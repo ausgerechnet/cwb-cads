@@ -1,12 +1,16 @@
-from apiflask import APIBlueprint, Schema
-from flask import request, current_app
-from .users import auth
-from .database import Breakdown, BreakdownItems, Matches
-from apiflask.fields import Integer, String
-from . import db
-from ccc import Corpus
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 from collections import Counter
 
+from apiflask import APIBlueprint, Schema
+from apiflask.fields import Integer, String
+from ccc import Corpus
+from flask import current_app, request
+
+from . import db
+from .database import Breakdown, BreakdownItems
+from .users import auth
 
 bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 

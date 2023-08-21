@@ -1,41 +1,14 @@
-"""
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
-=== one to many ===
-# topic (discourseme) - collocation
-- a discourseme (parent) can have several analyses (children) [but only one in any given corpus]
-- a collocation analysis has exactly one topic discourseme
-# user - [collocation, discourseme, constellation]
-- a user can have several analyses
-- a collocation/keyword analysis or discourseme belongs to exactly one user
-
-=== many to many ===
-# users - roles
-- a user can have several roles
-- a role can be token by several users
-# collocation - discoursemes
-- a collocation analysis can have several associated discoursemes
-- a discourseme can belong to several collocation analyses
-# keyword - discoursemes
-- a keyword analysis has several associated discoursemes
-- a discourseme can belong to several keyword analyses
-# constellation - discoursemes
-- a constellation has several associated discoursemes
-- a discourseme can belong to several constellations
-
-=== one to one ===
-# collocation/keyword - coordinates
-- a collocation/keyword analysis (parent) has exactly one coordinates table (child)
-- a coordinates table belongs to exactly one collocation/keyword analysis
-
-"""
-
-from . import db
-
-from flask import Blueprint, current_app
-from werkzeug.security import generate_password_hash
-from flask_login import UserMixin
 import json
 from datetime import datetime
+
+from flask import Blueprint, current_app
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash
+
+from . import db
 
 bp = Blueprint('database', __name__, url_prefix='/database')
 

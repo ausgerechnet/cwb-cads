@@ -1,14 +1,12 @@
-# import os
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
 import pytest
 
 from mmda import create_app
 from mmda.database import init_db
 
-
-# here = os.path.dirname(os.path.realpath(__file__))
 app = create_app('cfg.TestConfig')
-
 
 # create new database
 with app.app_context():

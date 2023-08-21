@@ -1,9 +1,13 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 from apiflask import APIBlueprint, Schema
-from flask import g, request
-from .users import auth
-from .database import Discourseme
 from apiflask.fields import Integer, String
+from flask import g, request
+
 from . import db
+from .database import Discourseme
+from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme')
 

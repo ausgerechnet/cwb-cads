@@ -1,10 +1,14 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 from apiflask import APIBlueprint, Schema
-from flask import current_app
-from .users import auth
-from .database import Corpus
+from apiflask.fields import Integer, List, String
 from ccc import Corpus as CCCorpus
-from apiflask.fields import Integer, String, List
+from flask import current_app
+
 from . import db
+from .database import Corpus
+from .users import auth
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus')
 

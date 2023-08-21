@@ -1,11 +1,13 @@
-from apiflask import APIBlueprint, Schema
-from flask import request, current_app, g
-from .users import auth
-from .database import Constellation, Discourseme
-from apiflask.fields import Integer, String, List
-from . import db
-from ccc import Corpus
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
+from apiflask import APIBlueprint, Schema
+from apiflask.fields import Integer, List, String
+from flask import g
+
+from . import db
+from .database import Constellation, Discourseme
+from .users import auth
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 

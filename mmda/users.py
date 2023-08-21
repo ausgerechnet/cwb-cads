@@ -3,8 +3,8 @@
 
 from apiflask import APIBlueprint, HTTPBasicAuth, Schema, abort
 from apiflask.fields import Integer, String
-from flask import request, current_app, jsonify, session, g
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import current_app, g, jsonify, request, session
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from mmda import db
 from mmda.database import User

@@ -8,7 +8,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .version import __version__
 
-
 CONFIG = 'cfg.ProdConfig'
 
 NAME = 'mmda'
@@ -65,7 +64,8 @@ def create_app(config=CONFIG):
         """
         return 'Hello back there', 200
 
-    from . import users, discourseme, constellation, query, breakdown, collocation, concordance, corpus
+    from . import (breakdown, collocation, concordance, constellation, corpus,
+                   discourseme, query, users)
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)
     app.register_blueprint(discourseme.bp)

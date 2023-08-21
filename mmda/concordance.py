@@ -1,15 +1,17 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 from apiflask import APIBlueprint, Schema
-from flask import request, current_app
-from .users import auth
-from .database import Query
-from apiflask.fields import Integer, String, List
-from . import db
+from apiflask.fields import Integer, List, String
 from ccc import Corpus, SubCorpus
 from ccc.concordances import Concordance
 from ccc.utils import format_roles
-from collections import Counter
+from flask import current_app
 from pandas import DataFrame
 
+from . import db
+from .database import Query
+from .users import auth
 
 bp = APIBlueprint('concordance', __name__, url_prefix='/concordance')
 

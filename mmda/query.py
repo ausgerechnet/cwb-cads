@@ -1,11 +1,14 @@
-from apiflask import APIBlueprint, Schema
-from flask import request, current_app
-from .users import auth
-from .database import Query, Matches
-from apiflask.fields import Integer, String
-from . import db
-from ccc import Corpus
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
+from apiflask import APIBlueprint, Schema
+from apiflask.fields import Integer, String
+from ccc import Corpus
+from flask import current_app, request
+
+from . import db
+from .database import Matches, Query
+from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
 

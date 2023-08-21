@@ -1,14 +1,16 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 from apiflask import APIBlueprint, Schema
-from flask import request, current_app, g
-from .users import auth
-from .database import Collocation, CollocationItems, Query
 from apiflask.fields import Integer, String
-from . import db
-from ccc import SubCorpus
+from ccc import Corpus, SubCorpus
 from ccc.collocates import Collocates
-from ccc import Corpus
+from flask import current_app, g
 from pandas import DataFrame
 
+from . import db
+from .database import Collocation, CollocationItems, Query
+from .users import auth
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
 
