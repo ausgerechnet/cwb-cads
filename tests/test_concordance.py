@@ -28,14 +28,16 @@ def test_create_collocation(client, auth):
         query = client.post(url_for('query.execute', id=query.json['id']),
                             auth=('admin', '0000'))
 
-        lines = client.get(url_for('concordance.get_concordance_lines'),
-                           json={
-                               'query_id': discourseme.json['id'],
-                               'p': ['word', 'lemma'],
-                               's_break': 's',
-                               'context': 20,
-                               'order': 'random'
-                           },
+        # concordance
+        concordance = client.post(url_for('query.concordance.create', query_id=query.json['id']),
+                                  json={
+                                      'p': 'lemma',
+                                      's_break': 's',
+                                      'context': 20,
+                                  },
+                                  auth=('admin', '0000'))
+
+        lines = client.get(url_for('query.concordance.get_concordance_lines', query_id=query.json['id'], id=concordance.json['id']),
                            auth=('admin', '0000'))
 
         assert lines.status_code == 200

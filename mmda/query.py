@@ -50,7 +50,7 @@ def create(data):
 @bp.output(QueryOut(many=True))
 @bp.auth_required(auth)
 def get_queries():
-    """Get a query.
+    """Get all queries.
 
     """
 
@@ -63,7 +63,7 @@ def get_queries():
 @bp.output(QueryOut)
 @bp.auth_required(auth)
 def get_query(id):
-    """Get a query.
+    """Get details of a query.
 
     """
 
@@ -90,7 +90,7 @@ def delete_query(id):
 @bp.output(QueryOut)
 @bp.auth_required(auth)
 def execute(id):
-    """Execute query: get matches
+    """Execute query: get matches.
 
     """
 

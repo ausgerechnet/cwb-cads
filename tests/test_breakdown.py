@@ -8,39 +8,34 @@ def test_create_breakdown(client, auth):
         client.get("/")
 
         # discourseme
-        discourseme = {
-            'name': 'CDU',
-            'description': 'Test Query'
-        }
-        r = client.post(url_for('discourseme.create'),
-                        json=discourseme,
-                        auth=('admin', '0000'))
+        discourseme = client.post(url_for('discourseme.create'),
+                                  json={
+                                      'name': 'CDU',
+                                      'description': 'Test Query'
+                                  },
+                                  auth=('admin', '0000'))
 
         # query
-        query = {
-            'discourseme_id': r.json['id'],
-            'corpus_id': 1,
-            'cqp_query': '[word="die"]? [lemma="CDU"]'
-        }
-        r = client.post(url_for('query.create'),
-                        json=query,
-                        auth=('admin', '0000'))
+        query = client.post(url_for('query.create'),
+                            json={
+                                'discourseme_id': discourseme.json['id'],
+                                'corpus_id': 1,
+                                'cqp_query': '[word="die"]? [lemma="CDU"]'
+                            },
+                            auth=('admin', '0000'))
 
         # create matches
-        r = client.post(url_for('query.execute', id=r.json['id']),
-                        auth=('admin', '0000'))
+        query = client.post(url_for('query.execute', id=query.json['id']),
+                            auth=('admin', '0000'))
 
         # breakdown
-        breakdown = {
-            'query_id': r.json['id'],
-            'p': 'lemma'
-        }
+        breakdown = client.post(url_for('query.breakdown.create', query_id=query.json['id']),
+                                json={
+                                    'p': 'lemma'
+                                },
+                                auth=('admin', '0000'))
 
-        r = client.post(url_for('breakdown.create'),
-                        json=breakdown,
-                        auth=('admin', '0000'))
-
-        assert r.status_code == 200
+        assert breakdown.status_code == 200
 
 
 def test_execute_breakdown(client, auth):
@@ -49,10 +44,13 @@ def test_execute_breakdown(client, auth):
     with client:
         client.get("/")
 
-        response = client.get(url_for('breakdown.get_breakdown', id=1),
+        breakdowns = client.get(url_for('query.breakdown.get_breakdowns', query_id=1),
+                                auth=('admin', '0000'))
+
+        response = client.get(url_for('query.breakdown.get_breakdown', query_id=breakdowns.json[0]['query_id'], id=breakdowns.json[0]['id']),
                               auth=('admin', '0000'))
 
-        response = client.post(url_for('breakdown.execute', id=1),
+        response = client.post(url_for('query.breakdown.execute', query_id=1, id=1),
                                json={'p': 'lemma'},
                                auth=('admin', '0000'))
         assert response.status_code == 200

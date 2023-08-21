@@ -66,13 +66,17 @@ def create_app(config=CONFIG):
 
     from . import (breakdown, collocation, concordance, constellation, corpus,
                    discourseme, query, users)
+
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)
+
     app.register_blueprint(discourseme.bp)
     app.register_blueprint(constellation.bp)
+
+    query.bp.register_blueprint(breakdown.bp)
+    query.bp.register_blueprint(collocation.bp)
+    query.bp.register_blueprint(concordance.bp)
+
     app.register_blueprint(query.bp)
-    app.register_blueprint(breakdown.bp)
-    app.register_blueprint(collocation.bp)
-    app.register_blueprint(concordance.bp)
 
     return app

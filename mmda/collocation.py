@@ -5,23 +5,22 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String
 from ccc import Corpus, SubCorpus
 from ccc.collocates import Collocates
-from flask import current_app, g
+from flask import current_app, jsonify
 from pandas import DataFrame
 
 from . import db
 from .database import Collocation, CollocationItems, Query
 from .users import auth
 
-bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
+bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 
 
 class CollocationIn(Schema):
 
-    corpus_id = Integer()
+    query_id = Integer()
     p = String()
     s_break = String()
-    window = Integer()
-    constellation_id = Integer()
+    context = Integer()
 
 
 class CollocationOut(Schema):
@@ -30,7 +29,7 @@ class CollocationOut(Schema):
     corpus_id = Integer()
     p = String()
     s_break = String()
-    window = Integer()
+    context = Integer()
     sem_map_id = Integer()
     constellation_id = Integer()
 
@@ -47,24 +46,34 @@ class CollocationItemsOut(Schema):
 @bp.input(CollocationIn)
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def create(data):
-    """Create new collocation.
+def create(query_id, data):
+    """Create new collocation analysis.
 
     """
-    collocation = Collocation(
-        user_id=g.user.id,
-        **data
-    )
+    collocation = Collocation(query_id=query_id, **data)
     db.session.add(collocation)
     db.session.commit()
 
     return CollocationOut().dump(collocation), 200
 
 
+@bp.get('/')
+@bp.output(CollocationOut(many=True))
+@bp.auth_required(auth)
+def get_collocations(query_id):
+    """Get collocation.
+
+    """
+
+    query = db.get_or_404(Query, query_id)
+
+    return [CollocationOut().dump(collocation) for collocation in query.collocations], 200
+
+
 @bp.get('/<id>')
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def get_collocation(id):
+def get_collocation(query_id, id):
     """Get collocation.
 
     """
@@ -76,8 +85,8 @@ def get_collocation(id):
 
 @bp.delete('/<id>')
 @bp.auth_required(auth)
-def delete_collocation(id):
-    """Delete one collocation.
+def delete_collocation(query_id, id):
+    """Delete collocation.
 
     """
 
@@ -91,25 +100,25 @@ def delete_collocation(id):
 @bp.post('/<id>/execute')
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def execute(id):
-    """Execute collocation.
+def execute(query_id, id):
+    """Execute collocation: Get collocation items.
 
     """
 
     mws = 20
     collocation = db.get_or_404(Collocation, id)
-    constellation = collocation.constellation
-    filter_discoursemes_ids = [d.id for d in constellation.filter_discoursemes]
-    filter_queries = Query.query.filter(Query.discourseme_id.in_(filter_discoursemes_ids),
-                                        Query.corpus_id == collocation.corpus_id).all()
+    filter_query = collocation.query
+    # filter_discoursemes_ids = [d.id for d in constellation.filter_discoursemes]
+    # filter_queries = Query.query.filter(Query.discourseme_id.in_(filter_discoursemes_ids),
+    #                                     Query.corpus_id == collocation.corpus_id).all()
 
-    if len(filter_queries) == 0:
-        raise ValueError()
+    # if len(filter_queries) == 0:
+    #     raise ValueError()
 
-    if len(filter_queries) > 1:
-        raise NotImplementedError()
+    # if len(filter_queries) > 1:
+    #     raise NotImplementedError()
 
-    filter_query = filter_queries[0]
+    # filter_query = filter_queries[0]
     matches = filter_query.matches
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
     df_dump['context'] = df_dump['match']
@@ -125,7 +134,7 @@ def execute(id):
                           registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                           data_dir=current_app.config['CCC_DATA_DIR'],
                           overwrite=False)
-    subcorpus = subcorpus.set_context(context=collocation.window, context_break=collocation.s_break)
+    subcorpus = subcorpus.set_context(context=collocation.context, context_break=collocation.s_break)
     df_dump = subcorpus.df
 
     # cotext
@@ -142,7 +151,7 @@ def execute(id):
     # print(collocates.node_freq)
 
     # collocates = subcorpus.collocates(p_query=[collocation.p], cut_off=None, show_negative=True)
-    collocates = collocates.show(window=collocation.window,
+    collocates = collocates.show(window=collocation.context,
                                  order='O11', cut_off=None, ams=None, min_freq=1, flags=None,
                                  marginals='corpus', show_negative=True)
 
@@ -160,11 +169,15 @@ def execute(id):
 
 
 @bp.get("/<id>/items")
+# @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def get_collocation_items(id):
+def get_collocation_items(query_id, id):
+    """Get collocation items.
+
+    """
 
     collocation = db.get_or_404(Collocation, id)
     records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items]
     df_collocation = DataFrame.from_records(records).pivot(index='item', columns='am', values='value')
 
-    return df_collocation.to_json(), 200
+    return jsonify(df_collocation.to_json()), 200

@@ -25,44 +25,33 @@ def test_create_collocation(client, auth):
                             auth=('admin', '0000'))
 
         # execute
-        client.post(url_for('query.execute', id=query.json['id']),
-                    auth=('admin', '0000'))
-
-        # constellation
-        constellation = client.post(url_for('constellation.create'),
-                                    json={
-                                        'name': 'CDU',
-                                        'description': 'Test Constellation',
-                                        'filter_discourseme_ids': [discourseme.json['id']]
-                                    },
-                                    auth=('admin', '0000'))
+        query = client.post(url_for('query.execute', id=query.json['id']),
+                            auth=('admin', '0000'))
 
         # collocation
-        collocation = client.post(url_for('collocation.create'),
+        collocation = client.post(url_for('query.collocation.create', query_id=query.json['id']),
                                   json={
-                                      'corpus_id': 1,
                                       'p': 'lemma',
                                       's_break': 's',
-                                      'window': 5,
-                                      'constellation_id': constellation.json['id']
+                                      'context': 5,
                                   },
                                   auth=('admin', '0000'))
 
-        collocation = client.get(url_for('collocation.get_collocation', id=collocation.json['id']),
+        collocation = client.get(url_for('query.collocation.get_collocation', query_id=query.json['id'], id=collocation.json['id']),
                                  auth=('admin', '0000'))
 
         assert collocation.status_code == 200
 
 
-def test_execute_query(client, auth):
+def test_execute_collocation(client, auth):
 
     auth.login()
     with client:
         client.get("/")
-        collocation = client.post(url_for('collocation.execute', id=1),
+        collocation = client.post(url_for('query.collocation.execute', query_id=1, id=1),
                                   auth=('admin', '0000'))
 
-        items = client.get(url_for('collocation.get_collocation_items', id=collocation.json['id']),
+        items = client.get(url_for('query.collocation.get_collocation_items', query_id=1, id=collocation.json['id']),
                            auth=('admin', '0000'))
-
+        print(items.json)
         assert items.status_code == 200

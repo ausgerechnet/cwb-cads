@@ -10,7 +10,7 @@ from werkzeug.security import generate_password_hash
 
 from . import db
 
-bp = Blueprint('database', __name__, url_prefix='/database')
+bp = Blueprint('database', __name__, url_prefix='/database', cli_group='database')
 
 users_roles = db.Table(
     'UsersRoles',
@@ -70,7 +70,7 @@ class User(db.Model, UserMixin):
     discoursemes = db.relationship('Discourseme', backref='user', lazy=True)
     constellations = db.relationship('Constellation', backref='user', lazy=True)
 
-    collocation_analyses = db.relationship('Collocation', backref='user', lazy=True)
+    collocations = db.relationship('Collocation', backref='user', lazy=True)
     # keyword_analyses = db.relationship('Keyword', backref='user', lazy=True)
 
 
@@ -144,7 +144,7 @@ class Constellation(db.Model):
     highlight_discoursemes = db.relationship("Discourseme", secondary=constellation_highlight_discoursemes,
                                              backref=db.backref('constellation_highlighted', lazy=True))
 
-    collocation_analyses = db.relationship('Collocation', backref='constellation', lazy=True)
+    # collocation_analyses = db.relationship('Collocation', backref='constellation', lazy=True)
 
 
 class Query(db.Model):
@@ -163,6 +163,8 @@ class Query(db.Model):
     match_strategy = db.Column(db.Unicode, default='longest')
     matches = db.relationship('Matches', backref='query', lazy=True)
     breakdowns = db.relationship('Breakdown', backref='query', lazy=True)
+    collocations = db.relationship('Collocation', backref='query', lazy=True)
+    concordances = db.relationship('Concordance', backref='query', lazy=True)
 
 
 class Matches(db.Model):
@@ -206,6 +208,37 @@ class BreakdownItems(db.Model):
 
     item = db.Column(db.Unicode)
     freq = db.Column(db.Integer)
+
+
+class Concordance(db.Model):
+    """Concordance
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, default=datetime.utcnow)
+
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
+
+    p = db.Column(db.Unicode, nullable=False)
+    context = db.Column(db.Integer)
+    s_break = db.Column(db.Unicode)
+
+#     lines = db.relationship('ConcordanceLine', backref='concordance', lazy=True)
+
+
+# class ConcordanceLines(db.Model):
+#     """Concordance Lines
+
+#     """
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     modified = db.Column(db.DateTime, default=datetime.utcnow)
+
+#     breakdown_id = db.Column(db.Integer, db.ForeignKey('breakdown.id', ondelete='CASCADE'))
+
+#     item = db.Column(db.Unicode)
+#     freq = db.Column(db.Integer)
 
 
 class Cotext(db.Model):
@@ -273,9 +306,9 @@ class Collocation(db.Model):
 
     p = db.Column(db.Unicode(255), nullable=False)
     s_break = db.Column(db.Unicode(255), nullable=False)
-    window = db.Column(db.Integer, nullable=True)
+    context = db.Column(db.Integer, nullable=True)
 
-    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
     sem_map_id = db.Column(db.Integer, db.ForeignKey('sem_map.id'))
     items = db.relationship('CollocationItems', backref='collocation', lazy=True)
@@ -326,7 +359,6 @@ class CollocationItems(db.Model):
 #     """
 #     id = db.Column(db.Integer, primary_key=True)
 #     modified = db.Column(db.DateTime, default=datetime.utcnow)
-
 
 # @bp.cli.command('init')
 def init_db():
