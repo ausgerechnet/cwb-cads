@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, HTTPBasicAuth, Schema, abort
-from apiflask.fields import Integer, String
+from apiflask.fields import Integer, List, String
 from flask import current_app, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -33,6 +33,9 @@ def verify_password(username, password):
 class UserRegister(Schema):
 
     username = String(required=True)
+    first_name = String()
+    last_name = String()
+    email = String()
     password = String(required=True)
     confirm_password = String(required=True)
 
@@ -54,13 +57,12 @@ class UserOut(Schema):
 
     id = Integer(required=True)
     username = String(required=True)
+    roles = List(String())
 
 
 @bp.post('/login')
 @bp.input(UserIn, location='form')
 @bp.output(UserOut)
-@bp.doc(responses=[401,         # name not found
-                   404])        # incorrect password
 def login(data):
     """Login with name and password.
 
@@ -90,17 +92,18 @@ def logout():
 
     """
 
-    # clear session
     session.clear()
 
     return 'Logout successful.', 200
 
 
 @bp.post('/')
+@bp.input(UserIn)
+@bp.output(UserOut)
 @bp.auth_required(auth)
 def create_user(username):
-    """
-    Register a new user
+    """Register new user.
+
     """
 
     username = request.json.get('username')
@@ -120,48 +123,42 @@ def create_user(username):
     db.session.commit()
 
     current_app.logger.debug('Updated details for user %s', user.id)
-    return jsonify({'msg': 'Updated'}), 200
-
-
-@bp.get('/')
-@bp.auth_required(auth)
-def get_users(username):
-    """
-    Get all users
-    """
-
-    # Get User
-    user = User.query.filter_by(username=username).first()
-    user = db.get_or_404(User, user.id)
-    if not user:
-        current_app.logger.debug('No such user %s', username)
-        return jsonify({'msg': 'No such user'}), 404
-
-    return jsonify(user.serialize), 200
+    return UserOut().dump(user), 200
 
 
 @bp.get('/<id>')
+@bp.output(UserOut)
 @bp.auth_required(auth)
-def get_user(username):
-    """
-    Get details of a user
+def get_user(id):
+    """Get details of user.
+
     """
 
-    # Get User
-    user = User.query.filter_by(username=username).first()
-    user = db.get_or_404(User, user.id)
-    if not user:
-        current_app.logger.debug('No such user %s', username)
-        return jsonify({'msg': 'No such user'}), 404
+    user = db.get_or_404(User, id)
 
-    return jsonify(user.serialize), 200
+    return UserOut().dump(user), 200
+
+
+@bp.get('/')
+@bp.output(UserOut(many=True))
+@bp.auth_required(auth)
+def get_users():
+    """Get all users.
+
+    """
+
+    users = User.query.all()
+
+    return [UserOut().dump(user) for user in users], 200
 
 
 @bp.patch('/<id>')
+@bp.input(UserUpdate)
+@bp.output(UserOut)
 @bp.auth_required(auth)
 def update_user(username):
-    """
-    Update details of a user
+    """Update details of a user.
+
     """
 
     # Check Request
@@ -185,4 +182,4 @@ def update_user(username):
     db.session.commit()
 
     current_app.logger.debug('Password updated for user %s', user.id)
-    return jsonify({'msg': 'Updated'}), 200
+    return UserOut().dump(user), 200

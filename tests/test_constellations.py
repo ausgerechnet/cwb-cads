@@ -20,8 +20,14 @@ def test_create_collocation(client, auth):
                                     json={
                                         'name': 'CDU',
                                         'description': 'Test Constellation',
-                                        'filter_discoursemes': [discourseme.json['id']]
+                                        'filter_discourseme_ids': [discourseme.json['id']]
                                     },
                                     auth=('admin', '0000'))
 
-        assert constellation.status_code == 200
+        constellation = client.get(url_for('constellation.get_constellation', id=constellation.json['id']),
+                                   auth=('admin', '0000'))
+
+        constellations = client.get(url_for('constellation.get_constellations'),
+                                    auth=('admin', '0000'))
+
+        assert constellations.status_code == 200

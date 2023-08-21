@@ -16,7 +16,8 @@ class ConstellationIn(Schema):
 
     name = String()
     description = String()
-    filter_discoursemes = List(Integer)
+    filter_discourseme_ids = List(Integer)
+    highlight_discourseme_ids = List(Integer, required=False)
 
 
 class ConstellationOut(Schema):
@@ -27,14 +28,6 @@ class ConstellationOut(Schema):
     # filter_discoursemes = List(DiscoursemeOut)
 
 
-class ConstellationItemsOut(Schema):
-
-    id = Integer()
-    constellation_id = Integer()
-    item = String()
-    freq = Integer()
-
-
 @bp.post('/')
 @bp.input(ConstellationIn)
 @bp.output(ConstellationOut)
@@ -43,7 +36,7 @@ def create(data):
     """Create new constellation.
 
     """
-    filter_discoursemes = Discourseme.query.filter(Discourseme.id.in_(data['filter_discoursemes'])).all()
+    filter_discoursemes = Discourseme.query.filter(Discourseme.id.in_(data['filter_discourseme_ids'])).all()
     constellation = Constellation(
         user_id=g.user.id,
         name=data['name'],
@@ -60,9 +53,35 @@ def create(data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def get_constellation(id):
-    """Get constellation.
+    """Get details of a constellation.
 
     """
 
     constellation = db.get_or_404(Constellation, id)
     return ConstellationOut().dump(constellation), 200
+
+
+@bp.delete('/<id>')
+@bp.auth_required(auth)
+def delete_constellation(id):
+    """Delete one constellation.
+
+    """
+
+    constellation = db.get_or_404(Constellation, id)
+    db.session.delete(constellation)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
+
+
+@bp.get('/')
+@bp.output(ConstellationOut(many=True))
+@bp.auth_required(auth)
+def get_constellations():
+    """Get all constellations.
+
+    """
+
+    constellations = Constellation.query.all()
+    return [ConstellationOut().dump(constellation) for constellation in constellations], 200

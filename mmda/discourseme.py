@@ -42,3 +42,41 @@ def create(data):
     db.session.add(discourseme)
     db.session.commit()
     return DiscoursemeOut().dump(discourseme), 200
+
+
+@bp.get('/<id>')
+@bp.output(DiscoursemeOut)
+@bp.auth_required(auth)
+def get_discourseme(id):
+    """Get details of a discourseme.
+
+    """
+
+    discourseme = db.get_or_404(Discourseme, id)
+    return DiscoursemeOut().dump(discourseme), 200
+
+
+@bp.delete('/<id>')
+@bp.auth_required(auth)
+def delete_discourseme(id):
+    """Delete one discourseme.
+
+    """
+
+    discourseme = db.get_or_404(Discourseme, id)
+    db.session.delete(discourseme)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
+
+
+@bp.get('/')
+@bp.output(DiscoursemeOut(many=True))
+@bp.auth_required(auth)
+def get_discoursemes():
+    """Get all discoursemes.
+
+    """
+
+    discoursemes = Discourseme.query.all()
+    return [DiscoursemeOut().dump(discourseme) for discourseme in discoursemes], 200

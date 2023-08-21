@@ -19,7 +19,6 @@ class QueryIn(Schema):
     corpus_id = Integer()
     match_strategy = String()
     cqp_query = String()
-    cqp_id = String()
 
 
 class QueryOut(Schema):
@@ -47,6 +46,19 @@ def create(data):
     return QueryOut().dump(query), 200
 
 
+@bp.get('/')
+@bp.output(QueryOut(many=True))
+@bp.auth_required(auth)
+def get_queries():
+    """Get a query.
+
+    """
+
+    queries = Query.query.all()
+
+    return [QueryOut().dump(query) for query in queries], 200
+
+
 @bp.get('/<id>')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
@@ -58,6 +70,20 @@ def get_query(id):
     query = db.get_or_404(Query, id)
 
     return QueryOut().dump(query), 200
+
+
+@bp.delete('/<id>')
+@bp.auth_required(auth)
+def delete_query(id):
+    """Delete a query.
+
+    """
+
+    query = db.get_or_404(Query, id)
+    db.session.delete(query)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
 
 
 @bp.post('/<id>/execute')

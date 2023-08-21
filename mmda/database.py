@@ -91,7 +91,6 @@ class Corpus(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     cwb_id = db.Column(db.Unicode)
-    registry_dir = db.Column(db.Unicode)
     name = db.Column(db.Unicode)
     language = db.Column(db.Unicode)
     register = db.Column(db.Unicode)

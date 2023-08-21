@@ -25,7 +25,7 @@ class ProdConfig(Config):
     ADMIN_PASSWORD = "0000"  # only user (name = 'admin')
 
     SESSION_COOKIE_SECURE = True
-    CORPORA = 'tests/corpora/corpora.json'
+    CORPORA = '/home/ausgerechnet/corpora/cwb/mmda-corpora.json'
 
     CCC_REGISTRY_DIR = str(getenv('CORPUS_REGISTRY', default='tests/corpora/registry/'))
     CCC_CQP_BIN = str(getenv('CQP_BIN', default='cqp'))

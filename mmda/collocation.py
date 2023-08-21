@@ -70,7 +70,22 @@ def get_collocation(id):
     """
 
     collocation = db.get_or_404(Collocation, id)
+
     return CollocationOut().dump(collocation), 200
+
+
+@bp.delete('/<id>')
+@bp.auth_required(auth)
+def delete_collocation(id):
+    """Delete one collocation.
+
+    """
+
+    collocation = db.get_or_404(Collocation, id)
+    db.session.delete(collocation)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
 
 
 @bp.post('/<id>/execute')

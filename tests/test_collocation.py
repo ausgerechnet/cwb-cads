@@ -33,7 +33,7 @@ def test_create_collocation(client, auth):
                                     json={
                                         'name': 'CDU',
                                         'description': 'Test Constellation',
-                                        'filter_discoursemes': [discourseme.json['id']]
+                                        'filter_discourseme_ids': [discourseme.json['id']]
                                     },
                                     auth=('admin', '0000'))
 
@@ -62,7 +62,7 @@ def test_execute_query(client, auth):
         collocation = client.post(url_for('collocation.execute', id=1),
                                   auth=('admin', '0000'))
 
-        items = client.get(url_for('collocation.get_collocation_items', id=1),
+        items = client.get(url_for('collocation.get_collocation_items', id=collocation.json['id']),
                            auth=('admin', '0000'))
 
         assert items.status_code == 200

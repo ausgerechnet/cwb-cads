@@ -81,7 +81,7 @@ class CorpusOut(Schema):
 @bp.output(CorpusOut(many=True))
 @bp.auth_required(auth)
 def get_corpora():
-    """Get one corpus.
+    """Get all corpora.
 
     """
     corpora = Corpus.query.all()
@@ -93,7 +93,7 @@ def get_corpora():
 @bp.output(CorpusOut)
 @bp.auth_required(auth)
 def get_corpus(id):
-    """Get one corpus.
+    """Get details of a corpus.
 
     """
     corpus = db.get_or_404(Corpus, id)
