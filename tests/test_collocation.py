@@ -53,5 +53,5 @@ def test_execute_collocation(client, auth):
 
         items = client.get(url_for('query.collocation.get_collocation_items', query_id=1, id=collocation.json['id']),
                            auth=('admin', '0000'))
-        print(items.json)
+
         assert items.status_code == 200
