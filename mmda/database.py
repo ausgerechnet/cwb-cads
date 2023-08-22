@@ -73,6 +73,25 @@ class User(db.Model, UserMixin):
     collocations = db.relationship('Collocation', backref='user', lazy=True)
     # keyword_analyses = db.relationship('Keyword', backref='user', lazy=True)
 
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format
+
+        :return: Dictionary containing the user values
+        :rtype: dict
+
+        """
+
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'email_confirmed_at': self.email,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'active': self.active,
+        }
+
 
 class Role(db.Model):
     """Role
@@ -125,6 +144,26 @@ class Discourseme(db.Model):
 
     name = db.Column(db.Unicode(255), nullable=True)
     description = db.Column(db.Unicode, nullable=True)
+    items = db.Column(db.Unicode, default="")
+    queries = db.relationship("Query", backref="discourseme", lazy=True)
+
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format
+
+        :return: Dictionary containing the discourseme values
+        :rtype: dict
+
+        """
+
+        return {
+            'id': self.id,
+            'name': self.name,
+            'is_topic': False,
+            'user_id': self.user_id,
+            'items': self.items.split("\t"),
+            'collocation_analyses': []
+        }
 
 
 class Constellation(db.Model):
@@ -146,6 +185,23 @@ class Constellation(db.Model):
 
     # collocation_analyses = db.relationship('Collocation', backref='constellation', lazy=True)
 
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format
+
+        :return: Dictionary containing the constellation values
+        :rtype: dict
+
+        """
+        discoursemes = self.filter_discoursemes + self.highlight_discoursemes
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'name': self.name,
+            'discoursemes': [discourseme.id for discourseme in discoursemes],
+            'discoursemes_names': [discourseme.name for discourseme in discoursemes]
+        }
+
 
 class Query(db.Model):
     """Query: executed in CQP and dumped to disk
@@ -161,10 +217,10 @@ class Query(db.Model):
     cqp_query = db.Column(db.Unicode)
     cqp_id = db.Column(db.Unicode)
     match_strategy = db.Column(db.Unicode, default='longest')
-    matches = db.relationship('Matches', backref='query', lazy=True)
-    breakdowns = db.relationship('Breakdown', backref='query', lazy=True)
-    collocations = db.relationship('Collocation', backref='query', lazy=True)
-    concordances = db.relationship('Concordance', backref='query', lazy=True)
+    matches = db.relationship('Matches', backref='_query', lazy=True)
+    breakdowns = db.relationship('Breakdown', backref='_query', lazy=True)
+    collocations = db.relationship('Collocation', backref='_query', lazy=True)
+    concordances = db.relationship('Concordance', backref='_query', lazy=True)
 
 
 class Matches(db.Model):
@@ -316,7 +372,31 @@ class Collocation(db.Model):
 
     # semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     items = db.relationship('CollocationItems', backref='collocation', lazy=True)
-    # collocation = db.relationship('SemanticMap', backref='collocation', lazy=True)
+
+    # semantic_map = db.relationship('SemanticMap', backref='collocation', lazy=True)
+
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format
+
+        :return: Dictionary containing the collocation analysis values
+        :rtype: dict
+
+        """
+        return {
+            'id': self.id,
+            'corpus': self._query.corpus.cwb_id,
+            'user_id': self.user_id,
+            'topic_id': self._query.discourseme.id,
+            'p_query': 'lemma',
+            'flags_query': '',
+            'escape_query': False,
+            'p_collocation': self.p,
+            's_break': self.s_break,
+            'context': self.context,
+            'items': self._query.discourseme.items.split("\t"),
+            'topic_discourseme': self._query.discourseme.serialize
+        }
 
 
 class CollocationItems(db.Model):
@@ -374,7 +454,10 @@ def init_db():
 
     db.session.add(
         User(username='admin',
-             password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']))
+             password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']),
+             first_name='Admin',
+             last_name='Istrinator',
+             email='admin@istrination.com')
     )
 
     corpora = json.load(open(current_app.config['CORPORA'], 'rt'))
@@ -382,5 +465,11 @@ def init_db():
         db.session.add(Corpus(
             **corpus
         ))
+
+    db.session.commit()
+
+    db.session.add(
+        Discourseme(user_id=1, items="\t".join(['Bundeskanzler', 'Kanzler']), name='Kanzler')
+    )
 
     db.session.commit()
