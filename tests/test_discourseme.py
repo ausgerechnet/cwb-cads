@@ -1,7 +1,7 @@
 from flask import url_for
 
 
-def test_create_discourseme(client, auth):
+def test_create_get_discourseme(client, auth):
 
     auth.login()
     with client:

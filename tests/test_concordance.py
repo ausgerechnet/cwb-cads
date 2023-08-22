@@ -1,7 +1,7 @@
 from flask import url_for
 
 
-def test_create_collocation(client, auth):
+def test_create_get_concordance(client, auth):
 
     auth.login()
     with client:
@@ -37,7 +37,7 @@ def test_create_collocation(client, auth):
                                   },
                                   auth=('admin', '0000'))
 
-        lines = client.get(url_for('query.concordance.get_concordance_lines', query_id=query.json['id'], id=concordance.json['id']),
+        lines = client.get(url_for('query.concordance.lines', query_id=query.json['id'], id=concordance.json['id']),
                            auth=('admin', '0000'))
 
         assert lines.status_code == 200

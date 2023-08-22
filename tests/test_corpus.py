@@ -1,7 +1,7 @@
 from flask import url_for
 
 
-def test_get_corpora(client, auth):
+def test_get_corpus(client, auth):
 
     auth.login()
     with client:

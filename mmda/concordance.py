@@ -103,7 +103,7 @@ def delete_concordance(query_id, id):
 @bp.get("/<id>/lines")
 @bp.output(ConcordanceLinesOut(many=True))
 @bp.auth_required(auth)
-def get_concordance_lines(query_id, id):
+def lines(query_id, id):
     """Get concordance lines.
 
     """

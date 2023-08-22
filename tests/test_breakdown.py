@@ -1,7 +1,7 @@
 from flask import url_for
 
 
-def test_create_breakdown(client, auth):
+def test_create_get_breakdown(client, auth):
 
     auth.login()
     with client:
@@ -36,13 +36,6 @@ def test_create_breakdown(client, auth):
                                 auth=('admin', '0000'))
 
         assert breakdown.status_code == 200
-
-
-def test_execute_breakdown(client, auth):
-
-    auth.login()
-    with client:
-        client.get("/")
 
         breakdowns = client.get(url_for('query.breakdown.get_breakdowns', query_id=1),
                                 auth=('admin', '0000'))

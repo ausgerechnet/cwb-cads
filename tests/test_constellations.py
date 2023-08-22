@@ -1,7 +1,7 @@
 from flask import url_for
 
 
-def test_create_collocation(client, auth):
+def test_create_get_constellation(client, auth):
 
     auth.login()
     with client:
