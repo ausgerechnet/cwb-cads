@@ -5,7 +5,8 @@ import os
 
 from apiflask import APIFlask
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 from .version import __version__
 
 CONFIG = 'cfg.ProdConfig'
@@ -14,6 +15,7 @@ NAME = 'mmda'
 TITLE = 'MMDA v2'
 
 db = SQLAlchemy()
+jwt = JWTManager()
 
 
 def create_app(config=CONFIG):
@@ -21,6 +23,10 @@ def create_app(config=CONFIG):
     # create and configure app
     app = APIFlask(NAME, title=TITLE, instance_relative_config=True,
                    version=__version__)
+
+    # Setup Flask JWT and CORS
+    jwt.init_app(app)
+    CORS(app, supports_credentials=True)
 
     # will be overwritten if provided in config
     app.secret_key = 'dev'
@@ -90,5 +96,9 @@ def create_app(config=CONFIG):
     query.bp.register_blueprint(concordance.bp)
 
     app.register_blueprint(query.bp)
+
+    # API for old frontend
+    from .api import api_blueprint
+    app.register_blueprint(api_blueprint)
 
     return app
