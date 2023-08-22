@@ -15,6 +15,35 @@ from .users import auth
 bp = APIBlueprint('breakdown', __name__, url_prefix='/<query_id>/breakdown')
 
 
+def ccc_breakdown(breakdown):
+
+    matches = breakdown._query.matches
+
+    if len(matches) == 0:
+        raise ValueError()
+
+    # get frequency counts
+    corpus = Corpus(breakdown._query.corpus.cwb_id,
+                    cqp_bin=current_app.config['CCC_CQP_BIN'],
+                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                    data_dir=current_app.config['CCC_DATA_DIR'])
+    items = list()
+    for match in matches:
+        items.append(" ".join(["_".join(corpus.cpos2patts(cpos, [breakdown.p])) for cpos in range(match.match, match.matchend + 1)]))
+    counts = Counter(items)
+
+    # add breakdown items to database
+    for item, freq in counts.items():
+        db.session.add(
+            BreakdownItems(
+                item=item,
+                freq=freq,
+                breakdown_id=breakdown.id
+            )
+        )
+    db.session.commit()
+
+
 class BreakdownIn(Schema):
 
     query_id = Integer()
@@ -98,31 +127,7 @@ def execute(query_id, id):
     """
 
     breakdown = db.get_or_404(Breakdown, id)
-    matches = breakdown.query.matches
-
-    if len(matches) == 0:
-        raise ValueError()
-
-    # get frequency counts
-    corpus = Corpus(breakdown.query.corpus.cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
-    items = list()
-    for match in matches:
-        items.append(" ".join(["_".join(corpus.cpos2patts(cpos, [breakdown.p])) for cpos in range(match.match, match.matchend + 1)]))
-    counts = Counter(items)
-
-    # add breakdown items to database
-    for item, freq in counts.items():
-        db.session.add(
-            BreakdownItems(
-                item=item,
-                freq=freq,
-                breakdown_id=breakdown.id
-            )
-        )
-    db.session.commit()
+    ccc_breakdown(breakdown)
 
     return BreakdownOut().dump(breakdown), 200
 

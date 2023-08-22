@@ -16,6 +16,70 @@ from .users import auth
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 
 
+def ccc_collocates(collocation, mws=20):
+
+    filter_query = collocation._query
+    # filter_discoursemes_ids = [d.id for d in constellation.filter_discoursemes]
+    # filter_queries = Query.query.filter(Query.discourseme_id.in_(filter_discoursemes_ids),
+    #                                     Query.corpus_id == collocation.corpus_id).all()
+
+    # if len(filter_queries) == 0:
+    #     raise ValueError()
+
+    # if len(filter_queries) > 1:
+    #     raise NotImplementedError()
+
+    # filter_query = filter_queries[0]
+    matches = filter_query.matches
+    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
+    df_dump['context'] = df_dump['match']
+    df_dump['contextend'] = df_dump['matchend']
+    df_dump = df_dump.set_index(['match', 'matchend'])
+
+    # matches
+    subcorpus = SubCorpus('Temp',
+                          df_dump,
+                          corpus_name=filter_query.corpus.cwb_id,
+                          lib_dir=None,
+                          cqp_bin=current_app.config['CCC_CQP_BIN'],
+                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                          data_dir=current_app.config['CCC_DATA_DIR'],
+                          overwrite=False)
+    subcorpus = subcorpus.set_context(context=collocation.context, context_break=collocation.s_break)
+    df_dump = subcorpus.df
+
+    # cotext
+    collocates = Collocates(Corpus(corpus_name=filter_query.corpus.cwb_id,
+                                   lib_dir=None,
+                                   cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                   data_dir=current_app.config['CCC_DATA_DIR']),
+                            df_dump,
+                            [collocation.p],
+                            mws=mws)
+    # print(collocates.df_cooc)
+    # print(collocates.f1_set)
+    # print(collocates.node_freq)
+
+    # collocates = subcorpus.collocates(p_query=[collocation.p], cut_off=None, show_negative=True)
+    collocates = collocates.show(window=collocation.context,
+                                 order='O11', cut_off=None, ams=None, min_freq=1, flags=None,
+                                 marginals='corpus', show_negative=True)
+
+    # wide to long
+    collocates = collocates.reset_index()
+    collocates = collocates.melt(id_vars=['item'], var_name='am')
+
+    # add items to database
+    for row in collocates.iterrows():
+        items = dict(row[1])
+        items['collocation_id'] = collocation.id
+        db.session.add(CollocationItems(**items))
+    db.session.commit()
+
+    return collocates
+
+
 class CollocationIn(Schema):
 
     query_id = Integer()
@@ -106,65 +170,8 @@ def execute(query_id, id):
 
     """
 
-    mws = 20
     collocation = db.get_or_404(Collocation, id)
-    filter_query = collocation.query
-    # filter_discoursemes_ids = [d.id for d in constellation.filter_discoursemes]
-    # filter_queries = Query.query.filter(Query.discourseme_id.in_(filter_discoursemes_ids),
-    #                                     Query.corpus_id == collocation.corpus_id).all()
-
-    # if len(filter_queries) == 0:
-    #     raise ValueError()
-
-    # if len(filter_queries) > 1:
-    #     raise NotImplementedError()
-
-    # filter_query = filter_queries[0]
-    matches = filter_query.matches
-    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
-    df_dump['context'] = df_dump['match']
-    df_dump['contextend'] = df_dump['matchend']
-    df_dump = df_dump.set_index(['match', 'matchend'])
-
-    # matches
-    subcorpus = SubCorpus('Temp',
-                          df_dump,
-                          corpus_name=filter_query.corpus.cwb_id,
-                          lib_dir=None,
-                          cqp_bin=current_app.config['CCC_CQP_BIN'],
-                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                          data_dir=current_app.config['CCC_DATA_DIR'],
-                          overwrite=False)
-    subcorpus = subcorpus.set_context(context=collocation.context, context_break=collocation.s_break)
-    df_dump = subcorpus.df
-
-    # cotext
-    collocates = Collocates(Corpus(corpus_name=filter_query.corpus.cwb_id,
-                                   lib_dir=None,
-                                   cqp_bin=current_app.config['CCC_CQP_BIN'],
-                                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                                   data_dir=current_app.config['CCC_DATA_DIR']),
-                            df_dump,
-                            [collocation.p],
-                            mws=mws)
-    # print(collocates.df_cooc)
-    # print(collocates.f1_set)
-    # print(collocates.node_freq)
-
-    # collocates = subcorpus.collocates(p_query=[collocation.p], cut_off=None, show_negative=True)
-    collocates = collocates.show(window=collocation.context,
-                                 order='O11', cut_off=None, ams=None, min_freq=1, flags=None,
-                                 marginals='corpus', show_negative=True)
-
-    # wide to long
-    collocates = collocates.reset_index()
-    collocates = collocates.melt(id_vars=['item'], var_name='am')
-
-    for row in collocates.iterrows():
-        items = dict(row[1])
-        items['collocation_id'] = collocation.id
-        db.session.add(CollocationItems(**items))
-    db.session.commit()
+    ccc_collocates(collocation)
 
     return CollocationOut().dump(collocation), 200
 

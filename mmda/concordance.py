@@ -16,6 +16,42 @@ from .users import auth
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')
 
 
+def ccc_concordance(query, concordance, order, cut_off):
+
+    s_break = concordance.s_break
+    context = concordance.context
+    p = concordance.p
+
+    matches = query.matches
+    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
+    df_dump['context'] = df_dump['match']
+    df_dump['contextend'] = df_dump['matchend']
+    df_dump = df_dump.set_index(['match', 'matchend'])
+
+    subcorpus = SubCorpus('Temp',
+                          df_dump,
+                          corpus_name=query.corpus.cwb_id,
+                          lib_dir=None,
+                          cqp_bin=current_app.config['CCC_CQP_BIN'],
+                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                          data_dir=current_app.config['CCC_DATA_DIR'],
+                          overwrite=False)
+
+    subcorpus = subcorpus.set_context(context=concordance.context, context_break=s_break)
+    df_dump = subcorpus.df
+    concordance = CCConcordance(Corpus(corpus_name=query.corpus.cwb_id,
+                                       lib_dir=None,
+                                       cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                       registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                       data_dir=current_app.config['CCC_DATA_DIR']),
+                                df_dump)
+    lines = concordance.lines(form='dict', p_show=['word', p],
+                              s_show=[], order=order, cut_off=cut_off)
+    lines = list(lines.apply(lambda row: format_roles(row, [], [], context, htmlify_meta=True), axis=1))
+
+    return lines
+
+
 class ConcordanceIn(Schema):
 
     p = String()
@@ -108,39 +144,8 @@ def lines(query_id, id):
 
     """
 
-    order = request.args.get('order')
-    cut_off = request.args.get('cut_off')
     query = db.get_or_404(Query, query_id)
     concordance = db.get_or_404(Concordance, id)
-    s_break = concordance.s_break
-    context = concordance.context
-    p = concordance.p
+    concordance_lines = ccc_concordance(query, concordance, request.args.get('order'), request.args.get('cut_off'))
 
-    matches = query.matches
-    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
-    df_dump['context'] = df_dump['match']
-    df_dump['contextend'] = df_dump['matchend']
-    df_dump = df_dump.set_index(['match', 'matchend'])
-
-    subcorpus = SubCorpus('Temp',
-                          df_dump,
-                          corpus_name=query.corpus.cwb_id,
-                          lib_dir=None,
-                          cqp_bin=current_app.config['CCC_CQP_BIN'],
-                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                          data_dir=current_app.config['CCC_DATA_DIR'],
-                          overwrite=False)
-
-    subcorpus = subcorpus.set_context(context=concordance.context, context_break=s_break)
-    df_dump = subcorpus.df
-    concordance = CCConcordance(Corpus(corpus_name=query.corpus.cwb_id,
-                                       lib_dir=None,
-                                       cqp_bin=current_app.config['CCC_CQP_BIN'],
-                                       registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                                       data_dir=current_app.config['CCC_DATA_DIR']),
-                                df_dump)
-    lines = concordance.lines(form='dict', p_show=['word', p],
-                              s_show=[], order=order, cut_off=cut_off)
-    lines = list(lines.apply(lambda row: format_roles(row, [], [], context, htmlify_meta=True), axis=1))
-
-    return [ConcordanceLinesOut().dump(line) for line in lines], 200
+    return [ConcordanceLinesOut().dump(line) for line in concordance_lines], 200

@@ -12,6 +12,31 @@ from .users import auth
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
 
 
+def ccc_semmap(semantic_map):
+
+    items = list(set([item.item for item in semantic_map.collocation.items]))
+
+    semspace = SemanticSpace(semantic_map.embeddings)
+    coordinates = semspace.generate2d(items, method='tsne', parameters=None)
+    for item, (x, y) in coordinates.iterrows():
+        db.session.add(
+            Coordinates(
+                semantic_map_id=semantic_map.id,
+                item=item,
+                x=x,
+                y=y
+            )
+        )
+    db.session.commit()
+
+    return coordinates
+
+
+def ccc_semmap_update(semantic_map, items):
+
+    pass
+
+
 class SemanticMapIn(Schema):
 
     collocation_id = Integer()
@@ -28,7 +53,7 @@ class SemanticMapOut(Schema):
 class CoordinatesOut(Schema):
 
     id = Integer()
-    semanticmap_id = Integer()
+    semantic_map_id = Integer()
     item = String()
     x = Float()
     y = Float()
@@ -69,20 +94,7 @@ def execute(id):
     """
 
     semantic_map = db.get_or_404(SemanticMap, id)
-    items = list(set([item.item for item in semantic_map.collocation.items]))
-
-    semspace = SemanticSpace(semantic_map.embeddings)
-    coordinates = semspace.generate2d(items, method='tsne', parameters=None)
-    for item, (x, y) in coordinates.iterrows():
-        db.session.add(
-            Coordinates(
-                semantic_map_id=semantic_map.id,
-                item=item,
-                x=x,
-                y=y
-            )
-        )
-    db.session.commit()
+    ccc_semmap(semantic_map)
 
     return SemanticMapOut().dump(semantic_map), 200
 
