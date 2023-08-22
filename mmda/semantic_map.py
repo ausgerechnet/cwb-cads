@@ -43,7 +43,7 @@ class CoordinatesOut(Schema):
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
 def create(query_id, collocation_id, data):
-    """Create new semanticmap for collocation items.
+    """Create new semantic map for collocation items.
 
     """
     collocation = db.get_or_404(Collocation, collocation_id)
@@ -59,7 +59,7 @@ def create(query_id, collocation_id, data):
 @bp.output(SemanticMapOut(many=True))
 @bp.auth_required(auth)
 def get_semanticmaps(query_id, collocation_id):
-    """Get all semanticmaps of collocation.
+    """Get all semantic maps of collocation.
 
     """
 
@@ -71,7 +71,7 @@ def get_semanticmaps(query_id, collocation_id):
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
 def get_semanticmap(query_id, collocation_id, id):
-    """Get semanticmap.
+    """Get semantic map.
 
     """
 
@@ -82,7 +82,7 @@ def get_semanticmap(query_id, collocation_id, id):
 @bp.delete('/<id>')
 @bp.auth_required(auth)
 def delete_semanticmap(query_id, collocation_id, id):
-    """Delete semanticmap.
+    """Delete semantic map.
 
     """
 
@@ -97,7 +97,7 @@ def delete_semanticmap(query_id, collocation_id, id):
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
 def execute(query_id, collocation_id, id):
-    """Execute SemanticMap: Get positions of items.
+    """Execute semantic map: Get positions of items.
 
     """
 
@@ -124,7 +124,7 @@ def execute(query_id, collocation_id, id):
 @bp.output(CoordinatesOut(many=True))
 @bp.auth_required(auth)
 def get_coordinates(query_id, collocation_id, id):
-    """Get semanticmap items.
+    """Get coordinates.
 
     """
 

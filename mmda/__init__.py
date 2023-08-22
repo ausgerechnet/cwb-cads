@@ -64,6 +64,17 @@ def create_app(config=CONFIG):
         """
         return 'Hello back there', 200
 
+    # automatically redirect to API docs from base URL
+    @app.route('/')
+    @app.doc(tags=['Easter Eggs'])
+    def docs():
+        """Redirect to API docs.
+
+        """
+        from flask import redirect
+        return redirect('/docs')
+
+    # register blueprints
     from . import (breakdown, collocation, concordance, constellation, corpus,
                    discourseme, query, users, semantic_map)
 

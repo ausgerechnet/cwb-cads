@@ -104,6 +104,9 @@ def delete_concordance(query_id, id):
 @bp.output(ConcordanceLinesOut(many=True))
 @bp.auth_required(auth)
 def get_concordance_lines(query_id, id):
+    """Get concordance lines.
+
+    """
 
     order = request.args.get('order')
     cut_off = request.args.get('cut_off')
