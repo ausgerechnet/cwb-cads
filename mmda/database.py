@@ -269,13 +269,19 @@ class CotextLines(db.Model):
     offset = db.Column(db.Integer)
 
 
-class SemMap(db.Model):
+class SemanticMap(db.Model):
     """Semantic Map
 
     """
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
+    name = db.Column(db.Unicode)
+    embeddings = db.Column(db.Unicode)
+    method = db.Column(db.Unicode)
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id'))
+    collocation = db.relationship('Collocation', backref='semantic_map', lazy=True)
+    coordinates = db.relationship('Coordinates', backref='semantic_map', lazy=True)
 
 
 class Coordinates(db.Model):
@@ -286,7 +292,7 @@ class Coordinates(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-    sem_map_id = db.Column(db.Integer, db.ForeignKey('sem_map.id', ondelete='CASCADE'))
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
     item = db.Column(db.Unicode)
     x = db.Column(db.Float)
@@ -302,16 +308,15 @@ class Collocation(db.Model):
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
-
     p = db.Column(db.Unicode(255), nullable=False)
     s_break = db.Column(db.Unicode(255), nullable=False)
     context = db.Column(db.Integer, nullable=True)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
-    sem_map_id = db.Column(db.Integer, db.ForeignKey('sem_map.id'))
+    # semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     items = db.relationship('CollocationItems', backref='collocation', lazy=True)
+    # collocation = db.relationship('SemanticMap', backref='collocation', lazy=True)
 
 
 class CollocationItems(db.Model):
@@ -366,6 +371,7 @@ def init_db():
 
     db.drop_all()
     db.create_all()
+
     db.session.add(
         User(username='admin',
              password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']))

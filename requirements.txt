@@ -5,3 +5,4 @@ flask-jwt-extended
 cwb-ccc
 flask-login
 pytest
+semmap
