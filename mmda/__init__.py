@@ -83,8 +83,7 @@ def create_app(config=CONFIG):
 
     app.register_blueprint(discourseme.bp)
     app.register_blueprint(constellation.bp)
-
-    collocation.bp.register_blueprint(semantic_map.bp)
+    app.register_blueprint(semantic_map.bp)
 
     query.bp.register_blueprint(breakdown.bp)
     query.bp.register_blueprint(collocation.bp)

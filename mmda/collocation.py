@@ -9,7 +9,8 @@ from flask import current_app, jsonify
 from pandas import DataFrame
 
 from . import db
-from .database import Collocation, CollocationItems, Query
+from .database import Collocation, CollocationItems, Query, SemanticMap
+from .semantic_map import SemanticMapIn, SemanticMapOut
 from .users import auth
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
@@ -97,7 +98,7 @@ def delete_collocation(query_id, id):
     return 'Deletion successful.', 200
 
 
-@bp.post('/<id>/execute')
+@bp.post('/<id>/collocates')
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def execute(query_id, id):
@@ -168,7 +169,7 @@ def execute(query_id, id):
     return CollocationOut().dump(collocation), 200
 
 
-@bp.get("/<id>/items")
+@bp.get("/<id>/collocates")
 # @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def get_collocation_items(query_id, id):
@@ -181,3 +182,32 @@ def get_collocation_items(query_id, id):
     df_collocation = DataFrame.from_records(records).pivot(index='item', columns='am', values='value')
 
     return jsonify(df_collocation.to_json()), 200
+
+
+@bp.post('/<id>/semantic_map/')
+@bp.input(SemanticMapIn)
+@bp.output(SemanticMapOut)
+@bp.auth_required(auth)
+def create_semantic_map(query_id, collocation_id, data):
+    """Create new semantic map for collocation items.
+
+    """
+    collocation = db.get_or_404(Collocation, collocation_id)
+    embeddings = collocation.query.corpus.embeddings
+    semanticmap = SemanticMap(collocation_id=collocation_id, embeddings=embeddings, **data)
+    db.session.add(semanticmap)
+    db.session.commit()
+
+    return SemanticMapOut().dump(semanticmap), 200
+
+
+@bp.get('/<id>/semantic_map/')
+@bp.output(SemanticMapOut(many=True))
+@bp.auth_required(auth)
+def get_semanticmaps(query_id, collocation_id):
+    """Get all semantic maps of collocation.
+
+    """
+
+    collocation = db.get_or_404(Collocation, collocation_id)
+    return [SemanticMapOut().dump(semanticmap) for semanticmap in collocation.semanticmaps], 200

@@ -46,21 +46,21 @@ def test_create_semmap(client, auth):
         assert collocation.status_code == 200
 
         # semmap
-        semantic_map = client.post(url_for('query.collocation.semantic_map.create', query_id=query.json['id'], collocation_id=collocation.json['id']),
+        semantic_map = client.post(url_for('query.collocation.create_semantic_map', query_id=query.json['id'], id=collocation.json['id']),
                                    auth=('admin', '0000'))
 
         assert semantic_map.status_code == 200
 
 
-def test_execute_collocation(client, auth):
+def test_execute_semmap(client, auth):
 
     auth.login()
     with client:
         client.get("/")
-        client.post(url_for('query.collocation.semantic_map.execute', query_id=1, collocation_id=1, id=1),
+        client.post(url_for('semantic_map.execute', id=1),
                     auth=('admin', '0000'))
 
-        items = client.get(url_for('query.collocation.semantic_map.get_coordinates', query_id=1, collocation_id=1, id=1),
+        items = client.get(url_for('semantic_map.get_coordinates', id=1),
                            auth=('admin', '0000'))
 
         assert items.status_code == 200
