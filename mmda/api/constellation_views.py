@@ -42,12 +42,12 @@ def create_constellation(username):
             continue
 
         # Check if exists alread
-        constellation_discourseme = discourseme in constellation.filter_discoursemes
+        constellation_discourseme = discourseme in constellation.highlight_discoursemes
         if constellation_discourseme:
             continue
 
         # Add discourseme link
-        constellation.filter_discoursemes.append(discourseme)
+        constellation.highlight_discoursemes.append(discourseme)
         db.session.add(constellation)
 
     db.session.commit()
@@ -155,9 +155,7 @@ def get_discoursemes_for_constellation(username, constellation):
         return jsonify({'msg': 'No such constellation'}), 404
 
     # Get Discoursemes list from DB
-    constellation_discoursemes = [discourseme.serialize for discourseme in constellation.filter_discoursemes]
-    if not constellation_discoursemes:
-        return jsonify([]), 200
+    constellation_discoursemes = [discourseme.serialize for discourseme in constellation.filter_discoursemes + constellation.highlight_discoursemes]
 
     return jsonify(constellation_discoursemes), 200
 
@@ -184,11 +182,11 @@ def put_discourseme_into_constellation(username, constellation, discourseme):
         return jsonify({'msg': 'No such discourseme'}), 404
 
     # Check if exists
-    if discourseme in constellation.filter_discoursemes:
+    if discourseme in constellation.highlight_discoursemes:
         return jsonify({'msg': 'Already linked'}), 200
 
     # Add Link to DB
-    constellation.filter_discoursemes.append(discourseme)
+    constellation.highlight_discoursemes.append(discourseme)
     db.session.add(constellation)
     db.session.commit()
 
@@ -216,10 +214,10 @@ def delete_discourseme_from_constellation(username, constellation, discourseme):
     if not discourseme:
         return jsonify({'msg': 'No such discourseme'}), 404
 
-    if discourseme not in constellation.filter_discoursemes:
+    if discourseme not in constellation.highlight_discoursemes:
         return jsonify({'msg': 'Not found'}), 404
 
-    constellation.filter_discoursemes.remove(discourseme)
+    constellation.highlight_discoursemes.remove(discourseme)
     db.session.add(constellation)
     db.session.commit()
 
@@ -263,7 +261,7 @@ def get_constellation_concordance(username, constellation):
     # get constellation discoursemes as dict
     constellation = Constellation.query.filter_by(id=constellation, user_id=user.id).first()
     discoursemes = dict()
-    for disc in constellation.filter_discoursemes:
+    for disc in constellation.highlight_discoursemes:
         discoursemes[str(disc.id)] = disc.items
 
     flags_query = "%c"
@@ -326,7 +324,7 @@ def get_constellation_associations(username, constellation):
     # ... constellation
     constellation = Constellation.query.filter_by(id=constellation, user_id=user.id).first()
     discoursemes = dict()
-    for disc in constellation.filter_discoursemes:
+    for disc in constellation.highlight_discoursemes:
         discoursemes[disc.name] = disc.items
 
     assoc = ccc_constellation_association(
