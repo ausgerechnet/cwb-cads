@@ -3,18 +3,19 @@ Discourseme view
 """
 
 from ccc.utils import cqp_escape
-from apiflask import APIBlueprint, Schema
+from apiflask import APIBlueprint
 from flask import jsonify, request
 
 from ..database import Discourseme, User
 from .. import db
+from .login_views import user_required
 
 
 discourseme_blueprint = APIBlueprint('discourseme', __name__)
 
 
 @discourseme_blueprint.route('/api/user/<username>/discourseme/', methods=['POST'])
-# @user_required
+@user_required
 def create_discourseme(username):
     """Create a new discourseme.
 
@@ -37,7 +38,7 @@ def create_discourseme(username):
 
 
 @discourseme_blueprint.route('/api/user/<username>/discourseme/', methods=['GET'])
-# @user_required
+@user_required
 def get_discoursemes(username):
     """List discoursemes for a user.
 
@@ -53,7 +54,7 @@ def get_discoursemes(username):
 
 
 @discourseme_blueprint.route('/api/user/<username>/discourseme/<discourseme>/', methods=['GET'])
-# @user_required
+@user_required
 def get_discourseme(username, discourseme):
     """Get the details of a discourseme.
 
@@ -69,8 +70,7 @@ def get_discourseme(username, discourseme):
 
 
 @discourseme_blueprint.route('/api/user/<username>/discourseme/<discourseme>/', methods=['PUT'])
-# @expects_json(DISCOURSEME_SCHEMA)
-# @user_required
+@user_required
 def update_discourseme(username, discourseme):
     """
     Update the details of a discourseme
@@ -90,14 +90,14 @@ def update_discourseme(username, discourseme):
         return jsonify({'msg': 'No such discourseme'}), 404
 
     discourseme.name = name
-    discourseme.items = items
+    discourseme.items = "\t".join(items)
     db.session.commit()
 
     return jsonify({'msg': discourseme.id}), 200
 
 
 @discourseme_blueprint.route('/api/user/<username>/discourseme/<discourseme>/', methods=['DELETE'])
-# @user_required
+@user_required
 def delete_discourseme(username, discourseme):
     """
     Delete a discourseme
