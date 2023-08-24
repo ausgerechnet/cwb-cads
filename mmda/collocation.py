@@ -16,8 +16,9 @@ from .users import auth
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 
 
-def ccc_collocates(collocation, mws=20):
+def ccc_collocates(collocation, window=None):
 
+    window = collocation.context if window is None else window
     filter_query = collocation._query
     # filter_discoursemes_ids = [d.id for d in constellation.filter_discoursemes]
     # filter_queries = Query.query.filter(Query.discourseme_id.in_(filter_discoursemes_ids),
@@ -29,6 +30,9 @@ def ccc_collocates(collocation, mws=20):
     # if len(filter_queries) > 1:
     #     raise NotImplementedError()
 
+    ###########
+    # CONTEXT #
+    ###########
     # filter_query = filter_queries[0]
     matches = filter_query.matches
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
@@ -49,6 +53,10 @@ def ccc_collocates(collocation, mws=20):
     df_dump = subcorpus.df
 
     # cotext
+    # TODO: save and retrieve from CACHE
+    # print(collocates.df_cooc)
+    # print(collocates.f1_set)
+    # print(collocates.node_freq)
     collocates = Collocates(Corpus(corpus_name=filter_query.corpus.cwb_id,
                                    lib_dir=None,
                                    cqp_bin=current_app.config['CCC_CQP_BIN'],
@@ -56,19 +64,23 @@ def ccc_collocates(collocation, mws=20):
                                    data_dir=current_app.config['CCC_DATA_DIR']),
                             df_dump,
                             [collocation.p],
-                            mws=mws)
-    # print(collocates.df_cooc)
-    # print(collocates.f1_set)
-    # print(collocates.node_freq)
+                            mws=collocation.context)
 
-    # collocates = subcorpus.collocates(p_query=[collocation.p], cut_off=None, show_negative=True)
-    collocates = collocates.show(window=collocation.context,
-                                 order='O11', cut_off=None, ams=None, min_freq=1, flags=None,
-                                 marginals='corpus', show_negative=True)
+    ##########
+    # WINDOW #
+    ##########
+    collocates = collocates.show(window=window,
+                                 order='O11',
+                                 cut_off=None,
+                                 ams=None,
+                                 min_freq=2,
+                                 flags=None,
+                                 marginals='corpus')
 
     # wide to long
     collocates = collocates.reset_index()
-    collocates = collocates.melt(id_vars=['item'], var_name='am')
+    collocates['window'] = window
+    collocates = collocates.melt(id_vars=['item', 'window'], var_name='am')
 
     # add items to database
     for row in collocates.iterrows():

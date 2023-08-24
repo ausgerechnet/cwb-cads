@@ -183,7 +183,7 @@ class Constellation(db.Model):
     highlight_discoursemes = db.relationship("Discourseme", secondary=constellation_highlight_discoursemes,
                                              backref=db.backref('constellation_highlighted', lazy=True))
 
-    # collocation_analyses = db.relationship('Collocation', backref='constellation', lazy=True)
+    collocation_analyses = db.relationship('Collocation', backref='constellation', lazy=True)
 
     @property
     def serialize(self):
@@ -353,6 +353,8 @@ class Coordinates(db.Model):
     item = db.Column(db.Unicode)
     x = db.Column(db.Float)
     y = db.Column(db.Float)
+    x_user = db.Column(db.Float)
+    y_user = db.Column(db.Float)
 
 
 class Collocation(db.Model):
@@ -372,6 +374,7 @@ class Collocation(db.Model):
 
     # semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     items = db.relationship('CollocationItems', backref='collocation', lazy=True)
+    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
     # semantic_map = db.relationship('SemanticMap', backref='collocation', lazy=True)
 
@@ -412,6 +415,7 @@ class CollocationItems(db.Model):
     item = db.Column(db.Unicode)
     discourseme_ids = db.relationship("Discourseme", secondary=collocation_items_discoursemes,
                                       backref=db.backref('collocation_items', lazy=True))
+    window = db.Column(db.Integer)
     am = db.Column(db.Unicode)
     value = db.Column(db.Float)
 
@@ -445,31 +449,28 @@ class CollocationItems(db.Model):
 #     id = db.Column(db.Integer, primary_key=True)
 #     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-# @bp.cli.command('init')
+@bp.cli.command('init')
 def init_db():
     """clear the existing data and create new tables"""
 
     db.drop_all()
     db.create_all()
 
-    db.session.add(
-        User(username='admin',
-             password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']),
-             first_name='Admin',
-             last_name='Istrinator',
-             email='admin@istrination.com')
-    )
+    db.session.add(User(username='admin',
+                        password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']),
+                        first_name='Admin',
+                        last_name='Istrinator',
+                        email='admin@istrination.com'))
 
     corpora = json.load(open(current_app.config['CORPORA'], 'rt'))
     for corpus in corpora:
-        db.session.add(Corpus(
-            **corpus
-        ))
+        db.session.add(Corpus(**corpus))
 
     db.session.commit()
 
-    db.session.add(
-        Discourseme(user_id=1, items="\t".join(['Bundeskanzler', 'Kanzler']), name='Kanzler')
-    )
+    db.session.add(Discourseme(user_id=1, items="\t".join(['CDU', 'CSU']), name='CDU/CSU'))
+    db.session.add(Discourseme(user_id=1, items="\t".join(['F. D. P.']), name='FDP'))
+    db.session.add(Discourseme(user_id=1, items="\t".join(['Bundeskanzler', 'Kanzler']), name='Kanzler'))
+    db.session.add(Discourseme(user_id=1, items="\t".join(['Präsident']), name='Präsident'))
 
     db.session.commit()
