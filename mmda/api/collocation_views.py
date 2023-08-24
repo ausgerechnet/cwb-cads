@@ -7,24 +7,19 @@ Collocation view
 # requirements
 from apiflask import APIBlueprint
 from flask import current_app, jsonify, request
-from numpy import nan
 from pandas import DataFrame
 from .login_views import user_required
-from ..database import User, Discourseme, Collocation, SemanticMap, Corpus, Query, Breakdown, Concordance
+from ..database import User, Discourseme, Collocation, SemanticMap, Corpus, Query, Breakdown, Concordance, Constellation, Coordinates
 from .. import db
 from ..query import ccc_query
 from ccc.utils import format_cqp_query
 from ..collocation import ccc_collocates
-from ..semantic_map import ccc_semmap, CoordinatesOut
+from ..semantic_map import ccc_semmap, CoordinatesOut, ccc_semmap_update  # TODO: update semmap when new items arrive
 from ..breakdown import ccc_breakdown, BreakdownItemsOut
 from ..concordance import ccc_concordance, ConcordanceLinesOut
+from ..corpus import ccc_corpus
 
 collocation_blueprint = APIBlueprint('collocation', __name__)
-
-
-###############
-# COLLOCATION #
-###############
 
 
 def format_ams(df, cut_off=200):
@@ -68,7 +63,9 @@ def format_ams(df, cut_off=200):
     return df
 
 
-# CREATE
+###############
+# COLLOCATION #
+###############
 @collocation_blueprint.route('/api/user/<username>/collocation/', methods=['POST'])
 @user_required
 def create_collocation(username):
@@ -118,42 +115,51 @@ def create_collocation(username):
        404:
          description: "empty result"
     """
+
     user = User.query.filter_by(username=username).first()
 
-    # PARAMETERS #
-    # required
+    # Parameters
+    # .. required
     corpus_name = request.json.get('corpus')
     discourseme = request.json.get('discourseme')
     items = request.json.get('items')
-
-    # more or less reasonable defaults
-    context = request.json.get('context', 10)
-    p_query = request.json.get('p_query', 'lemma')
+    # .. more or less reasonable defaults
+    p = request.json.get('p_collocation', 'lemma')
     s_break = request.json.get('s_break', 'text')
+    context = request.json.get('context', 10)
+    # .. for query creation
+    p_query = request.json.get('p_query', 'lemma')
     flags_query = request.json.get('flags_query', '')
-
-    # not set yet
+    escape = request.json.get('escape', False)
+    # .. not set yet
     # cut_off = request.json.get('cut_off', 200)
     # order = request.json.get('order', 'log_likelihood')
     # flags_show = request.args.get('flags_show', '')
     # min_freq = request.json.get('min_freq', 2)
-    escape = request.json.get('escape', False)
     # ams = request.json.get('ams', None)
     # collocation_name = request.json.get('name', None)
-    p = request.json.get('p_collocation', 'lemma')
 
+    # Corpus
     corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
 
     # Discourseme
     current_app.logger.debug('Creating collocation :: disourseme management')
     if isinstance(discourseme, str):
+        # new discourseme
         filter_discourseme = Discourseme(name=discourseme, user_id=user.id)
+        db.session.add(filter_discourseme)
+        db.session.commit()
     elif isinstance(discourseme, dict):
+        # get discourseme
         filter_discourseme = Discourseme.query.filter_by(id=discourseme['id']).first()
     else:
         raise ValueError()
-    db.session.add(filter_discourseme)
-    db.session.commit()
+
+    # Constellation
+    current_app.logger.debug('Creating collocation :: constellation management')
+    constellation = Constellation(user_id=user.id)
+    constellation.filter_discoursemes.append(filter_discourseme)
+    db.session.add(constellation)
 
     # Query
     current_app.logger.debug('Creating collocation :: query')
@@ -172,12 +178,13 @@ def create_collocation(username):
 
     # Collocation
     current_app.logger.debug('Creating collocation :: collocation')
-    collocation = Collocation(query_id=query.id, p=p, s_break=s_break, context=context, user_id=user.id)
+    collocation = Collocation(query_id=query.id, p=p, s_break=s_break, context=context, user_id=user.id, constellation_id=constellation.id)
     db.session.add(collocation)
     db.session.commit()
-    ccc_collocates(collocation, mws=context)
+    ccc_collocates(collocation)
 
     # Concordance
+    # TODO: no need for context (nor p), just s_break, because window (and layer) is generated on the fly
     current_app.logger.debug('Creating collocation :: concordance')
     concordance = Concordance(query_id=query.id, p=p, s_break=s_break, context=context)
     db.session.add(concordance)
@@ -185,7 +192,7 @@ def create_collocation(username):
 
     # Semantic Map
     current_app.logger.debug('Creating collocation :: semantic map')
-    semantic_map = SemanticMap(collocation_id=collocation.id)
+    semantic_map = SemanticMap(collocation_id=collocation.id, embeddings=query.corpus.embeddings, method='tsne')
     db.session.add(semantic_map)
     db.session.commit()
     ccc_semmap(semantic_map)
@@ -198,9 +205,8 @@ def create_collocation(username):
     return jsonify({'msg': collocation.id}), 201
 
 
-# READ ALL
 @collocation_blueprint.route('/api/user/<username>/collocation/', methods=['GET'])
-# @user_required
+@user_required
 def get_all_collocation(username):
     """ List all analyses for given user.
 
@@ -213,18 +219,15 @@ def get_all_collocation(username):
          description: list of serialized analyses
     """
 
-    # get user
     user = User.query.filter_by(username=username).first()
-
     collocation_analyses = Collocation.query.filter_by(user_id=user.id).all()
     collocation_list = [collocation.serialize for collocation in collocation_analyses]
 
     return jsonify(collocation_list), 200
 
 
-# READ
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/', methods=['GET'])
-# @user_required
+@user_required
 def get_collocation(username, collocation):
     """ Get details of collocation analysis.
 
@@ -242,10 +245,7 @@ def get_collocation(username, collocation):
          description: "no such analysis"
     """
 
-    # get user
     user = User.query.filter_by(username=username).first()
-
-    # get analysis
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
     if not collocation:
         return jsonify({'msg': 'no such analysis'}), 404
@@ -253,47 +253,8 @@ def get_collocation(username, collocation):
     return jsonify(collocation.serialize), 200
 
 
-# UPDATE
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/', methods=['PUT'])
-# @expects_json(UPDATE_SCHEMA)
-# @user_required
-def update_collocation(username, collocation):
-    """ Edit analysis. Only the name can be updated. Deprecated.
-
-    parameters:
-      - username: username
-        type: str
-        description: username, links to user
-      - name: analysis
-        type: str
-        description: analysis id
-      - name: name
-        type: str
-        description: new analysis name
-    responses:
-       200:
-         description: analysis.id
-       400:
-         description: "wrong request parameters"
-    """
-    # get user
-    user = User.query.filter_by(username=username).first()
-    # check request
-    name = request.json.get('name', None)
-    if not name:
-        return jsonify({'msg': 'wrong request parameters'}), 400
-
-    # update analysis
-    analysis = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
-    analysis.name = name
-    db.session.commit()
-
-    return jsonify({'msg': analysis.id}), 200
-
-
-# DELETE
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/', methods=['DELETE'])
-# @user_required
+@user_required
 def delete_collocation(username, collocation):
     """ Delete collocation.
 
@@ -311,27 +272,21 @@ def delete_collocation(username, collocation):
          description: "no such collocation"
     """
 
-    # get user
     user = User.query.filter_by(username=username).first()
-
-    # delete collocation
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
     if not collocation:
         return jsonify({'msg': 'no such collocation'}), 404
-
     db.session.delete(collocation)
     db.session.commit()
 
     return jsonify({'msg': 'deleted'}), 200
 
 
-###########################
-# ASSOCIATED DISCOURSEMES #
-###########################
-
-# READ
+##########################
+# DISCOURSEME MANAGEMENT #
+##########################
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/discourseme/', methods=['GET'])
-# @user_required
+@user_required
 def get_discoursemes_for_collocation(username, collocation):
     """ Return list of discoursemes for collocation.
 
@@ -351,26 +306,19 @@ def get_discoursemes_for_collocation(username, collocation):
 
     # get user
     user = User.query.filter_by(username=username).first()
-
-    # get collocation
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
     if not collocation:
         return jsonify({'msg': 'no such analysis'}), 404
 
-    # get discoursemes as list
-    # collocation_discoursemes = [
-    #     discourseme.serialize for discourseme in collocation.highlight_discoursemes
-    # ]
-    collocation_discoursemes = []
-    if not collocation_discoursemes:
-        return jsonify([]), 200
+    collocation_discoursemes = [
+        discourseme.serialize for discourseme in collocation.constellation.highlight_discoursemes
+    ]
 
     return jsonify(collocation_discoursemes), 200
 
 
-# UPDATE
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/discourseme/<discourseme>/', methods=['PUT'])
-# @user_required
+@user_required
 def put_discourseme_into_collocation(username, collocation, discourseme):
     """ Associate a discourseme with collocation.
 
@@ -410,28 +358,17 @@ def put_discourseme_into_collocation(username, collocation, discourseme):
         msg = 'no such discourseme %s' % discourseme
         return jsonify({'msg': msg}), 404
 
-    # check if discourseme already associated or already topic of collocation analysis
-    # collocation_discourseme = discourseme in collocation.filter_discoursemes
-    # is_own_topic_discourseme = discourseme.id == collocation.topic_id
-    # if is_own_topic_discourseme:
-    #     msg = 'discourseme %s is already topic of the collocation analysis', discourseme
-    #     return jsonify({'msg': msg}), 409
-    # if collocation_discourseme:
-    #     msg = 'discourseme %s is already associated', discourseme
-    #     return jsonify({'msg': msg}), 200
-
-    # update database
-    # collocation._query.highlight_discoursemes.append(discourseme)
-    # db.session.add(collocation)
+    constellation = collocation.constellation
+    constellation.highlight_discoursemes.append(discourseme)
     db.session.commit()
+
     msg = 'associated discourseme %s with collocation analysis %s' % (discourseme, collocation)
 
     return jsonify({'msg': msg}), 200
 
 
-# DELETE
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/discourseme/<discourseme>/', methods=['DELETE'])
-# @user_required
+@user_required
 def delete_discourseme_from_collocation(username, collocation, discourseme):
     """ Remove discourseme from collocation.
 
@@ -468,26 +405,20 @@ def delete_discourseme_from_collocation(username, collocation, discourseme):
     if not discourseme:
         return jsonify({'msg': 'no such discourseme'}), 404
 
-    # check link
-    # collocation_discourseme = discourseme in collocation._query.highlight_discoursemes
-    # if not collocation_discourseme:
-    #     return jsonify({'msg': 'discourseme not linked to analysis'}), 404
-
     # delete
-    # collocation._query.highlight_discoursemes.remove(discourseme)
-    # db.session.commit()
+    collocation.constellation.highlight_discoursemes.remove(discourseme)
+    db.session.commit()
 
     return jsonify({'msg': 'deleted discourseme from collocation analysis'}), 200
 
 
-##############
-# COLLOCATES #
-##############
-
+#####################
+# COLLOCATION ITEMS #
+#####################
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/collocate/', methods=['GET'])
-# @user_required
+@user_required
 def get_collocate_for_collocation(username, collocation):
-    """ Get collocate table for collocation analysis.
+    """Get collocate items for collocation analysis.
 
     parameters:
       - name: username
@@ -526,27 +457,20 @@ def get_collocate_for_collocation(username, collocation):
     """
 
     user = User.query.filter_by(username=username).first()
-    collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
-    if not collocation:
-        msg = 'No such collocation %s' % collocation
-        return jsonify({'msg': msg}), 404
 
-    # PARAMETERS #
-    # required
-    window_size = int(request.args.get('window_size'))
-
-    # optional
-    # ... optional discourseme ID list
+    # Parameters
+    # .. required
+    window = int(request.args.get('window_size'))
+    # .. additional discoursemes
     discourseme_ids = request.args.getlist('discourseme', None)
-    # ... optional additional items
     items = request.args.getlist('collocate', None)
-
-    # not set yet
-    cut_off = request.args.get('cut_off', 200)
+    # .. not set yet
+    # flags_show = request.args.get('flags_show', "")
+    # min_freq = request.args.get('min_freq', 2)
+    # ams = request.args.get('ams', None)
+    # .. pagination
     order = request.args.get('order', 'log_likelihood')
-    flags_show = request.args.get('flags_show', "")  # collocation.flags_query)
-    min_freq = request.args.get('min_freq', 2)
-    ams = request.args.get('ams', None)
+    cut_off = request.args.get('cut_off', 200)
 
     # # pre-process request
     # # ... filter for SOC
@@ -568,9 +492,17 @@ def get_collocate_for_collocation(username, collocation):
     # for d in collocation._query.discoursemes:
     #     additional_discoursemes[str(d.id)] = d.items
 
-    # Collocates
-    collocation = db.get_or_404(Collocation, collocation.id)
-    records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items]
+    # Collocation
+    collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
+
+    # Get or create items for this window size
+    records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
+    if len(records) == 0:
+        current_app.logger.debug(f'Creating collocation :: items for window {window}')
+        ccc_collocates(collocation, window=window)
+
+    # Format items
+    records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
     df_collocates = DataFrame.from_records(records).pivot(index='item', columns='am', values='value')
     df_collocates = format_ams(df_collocates)
 
@@ -581,7 +513,7 @@ def get_collocate_for_collocation(username, collocation):
 # CONCORDANCE LINES #
 #####################
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/concordance/', methods=['GET'])
-# @user_required
+@user_required
 def get_concordance_for_collocation(username, collocation):
     """ Get concordance lines for collocation.
 
@@ -620,59 +552,51 @@ def get_concordance_for_collocation(username, collocation):
     """
     # TODO: rename item ./. items
 
-    # get user
     user = User.query.filter_by(username=username).first()
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
-    concordance = Concordance.query.filter_by(query_id=collocation._query.id).first()
-    query = collocation._query
 
-    # get s_show
-    # corpus = query.corpus
-    s_show = []
-
-    # check request
-    # ... collocation
     if not collocation:
         return jsonify({'msg': 'empty result'}), 404
-    # ... window size
-    window_size = request.args.get('window_size', 3)
-    try:
-        window_size = int(window_size)
-    except TypeError:
-        return jsonify({'msg': 'wrong request parameters'}), 400
+
+    window = int(request.args.get('window_size', 3))
+    corpus = ccc_corpus(collocation._query.corpus.cwb_id,
+                        cqp_bin=current_app.config['CCC_CQP_BIN'],
+                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                        data_dir=current_app.config['CCC_DATA_DIR'])
+    s_show = corpus['s_annotations']
+    p_show = ['word', collocation.p]
+
+    # check request
     # ... optional discourseme ID list
-    discourseme_ids = request.args.getlist('discourseme', None)
+    filter_ids = request.args.getlist('discourseme', None)
+    filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
     # ... optional additional items
     items = request.args.getlist('item', None)
-    # ... how many?
+
+    # .. pagination
     cut_off = request.args.get('cut_off', 500)
-    # ... how to sort them?
-    order = request.args.get('order', 'random')
+    order = request.args.get('order', 42)
 
     # pre-process request
     # ... get associated topic discourseme (no need if not interested in name)
     # topic_discourseme = Discourseme.query.filter_by(id=collocation.topic_id).first()
     # ... further discoursemes as a dict {name: items}
-    filter_discoursemes = dict()
+    filter_queries = dict()
     if items:
         # create discourseme for additional items on the fly
-        filter_discoursemes['collocate'] = items
+        filter_queries['collocate'] = format_cqp_query(items, collocation.p)
 
-    # SOC
-    if discourseme_ids:
-        discoursemes = Discourseme.query.filter(
-            Discourseme.id.in_(discourseme_ids), Discourseme.user_id == user.id
-        ).all()
-        for d in discoursemes:
-            filter_discoursemes[str(d.id)] = d.items
+    # # SOC
+    # if discourseme_ids:
+    #     discoursemes = Discourseme.query.filter(
+    #         Discourseme.id.in_(discourseme_ids), Discourseme.user_id == user.id
+    #     ).all()
+    #     for d in discoursemes:
+    #         filter_discoursemes[str(d.id)] = d.items
 
-    # additional_discoursemes = dict()
-    # for d in collocation._query.highlight_discoursemes:
-    #     additional_discoursemes[str(d.id)] = d.items
-
-    random_seed = 42
-
-    concordance_lines = ccc_concordance(query, concordance, order, cut_off)
+    highlight_discoursemes = collocation.constellation.highlight_discoursemes
+    concordance = Concordance.query.filter_by(query_id=collocation._query.id).first()
+    concordance_lines = ccc_concordance(concordance, p_show, s_show, highlight_discoursemes, filter_queries, order=order, cut_off=cut_off, window=window)
     conc_json = [ConcordanceLinesOut().dump(line) for line in concordance_lines]
 
     return conc_json, 200
@@ -775,9 +699,8 @@ def get_meta_for_collocation(username, collocation):
 # COORDINATES #
 ###############
 
-# READ
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/', methods=['GET'])
-# @user_required
+@user_required
 def get_coordinates(username, collocation):
     """ Get coordinates for collocation analysis.
 
@@ -798,115 +721,69 @@ def get_coordinates(username, collocation):
         coordinates = CoordinatesOut().dump(coordinates)
         out[coordinates['item']] = coordinates
 
+    # TODO make sure there's coordinates for all items
+
     return jsonify(out), 200
 
 
-# UPDATE
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/reload/', methods=['PUT'])
-# @user_required
+@user_required
 def reload_coordinates(username, collocation):
     """ Re-calculate coordinates for collocation analysis.
 
     """
 
-    # get user
-    user = User.query.filter_by(username=username).first()
+    # # get user
+    # user = User.query.filter_by(username=username).first()
 
-    # get analysis
-    collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
-    if not collocation:
-        return jsonify({'msg': 'no such collocation analysis'}), 404
+    # # get analysis
+    # collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
+    # if not collocation:
+    #     return jsonify({'msg': 'no such collocation analysis'}), 404
 
-    # get tokens
-    coordinates = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
-    tokens = coordinates.data.index.values
+    # # get tokens
+    # coordinates = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+    # tokens = coordinates.data.index.values
 
-    # generate new coordinates
-    semantic_space = generate_semantic_space(
-        tokens,
-        current_app.config['CORPORA'][collocation.corpus]['embeddings']
-    )
+    # # generate new coordinates
+    # semantic_space = generate_semantic_space(
+    #     tokens,
+    #     current_app.config['CORPORA'][collocation.corpus]['embeddings']
+    # )
 
-    coordinates.data = semantic_space
-    db.session.commit()
+    # coordinates.data = semantic_space
+    # db.session.commit()
+
+    # TODO: update everything
 
     return jsonify({'msg': 'updated'}), 200
 
 
-# UPDATE
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/', methods=['PUT'])
-# @user_required
+@user_required
 def update_coordinates(username, collocation):
-    """ Update coordinates for an collocation.
+    """Update user coordinates. If "none": delete user coordinates.
 
-    Hint: Non numeric values are treated as NaN
     """
 
-    if not request.is_json:
-        return jsonify({'msg': 'no request data provided'}), 400
-
-    # TODO Validate request. Should be:
-    # {foo: {user_x: 1, user_y: 2}, bar: {user_x: 1, user_y: 2}}
+    # {'foo': {'x_user': 1.3124, 'y_user': 2.3246}}
     items = request.get_json()
 
-    # get user
     user = User.query.filter_by(username=username).first()
-
-    # get collocation
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
     if not collocation:
         return jsonify({'msg': 'no such collocation analysis'}), 404
 
-    # get coordinates
-    coordinates = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
-    df = coordinates.data
-
-    # update coordinates dataframe, and save
-    df.update(DataFrame.from_dict(items, orient='index'))
-
-    # sanity checks, non-numeric get treated as NaN
-    df.replace(to_replace=r'[^0-9]+', value=nan, inplace=True, regex=True)
-
-    coordinates.data = df
+    # set coordinates
+    semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+    for item, xy in items.items():
+        coordinates = Coordinates.query.filter_by(item=item, semantic_map_id=semantic_map.id).first()
+        if not (isinstance(xy['x_user'], float) and isinstance(xy['y_user'], float)):
+            coordinates.x_user = None
+            coordinates.y_user = None
+        else:
+            coordinates.x_user = xy['x_user']
+            coordinates.y_user = xy['y_user']
     db.session.commit()
 
     return jsonify({'msg': 'updated'}), 200
-
-
-# DELETE
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/', methods=['DELETE'])
-# @user_required
-def delete_coordinates(username, collocation):
-    """ Delete coordinates for collocation analysis.
-
-    """
-
-    if not request.is_json:
-        return jsonify({'msg': 'no request data provided'}), 400
-
-    # TODO Validate request. Should be:
-    # {foo: {user_x: 1, user_y: 2}, bar: {user_x: 1, user_y: 2}}
-    items = request.get_json()
-
-    # get user
-    user = User.query.filter_by(username=username).first()
-
-    # get analysis
-    collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
-    if not collocation:
-        return jsonify({'msg': 'no such collocation analysis'}), 404
-
-    # get coordinates
-    coordinates = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
-    df = coordinates.data
-
-    for item in items.keys():
-        if item in df.index:
-            df.loc[item]['x_user'] = None
-            df.loc[item]['y_user'] = None
-
-    # update coordinates dataframe, and save
-    coordinates.data = df
-    db.session.commit()
-
-    return jsonify({'msg': 'deleted'}), 200
