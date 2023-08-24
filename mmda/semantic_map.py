@@ -20,25 +20,29 @@ def ccc_semmap(semantic_map):
     semspace = SemanticSpace(semantic_map.embeddings)
     coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
     for item, (x, y) in coordinates.iterrows():
-        db.session.add(
-            Coordinates(
-                semantic_map_id=semantic_map.id,
-                item=item,
-                x=x,
-                y=y
-            )
-        )
+        db.session.add(Coordinates(semantic_map_id=semantic_map.id, item=item, x=x, y=y))
     db.session.commit()
 
     return coordinates
 
 
-def ccc_semmap_update(semantic_map, items):
+def ccc_semmap_update(semantic_map):
 
     coordinates = DataFrame([CoordinatesOut().dump(coordinate) for coordinate in semantic_map.coordinates])
+    items = set([item.item for item in semantic_map.collocation.items if item.item not in set(coordinates['item'])])
+    if len(items) == 0:
+        return None
+
+    # get old coordinates
     semspace = SemanticSpace(semantic_map.embeddings)
     semspace.coordinates = coordinates[['x', 'y']]
+
+    # get new coordinates and add to database
     new_coordinates = semspace.add(items)
+    for item, (x, y) in new_coordinates.iterrows():
+        db.session.add(Coordinates(semantic_map_id=semantic_map.id, item=item, x=x, y=y))
+    db.session.commit()
+
     return new_coordinates
 
 

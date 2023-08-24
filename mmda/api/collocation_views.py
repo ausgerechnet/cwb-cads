@@ -498,8 +498,11 @@ def get_collocate_for_collocation(username, collocation):
     # Get or create items for this window size
     records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
     if len(records) == 0:
-        current_app.logger.debug(f'Creating collocation :: items for window {window}')
+        current_app.logger.debug(f'Creating collocation :: calculating items for window {window}')
         ccc_collocates(collocation, window=window)
+        current_app.logger.debug('Creating collocation :: making sure there are coordinates for all items')
+        semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+        ccc_semmap_update(semantic_map)
 
     # Format items
     records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
@@ -606,7 +609,7 @@ def get_concordance_for_collocation(username, collocation):
 # FREQUENCY BREAKDOWN #
 #######################
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/breakdown/', methods=['GET'])
-# @user_required
+@user_required
 def get_breakdown_for_collocation(username, collocation):
     """ Get breakdown for collocation.
 
@@ -635,7 +638,7 @@ def get_breakdown_for_collocation(username, collocation):
 # META DISTRIBUTION #
 #####################
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/meta/', methods=['GET'])
-# @user_required
+@user_required
 def get_meta_for_collocation(username, collocation):
     """ Get concordance lines for collocation.
 
@@ -716,12 +719,11 @@ def get_coordinates(username, collocation):
 
     # load coordinates
     sem_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+
     out = dict()
     for coordinates in sem_map.coordinates:
         coordinates = CoordinatesOut().dump(coordinates)
         out[coordinates['item']] = coordinates
-
-    # TODO make sure there's coordinates for all items
 
     return jsonify(out), 200
 
