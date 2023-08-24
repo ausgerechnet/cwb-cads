@@ -3,9 +3,9 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
-from ccc import Corpus, SubCorpus
+from ccc import Corpus
 from ccc.concordances import Concordance as CCConcordance
-from ccc.utils import format_roles
+from ccc.utils import format_cqp_query
 from flask import current_app, request
 from pandas import DataFrame
 
@@ -16,40 +16,95 @@ from .users import auth
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')
 
 
-def ccc_concordance(query, concordance, order, cut_off):
+def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
+                    highlight_discoursemes=[], filter_queries=[],
+                    order=42, cut_off=500, window=None):
 
+    query = concordance._query
     s_break = concordance.s_break
-    context = concordance.context
-    p = concordance.p
+    # do not get from settings
+    window = concordance.context if window is None else window
 
+    # post-process matches
     matches = query.matches
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
     df_dump['context'] = df_dump['match']
     df_dump['contextend'] = df_dump['matchend']
     df_dump = df_dump.set_index(['match', 'matchend'])
 
-    subcorpus = SubCorpus('Temp',
-                          df_dump,
-                          corpus_name=query.corpus.cwb_id,
-                          lib_dir=None,
-                          cqp_bin=current_app.config['CCC_CQP_BIN'],
-                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                          data_dir=current_app.config['CCC_DATA_DIR'],
-                          overwrite=False)
+    # create corpus and set context
+    corpus = Corpus(corpus_name=query.corpus.cwb_id,
+                    lib_dir=None,
+                    cqp_bin=current_app.config['CCC_CQP_BIN'],
+                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                    data_dir=current_app.config['CCC_DATA_DIR'])
+    matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df_dump, overwrite=False)
+    matches = matches.set_context(context_break=s_break)
+    df_dump = matches.df
 
-    subcorpus = subcorpus.set_context(context=concordance.context, context_break=s_break)
-    df_dump = subcorpus.df
-    concordance = CCConcordance(Corpus(corpus_name=query.corpus.cwb_id,
-                                       lib_dir=None,
-                                       cqp_bin=current_app.config['CCC_CQP_BIN'],
-                                       registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                                       data_dir=current_app.config['CCC_DATA_DIR']),
-                                df_dump)
-    lines = concordance.lines(form='dict', p_show=['word', p],
-                              s_show=[], order=order, cut_off=cut_off)
-    lines = list(lines.apply(lambda row: format_roles(row, [], [], context, htmlify_meta=True), axis=1))
+    ########################################
+    # SUBCORPUS OF COTEXT OF QUERY MATCHES #
+    ########################################
+    # TODO: implement as matches.set_matches(['context', 'contextend'])
+    df = matches.df.set_index(['context', 'contextend'], drop=False)
+    df = df.drop_duplicates()
+    df.index.names = ['match', 'matchend']
+    df = df[['context', 'contextend', 'contextid']]
+    cotext_of_matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df, overwrite=True)
 
-    return lines
+    #############
+    # FILTERING #
+    #############
+    matches_filter = dict()
+    for name, cqp_query in filter_queries.items():
+        disc = cotext_of_matches.query(cqp_query, context_break=concordance.s_break)
+        matches_filter[name] = disc.matches()
+        df = matches.df.set_index(['context', 'contextend'], drop=False)
+        df.index.names = ['match', 'matchend']
+        df = df[['context', 'contextend', 'contextid']]
+        cotext_of_matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df, overwrite=True)
+
+    ################
+    # HIGHLIGHTING #
+    ################
+    matches_highlight = dict()
+    for discourseme in highlight_discoursemes:
+        # create or retrieve query matches
+        # query = Query()
+        disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma')
+        disc = cotext_of_matches.query(cqp_query=disc_query, context_break=concordance.s_break)
+        matches_highlight[discourseme.id] = disc.matches()
+
+    ###########################
+    # CREATE LINES AND FORMAT #
+    ###########################
+    concordance = CCConcordance(corpus, df_dump)
+    lines = concordance.lines(form='dict', p_show=p_show, s_show=s_show, order=order, cut_off=cut_off)
+    out = list()
+    for line in lines.iterrows():
+        line = line[1]['dict']
+        roles = list()
+        include = False if len(matches_filter) > 0 else True
+        for cpos, offset in zip(line['cpos'], line['offset']):
+            cpos_roles = list()
+            if offset == 0:
+                cpos_roles.append('node')
+            elif abs(offset) > window:
+                cpos_roles.append('out_of_window')
+            for disc_name, disc_matches in matches_highlight.items():
+                if cpos in disc_matches:
+                    cpos_roles.append(disc_name)
+            for disc_name, disc_matches in matches_filter.items():
+                if cpos in disc_matches:
+                    cpos_roles.append(disc_name)
+                    if abs(offset) <= window:
+                        include = True
+            roles.append(cpos_roles)
+        line['role'] = roles
+        if include:
+            out.append(line)
+
+    return out
 
 
 class ConcordanceIn(Schema):
