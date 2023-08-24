@@ -4,6 +4,7 @@
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String, Float
 from semmap import SemanticSpace
+from pandas import DataFrame
 
 from . import db
 from .database import SemanticMap, Coordinates
@@ -17,7 +18,7 @@ def ccc_semmap(semantic_map):
     items = list(set([item.item for item in semantic_map.collocation.items]))
 
     semspace = SemanticSpace(semantic_map.embeddings)
-    coordinates = semspace.generate2d(items, method='tsne', parameters=None)
+    coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
     for item, (x, y) in coordinates.iterrows():
         db.session.add(
             Coordinates(
@@ -34,7 +35,11 @@ def ccc_semmap(semantic_map):
 
 def ccc_semmap_update(semantic_map, items):
 
-    pass
+    coordinates = DataFrame([CoordinatesOut().dump(coordinate) for coordinate in semantic_map.coordinates])
+    semspace = SemanticSpace(semantic_map.embeddings)
+    semspace.coordinates = coordinates[['x', 'y']]
+    new_coordinates = semspace.add(items)
+    return new_coordinates
 
 
 class SemanticMapIn(Schema):
@@ -57,6 +62,8 @@ class CoordinatesOut(Schema):
     item = String()
     x = Float()
     y = Float()
+    x_user = Float()
+    y_user = Float()
 
 
 @bp.get('/<id>')
