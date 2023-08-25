@@ -3,11 +3,13 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String
-from ccc import Corpus, SubCorpus
+from ccc import Corpus
 from ccc.collocates import Collocates
 from flask import current_app, jsonify
 from pandas import DataFrame
 from association_measures import measures
+from pandas import concat
+from ccc.utils import format_cqp_query
 
 from . import db
 from .database import Collocation, CollocationItems, Query, SemanticMap
@@ -21,51 +23,65 @@ def ccc_collocates(collocation, window=None):
 
     window = collocation.context if window is None else window
     filter_query = collocation._query
-    # filter_discoursemes_ids = [d.id for d in constellation.filter_discoursemes]
-    # filter_queries = Query.query.filter(Query.discourseme_id.in_(filter_discoursemes_ids),
-    #                                     Query.corpus_id == collocation.corpus_id).all()
-
-    # if len(filter_queries) == 0:
-    #     raise ValueError()
-
-    # if len(filter_queries) > 1:
-    #     raise NotImplementedError()
 
     ###########
     # CONTEXT #
     ###########
-    # filter_query = filter_queries[0]
+    # post-process matches
     matches = filter_query.matches
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
     df_dump['context'] = df_dump['match']
     df_dump['contextend'] = df_dump['matchend']
     df_dump = df_dump.set_index(['match', 'matchend'])
 
-    # matches
-    subcorpus = SubCorpus('Temp',
-                          df_dump,
-                          corpus_name=filter_query.corpus.cwb_id,
-                          lib_dir=None,
-                          cqp_bin=current_app.config['CCC_CQP_BIN'],
-                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                          data_dir=current_app.config['CCC_DATA_DIR'],
-                          overwrite=False)
-    subcorpus = subcorpus.set_context(context=collocation.context, context_break=collocation.s_break)
-    df_dump = subcorpus.df
+    # create corpus and set context
+    corpus = Corpus(corpus_name=filter_query.corpus.cwb_id,
+                    lib_dir=None,
+                    cqp_bin=current_app.config['CCC_CQP_BIN'],
+                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                    data_dir=current_app.config['CCC_DATA_DIR'])
+    matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df_dump, overwrite=False)
+    matches = matches.set_context(context=collocation.context, context_break=collocation.s_break)
+    df_dump = matches.df
+
+    # initial cotext counts
+    from ccc.collocates import dump2cooc
+    df_cooc, f1_set = dump2cooc(df_dump)
+
+    ########################################
+    # SUBCORPUS OF COTEXT OF QUERY MATCHES #
+    ########################################
+    df = matches.df.set_index(['context', 'contextend'], drop=False)
+    df = df.drop_duplicates()
+    df.index.names = ['match', 'matchend']
+    df = df[['context', 'contextend', 'contextid']]
+    cotext_of_matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df, overwrite=True)
+
+    highlight_counts = list()
+    for discourseme in collocation.constellation.highlight_discoursemes:
+        disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma')
+        # query on subcorpus and on corpus
+        disc = cotext_of_matches.query(cqp_query=disc_query, context_break=collocation.s_break)
+        disc2 = corpus.query(cqp_query=disc_query, context_break=collocation.s_break)
+        f1_set.update(disc.matches())
+        df = disc2.breakdown().rename({'freq': 'O21'}, axis=1).join(
+            disc.breakdown().rename({'freq': 'O11'}, axis=1)
+        )
+        df['discourseme'] = discourseme.id
+        highlight_counts.append(df)
+
+    df_cooc = df_cooc.loc[~df_cooc.cpos.isin(f1_set)]
+    node_freq = corpus.counts.cpos(f1_set, [collocation.p])
 
     # cotext
     # TODO: save and retrieve from CACHE
-    # print(collocates.df_cooc)
-    # print(collocates.f1_set)
-    # print(collocates.node_freq)
-    collocates = Collocates(Corpus(corpus_name=filter_query.corpus.cwb_id,
-                                   lib_dir=None,
-                                   cqp_bin=current_app.config['CCC_CQP_BIN'],
-                                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                                   data_dir=current_app.config['CCC_DATA_DIR']),
-                            df_dump,
-                            [collocation.p],
-                            mws=collocation.context)
+    collocates = Collocates(corpus,
+                            df_dump=None,
+                            p_query=[collocation.p],
+                            mws=collocation.context,
+                            df_cooc=df_cooc,
+                            f1_set=f1_set,
+                            node_freq=node_freq)
 
     ##########
     # WINDOW #
@@ -76,10 +92,23 @@ def ccc_collocates(collocation, window=None):
                                  ams=None,
                                  min_freq=2,
                                  flags=None,
-                                 marginals='corpus')
+                                 marginals='corpus').reset_index()
+
+    ###############################
+    # ADD DISCOURSEME-ITEM SCORES #
+    ###############################
+    if len(highlight_counts) > 0:
+        df = concat(highlight_counts)
+        df['R1'] = collocates.head(1)['R1'][0]
+        df['R2'] = collocates.head(1)['R2'][0]
+        df = df.rename({'O11': 'f1', 'O21': 'f2', 'R1': 'N1', 'R2': 'N2'}, axis=1)
+        df = measures.score(
+            df, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(collocation.items)
+        )
+        df = df.reset_index().fillna(0)
+        collocates = concat([collocates, df])
 
     # wide to long
-    collocates = collocates.reset_index()
     collocates['window'] = window
     collocates = collocates.melt(id_vars=['item', 'window'], var_name='am')
 

@@ -14,7 +14,7 @@ from .. import db
 from ..query import ccc_query
 from ccc.utils import format_cqp_query
 from ..collocation import ccc_collocates
-from ..semantic_map import ccc_semmap, CoordinatesOut, ccc_semmap_update  # TODO: update semmap when new items arrive
+from ..semantic_map import ccc_semmap, CoordinatesOut, ccc_semmap_update
 from ..breakdown import ccc_breakdown, BreakdownItemsOut
 from ..concordance import ccc_concordance, ConcordanceLinesOut
 from ..corpus import ccc_corpus
