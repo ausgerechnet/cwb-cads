@@ -373,7 +373,7 @@ class Collocation(db.Model):
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
     # semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
-    items = db.relationship('CollocationItems', backref='collocation', lazy=True)
+    items = db.relationship('CollocationItems', backref='collocation')
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
     # semantic_map = db.relationship('SemanticMap', backref='collocation', lazy=True)

@@ -7,7 +7,7 @@ from semmap import SemanticSpace
 from pandas import DataFrame
 
 from . import db
-from .database import SemanticMap, Coordinates
+from .database import SemanticMap, Coordinates, CollocationItems
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
@@ -29,7 +29,12 @@ def ccc_semmap(semantic_map):
 def ccc_semmap_update(semantic_map):
 
     coordinates = DataFrame([CoordinatesOut().dump(coordinate) for coordinate in semantic_map.coordinates])
-    items = set([item.item for item in semantic_map.collocation.items if item.item not in set(coordinates['item'])])
+    items = set([
+        item.item for item in CollocationItems.query.filter(
+            CollocationItems.collocation_id == semantic_map.collocation.id,
+            ~ CollocationItems.item.in_(set(coordinates['item']))
+        ).all()
+    ])
     if len(items) == 0:
         return None
 
