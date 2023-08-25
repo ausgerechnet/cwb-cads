@@ -38,11 +38,9 @@ def ccc_semmap_update(semantic_map):
     if len(items) == 0:
         return None
 
-    # get old coordinates
+    # create new coordinates and add to database
     semspace = SemanticSpace(semantic_map.embeddings)
     semspace.coordinates = coordinates[['x', 'y']]
-
-    # get new coordinates and add to database
     new_coordinates = semspace.add(items)
     for item, (x, y) in new_coordinates.iterrows():
         db.session.add(Coordinates(semantic_map_id=semantic_map.id, item=item, x=x, y=y))
