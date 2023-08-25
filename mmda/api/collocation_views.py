@@ -18,6 +18,7 @@ from ..semantic_map import ccc_semmap, CoordinatesOut, ccc_semmap_update  # TODO
 from ..breakdown import ccc_breakdown, BreakdownItemsOut
 from ..concordance import ccc_concordance, ConcordanceLinesOut
 from ..corpus import ccc_corpus
+from ..collocation import ccc_collocates_update
 
 collocation_blueprint = APIBlueprint('collocation', __name__)
 
@@ -498,13 +499,20 @@ def get_collocate_for_collocation(username, collocation):
     # Get or create items for this window size
     records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
     if len(records) == 0:
-        current_app.logger.debug(f'Creating collocation :: calculating items for window {window}')
+        current_app.logger.debug(f'Getting collocation items :: calculating for window {window}')
         ccc_collocates(collocation, window=window)
-        current_app.logger.debug('Creating collocation :: making sure there are coordinates for all items')
-        semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
-        ccc_semmap_update(semantic_map)
 
-    # Format items
+    # highlighting
+    current_app.logger.debug('Getting collocation items :: highlighting')
+    ccc_collocates_update(collocation)
+
+    # updating coordinates
+    current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
+    semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+    ccc_semmap_update(semantic_map)
+
+    # format output
+    current_app.logger.debug('Getting collocation items :: formatting')
     records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
     df_collocates = DataFrame.from_records(records).pivot(index='item', columns='am', values='value')
     df_collocates = format_ams(df_collocates)
@@ -571,8 +579,9 @@ def get_concordance_for_collocation(username, collocation):
 
     # check request
     # ... optional discourseme ID list
-    filter_ids = request.args.getlist('discourseme', None)
-    filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
+    # filter_ids = request.args.getlist('discourseme', None)
+    # filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
+    # print(filter_discoursemes)
     # ... optional additional items
     items = request.args.getlist('item', None)
 
@@ -730,33 +739,15 @@ def get_coordinates(username, collocation):
 
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/reload/', methods=['PUT'])
 @user_required
-def reload_coordinates(username, collocation):
+def update_collocation(username, collocation):
     """ Re-calculate coordinates for collocation analysis.
 
     """
 
-    # # get user
-    # user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=username).first()
+    collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
 
-    # # get analysis
-    # collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
-    # if not collocation:
-    #     return jsonify({'msg': 'no such collocation analysis'}), 404
-
-    # # get tokens
-    # coordinates = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
-    # tokens = coordinates.data.index.values
-
-    # # generate new coordinates
-    # semantic_space = generate_semantic_space(
-    #     tokens,
-    #     current_app.config['CORPORA'][collocation.corpus]['embeddings']
-    # )
-
-    # coordinates.data = semantic_space
-    # db.session.commit()
-
-    # TODO: update everything
+    ccc_collocates_update(collocation)
 
     return jsonify({'msg': 'updated'}), 200
 
