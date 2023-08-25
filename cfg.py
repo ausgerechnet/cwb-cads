@@ -14,25 +14,31 @@ class Config:
         }
     }
 
-
-class ProdConfig(Config):
-
-    DEBUG = False
-    TESTING = False
-    SECRET_KEY = "8!9!zU3nC@fBc5sA"
-
-    DB_NAME = "mmda.sqlite"  # relative to instance folder
-    ADMIN_PASSWORD = "0000"  # only user (name = 'admin')
-
-    SESSION_COOKIE_SECURE = True
-    CORPORA = '/home/ausgerechnet/corpora/cwb/mmda-corpora.json'
-
-    CCC_REGISTRY_DIR = str(getenv('CORPUS_REGISTRY', default='tests/corpora/registry/'))
     CCC_CQP_BIN = str(getenv('CQP_BIN', default='cqp'))
     CCC_LIB_DIR = getenv('CCC_LIB_DIR', None)
 
+
+class ProdConfig(Config):
+
+    # DEBUG = False
+    # TESTING = False
+    DEBUG = True
+    TESTING = True
+
+    SECRET_KEY = "8!9!zU3nC@fBc5sA"
+    SESSION_COOKIE_SECURE = True
+
+    DB_NAME = "mmda.sqlite"  # relative to instance folder
+    ADMIN_PASSWORD = "mmda-admin"  # only user (name = 'admin')
+
+    CORPORA = 'tests/corpora/corpora.json'
+    CCC_REGISTRY_DIR = str(getenv('CORPUS_REGISTRY2', default='tests/corpora/registry/'))
+
     CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/mmda-ccc-cache/'))
     ANYCACHE_DIR = str(getenv('ANYCACHE_DIR', '/tmp/mmda-anycache/'))
+
+    JWT_ACCESS_TOKEN_EXPIRES = 60*60*12
+    JWT_REFRESH_TOKEN_EXPIRES = 60*60*12
 
 
 class TestConfig(Config):
@@ -46,7 +52,9 @@ class TestConfig(Config):
 
     CORPORA = 'tests/corpora/corpora.json'
     CCC_REGISTRY_DIR = 'tests/corpora/registry/'
+
     CCC_DATA_DIR = 'instance/ccc-data-testing/'
     ANYCACHE_DIR = 'instance/mmda-anycache-testing/'
-    CCC_CQP_BIN = 'cqp'
-    CCC_LIB_DIR = None
+
+    JWT_ACCESS_TOKEN_EXPIRES = False
+    JWT_REFRESH_TOKEN_EXPIRES = False
