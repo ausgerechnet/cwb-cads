@@ -10,11 +10,13 @@ from pandas import DataFrame
 from association_measures import measures
 from pandas import concat
 from ccc.utils import format_cqp_query
+from ccc.collocates import dump2cooc
 
 from . import db
-from .database import Collocation, CollocationItems, Query, SemanticMap
+from .database import Collocation, CollocationItems, Query, SemanticMap, Matches
 from .semantic_map import SemanticMapIn, SemanticMapOut
 from .users import auth
+
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 
@@ -22,13 +24,14 @@ bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 def ccc_collocates(collocation, window=None):
 
     window = collocation.context if window is None else window
+
     filter_query = collocation._query
+    matches = filter_query.matches
 
     ###########
     # CONTEXT #
     ###########
     # post-process matches
-    matches = filter_query.matches
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
     df_dump['context'] = df_dump['match']
     df_dump['contextend'] = df_dump['matchend']
@@ -44,28 +47,52 @@ def ccc_collocates(collocation, window=None):
     matches = matches.set_context(context=collocation.context, context_break=collocation.s_break)
     df_dump = matches.df
 
-    # initial cotext counts
-    from ccc.collocates import dump2cooc
+    #########################
+    # INITIAL COTEXT COUNTS #
+    #########################
     df_cooc, f1_set = dump2cooc(df_dump)
 
     ########################################
     # SUBCORPUS OF COTEXT OF QUERY MATCHES #
     ########################################
-    df = matches.df.set_index(['context', 'contextend'], drop=False)
-    df = df.drop_duplicates()
-    df.index.names = ['match', 'matchend']
-    df = df[['context', 'contextend', 'contextid']]
-    cotext_of_matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df, overwrite=True)
+    cotext_of_matches = matches.set_matches(subcorpus_name='Temp', overwrite=True)
 
+    ######################################
+    # CONFLATE HIGHLIGHTING DISCOURSEMES #
+    ######################################
     highlight_counts = list()
     for discourseme in collocation.constellation.highlight_discoursemes:
-        disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma')
-        # query on subcorpus and on corpus
-        disc = cotext_of_matches.query(cqp_query=disc_query, context_break=collocation.s_break)
-        disc2 = corpus.query(cqp_query=disc_query, context_break=collocation.s_break)
-        f1_set.update(disc.matches())
-        df = disc2.breakdown().rename({'freq': 'O21'}, axis=1).join(
-            disc.breakdown().rename({'freq': 'O11'}, axis=1)
+
+        disc_query = Query(
+            discourseme_id=discourseme.id,
+            corpus_id=filter_query.corpus.id,
+            cqp_query=format_cqp_query(discourseme.items.split("\t"), 'lemma')
+        )
+        db.session.add(disc_query)
+        db.session.commit()
+
+        # matches on corpus
+        corpus_matches = corpus.query(cqp_query=disc_query.cqp_query, context_break=collocation.s_break)
+        corpus_matches_df = corpus_matches.df.reset_index()[['match', 'matchend']]
+        corpus_matches_df['query_id'] = disc_query.id
+        for m in corpus_matches_df.to_dict(orient='records'):
+            db.session.add(Matches(**m))
+        db.session.commit()
+
+        # matches on subcorpus
+        subcorpus_matches = cotext_of_matches.query(cqp_query=disc_query.cqp_query, context_break=collocation.s_break)
+        subcorpus_matches_df = subcorpus_matches.df.reset_index()[['match', 'matchend']]
+        subcorpus_matches_df['query_id'] = disc_query.id
+        for m in subcorpus_matches_df.to_dict(orient='records'):
+            db.session.add(Matches(**m))
+        db.session.commit()
+
+        # update f1_set
+        f1_set.update(corpus_matches.matches())
+
+        # create breakdown
+        df = corpus_matches.breakdown().rename({'freq': 'C1'}, axis=1).join(
+            subcorpus_matches.breakdown().rename({'freq': 'O11'}, axis=1)
         )
         df['discourseme'] = discourseme.id
         highlight_counts.append(df)
@@ -101,6 +128,7 @@ def ccc_collocates(collocation, window=None):
         df = concat(highlight_counts)
         df['R1'] = collocates.head(1)['R1'][0]
         df['R2'] = collocates.head(1)['R2'][0]
+        df['O21'] = df['C1'] - df['O11']
         df = df.rename({'O11': 'f1', 'O21': 'f2', 'R1': 'N1', 'R2': 'N2'}, axis=1)
         df = measures.score(
             df, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(collocation.items)
@@ -147,8 +175,6 @@ def ccc_collocates_update(collocation):
             items = dict(row[1])
             items['collocation_id'] = collocation.id
             db.session.add(CollocationItems(**items))
-
-        # COORDINATES
 
     db.session.commit()
 

@@ -20,13 +20,17 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
                     highlight_discoursemes=[], filter_queries=[],
                     order=42, cut_off=500, window=None):
 
-    query = concordance._query
-    s_break = concordance.s_break
     # do not get from settings
+    s_break = concordance.s_break
     window = concordance.context if window is None else window
 
-    # post-process matches
+    query = concordance._query
     matches = query.matches
+
+    ###########
+    # CONTEXT #
+    ###########
+    # post-process matches
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
     df_dump['context'] = df_dump['match']
     df_dump['contextend'] = df_dump['matchend']
@@ -45,12 +49,7 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
     ########################################
     # SUBCORPUS OF COTEXT OF QUERY MATCHES #
     ########################################
-    # TODO: implement as matches.set_matches(['context', 'contextend'])
-    df = matches.df.set_index(['context', 'contextend'], drop=False)
-    df = df.drop_duplicates()
-    df.index.names = ['match', 'matchend']
-    df = df[['context', 'contextend', 'contextid']]
-    cotext_of_matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df, overwrite=True)
+    cotext_of_matches = matches.set_matches(subcorpus_name='Temp', overwrite=True)
 
     #############
     # FILTERING #
