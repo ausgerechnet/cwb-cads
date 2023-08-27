@@ -4,14 +4,10 @@ Login views
 
 from flask import jsonify, request
 from apiflask import APIBlueprint
-# from flask_expects_json import expects_json
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 get_jwt_identity, verify_jwt_in_request, jwt_required)
 from werkzeug.security import check_password_hash
 from functools import wraps
-# from backend import admin_required, user_required
-# from backend.models.user_models import User
-# from backend.views.validators import PASSWORD_SCHEMA
 
 from ..database import User
 
@@ -96,6 +92,7 @@ def login():
 
 
 @login_blueprint.route('/api/refresh/', methods=['POST'])
+@jwt_required(refresh=True)
 def refresh():
     """
     Return a new token if the user has a refresh token
@@ -138,7 +135,7 @@ def test_user(username):
 
 
 @login_blueprint.route('/api/test-admin/', methods=['GET'])
-# @admin_required
+@admin_required
 def test_admin():
     """
     Access the roles of the current user with get_jwt_claims
