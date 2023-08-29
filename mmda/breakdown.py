@@ -122,7 +122,7 @@ def delete_breakdown(query_id, id):
 @bp.output(BreakdownOut)
 @bp.auth_required(auth)
 def execute(query_id, id):
-    """Execute breakdown: Get frequencies of query matches.
+    """Execute breakdown: Calculate frequencies of query matches.
 
     """
 
