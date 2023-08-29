@@ -5,7 +5,7 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
 from ccc import Corpus
 from ccc.concordances import Concordance as CCConcordance
-from ccc.utils import format_cqp_query
+from ccc.utils import format_cqp_query, cqp_escape
 from flask import current_app, request
 from pandas import DataFrame
 
@@ -21,86 +21,94 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
                     order=42, cut_off=500, window=None):
 
     # do not get from settings
-    s_break = concordance.s_break
+    context_break = concordance.s_break
     window = concordance.context if window is None else window
 
     query = concordance._query
     matches = query.matches
 
-    ###########
-    # CONTEXT #
-    ###########
-    # post-process matches
-    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend'])
-    df_dump['context'] = df_dump['match']
-    df_dump['contextend'] = df_dump['matchend']
-    df_dump = df_dump.set_index(['match', 'matchend'])
-
-    # create corpus and set context
     corpus = Corpus(corpus_name=query.corpus.cwb_id,
                     lib_dir=None,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
-    matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df_dump, overwrite=False)
-    matches = matches.set_context(context_break=s_break)
-    df_dump = matches.df
 
     ########################################
     # SUBCORPUS OF COTEXT OF QUERY MATCHES #
     ########################################
-    cotext_of_matches = matches.set_matches(subcorpus_name='Temp', overwrite=True)
+    matches_df = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
+    # NB:
+    # - for filtering, we set whole context regions as cotext so we can easily filter iteratively
+    # - we also output whole context regions
+    # - post-hoc filtering and marking as out-of-window below
+    matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=matches_df, overwrite=False).set_context(context_break=context_break, overwrite=True)
 
     #############
     # FILTERING #
     #############
     matches_filter = dict()
-    for name, cqp_query in filter_queries.items():
-        disc = cotext_of_matches.query(cqp_query, context_break=concordance.s_break)
-        matches_filter[name] = disc.matches()
-        df = matches.df.set_index(['context', 'contextend'], drop=False)
-        df.index.names = ['match', 'matchend']
-        df = df[['context', 'contextend', 'contextid']]
-        cotext_of_matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=df, overwrite=True)
+    if filter_queries:
+        current_app.logger.debug('ccc_collocates :: filtering')
+        cotext_of_matches = matches.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+        for name, cqp_query in filter_queries.items():
+            disc = cotext_of_matches.query(cqp_query, context_break=concordance.s_break)
+            matches_filter[name] = disc.matches()
+            cotext_of_matches = disc.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+        # focus back on topic:
+        matches = cotext_of_matches.query(query.cqp_query, context_break=concordance.s_break)
 
     ################
     # HIGHLIGHTING #
     ################
     matches_highlight = dict()
-    for discourseme in highlight_discoursemes:
-        # create or retrieve query matches
-        # query = Query()
-        disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma')
-        disc = cotext_of_matches.query(cqp_query=disc_query, context_break=concordance.s_break)
-        matches_highlight[discourseme.id] = disc.matches()
+    if highlight_discoursemes:
+        current_app.logger.debug('ccc_collocates :: highlighting')
+        for discourseme in highlight_discoursemes:
+            disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma', escape=False)
+            disc = matches.query(cqp_query=disc_query, context_break=concordance.s_break)
+            matches_highlight[discourseme.id] = disc.matches()
 
     ###########################
     # CREATE LINES AND FORMAT #
     ###########################
-    concordance = CCConcordance(corpus, df_dump)
+    current_app.logger.debug('ccc_collocates :: formatting')
+    # TODO: simplify, retrieve more tokens left and right
+    concordance = CCConcordance(corpus, matches.df)
     lines = concordance.lines(form='dict', p_show=p_show, s_show=s_show, order=order, cut_off=cut_off)
     out = list()
     for line in lines.iterrows():
+        meta = {s: line[1][s] for s in s_show}
         line = line[1]['dict']
+        line['lemma'] = [cqp_escape(item) for item in line['lemma']]
         roles = list()
-        include = False if len(matches_filter) > 0 else True
+        discoursemes_in_window = {disc_name: False for disc_name in matches_filter.keys()}
         for cpos, offset in zip(line['cpos'], line['offset']):
             cpos_roles = list()
+            # node
             if offset == 0:
                 cpos_roles.append('node')
+            # out of window
             elif abs(offset) > window:
                 cpos_roles.append('out_of_window')
+
+            # highlighting
             for disc_name, disc_matches in matches_highlight.items():
                 if cpos in disc_matches:
                     cpos_roles.append(disc_name)
+
+            # filtering
             for disc_name, disc_matches in matches_filter.items():
                 if cpos in disc_matches:
                     cpos_roles.append(disc_name)
                     if abs(offset) <= window:
-                        include = True
+                        discoursemes_in_window[disc_name] = True
+
             roles.append(cpos_roles)
-        line['role'] = roles
-        if include:
+
+        # we filter here according to window size
+        if sum(discoursemes_in_window.values()) >= len(matches_filter):
+            line['role'] = roles
+            line['meta'] = DataFrame.from_dict(meta, orient='index').to_html(bold_rows=False, header=False, render_links=True)
             out.append(line)
 
     return out
