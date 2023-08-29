@@ -342,9 +342,8 @@ class SemanticMap(db.Model):
     name = db.Column(db.Unicode)
     embeddings = db.Column(db.Unicode)
     method = db.Column(db.Unicode)
-    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id'))
-    collocation = db.relationship('Collocation', backref='semantic_map', lazy=True)
     coordinates = db.relationship('Coordinates', backref='semantic_map', lazy=True)
+    collocations = db.relationship('Collocation', backref='semantic_map', lazy=True)
 
 
 class Coordinates(db.Model):
@@ -379,11 +378,9 @@ class Collocation(db.Model):
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
-    # semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     items = db.relationship('CollocationItems', backref='collocation')
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
-
-    # semantic_map = db.relationship('SemanticMap', backref='collocation', lazy=True)
 
     @property
     def serialize(self):

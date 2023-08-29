@@ -13,9 +13,16 @@ from .users import auth
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
 
 
-def ccc_semmap(semantic_map):
+def ccc_semmap(collocation):
 
-    items = list(set([item.item for item in semantic_map.collocation.items]))
+    semantic_map = SemanticMap(embeddings=collocation._query.corpus.embeddings, method='tsne')
+    db.session.add(semantic_map)
+    db.session.commit()
+    collocation.semantic_map_id = semantic_map.id
+    db.session.add(collocation)
+    db.session.commit()
+
+    items = list(set([item.item for item in collocation.items]))
 
     semspace = SemanticSpace(semantic_map.embeddings)
     coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
@@ -26,22 +33,24 @@ def ccc_semmap(semantic_map):
     return coordinates
 
 
-def ccc_semmap_update(semantic_map):
+def ccc_semmap_update(collocation):
 
+    semantic_map = collocation.semantic_map
     coordinates = DataFrame([CoordinatesOut().dump(coordinate) for coordinate in semantic_map.coordinates])
-    items = set([
+
+    new_items = set([
         item.item for item in CollocationItems.query.filter(
-            CollocationItems.collocation_id == semantic_map.collocation.id,
+            CollocationItems.collocation_id == collocation.id,
             ~ CollocationItems.item.in_(set(coordinates['item']))
         ).all()
     ])
-    if len(items) == 0:
+    if len(new_items) == 0:
         return None
 
     # create new coordinates and add to database
     semspace = SemanticSpace(semantic_map.embeddings)
     semspace.coordinates = coordinates[['x', 'y']]
-    new_coordinates = semspace.add(items)
+    new_coordinates = semspace.add(new_items)
     for item, (x, y) in new_coordinates.iterrows():
         db.session.add(Coordinates(semantic_map_id=semantic_map.id, item=item, x=x, y=y))
     db.session.commit()
@@ -106,7 +115,7 @@ def execute(id):
     """Execute semantic map: Get positions of items.
 
     """
-
+    # TODO: get items
     semantic_map = db.get_or_404(SemanticMap, id)
     ccc_semmap(semantic_map)
 
