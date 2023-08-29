@@ -41,7 +41,8 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
     # - for filtering, we set whole context regions as cotext so we can easily filter iteratively
     # - we also output whole context regions
     # - post-hoc filtering and marking as out-of-window below
-    matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=matches_df, overwrite=False).set_context(context_break=context_break, overwrite=True)
+    matches = corpus.subcorpus(df_dump=matches_df, overwrite=False).set_context(context_break=context_break, overwrite=True)
+    cotext_of_matches = matches.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
 
     #############
     # FILTERING #
@@ -49,7 +50,6 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
     matches_filter = dict()
     if filter_queries:
         current_app.logger.debug('ccc_collocates :: filtering')
-        cotext_of_matches = matches.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
         for name, cqp_query in filter_queries.items():
             disc = cotext_of_matches.query(cqp_query, context_break=concordance.s_break)
             matches_filter[name] = disc.matches()
@@ -65,7 +65,7 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
         current_app.logger.debug('ccc_collocates :: highlighting')
         for discourseme in highlight_discoursemes:
             disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma', escape=False)
-            disc = matches.query(cqp_query=disc_query, context_break=concordance.s_break)
+            disc = cotext_of_matches.query(cqp_query=disc_query, context_break=concordance.s_break)
             matches_highlight[discourseme.id] = disc.matches()
 
     ###########################
