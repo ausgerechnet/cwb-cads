@@ -4,7 +4,6 @@
 Collocation view
 """
 
-# requirements
 from apiflask import APIBlueprint
 from flask import current_app, jsonify, request
 from pandas import DataFrame
@@ -12,13 +11,14 @@ from .login_views import user_required
 from ..database import User, Discourseme, Collocation, SemanticMap, Corpus, Query, Breakdown, Concordance, Constellation, Coordinates
 from .. import db
 from ..query import ccc_query
-from ccc.utils import format_cqp_query
+from ccc.utils import format_cqp_query, cqp_escape
 from ..collocation import ccc_collocates
 from ..semantic_map import ccc_semmap, CoordinatesOut, ccc_semmap_update
 from ..breakdown import ccc_breakdown, BreakdownItemsOut
 from ..concordance import ccc_concordance, ConcordanceLinesOut
 from ..corpus import ccc_corpus
-from ..collocation import ccc_collocates_update
+# from ..collocation import ccc_collocates_conflate
+from association_measures import measures
 
 collocation_blueprint = APIBlueprint('collocation', __name__)
 
@@ -29,7 +29,9 @@ def format_ams(df, cut_off=200):
         # conservative estimates
         'conservative_log_ratio': 'Conservative LR',
         # frequencies
-        'O11': 'cooc.',
+        'O11': 'obs.',
+        'O21': 'ref.',
+        'E11': 'exp.',
         'ipm': 'IPM (obs.)',
         'ipm_expected': 'IPM (exp.)',
         # asymptotic hypothesis tests
@@ -200,7 +202,7 @@ def create_collocation(username):
 
     # Update
     current_app.logger.debug('Creating collocation :: discourseme management')
-    filter_discourseme.items = "\t".join(set(filter_discourseme.items.split("\t")).union([item.item for item in breakdown.items]))
+    filter_discourseme.items = "\t".join(set(filter_discourseme.items.split("\t")).union([cqp_escape(item.item) for item in breakdown.items]))
     db.session.commit()
 
     return jsonify({'msg': collocation.id}), 201
@@ -458,64 +460,48 @@ def get_collocate_for_collocation(username, collocation):
     """
 
     user = User.query.filter_by(username=username).first()
-
-    # Parameters
-    # .. required
     window = int(request.args.get('window_size'))
-    # .. additional discoursemes
-    discourseme_ids = request.args.getlist('discourseme', None)
-    items = request.args.getlist('collocate', None)
-    # .. not set yet
-    # flags_show = request.args.get('flags_show', "")
-    # min_freq = request.args.get('min_freq', 2)
-    # ams = request.args.get('ams', None)
-    # .. pagination
-    order = request.args.get('order', 'log_likelihood')
-    cut_off = request.args.get('cut_off', 200)
-
-    # # pre-process request
-    # # ... filter for SOC
-    # filter_discoursemes = dict()
-    # if discourseme_ids:
-    #     discoursemes = Discourseme.query.filter(
-    #         Discourseme.id.in_(discourseme_ids), Discourseme.user_id == user.id
-    #     ).all()
-    #     for d in discoursemes:
-    #         filter_discoursemes[str(d.id)] = d.items
-
-    # # ... floating discoursemes
-    # additional_discoursemes = dict()
-    # if items:
-    #     # create discourseme for additional items on the fly
-    #     additional_discoursemes['collocate'] = items
-
-    # # ... highlight associated discoursemes
-    # for d in collocation._query.discoursemes:
-    #     additional_discoursemes[str(d.id)] = d.items
-
-    # Collocation
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
 
-    # Get or create items for this window size
-    records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
-    if len(records) == 0:
+    # .. additional discoursemes
+    # items = request.args.getlist('collocate', None)
+
+    # .. not set yet
+    # flags_show = request.args.get('flags_show', "")
+    # .. pagination
+    # ams = request.args.get('ams', None)
+    # min_freq = request.args.get('min_freq', 2)
+    # order = request.args.get('order', 'log_likelihood')
+    cut_off = request.args.get('cut_off', 200)
+
+    # .. create separate Collocation for SOC
+    filter_ids = request.args.getlist('discourseme', None)
+    filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
+    filter_queries = dict()
+    for filter_discourseme in filter_discoursemes:
+        filter_queries[filter_discourseme.id] = format_cqp_query(filter_discourseme.items.split("\t"), collocation.p, escape=False)
+
+    if len(filter_queries) > 0:
+        # iterative query (topic on subcorpus) → matches
+        # Collocation
+        # ccc_collocates
+        # ccc_semmap_update
+        current_app.logger.debug('NOT IMPLEMENTED')
+
+    # counts
+    counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
+    counts = counts.loc[counts['window'] == window]
+
+    if len(counts) == 0:
         current_app.logger.debug(f'Getting collocation items :: calculating for window {window}')
-        ccc_collocates(collocation, window=window)
+        counts = ccc_collocates(collocation, window=window)
+        current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
+        semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+        ccc_semmap_update(semantic_map)
 
-    # highlighting
-    current_app.logger.debug('Getting collocation items :: highlighting')
-    ccc_collocates_update(collocation)
-
-    # updating coordinates
-    current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
-    semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
-    ccc_semmap_update(semantic_map)
-
-    # format output
-    current_app.logger.debug('Getting collocation items :: formatting')
-    records = [{'item': item.item, 'am': item.am, 'value': item.value} for item in collocation.items if item.window == window]
-    df_collocates = DataFrame.from_records(records).pivot(index='item', columns='am', values='value')
-    df_collocates = format_ams(df_collocates)
+    df_collocates = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
+    df_collocates = format_ams(df_collocates, cut_off=cut_off)
+    df_collocates.index = [cqp_escape(item) for item in df_collocates.index]
 
     return df_collocates.to_json(), 200
 
@@ -569,6 +555,7 @@ def get_concordance_for_collocation(username, collocation):
     if not collocation:
         return jsonify({'msg': 'empty result'}), 404
 
+    # .. parameters
     window = int(request.args.get('window_size', 3))
     corpus = ccc_corpus(collocation._query.corpus.cwb_id,
                         cqp_bin=current_app.config['CCC_CQP_BIN'],
@@ -576,37 +563,23 @@ def get_concordance_for_collocation(username, collocation):
                         data_dir=current_app.config['CCC_DATA_DIR'])
     s_show = corpus['s_annotations']
     p_show = ['word', collocation.p]
-
-    # check request
-    # ... optional discourseme ID list
-    # filter_ids = request.args.getlist('discourseme', None)
-    # filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
-    # print(filter_discoursemes)
-    # ... optional additional items
-    items = request.args.getlist('item', None)
-
-    # .. pagination
     cut_off = request.args.get('cut_off', 500)
     order = request.args.get('order', 42)
 
-    # pre-process request
-    # ... get associated topic discourseme (no need if not interested in name)
-    # topic_discourseme = Discourseme.query.filter_by(id=collocation.topic_id).first()
-    # ... further discoursemes as a dict {name: items}
+    # .. create filter discoursemes  TODO simplify
+    filter_ids = request.args.getlist('discourseme', None)
+    filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
+    filter_items = request.args.getlist('item', None)
     filter_queries = dict()
-    if items:
-        # create discourseme for additional items on the fly
-        filter_queries['collocate'] = format_cqp_query(items, collocation.p)
+    for filter_discourseme in filter_discoursemes:
+        filter_queries[filter_discourseme.id] = format_cqp_query(filter_discourseme.items.split("\t"), collocation.p, escape=False)
+    if filter_items:
+        filter_queries['collocate'] = format_cqp_query(filter_items, collocation.p, escape=False)
 
-    # # SOC
-    # if discourseme_ids:
-    #     discoursemes = Discourseme.query.filter(
-    #         Discourseme.id.in_(discourseme_ids), Discourseme.user_id == user.id
-    #     ).all()
-    #     for d in discoursemes:
-    #         filter_discoursemes[str(d.id)] = d.items
-
+    # .. get highlight_discoursemes
     highlight_discoursemes = collocation.constellation.highlight_discoursemes
+
+    # .. actual concordancing
     concordance = Concordance.query.filter_by(query_id=collocation._query.id).first()
     concordance_lines = ccc_concordance(concordance, p_show, s_show, highlight_discoursemes, filter_queries, order=order, cut_off=cut_off, window=window)
     conc_json = [ConcordanceLinesOut().dump(line) for line in concordance_lines]
@@ -747,7 +720,10 @@ def update_collocation(username, collocation):
     user = User.query.filter_by(username=username).first()
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
 
-    ccc_collocates_update(collocation)
+    counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
+    for window in set(counts['window']):
+        current_app.logger.debug(f'Updating collocation :: window {window}')
+        ccc_collocates(collocation, window)
 
     return jsonify({'msg': 'updated'}), 200
 
