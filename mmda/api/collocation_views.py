@@ -8,7 +8,7 @@ from apiflask import APIBlueprint
 from flask import current_app, jsonify, request
 from pandas import DataFrame
 from .login_views import user_required
-from ..database import User, Discourseme, Collocation, SemanticMap, Corpus, Query, Breakdown, Concordance, Constellation, Coordinates
+from ..database import User, Discourseme, Collocation, Corpus, Query, Breakdown, Concordance, Constellation, Coordinates
 from .. import db
 from ..query import ccc_query
 from ccc.utils import format_cqp_query, cqp_escape
@@ -186,19 +186,16 @@ def create_collocation(username):
     db.session.commit()
     ccc_collocates(collocation)
 
+    # Semantic Map
+    current_app.logger.debug('Creating collocation :: semantic map')
+    ccc_semmap(collocation)
+
     # Concordance
     # TODO: no need for context (nor p), just s_break, because window (and layer) is generated on the fly
     current_app.logger.debug('Creating collocation :: concordance')
     concordance = Concordance(query_id=query.id, p=p, s_break=s_break, context=context)
     db.session.add(concordance)
     db.session.commit()
-
-    # Semantic Map
-    current_app.logger.debug('Creating collocation :: semantic map')
-    semantic_map = SemanticMap(collocation_id=collocation.id, embeddings=query.corpus.embeddings, method='tsne')
-    db.session.add(semantic_map)
-    db.session.commit()
-    ccc_semmap(semantic_map)
 
     # Update
     current_app.logger.debug('Creating collocation :: discourseme management')
@@ -224,7 +221,7 @@ def get_all_collocation(username):
 
     user = User.query.filter_by(username=username).first()
     collocation_analyses = Collocation.query.filter_by(user_id=user.id).all()
-    collocation_list = [collocation.serialize for collocation in collocation_analyses]
+    collocation_list = [collocation.serialize for collocation in collocation_analyses if collocation._query.nqr_name is None]
 
     return jsonify(collocation_list), 200
 
@@ -474,19 +471,64 @@ def get_collocate_for_collocation(username, collocation):
     # order = request.args.get('order', 'log_likelihood')
     cut_off = request.args.get('cut_off', 200)
 
-    # .. create separate Collocation for SOC
+    # get filter discoursemes
     filter_ids = request.args.getlist('discourseme', None)
     filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
     filter_queries = dict()
-    for filter_discourseme in filter_discoursemes:
-        filter_queries[filter_discourseme.id] = format_cqp_query(filter_discourseme.items.split("\t"), collocation.p, escape=False)
+    for discourseme in filter_discoursemes:
+        filter_queries[discourseme.id] = format_cqp_query(discourseme.items.split("\t"), collocation.p, escape=False)
 
+    # .. create separate Collocation for SOC
     if len(filter_queries) > 0:
+
         # iterative query (topic on subcorpus) → matches
-        # Collocation
-        # ccc_collocates
-        # ccc_semmap_update
-        current_app.logger.debug('NOT IMPLEMENTED')
+        # subcorpus = topic → discourseme_i → topic
+        subcorpus_name = str(collocation._query.discourseme.id) + "".join([str(discourseme.id) for discourseme in filter_discoursemes])
+
+        query = Query(discourseme_id=collocation._query.discourseme.id, corpus_id=collocation._query.corpus.id,
+                      cqp_query=collocation._query.cqp_query, nqr_name=subcorpus_name)
+        db.session.add(query)
+        db.session.commit()
+
+        # get matches of original filter
+        from ccc import Corpus as Crps
+        corpus = Crps(corpus_name=collocation._query.corpus.cwb_id,
+                      lib_dir=None,
+                      cqp_bin=current_app.config['CCC_CQP_BIN'],
+                      registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                      data_dir=current_app.config['CCC_DATA_DIR'])
+        matches = collocation._query.matches
+        matches_df = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
+
+        # for filtering, we set whole context regions as cotext so we can easily filter iteratively
+        matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=matches_df, overwrite=False).set_context(context_break=collocation.s_break,
+                                                                                                           overwrite=True)
+
+        current_app.logger.debug('Getting SOC collocation items :: filtering')
+        cotext_of_matches = matches.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+        for name, cqp_query in filter_queries.items():
+            disc = cotext_of_matches.query(cqp_query, context_break=collocation.s_break)
+            cotext_of_matches = disc.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+        # focus back on topic:
+        matches = cotext_of_matches.query(collocation._query.cqp_query, context_break=collocation.s_break).set_context(
+            context_break=collocation.s_break, context=collocation.context
+        ).df
+        matches['query_id'] = query.id
+        matches = matches[['query_id']]
+        from ..database import Matches
+        for m in matches.reset_index().to_dict(orient='records'):
+            db.session.add(Matches(**m))
+        db.session.commit()
+
+        semantic_map = collocation.semantic_map
+        collocation = Collocation(query_id=query.id, p=collocation.p, s_break=collocation.s_break, context=collocation.context,
+                                  user_id=user.id, constellation_id=collocation.constellation.id)
+        db.session.add(collocation)
+        db.session.commit()
+        ccc_collocates(collocation)
+        collocation.semantic_map_id = semantic_map.id
+        db.session.add(collocation)
+        db.session.commit()
 
     # counts
     counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
@@ -496,8 +538,7 @@ def get_collocate_for_collocation(username, collocation):
         current_app.logger.debug(f'Getting collocation items :: calculating for window {window}')
         counts = ccc_collocates(collocation, window=window)
         current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
-        semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
-        ccc_semmap_update(semantic_map)
+        ccc_semmap_update(collocation)
 
     df_collocates = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
     df_collocates = format_ams(df_collocates, cut_off=cut_off)
@@ -700,7 +741,7 @@ def get_coordinates(username, collocation):
         return jsonify({'msg': 'no such collocation analysis'}), 404
 
     # load coordinates
-    sem_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+    sem_map = collocation.semantic_map
 
     out = dict()
     for coordinates in sem_map.coordinates:
@@ -744,7 +785,7 @@ def update_coordinates(username, collocation):
         return jsonify({'msg': 'no such collocation analysis'}), 404
 
     # set coordinates
-    semantic_map = SemanticMap.query.filter_by(collocation_id=collocation.id).first()
+    semantic_map = collocation.semantic_map
     for item, xy in items.items():
         coordinates = Coordinates.query.filter_by(item=item, semantic_map_id=semantic_map.id).first()
         if not (isinstance(xy['x_user'], float) and isinstance(xy['y_user'], float)):
