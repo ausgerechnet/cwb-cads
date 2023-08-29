@@ -230,39 +230,39 @@ def ccc_collocates(collocation, window=None, min_freq=1):
     return counts
 
 
-def ccc_collocates_conflate(collocation):
-    """conflate items in context
+# def ccc_collocates_conflate(collocation):
+#     """conflate items in context
 
 
-    """
+#     """
 
-    records = [{'item': item.item, 'window': item.window, 'am': item.am, 'value': item.value} for item in collocation.items]
-    df_collocates = DataFrame.from_records(records).pivot(index=['item', 'window'], columns='am', values='value').reset_index()
-    for discourseme in collocation.constellation.highlight_discoursemes:
+#     records = [{'item': item.item, 'window': item.window, 'am': item.am, 'value': item.value} for item in collocation.items]
+#     df_collocates = DataFrame.from_records(records).pivot(index=['item', 'window'], columns='am', values='value').reset_index()
+#     for discourseme in collocation.constellation.highlight_discoursemes:
 
-        disc_label = f"(ID: {discourseme.id})"
-        disc_items = discourseme.items.split("\t")
+#         disc_label = f"(ID: {discourseme.id})"
+#         disc_items = discourseme.items.split("\t")
 
-        # DELETE IF EXISTS
-        CollocationItems.query.filter_by(collocation_id=collocation.id, item=disc_label).delete()
-        db.session.commit()
+#         # DELETE IF EXISTS
+#         CollocationItems.query.filter_by(collocation_id=collocation.id, item=disc_label).delete()
+#         db.session.commit()
 
-        # CONFLATE
-        df = df_collocates.loc[df_collocates['item'].isin(disc_items)]
-        df = df.groupby('window').agg({'O11': 'sum', 'O21': 'sum', 'R1': 'mean', 'R2': 'mean', 'in_nodes': 'sum', 'marginal': 'mean'})
-        df = df.rename({'O11': 'f1', 'O21': 'f2', 'R1': 'N1', 'R2': 'N2'}, axis=1)
-        df = measures.score(df, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(collocation.items))
-        df = df.reset_index().fillna(0)
-        df['item'] = disc_label
+#         # CONFLATE
+#         df = df_collocates.loc[df_collocates['item'].isin(disc_items)]
+#         df = df.groupby('window').agg({'O11': 'sum', 'O21': 'sum', 'R1': 'mean', 'R2': 'mean', 'in_nodes': 'sum', 'marginal': 'mean'})
+#         df = df.rename({'O11': 'f1', 'O21': 'f2', 'R1': 'N1', 'R2': 'N2'}, axis=1)
+#         df = measures.score(df, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(collocation.items))
+#         df = df.reset_index().fillna(0)
+#         df['item'] = disc_label
 
-        # ADD TO DATABASE
-        df = df.melt(id_vars=['item', 'window'], var_name='am')
-        for row in df.iterrows():
-            items = dict(row[1])
-            items['collocation_id'] = collocation.id
-            db.session.add(CollocationItems(**items))
+#         # ADD TO DATABASE
+#         df = df.melt(id_vars=['item', 'window'], var_name='am')
+#         for row in df.iterrows():
+#             items = dict(row[1])
+#             items['collocation_id'] = collocation.id
+#             db.session.add(CollocationItems(**items))
 
-    db.session.commit()
+#     db.session.commit()
 
 
 class CollocationIn(Schema):

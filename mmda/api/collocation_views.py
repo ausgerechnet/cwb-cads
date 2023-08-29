@@ -23,14 +23,13 @@ from association_measures import measures
 collocation_blueprint = APIBlueprint('collocation', __name__)
 
 
-def format_ams(df, cut_off=200):
+def score_counts(counts, cut_off=200):
 
     ams_dict = {
         # conservative estimates
         'conservative_log_ratio': 'Conservative LR',
         # frequencies
         'O11': 'obs.',
-        'O21': 'ref.',
         'E11': 'exp.',
         'ipm': 'IPM (obs.)',
         'ipm_expected': 'IPM (exp.)',
@@ -48,6 +47,9 @@ def format_ams(df, cut_off=200):
         'mutual_information': 'MI',
         'local_mutual_information': 'local MI',
     }
+
+    df = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
+    df = df.loc[df['O11'] > df['E11']]
 
     # select columns
     df = df[list(ams_dict.keys())]
@@ -540,8 +542,7 @@ def get_collocate_for_collocation(username, collocation):
         current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
         ccc_semmap_update(collocation)
 
-    df_collocates = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
-    df_collocates = format_ams(df_collocates, cut_off=cut_off)
+    df_collocates = score_counts(counts, cut_off=cut_off)
     df_collocates.index = [cqp_escape(item) for item in df_collocates.index]
 
     return df_collocates.to_json(), 200
