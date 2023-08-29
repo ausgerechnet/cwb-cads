@@ -115,9 +115,6 @@ class Corpus(db.Model):
     register = db.Column(db.Unicode)
     description = db.Column(db.Unicode)
     embeddings = db.Column(db.Unicode)  # TODO
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
-    # modified = db.Column(db.DateTime, default=datetime.utcnow)
-    # subcorpus_id = db.Column(db.Unicode)
 
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
 
@@ -137,6 +134,8 @@ class Discourseme(db.Model):
     """Discourseme
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
@@ -170,6 +169,8 @@ class Constellation(db.Model):
     """Constellation
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer(), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
@@ -208,19 +209,22 @@ class Query(db.Model):
 
     """
 
+    __table_args__ = {'sqlite_autoincrement': True}
+
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
+    nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
 
     cqp_query = db.Column(db.Unicode)
-    cqp_id = db.Column(db.Unicode)
+    cqp_nqr_matches = db.Column(db.Unicode)  # resulting NQR in CWB
     match_strategy = db.Column(db.Unicode, default='longest')
-    matches = db.relationship('Matches', backref='_query', lazy=True)
-    breakdowns = db.relationship('Breakdown', backref='_query', lazy=True)
-    collocations = db.relationship('Collocation', backref='_query', lazy=True)
-    concordances = db.relationship('Concordance', backref='_query', lazy=True)
+    matches = db.relationship('Matches', backref='_query')
+    breakdowns = db.relationship('Breakdown', backref='_query')
+    collocations = db.relationship('Collocation', backref='_query')
+    concordances = db.relationship('Concordance', backref='_query')
 
 
 class Matches(db.Model):
@@ -305,10 +309,12 @@ class Cotext(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
 
-    matches_id = db.Column(db.Integer, db.ForeignKey('matches.id', ondelete='CASCADE'))
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
     context = db.Column(db.Integer)
     context_break = db.Column(db.String)
+
+    lines = db.relationship('CotextLines', backref='cotext')
 
 
 class CotextLines(db.Model):
@@ -321,6 +327,7 @@ class CotextLines(db.Model):
 
     cotext_id = db.Column(db.Integer, db.ForeignKey('cotext.id', ondelete='CASCADE'))
 
+    match_pos = db.Column(db.Integer)
     cpos = db.Column(db.Integer)
     offset = db.Column(db.Integer)
 
@@ -416,9 +423,11 @@ class CollocationItems(db.Model):
     discourseme_ids = db.relationship("Discourseme", secondary=collocation_items_discoursemes,
                                       backref=db.backref('collocation_items', lazy=True))
     window = db.Column(db.Integer)
-    am = db.Column(db.Unicode)
-    value = db.Column(db.Float)
 
+    f = db.Column(db.Integer)
+    f1 = db.Column(db.Integer)
+    f2 = db.Column(db.Integer)
+    N = db.Column(db.Integer)
 
 # class Keyword(db.Model):
 #     """Keyword Analysis
@@ -468,8 +477,9 @@ def init_db():
 
     db.session.commit()
 
-    db.session.add(Discourseme(user_id=1, items="\t".join(['CDU', 'CSU']), name='CDU/CSU'))
-    db.session.add(Discourseme(user_id=1, items="\t".join(['F. D. P.']), name='FDP'))
+    db.session.add(Discourseme(user_id=1, items="\t".join(['CDU', 'CSU', 'CDU / CSU', r'\[ CDU / CSU \]:?']), name='CDU/CSU'))
+    db.session.add(Discourseme(user_id=1, items="\t".join([r'F\. D\. P\.', r'\[ F\. D\. P\. \]:?']), name='FDP'))
+    db.session.add(Discourseme(user_id=1, items="\t".join(['Beifall', 'Heiterkeit', 'Lache']), name='Reaktion'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Bundeskanzler', 'Kanzler']), name='Kanzler'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Präsident']), name='Präsident'))
 
