@@ -34,8 +34,10 @@ class ProdConfig(Config):
     CORPORA = 'tests/corpora/corpora.json'
     CCC_REGISTRY_DIR = str(getenv('CORPUS_REGISTRY2', default='tests/corpora/registry/'))
 
-    CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/mmda-ccc-cache/'))
-    ANYCACHE_DIR = str(getenv('ANYCACHE_DIR', '/tmp/mmda-anycache/'))
+    # CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/mmda-ccc-cache/'))
+    # ANYCACHE_DIR = str(getenv('ANYCACHE_DIR', '/tmp/mmda-anycache/'))
+    CCC_DATA_DIR = 'instance/dev-ccc-data/'
+    ANYCACHE_DIR = 'instance/dev-mmda-anycache/'
 
     JWT_ACCESS_TOKEN_EXPIRES = 60*60*12
     JWT_REFRESH_TOKEN_EXPIRES = 60*60*12
@@ -53,8 +55,8 @@ class TestConfig(Config):
     CORPORA = 'tests/corpora/corpora.json'
     CCC_REGISTRY_DIR = 'tests/corpora/registry/'
 
-    CCC_DATA_DIR = 'instance/ccc-data-testing/'
-    ANYCACHE_DIR = 'instance/mmda-anycache-testing/'
+    CCC_DATA_DIR = 'instance/test-ccc-data/'
+    ANYCACHE_DIR = 'instance/test-mmda-anycache/'
 
     JWT_ACCESS_TOKEN_EXPIRES = False
     JWT_REFRESH_TOKEN_EXPIRES = False
