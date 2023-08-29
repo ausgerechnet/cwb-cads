@@ -111,10 +111,11 @@ def delete_query(id):
 @bp.output(QueryOut)
 @bp.auth_required(auth)
 def execute(id):
-    """Execute query: get matches.
+    """Execute query: create matches.
 
     """
 
     query = db.get_or_404(Query, id)
+    ccc_query(query)
 
     return QueryOut().dump(query), 200
