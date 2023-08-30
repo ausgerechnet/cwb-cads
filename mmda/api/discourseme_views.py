@@ -67,7 +67,7 @@ def update_discourseme(username, discourseme):
 
     user = User.query.filter_by(username=username).first()
     name = request.json.get('name', None)
-    items = [item for item in request.json.get('items', [])]
+    items = [item for item in request.json.get('items', []) if item != ""]
     discourseme = Discourseme.query.filter_by(id=discourseme, user_id=user.id).first()
 
     if not discourseme:
