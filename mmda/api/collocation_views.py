@@ -8,7 +8,7 @@ from apiflask import APIBlueprint
 from flask import current_app, jsonify, request
 from pandas import DataFrame
 from .login_views import user_required
-from ..database import User, Discourseme, Collocation, Corpus, Query, Breakdown, Concordance, Constellation, Coordinates
+from ..database import User, Discourseme, Collocation, Corpus, Query, Breakdown, Constellation, Coordinates
 from .. import db
 from ..query import ccc_query
 from ccc.utils import format_cqp_query, cqp_escape
@@ -189,18 +189,11 @@ def create_collocation(username):
     ccc_collocates(collocation)
 
     # Semantic Map
-    current_app.logger.debug('Creating collocation :: semantic map')
+    current_app.logger.debug('Creating collocation :: creating semantic map')
     ccc_semmap(collocation)
 
-    # Concordance
-    # TODO: no need for context (nor p), just s_break, because window (and layer) is generated on the fly
-    current_app.logger.debug('Creating collocation :: concordance')
-    concordance = Concordance(query_id=query.id, p=p, s_break=s_break, context=context)
-    db.session.add(concordance)
-    db.session.commit()
-
     # Update
-    current_app.logger.debug('Creating collocation :: discourseme management')
+    current_app.logger.debug('Creating collocation :: adding surface realisations to items')
     filter_discourseme.items = "\t".join(set(filter_discourseme.items.split("\t")).union([cqp_escape(item.item) for item in breakdown.items]))
     db.session.commit()
 
@@ -622,8 +615,12 @@ def get_concordance_for_collocation(username, collocation):
     highlight_discoursemes = collocation.constellation.highlight_discoursemes
 
     # .. actual concordancing
-    concordance = Concordance.query.filter_by(query_id=collocation._query.id).first()
-    concordance_lines = ccc_concordance(concordance, p_show, s_show, highlight_discoursemes, filter_queries, order=order, cut_off=cut_off, window=window)
+    concordance_lines = ccc_concordance(collocation._query, collocation.s_break, p_show, s_show,
+                                        highlight_discoursemes, filter_queries,
+                                        order=order, cut_off=cut_off, window=window)
+    if concordance_lines is None:
+        return jsonify({'msg': 'empty concordance'}), 404
+
     conc_json = [ConcordanceLinesOut().dump(line) for line in concordance_lines]
 
     return conc_json, 200
