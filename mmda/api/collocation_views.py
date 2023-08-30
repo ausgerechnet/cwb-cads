@@ -526,7 +526,7 @@ def get_collocate_for_collocation(username, collocation):
         db.session.commit()
 
     # counts
-    counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
+    counts = DataFrame([vars(s) for s in collocation.items], columns=['f', 'f1', 'f2', 'N', 'collocation_id', 'window', 'item']).set_index('item')
     counts = counts.loc[counts['window'] == window]
 
     if len(counts) == 0:

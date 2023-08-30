@@ -76,7 +76,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
 
 def format_concordance(corpus, matches_df, p_show, s_show, order, cut_off, window, matches_filter, matches_highlight):
 
-    # TODO: simplify, retrieve more tokens left and right
+    # TODO: simplify, retrieve more tokens left and right; exclude discourseme matches that are not completely in window
     concordance = CCConcordance(corpus, matches_df)
     lines = concordance.lines(form='dict', p_show=p_show, s_show=s_show, order=order, cut_off=cut_off)
     out = list()

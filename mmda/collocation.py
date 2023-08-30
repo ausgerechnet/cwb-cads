@@ -59,12 +59,9 @@ def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorp
 
     cqp_query = format_cqp_query(discourseme.items.split("\t"), p_query, context_break, escape=False)
 
-    if not subcorpus_name:
-        query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query).order_by(Query.id.desc()).first()
-    else:
-        query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name).order_by(
-            Query.id.desc()
-        ).first()
+    query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name).order_by(
+        Query.id.desc()
+    ).first()
 
     if not query:
 
@@ -135,7 +132,7 @@ def ccc_collocates(collocation, window=None, min_freq=1):
     ###########
     current_app.logger.debug('ccc_collocates :: creating context')
     df_cooc = get_or_create_cooc(subcorpus_matches.df, filter_query.id, collocation.context, collocation.s_break)
-    discourseme_cpos_corpus = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # on whole corpus4
+    discourseme_cpos_corpus = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # on whole corpus
     discourseme_cpos_subcorpus = discourseme_cpos_corpus  # on subcorpus of context
 
     ############################################
