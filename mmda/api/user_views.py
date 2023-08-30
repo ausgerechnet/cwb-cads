@@ -9,17 +9,16 @@ from apiflask import APIBlueprint
 from flask import jsonify, request
 from werkzeug.security import generate_password_hash
 
-
-from ..database import User
 from .. import db
+from ..database import User
+from .login_views import user_required
 
 user_blueprint = APIBlueprint('user', __name__, template_folder='templates')
 log = getLogger('mmda-logger')
 
 
-# READ
 @user_blueprint.route('/api/user/<username>/', methods=['GET'])
-# @user_required
+@user_required
 def get_user(username):
     """
     Return details of a user
@@ -34,9 +33,8 @@ def get_user(username):
     return jsonify(user.serialize), 200
 
 
-# PUT
 @user_blueprint.route('/api/user/<username>/password/', methods=['PUT'])
-# @user_required
+@user_required
 def put_user_password(username):
     """
     Update a password for a user
@@ -66,9 +64,8 @@ def put_user_password(username):
     return jsonify({'msg': 'Updated'}), 200
 
 
-# PUT
 @user_blueprint.route('/api/user/<username>/', methods=['PUT'])
-# @user_required
+@user_required
 def put_user(username):
     """
     Update details of a user

@@ -13,15 +13,14 @@ from .keyword_views import keyword_blueprint
 from .login_views import login_blueprint
 from .user_views import user_blueprint
 
-
 api_blueprint = APIBlueprint('api', __name__)
 
 
 api_blueprint.register_blueprint(admin_blueprint)
-api_blueprint.register_blueprint(user_blueprint)
-api_blueprint.register_blueprint(login_blueprint)
-api_blueprint.register_blueprint(discourseme_blueprint)
+api_blueprint.register_blueprint(collocation_blueprint)
 api_blueprint.register_blueprint(constellation_blueprint)
 api_blueprint.register_blueprint(corpus_blueprint)
-api_blueprint.register_blueprint(collocation_blueprint)
+api_blueprint.register_blueprint(discourseme_blueprint)
 api_blueprint.register_blueprint(keyword_blueprint)
+api_blueprint.register_blueprint(login_blueprint)
+api_blueprint.register_blueprint(user_blueprint)

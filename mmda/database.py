@@ -24,13 +24,6 @@ users_roles = db.Table(
 #     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
 # )
 
-# collocation_discoursemes = db.Table(
-#     'CollocationDiscoursemes',
-#     db.Column('collocation_id', db.Integer, db.ForeignKey('collocation.id')),
-#     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
-# )
-
-
 constellation_filter_discoursemes = db.Table(
     'ConstellationFilterDiscoursemes',
     db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),

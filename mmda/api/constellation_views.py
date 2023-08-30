@@ -4,20 +4,21 @@
 Constellation views
 """
 
+from itertools import combinations
+
 # requirements
 from apiflask import APIBlueprint
-from flask import current_app, jsonify, request
-from ccc import Corpus as Crps
-
-from ..database import Constellation, Discourseme, User, Corpus
-from .. import db
-from ..corpus import ccc_corpus
-from .login_views import user_required
-from itertools import combinations
-from ..collocation import get_or_create_matches
-
-from pandas import DataFrame
 from association_measures import measures
+from ccc import Corpus as Crps
+from ccc.utils import format_cqp_query
+from flask import current_app, jsonify, request
+from pandas import DataFrame
+
+from .. import db
+from ..collocation import get_or_create_matches
+from ..corpus import ccc_corpus
+from ..database import Constellation, Corpus, Discourseme, User
+from .login_views import user_required
 
 constellation_blueprint = APIBlueprint('constellation', __name__, template_folder='templates')
 
@@ -258,7 +259,6 @@ def get_constellation_concordance(username, constellation):
     # preprocess queries
     highlight_queries = dict()
     filter_queries = dict()
-    from ccc.utils import format_cqp_query
     for discourseme in constellation.filter_discoursemes:
         filter_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
         highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)

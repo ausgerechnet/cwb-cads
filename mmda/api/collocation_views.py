@@ -5,20 +5,22 @@ Collocation view
 """
 
 from apiflask import APIBlueprint
+from association_measures import measures
+from ccc import Corpus as Crps
+from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app, jsonify, request
 from pandas import DataFrame
-from .login_views import user_required
-from ..database import User, Discourseme, Collocation, Corpus, Query, Breakdown, Constellation, Coordinates
+
 from .. import db
-from ..query import ccc_query
-from ccc.utils import format_cqp_query, cqp_escape
+from ..breakdown import BreakdownItemsOut, ccc_breakdown
 from ..collocation import ccc_collocates
-from ..semantic_map import ccc_semmap, CoordinatesOut, ccc_semmap_update
-from ..breakdown import ccc_breakdown, BreakdownItemsOut
-from ..concordance import ccc_concordance, ConcordanceLinesOut
+from ..concordance import ConcordanceLinesOut, ccc_concordance
 from ..corpus import ccc_corpus
-# from ..collocation import ccc_collocates_conflate
-from association_measures import measures
+from ..database import (Breakdown, Collocation, Constellation, Coordinates,
+                        Corpus, Discourseme, Matches, Query, User)
+from ..query import ccc_query
+from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update
+from .login_views import user_required
 
 collocation_blueprint = APIBlueprint('collocation', __name__)
 
@@ -486,7 +488,6 @@ def get_collocate_for_collocation(username, collocation):
         db.session.commit()
 
         # get matches of original filter
-        from ccc import Corpus as Crps
         corpus = Crps(corpus_name=collocation._query.corpus.cwb_id,
                       lib_dir=None,
                       cqp_bin=current_app.config['CCC_CQP_BIN'],
@@ -510,7 +511,6 @@ def get_collocate_for_collocation(username, collocation):
         ).df
         matches['query_id'] = query.id
         matches = matches[['query_id']]
-        from ..database import Matches
         for m in matches.reset_index().to_dict(orient='records'):
             db.session.add(Matches(**m))
         db.session.commit()

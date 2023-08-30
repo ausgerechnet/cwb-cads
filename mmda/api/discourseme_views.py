@@ -5,10 +5,9 @@ Discourseme view
 from apiflask import APIBlueprint
 from flask import jsonify, request
 
-from ..database import Discourseme, User
 from .. import db
+from ..database import Discourseme, User
 from .login_views import user_required
-
 
 discourseme_blueprint = APIBlueprint('discourseme', __name__)
 

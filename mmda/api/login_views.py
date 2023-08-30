@@ -2,12 +2,14 @@
 Login views
 """
 
-from flask import jsonify, request
-from apiflask import APIBlueprint
-from flask_jwt_extended import (create_access_token, create_refresh_token,
-                                get_jwt_identity, verify_jwt_in_request, jwt_required)
-from werkzeug.security import check_password_hash
 from functools import wraps
+
+from apiflask import APIBlueprint
+from flask import jsonify, request
+from flask_jwt_extended import (create_access_token, create_refresh_token,
+                                get_jwt_identity, jwt_required,
+                                verify_jwt_in_request)
+from werkzeug.security import check_password_hash
 
 from ..database import User
 

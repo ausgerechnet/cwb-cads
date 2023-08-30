@@ -3,21 +3,19 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String
-from ccc import Corpus
-from flask import current_app, jsonify
-from pandas import DataFrame
 from association_measures import measures
-from pandas import concat
-from ccc.utils import format_cqp_query
-from ccc.collocates import dump2cooc
+from ccc import Corpus
 from ccc.cache import generate_idx
+from ccc.collocates import dump2cooc
+from ccc.utils import format_cqp_query
+from flask import current_app, jsonify
+from pandas import DataFrame, concat
 
 from . import db
-from .database import Collocation, CollocationItems, Query, SemanticMap, Matches
+from .database import (Collocation, CollocationItems, Cotext, CotextLines,
+                       Matches, Query, SemanticMap)
 from .semantic_map import SemanticMapIn, SemanticMapOut
 from .users import auth
-from .database import Cotext, CotextLines
-
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 

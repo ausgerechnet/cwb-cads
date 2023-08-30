@@ -5,12 +5,12 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
 from ccc import Corpus
 from ccc.concordances import Concordance as CCConcordance
-from ccc.utils import format_cqp_query, cqp_escape
+from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app, request
 from pandas import DataFrame
 
 from . import db
-from .database import Query, Concordance
+from .database import Concordance, Query
 from .users import auth
 
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')

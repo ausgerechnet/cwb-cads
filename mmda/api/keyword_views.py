@@ -6,16 +6,16 @@ Keywords view
 
 from multiprocessing import Pool
 
+from apiflask import APIBlueprint
 # requirements
 from ccc import Corpus
-from apiflask import APIBlueprint
 from flask import current_app, jsonify, request
 from numpy import nan
 from pandas import DataFrame, concat, notnull
 
-from ..database import User, SemanticMap, Discourseme
-from .login_views import user_required
 from .. import db
+from ..database import Discourseme, SemanticMap, User
+from .login_views import user_required
 
 keyword_blueprint = APIBlueprint('keyword', __name__, template_folder='templates')
 

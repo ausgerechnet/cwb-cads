@@ -4,9 +4,10 @@
 import os
 
 from apiflask import APIFlask
-from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from flask_sqlalchemy import SQLAlchemy
+
 from .version import __version__
 
 CONFIG = 'cfg.ProdConfig'
@@ -82,7 +83,7 @@ def create_app(config=CONFIG):
 
     # register blueprints
     from . import (breakdown, collocation, concordance, constellation, corpus,
-                   discourseme, query, users, semantic_map)
+                   discourseme, query, semantic_map, users)
 
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)

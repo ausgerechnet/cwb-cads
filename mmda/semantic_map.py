@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Float
-from semmap import SemanticSpace
+from apiflask.fields import Float, Integer, String
 from pandas import DataFrame
+from semmap import SemanticSpace
 
 from . import db
-from .database import SemanticMap, Coordinates, CollocationItems
+from .database import CollocationItems, Coordinates, SemanticMap
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
