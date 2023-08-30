@@ -48,10 +48,10 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
 
     roles = db.relationship('Role', secondary=users_roles, backref=db.backref('user', lazy='dynamic'))
-    discoursemes = db.relationship('Discourseme', backref='user', lazy=True)
-    constellations = db.relationship('Constellation', backref='user', lazy=True)
+    discoursemes = db.relationship('Discourseme', backref='user')
+    constellations = db.relationship('Constellation', backref='user')
 
-    collocations = db.relationship('Collocation', backref='user', lazy=True)
+    collocations = db.relationship('Collocation', backref='user')
     # keyword_analyses = db.relationship('Keyword', backref='user', lazy=True)
 
     @property
@@ -161,11 +161,11 @@ class Constellation(db.Model):
     description = db.Column(db.Unicode, nullable=True)
 
     filter_discoursemes = db.relationship("Discourseme", secondary=constellation_filter_discoursemes,
-                                          backref=db.backref('constellations_filtered', lazy=True))
+                                          backref=db.backref('constellations_filtered'))
     highlight_discoursemes = db.relationship("Discourseme", secondary=constellation_highlight_discoursemes,
-                                             backref=db.backref('constellation_highlighted', lazy=True))
+                                             backref=db.backref('constellation_highlighted'))
 
-    collocation_analyses = db.relationship('Collocation', backref='constellation', lazy=True)
+    collocation_analyses = db.relationship('Collocation', backref='constellation', cascade='all, delete')
 
     @property
     def serialize(self):
@@ -234,7 +234,7 @@ class Breakdown(db.Model):
 
     p = db.Column(db.Unicode, nullable=False)
 
-    items = db.relationship('BreakdownItems', backref='breakdown', lazy=True)
+    items = db.relationship('BreakdownItems', backref='breakdown')
 
 
 class BreakdownItems(db.Model):
@@ -323,8 +323,8 @@ class SemanticMap(db.Model):
     name = db.Column(db.Unicode)
     embeddings = db.Column(db.Unicode)
     method = db.Column(db.Unicode)
-    coordinates = db.relationship('Coordinates', backref='semantic_map', lazy=True)
-    collocations = db.relationship('Collocation', backref='semantic_map', lazy=True)
+    coordinates = db.relationship('Coordinates', backref='semantic_map')
+    collocations = db.relationship('Collocation', backref='semantic_map')
 
 
 class Coordinates(db.Model):
@@ -360,8 +360,9 @@ class Collocation(db.Model):
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
-    items = db.relationship('CollocationItems', backref='collocation')
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
+
+    items = db.relationship('CollocationItems', backref='collocation')
 
     @property
     def serialize(self):
