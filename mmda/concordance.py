@@ -16,15 +16,10 @@ from .users import auth
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')
 
 
-def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
-                    highlight_discoursemes=[], filter_queries=[],
+def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
+                    highlight_discoursemes=[], filter_queries={},
                     order=42, cut_off=500, window=None):
 
-    # do not get from settings
-    context_break = concordance.s_break
-    window = concordance.context if window is None else window
-
-    query = concordance._query
     matches = query.matches
 
     corpus = Corpus(corpus_name=query.corpus.cwb_id,
@@ -51,11 +46,13 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
     if filter_queries:
         current_app.logger.debug('ccc_collocates :: filtering')
         for name, cqp_query in filter_queries.items():
-            disc = cotext_of_matches.query(cqp_query, context_break=concordance.s_break)
+            disc = cotext_of_matches.query(cqp_query, context_break=context_break)
+            if len(disc.df) == 0:
+                return None
             matches_filter[name] = disc.matches()
             cotext_of_matches = disc.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
         # focus back on topic:
-        matches = cotext_of_matches.query(query.cqp_query, context_break=concordance.s_break)
+        matches = cotext_of_matches.query(query.cqp_query, context_break=context_break)
 
     ################
     # HIGHLIGHTING #
@@ -65,15 +62,22 @@ def ccc_concordance(concordance, p_show=['word', 'lemma'], s_show=[],
         current_app.logger.debug('ccc_collocates :: highlighting')
         for discourseme in highlight_discoursemes:
             disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma', escape=False)
-            disc = cotext_of_matches.query(cqp_query=disc_query, context_break=concordance.s_break)
+            disc = cotext_of_matches.query(cqp_query=disc_query, context_break=context_break)
             matches_highlight[discourseme.id] = disc.matches()
 
     ###########################
     # CREATE LINES AND FORMAT #
     ###########################
     current_app.logger.debug('ccc_collocates :: formatting')
+    out = format_concordance(corpus, matches.df, p_show, s_show, order, cut_off, window, matches_filter, matches_highlight)
+
+    return out
+
+
+def format_concordance(corpus, matches_df, p_show, s_show, order, cut_off, window, matches_filter, matches_highlight):
+
     # TODO: simplify, retrieve more tokens left and right
-    concordance = CCConcordance(corpus, matches.df)
+    concordance = CCConcordance(corpus, matches_df)
     lines = concordance.lines(form='dict', p_show=p_show, s_show=s_show, order=order, cut_off=cut_off)
     out = list()
     for line in lines.iterrows():
