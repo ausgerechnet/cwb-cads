@@ -10,7 +10,7 @@ from flask import current_app, request
 from pandas import DataFrame
 
 from . import db
-from .database import Concordance, Query
+from .database import Query
 from .users import auth
 
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')

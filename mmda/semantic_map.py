@@ -13,9 +13,9 @@ from .users import auth
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
 
 
-def ccc_semmap(collocation):
+def ccc_semmap(collocation, embeddings):
 
-    semantic_map = SemanticMap(embeddings=collocation._query.corpus.embeddings, method='tsne')
+    semantic_map = SemanticMap(embeddings=embeddings, method='tsne')
     db.session.add(semantic_map)
     db.session.commit()
     collocation.semantic_map_id = semantic_map.id

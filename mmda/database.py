@@ -166,6 +166,7 @@ class Constellation(db.Model):
                                              backref=db.backref('constellation_highlighted'))
 
     collocation_analyses = db.relationship('Collocation', backref='constellation', cascade='all, delete')
+    keyword_analyses = db.relationship('Keyword', backref='constellation', cascade='all, delete')
 
     @property
     def serialize(self):
@@ -205,7 +206,7 @@ class Query(db.Model):
     matches = db.relationship('Matches', backref='_query')
     breakdowns = db.relationship('Breakdown', backref='_query')
     collocations = db.relationship('Collocation', backref='_query')
-    concordances = db.relationship('Concordance', backref='_query')
+    # concordances = db.relationship('Concordance', backref='_query')
 
 
 class Matches(db.Model):
@@ -251,19 +252,19 @@ class BreakdownItems(db.Model):
     freq = db.Column(db.Integer)
 
 
-class Concordance(db.Model):
-    """Concordance
+# class Concordance(db.Model):
+#     """Concordance
 
-    """
+#     """
 
-    id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.utcnow)
+#     id = db.Column(db.Integer, primary_key=True)
+#     created = db.Column(db.DateTime, default=datetime.utcnow)
 
-    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
+#     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
-    p = db.Column(db.Unicode, nullable=False)
-    context = db.Column(db.Integer)
-    s_break = db.Column(db.Unicode)
+#     p = db.Column(db.Unicode, nullable=False)
+#     context = db.Column(db.Integer)
+#     s_break = db.Column(db.Unicode)
 
 #     lines = db.relationship('ConcordanceLine', backref='concordance', lazy=True)
 
@@ -325,6 +326,7 @@ class SemanticMap(db.Model):
     method = db.Column(db.Unicode)
     coordinates = db.relationship('Coordinates', backref='semantic_map')
     collocations = db.relationship('Collocation', backref='semantic_map')
+    keywords = db.relationship('Keyword', backref='semantic_map')
 
 
 class Coordinates(db.Model):
@@ -406,34 +408,64 @@ class CollocationItems(db.Model):
     f2 = db.Column(db.Integer)
     N = db.Column(db.Integer)
 
-# class Keyword(db.Model):
-#     """Keyword Analysis
 
-#     """
+class Keyword(db.Model):
+    """Keyword Analysis
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
-#     modified = db.Column(db.DateTime, default=datetime.utcnow)
-#     name = db.Column(db.Unicode(255))
+    """
 
-#     corpus_id = db.Column(db.Unicode(255), nullable=False)
-#     corpus_id_reference = db.Column(db.Unicode(255), nullable=False)
-#     p = db.Column(db.Unicode(255), nullable=False)
-#     p_reference = db.Column(db.Unicode(255), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
+    modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-#     highlight_queries = db.relationship("Discourseme", secondary=keyword_discoursemes, backref=db.backref('keyword_associated', lazy=True))
+    corpus_id = db.Column(db.Unicode(255), nullable=False)
+    corpus_id_reference = db.Column(db.Unicode(255), nullable=False)
 
-#     # RELATIONSHIP DEFINITIONS FOR CHILDREN
-#     coordinates = db.relationship("Coordinates", backref='keyword', cascade='all, delete', lazy=True)
-#     # associated discoursemes
+    p = db.Column(db.Unicode(255), nullable=False)
+    p_reference = db.Column(db.Unicode(255), nullable=False)
+
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
+    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
+
+    items = db.relationship('KeywordItems', backref='keyword')
+
+    @property
+    def serialize(self):
+        """Return object data in easily serializeable format
+
+        :return: Dictionary containing the analysis values
+        :rtype: dict
+
+        """
+        corpus = Corpus.query.filter_by(id=self.corpus_id).first()
+        corpus_reference = Corpus.query.filter_by(id=self.corpus_id_reference).first()
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'corpus': corpus.name,
+            'corpus_reference': corpus_reference.name,
+            'p': self.p,
+            'p_reference': self.p_reference
+        }
 
 
-# class KeywordItems(db.Modell):
-#     """Query: executed in CQP and dumped to disk
+class KeywordItems(db.Model):
+    """
 
-#     """
-#     id = db.Column(db.Integer, primary_key=True)
-#     modified = db.Column(db.DateTime, default=datetime.utcnow)
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    modified = db.Column(db.DateTime, default=datetime.utcnow)
+
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'))
+
+    item = db.Column(db.Unicode)
+
+    f1 = db.Column(db.Integer)
+    N1 = db.Column(db.Integer)
+    f2 = db.Column(db.Integer)
+    N2 = db.Column(db.Integer)
+
 
 @bp.cli.command('init')
 def init_db():

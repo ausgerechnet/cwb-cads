@@ -40,6 +40,8 @@ def get_corpus(corpus):
     """
 
     corpus = Corpus.query.filter_by(cwb_id=corpus).first()
+    if not corpus:
+        return jsonify({'msg': 'no such corpus'}), 404
     attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
     corpus = CorpusOut().dump(corpus)
     corpus['pQueries'] = attributes['p_atts']

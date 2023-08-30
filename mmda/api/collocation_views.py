@@ -51,7 +51,7 @@ def score_counts(counts, cut_off=200):
     }
 
     df = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
-    df = df.loc[df['O11'] > df['E11']]
+    df = df.loc[df['O11'] >= df['E11']]
 
     # select columns
     df = df[list(ams_dict.keys())]
@@ -191,8 +191,8 @@ def create_collocation(username):
     ccc_collocates(collocation)
 
     # Semantic Map
-    current_app.logger.debug('Creating collocation :: creating semantic map')
-    ccc_semmap(collocation)
+    current_app.logger.debug(f'Creating collocation :: creating semantic map for {len(collocation.items)} items')
+    ccc_semmap(collocation, collocation._query.corpus.embeddings)
 
     # Update
     current_app.logger.debug('Creating collocation :: adding surface realisations to items')
@@ -245,7 +245,7 @@ def get_collocation(username, collocation):
     user = User.query.filter_by(username=username).first()
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
     if not collocation:
-        return jsonify({'msg': 'no such analysis'}), 404
+        return jsonify({'msg': 'no such collocation analysis'}), 404
 
     return jsonify(collocation.serialize), 200
 
@@ -301,7 +301,6 @@ def get_discoursemes_for_collocation(username, collocation):
          description: "no such collocation"
     """
 
-    # get user
     user = User.query.filter_by(username=username).first()
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
     if not collocation:
