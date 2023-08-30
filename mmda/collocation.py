@@ -135,7 +135,7 @@ def ccc_collocates(collocation, window=None, min_freq=1):
     ###########
     current_app.logger.debug('ccc_collocates :: creating context')
     df_cooc = get_or_create_cooc(subcorpus_matches.df, filter_query.id, collocation.context, collocation.s_break)
-    discourseme_cpos_corpus = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # on whole corpus
+    discourseme_cpos_corpus = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # on whole corpus4
     discourseme_cpos_subcorpus = discourseme_cpos_corpus  # on subcorpus of context
 
     ############################################
@@ -215,7 +215,7 @@ def ccc_collocates(collocation, window=None, min_freq=1):
         # concat
         counts = concat([counts, df])
         # TODO: items can belong to several discoursemes
-        # assumption: if an item belongs to a discourseme, it does always do → cannot be part of item counts
+        # but assumption: if an item belongs to a discourseme, it always does → cannot be part of item counts
         # here: just keep it once, even if actual association might be different (if part of MWU in discourseme(s))
         counts = counts.drop('discourseme', axis=1)
         counts = counts[~counts.index.duplicated(keep='first')]

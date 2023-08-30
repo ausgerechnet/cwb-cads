@@ -441,22 +441,31 @@ def init_db():
     db.drop_all()
     db.create_all()
 
-    db.session.add(User(username='admin',
-                        password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']),
-                        first_name='Admin',
-                        last_name='Istrinator',
-                        email='admin@istrination.com'))
+    # roles
+    role = Role(name='admin', description='admin stuff')
+    db.session.add(role)
+    db.session.commit()
 
+    # users
+    admin = User(username='admin',
+                 password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']),
+                 first_name='Admin',
+                 last_name='Istrinator',
+                 email='admin@istrination.com')
+    admin.roles.append(role)
+    db.session.add(admin)
+    db.session.commit()
+
+    # corpora
     corpora = json.load(open(current_app.config['CORPORA'], 'rt'))
     for corpus in corpora:
         db.session.add(Corpus(**corpus))
-
     db.session.commit()
 
+    # discoursemes
     db.session.add(Discourseme(user_id=1, items="\t".join(['CDU', 'CSU', 'CDU / CSU', r'\[ CDU / CSU \]:?']), name='CDU/CSU'))
     db.session.add(Discourseme(user_id=1, items="\t".join([r'F\. D\. P\.', r'\[ F\. D\. P\. \]:?']), name='FDP'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Beifall', 'Heiterkeit', 'Lache']), name='Reaktion'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Bundeskanzler', 'Kanzler']), name='Kanzler'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Präsident']), name='Präsident'))
-
     db.session.commit()
