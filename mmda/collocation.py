@@ -93,7 +93,7 @@ def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorp
     return matches_df
 
 
-def ccc_collocates(collocation, window=None, min_freq=1):
+def ccc_collocates(collocation, window=None, min_freq=2):
     """get CollocationItems for collocation analysis and given window
 
     - create context of collocation._query
@@ -133,7 +133,7 @@ def ccc_collocates(collocation, window=None, min_freq=1):
     current_app.logger.debug('ccc_collocates :: creating context')
     df_cooc = get_or_create_cooc(subcorpus_matches.df, filter_query.id, collocation.context, collocation.s_break)
     discourseme_cpos_corpus = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # on whole corpus
-    discourseme_cpos_subcorpus = discourseme_cpos_corpus  # on subcorpus of context
+    discourseme_cpos_subcorpus = discourseme_cpos_corpus.copy()  # on subcorpus of context
 
     ############################################
     # GET MATCHES OF HIGHLIGHTING_DISCOURSEMES #
@@ -156,16 +156,20 @@ def ccc_collocates(collocation, window=None, min_freq=1):
         # matches on whole corpus
         corpus_matches_df = get_or_create_matches(discourseme, corpus, filter_query.corpus.id, collocation.s_break)
         corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
+        corpus_matches_breakdown = corpus_matches.breakdown().rename({'freq': 'f2'}, axis=1)
 
         # matches on subcorpus
         subcorpus_matches_df = get_or_create_matches(discourseme, subcorpus_context, filter_query.corpus.id,
                                                      collocation.s_break, subcorpus_name=subcorpus_context_name)
         subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
+        subcorpus_matches_breakdown = subcorpus_matches.breakdown().rename({'freq': 'f'}, axis=1)
 
-        # create breakdown
-        df = corpus_matches.breakdown().rename({'freq': 'f2'}, axis=1).join(
-            subcorpus_matches.breakdown().rename({'freq': 'f'}, axis=1)
-        )
+        # create combined breakdown
+        df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
+        if 'f' not in df.columns:
+            # empty queries
+            df['f'] = 0
+
         df['discourseme'] = discourseme.id
         highlight_breakdowns.append(df)
 
@@ -196,6 +200,7 @@ def ccc_collocates(collocation, window=None, min_freq=1):
 
     # correct counts
     counts = counts.join(node_freq_corpus).join(node_freq_subcorpus).fillna(0, downcast='infer')
+    print(counts)
     counts['f'] = counts['f'] - counts['node_freq_subcorpus']
     counts['f2'] = counts['f2'] - counts['node_freq_corpus']
     counts = counts.drop(['node_freq_subcorpus', 'node_freq_corpus'], axis=1)
@@ -204,7 +209,7 @@ def ccc_collocates(collocation, window=None, min_freq=1):
     if len(highlight_breakdowns) > 0:
 
         # add discourseme breakdowns
-        df = concat(highlight_breakdowns)
+        df = concat(highlight_breakdowns).fillna(0, downcast='infer')
         df['f1'] = len(relevant)
         df['N'] = corpus.corpus_size
         df = df.fillna(0)
@@ -216,6 +221,8 @@ def ccc_collocates(collocation, window=None, min_freq=1):
         # here: just keep it once, even if actual association might be different (if part of MWU in discourseme(s))
         counts = counts.drop('discourseme', axis=1)
         counts = counts[~counts.index.duplicated(keep='first')]
+
+    print(counts)
 
     ####################
     # SAVE TO DATABASE #
