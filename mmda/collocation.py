@@ -73,7 +73,7 @@ def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorp
         query = Query(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name)
         db.session.add(query)
         db.session.commit()
-        print(corpus)
+
         matches = corpus.query(cqp_query=cqp_query, context_break=context_break)
         matches_df = matches.df.reset_index()[['match', 'matchend']]
         matches_df['query_id'] = query.id

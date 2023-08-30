@@ -7,13 +7,26 @@ Constellation views
 # requirements
 from apiflask import APIBlueprint
 from flask import current_app, jsonify, request
-from ..database import Constellation, Discourseme, User, Corpus
+from ccc import Corpus as Crps
 
+from ..database import Constellation, Discourseme, User, Corpus
 from .. import db
 from ..corpus import ccc_corpus
 from .login_views import user_required
+from itertools import combinations
+from ..collocation import get_or_create_matches
+
+from pandas import DataFrame
+from association_measures import measures
 
 constellation_blueprint = APIBlueprint('constellation', __name__, template_folder='templates')
+
+
+def pairwise_intersections(dict_of_sets):
+
+    nt = lambda a, b: len(dict_of_sets[a].intersection(dict_of_sets[b]))
+    res = dict([(t, nt(*t)) for t in combinations(dict_of_sets.keys(), 2)])
+    return res
 
 
 @constellation_blueprint.route('/api/user/<username>/constellation/', methods=['POST'])
@@ -227,7 +240,7 @@ def get_constellation_concordance(username, constellation):
     user = User.query.filter_by(username=username).first()
     constellation = Constellation.query.filter_by(id=constellation, user_id=user.id).first()
 
-    # .. parameters
+    # parameters
     corpus_name = request.args.get('corpus')
     p_query = request.args.get('p_query', 'lemma')
     context_break = request.args.get('s_break', 'text')
@@ -252,13 +265,13 @@ def get_constellation_concordance(username, constellation):
     for discourseme in constellation.highlight_discoursemes:
         highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
 
-    from ccc import Corpus as Crps
     corpus = Crps(corpus_name=corpus.cwb_id,
                   lib_dir=None,
                   cqp_bin=current_app.config['CCC_CQP_BIN'],
                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                   data_dir=current_app.config['CCC_DATA_DIR'])
 
+    current_app.logger.debug('Get constellation concordance :: CCC quick-conc')
     lines = corpus.quick_conc(
         topic_query="",
         filter_queries=filter_queries,
@@ -272,7 +285,7 @@ def get_constellation_concordance(username, constellation):
         match_strategy='longest'
     )
 
-    # repair format
+    current_app.logger.debug('Get constellation concordance :: formatting')
     out = list()
     for key, value in enumerate(lines):
         out.append({'id': key, **value})
@@ -281,25 +294,53 @@ def get_constellation_concordance(username, constellation):
     return conc_json, 200
 
 
-# ASSOCIATIONS
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/association/', methods=['GET'])
-# @user_required
+@user_required
 def get_constellation_associations(username, constellation):
     """ Get association scores for all discoursemes in constellation.
 
     """
 
-    # check request
-    # ... user
     user = User.query.filter_by(username=username).first()
-    # ... corpus
-    corpus = request.args.get('corpus', None)
-    # ... p-query
-    p_query = request.args.get('p_query', 'lemma')
-    # ... s-break
-    s_break = request.args.get('s_break', 'text')
-    # ... constellation
     constellation = Constellation.query.filter_by(id=constellation, user_id=user.id).first()
 
-    assoc = {'msg': 'not implemented'}
-    return jsonify(assoc), 200
+    # parameters
+    corpus_name = request.args.get('corpus', None)
+    p_query = request.args.get('p_query', 'lemma')
+    context_break = request.args.get('s_break', 'text')
+
+    corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
+    corpus_id = corpus.id
+    corpus = Crps(corpus_name=corpus.cwb_id,
+                  lib_dir=None,
+                  cqp_bin=current_app.config['CCC_CQP_BIN'],
+                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                  data_dir=current_app.config['CCC_DATA_DIR'])
+
+    current_app.logger.debug('Get constellation association :: collecting matches')
+    context_ids = dict()
+    for discourseme in constellation.highlight_discoursemes + constellation.filter_discoursemes:
+        df = get_or_create_matches(discourseme, corpus, corpus_id, context_break, p_query=p_query)
+        s_att = corpus.dump2satt(df, context_break)
+        context_ids[f'{discourseme.name} (ID: {discourseme.id})'] = set(s_att[f'{context_break}_cwbid'])
+
+    current_app.logger.debug('Get constellation association :: calculating co-occurrences')
+    N = len(corpus.attributes.attribute(context_break, 's'))
+    records = list()
+    for pair, f in pairwise_intersections(context_ids).items():
+        pair = sorted(pair)
+        f1 = len(context_ids[pair[0]])
+        f2 = len(context_ids[pair[1]])
+        records.append({'node': pair[0],
+                        'item': pair[1],
+                        'f': f, 'f1': f1, 'f2': f2, 'N': N})
+
+    counts = DataFrame(records).set_index(['node', 'item'])
+    try:
+        scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).round(4)
+        assoc = counts.drop(['N'], axis=1).join(scores)
+    except ZeroDivisionError:
+        assoc = counts
+
+    assoc = assoc.reset_index().rename({'item': 'candidate'}, axis=1).to_dict(orient='index').values()
+    return jsonify(list(assoc)), 200
