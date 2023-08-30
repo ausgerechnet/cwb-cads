@@ -305,7 +305,6 @@ class CotextLines(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.utcnow)
 
     cotext_id = db.Column(db.Integer, db.ForeignKey('cotext.id', ondelete='CASCADE'))
 
@@ -396,7 +395,6 @@ class CollocationItems(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'))
 
@@ -455,7 +453,6 @@ class KeywordItems(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'))
 
