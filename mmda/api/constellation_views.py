@@ -7,17 +7,17 @@ Constellation views
 # requirements
 from apiflask import APIBlueprint
 from flask import current_app, jsonify, request
-from ..database import Constellation, Discourseme, User
+from ..database import Constellation, Discourseme, User, Corpus
 
 from .. import db
 from ..corpus import ccc_corpus
+from .login_views import user_required
 
 constellation_blueprint = APIBlueprint('constellation', __name__, template_folder='templates')
 
 
-# CREATE
 @constellation_blueprint.route('/api/user/<username>/constellation/', methods=['POST'])
-# @user_required
+@user_required
 def create_constellation(username):
     """ Create new constellation.
 
@@ -55,9 +55,8 @@ def create_constellation(username):
     return jsonify({'msg': constellation.id}), 201
 
 
-# READ
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/', methods=['GET'])
-# @user_required
+@user_required
 def get_constellation(username, constellation):
     """ Get details for constellation.
 
@@ -75,9 +74,8 @@ def get_constellation(username, constellation):
     return jsonify(constellation.serialize), 200
 
 
-# READ
 @constellation_blueprint.route('/api/user/<username>/constellation/', methods=['GET'])
-# @user_required
+@user_required
 def get_constellations(username):
     """ List all constellations for a user.
 
@@ -91,9 +89,8 @@ def get_constellations(username):
     return jsonify(constellations_list), 200
 
 
-# UPDATE
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/', methods=['PUT'])
-# @user_required
+@user_required
 def update_constellation(username, constellation):
     """ Update constellation details.
 
@@ -116,9 +113,8 @@ def update_constellation(username, constellation):
     return jsonify({'msg': constellation.id}), 200
 
 
-# DELETE
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/', methods=['DELETE'])
-# @user_required
+@user_required
 def delete_constellation(username, constellation):
     """ Delete constellation.
 
@@ -138,9 +134,8 @@ def delete_constellation(username, constellation):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-# READ
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/discourseme/', methods=['GET'])
-# @user_required
+@user_required
 def get_discoursemes_for_constellation(username, constellation):
     """ List discoursemes for constellation.
 
@@ -160,9 +155,8 @@ def get_discoursemes_for_constellation(username, constellation):
     return jsonify(constellation_discoursemes), 200
 
 
-# UPDATE
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/discourseme/<discourseme>/', methods=['PUT'])
-# @user_required
+@user_required
 def put_discourseme_into_constellation(username, constellation, discourseme):
     """ Put a discourseme into a constellation.
 
@@ -193,9 +187,8 @@ def put_discourseme_into_constellation(username, constellation, discourseme):
     return jsonify({'msg': 'Updated'}), 200
 
 
-# DELETE
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/discourseme/<discourseme>/', methods=['DELETE'])
-# @user_required
+@user_required
 def delete_discourseme_from_constellation(username, constellation, discourseme):
     """
     Remove a discourseme from a constellation
@@ -224,81 +217,65 @@ def delete_discourseme_from_constellation(username, constellation, discourseme):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-# CONCORDANCE LINES
 @constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/concordance/', methods=['GET'])
-# @user_required
+@user_required
 def get_constellation_concordance(username, constellation):
     """ Get concordance lines for a constellation.
 
     """
 
-    # check request
-    # ... user
     user = User.query.filter_by(username=username).first()
-    # ... corpus
-    corpus_name = request.args.get('corpus', None)
-    # ... p-query
-    p_query = request.args.get('p_query', 'lemma')
-    # ... s-break
-    s_break = request.args.get('s_break', 'text')
-    # ... how many?
-    cut_off = request.args.get('cut_off', 10000)
-    # ... how to sort them?
-    order = request.args.get('order', 'random')
+    constellation = Constellation.query.filter_by(id=constellation, user_id=user.id).first()
 
-    # not set yet
+    # .. parameters
+    corpus_name = request.args.get('corpus')
+    p_query = request.args.get('p_query', 'lemma')
+    context_break = request.args.get('s_break', 'text')
+    cut_off = request.args.get('cut_off', 10000)
+    random_seed = request.args.get('order', 42)
     p_show = ['word', 'lemma']
 
-    if corpus_name is None:
-        return jsonify({'msg': 'no corpus provided'}), 404
+    corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
+    crps = ccc_corpus(corpus_name,
+                      cqp_bin=current_app.config['CCC_CQP_BIN'],
+                      registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                      data_dir=current_app.config['CCC_DATA_DIR'])
+    s_show = crps['s_annotations']
 
-    corpus = ccc_corpus(corpus_name,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
-    s_show = corpus['s_annotations']
+    # preprocess queries
+    highlight_queries = dict()
+    filter_queries = dict()
+    from ccc.utils import format_cqp_query
+    for discourseme in constellation.filter_discoursemes:
+        filter_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
+        highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
+    for discourseme in constellation.highlight_discoursemes:
+        highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
 
-    # get constellation discoursemes as dict
-    constellation = Constellation.query.filter_by(id=constellation, user_id=user.id).first()
-    discoursemes = dict()
-    for disc in constellation.highlight_discoursemes:
-        discoursemes[str(disc.id)] = disc.items
+    from ccc import Corpus as Crps
+    corpus = Crps(corpus_name=corpus.cwb_id,
+                  lib_dir=None,
+                  cqp_bin=current_app.config['CCC_CQP_BIN'],
+                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                  data_dir=current_app.config['CCC_DATA_DIR'])
 
-    flags_query = "%c"
-    random_seed = 43
-
-    # use cwb-ccc to extract data
-    concordance = ccc_concordance(
-        corpus_name=corpus_name,
-        cqp_bin=current_app.config['CCC_CQP_BIN'],
-        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-        data_dir=current_app.config['CCC_DATA_DIR'],
-        lib_dir=current_app.config['CCC_LIB_DIR'],
-        topic_discourseme={},
-        filter_discoursemes={},
-        additional_discoursemes=discoursemes,
-        s_context=s_break,
-        window_size=0,
-        context=None,
-        p_query=p_query,
+    lines = corpus.quick_conc(
+        topic_query="",
+        filter_queries=filter_queries,
+        highlight_queries=highlight_queries,
+        s_context=context_break,
+        window=10,
+        cut_off=cut_off,
+        order=random_seed,
         p_show=p_show,
         s_show=s_show,
-        s_query=s_break,
-        order=order,
-        cut_off=cut_off,
-        flags_query=flags_query,
-        escape_query=True,
-        random_seed=random_seed
+        match_strategy='longest'
     )
-
-    if concordance is None:
-        return jsonify({'msg': 'empty result'}), 404
 
     # repair format
     out = list()
-    for key, value in enumerate(concordance):
+    for key, value in enumerate(lines):
         out.append({'id': key, **value})
-
     conc_json = jsonify(out)
 
     return conc_json, 200
@@ -323,23 +300,6 @@ def get_constellation_associations(username, constellation):
     s_break = request.args.get('s_break', 'text')
     # ... constellation
     constellation = Constellation.query.filter_by(id=constellation, user_id=user.id).first()
-    discoursemes = dict()
-    for disc in constellation.highlight_discoursemes:
-        discoursemes[disc.name] = disc.items
 
-    assoc = ccc_constellation_association(
-        corpus_name=corpus,
-        cqp_bin=current_app.config['CCC_CQP_BIN'],
-        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-        data_dir=current_app.config['CCC_DATA_DIR'],
-        lib_dir=current_app.config['CCC_LIB_DIR'],
-        discoursemes=discoursemes,
-        p_query=p_query,
-        s_query=s_break,
-        flags_query="%c",
-        escape_query=True,
-        s_context=None,
-        context=None
-    )
-
+    assoc = {'msg': 'not implemented'}
     return jsonify(assoc), 200
