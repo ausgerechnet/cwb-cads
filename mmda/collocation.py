@@ -54,19 +54,26 @@ def get_or_create_cooc(subcorpus_matches, query_id, context, context_break):
     return df_cooc
 
 
-def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorpus_name=None):
+def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorpus_name=None, p_query='lemma', return_df=True):
+    """
+    create matches or get the last matches of this discourseme on this corpus
+    """
 
-    cqp_query = format_cqp_query(discourseme.items.split("\t"), 'lemma', context_break, escape=False)
+    cqp_query = format_cqp_query(discourseme.items.split("\t"), p_query, context_break, escape=False)
+
     if not subcorpus_name:
-        query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query).first()
+        query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query).order_by(Query.id.desc()).first()
     else:
-        query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name).first()
+        query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name).order_by(
+            Query.id.desc()
+        ).first()
 
     if not query:
 
         query = Query(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name)
         db.session.add(query)
         db.session.commit()
+        print(corpus)
         matches = corpus.query(cqp_query=cqp_query, context_break=context_break)
         matches_df = matches.df.reset_index()[['match', 'matchend']]
         matches_df['query_id'] = query.id
@@ -80,12 +87,13 @@ def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorp
         db.session.add_all(matches_lines)
         db.session.commit()
 
-        matches_df = matches_df.drop('query_id', axis=1)
+        matches_df = matches_df.drop('query_id', axis=1).set_index(['match', 'matchend'])
+
+    elif return_df:
+        matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
 
     else:
-        matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend'])
-
-    matches_df = matches_df.set_index(['match', 'matchend'])
+        matches_df = None
 
     return matches_df
 
