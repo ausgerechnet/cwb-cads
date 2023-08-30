@@ -480,7 +480,7 @@ def get_collocate_for_collocation(username, collocation):
 
         # iterative query (topic on subcorpus) → matches
         # subcorpus = topic → discourseme_i → topic
-        subcorpus_name = str(collocation._query.discourseme.id) + "".join([str(discourseme.id) for discourseme in filter_discoursemes])
+        subcorpus_name = "Q" + str(collocation._query.discourseme.id) + "".join([str(discourseme.id) for discourseme in filter_discoursemes])
 
         query = Query(discourseme_id=collocation._query.discourseme.id, corpus_id=collocation._query.corpus.id,
                       cqp_query=collocation._query.cqp_query, nqr_name=subcorpus_name)
@@ -497,6 +497,7 @@ def get_collocate_for_collocation(username, collocation):
         matches_df = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
 
         # for filtering, we set whole context regions as cotext so we can easily filter iteratively
+        # TODO: correct afterwards!
         matches = corpus.subcorpus(subcorpus_name='Temp', df_dump=matches_df, overwrite=False).set_context(context_break=collocation.s_break,
                                                                                                            overwrite=True)
 
