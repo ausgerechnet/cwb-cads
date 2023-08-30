@@ -18,12 +18,6 @@ users_roles = db.Table(
     db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
 )
 
-# keyword_discoursemes = db.Table(
-#     'KeywordDiscoursemes',
-#     db.Column('keyword_id', db.Integer, db.ForeignKey('keyword.id')),
-#     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
-# )
-
 constellation_filter_discoursemes = db.Table(
     'ConstellationFilterDiscoursemes',
     db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),
@@ -33,12 +27,6 @@ constellation_filter_discoursemes = db.Table(
 constellation_highlight_discoursemes = db.Table(
     'ConstellationHighlightDiscoursemes',
     db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),
-    db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
-)
-
-collocation_items_discoursemes = db.Table(
-    'CollocationItemsDiscoursemes',
-    db.Column('collocation_items_id', db.Integer, db.ForeignKey('collocation_items.id')),
     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
 )
 
@@ -410,8 +398,6 @@ class CollocationItems(db.Model):
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'))
 
     item = db.Column(db.Unicode)
-    discourseme_ids = db.relationship("Discourseme", secondary=collocation_items_discoursemes,
-                                      backref=db.backref('collocation_items', lazy=True))
     window = db.Column(db.Integer)
 
     f = db.Column(db.Integer)
