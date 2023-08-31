@@ -8,7 +8,8 @@ from flask import current_app, jsonify, request
 from werkzeug.security import generate_password_hash
 
 from .. import db
-from ..database import Collocation, Constellation, Discourseme, Role, User, Keyword
+from ..database import (Collocation, Constellation, Discourseme, Keyword, Role,
+                        User)
 from .login_views import admin_required
 
 admin_blueprint = APIBlueprint('admin', __name__, template_folder='templates')

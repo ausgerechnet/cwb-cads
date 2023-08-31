@@ -15,9 +15,9 @@ from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
-from ..collocation import get_or_create_matches
 from ..corpus import ccc_corpus
 from ..database import Constellation, Corpus, Discourseme, User
+from ..query import get_or_create_matches
 from .login_views import user_required
 
 constellation_blueprint = APIBlueprint('constellation', __name__, template_folder='templates')

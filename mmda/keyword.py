@@ -4,8 +4,9 @@
 from apiflask import APIBlueprint
 from ccc import Corpus as Crps
 from flask import current_app
-from . database import Corpus, KeywordItems
+
 from . import db
+from .database import Corpus, KeywordItems
 
 bp = APIBlueprint('keyword', __name__, url_prefix='/keyword')
 

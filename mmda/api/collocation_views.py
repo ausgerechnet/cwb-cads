@@ -142,7 +142,7 @@ def create_collocation(username):
     # cut_off = request.json.get('cut_off', 200)
     # order = request.json.get('order', 'log_likelihood')
     # flags_show = request.args.get('flags_show', '')
-    # min_freq = request.json.get('min_freq', 2)
+    min_freq = request.json.get('min_freq', 3)
     # ams = request.json.get('ams', None)
     # collocation_name = request.json.get('name', None)
 
@@ -188,7 +188,7 @@ def create_collocation(username):
     collocation = Collocation(query_id=query.id, p=p, s_break=s_break, context=context, user_id=user.id, constellation_id=constellation.id)
     db.session.add(collocation)
     db.session.commit()
-    ccc_collocates(collocation)
+    ccc_collocates(collocation, min_freq=min_freq)
 
     # Semantic Map
     current_app.logger.debug(f'Creating collocation :: creating semantic map for {len(collocation.items)} items')
@@ -463,7 +463,7 @@ def get_collocate_for_collocation(username, collocation):
     # flags_show = request.args.get('flags_show', "")
     # .. pagination
     # ams = request.args.get('ams', None)
-    # min_freq = request.args.get('min_freq', 2)
+    min_freq = request.args.get('min_freq', 3)
     # order = request.args.get('order', 'log_likelihood')
     cut_off = request.args.get('cut_off', 200)
 
@@ -520,7 +520,7 @@ def get_collocate_for_collocation(username, collocation):
                                   user_id=user.id, constellation_id=collocation.constellation.id)
         db.session.add(collocation)
         db.session.commit()
-        ccc_collocates(collocation)
+        ccc_collocates(collocation, min_freq=min_freq)
         collocation.semantic_map_id = semantic_map.id
         db.session.add(collocation)
         db.session.commit()
@@ -531,7 +531,7 @@ def get_collocate_for_collocation(username, collocation):
 
     if len(counts) == 0:
         current_app.logger.debug(f'Getting collocation items :: calculating for window {window}')
-        counts = ccc_collocates(collocation, window=window)
+        counts = ccc_collocates(collocation, window=window, min_freq=min_freq)
         current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
         ccc_semmap_update(collocation)
 
@@ -762,7 +762,7 @@ def update_collocation(username, collocation):
     counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
     for window in set(counts['window']):
         current_app.logger.debug(f'Updating collocation :: window {window}')
-        ccc_collocates(collocation, window)
+        ccc_collocates(collocation, window, min_freq=3)
 
     return jsonify({'msg': 'updated'}), 200
 

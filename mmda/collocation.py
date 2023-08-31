@@ -7,13 +7,13 @@ from association_measures import measures
 from ccc import Corpus
 from ccc.cache import generate_idx
 from ccc.collocates import dump2cooc
-from ccc.utils import format_cqp_query
 from flask import current_app, jsonify
 from pandas import DataFrame, concat
 
 from . import db
 from .database import (Collocation, CollocationItems, Cotext, CotextLines,
-                       Matches, Query, SemanticMap)
+                       Query, SemanticMap)
+from .query import get_or_create_matches
 from .semantic_map import SemanticMapIn, SemanticMapOut
 from .users import auth
 
@@ -25,10 +25,13 @@ def get_or_create_cooc(subcorpus_matches, query_id, context, context_break):
 
     """
 
+    current_app.logger.debug(f"get_or_create_cooc :: {len(subcorpus_matches)} matches")
+
     cotext = Cotext.query.filter_by(query_id=query_id, context=context, context_break=context_break).first()
 
     if cotext is None:
 
+        current_app.logger.debug("get_or_create_cooc :: creating cooc-table from scratch")
         cotext = Cotext(query_id=query_id, context=context, context_break=context_break)
         db.session.add(cotext)
         db.session.commit()
@@ -37,60 +40,23 @@ def get_or_create_cooc(subcorpus_matches, query_id, context, context_break):
         df_cooc = df_cooc.rename({'match': 'match_pos'}, axis=1).reset_index(drop=True)
         df_cooc['cotext_id'] = cotext.id
 
+        current_app.logger.debug(f"get_or_create_cooc :: saving {len(df_cooc)} lines to database")
+        df_cooc_json = df_cooc.to_dict(orient='records')
+        print('B')
         # doesn't work, but why?
         # cotext_lines = df_cooc.apply(lambda row: CotextLines(**row), axis=1).values
         cotext_lines = list()
-        for line in df_cooc.to_dict(orient='records'):
+        for line in df_cooc_json:
             cotext_lines.append(CotextLines(**line))
 
         db.session.add_all(cotext_lines)
         db.session.commit()
 
     else:
+        current_app.logger.debug("get_or_create_cooc :: getting cooc-table from database")
         df_cooc = DataFrame([vars(s) for s in cotext.lines], columns=['match_pos', 'cpos', 'offset', 'cotext_id'])
 
     return df_cooc
-
-
-def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorpus_name=None, p_query='lemma', return_df=True):
-    """
-    create matches or get the last matches of this discourseme on this corpus
-    """
-
-    cqp_query = format_cqp_query(discourseme.items.split("\t"), p_query, context_break, escape=False)
-
-    query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name).order_by(
-        Query.id.desc()
-    ).first()
-
-    if not query:
-
-        query = Query(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name)
-        db.session.add(query)
-        db.session.commit()
-
-        matches = corpus.query(cqp_query=cqp_query, context_break=context_break)
-        matches_df = matches.df.reset_index()[['match', 'matchend']]
-        matches_df['query_id'] = query.id
-
-        # doesn't work, but why?
-        # matches_lines = matches_df.apply(lambda row: Matches(**row), axis=1)
-        matches_lines = list()
-        for m in matches_df.to_dict(orient='records'):
-            matches_lines.append(Matches(**m))
-
-        db.session.add_all(matches_lines)
-        db.session.commit()
-
-        matches_df = matches_df.drop('query_id', axis=1).set_index(['match', 'matchend'])
-
-    elif return_df:
-        matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
-
-    else:
-        matches_df = None
-
-    return matches_df
 
 
 def ccc_collocates(collocation, window=None, min_freq=2):
@@ -130,8 +96,9 @@ def ccc_collocates(collocation, window=None, min_freq=2):
     ###########
     # CONTEXT #
     ###########
-    current_app.logger.debug('ccc_collocates :: creating context')
     df_cooc = get_or_create_cooc(subcorpus_matches.df, filter_query.id, collocation.context, collocation.s_break)
+
+    current_app.logger.debug('ccc_collocates :: getting matches of filter')
     discourseme_cpos_corpus = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # on whole corpus
     discourseme_cpos_subcorpus = discourseme_cpos_corpus.copy()  # on subcorpus of context
 
@@ -200,10 +167,11 @@ def ccc_collocates(collocation, window=None, min_freq=2):
 
     # correct counts
     counts = counts.join(node_freq_corpus).join(node_freq_subcorpus).fillna(0, downcast='infer')
-    print(counts)
     counts['f'] = counts['f'] - counts['node_freq_subcorpus']
     counts['f2'] = counts['f2'] - counts['node_freq_corpus']
     counts = counts.drop(['node_freq_subcorpus', 'node_freq_corpus'], axis=1)
+
+    # cut-off
     counts = counts.loc[counts['f'] >= min_freq]
 
     if len(highlight_breakdowns) > 0:
@@ -221,8 +189,6 @@ def ccc_collocates(collocation, window=None, min_freq=2):
         # here: just keep it once, even if actual association might be different (if part of MWU in discourseme(s))
         counts = counts.drop('discourseme', axis=1)
         counts = counts[~counts.index.duplicated(keep='first')]
-
-    print(counts)
 
     ####################
     # SAVE TO DATABASE #

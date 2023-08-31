@@ -5,19 +5,18 @@ Keywords view
 """
 
 from apiflask import APIBlueprint
-from ccc.utils import cqp_escape
+from ccc import Corpus as Crps
+from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app, jsonify, request
-from ..semantic_map import CoordinatesOut
 from pandas import DataFrame
 
 from .. import db
-from ..database import Discourseme, User, Keyword, Constellation, Corpus, Coordinates
+from ..database import (Constellation, Coordinates, Corpus, Discourseme,
+                        Keyword, User)
 from ..keyword import ccc_keywords
-from .login_views import user_required
-from ..semantic_map import ccc_semmap
+from ..semantic_map import CoordinatesOut, ccc_semmap
 from .collocation_views import score_counts
-from ccc import Corpus as Crps
-from ccc.utils import format_cqp_query
+from .login_views import user_required
 
 keyword_blueprint = APIBlueprint('keyword', __name__)
 
