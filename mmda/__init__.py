@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .version import __version__
 
-CONFIG = 'cfg.ProdConfig'
+CONFIG = 'cfg.DevConfig'
 
 NAME = 'mmda'
 TITLE = 'MMDA v2'
