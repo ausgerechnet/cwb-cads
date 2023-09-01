@@ -17,7 +17,7 @@ from pandas import DataFrame
 from .. import db
 from ..corpus import ccc_corpus
 from ..database import Constellation, Corpus, Discourseme, User
-from ..query import get_or_create_matches
+from ..query import get_or_create_query, ccc_query
 from .login_views import user_required
 
 constellation_blueprint = APIBlueprint('constellation', __name__, template_folder='templates')
@@ -308,24 +308,25 @@ def get_constellation_associations(username, constellation):
     corpus_name = request.args.get('corpus', None)
     p_query = request.args.get('p_query', 'lemma')
     context_break = request.args.get('s_break', 'text')
+    match_strategy = 'longest'
 
     corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
-    corpus_id = corpus.id
-    corpus = Crps(corpus_name=corpus.cwb_id,
-                  lib_dir=None,
-                  cqp_bin=current_app.config['CCC_CQP_BIN'],
-                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                  data_dir=current_app.config['CCC_DATA_DIR'])
+    crps = Crps(corpus_name=corpus.cwb_id,
+                lib_dir=None,
+                cqp_bin=current_app.config['CCC_CQP_BIN'],
+                registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                data_dir=current_app.config['CCC_DATA_DIR'])
 
     current_app.logger.debug('Get constellation association :: collecting matches')
     context_ids = dict()
     for discourseme in constellation.highlight_discoursemes + constellation.filter_discoursemes:
-        df = get_or_create_matches(discourseme, corpus, corpus_id, context_break, p_query=p_query)
-        s_att = corpus.dump2satt(df, context_break)
+        query = get_or_create_query(corpus, discourseme, context_break, p_query, match_strategy)
+        matches_df = ccc_query(query)
+        s_att = crps.dump2satt(matches_df, context_break)
         context_ids[f'{discourseme.name} (ID: {discourseme.id})'] = set(s_att[f'{context_break}_cwbid'])
 
     current_app.logger.debug('Get constellation association :: calculating co-occurrences')
-    N = len(corpus.attributes.attribute(context_break, 's'))
+    N = len(crps.attributes.attribute(context_break, 's'))
     records = list()
     for pair, f in pairwise_intersections(context_ids).items():
         pair = sorted(pair)

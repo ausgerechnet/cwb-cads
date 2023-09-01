@@ -13,7 +13,7 @@ from pandas import DataFrame
 
 from .. import db
 from ..breakdown import BreakdownItemsOut, ccc_breakdown
-from ..collocation import ccc_collocates
+from ..collocation import ccc_collocates, score_counts
 from ..concordance import ConcordanceLinesOut, ccc_concordance
 from ..corpus import ccc_corpus
 from ..database import (Breakdown, Collocation, Constellation, Coordinates,
@@ -23,51 +23,6 @@ from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update
 from .login_views import user_required
 
 collocation_blueprint = APIBlueprint('collocation', __name__)
-
-
-def score_counts(counts, cut_off=200):
-
-    ams_dict = {
-        # conservative estimates
-        'conservative_log_ratio': 'Conservative LR',
-        # frequencies
-        'O11': 'obs.',
-        'E11': 'exp.',
-        'ipm': 'IPM (obs.)',
-        'ipm_expected': 'IPM (exp.)',
-        # asymptotic hypothesis tests
-        'log_likelihood': 'LLR',
-        'z_score': 'z-score',
-        't_score': 't-score',
-        'simple_ll': 'simple LL',
-        # point estimates of association strength
-        'dice': 'Dice',
-        'log_ratio': 'log-ratio',
-        'min_sensitivity': 'min. sensitivity',
-        'liddell': 'Liddell',
-        # information theory
-        'mutual_information': 'MI',
-        'local_mutual_information': 'local MI',
-    }
-
-    df = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
-    df = df.loc[df['O11'] >= df['E11']]
-
-    # select columns
-    df = df[list(ams_dict.keys())]
-
-    # select items (top cut_off of each AM)
-    items = set()
-    for am in ams_dict.keys():
-        if am not in ['O11', 'ipm', 'ipm_expected']:
-            df = df.sort_values(by=[am, 'item'], ascending=[False, True])
-            items = items.union(set(df.head(cut_off).index))
-    df = df.loc[list(items)]
-
-    # rename columns
-    df = df.rename(ams_dict, axis=1)
-
-    return df
 
 
 ###############
@@ -476,6 +431,7 @@ def get_collocate_for_collocation(username, collocation):
 
     # .. create separate Collocation for SOC
     if len(filter_queries) > 0:
+        # TODO move to ccc_collocates()
 
         # iterative query (topic on subcorpus) → matches
         # subcorpus = topic → discourseme_i → topic
@@ -527,6 +483,7 @@ def get_collocate_for_collocation(username, collocation):
 
     # counts
     counts = DataFrame([vars(s) for s in collocation.items], columns=['f', 'f1', 'f2', 'N', 'collocation_id', 'window', 'item']).set_index('item')
+    # TODO only retrieve the ones for the correct window
     counts = counts.loc[counts['window'] == window]
 
     if len(counts) == 0:

@@ -78,6 +78,7 @@ def create_keyword(username):
     # flags = request.json.get('flags', '')
     # flags_reference = request.json.get('flags_reference', '')
     # s_break = request.json.get('s_break', 's')
+    min_freq = request.json.get('min_freq', 3)
 
     # Corpora
     corpus_left = Corpus.query.filter_by(cwb_id=corpus).first()
@@ -95,7 +96,7 @@ def create_keyword(username):
                       p=p, p_reference=p_reference, constellation_id=constellation.id)
     db.session.add(keyword)
     db.session.commit()
-    ccc_keywords(keyword)
+    ccc_keywords(keyword, min_freq)
 
     # Semantic Map
     current_app.logger.debug(f'Creating keyword :: creating semantic map for {len(keyword.items)} items')
