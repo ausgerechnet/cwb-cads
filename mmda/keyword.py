@@ -7,6 +7,7 @@ from flask import current_app
 
 from . import db
 from .database import Corpus, KeywordItems
+from .collocation import score_counts
 
 bp = APIBlueprint('keyword', __name__, url_prefix='/keyword')
 
@@ -37,7 +38,10 @@ def ccc_keywords(keyword, min_freq=2):
     counts['N1'] = target['f1'].sum()
     counts['N2'] = reference['f2'].sum()
     counts = counts.fillna(0, downcast='infer')
-    counts = counts.loc[counts['f1'] >= min_freq]
+
+    # we score once here in order to only save relevant items
+    scores = score_counts(counts, cut_off=500)
+    counts = counts.loc[list(scores.index)]
 
     ############################################
     # GET MATCHES OF HIGHLIGHTING DISCOURSEMES #
