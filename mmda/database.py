@@ -114,6 +114,7 @@ class Corpus(db.Model):
 class Discourseme(db.Model):
     """Discourseme
 
+
     """
 
     __table_args__ = {'sqlite_autoincrement': True}
@@ -124,7 +125,9 @@ class Discourseme(db.Model):
 
     name = db.Column(db.Unicode(255), nullable=True)
     description = db.Column(db.Unicode, nullable=True)
+
     items = db.Column(db.Unicode, default="")
+
     queries = db.relationship("Query", backref="discourseme", lazy=True)
 
     @property
@@ -493,8 +496,8 @@ def init_db():
     db.session.commit()
 
     # discoursemes
-    db.session.add(Discourseme(user_id=1, items="\t".join(['CDU', 'CSU', 'CDU / CSU', r'\[ CDU / CSU \]:?']), name='CDU/CSU'))
-    db.session.add(Discourseme(user_id=1, items="\t".join([r'F\. D\. P\.', r'\[ F\. D\. P\. \]:?']), name='FDP'))
+    db.session.add(Discourseme(user_id=1, items="\t".join(['CDU / CSU-Fraktion', 'CDU', 'CSU', 'CDU / CSU', r'\[ CDU / CSU \]:?']), name='CDU/CSU'))
+    db.session.add(Discourseme(user_id=1, items="\t".join(["FDP", r'F\. D\. P\.', r'\[ F\. D\. P\. \]:?']), name='FDP'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Beifall', 'Heiterkeit', 'Lache']), name='Reaktion'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Bundeskanzler', 'Kanzler']), name='Kanzler'))
     db.session.add(Discourseme(user_id=1, items="\t".join(['Präsident']), name='Präsident'))
