@@ -5,7 +5,6 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String
 from association_measures import measures
 from ccc import Corpus
-from ccc.cache import generate_idx
 from ccc.collocates import dump2cooc
 from flask import current_app, jsonify
 from pandas import DataFrame, concat
@@ -13,19 +12,69 @@ from pandas import DataFrame, concat
 from . import db
 from .database import (Collocation, CollocationItems, Cotext, CotextLines,
                        Query, SemanticMap)
-from .query import get_or_create_matches
+from .query import get_or_create_query, ccc_query
 from .semantic_map import SemanticMapIn, SemanticMapOut
 from .users import auth
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 
 
-def get_or_create_cooc(subcorpus_matches, query_id, context, context_break):
+def score_counts(counts, cut_off=200):
+
+    ams_dict = {
+        # preferred: LRC
+        'conservative_log_ratio': 'Conservative LR',
+        # frequencies
+        'O11': 'obs.',
+        'E11': 'exp.',
+        'ipm': 'IPM (obs.)',
+        'ipm_expected': 'IPM (exp.)',
+        # asymptotic hypothesis tests
+        'log_likelihood': 'LLR',
+        'z_score': 'z-score',
+        't_score': 't-score',
+        'simple_ll': 'simple LL',
+        # point estimates of association strength
+        'dice': 'Dice',
+        'log_ratio': 'log-ratio',
+        'min_sensitivity': 'min. sensitivity',
+        'liddell': 'Liddell',
+        # information theory
+        'mutual_information': 'MI',
+        'local_mutual_information': 'local MI',
+    }
+
+    df = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
+    df = df.loc[df['O11'] >= df['E11']]
+
+    # select columns
+    df = df[list(ams_dict.keys())]
+
+    # select items (top cut_off of each AM)
+    items = set()
+    for am in ams_dict.keys():
+        if am not in ['O11', 'E11', 'ipm', 'ipm_expected']:
+            df = df.sort_values(by=[am, 'item'], ascending=[False, True])
+            items = items.union(set(df.head(cut_off).index))
+    df = df.loc[list(items)]
+
+    # rename columns
+    df = df.rename(ams_dict, axis=1)
+
+    return df
+
+
+def get_or_create_cooc(collocation, window=None):
     """create Cotext, CotextLines of matches and save it to database (if it does not exist)
 
     """
 
-    current_app.logger.debug(f"get_or_create_cooc :: {len(subcorpus_matches)} matches")
+    query_id = collocation._query.id
+    context = collocation.context
+    context_break = collocation.s_break
+    cwb_id = collocation._query.corpus.cwb_id
+
+    window = context if window is None else window
 
     cotext = Cotext.query.filter_by(query_id=query_id, context=context, context_break=context_break).first()
 
@@ -36,25 +85,45 @@ def get_or_create_cooc(subcorpus_matches, query_id, context, context_break):
         db.session.add(cotext)
         db.session.commit()
 
-        df_cooc = dump2cooc(subcorpus_matches, rm_nodes=False)
+        matches_df = ccc_query(collocation._query)
+
+        corpus = Corpus(corpus_name=cwb_id,
+                        lib_dir=None,
+                        cqp_bin=current_app.config['CCC_CQP_BIN'],
+                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                        data_dir=current_app.config['CCC_DATA_DIR'])
+
+        subcorpus_context = corpus.subcorpus(
+            subcorpus_name=None, df_dump=matches_df, overwrite=False
+        ).set_context(
+            context, context_break, overwrite=False
+        )
+
+        current_app.logger.debug("get_or_create_cooc :: dump2cooc")
+        df_cooc = dump2cooc(subcorpus_context.df, rm_nodes=False)
         df_cooc = df_cooc.rename({'match': 'match_pos'}, axis=1).reset_index(drop=True)
         df_cooc['cotext_id'] = cotext.id
 
         current_app.logger.debug(f"get_or_create_cooc :: saving {len(df_cooc)} lines to database")
-        df_cooc_json = df_cooc.to_dict(orient='records')
-        print('B')
         # doesn't work, but why?
         # cotext_lines = df_cooc.apply(lambda row: CotextLines(**row), axis=1).values
+        df_cooc_json = df_cooc.to_dict(orient='records')
         cotext_lines = list()
         for line in df_cooc_json:
             cotext_lines.append(CotextLines(**line))
-
         db.session.add_all(cotext_lines)
         db.session.commit()
+        current_app.logger.debug("get_or_create_cooc :: saved to database")
+
+        df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
 
     else:
         current_app.logger.debug("get_or_create_cooc :: getting cooc-table from database")
         df_cooc = DataFrame([vars(s) for s in cotext.lines], columns=['match_pos', 'cpos', 'offset', 'cotext_id'])
+        current_app.logger.debug(f"get_or_create_cooc :: got {len(df_cooc)} lines from database")
+
+        # TODO: only retrieve where offset in window
+        df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
 
     return df_cooc
 
@@ -62,45 +131,34 @@ def get_or_create_cooc(subcorpus_matches, query_id, context, context_break):
 def ccc_collocates(collocation, window=None, min_freq=2):
     """get CollocationItems for collocation analysis and given window
 
-    - create context of collocation._query
+    (1) get or create context of collocation._query
 
-    - count query for matches of collocation.highlight_discoursemes
+    (2) get or create matches of collocation.constellation.highlight_discoursemes in collocation._query.corpus
 
-    - count items and discoursemes separately
+    (3) count items and discoursemes separately
 
     """
 
     window = collocation.context if window is None else window
 
+    # remove existing collocation items from database
     CollocationItems.query.filter_by(collocation_id=collocation.id, window=window).delete()
 
+    # get relevant objects
     filter_query = collocation._query
-    filter_discourseme = filter_query.discourseme
     highlight_discoursemes = collocation.constellation.highlight_discoursemes
-    cwb_id = filter_query.corpus.cwb_id
-    matches = filter_query.matches
+    match_strategy = filter_query.match_strategy
 
-    corpus = Corpus(corpus_name=cwb_id,
-                    lib_dir=None,
+    corpus = Corpus(filter_query.corpus.cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
 
-    # expensive → only run function if necessary
-    current_app.logger.debug('ccc_collocates :: load subcorpus')
-    matches_df = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
-    subcorpus_matches = corpus.subcorpus(subcorpus_name=None, df_dump=matches_df, overwrite=False).set_context(
-        collocation.context, collocation.s_break, overwrite=False
-    )
-
     ###########
     # CONTEXT #
     ###########
-    df_cooc = get_or_create_cooc(subcorpus_matches.df, filter_query.id, collocation.context, collocation.s_break)
-
-    current_app.logger.debug('ccc_collocates :: getting matches of filter')
-    discourseme_cpos_corpus = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # on whole corpus
-    discourseme_cpos_subcorpus = discourseme_cpos_corpus.copy()  # on subcorpus of context
+    df_cooc = get_or_create_cooc(collocation, window)
+    discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # filter can only match in context
 
     ############################################
     # GET MATCHES OF HIGHLIGHTING_DISCOURSEMES #
@@ -108,77 +166,80 @@ def ccc_collocates(collocation, window=None, min_freq=2):
     # for each discourseme (including filter_discourseme):
     # - get frequency breakdown within and outside context
     # - collect cpos consumed within and outside context
-    # this means we have to run each discourseme query twice: once on whole corpus, once on context of filter query matches
 
     # get or create subcorpus of context
-    current_app.logger.debug('ccc_collocates :: getting matches of highlighting discoursemes')
-    item_hash = generate_idx(filter_discourseme.items, length=8)
-    subcorpus_context_name = f'Q{item_hash}_{window}'
-    subcorpus_context = subcorpus_matches.set_context(context=window, context_break=collocation.s_break, overwrite=False)
-    subcorpus_context = subcorpus_context.set_context_as_matches(subcorpus_name=subcorpus_context_name, overwrite=True)
     highlight_breakdowns = list()
     for discourseme in highlight_discoursemes:
 
-        current_app.logger.debug(f'ccc_collocates :: querying discourseme {discourseme.id}')
-        # matches on whole corpus
-        corpus_matches_df = get_or_create_matches(discourseme, corpus, filter_query.corpus.id, collocation.s_break)
-        corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
-        corpus_matches_breakdown = corpus_matches.breakdown().rename({'freq': 'f2'}, axis=1)
+        current_app.logger.debug(f'ccc_collocates :: checking discourseme {discourseme.name}')
+        corpus_query = get_or_create_query(
+            filter_query.corpus, discourseme, collocation.s_break, collocation.p, match_strategy
+        )
+        corpus_matches_df = ccc_query(corpus_query).reset_index()
+        corpus_matches_df['match_in_context'] = corpus_matches_df['match'].isin(df_cooc['cpos'])
+        corpus_matches_df['matchend_in_context'] = corpus_matches_df['matchend'].isin(df_cooc['cpos'])
+        corpus_matches_df['in_context'] = corpus_matches_df['match_in_context'] + \
+            corpus_matches_df['matchend_in_context']
+        subcorpus_matches_df = corpus_matches_df.loc[corpus_matches_df['in_context']]
 
-        # matches on subcorpus
-        subcorpus_matches_df = get_or_create_matches(discourseme, subcorpus_context, filter_query.corpus.id,
-                                                     collocation.s_break, subcorpus_name=subcorpus_context_name)
+        corpus_matches_df = corpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
+        subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
+
+        # create breakdown
+        corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
         subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
+        corpus_matches_breakdown = corpus_matches.breakdown().rename({'freq': 'f2'}, axis=1)
         subcorpus_matches_breakdown = subcorpus_matches.breakdown().rename({'freq': 'f'}, axis=1)
 
         # create combined breakdown
         df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
         if 'f' not in df.columns:
-            # empty queries
-            df['f'] = 0
+            df['f'] = 0         # empty queries
 
         df['discourseme'] = discourseme.id
         highlight_breakdowns.append(df)
 
         # update set of cpos of highlight_discoursemes
-        discourseme_cpos_corpus.update(corpus_matches.matches())
-        discourseme_cpos_subcorpus.update(subcorpus_matches.matches())
+        discourseme_cpos.update(corpus_matches.matches())
 
     ################################
     # COUNT ITEMS AND DISCOURSEMES #
     ################################
 
+    f1_discoursemes = len(df_cooc)           # for discourseme associations
+    df_cooc = df_cooc.loc[~df_cooc['cpos'].isin(discourseme_cpos)]
+
     # create context counts of items for window, including cpos consumed by discoursemes
     current_app.logger.debug('ccc_collocates :: scoring items in context for given window')
-    relevant = df_cooc.loc[abs(df_cooc['offset']) <= window]
-    f = corpus.counts.cpos(relevant['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
+    f = corpus.counts.cpos(df_cooc['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
     f2 = corpus.marginals(f.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
 
     # get frequency of items at cpos consumed by discoursemes (includes filter)
-    node_freq_corpus = corpus.counts.cpos(discourseme_cpos_corpus, [collocation.p])[['freq']].rename(columns={'freq': 'node_freq_corpus'})
-    node_freq_subcorpus = corpus.counts.cpos(discourseme_cpos_subcorpus, [collocation.p])[['freq']].rename(columns={'freq': 'node_freq_subcorpus'})
+    node_freq_corpus = corpus.counts.cpos(discourseme_cpos, [collocation.p])[['freq']].rename(
+        columns={'freq': 'node_freq_corpus'}
+    )
 
     # create dataframe
     counts = f.join(f2).fillna(0, downcast='infer')
 
     # add marginals
-    counts['f1'] = len(relevant) - len(discourseme_cpos_subcorpus)
-    counts['N'] = corpus.corpus_size - len(discourseme_cpos_corpus)
+    counts['f1'] = len(df_cooc)
+    counts['N'] = corpus.corpus_size - len(discourseme_cpos)
 
     # correct counts
-    counts = counts.join(node_freq_corpus).join(node_freq_subcorpus).fillna(0, downcast='infer')
-    counts['f'] = counts['f'] - counts['node_freq_subcorpus']
+    counts = counts.join(node_freq_corpus).fillna(0, downcast='infer')
     counts['f2'] = counts['f2'] - counts['node_freq_corpus']
-    counts = counts.drop(['node_freq_subcorpus', 'node_freq_corpus'], axis=1)
+    counts = counts.drop('node_freq_corpus', axis=1)
 
-    # cut-off
-    counts = counts.loc[counts['f'] >= min_freq]
+    # we score once here in order to only save relevant items
+    scores = score_counts(counts, cut_off=500)
+    counts = counts.loc[list(scores.index)]
 
     if len(highlight_breakdowns) > 0:
 
         # add discourseme breakdowns
         df = concat(highlight_breakdowns).fillna(0, downcast='infer')
-        df['f1'] = len(relevant)
+        df['f1'] = f1_discoursemes
         df['N'] = corpus.corpus_size
         df = df.fillna(0)
 
@@ -193,13 +254,14 @@ def ccc_collocates(collocation, window=None, min_freq=2):
     ####################
     # SAVE TO DATABASE #
     ####################
-    current_app.logger.debug('ccc_collocates :: saving to database')
+    current_app.logger.debug(f'ccc_collocates :: saving {len(counts)} items to database')
 
     counts['collocation_id'] = collocation.id
     counts['window'] = window
-
-    collocation_items = counts.reset_index().apply(lambda row: CollocationItems(**row), axis=1)
-
+    collocation_items_json = counts.reset_index().to_dict(orient='records')
+    collocation_items = list()
+    for line in collocation_items_json:
+        collocation_items.append(CollocationItems(**line))
     db.session.add_all(collocation_items)
     db.session.commit()
 

@@ -15,31 +15,46 @@ from .users import auth
 bp = APIBlueprint('query', __name__, url_prefix='/query')
 
 
-def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorpus_name=None, p_query='lemma', return_df=True):
-    """
-    create matches or get the last matches of this discourseme on this corpus
+def get_or_create_query(corpus, discourseme, context_break, p_query, match_strategy, subcorpus_name=None):
     """
 
-    current_app.logger.debug(f"get_or_create_matches :: discourseme {discourseme.name} on corpus {corpus_id} (subcorpus: {subcorpus_name})")
+    """
 
+    current_app.logger.debug(f"get_or_create_query :: discourseme {discourseme.name} on corpus {corpus.cwb_id} (subcorpus: {subcorpus_name})")
     cqp_query = format_cqp_query(discourseme.items.split("\t"), p_query, context_break, escape=False)
-
-    query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name).order_by(
-        Query.id.desc()
-    ).first()
+    query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query,
+                                  nqr_name=subcorpus_name, match_strategy=match_strategy).order_by(Query.id.desc()).first()
 
     if not query:
-
-        current_app.logger.debug("get_or_create_matches :: querying corpus")
-        query = Query(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_query=cqp_query, nqr_name=subcorpus_name)
+        query = Query(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query, nqr_name=subcorpus_name, match_strategy=match_strategy)
         db.session.add(query)
         db.session.commit()
 
-        matches = corpus.query(cqp_query=cqp_query, context_break=context_break)
+    return query
+
+
+def ccc_query(query, return_df=True):
+    """create or get matches of this query
+
+    """
+
+    matches = query.matches
+
+    if len(matches) == 0:
+
+        current_app.logger.debug(f'ccc_query :: querying corpus {query.corpus.cwb_id}')
+        corpus = Corpus(query.corpus.cwb_id,
+                        cqp_bin=current_app.config['CCC_CQP_BIN'],
+                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                        data_dir=current_app.config['CCC_DATA_DIR'])
+        if query.nqr_name:
+            corpus = corpus.subcorpus(query.nqr_name)
+
+        matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy)
         matches_df = matches.df.reset_index()[['match', 'matchend']]
         matches_df['query_id'] = query.id
 
-        current_app.logger.debug(f"get_or_create_matches :: saving {len(matches_df)} matches from database")
+        current_app.logger.debug(f"get_or_create_matches :: saving {len(matches_df)} lines to database")
         # doesn't work, but why?
         # matches_lines = matches_df.apply(lambda row: Matches(**row), axis=1)
         matches_lines = list()
@@ -47,43 +62,20 @@ def get_or_create_matches(discourseme, corpus, corpus_id, context_break, subcorp
             matches_lines.append(Matches(**m))
         db.session.add_all(matches_lines)
         db.session.commit()
+        current_app.logger.debug("get_or_create_matches :: saved to database")
 
         matches_df = matches_df.drop('query_id', axis=1).set_index(['match', 'matchend'])
 
     elif return_df:
         current_app.logger.debug("get_or_create_matches :: getting matches from database")
         matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
+        current_app.logger.debug(f"get_or_create_matches :: got {len(matches_df)} matches from database")
 
     else:
-        current_app.logger.debug("get_or_create_matches :: matches exist in database")
+        current_app.logger.debug("get_or_create_matches :: matches already exist in database")
         matches_df = None
 
     return matches_df
-
-
-def ccc_query(query):
-    """get Matches for query
-
-    """
-
-    corpus = Corpus(query.corpus.cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
-    result = corpus.query(query.cqp_query, match_strategy=query.match_strategy)
-
-    if result is None:
-        raise ValueError()
-
-    matches = result.df.drop(['context', 'contextend'], axis=1)
-    matches['query_id'] = query.id
-
-    current_app.logger.debug(f'ccc_query :: saving {len(result)} matches to database')
-    for m in matches.reset_index().to_dict(orient='records'):
-        db.session.add(Matches(**m))
-    db.session.commit()
-
-    return matches
 
 
 class QueryIn(Schema):
