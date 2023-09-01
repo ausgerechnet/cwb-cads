@@ -46,13 +46,13 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
     if filter_queries:
         current_app.logger.debug('ccc_collocates :: filtering')
         for name, cqp_query in filter_queries.items():
-            disc = cotext_of_matches.query(cqp_query, context_break=context_break)
+            disc = cotext_of_matches.query(cqp_query, context_break=context_break, match_strategy=query.match_strategy)
             if len(disc.df) == 0:
                 return None
             matches_filter[name] = disc.matches()
             cotext_of_matches = disc.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
         # focus back on topic:
-        matches = cotext_of_matches.query(query.cqp_query, context_break=context_break)
+        matches = cotext_of_matches.query(query.cqp_query, context_break=context_break, match_strategy=query.match_strategy)
 
     ################
     # HIGHLIGHTING #
@@ -62,7 +62,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
         current_app.logger.debug('ccc_collocates :: highlighting')
         for discourseme in highlight_discoursemes:
             disc_query = format_cqp_query(discourseme.items.split("\t"), 'lemma', escape=False)
-            disc = cotext_of_matches.query(cqp_query=disc_query, context_break=context_break)
+            disc = cotext_of_matches.query(cqp_query=disc_query, context_break=context_break, match_strategy=query.match_strategy)
             matches_highlight[discourseme.id] = disc.matches()
 
     ###########################
