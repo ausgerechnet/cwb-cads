@@ -15,9 +15,11 @@ bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
 
 def ccc_semmap(collocation, embeddings):
 
+    # create new semantic map
     semantic_map = SemanticMap(embeddings=embeddings, method='tsne')
     db.session.add(semantic_map)
     db.session.commit()
+    # and set as semantic map of the collocation analysis
     collocation.semantic_map_id = semantic_map.id
     db.session.add(collocation)
     db.session.commit()
