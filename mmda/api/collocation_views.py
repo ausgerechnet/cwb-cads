@@ -5,9 +5,8 @@ Collocation view
 """
 
 from apiflask import APIBlueprint
-from association_measures import measures
 from ccc import Corpus as Crps
-from ccc.utils import cqp_escape, format_cqp_query
+from ccc.utils import cqp_escape, cqp_unescape, format_cqp_query
 from flask import current_app, jsonify, request
 from pandas import DataFrame
 
@@ -146,10 +145,10 @@ def create_collocation(username):
     ccc_collocates(collocation, min_freq=min_freq)
 
     # Semantic Map
-    current_app.logger.debug(f'Creating collocation :: creating semantic map for {len(collocation.items)} items')
+    current_app.logger.debug('Creating collocation :: semantic map')
     ccc_semmap(collocation, collocation._query.corpus.embeddings)
 
-    # Update
+    # Update Items
     current_app.logger.debug('Creating collocation :: adding surface realisations to items')
     filter_discourseme.items = "\t".join(set(filter_discourseme.items.split("\t")).union([cqp_escape(item.item) for item in breakdown.items]))
     db.session.commit()
@@ -482,15 +481,13 @@ def get_collocate_for_collocation(username, collocation):
         db.session.commit()
 
     # counts
-    counts = DataFrame([vars(s) for s in collocation.items], columns=['f', 'f1', 'f2', 'N', 'collocation_id', 'window', 'item']).set_index('item')
     # TODO only retrieve the ones for the correct window
+    counts = DataFrame([vars(s) for s in collocation.items], columns=['f', 'f1', 'f2', 'N', 'collocation_id', 'window', 'item']).set_index('item')
     counts = counts.loc[counts['window'] == window]
 
     if len(counts) == 0:
         current_app.logger.debug(f'Getting collocation items :: calculating for window {window}')
         counts = ccc_collocates(collocation, window=window, min_freq=min_freq)
-        current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
-        ccc_semmap_update(collocation)
 
     df_collocates = score_counts(counts, cut_off=cut_off)
     df_collocates.index = [cqp_escape(item) for item in df_collocates.index]
@@ -695,13 +692,16 @@ def get_coordinates(username, collocation):
     if not collocation:
         return jsonify({'msg': 'no such collocation analysis'}), 404
 
+    current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
+    ccc_semmap_update(collocation)
+
     # load coordinates
     sem_map = collocation.semantic_map
 
     out = dict()
     for coordinates in sem_map.coordinates:
         coordinates = CoordinatesOut().dump(coordinates)
-        out[coordinates['item']] = coordinates
+        out[cqp_escape(coordinates['item'])] = coordinates
 
     return jsonify(out), 200
 
@@ -742,7 +742,7 @@ def update_coordinates(username, collocation):
     # set coordinates
     semantic_map = collocation.semantic_map
     for item, xy in items.items():
-        coordinates = Coordinates.query.filter_by(item=item, semantic_map_id=semantic_map.id).first()
+        coordinates = Coordinates.query.filter_by(item=cqp_unescape(item), semantic_map_id=semantic_map.id).first()
         if not (isinstance(xy['x_user'], float) and isinstance(xy['y_user'], float)):
             coordinates.x_user = None
             coordinates.y_user = None

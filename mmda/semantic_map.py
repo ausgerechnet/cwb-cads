@@ -3,6 +3,7 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, String
+from flask import current_app
 from pandas import DataFrame
 from semmap import SemanticSpace
 
@@ -26,6 +27,7 @@ def ccc_semmap(collocation, embeddings):
 
     items = list(set([item.item for item in collocation.items]))
 
+    current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)
     coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
     for item, (x, y) in coordinates.iterrows():
@@ -49,10 +51,12 @@ def ccc_semmap_update(collocation):
     if len(new_items) == 0:
         return None
 
+    current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
     # create new coordinates and add to database
     semspace = SemanticSpace(semantic_map.embeddings)
     semspace.coordinates = coordinates[['x', 'y']]
     new_coordinates = semspace.add(new_items)
+
     for item, (x, y) in new_coordinates.iterrows():
         db.session.add(Coordinates(semantic_map_id=semantic_map.id, item=item, x=x, y=y))
     db.session.commit()
