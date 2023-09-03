@@ -50,7 +50,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
             if len(disc.df) == 0:
                 return None
             matches_filter[name] = disc.matches()
-            cotext_of_matches = disc.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+            cotext_of_matches = disc.set_context_as_matches(overwrite=True)
         # focus back on topic:
         matches = cotext_of_matches.query(query.cqp_query, context_break=context_break, match_strategy=query.match_strategy)
 
@@ -76,7 +76,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
 
 def format_concordance(corpus, matches_df, p_show, s_show, order, cut_off, window, matches_filter, matches_highlight):
 
-    # TODO: simplify, retrieve more tokens left and right; exclude discourseme matches that are not completely in window
+    # TODO: simplify, retrieve more tokens left and right;
     concordance = CCConcordance(corpus, matches_df)
     lines = concordance.lines(form='dict', p_show=p_show, s_show=s_show, order=order, cut_off=cut_off)
     out = list()
@@ -108,7 +108,6 @@ def format_concordance(corpus, matches_df, p_show, s_show, order, cut_off, windo
                         discoursemes_in_window[disc_name] = True
 
             roles.append(cpos_roles)
-
         # we filter here according to window size
         if sum(discoursemes_in_window.values()) >= len(matches_filter):
             line['role'] = roles
