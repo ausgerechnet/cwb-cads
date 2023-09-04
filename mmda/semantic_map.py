@@ -54,7 +54,7 @@ def ccc_semmap_update(collocation):
     current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
     # create new coordinates and add to database
     semspace = SemanticSpace(semantic_map.embeddings)
-    semspace.coordinates = coordinates[['x', 'y']]
+    semspace.coordinates = coordinates.set_index('item')[['x', 'y']]
     new_coordinates = semspace.add(new_items)
 
     for item, (x, y) in new_coordinates.iterrows():
