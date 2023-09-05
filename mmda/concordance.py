@@ -37,7 +37,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
     # - we also output whole context regions
     # - post-hoc filtering and marking as out-of-window below
     matches = corpus.subcorpus(df_dump=matches_df, overwrite=False).set_context(context_break=context_break, overwrite=True)
-    cotext_of_matches = matches.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+    cotext_of_matches = matches.set_context_as_matches(overwrite=True)
 
     #############
     # FILTERING #
