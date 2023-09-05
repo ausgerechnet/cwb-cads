@@ -15,8 +15,9 @@ from ..breakdown import BreakdownItemsOut, ccc_breakdown
 from ..collocation import ccc_collocates, score_counts
 from ..concordance import ConcordanceLinesOut, ccc_concordance
 from ..corpus import ccc_corpus
-from ..database import (Breakdown, Collocation, Constellation, Coordinates,
-                        Corpus, Discourseme, Matches, Query, User)
+from ..database import (Breakdown, Collocation, CollocationItems,
+                        Constellation, Coordinates, Corpus, Discourseme,
+                        Matches, Query, User)
 from ..query import ccc_query
 from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update
 from .login_views import user_required
@@ -456,10 +457,10 @@ def get_collocate_for_collocation(username, collocation):
                                                                                                            overwrite=True)
 
         current_app.logger.debug('Getting SOC collocation items :: filtering')
-        cotext_of_matches = matches.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+        cotext_of_matches = matches.set_context_as_matches(overwrite=True)
         for name, cqp_query in filter_queries.items():
             disc = cotext_of_matches.query(cqp_query, context_break=collocation.s_break)
-            cotext_of_matches = disc.set_context_as_matches(subcorpus_name='Temp', overwrite=True)
+            cotext_of_matches = disc.set_context_as_matches(overwrite=True)
         # focus back on topic:
         matches = cotext_of_matches.query(collocation._query.cqp_query, context_break=collocation.s_break).set_context(
             context_break=collocation.s_break, context=collocation.context
@@ -481,9 +482,8 @@ def get_collocate_for_collocation(username, collocation):
         db.session.commit()
 
     # counts
-    # TODO only retrieve the ones for the correct window
-    counts = DataFrame([vars(s) for s in collocation.items], columns=['f', 'f1', 'f2', 'N', 'collocation_id', 'window', 'item']).set_index('item')
-    counts = counts.loc[counts['window'] == window]
+    items = CollocationItems.query.filter_by(collocation_id=collocation.id, window=window).all()
+    counts = DataFrame([vars(s) for s in items], columns=['f', 'f1', 'f2', 'N', 'collocation_id', 'window', 'item']).set_index('item')
 
     if len(counts) == 0:
         current_app.logger.debug(f'Getting collocation items :: calculating for window {window}')
@@ -706,10 +706,11 @@ def get_coordinates(username, collocation):
     return jsonify(out), 200
 
 
+# TODO change route
 @collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/reload/', methods=['PUT'])
 @user_required
 def update_collocation(username, collocation):
-    """ Re-calculate coordinates for collocation analysis.
+    """ Re-calculate collocation scores
 
     """
 
@@ -720,6 +721,9 @@ def update_collocation(username, collocation):
     for window in set(counts['window']):
         current_app.logger.debug(f'Updating collocation :: window {window}')
         ccc_collocates(collocation, window, min_freq=3)
+
+    current_app.logger.debug('Updating collocation :: making sure there are coordinates for all items')
+    ccc_semmap_update(collocation)
 
     return jsonify({'msg': 'updated'}), 200
 
