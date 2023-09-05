@@ -210,7 +210,7 @@ def ccc_collocates(collocation, window=None, min_freq=2):
     df_cooc = df_cooc.loc[~df_cooc['cpos'].isin(discourseme_cpos)]
 
     # create context counts of items for window, including cpos consumed by discoursemes
-    current_app.logger.debug('ccc_collocates :: scoring items in context for given window')
+    current_app.logger.debug(f'ccc_collocates :: scoring items in context for window {window}')
     f = corpus.counts.cpos(df_cooc['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
     f2 = corpus.marginals(f.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
 
