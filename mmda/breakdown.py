@@ -1,47 +1,34 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from collections import Counter
-
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String
 from ccc import Corpus
 from flask import current_app
 
 from . import db
-from .database import Breakdown, BreakdownItems, Query
+from .database import Breakdown, Query
 from .users import auth
+from .query import ccc_query
 
 bp = APIBlueprint('breakdown', __name__, url_prefix='/<query_id>/breakdown')
 
 
 def ccc_breakdown(breakdown):
 
-    matches = breakdown._query.matches
-
-    if len(matches) == 0:
-        raise ValueError()
-
-    # get frequency counts
+    matches_df = ccc_query(breakdown._query)
     corpus = Corpus(breakdown._query.corpus.cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
-    items = list()
-    for match in matches:
-        items.append(" ".join(["_".join(corpus.cpos2patts(cpos, [breakdown.p])) for cpos in range(match.match, match.matchend + 1)]))
-    counts = Counter(items)
 
-    # add breakdown items to database
-    for item, freq in counts.items():
-        db.session.add(
-            BreakdownItems(
-                item=item,
-                freq=freq,
-                breakdown_id=breakdown.id
-            )
-        )
+    matches = corpus.subcorpus(df_dump=matches_df, overwrite=False)
+    breakdown_df = matches.breakdown(p_atts=[breakdown.p])
+    breakdown_df['breakdown_id'] = breakdown.id
+    breakdown_df.to_sql("breakdown_items", con=db.engine, if_exists='append')
     db.session.commit()
+
+    return breakdown_df
 
 
 class BreakdownIn(Schema):
