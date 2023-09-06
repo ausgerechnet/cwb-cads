@@ -63,22 +63,22 @@ def create_user():
     role = None
 
     if role_name:
-        current_app.logger.debu('Get instance for role %s', role_name)
+        current_app.logger.debug('Get instance for role %s', role_name)
         role = Role.query.filter(Role.name == role_name).first()
         if not role:
-            current_app.logger.debu('No such role %s', role)
+            current_app.logger.debug('No such role %s', role)
             return jsonify({'msg': 'No such role'}), 404
 
     # Check if username exists
     if User.query.filter_by(username=username).first():
-        current_app.logger.debu('User %s already exists', username)
+        current_app.logger.debug('User %s already exists', username)
         return jsonify({'msg': 'User already exists'}), 409
 
-    current_app.logger.debu('Create user %s', username)
+    current_app.logger.debug('Create user %s', username)
     user = find_or_create_user(username, first_name, last_name, email, password, role)
     db.session.commit()
 
-    current_app.logger.debu('User created with ID %s', user.id)
+    current_app.logger.debug('User created with ID %s', user.id)
     return jsonify({'msg': user.id}), 201
 
 
@@ -107,21 +107,21 @@ def put_user_password(username):
     # Get User
     user = User.query.filter_by(username=username).first()
     if not user:
-        current_app.logger.debu('No such user %s', username)
+        current_app.logger.debug('No such user %s', username)
         return jsonify({'msg': 'No such user'}), 404
 
     # Generate salted password hash
     hashed_password = generate_password_hash(new_password)
 
     if not hashed_password:
-        current_app.logger.debu('Password could not be changed. No hash generated')
+        current_app.logger.debug('Password could not be changed. No hash generated')
         return jsonify({'msg': 'Password could not be changed'}), 500
 
     # Only set if we got a valid hash
     user.password = hashed_password
     db.session.commit()
 
-    current_app.logger.debu('Password updated for user %s', user.id)
+    current_app.logger.debug('Password updated for user %s', user.id)
     return jsonify({'msg': 'Updated'}), 200
 
 
@@ -135,7 +135,7 @@ def delete_user(username):
     # Get User
     user = User.query.filter_by(username=username).first()
     if not user:
-        current_app.logger.debu('No such user %s', username)
+        current_app.logger.debug('No such user %s', username)
         return jsonify({'msg': 'No such user'}), 404
 
     # Cannot delete admin
@@ -145,7 +145,7 @@ def delete_user(username):
     db.session.delete(user)
     db.session.commit()
 
-    current_app.logger.debu('Deleted user %s', username)
+    current_app.logger.debug('Deleted user %s', username)
     return jsonify({'msg': 'Deleted'}), 200
 
 
@@ -210,13 +210,13 @@ def delete_collocation(collocation):
 
     item = Collocation.query.filter_by(id=collocation).first()
     if not item:
-        current_app.logger.debu('No such item %s', collocation)
+        current_app.logger.debug('No such item %s', collocation)
         return jsonify({'msg': 'No such item'}), 404
 
     db.session.delete(item)
     db.session.commit()
 
-    current_app.logger.debu('Deleted collocation analysis %s', collocation)
+    current_app.logger.debug('Deleted collocation analysis %s', collocation)
     return jsonify({'msg': 'Deleted'}), 200
 
 
@@ -229,13 +229,13 @@ def delete_keyword(keyword):
 
     item = Keyword.query.filter_by(id=keyword).first()
     if not item:
-        current_app.logger.debu('No such item %s', keyword)
+        current_app.logger.debug('No such item %s', keyword)
         return jsonify({'msg': 'No such item'}), 404
 
     db.session.delete(item)
     db.session.commit()
 
-    current_app.logger.debu('Deleted keyword analysis %s', keyword)
+    current_app.logger.debug('Deleted keyword analysis %s', keyword)
     return jsonify({'msg': 'Deleted'}), 200
 
 
@@ -248,13 +248,13 @@ def delete_discourseme(discourseme):
 
     item = Discourseme.query.filter_by(id=discourseme).first()
     if not item:
-        current_app.logger.debu('No such item %s', discourseme)
+        current_app.logger.debug('No such item %s', discourseme)
         return jsonify({'msg': 'No such item'}), 404
 
     db.session.delete(item)
     db.session.commit()
 
-    current_app.logger.debu('Deleted discourseme %s', discourseme)
+    current_app.logger.debug('Deleted discourseme %s', discourseme)
     return jsonify({'msg': 'Deleted'}), 200
 
 
@@ -267,11 +267,11 @@ def delete_constellation(constellation):
 
     item = Constellation.query.filter_by(id=constellation).first()
     if not item:
-        current_app.logger.debu('No such item %s', constellation)
+        current_app.logger.debug('No such item %s', constellation)
         return jsonify({'msg': 'No such item'}), 404
 
     db.session.delete(item)
     db.session.commit()
 
-    current_app.logger.debu('Deleted constellation %s', constellation)
+    current_app.logger.debug('Deleted constellation %s', constellation)
     return jsonify({'msg': 'Deleted'}), 200
