@@ -6,7 +6,9 @@ install:
 
 init:
 	. venv/bin/activate && \
-	flask --app mmda database init
+	flask --app mmda database init && \
+	flask --app mmda discourseme import --path_in "tests/discoursemes/russland.tsv" && \
+	flask --app mmda discourseme import --path_in "tests/discoursemes/germaparl.tsv"
 
 run:
 	. venv/bin/activate && \
@@ -15,3 +17,7 @@ run:
 test:
 	. venv/bin/activate && \
 	pytest -s -v
+
+export:
+	. venv/bin/activate && \
+	flask --app mmda discourseme export
