@@ -8,7 +8,7 @@ from pandas import DataFrame
 from semmap import SemanticSpace
 
 from . import db
-from .database import CollocationItems, Coordinates, SemanticMap
+from .database import CollocationItems, SemanticMap
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
@@ -30,8 +30,9 @@ def ccc_semmap(collocation, embeddings):
     current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)
     coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
-    for item, (x, y) in coordinates.iterrows():
-        db.session.add(Coordinates(semantic_map_id=semantic_map.id, item=item, x=x, y=y))
+    coordinates.index.name = 'item'
+    coordinates['semantic_map_id'] = semantic_map.id
+    coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
     db.session.commit()
 
     return coordinates
@@ -43,6 +44,9 @@ def ccc_semmap_update(collocation):
     coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'item'])
     coordinates = coordinates.set_index('item')
 
+    # sometimes there's duplicates, but why?
+    coordinates = coordinates.loc[~coordinates.index.duplicated()]
+
     new_items = list(set([
         item.item for item in CollocationItems.query.filter(
             CollocationItems.collocation_id == collocation.id,
@@ -53,14 +57,12 @@ def ccc_semmap_update(collocation):
         return None
 
     current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
-    # create new coordinates and add to database
     semspace = SemanticSpace(semantic_map.embeddings)
     semspace.coordinates = coordinates
     new_coordinates = semspace.add(new_items)
-
-    for item, (x, y) in new_coordinates.iterrows():
-        db.session.add(Coordinates(semantic_map_id=semantic_map.id, item=item, x=x, y=y))
-
+    new_coordinates.index.name = 'item'
+    new_coordinates['semantic_map_id'] = semantic_map.id
+    new_coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
     db.session.commit()
 
     return new_coordinates
