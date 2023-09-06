@@ -17,7 +17,7 @@ from pandas import DataFrame
 from .. import db
 from ..corpus import ccc_corpus
 from ..database import Constellation, Corpus, Discourseme, User
-from ..query import get_or_create_query, ccc_query
+from ..query import ccc_query, get_or_create_query
 from .login_views import user_required
 
 constellation_blueprint = APIBlueprint('constellation', __name__, template_folder='templates')
