@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
 import os
 
 from apiflask import APIFlask
+from flask.logging import default_handler
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
@@ -38,7 +40,14 @@ def create_app(config=CONFIG):
     except OSError:
         app.logger.warning("could not create instance folder")
 
+    # load config
     app.config.from_object(config)
+
+    # also log cwb-ccc INFO messages
+    if app.config['DEBUG']:
+        logger = logging.getLogger('ccc')
+        logger.addHandler(default_handler)
+        logger.setLevel(logging.INFO)
 
     # init database connection
     if 'SQLALCHEMY_DATABASE_URI' not in app.config:
@@ -47,7 +56,7 @@ def create_app(config=CONFIG):
                 app.instance_path, app.config['DB_NAME']
             )
         )
-    app.logger.info("   - database uri:  " + app.config['SQLALCHEMY_DATABASE_URI'])
+    app.logger.info("database URI: " + app.config['SQLALCHEMY_DATABASE_URI'])
 
     # init database
     from . import database
