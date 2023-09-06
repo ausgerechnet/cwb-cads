@@ -7,19 +7,19 @@ from association_measures import measures
 from ccc import Corpus
 from ccc.collocates import dump2cooc
 from flask import current_app, jsonify
-from pandas import DataFrame, concat
+from pandas import DataFrame, concat, read_sql
 
 from . import db
 from .database import (Collocation, CollocationItems, Cotext, CotextLines,
                        Query, SemanticMap)
-from .query import get_or_create_query, ccc_query
+from .query import ccc_query, get_or_create_query
 from .semantic_map import SemanticMapIn, SemanticMapOut
 from .users import auth
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 
 
-def score_counts(counts, cut_off=200):
+def score_counts(counts, cut_off=200, min_freq=3):
 
     ams_dict = {
         # preferred: LRC
@@ -45,6 +45,7 @@ def score_counts(counts, cut_off=200):
     }
 
     df = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
+    df = df.loc[df['O11'] > min_freq]
     df = df.loc[df['O11'] >= df['E11']]
 
     # select columns
@@ -105,13 +106,7 @@ def get_or_create_cooc(collocation, window=None):
         df_cooc['cotext_id'] = cotext.id
 
         current_app.logger.debug(f"get_or_create_cooc :: saving {len(df_cooc)} lines to database")
-        # doesn't work, but why?
-        # cotext_lines = df_cooc.apply(lambda row: CotextLines(**row), axis=1).values
-        df_cooc_json = df_cooc.to_dict(orient='records')
-        cotext_lines = list()
-        for line in df_cooc_json:
-            cotext_lines.append(CotextLines(**line))
-        db.session.add_all(cotext_lines)
+        df_cooc.to_sql("cotext_lines", con=db.engine, if_exists='append', index=False)
         db.session.commit()
         current_app.logger.debug("get_or_create_cooc :: saved to database")
 
@@ -119,16 +114,14 @@ def get_or_create_cooc(collocation, window=None):
 
     else:
         current_app.logger.debug("get_or_create_cooc :: getting cooc-table from database")
-        df_cooc = DataFrame([vars(s) for s in cotext.lines], columns=['match_pos', 'cpos', 'offset', 'cotext_id'])
+        sql_query = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
+        df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id')
         current_app.logger.debug(f"get_or_create_cooc :: got {len(df_cooc)} lines from database")
-
-        # TODO: only retrieve where offset in window
-        df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
 
     return df_cooc
 
 
-def ccc_collocates(collocation, window=None, min_freq=2):
+def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
     """get CollocationItems for collocation analysis and given window
 
     (1) get or create context of collocation._query
@@ -143,6 +136,7 @@ def ccc_collocates(collocation, window=None, min_freq=2):
 
     # remove existing collocation items from database
     CollocationItems.query.filter_by(collocation_id=collocation.id, window=window).delete()
+    db.session.commit()
 
     # get relevant objects
     filter_query = collocation._query
@@ -188,8 +182,8 @@ def ccc_collocates(collocation, window=None, min_freq=2):
         # create breakdown
         corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
         subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
-        corpus_matches_breakdown = corpus_matches.breakdown().rename({'freq': 'f2'}, axis=1)
-        subcorpus_matches_breakdown = subcorpus_matches.breakdown().rename({'freq': 'f'}, axis=1)
+        corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f2'}, axis=1)
+        subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f'}, axis=1)
 
         # create combined breakdown
         df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
@@ -205,12 +199,11 @@ def ccc_collocates(collocation, window=None, min_freq=2):
     ################################
     # COUNT ITEMS AND DISCOURSEMES #
     ################################
-
+    current_app.logger.debug(f'ccc_collocates :: counting items in context for window {window}')
     f1_discoursemes = len(df_cooc)           # for discourseme associations
     df_cooc = df_cooc.loc[~df_cooc['cpos'].isin(discourseme_cpos)]
 
     # create context counts of items for window, including cpos consumed by discoursemes
-    current_app.logger.debug(f'ccc_collocates :: scoring items in context for window {window}')
     f = corpus.counts.cpos(df_cooc['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
     f2 = corpus.marginals(f.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
 
@@ -232,11 +225,13 @@ def ccc_collocates(collocation, window=None, min_freq=2):
     counts = counts.drop('node_freq_corpus', axis=1)
 
     # we score once here in order to only save relevant items
-    scores = score_counts(counts, cut_off=500)
+    current_app.logger.debug(f'ccc_collocates :: scoring {len(counts)} items')
+    scores = score_counts(counts, cut_off=cut_off, min_freq=min_freq)
     counts = counts.loc[list(scores.index)]
+    current_app.logger.debug(f'ccc_collocates :: selected {len(counts)} items')
 
     if len(highlight_breakdowns) > 0:
-
+        current_app.logger.debug(f'ccc_collocates :: counting {len(highlight_breakdowns)} discourseme items')
         # add discourseme breakdowns
         df = concat(highlight_breakdowns).fillna(0, downcast='infer')
         df['f1'] = f1_discoursemes
@@ -258,11 +253,8 @@ def ccc_collocates(collocation, window=None, min_freq=2):
 
     counts['collocation_id'] = collocation.id
     counts['window'] = window
-    collocation_items_json = counts.reset_index().to_dict(orient='records')
-    collocation_items = list()
-    for line in collocation_items_json:
-        collocation_items.append(CollocationItems(**line))
-    db.session.add_all(collocation_items)
+    collocation_items = counts.reset_index()
+    collocation_items.to_sql('collocation_items', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
     return counts
