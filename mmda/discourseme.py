@@ -1,15 +1,19 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
+
+import click
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String
 from flask import g, request
+from pandas import DataFrame, read_csv
 
 from . import db
 from .database import Discourseme
 from .users import auth
 
-bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme')
+bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 
 
 class DiscoursemeIn(Schema):
@@ -80,3 +84,32 @@ def get_discoursemes():
 
     discoursemes = Discourseme.query.all()
     return [DiscoursemeOut().dump(discourseme) for discourseme in discoursemes], 200
+
+
+@bp.cli.command('import')
+@click.option('--path_in', default='discoursemes.tsv')
+def import_discoursemes(path_in):
+
+    df = read_csv(path_in, sep="\t")
+    discoursemes = defaultdict(list)
+    for row in df.iterrows():
+        discoursemes[row[1]['name']].append(row[1]['query'])
+
+    for name, query_list in discoursemes.items():
+        db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))
+
+    db.session.commit()
+
+
+@bp.cli.command('export')
+@click.option('--path_out', default='discoursemes.tsv')
+def export_discoursemes(path_out):
+
+    records = list()
+    for discourseme in Discourseme.query.all():
+        disc = discourseme.serialize
+        for item in disc['items']:
+            records.append({'name': disc['name'], 'query': item, 'username': discourseme.user.username})
+
+    discoursemes = DataFrame(records)
+    discoursemes.to_csv(path_out, sep="\t", index=False)

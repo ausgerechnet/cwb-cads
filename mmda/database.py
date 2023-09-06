@@ -494,11 +494,3 @@ def init_db():
     for corpus in corpora:
         db.session.add(Corpus(**corpus))
     db.session.commit()
-
-    # discoursemes
-    db.session.add(Discourseme(user_id=1, items="\t".join(['CDU / CSU-Fraktion', 'CDU', 'CSU', 'CDU / CSU', r'\[ CDU / CSU \]:?']), name='CDU/CSU'))
-    db.session.add(Discourseme(user_id=1, items="\t".join(["FDP", r'F\. D\. P\.', r'\[ F\. D\. P\. \]:?']), name='FDP'))
-    db.session.add(Discourseme(user_id=1, items="\t".join(['Beifall', 'Heiterkeit', 'Lache']), name='Reaktion'))
-    db.session.add(Discourseme(user_id=1, items="\t".join(['Bundeskanzler', 'Kanzler']), name='Kanzler'))
-    db.session.add(Discourseme(user_id=1, items="\t".join(['Präsident']), name='Präsident'))
-    db.session.commit()
