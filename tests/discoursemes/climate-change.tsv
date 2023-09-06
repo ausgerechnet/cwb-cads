@@ -1,0 +1,25 @@
+name	query
+Klimawandel	Klima(wandel|(ver)?änderung|wechsel|krise|katastrophe|notstand|lüge)
+Klimawandel	global Erwärmung
+Ursachen	Treibhausgas(emission)?
+Atomkraft	(Kern|Atom|Nuklear)(kraft|energie)(werk)?
+Kampf	Kampf|Bekämpfung|aufhalten
+Ressourcen	Armut|Hunger|Dürre|Ressourcenknappheit
+Wetter	Sturm|(Extrem)?[Ww]etter(ereignis)|Naturkatastrophe|Wetterextrem
+Anpassung	[Bb]ewältig(en|ung)|(Anpassungs?)?([Mm]aßnahme)?
+Ausbau	Ausbau|ausbauen|Förderung
+Ausbau	Steigerung die Anteil
+Ausstieg	Ausstieg|aussteigen
+Erneuerbare Energien	erneuerbar|regenerativ Energie
+Erneuerbare Energien	(Wind|Sonnen)energie
+(fossile) Rohstoffe	fossil Energie|Brennstoff
+(fossile) Rohstoffe	(Braun|Stein)?[Kkohle]
+(fossile) Rohstoffe	Erd(gas|öl)
+(fossile) Rohstoffe	Mineralöl
+(fossile) Rohstoffe	Gas|Öl
+Kampf	Bekämpfung|Kampf|aufhalten
+Mangel	Armut|Hunger|Dürre|Ressourcenknappheit
+Verursacher	menschengemacht
+Verursacher	Mitverursacher
+Verursacher	Hauptverursacher
+Verursacher	Verursacher
