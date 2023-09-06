@@ -9,7 +9,7 @@ from flask import current_app, request
 from pandas import DataFrame
 
 from . import db
-from .database import Matches, Query
+from .database import Query
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -51,20 +51,15 @@ def ccc_query(query, return_df=True):
             corpus = corpus.subcorpus(query.nqr_name)
 
         matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy)
-        matches_df = matches.df.reset_index()[['match', 'matchend']]
-        matches_df['query_id'] = query.id
+        df_matches = matches.df.reset_index()[['match', 'matchend']]
+        df_matches['query_id'] = query.id
 
-        current_app.logger.debug(f"get_or_create_matches :: saving {len(matches_df)} lines to database")
-        # doesn't work, but why?
-        # matches_lines = matches_df.apply(lambda row: Matches(**row), axis=1)
-        matches_lines = list()
-        for m in matches_df.to_dict(orient='records'):
-            matches_lines.append(Matches(**m))
-        db.session.add_all(matches_lines)
+        current_app.logger.debug(f"get_or_create_matches :: saving {len(df_matches)} lines to database")
+        df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
         db.session.commit()
         current_app.logger.debug("get_or_create_matches :: saved to database")
 
-        matches_df = matches_df.drop('query_id', axis=1).set_index(['match', 'matchend'])
+        matches_df = df_matches.drop('query_id', axis=1).set_index(['match', 'matchend'])
 
     elif return_df:
         current_app.logger.debug("get_or_create_matches :: getting matches from database")
