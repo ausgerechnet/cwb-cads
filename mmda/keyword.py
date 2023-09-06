@@ -6,8 +6,8 @@ from ccc import Corpus as Crps
 from flask import current_app
 
 from . import db
-from .database import Corpus, KeywordItems
 from .collocation import score_counts
+from .database import Corpus, KeywordItems
 
 bp = APIBlueprint('keyword', __name__, url_prefix='/keyword')
 
