@@ -111,11 +111,12 @@ def get_or_create_cooc(collocation, window=None):
         current_app.logger.debug("get_or_create_cooc :: saved to database")
 
         df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
+        df_cooc = df_cooc[['cotext_id', 'match_pos', 'cpos', 'offset']]
 
     else:
         current_app.logger.debug("get_or_create_cooc :: getting cooc-table from database")
         sql_query = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
-        df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id')
+        df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
         current_app.logger.debug(f"get_or_create_cooc :: got {len(df_cooc)} lines from database")
 
     return df_cooc
