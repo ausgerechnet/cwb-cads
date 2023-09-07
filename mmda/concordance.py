@@ -42,9 +42,6 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
         match_strategy='longest'
     )
 
-    for line in lines:
-        line['lemma'] = [cqp_escape(lemma) for lemma in line['lemma']]
-
     return lines
 
 
