@@ -1,4 +1,4 @@
-# cwb-cda
+# cwb-cads
 
 - a python backend for corpus-linguistic discourse analysis
   + CLI
