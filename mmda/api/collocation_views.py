@@ -102,7 +102,7 @@ def create_collocation(username):
     corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
 
     # Discourseme
-    current_app.logger.debug('Creating collocation :: disourseme management')
+    current_app.logger.info('Creating collocation :: disourseme management')
     if isinstance(discourseme, str):
         # new discourseme
         filter_discourseme = Discourseme(name=discourseme, user_id=user.id)
@@ -115,13 +115,18 @@ def create_collocation(username):
         raise ValueError()
 
     # Constellation
-    current_app.logger.debug('Creating collocation :: constellation management')
+    current_app.logger.info('Creating collocation :: constellation management')
     constellation = Constellation(user_id=user.id)
     constellation.filter_discoursemes.append(filter_discourseme)
     db.session.add(constellation)
 
     # Query
-    current_app.logger.debug('Creating collocation :: query')
+    current_app.logger.info('Creating collocation :: query')
+    # current_app.logger.error('fails on obelix')
+    # items = [item.encode() for item in items]
+    # current_app.logger.error(items)
+    current_app.logger.error('ü')
+    current_app.logger.error(u"ü".encode())
     cqp_query = format_cqp_query(items, p_query=p_query, s_query=s_break, flags=flags_query, escape=escape)
     query = Query(discourseme_id=filter_discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query)
     db.session.add(query)
@@ -129,25 +134,25 @@ def create_collocation(username):
     ccc_query(query)
 
     # Breakdown
-    current_app.logger.debug('Creating collocation :: breakdown')
+    current_app.logger.info('Creating collocation :: breakdown')
     breakdown = Breakdown(query_id=query.id, p=p)
     db.session.add(breakdown)
     db.session.commit()
     ccc_breakdown(breakdown)
 
     # Collocation
-    current_app.logger.debug('Creating collocation :: collocation')
+    current_app.logger.info('Creating collocation :: collocation')
     collocation = Collocation(query_id=query.id, p=p, s_break=s_break, context=context, user_id=user.id, constellation_id=constellation.id)
     db.session.add(collocation)
     db.session.commit()
     ccc_collocates(collocation, cut_off=cut_off, min_freq=min_freq)
 
     # Semantic Map
-    current_app.logger.debug('Creating collocation :: semantic map')
+    current_app.logger.info('Creating collocation :: semantic map')
     ccc_semmap(collocation, collocation._query.corpus.embeddings)
 
     # Update Items
-    current_app.logger.debug('Creating collocation :: adding surface realisations to items')
+    current_app.logger.info('Creating collocation :: adding surface realisations to items')
     filter_discourseme.items = "\t".join(set(filter_discourseme.items.split("\t")).union([cqp_escape(item.item) for item in breakdown.items]))
     db.session.commit()
 
@@ -442,7 +447,7 @@ def get_collocate_for_collocation(username, collocation):
             context_break=collocation.s_break, overwrite=False
         )
 
-        current_app.logger.debug('Getting SOC collocation items :: filtering')
+        current_app.logger.info('Getting SOC collocation items :: filtering')
         cotext_of_matches = matches.set_context_as_matches(overwrite=True)
         for name, cqp_query in filter_queries.items():
             disc = cotext_of_matches.query(cqp_query, context_break=collocation.s_break)
@@ -476,7 +481,7 @@ def get_collocate_for_collocation(username, collocation):
     counts = DataFrame([vars(s) for s in items], columns=['f', 'f1', 'f2', 'N', 'collocation_id', 'window', 'item']).set_index('item')
 
     if len(counts) == 0:
-        current_app.logger.debug(f'Getting collocation items :: calculating for window {window}')
+        current_app.logger.info(f'Getting collocation items :: calculating for window {window}')
         counts = ccc_collocates(collocation, window=window)
 
     df_collocates = score_counts(counts, cut_off=cut_off)
@@ -685,7 +690,7 @@ def get_coordinates(username, collocation):
     if not collocation:
         return jsonify({'msg': 'no such collocation analysis'}), 404
 
-    current_app.logger.debug('Getting collocation items :: making sure there are coordinates for all items')
+    current_app.logger.info('Getting collocation items :: making sure there are coordinates for all items')
     ccc_semmap_update(collocation)
 
     # load coordinates
@@ -712,7 +717,7 @@ def update_collocation(username, collocation):
 
     counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
     for window in set(counts['window']):
-        current_app.logger.debug(f'Updating collocation :: window {window}')
+        current_app.logger.info(f'Updating collocation :: window {window}')
         ccc_collocates(collocation, window)
 
     return jsonify({'msg': 'updated'}), 200
