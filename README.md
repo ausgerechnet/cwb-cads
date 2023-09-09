@@ -1,12 +1,48 @@
-# cwb-cads
+# cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies 
 
-- a python backend for corpus-linguistic discourse analysis
-  + CLI
-  + OpenApi, user management (auth, history)
+- implemented in Python/APIFlask
+
+- interactive OpenAPI documentation at cwb-cads/docs
+
+- MMDA backend available via cwb-cads/mmda/
+  + JWT authorization
+  + dedicated to old vue.js frontend
+
 - uses cwb-ccc for connecting to the CWB
   + CWB must be installed
   + corpora must be imported via cwb-encode
-  + no further corpus installation needed, but creating s-att tables is recommended
+  + no further corpus installation needed (TODO: creating s-att tables)
+
+
+## development
+
+## serve via Apache2 in production
+- install `mod_wsgi_express` in virtual environment
+  ```
+  . venv/bin/activate && pip install mod_wsgi_express
+  ```
+- add the following to `/etc/apache2/sites-enabled/vhost-corpora-le-ssl.conf`:
+  ```
+  <Virtualhost *:443>
+  
+	  ...
+	  
+
+	  WSGIDaemonProcess mmda user=www-data group=www-data threads=4 python-home=/data/Philipp/cwb-cads/venv
+	  WSGIScriptAlias /cwb-cads /data/Philipp/cwb-cads/cwb-cads.wsgi
+	  WSGIPassAuthorization on
+	  
+	  <Directory /data/Philipp/cwb-cads/>
+		WSGIProcessGroup mmda
+		WSGIApplicationGroup %{GLOBAL}
+		Order deny,allow
+		Require all granted
+	  </Directory>
+	
+	  ...
+	  
+  </Virtualhost>
+  ```
 
 ## standard features
 - query interface
