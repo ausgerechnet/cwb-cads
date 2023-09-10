@@ -1,3 +1,6 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from os import getenv
 
 
@@ -6,10 +9,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     OPENAPI_VERSION = '3.0.2'
     INFO = {
-        'description': 'mmda-v2 backend',
+        'description': 'cwb-cads',
         'contact': {
             'name': 'Philipp Heinrich',
-            'url': 'https://philipp-heinrich.eu',
+            'url': 'https://github.com/ausgerechnet/cwb-cads',
             'email': 'philipp.heinrich@fau.de'
         }
     }
