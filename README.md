@@ -30,20 +30,8 @@
     ```
   + install Apache mod for WSGI daemon
     ```
-    sudo apt-get install python3-pip apache2 libapache2-mod-wsgi-py3
+    sudo apt install libapache2-mod-wsgi-py3
     ```
-
-- in case you need to set up SSL:
-
-  + enable SSL
-  ```
-  sudo a2enmod ssl
-  systemctl restart apache2
-  ```
-  + create SSL certificate
-  ```
-  sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt
-  ```
 
 - install `mod_wsgi_express` in virtual environment
   ```
@@ -55,7 +43,7 @@
   sudo chgrp www-data -R cwb-cads/
   sudo find ./ -type d -exec chmod 755 -R {} \;
   sudo find ./ -type f -exec chmod 644 {} \;
-  sudo chmod -R g+w instance/
+  sudo chmod -R g+w cwb-cads/instance/
   ```
 
 - make sure that root directory can be served by Apache
