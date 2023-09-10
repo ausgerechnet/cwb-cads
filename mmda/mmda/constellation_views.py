@@ -20,7 +20,7 @@ from ..database import Constellation, Corpus, Discourseme, User
 from ..query import ccc_query, get_or_create_query
 from .login_views import user_required
 
-constellation_blueprint = APIBlueprint('constellation', __name__, template_folder='templates')
+constellation_blueprint = APIBlueprint('constellation', __name__, url_prefix='/user/<username>/constellation')
 
 
 def pairwise_intersections(dict_of_sets):
@@ -30,7 +30,7 @@ def pairwise_intersections(dict_of_sets):
     return res
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/', methods=['POST'])
+@constellation_blueprint.route('/', methods=['POST'])
 @user_required
 def create_constellation(username):
     """ Create new constellation.
@@ -69,7 +69,7 @@ def create_constellation(username):
     return jsonify({'msg': constellation.id}), 201
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/', methods=['GET'])
+@constellation_blueprint.route('/<constellation>/', methods=['GET'])
 @user_required
 def get_constellation(username, constellation):
     """ Get details for constellation.
@@ -88,7 +88,7 @@ def get_constellation(username, constellation):
     return jsonify(constellation.serialize), 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/', methods=['GET'])
+@constellation_blueprint.route('/', methods=['GET'])
 @user_required
 def get_constellations(username):
     """ List all constellations for a user.
@@ -103,7 +103,7 @@ def get_constellations(username):
     return jsonify(constellations_list), 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/', methods=['PUT'])
+@constellation_blueprint.route('/<constellation>/', methods=['PUT'])
 @user_required
 def update_constellation(username, constellation):
     """ Update constellation details.
@@ -127,7 +127,7 @@ def update_constellation(username, constellation):
     return jsonify({'msg': constellation.id}), 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/', methods=['DELETE'])
+@constellation_blueprint.route('/<constellation>/', methods=['DELETE'])
 @user_required
 def delete_constellation(username, constellation):
     """ Delete constellation.
@@ -148,7 +148,7 @@ def delete_constellation(username, constellation):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/discourseme/', methods=['GET'])
+@constellation_blueprint.route('/<constellation>/discourseme/', methods=['GET'])
 @user_required
 def get_discoursemes_for_constellation(username, constellation):
     """ List discoursemes for constellation.
@@ -169,7 +169,7 @@ def get_discoursemes_for_constellation(username, constellation):
     return jsonify(constellation_discoursemes), 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/discourseme/<discourseme>/', methods=['PUT'])
+@constellation_blueprint.route('/<constellation>/discourseme/<discourseme>/', methods=['PUT'])
 @user_required
 def put_discourseme_into_constellation(username, constellation, discourseme):
     """ Put a discourseme into a constellation.
@@ -201,7 +201,7 @@ def put_discourseme_into_constellation(username, constellation, discourseme):
     return jsonify({'msg': 'Updated'}), 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/discourseme/<discourseme>/', methods=['DELETE'])
+@constellation_blueprint.route('/<constellation>/discourseme/<discourseme>/', methods=['DELETE'])
 @user_required
 def delete_discourseme_from_constellation(username, constellation, discourseme):
     """
@@ -231,7 +231,7 @@ def delete_discourseme_from_constellation(username, constellation, discourseme):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/concordance/', methods=['GET'])
+@constellation_blueprint.route('/<constellation>/concordance/', methods=['GET'])
 @user_required
 def get_constellation_concordance(username, constellation):
     """ Get concordance lines for a constellation.
@@ -294,7 +294,7 @@ def get_constellation_concordance(username, constellation):
     return conc_json, 200
 
 
-@constellation_blueprint.route('/api/user/<username>/constellation/<constellation>/association/', methods=['GET'])
+@constellation_blueprint.route('/<constellation>/association/', methods=['GET'])
 @user_required
 def get_constellation_associations(username, constellation):
     """ Get association scores for all discoursemes in constellation.

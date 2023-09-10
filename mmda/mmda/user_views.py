@@ -13,11 +13,11 @@ from .. import db
 from ..database import User
 from .login_views import user_required
 
-user_blueprint = APIBlueprint('user', __name__, template_folder='templates')
+user_blueprint = APIBlueprint('user', __name__, url_prefix='/user/<username>')
 log = getLogger('mmda-logger')
 
 
-@user_blueprint.route('/api/user/<username>/', methods=['GET'])
+@user_blueprint.route('/', methods=['GET'])
 @user_required
 def get_user(username):
     """
@@ -33,7 +33,7 @@ def get_user(username):
     return jsonify(user.serialize), 200
 
 
-@user_blueprint.route('/api/user/<username>/password/', methods=['PUT'])
+@user_blueprint.route('/password/', methods=['PUT'])
 @user_required
 def put_user_password(username):
     """
@@ -64,7 +64,7 @@ def put_user_password(username):
     return jsonify({'msg': 'Updated'}), 200
 
 
-@user_blueprint.route('/api/user/<username>/', methods=['PUT'])
+@user_blueprint.route('/', methods=['PUT'])
 @user_required
 def put_user(username):
     """

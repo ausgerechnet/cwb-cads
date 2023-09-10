@@ -22,13 +22,13 @@ from ..query import ccc_query
 from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update
 from .login_views import user_required
 
-collocation_blueprint = APIBlueprint('collocation', __name__)
+collocation_blueprint = APIBlueprint('collocation', __name__, url_prefix='/user/<username>/collocation')
 
 
 ###############
 # COLLOCATION #
 ###############
-@collocation_blueprint.route('/api/user/<username>/collocation/', methods=['POST'])
+@collocation_blueprint.route('/', methods=['POST'])
 @user_required
 def create_collocation(username):
     """ Create new collocation analysis for given user.
@@ -159,7 +159,7 @@ def create_collocation(username):
     return jsonify({'msg': collocation.id}), 201
 
 
-@collocation_blueprint.route('/api/user/<username>/collocation/', methods=['GET'])
+@collocation_blueprint.route('/', methods=['GET'])
 @user_required
 def get_all_collocation(username):
     """ List all analyses for given user.
@@ -180,7 +180,7 @@ def get_all_collocation(username):
     return jsonify(collocation_list), 200
 
 
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/', methods=['GET'])
+@collocation_blueprint.route('/<collocation>/', methods=['GET'])
 @user_required
 def get_collocation(username, collocation):
     """ Get details of collocation analysis.
@@ -207,7 +207,7 @@ def get_collocation(username, collocation):
     return jsonify(collocation.serialize), 200
 
 
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/', methods=['DELETE'])
+@collocation_blueprint.route('/<collocation>/', methods=['DELETE'])
 @user_required
 def delete_collocation(username, collocation):
     """ Delete collocation.
@@ -239,7 +239,7 @@ def delete_collocation(username, collocation):
 ##########################
 # DISCOURSEME MANAGEMENT #
 ##########################
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/discourseme/', methods=['GET'])
+@collocation_blueprint.route('/<collocation>/discourseme/', methods=['GET'])
 @user_required
 def get_discoursemes_for_collocation(username, collocation):
     """ Return list of discoursemes for collocation.
@@ -270,7 +270,7 @@ def get_discoursemes_for_collocation(username, collocation):
     return jsonify(collocation_discoursemes), 200
 
 
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/discourseme/<discourseme>/', methods=['PUT'])
+@collocation_blueprint.route('/<collocation>/discourseme/<discourseme>/', methods=['PUT'])
 @user_required
 def put_discourseme_into_collocation(username, collocation, discourseme):
     """ Associate a discourseme with collocation.
@@ -320,7 +320,7 @@ def put_discourseme_into_collocation(username, collocation, discourseme):
     return jsonify({'msg': msg}), 200
 
 
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/discourseme/<discourseme>/', methods=['DELETE'])
+@collocation_blueprint.route('/<collocation>/discourseme/<discourseme>/', methods=['DELETE'])
 @user_required
 def delete_discourseme_from_collocation(username, collocation, discourseme):
     """ Remove discourseme from collocation.
@@ -368,7 +368,7 @@ def delete_discourseme_from_collocation(username, collocation, discourseme):
 #####################
 # COLLOCATION ITEMS #
 #####################
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/collocate/', methods=['GET'])
+@collocation_blueprint.route('/<collocation>/collocate/', methods=['GET'])
 @user_required
 def get_collocate_for_collocation(username, collocation):
     """Get collocate items for collocation analysis.
@@ -496,7 +496,7 @@ def get_collocate_for_collocation(username, collocation):
 #####################
 # CONCORDANCE LINES #
 #####################
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/concordance/', methods=['GET'])
+@collocation_blueprint.route('/<collocation>/concordance/', methods=['GET'])
 @user_required
 def get_concordance_for_collocation(username, collocation):
     """ Get concordance lines for collocation.
@@ -581,7 +581,7 @@ def get_concordance_for_collocation(username, collocation):
 #######################
 # FREQUENCY BREAKDOWN #
 #######################
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/breakdown/', methods=['GET'])
+@collocation_blueprint.route('/<collocation>/breakdown/', methods=['GET'])
 @user_required
 def get_breakdown_for_collocation(username, collocation):
     """ Get breakdown for collocation.
@@ -610,7 +610,7 @@ def get_breakdown_for_collocation(username, collocation):
 #####################
 # META DISTRIBUTION #
 #####################
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/meta/', methods=['GET'])
+@collocation_blueprint.route('/<collocation>/meta/', methods=['GET'])
 @user_required
 def get_meta_for_collocation(username, collocation):
     """ Get concordance lines for collocation.
@@ -675,7 +675,7 @@ def get_meta_for_collocation(username, collocation):
 # COORDINATES #
 ###############
 
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/', methods=['GET'])
+@collocation_blueprint.route('/<collocation>/coordinates/', methods=['GET'])
 @user_required
 def get_coordinates(username, collocation):
     """ Get coordinates for collocation analysis.
@@ -705,7 +705,7 @@ def get_coordinates(username, collocation):
 
 
 # TODO change route
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/reload/', methods=['PUT'])
+@collocation_blueprint.route('/<collocation>/coordinates/reload/', methods=['PUT'])
 @user_required
 def update_collocation(username, collocation):
     """ Re-calculate collocation scores
@@ -723,7 +723,7 @@ def update_collocation(username, collocation):
     return jsonify({'msg': 'updated'}), 200
 
 
-@collocation_blueprint.route('/api/user/<username>/collocation/<collocation>/coordinates/', methods=['PUT'])
+@collocation_blueprint.route('/<collocation>/coordinates/', methods=['PUT'])
 @user_required
 def update_coordinates(username, collocation):
     """Update user coordinates. If "none": delete user coordinates.

@@ -10,10 +10,10 @@ from flask_jwt_extended import jwt_required
 from ..corpus import CorpusOut, ccc_corpus
 from ..database import Corpus
 
-corpus_blueprint = APIBlueprint('corpus', __name__)
+corpus_blueprint = APIBlueprint('corpus', __name__, url_prefix='/corpus')
 
 
-@corpus_blueprint.route('/api/corpus/', methods=['GET'])
+@corpus_blueprint.route('/', methods=['GET'])
 @jwt_required()
 def get_corpora():
     """
@@ -32,7 +32,7 @@ def get_corpora():
     return jsonify(corpora), 200
 
 
-@corpus_blueprint.get('/api/corpus/<corpus>/')
+@corpus_blueprint.get('/<corpus>/')
 @jwt_required()
 def get_corpus(corpus):
     """Returns a list of available corpora as JSON array with their details.

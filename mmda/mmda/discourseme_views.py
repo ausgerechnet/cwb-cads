@@ -9,10 +9,10 @@ from .. import db
 from ..database import Discourseme, User
 from .login_views import user_required
 
-discourseme_blueprint = APIBlueprint('discourseme', __name__)
+discourseme_blueprint = APIBlueprint('discourseme', __name__, url_prefix='/user/<username>/discourseme')
 
 
-@discourseme_blueprint.route('/api/user/<username>/discourseme/', methods=['POST'])
+@discourseme_blueprint.route('/', methods=['POST'])
 @user_required
 def create_discourseme(username):
     """Create a new discourseme.
@@ -31,7 +31,7 @@ def create_discourseme(username):
     return jsonify({'msg': discourseme.id}), 201
 
 
-@discourseme_blueprint.route('/api/user/<username>/discourseme/', methods=['GET'])
+@discourseme_blueprint.route('/', methods=['GET'])
 @user_required
 def get_discoursemes(username):
     """List discoursemes for a user.
@@ -44,7 +44,7 @@ def get_discoursemes(username):
     return jsonify(discoursemes), 200
 
 
-@discourseme_blueprint.route('/api/user/<username>/discourseme/<discourseme>/', methods=['GET'])
+@discourseme_blueprint.route('/<discourseme>/', methods=['GET'])
 @user_required
 def get_discourseme(username, discourseme):
     """Get the details of a discourseme.
@@ -57,7 +57,7 @@ def get_discourseme(username, discourseme):
     return jsonify(discourseme.serialize), 200
 
 
-@discourseme_blueprint.route('/api/user/<username>/discourseme/<discourseme>/', methods=['PUT'])
+@discourseme_blueprint.route('/<discourseme>/', methods=['PUT'])
 @user_required
 def update_discourseme(username, discourseme):
     """
@@ -79,7 +79,7 @@ def update_discourseme(username, discourseme):
     return jsonify({'msg': discourseme.id}), 200
 
 
-@discourseme_blueprint.route('/api/user/<username>/discourseme/<discourseme>/', methods=['DELETE'])
+@discourseme_blueprint.route('/<discourseme>/', methods=['DELETE'])
 @user_required
 def delete_discourseme(username, discourseme):
     """

@@ -13,7 +13,7 @@ from werkzeug.security import check_password_hash
 
 from ..database import User
 
-login_blueprint = APIBlueprint('login', __name__, template_folder='templates')
+login_blueprint = APIBlueprint('login', __name__)
 
 
 def user_required(fn):
@@ -61,7 +61,7 @@ def admin_required(fn):
     return wrapper
 
 
-@login_blueprint.route('/api/login/', methods=['POST'])
+@login_blueprint.route('/login/', methods=['POST'])
 def login():
     """
     Login route to get JWT token to access the API
@@ -93,7 +93,7 @@ def login():
     return jsonify(tokens), 200
 
 
-@login_blueprint.route('/api/refresh/', methods=['POST'])
+@login_blueprint.route('/refresh/', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
     """
@@ -108,7 +108,7 @@ def refresh():
     return jsonify(ret), 200
 
 
-@login_blueprint.route('/api/test-login/', methods=['GET'])
+@login_blueprint.route('/test-login/', methods=['GET'])
 @jwt_required()
 def test_login():
     """
@@ -122,7 +122,7 @@ def test_login():
     return jsonify(ret), 200
 
 
-@login_blueprint.route('/api/test-login/<username>/', methods=['GET'])
+@login_blueprint.route('/test-login/<username>/', methods=['GET'])
 @user_required
 def test_user(username):
     """
@@ -136,7 +136,7 @@ def test_user(username):
     return jsonify(ret), 200
 
 
-@login_blueprint.route('/api/test-admin/', methods=['GET'])
+@login_blueprint.route('/test-admin/', methods=['GET'])
 @admin_required
 def test_admin():
     """

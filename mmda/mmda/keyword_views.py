@@ -18,14 +18,14 @@ from ..semantic_map import CoordinatesOut, ccc_semmap
 from .collocation_views import score_counts
 from .login_views import user_required
 
-keyword_blueprint = APIBlueprint('keyword', __name__)
+keyword_blueprint = APIBlueprint('keyword', __name__, url_prefix='/user/<username>/keyword')
 
 
 ###########
 # KEYWORD #
 ###########
 
-@keyword_blueprint.route('/api/user/<username>/keyword/', methods=['POST'])
+@keyword_blueprint.route('/', methods=['POST'])
 @user_required
 def create_keyword(username):
     """ Create new keyword analysis for given user.
@@ -105,7 +105,7 @@ def create_keyword(username):
     return jsonify({'msg': keyword.id}), 201
 
 
-@keyword_blueprint.route('/api/user/<username>/keyword/', methods=['GET'])
+@keyword_blueprint.route('/', methods=['GET'])
 @user_required
 def get_all_keyword(username):
     """ List all keyword analyses for given user.
@@ -126,7 +126,7 @@ def get_all_keyword(username):
     return jsonify(keyword_list), 200
 
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/', methods=['GET'])
+@keyword_blueprint.route('/<keyword>/', methods=['GET'])
 @user_required
 def get_keyword(username, keyword):
     """ Get details of keyword analysis.
@@ -154,7 +154,7 @@ def get_keyword(username, keyword):
     return jsonify(keyword.serialize), 200
 
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/', methods=['DELETE'])
+@keyword_blueprint.route('/<keyword>/', methods=['DELETE'])
 @user_required
 def delete_keyword(username, keyword):
     """ Delete keyword analysis.
@@ -191,7 +191,7 @@ def delete_keyword(username, keyword):
 # DISCOURSEME MANAGEMENT #
 ##########################
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/discourseme/', methods=['GET'])
+@keyword_blueprint.route('/<keyword>/discourseme/', methods=['GET'])
 @user_required
 def get_discoursemes_for_keyword(username, keyword):
     """ Return list of discoursemes for keyword analysis.
@@ -222,7 +222,7 @@ def get_discoursemes_for_keyword(username, keyword):
     return jsonify(keyword_discoursemes), 200
 
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/discourseme/<discourseme>/', methods=['PUT'])
+@keyword_blueprint.route('/<keyword>/discourseme/<discourseme>/', methods=['PUT'])
 @user_required
 def put_discourseme_into_keyword(username, keyword, discourseme):
     """ Associate a discourseme with keyword analysis.
@@ -270,7 +270,7 @@ def put_discourseme_into_keyword(username, keyword, discourseme):
     return jsonify({'msg': msg}), 200
 
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/discourseme/<discourseme>/', methods=['DELETE'])
+@keyword_blueprint.route('/<keyword>/discourseme/<discourseme>/', methods=['DELETE'])
 @user_required
 def delete_discourseme_from_keyword(username, keyword, discourseme):
     """ Remove discourseme from keyword analysis.
@@ -319,7 +319,7 @@ def delete_discourseme_from_keyword(username, keyword, discourseme):
 # KEYWORD ITEMS #
 #################
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/keywords/', methods=['GET'])
+@keyword_blueprint.route('/<keyword>/keywords/', methods=['GET'])
 @user_required
 def get_keywords_for_keyword(username, keyword):
     """ Get keywords table for keyword analysis.
@@ -392,7 +392,7 @@ def get_keywords_for_keyword(username, keyword):
 #####################
 # CONCORDANCE LINES #
 #####################
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/concordance/', methods=['GET'])
+@keyword_blueprint.route('/<keyword>/concordance/', methods=['GET'])
 @user_required
 def get_concordance_for_keyword(username, keyword):
     """ Get concordance lines for analysis.
@@ -479,7 +479,7 @@ def get_concordance_for_keyword(username, keyword):
 # COORDINATES #
 ###############
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/coordinates/', methods=['GET'])
+@keyword_blueprint.route('/<keyword>/coordinates/', methods=['GET'])
 @user_required
 def get_coordinates_keywords(username, keyword):
     """ Get coordinates for keyword analysis.
@@ -505,7 +505,7 @@ def get_coordinates_keywords(username, keyword):
     return jsonify(out), 200
 
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/coordinates/reload/', methods=['PUT'])
+@keyword_blueprint.route('/<keyword>/coordinates/reload/', methods=['PUT'])
 @user_required
 def update_keyword(username, keyword):
     """ Re-calculate coordinates for keyword analysis.
@@ -521,7 +521,7 @@ def update_keyword(username, keyword):
     return jsonify({'msg': 'updated'}), 200
 
 
-@keyword_blueprint.route('/api/user/<username>/keyword/<keyword>/coordinates/', methods=['PUT'])
+@keyword_blueprint.route('/<keyword>/coordinates/', methods=['PUT'])
 @user_required
 def update_coordinates_keyword(username, keyword):
     """ Update user coordinates.
@@ -561,7 +561,7 @@ def update_coordinates_keyword(username, keyword):
 #     log.debug(f'prepared marginals for corpus "{corpus_name}" (attribute(s): {p_atts})')
 
 
-# @keyword_blueprint.route('/api/keyword/cache-marginals', methods=['GET'])
+# @keyword_blueprint.route('/keyword/cache-marginals', methods=['GET'])
 # @admin_required
 # def prepare_all_marginals():
 #     """create cache of marginals for each corpus"""

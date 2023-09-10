@@ -12,7 +12,7 @@ from ..database import (Collocation, Constellation, Discourseme, Keyword, Role,
                         User)
 from .login_views import admin_required
 
-admin_blueprint = APIBlueprint('admin', __name__, template_folder='templates')
+admin_blueprint = APIBlueprint('admin', __name__, template_folder='templates', url_prefix='/admin')
 
 
 def find_or_create_user(username, first_name, last_name, email, password, role=None):
@@ -46,7 +46,7 @@ def find_or_create_user(username, first_name, last_name, email, password, role=N
     return user
 
 
-@admin_blueprint.route('/api/admin/user/', methods=['POST'])
+@admin_blueprint.route('/user/', methods=['POST'])
 @admin_required
 def create_user():
     """
@@ -82,7 +82,7 @@ def create_user():
     return jsonify({'msg': user.id}), 201
 
 
-@admin_blueprint.route('/api/admin/user/', methods=['GET'])
+@admin_blueprint.route('/user/', methods=['GET'])
 @admin_required
 def get_users():
     """
@@ -95,7 +95,7 @@ def get_users():
     return jsonify(user_names), 200
 
 
-@admin_blueprint.route('/api/admin/user/<username>/password/', methods=['PUT'])
+@admin_blueprint.route('/user/<username>/password/', methods=['PUT'])
 @admin_required
 def put_user_password(username):
     """
@@ -125,7 +125,7 @@ def put_user_password(username):
     return jsonify({'msg': 'Updated'}), 200
 
 
-@admin_blueprint.route('/api/admin/user/<username>/', methods=['DELETE'])
+@admin_blueprint.route('/user/<username>/', methods=['DELETE'])
 @admin_required
 def delete_user(username):
     """
@@ -149,7 +149,7 @@ def delete_user(username):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-@admin_blueprint.route('/api/admin/collocation/', methods=['GET'])
+@admin_blueprint.route('/collocation/', methods=['GET'])
 @admin_required
 def get_collocation():
     """
@@ -162,7 +162,7 @@ def get_collocation():
     return jsonify(items_serial), 200
 
 
-@admin_blueprint.route('/api/admin/keyword/', methods=['GET'])
+@admin_blueprint.route('/keyword/', methods=['GET'])
 @admin_required
 def get_keyword():
     """
@@ -175,7 +175,7 @@ def get_keyword():
     return jsonify(items_serial), 200
 
 
-@admin_blueprint.route('/api/admin/discourseme/', methods=['GET'])
+@admin_blueprint.route('/discourseme/', methods=['GET'])
 @admin_required
 def get_discourseme():
     """
@@ -188,7 +188,7 @@ def get_discourseme():
     return jsonify(items_serial), 200
 
 
-@admin_blueprint.route('/api/admin/constellation/', methods=['GET'])
+@admin_blueprint.route('/constellation/', methods=['GET'])
 @admin_required
 def get_constellation():
     """
@@ -201,7 +201,7 @@ def get_constellation():
     return jsonify(items_serial), 200
 
 
-@admin_blueprint.route('/api/admin/collocation/<collocation>/', methods=['DELETE'])
+@admin_blueprint.route('/collocation/<collocation>/', methods=['DELETE'])
 @admin_required
 def delete_collocation(collocation):
     """
@@ -220,7 +220,7 @@ def delete_collocation(collocation):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-@admin_blueprint.route('/api/admin/keyword/<keyword>/', methods=['DELETE'])
+@admin_blueprint.route('/keyword/<keyword>/', methods=['DELETE'])
 @admin_required
 def delete_keyword(keyword):
     """
@@ -239,7 +239,7 @@ def delete_keyword(keyword):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-@admin_blueprint.route('/api/admin/discourseme/<discourseme>/', methods=['DELETE'])
+@admin_blueprint.route('/discourseme/<discourseme>/', methods=['DELETE'])
 @admin_required
 def delete_discourseme(discourseme):
     """
@@ -258,7 +258,7 @@ def delete_discourseme(discourseme):
     return jsonify({'msg': 'Deleted'}), 200
 
 
-@admin_blueprint.route('/api/admin/constellation/<constellation>/', methods=['DELETE'])
+@admin_blueprint.route('/constellation/<constellation>/', methods=['DELETE'])
 @admin_required
 def delete_constellation(constellation):
     """
