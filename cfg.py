@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from os import getenv
-from mmda.version import __version__
+from cads.version import __version__
 
 
 class Config:

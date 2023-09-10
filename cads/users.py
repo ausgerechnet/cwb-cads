@@ -6,8 +6,8 @@ from apiflask.fields import Integer, List, String
 from flask import current_app, g, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from mmda import db
-from mmda.database import User
+from . import db
+from .database import User
 
 bp = APIBlueprint('user', __name__, url_prefix='/user')
 auth = HTTPBasicAuth()

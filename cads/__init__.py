@@ -15,7 +15,7 @@ from .version import __version__
 
 CONFIG = os.getenv('CWB_CADS_CONFIG', default='cfg.TestConfig')
 
-NAME = 'mmda'
+NAME = 'cads'
 TITLE = 'cwb-cads'
 
 db = SQLAlchemy()
