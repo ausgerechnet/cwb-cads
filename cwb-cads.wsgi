@@ -1,13 +1,15 @@
-#! /data/Philipp/cwb-cads/venv/bin/python3
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
 import os
-
-root = '/data/Philipp/cwb-cads/'
-sys.path.insert(0, root)
-
 from logging.config import dictConfig
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, dir_path)
+
+from mmda import create_app
+from cfg import ProdConfig
 
 dictConfig({
     'version': 1,
@@ -17,7 +19,7 @@ dictConfig({
     'handlers': {'wsgi': {
         'class': 'logging.handlers.RotatingFileHandler',
         "formatter": "default",
-        "filename": os.path.join(root, "instance/mmda.log"),
+        "filename": os.path.join(dir_path, "instance", "mmda.log"),
         "maxBytes": 1000000,
         "backupCount": 10,
         "delay": "True",
@@ -28,9 +30,5 @@ dictConfig({
         'handlers': ['wsgi']
     }
 })
-
-
-from mmda import create_app
-from cfg import ProdConfig
 
 application = create_app(ProdConfig)
