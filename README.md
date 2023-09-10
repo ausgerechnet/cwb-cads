@@ -1,39 +1,78 @@
 # cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies 
 
 - implemented in Python/APIFlask
-
-- interactive OpenAPI documentation at cwb-cads/docs
-
-- MMDA backend available via cwb-cads/mmda/
-  + JWT authorization
-  + dedicated to old vue.js frontend
+  + interactive OpenAPI documentation at [cwb-cads/docs](https://corpora.linguistik.uni-erlangen.de/cwb-cads/docs)
 
 - uses cwb-ccc for connecting to the CWB
   + CWB must be installed
   + corpora must be imported via cwb-encode
   + no further corpus installation needed (TODO: creating s-att tables)
 
+- MMDA backend available via [cwb-cads/mmda/](https://corpora.linguistik.uni-erlangen.de/cwb-cads/mmda/)
+  + JWT authorization
+  + dedicated to old vue.js frontend
 
-## development
+## Development
 
-## serve via Apache2 in production
+- use makefile for testing and development
+  ```
+  make install
+  make init
+  make run
+  make test
+  ```
+
+- we use Apache in production
+
+  + install Apache
+    ```
+    sudo apt install apache2 apache2-dev
+    ```
+  + install Apache mod for WSGI daemon
+    ```
+    sudo apt-get install python3-pip apache2 libapache2-mod-wsgi-py3
+    ```
+
+- in case you need to set up SSL:
+
+  + enable SSL
+  ```
+  sudo a2enmod ssl
+  systemctl restart apache2
+  ```
+  + create SSL certificate
+  ```
+  sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt
+  ```
+
 - install `mod_wsgi_express` in virtual environment
   ```
-  . venv/bin/activate && pip install mod_wsgi_express
+  . venv/bin/activate && pip install mod-wsgi
   ```
-- add the following to `/etc/apache2/sites-enabled/vhost-corpora-le-ssl.conf`:
+
+- set group of root directory to `www-data` and make files accessible for group
   ```
-  <Virtualhost *:443>
+  sudo chgrp www-data -R cwb-cads/
+  sudo find ./ -type d -exec chmod 755 -R {} \;
+  sudo find ./ -type f -exec chmod 644 {} \;
+  sudo chmod -R g+w instance/
+  ```
+
+- make sure that root directory can be served by Apache
+  + NB: all parent directories must be accessible by `www-data` (e.g. `chmod o+rx /home/<USER>/`)
+
+- add the following to `/etc/apache2/sites-enabled/<HOSTS>.conf`
+  ```apacheconf
+  <Virtualhost ...>
   
 	  ...
 	  
-
-	  WSGIDaemonProcess mmda user=www-data group=www-data threads=4 python-home=/data/Philipp/cwb-cads/venv
-	  WSGIScriptAlias /cwb-cads /data/Philipp/cwb-cads/cwb-cads.wsgi
+	  WSGIDaemonProcess cwb-cads user=www-data group=www-data threads=4 python-home=/<PATH-TO-CWB-CADS>/venv locale='C.UTF-8'
+	  WSGIScriptAlias /cwb-cads /<PATH-TO-CWB-CADS>/cwb-cads.wsgi
 	  WSGIPassAuthorization on
 	  
-	  <Directory /data/Philipp/cwb-cads/>
-		WSGIProcessGroup mmda
+	  <Directory /<PATH-TO-CWB-CADS/>
+		WSGIProcessGroup cwb-cads
 		WSGIApplicationGroup %{GLOBAL}
 		Order deny,allow
 		Require all granted
@@ -43,21 +82,28 @@
 	  
   </Virtualhost>
   ```
+  
+- restart Apache
+  ```
+  sudo service apache2 restart
+  ```
 
-## standard features
-- query interface
-- concordancing
-- breakdown (using anchor points)
-- collocation
+## Features
+
+### standard features
+- [x] query interface
+- [x] concordancing
+- [x] breakdown (using anchor points)
+- [x] collocation
+- [x] keyword analysis
 - subcorpus creation
 - meta distribution
-- keyword analysis
+
 
 ## MMDA features
 - discoursemes
   + creation 
-  + description
-  + query
+  + query / collocation analysis
   + meta distribution
 - discourseme constellations
   + pairwise discourseme associations
@@ -71,59 +117,50 @@
   + projection (including new items in created map)
   + interactive drag & drop for discourseme creation
 
+# current issues
 
-### components
+bugfix
+- deleting discourseme → deleting collocations where discourseme is filter
+- no results → network error; but empty discourseme is added
+- few results → no collocates table → netwerk error
 
-#### keyword analysis
+performance:
+- quick-conc ain't quick enough
+- create all window counts separately
+- regenerate: delete all collocation items, create for given window size
 
-#### collocation analysis
+semantic map
+- discourseme positions: automatically move items towards center of manual positions
+- new items: move away from center
 
-#### interaction on semantic map
+code sanity
+- move second order collocation to ccc_collocates
 
-discoursemes → corpora → matches
+test
+- top-level methods only
 
-corpora → discoursemes → matches
+# test cases
 
+## collocation analysis workflow
 
-discourseme-view
+create collocation (constellation: one filter discourseme, no highlight discoursemes)
 
-POST /discourseme/?cwb_id=<cwb_id>
+- get breakdown
+- get collocation
+- get concordance
 
-GET /discourseme/<id>/matches/?cwb_id=<cwb_id>
-- for specified corpora: provide matches
+create discourseme
 
-keyword-view
+- create discourseme from two items
+- add discourseme to highlight discoursemes
 
-collocation-view
+- get concordance lines
 
-constellation-view
+delete discourseme
 
+- delete discourseme from highlight discoursemes
 
-POST /corpus/<id>/discourseme/
+change discourseme
 
-GET /matches/discoursemes/
-
-
-
-
-+ discourseme creation / update
-
-+ query creation
-  + 1 item
-  + 2 items
-  + many items
-    
-PATCH discourseme/<id> 
-+ discourseme update
-  + include in discourseme
-  + remove from discourseme
-
-
-
-POST discourseme/corpus/<topic_id>
-+ topic update = restart
-
-GET discourseme/<id>/concordance
-+ discourseme concordance
-
-GET discourseme
+- delete item from discourseme
+- add item to discourseme
