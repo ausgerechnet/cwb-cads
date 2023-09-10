@@ -35,11 +35,10 @@ class ProdConfig(Config):
     DB_NAME = "mmda.sqlite"  # relative to instance folder
     ADMIN_PASSWORD = "mmda-admin"  # only user (name = 'admin')
 
-    CORPORA = 'tests/corpora/corpora.json'
-    CCC_REGISTRY_DIR = str(getenv('CORPUS_REGISTRY', default='tests/corpora/registry/'))
+    CORPORA = '/data/Philipp/mmda-corpora.json'
+    CCC_REGISTRY_DIR = '/data/Philipp/cwb-cads/tests/corpora/registry'
 
-    CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/mmda-ccc-cache/'))
-    ANYCACHE_DIR = str(getenv('ANYCACHE_DIR', '/tmp/mmda-anycache/'))
+    CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/mmda-ccc-data/'))
 
     JWT_ACCESS_TOKEN_EXPIRES = 60*60*12
     JWT_REFRESH_TOKEN_EXPIRES = 60*60*12
@@ -48,16 +47,14 @@ class ProdConfig(Config):
 class DevConfig(Config):
 
     DEBUG = True
-    # TESTING = True
 
     DB_NAME = "mmda-dev.sqlite"
     ADMIN_PASSWORD = "mmda-admin"
 
     CORPORA = '/home/ausgerechnet/corpora/cwb/mmda-corpora.json'
-    CCC_REGISTRY_DIR = str(getenv('CORPUS_REGISTRY', default='tests/corpora/registry/'))
+    CCC_REGISTRY_DIR = '/home/ausgerechnet/corpora/cwb/registry/'
 
-    CCC_DATA_DIR = 'instance/dev-ccc-data/'
-    ANYCACHE_DIR = 'instance/dev-mmda-anycache/'
+    CCC_DATA_DIR = '/tmp/dev-ccc-data/'
 
     JWT_ACCESS_TOKEN_EXPIRES = False
     JWT_REFRESH_TOKEN_EXPIRES = False
@@ -70,13 +67,12 @@ class TestConfig(Config):
     APP_ENV = 'testing'
 
     DB_NAME = 'mmda-test.sqlite'
-    ADMIN_PASSWORD = '0000'
+    ADMIN_PASSWORD = 'mmda-admin'
 
     CORPORA = 'tests/corpora/corpora.json'
     CCC_REGISTRY_DIR = 'tests/corpora/registry/'
 
     CCC_DATA_DIR = 'instance/test-ccc-data/'
-    ANYCACHE_DIR = 'instance/test-mmda-anycache/'
 
     JWT_ACCESS_TOKEN_EXPIRES = False
     JWT_REFRESH_TOKEN_EXPIRES = False
