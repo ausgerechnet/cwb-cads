@@ -5,6 +5,7 @@ import logging
 import os
 
 from apiflask import APIFlask
+from flask import redirect, request
 from flask.logging import default_handler
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -15,7 +16,7 @@ from .version import __version__
 CONFIG = 'cfg.DevConfig'
 
 NAME = 'mmda'
-TITLE = 'MMDA v2'
+TITLE = 'cwb-cads'
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -38,7 +39,7 @@ def create_app(config=CONFIG):
     try:
         os.makedirs(app.instance_path, exist_ok=True)
     except OSError:
-        app.logger.warning("could not create instance folder")
+        app.logger.warning(f"could not create instance folder {app.instance_path}")
 
     # load config
     app.config.from_object(config)
@@ -87,8 +88,7 @@ def create_app(config=CONFIG):
         """Redirect to API docs.
 
         """
-        from flask import redirect
-        return redirect('/docs')
+        return redirect(request.base_url + "docs")
 
     # register blueprints
     from . import (breakdown, collocation, concordance, constellation, corpus,
@@ -108,7 +108,7 @@ def create_app(config=CONFIG):
     app.register_blueprint(query.bp)
 
     # API for old frontend
-    from .api import api_blueprint
-    app.register_blueprint(api_blueprint)
+    from .mmda import mmda_blueprint
+    app.register_blueprint(mmda_blueprint)
 
     return app
