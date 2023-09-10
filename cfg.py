@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from os import getenv
+from mmda.version import __version__
 
 
 class Config:
@@ -9,12 +10,14 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     OPENAPI_VERSION = '3.0.2'
     INFO = {
-        'description': 'cwb-cads',
+        'title': 'cwb-cads',
+        'description': 'cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies',
         'contact': {
             'name': 'Philipp Heinrich',
-            'url': 'https://github.com/ausgerechnet/cwb-cads',
+            'url': 'https://philipp-heinrich.eu',
             'email': 'philipp.heinrich@fau.de'
-        }
+        },
+        'version': __version__
     }
 
     CCC_CQP_BIN = str(getenv('CQP_BIN', default='cqp'))
