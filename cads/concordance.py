@@ -45,6 +45,16 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
     return lines
 
 
+class ConcordanceIn(Schema):
+
+    context_break = String(default='text', required=False)
+    p_show = List(String, default=['word', 'lemma'], required=False)
+    s_show = List(String, default=[], required=False)
+    order = Integer(default=42, required=False)
+    cut_off = Integer(default=500, required=False)
+    window = Integer(default=20, required=False)
+
+
 class ConcordanceLinesOut(Schema):
 
     match = Integer()
@@ -57,10 +67,11 @@ class ConcordanceLinesOut(Schema):
     role = List(List(String))
 
 
-@bp.get("/concordance")
+@bp.post("/")
+@bp.input(ConcordanceIn)
 @bp.output(ConcordanceLinesOut(many=True))
 @bp.auth_required(auth)
-def lines(query_id):
+def lines(query_id, data):
     """Get concordance lines.
 
     """
@@ -68,13 +79,13 @@ def lines(query_id):
     query = db.get_or_404(Query, query_id)
 
     concordance_lines = ccc_concordance(query,
-                                        context_break=request.args.get('context_break', 'text'),
+                                        context_break=request.args.get('context_break', 's'),
                                         p_show=request.args.getlist('p_show', ['word', 'lemma']),
                                         s_show=request.args.getlist('s_show', []),
                                         highlight_discoursemes=[],
                                         filter_queries={},
                                         order=int(request.args.get('order', 42)),
-                                        cut_off=request.args.get('cut_off'),
+                                        cut_off=int(request.args.get('cut_off', 500)),
                                         window=int(request.args.get('window', 5)))
 
     return [ConcordanceLinesOut().dump(line) for line in concordance_lines], 200

@@ -33,9 +33,9 @@
     sudo apt install libapache2-mod-wsgi-py3
     ```
 
-- install `mod_wsgi_express` in virtual environment
+- install `mod_wsgi` in virtual environment
   ```
-  . venv/bin/activate && pip install mod-wsgi
+  . venv/bin/activate && pip install mod_wsgi
   ```
 
 - set group of root directory to `www-data` and make files accessible for group
@@ -108,6 +108,7 @@
 # current issues
 
 bugfix
+- quick-conc without s-att
 - deleting discourseme → deleting collocations where discourseme is filter
 - no results → network error; but empty discourseme is added
 - few results → no collocates table → netwerk error
