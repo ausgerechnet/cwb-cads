@@ -78,15 +78,15 @@
 
 ## Features
 
-### standard features
-- [x] query interface
-- [x] concordancing
-- [x] breakdown (using anchor points)
-- [x] collocation
+### CADS features
+- [x] query
+- [x] breakdown
+- [x] concordance
+- [x] collocation analysis
 - [x] keyword analysis
-- subcorpus creation
-- meta distribution
-
+- [ ] anchored queries
+- [ ] subcorpus creation
+- [ ] meta distribution
 
 ## MMDA features
 - discoursemes

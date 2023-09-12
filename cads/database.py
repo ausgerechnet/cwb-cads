@@ -47,7 +47,7 @@ class User(db.Model, UserMixin):
     first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
 
-    roles = db.relationship('Role', secondary=users_roles, backref=db.backref('user', lazy='dynamic'))
+    roles = db.relationship('Role', secondary=users_roles, backref=db.backref('user'))
     discoursemes = db.relationship('Discourseme', backref='user')
     constellations = db.relationship('Constellation', backref='user')
 
@@ -467,7 +467,7 @@ class KeywordItems(db.Model):
     N2 = db.Column(db.Integer)
 
 
-@bp.cli.command('init')
+# @bp.cli.command('init')
 def init_db():
     """clear the existing data and create new tables"""
 
@@ -475,8 +475,8 @@ def init_db():
     db.create_all()
 
     # roles
-    role = Role(name='admin', description='admin stuff')
-    db.session.add(role)
+    admin_role = Role(name='admin', description='admin stuff')
+    db.session.add(admin_role)
     db.session.commit()
 
     # users
@@ -485,7 +485,7 @@ def init_db():
                  first_name='Admin',
                  last_name='Istrinator',
                  email='admin@istrination.com')
-    admin.roles.append(role)
+    admin.roles.append(admin_role)
     db.session.add(admin)
     db.session.commit()
 

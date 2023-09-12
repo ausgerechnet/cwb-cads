@@ -8,8 +8,8 @@ from logging.config import dictConfig
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, dir_path)
 
-from mmda import create_app
-from cfg import ProdConfig
+from cads import create_app
+from cfg import DevConfig
 
 dictConfig({
     'version': 1,
@@ -31,4 +31,4 @@ dictConfig({
     }
 })
 
-application = create_app(ProdConfig)
+application = create_app(DevConfig)

@@ -67,7 +67,7 @@ class TestConfig(Config):
     APP_ENV = 'testing'
 
     DB_NAME = 'mmda-test.sqlite'
-    ADMIN_PASSWORD = 'mmda-admin'
+    ADMIN_PASSWORD = '0000'
 
     CORPORA = 'tests/corpora/corpora.json'
     CCC_REGISTRY_DIR = 'tests/corpora/registry/'

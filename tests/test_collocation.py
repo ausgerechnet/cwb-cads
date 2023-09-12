@@ -1,9 +1,7 @@
 from flask import url_for
-import pytest
 from cads.database import Collocation
 
 
-@pytest.mark.now
 def test_create_collocation(client, auth):
 
     auth.login()
@@ -118,7 +116,6 @@ def test_create_or_get_cooc(client, auth):
         assert df_cooc.equals(df_cooc_2)
 
 
-@pytest.mark.now
 def test_execute_collocation(client, auth):
 
     auth.login()

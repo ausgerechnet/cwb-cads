@@ -6,11 +6,23 @@ install:
 
 init:
 	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.DevConfig && \
+	flask --app cads database init && \
+	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
+	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv"
+
+init_test:
+	. venv/bin/activate && \
 	flask --app cads database init && \
 	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
 	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv"
 
 run:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.DevConfig && \
+	flask --app cads --debug run
+
+run_test:
 	. venv/bin/activate && \
 	flask --app cads --debug run
 
