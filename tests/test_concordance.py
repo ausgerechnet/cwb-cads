@@ -29,15 +29,7 @@ def test_create_get_concordance(client, auth):
                             auth=('admin', '0000'))
 
         # concordance
-        concordance = client.post(url_for('query.concordance.create', query_id=query.json['id']),
-                                  json={
-                                      'p': 'lemma',
-                                      's_break': 's',
-                                      'context': 20,
-                                  },
-                                  auth=('admin', '0000'))
-
-        lines = client.get(url_for('query.concordance.lines', query_id=query.json['id'], id=concordance.json['id']),
+        lines = client.get(url_for('query.concordance.lines', query_id=query.json['id']),
                            auth=('admin', '0000'))
 
         assert lines.status_code == 200

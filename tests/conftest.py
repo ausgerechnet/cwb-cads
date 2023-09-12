@@ -3,14 +3,16 @@
 
 import pytest
 
-from mmda import create_app
-from mmda.database import init_db
+from cads import create_app
+from cads.database import init_db
+from cads.discourseme import import_discoursemes
 
 app = create_app('cfg.TestConfig')
 
 # create new database
 with app.app_context():
     init_db()
+    import_discoursemes("tests/discoursemes/germaparl.tsv")
 
 
 class AuthActions(object):

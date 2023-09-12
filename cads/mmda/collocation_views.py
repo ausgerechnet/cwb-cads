@@ -122,11 +122,6 @@ def create_collocation(username):
 
     # Query
     current_app.logger.info('Creating collocation :: query')
-    # current_app.logger.error('fails on obelix')
-    # items = [item.encode() for item in items]
-    # current_app.logger.error(items)
-    current_app.logger.error('ü')
-    current_app.logger.error(u"ü".encode())
     cqp_query = format_cqp_query(items, p_query=p_query, s_query=s_break, flags=flags_query, escape=escape)
     query = Query(discourseme_id=filter_discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query)
     db.session.add(query)

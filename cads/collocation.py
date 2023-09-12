@@ -417,8 +417,8 @@ def create_semantic_map(query_id, collocation_id, data):
 
     """
     collocation = db.get_or_404(Collocation, collocation_id)
-    embeddings = collocation.query.corpus.embeddings
-    semanticmap = SemanticMap(collocation_id=collocation_id, embeddings=embeddings, **data)
+    embeddings = collocation._query.corpus.embeddings
+    semanticmap = SemanticMap(embeddings=embeddings, **data)
     db.session.add(semanticmap)
     db.session.commit()
 

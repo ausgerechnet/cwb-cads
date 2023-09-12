@@ -4,7 +4,7 @@
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
 from ccc import Corpus
-from ccc.utils import format_cqp_query, cqp_escape
+from ccc.utils import format_cqp_query
 from flask import current_app, request
 
 from . import db
@@ -68,13 +68,13 @@ def lines(query_id):
     query = db.get_or_404(Query, query_id)
 
     concordance_lines = ccc_concordance(query,
-                                        context_break=request.args.get('context_break', None),
+                                        context_break=request.args.get('context_break', 'text'),
                                         p_show=request.args.getlist('p_show', ['word', 'lemma']),
                                         s_show=request.args.getlist('s_show', []),
                                         highlight_discoursemes=[],
                                         filter_queries={},
-                                        order=request.args.get('order'),
+                                        order=int(request.args.get('order', 42)),
                                         cut_off=request.args.get('cut_off'),
-                                        window=request.args.get('window'))
+                                        window=int(request.args.get('window', 5)))
 
     return [ConcordanceLinesOut().dump(line) for line in concordance_lines], 200

@@ -86,8 +86,6 @@ def get_discoursemes():
     return [DiscoursemeOut().dump(discourseme) for discourseme in discoursemes], 200
 
 
-@bp.cli.command('import')
-@click.option('--path_in', default='discoursemes.tsv')
 def import_discoursemes(path_in):
 
     df = read_csv(path_in, sep="\t")
@@ -99,6 +97,13 @@ def import_discoursemes(path_in):
         db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))
 
     db.session.commit()
+
+
+@bp.cli.command('import')
+@click.option('--path_in', default='discoursemes.tsv')
+def _import_discoursemes(path_in):
+
+    import_discoursemes(path_in)
 
 
 @bp.cli.command('export')

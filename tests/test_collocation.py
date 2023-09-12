@@ -1,7 +1,6 @@
 from flask import url_for
 import pytest
-from mmda.database import Collocation
-from pandas import DataFrame
+from cads.database import Collocation
 
 
 @pytest.mark.now
@@ -112,7 +111,7 @@ def test_create_or_get_cooc(client, auth):
 
         collocation = Collocation.query.filter_by(id=collocation.json['id']).first()
 
-        from mmda.collocation import get_or_create_cooc
+        from cads.collocation import get_or_create_cooc
 
         df_cooc = get_or_create_cooc(collocation)
         df_cooc_2 = get_or_create_cooc(collocation)
