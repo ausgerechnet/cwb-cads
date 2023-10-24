@@ -7,6 +7,7 @@ from datetime import datetime
 from flask import Blueprint, current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
+import click
 
 from . import db
 
@@ -467,7 +468,7 @@ class KeywordItems(db.Model):
     N2 = db.Column(db.Integer)
 
 
-# @bp.cli.command('init')
+@bp.cli.command('init')
 def init_db():
     """clear the existing data and create new tables"""
 
@@ -493,4 +494,41 @@ def init_db():
     corpora = json.load(open(current_app.config['CORPORA'], 'rt'))
     for corpus in corpora:
         db.session.add(Corpus(**corpus))
+    db.session.commit()
+
+
+@bp.cli.command('update-corpora')
+@click.argument('path')
+def corpora(path, delete_old=True):
+    """update corpora according to JSON file
+
+    - existing corpora (same CWB_ID) keep the same ID
+    - corpora that are not included in JSON file are deleted
+    - new corpora are added
+    """
+
+    # get dictionaries for both sets of corpora
+    corpora_old = {corpus.cwb_id: corpus for corpus in Corpus.query.all()}
+    corpora_new = {corpus['cwb_id']: corpus for corpus in json.load(open(path, 'rt'))}
+
+    corpora_update_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id in corpora_new.keys()]
+    corpora_add_ids = [cwb_id for cwb_id in corpora_new.keys() if cwb_id not in corpora_old.keys()]
+
+    if delete_old:
+        corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
+        for cwb_id in corpora_delete_ids:
+            click.echo(f'deleting corpus {cwb_id}')
+            db.session.delete(corpora_old[cwb_id])
+
+    for cwb_id in corpora_update_ids:
+        corpus = corpora_old[cwb_id]
+        click.echo(f'updating corpus {cwb_id}')
+        for key, value in corpora_new[cwb_id].items():
+            setattr(corpus, key, value)
+
+    for cwb_id in corpora_add_ids:
+        click.echo(f'adding corpus {cwb_id}')
+        db.session.add(Corpus(**corpora_new[cwb_id]))
+
+    # add new corpora
     db.session.commit()

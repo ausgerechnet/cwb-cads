@@ -11,6 +11,11 @@ init:
 	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
 	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv"
 
+update_corpora:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.DevConfig && \
+	flask --app cads database update-corpora "tests/corpora/corpora-add.json"
+
 init_test:
 	. venv/bin/activate && \
 	flask --app cads database init && \

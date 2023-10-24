@@ -1,0 +1,16 @@
+[
+    {
+        "name": "German Tweets (2019 - 2022)",
+        "cwb_id": "TWEETS-DE-2019-2022",
+        "embeddings": "/home/ausgerechnet/corpora/embeddings/magnitude/deTwitterWord2Vec.magnitude",
+        "language": "de",
+        "register": "cmc"
+    },
+    {
+        "name": "Süddeutsche Zeitung (2020 - 2022)",
+        "cwb_id": "SZ-2020-2022-CQPWEB",
+        "embeddings": "/home/ausgerechnet/corpora/embeddings/magnitude/deTwitterWord2Vec.magnitude",
+        "language": "de",
+        "register": "cmc"
+    }
+]
