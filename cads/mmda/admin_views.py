@@ -37,7 +37,7 @@ def find_or_create_user(username, first_name, last_name, email, password, role=N
                     email=email,
                     first_name=first_name,
                     last_name=last_name,
-                    password=generate_password_hash(password),
+                    password_hash=generate_password_hash(password),
                     active=True)
         if role:
             user.roles.append(role)

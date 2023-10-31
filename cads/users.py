@@ -110,19 +110,24 @@ def create_user(username):
     first_name = request.json.get('first_name')
     last_name = request.json.get('last_name')
     email = request.json.get('email')
+    password = request.json.get('password')
 
-    # Get User
+    # does user already exist?
     user = User.query.filter_by(username=username).first()
-    if not user:
-        current_app.logger.debug('No such user %s', username)
-        return jsonify({'msg': 'No such user'}), 404
+    if user:
+        current_app.logger.debug('User %s already exists', username)
+        return jsonify({'msg': 'User already exists'}), 409
 
-    user.first_name = first_name
-    user.last_name = last_name
-    user.email = email
+    user = User(
+        username=username,
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        password_hash=generate_password_hash(password)
+    )
+    db.session.add(user)
     db.session.commit()
 
-    current_app.logger.debug('Updated details for user %s', user.id)
     return UserOut().dump(user), 200
 
 
