@@ -148,7 +148,9 @@ def create_collocation(username):
 
     # Update Items
     current_app.logger.info('Creating collocation :: adding surface realisations to items')
-    filter_discourseme.items = "\t".join(set(filter_discourseme.items.split("\t")).union([cqp_escape(item.item) for item in breakdown.items]))
+    new_items = set([cqp_escape(item.item) for item in breakdown.items])
+    old_items = set(filter_discourseme.items.split("\t"))
+    filter_discourseme.items = "\t".join({item for item in new_items.union(old_items) if len(item) > 0})
     db.session.commit()
 
     return jsonify({'msg': collocation.id}), 201
