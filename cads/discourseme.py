@@ -6,8 +6,9 @@ from collections import defaultdict
 import click
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String
-from flask import g, request
+from flask import request
 from pandas import DataFrame, read_csv
+from glob import glob
 
 from . import db
 from .database import Discourseme
@@ -39,7 +40,7 @@ def create(data):
     """
 
     discourseme = Discourseme(
-        user_id=g.user.id,
+        user_id=auth.current_user.id,
         name=request.json['name'],
         description=request.json['description'],
     )
@@ -102,8 +103,8 @@ def import_discoursemes(path_in):
 @bp.cli.command('import')
 @click.option('--path_in', default='discoursemes.tsv')
 def _import_discoursemes(path_in):
-
-    import_discoursemes(path_in)
+    for path in glob(path_in):
+        import_discoursemes(path)
 
 
 @bp.cli.command('export')
@@ -112,9 +113,8 @@ def export_discoursemes(path_out):
 
     records = list()
     for discourseme in Discourseme.query.all():
-        disc = discourseme.serialize
-        for item in disc['items']:
-            records.append({'name': disc['name'], 'query': item, 'username': discourseme.user.username})
+        for item in discourseme.get_items():
+            records.append({'name': discourseme.name, 'query': item})  # , 'username': discourseme.user.username})
 
     discoursemes = DataFrame(records)
     discoursemes.to_csv(path_out, sep="\t", index=False)
