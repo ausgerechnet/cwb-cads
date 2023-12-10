@@ -2,65 +2,72 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String
+from apiflask.fields import Integer, String, Float, Boolean
 from association_measures import measures
 from ccc import Corpus
 from ccc.collocates import dump2cooc
-from flask import current_app, jsonify
+from flask import current_app
 from pandas import DataFrame, concat, read_sql
 
 from . import db
-from .database import (Collocation, CollocationItems, Cotext, CotextLines,
-                       Query, SemanticMap)
+from .database import (Collocation, CollocationItems, Cotext,
+                       CotextLines, Query)
 from .query import ccc_query, get_or_create_query
-from .semantic_map import SemanticMapIn, SemanticMapOut
+from .semantic_map import SemanticMapIn, SemanticMapOut, CoordinatesOut, ccc_semmap
 from .users import auth
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/<query_id>/collocation')
 
 
-def score_counts(counts, cut_off=200, min_freq=3):
-
-    ams_dict = {
-        # preferred: LRC
-        'conservative_log_ratio': 'Conservative LR',
-        # frequencies
-        'O11': 'obs.',
-        'E11': 'exp.',
-        'ipm': 'IPM (obs.)',
-        'ipm_expected': 'IPM (exp.)',
-        # asymptotic hypothesis tests
-        'log_likelihood': 'LLR',
-        'z_score': 'z-score',
-        't_score': 't-score',
-        'simple_ll': 'simple LL',
-        # point estimates of association strength
-        'dice': 'Dice',
-        'log_ratio': 'log-ratio',
-        'min_sensitivity': 'min. sensitivity',
-        'liddell': 'Liddell',
-        # information theory
-        'mutual_information': 'MI',
-        'local_mutual_information': 'local MI',
-    }
+def score_counts(counts, cut_off=200, min_freq=3, show_negative=False, rename=True):
 
     df = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
     df = df.loc[df['O11'] > min_freq]
-    df = df.loc[df['O11'] >= df['E11']]
 
-    # select columns
-    df = df[list(ams_dict.keys())]
+    if not show_negative:
+        df = df.loc[df['O11'] >= df['E11']]
 
-    # select items (top cut_off of each AM)
-    items = set()
-    for am in ams_dict.keys():
-        if am not in ['O11', 'E11', 'ipm', 'ipm_expected']:
-            df = df.sort_values(by=[am, 'item'], ascending=[False, True])
-            items = items.union(set(df.head(cut_off).index))
-    df = df.loc[list(items)]
+    if rename:
 
-    # rename columns
-    df = df.rename(ams_dict, axis=1)
+        ams_dict = {
+            # preferred: LRC
+            'conservative_log_ratio': 'Conservative LR',
+            # frequencies
+            'O11': 'obs.',
+            'E11': 'exp.',
+            'ipm': 'IPM (obs.)',
+            'ipm_expected': 'IPM (exp.)',
+            # asymptotic hypothesis tests
+            'log_likelihood': 'LLR',
+            'z_score': 'z-score',
+            't_score': 't-score',
+            'simple_ll': 'simple LL',
+            # point estimates of association strength
+            'dice': 'Dice',
+            'log_ratio': 'log-ratio',
+            'min_sensitivity': 'min. sensitivity',
+            'liddell': 'Liddell',
+            # information theory
+            'mutual_information': 'MI',
+            'local_mutual_information': 'local MI',
+        }
+
+        # select columns
+        df = df[list(ams_dict.keys())]
+
+        # select items (top cut_off of each AM)
+        items = set()
+        for am in ams_dict.keys():
+            if am not in ['O11', 'E11', 'ipm', 'ipm_expected']:
+                df = df.sort_values(by=[am, 'item'], ascending=[False, True])
+                items = items.union(set(df.head(cut_off).index))
+        df = df.loc[list(items)]
+
+        # rename columns
+        df = df.rename(ams_dict, axis=1)
+
+    elif cut_off:
+        raise NotImplementedError("cannot use cut-off value when not rename=True")
 
     return df
 
@@ -316,7 +323,7 @@ class CollocationOut(Schema):
     constellation_id = Integer()
 
 
-class CollocationItemsOut(Schema):
+class CollocationItemsOutMMDA(Schema):
 
     id = Integer()
     collocation_id = Integer()
@@ -324,17 +331,32 @@ class CollocationItemsOut(Schema):
     ams = None
 
 
+class CollocationItemsOut(Schema):
+
+    id = Integer()
+    collocation_id = Integer()
+    item = String()
+    ams = String()
+    score = Float()
+
+
 @bp.post('/')
 @bp.input(CollocationIn)
+@bp.input({'execute': Boolean(load_default=True),
+           'semantic_map_id': Integer(load_default=None)}, location='query')
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def create(query_id, data):
+def create(query_id, data, query_data):
     """Create new collocation analysis.
 
     """
-    collocation = Collocation(query_id=query_id, **data)
+
+    collocation = Collocation(query_id=query_id, user_id=auth.current_user.id, **data, semantic_map_id=query_data['semantic_map_id'])
     db.session.add(collocation)
     db.session.commit()
+
+    if query_data['execute']:
+        ccc_collocates(collocation)
 
     return CollocationOut().dump(collocation), 200
 
@@ -383,12 +405,12 @@ def delete_collocation(query_id, id):
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def execute(query_id, id):
-    """Execute collocation: Get collocation items.
+    """Execute collocation: Create collocation items.
 
     """
 
     collocation = db.get_or_404(Collocation, id)
-    ccc_collocates(collocation)
+    ccc_collocates(collocation, cut_off=None, min_freq=2)
 
     return CollocationOut().dump(collocation), 200
 
@@ -403,9 +425,11 @@ def get_collocation_items(query_id, id):
 
     collocation = db.get_or_404(Collocation, id)
     counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
-    df_collocation = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
+    df_collocates = score_counts(counts, cut_off=None, min_freq=0, show_negative=False, rename=False)
 
-    return jsonify(df_collocation.to_json()), 200
+    # TODO: return long format (CollocationOut)
+
+    return df_collocates.reset_index().to_json(orient='records'), 200
 
 
 @bp.post('/<id>/semantic_map/')
@@ -416,22 +440,24 @@ def create_semantic_map(query_id, collocation_id, data):
     """Create new semantic map for collocation items.
 
     """
+
     collocation = db.get_or_404(Collocation, collocation_id)
     embeddings = collocation._query.corpus.embeddings
-    semanticmap = SemanticMap(embeddings=embeddings, **data)
-    db.session.add(semanticmap)
-    db.session.commit()
 
-    return SemanticMapOut().dump(semanticmap), 200
+    coordinates = ccc_semmap(collocation, embeddings)
+
+    return [CoordinatesOut().dump(c) for c in coordinates]
 
 
 @bp.get('/<id>/semantic_map/')
-@bp.output(SemanticMapOut(many=True))
+@bp.output(SemanticMapOut)
 @bp.auth_required(auth)
-def get_semanticmaps(query_id, collocation_id):
-    """Get all semantic maps of collocation.
+def get_semantic_map(query_id, collocation_id):
+    """Get semantic map of collocation analysis.
+
+    TODO: allow many-to-many relationship
 
     """
 
     collocation = db.get_or_404(Collocation, collocation_id)
-    return [SemanticMapOut().dump(semanticmap) for semanticmap in collocation.semanticmaps], 200
+    return SemanticMapOut().dump(collocation.semantic_map), 200
