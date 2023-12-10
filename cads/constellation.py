@@ -3,7 +3,6 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
-from flask import g
 
 from . import db
 from .database import Constellation, Discourseme
@@ -38,7 +37,7 @@ def create(data):
     """
     filter_discoursemes = Discourseme.query.filter(Discourseme.id.in_(data['filter_discourseme_ids'])).all()
     constellation = Constellation(
-        user_id=g.user.id,
+        user_id=auth.current_user.id,
         name=data['name'],
         description=data['description']
     )
