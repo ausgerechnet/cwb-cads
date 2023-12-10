@@ -5,7 +5,7 @@ Keywords view
 """
 
 from apiflask import APIBlueprint
-from ccc import Corpus as Crps
+
 from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app, jsonify, request
 from pandas import DataFrame
@@ -13,6 +13,8 @@ from pandas import DataFrame
 from .. import db
 from ..database import (Constellation, Coordinates, Corpus, Discourseme,
                         Keyword, User)
+from ..corpus import ccc_corpus
+from ..concordance import ccc_concordance
 from ..keyword import ccc_keywords
 from ..semantic_map import CoordinatesOut, ccc_semmap
 from .collocation_views import score_counts
@@ -384,9 +386,8 @@ def get_keywords_for_keyword(username, keyword):
     counts.index = [cqp_escape(item) for item in counts.index]
     counts.index.name = 'item'
     df_keywords = score_counts(counts, cut_off=cut_off)
-    df_json = df_keywords.to_json()
 
-    return df_json, 200
+    return df_keywords.to_json(), 200
 
 
 #####################
@@ -431,40 +432,26 @@ def get_concordance_for_keyword(username, keyword):
         return {}, 200
     context_break = 's'
     cut_off = 500
-    random_seed = 42
+    order = 42
     p_show = ['word', keyword.p]
-    window = 50
-    match_strategy = 'longest'
-    from ..corpus import ccc_corpus
-
-    # ... highlight associated discoursemes
-    highlight_queries = dict()
-    for discourseme in keyword.constellation.highlight_discoursemes:
-        highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=keyword.p, escape=False)
 
     corpus = Corpus.query.filter_by(id=keyword.corpus_id).first()
     s_show = ccc_corpus(corpus.cwb_id,
                         cqp_bin=current_app.config['CCC_CQP_BIN'],
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                         data_dir=current_app.config['CCC_DATA_DIR'])['s_annotations']
-    corpus = Crps(corpus_name=corpus.cwb_id,
-                  lib_dir=None,
-                  cqp_bin=current_app.config['CCC_CQP_BIN'],
-                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                  data_dir=current_app.config['CCC_DATA_DIR'])
 
-    current_app.logger.debug('Get keyword concordance :: CCC quick-conc')
-    lines = corpus.quick_conc(
-        topic_query=format_cqp_query([item], p_query=keyword.p, escape=False),
-        filter_queries={},
-        highlight_queries=highlight_queries,
-        s_context=context_break,
-        window=window,
-        cut_off=cut_off,
-        order=random_seed,
+    lines = ccc_concordance(
+        query=None,
+        context_break=context_break,
         p_show=p_show,
         s_show=s_show,
-        match_strategy=match_strategy
+        highlight_discoursemes=keyword.constellation.highlight_discoursemes,
+        order=order,
+        cut_off=cut_off,
+        window=50,
+        cwb_id=corpus.cwb_id,
+        topic_query=format_cqp_query([item], p_query=keyword.p, escape=False)
     )
 
     if lines is None:
