@@ -22,60 +22,6 @@
   make test
   ```
 
-- we use Apache in production
-
-  + install Apache
-    ```
-    sudo apt install apache2 apache2-dev
-    ```
-  + install Apache mod for WSGI daemon
-    ```
-    sudo apt install libapache2-mod-wsgi-py3
-    ```
-
-- install `mod_wsgi` in virtual environment
-  ```
-  . venv/bin/activate && pip install mod_wsgi
-  ```
-
-- set group of root directory to `www-data` and make files accessible for group
-  ```
-  sudo chgrp www-data -R cwb-cads/
-  sudo find ./ -type d -exec chmod 755 -R {} \;
-  sudo find ./ -type f -exec chmod 644 {} \;
-  sudo chmod -R g+w cwb-cads/instance/
-  ```
-
-- make sure that root directory can be served by Apache
-  + NB: all parent directories must be accessible by `www-data` (e.g. `chmod o+rx /home/<USER>/`)
-
-- add the following to `/etc/apache2/sites-enabled/<HOSTS>.conf`
-  ```apacheconf
-  <Virtualhost ...>
-  
-	  ...
-	  
-	  WSGIDaemonProcess cwb-cads user=www-data group=www-data threads=4 python-home=/<PATH-TO-CWB-CADS>/venv locale='C.UTF-8'
-	  WSGIScriptAlias /cwb-cads /<PATH-TO-CWB-CADS>/cwb-cads.wsgi
-	  WSGIPassAuthorization on
-	  
-	  <Directory /<PATH-TO-CWB-CADS/>
-		WSGIProcessGroup cwb-cads
-		WSGIApplicationGroup %{GLOBAL}
-		Order deny,allow
-		Require all granted
-	  </Directory>
-	
-	  ...
-	  
-  </Virtualhost>
-  ```
-  
-- restart Apache
-  ```
-  sudo service apache2 restart
-  ```
-
 ## Features
 
 ### CADS features
@@ -84,9 +30,9 @@
 - [x] concordance
 - [x] collocation analysis
 - [x] keyword analysis
-- [ ] anchored queries
-- [ ] subcorpus creation
+- [x] subcorpus creation
 - [ ] meta distribution
+- [ ] anchored queries
 
 ## MMDA features
 - discoursemes
