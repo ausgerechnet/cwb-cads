@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String
+from apiflask.fields import Integer, String, Boolean
 from ccc import Corpus
 from flask import current_app
 
@@ -54,15 +54,19 @@ class BreakdownItemsOut(Schema):
 
 @bp.post('/')
 @bp.input(BreakdownIn)
+@bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(BreakdownOut)
 @bp.auth_required(auth)
-def create(query_id, data):
+def create(query_id, data, execute):
     """Create new breakdown for query.
 
     """
     breakdown = Breakdown(query_id=query_id, **data)
     db.session.add(breakdown)
     db.session.commit()
+
+    if execute:
+        ccc_breakdown(breakdown)
 
     return BreakdownOut().dump(breakdown), 200
 
