@@ -4,43 +4,62 @@
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
 from ccc import Corpus
-from ccc.utils import format_cqp_query
-from flask import current_app, request
+from flask import current_app
+from json import dumps
 
 from . import db
-from .database import Query
+from .database import Query, Corpus as Crps
 from .users import auth
 
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')
 
 
-def ccc_concordance(query, context_break, p_show=['word', 'lemma'], s_show=[],
-                    highlight_discoursemes=[], filter_queries={},
-                    order=42, cut_off=500, window=None):
+def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
+                    s_show=[], highlight_discoursemes=[],
+                    filter_queries={}, order=42, cut_off=500,
+                    window=None, htmlify_meta=True, cwb_ids=False,
+                    cwb_id=None, bools=False, topic_query=None):
 
-    corpus = Corpus(corpus_name=query.corpus.cwb_id,
+    corpus = Corpus(corpus_name=query.corpus.cwb_id if query else cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
 
-    highlight_queries = dict()
-    if highlight_discoursemes:
-        for discourseme in highlight_discoursemes:
-            if str(discourseme.id) not in filter_queries.keys():
-                highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), 'lemma', escape=False)
+    if query and query.nqr_name:
+        corpus = corpus.subcorpus(query.nqr_name)
 
     lines = corpus.quick_conc(
-        topic_query=query.cqp_query,
+        topic_query=query.cqp_query if query else (topic_query if topic_query else ""),
         filter_queries=filter_queries,
-        highlight_queries=highlight_queries,
+        highlight_queries={},
         s_context=context_break,
         window=window,
         cut_off=cut_off,
         order=order,
         p_show=p_show,
         s_show=s_show,
-        match_strategy='longest'
+        match_strategy='longest',
+        htmlify_meta=htmlify_meta,
+        cwb_ids=cwb_ids
     )
+
+    corpus_id = query.corpus.id if query else Crps.query.filter_by(cwb_id=cwb_id).first().id
+    highlight = dict()
+    if highlight_discoursemes:
+        for discourseme in highlight_discoursemes:
+            if str(discourseme.id) not in filter_queries.keys():
+                highlight[str(discourseme.id)] = discourseme.get_cpos(corpus_id=corpus_id)
+
+    for line in lines:
+        if bools:
+            for discourseme in highlight.keys():
+                line[discourseme + "_BOOL"] = False
+        for cpos, roles in zip(line['cpos'], line['role']):
+            for discourseme, matches in highlight.items():
+                if cpos in matches:
+                    roles.extend([discourseme])
+                    if bools:
+                        line[discourseme + "_BOOL"] = True
 
     return lines
 
@@ -55,7 +74,7 @@ class ConcordanceIn(Schema):
     window = Integer(default=20, required=False)
 
 
-class ConcordanceLinesOut(Schema):
+class ConcordanceLinesOutMMDA(Schema):
 
     match = Integer()
     meta = String()
@@ -65,6 +84,14 @@ class ConcordanceLinesOut(Schema):
     word = List(String)
     lemma = List(String)
     role = List(List(String))
+
+
+class ConcordanceLinesOut(Schema):
+
+    match = Integer()
+
+    positional = String()       # jsonified dict of: cpos, offset, role, word, lemma, ...
+    structural = String()       # jsonified dict of: text_id, text_id_cwbid, ...
 
 
 @bp.post("/")
@@ -78,14 +105,48 @@ def lines(query_id, data):
 
     query = db.get_or_404(Query, query_id)
 
+    order = data.get('order', 42)
+    try:
+        order = int(order)
+    except TypeError:
+        pass
+
+    cut_off = data.get('cut_off', None)
+    try:
+        cut_off = int(cut_off)
+    except TypeError:
+        pass
+
+    p_show = data.get('p_show', ['word', 'lemma'])
+    s_show = data.get('s_show', [])
+
     concordance_lines = ccc_concordance(query,
-                                        context_break=request.args.get('context_break', 's'),
-                                        p_show=request.args.getlist('p_show', ['word', 'lemma']),
-                                        s_show=request.args.getlist('s_show', []),
+                                        context_break=data.get('context_break', 's'),
+                                        p_show=p_show,
+                                        s_show=s_show,
                                         highlight_discoursemes=[],
                                         filter_queries={},
-                                        order=int(request.args.get('order', 42)),
-                                        cut_off=int(request.args.get('cut_off', 500)),
-                                        window=int(request.args.get('window', 5)))
+                                        order=order,
+                                        cut_off=cut_off,
+                                        window=int(data.get('window', 5)),
+                                        htmlify_meta=False,
+                                        cwb_ids=True)
 
-    return [ConcordanceLinesOut().dump(line) for line in concordance_lines], 200
+    rows = list()
+    for line in concordance_lines:
+
+        positional = dict()
+        for p_att in ['cpos', 'offset', 'role'] + p_show:
+            positional[p_att] = line[p_att]
+
+        structural = dict()
+        for s_att in s_show + [s + "_cwbid" for s in s_show]:
+            structural[s_att] = line[s_att]
+
+        rows.append({
+            'match': line['match'],
+            'positional': dumps(positional),
+            'structural': dumps(structural)
+        })
+
+    return [ConcordanceLinesOut().dump(line) for line in rows], 200
