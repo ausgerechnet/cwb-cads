@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String
+from apiflask.fields import Integer, String, Boolean
 from ccc import Corpus
 from ccc.utils import format_cqp_query
-from flask import current_app, request
+from flask import current_app
 from pandas import DataFrame
 
 from . import db
@@ -15,13 +15,14 @@ from .users import auth
 bp = APIBlueprint('query', __name__, url_prefix='/query')
 
 
-def get_or_create_query(corpus, discourseme, context_break, p_query, match_strategy, subcorpus_name=None):
+def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, match_strategy='longest', subcorpus_name=None, cqp_query=None):
     """
 
     """
 
     current_app.logger.debug(f"get_or_create_query :: discourseme {discourseme.name} on corpus {corpus.cwb_id} (subcorpus: {subcorpus_name})")
-    cqp_query = format_cqp_query(discourseme.items.split("\t"), p_query, context_break, escape=False)
+    if not cqp_query:
+        cqp_query = format_cqp_query(discourseme.items.split("\t"), p_query, context_break, escape=False)
     query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query,
                                   nqr_name=subcorpus_name, match_strategy=match_strategy).order_by(Query.id.desc()).first()
 
@@ -48,9 +49,13 @@ def ccc_query(query, return_df=True):
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                         data_dir=current_app.config['CCC_DATA_DIR'])
         if query.nqr_name:
+            # TODO check that subcorpus exists
+            # print(query.nqr_name)
+            # nqrs = corpus.show_nqr()
             corpus = corpus.subcorpus(query.nqr_name)
 
         matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy)
+        query.cqp_nqr_matches = matches.subcorpus_name
         df_matches = matches.df.reset_index()[['match', 'matchend']]
         df_matches['query_id'] = query.id
 
@@ -79,6 +84,7 @@ class QueryIn(Schema):
     corpus_id = Integer()
     match_strategy = String()
     cqp_query = String()
+    nqr_name = String(required=False)
 
 
 class QueryOut(Schema):
@@ -88,20 +94,25 @@ class QueryOut(Schema):
     corpus_id = Integer()
     match_strategy = String()
     cqp_query = String()
-    cqp_id = String()
+    nqr_name = String()
+    cqp_nqr_matches = String()
 
 
 @bp.post('/')
 @bp.input(QueryIn)
+@bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def create(data):
+def create(data, execute):
     """Create new query.
 
     """
-    query = Query(**request.json)
+    query = Query(**data)
     db.session.add(query)
     db.session.commit()
+
+    if execute:
+        ccc_query(query)
 
     return QueryOut().dump(query), 200
 
