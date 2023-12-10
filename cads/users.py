@@ -13,20 +13,11 @@ bp = APIBlueprint('user', __name__, url_prefix='/user')
 auth = HTTPBasicAuth()
 
 
-@bp.before_app_request
-def load_logged_in_user():
-    user_id = session.get('user_id')
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = User.query.filter_by(id=user_id).first()
-
-
 @auth.verify_password
 def verify_password(username, password):
     user = User.query.filter_by(username=username).first()
     if user and check_password_hash(user.password_hash, password):
-        return username
+        return user
     return None
 
 
