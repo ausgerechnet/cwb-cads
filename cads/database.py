@@ -7,7 +7,7 @@ from datetime import datetime
 from flask import Blueprint, current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
-import click
+from pandas import read_sql
 
 from . import db
 
@@ -127,9 +127,31 @@ class Discourseme(db.Model):
     name = db.Column(db.Unicode(255), nullable=True)
     description = db.Column(db.Unicode, nullable=True)
 
-    items = db.Column(db.Unicode, default="")
+    items = db.Column(db.Unicode)  # "\t"-joined list
 
     queries = db.relationship("Query", backref="discourseme", lazy=True)
+
+    def get_items(self, corpus_id=None):
+
+        items = list()
+        queries = [query for query in self.queries if (not corpus_id or query.corpus_id == corpus_id)]
+        for _query in queries:
+            if _query.breakdowns:  # TODO why several?
+                items.extend([item.item for item in _query.breakdowns[0].items])
+        if len(items) == 0 and self.items:
+            return self.items.split("\t")
+        return items
+
+    def get_cpos(self, corpus_id=None):
+
+        queries = [query for query in self.queries if (not corpus_id or query.corpus_id == corpus_id)]
+        cpos = set()
+        for _query in queries:
+            sql_query = Matches.query.filter(Matches.query_id == _query.id)
+            matches = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
+            for matches in _query.matches:
+                cpos.update(range(matches.match, matches.matchend + 1))
+        return cpos
 
     @property
     def serialize(self):
@@ -145,7 +167,7 @@ class Discourseme(db.Model):
             'name': self.name,
             'is_topic': False,
             'user_id': self.user_id,
-            'items': self.items.split("\t"),
+            'items': self.get_items(),
             'collocation_analyses': []
         }
 
@@ -202,11 +224,12 @@ class Query(db.Model):
 
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
-    nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
 
+    nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
     cqp_query = db.Column(db.Unicode)
     cqp_nqr_matches = db.Column(db.Unicode)  # resulting NQR in CWB
     match_strategy = db.Column(db.Unicode, default='longest')
+
     matches = db.relationship('Matches', backref='_query')
     breakdowns = db.relationship('Breakdown', backref='_query')
     collocations = db.relationship('Collocation', backref='_query')
@@ -377,9 +400,16 @@ class Collocation(db.Model):
         :rtype: dict
 
         """
+
+        try:
+            subcorpus = Query.query.filter_by(cqp_nqr_matches=self._query.nqr_name).first().discourseme.name if self._query.nqr_name else None
+        except AttributeError:  # SOC
+            subcorpus = 'SOC'
+
         return {
             'id': self.id,
             'corpus': self._query.corpus.cwb_id,
+            'subcorpus': subcorpus,
             'user_id': self.user_id,
             'topic_id': self._query.discourseme.id,
             'p_query': 'lemma',
@@ -388,7 +418,7 @@ class Collocation(db.Model):
             'p_collocation': self.p,
             's_break': self.s_break,
             'context': self.context,
-            'items': self._query.discourseme.items.split("\t"),
+            'items': self._query.discourseme.get_items(),
             'topic_discourseme': self._query.discourseme.serialize
         }
 
@@ -444,8 +474,8 @@ class Keyword(db.Model):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'corpus': corpus.name,
-            'corpus_reference': corpus_reference.name,
+            'corpus': corpus.cwb_id,
+            'corpus_reference': corpus_reference.cwb_id,
             'p': self.p,
             'p_reference': self.p_reference
         }
@@ -494,41 +524,4 @@ def init_db():
     corpora = json.load(open(current_app.config['CORPORA'], 'rt'))
     for corpus in corpora:
         db.session.add(Corpus(**corpus))
-    db.session.commit()
-
-
-@bp.cli.command('update-corpora')
-@click.argument('path')
-def corpora(path, delete_old=True):
-    """update corpora according to JSON file
-
-    - existing corpora (same CWB_ID) keep the same ID
-    - corpora that are not included in JSON file are deleted
-    - new corpora are added
-    """
-
-    # get dictionaries for both sets of corpora
-    corpora_old = {corpus.cwb_id: corpus for corpus in Corpus.query.all()}
-    corpora_new = {corpus['cwb_id']: corpus for corpus in json.load(open(path, 'rt'))}
-
-    corpora_update_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id in corpora_new.keys()]
-    corpora_add_ids = [cwb_id for cwb_id in corpora_new.keys() if cwb_id not in corpora_old.keys()]
-
-    if delete_old:
-        corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
-        for cwb_id in corpora_delete_ids:
-            click.echo(f'deleting corpus {cwb_id}')
-            db.session.delete(corpora_old[cwb_id])
-
-    for cwb_id in corpora_update_ids:
-        corpus = corpora_old[cwb_id]
-        click.echo(f'updating corpus {cwb_id}')
-        for key, value in corpora_new[cwb_id].items():
-            setattr(corpus, key, value)
-
-    for cwb_id in corpora_add_ids:
-        click.echo(f'adding corpus {cwb_id}')
-        db.session.add(Corpus(**corpora_new[cwb_id]))
-
-    # add new corpora
     db.session.commit()
