@@ -16,6 +16,7 @@ from pandas import DataFrame
 
 from .. import db
 from ..corpus import ccc_corpus
+from ..concordance import ccc_concordance
 from ..database import Constellation, Corpus, Discourseme, User
 from ..query import ccc_query, get_or_create_query
 from .login_views import user_required
@@ -246,7 +247,7 @@ def get_constellation_concordance(username, constellation):
     p_query = request.args.get('p_query', 'lemma')
     context_break = request.args.get('s_break', 'text')
     cut_off = request.args.get('cut_off', 10000)
-    random_seed = request.args.get('order', 42)
+    order = request.args.get('order', 42)
     p_show = ['word', 'lemma']
 
     corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
@@ -257,33 +258,14 @@ def get_constellation_concordance(username, constellation):
     s_show = crps['s_annotations']
 
     # preprocess queries
-    highlight_queries = dict()
     filter_queries = dict()
-    for discourseme in constellation.filter_discoursemes:
-        filter_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
-        highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
-    for discourseme in constellation.highlight_discoursemes:
-        highlight_queries[str(discourseme.id)] = format_cqp_query(discourseme.items.split("\t"), p_query=p_query, escape=False)
+    for discourseme in constellation.filter_discoursemes + constellation.highlight_discoursemes:
+        discourseme_items = discourseme.get_items(corpus.id)
+        filter_queries[str(discourseme.id)] = format_cqp_query(discourseme_items, p_query=p_query, escape=False)
 
-    corpus = Crps(corpus_name=corpus.cwb_id,
-                  lib_dir=None,
-                  cqp_bin=current_app.config['CCC_CQP_BIN'],
-                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                  data_dir=current_app.config['CCC_DATA_DIR'])
-
-    current_app.logger.debug('Get constellation concordance :: CCC quick-conc')
-    lines = corpus.quick_conc(
-        topic_query="",
-        filter_queries=filter_queries,
-        highlight_queries=highlight_queries,
-        s_context=context_break,
-        window=10,
-        cut_off=cut_off,
-        order=random_seed,
-        p_show=p_show,
-        s_show=s_show,
-        match_strategy='longest'
-    )
+    lines = ccc_concordance(query=None, context_break=context_break, p_show=p_show, s_show=s_show,
+                            highlight_discoursemes=constellation.highlight_discoursemes+constellation.filter_discoursemes,
+                            filter_queries=filter_queries, order=order, cut_off=cut_off, cwb_id=corpus.cwb_id, bools=True)
 
     current_app.logger.debug('Get constellation concordance :: formatting')
     out = list()
@@ -332,6 +314,8 @@ def get_constellation_associations(username, constellation):
         pair = sorted(pair)
         f1 = len(context_ids[pair[0]])
         f2 = len(context_ids[pair[1]])
+        if f1 == 0 or f2 == 0:
+            continue
         records.append({'node': pair[0],
                         'item': pair[1],
                         'f': f, 'f1': f1, 'f2': f2, 'N': N})
@@ -344,4 +328,5 @@ def get_constellation_associations(username, constellation):
         assoc = counts
 
     assoc = assoc.reset_index().rename({'item': 'candidate'}, axis=1).to_dict(orient='index').values()
+
     return jsonify(list(assoc)), 200
