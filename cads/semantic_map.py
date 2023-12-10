@@ -71,7 +71,6 @@ def ccc_semmap_update(collocation):
 class SemanticMapIn(Schema):
 
     collocation_id = Integer()
-    # embeddings = String()
 
 
 class SemanticMapOut(Schema):
@@ -100,8 +99,8 @@ def get_semantic_map(id):
 
     """
 
-    semanticmap = db.get_or_404(SemanticMap, id)
-    return SemanticMapOut().dump(semanticmap), 200
+    semantic_map = db.get_or_404(SemanticMap, id)
+    return SemanticMapOut().dump(semantic_map), 200
 
 
 @bp.delete('/<id>')
@@ -111,25 +110,11 @@ def delete_semantic_map(id):
 
     """
 
-    semanticmap = db.get_or_404(SemanticMap, id)
-    db.session.delete(semanticmap)
+    semantic_map = db.get_or_404(SemanticMap, id)
+    db.session.delete(semantic_map)
     db.session.commit()
 
     return 'Deletion successful.', 200
-
-
-@bp.post('/<id>')
-@bp.output(SemanticMapOut)
-@bp.auth_required(auth)
-def execute(id):
-    """Execute semantic map: Get positions of items.
-
-    """
-    # TODO: get items
-    semantic_map = db.get_or_404(SemanticMap, id)
-    ccc_semmap(semantic_map)
-
-    return SemanticMapOut().dump(semantic_map), 200
 
 
 @bp.get("/<id>/coordinates")
