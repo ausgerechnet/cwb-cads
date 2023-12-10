@@ -13,12 +13,12 @@ from pandas import DataFrame
 from .. import db
 from ..breakdown import BreakdownItemsOut, ccc_breakdown
 from ..collocation import ccc_collocates, score_counts
-from ..concordance import ConcordanceLinesOut, ccc_concordance
+from ..concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut, ccc_concordance
 from ..corpus import ccc_corpus
 from ..database import (Breakdown, Collocation, CollocationItems,
                         Constellation, Coordinates, Corpus, Discourseme,
                         Matches, Query, User)
-from ..query import ccc_query
+from ..query import ccc_query, get_or_create_query
 from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update
 from .login_views import user_required
 
@@ -102,7 +102,7 @@ def create_collocation(username):
     corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
 
     # Discourseme
-    current_app.logger.info('Creating collocation :: disourseme management')
+    current_app.logger.info('Creating collocation :: discourseme management')
     if isinstance(discourseme, str):
         # new discourseme
         filter_discourseme = Discourseme(name=discourseme, user_id=user.id)
@@ -147,10 +147,10 @@ def create_collocation(username):
     ccc_semmap(collocation, collocation._query.corpus.embeddings)
 
     # Update Items
-    current_app.logger.info('Creating collocation :: adding surface realisations to items')
-    new_items = set([cqp_escape(item.item) for item in breakdown.items])
-    old_items = set(filter_discourseme.items.split("\t"))
-    filter_discourseme.items = "\t".join({item for item in new_items.union(old_items) if len(item) > 0})
+    # current_app.logger.info('Creating collocation :: adding surface realisations to items')
+    # new_items = set([cqp_escape(item.item) for item in breakdown.items])
+    # old_items = set(filter_discourseme.get_items())
+    # filter_discourseme.items = "\t".join({item for item in new_items.union(old_items) if len(item) > 0})
     db.session.commit()
 
     return jsonify({'msg': collocation.id}), 201
@@ -172,7 +172,7 @@ def get_all_collocation(username):
 
     user = User.query.filter_by(username=username).first()
     collocation_analyses = Collocation.query.filter_by(user_id=user.id).all()
-    collocation_list = [collocation.serialize for collocation in collocation_analyses if collocation._query.nqr_name is None]
+    collocation_list = [collocation.serialize for collocation in collocation_analyses if collocation.serialize['subcorpus'] != 'SOC']
 
     return jsonify(collocation_list), 200
 
@@ -418,23 +418,15 @@ def get_collocate_for_collocation(username, collocation):
     filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
     filter_queries = dict()
     for discourseme in filter_discoursemes:
-        filter_queries[discourseme.id] = format_cqp_query(discourseme.items.split("\t"), collocation.p, escape=False)
+        discourseme_items = discourseme.get_items(corpus_id=collocation._query.corpus.id)
+        filter_queries[discourseme.id] = format_cqp_query(discourseme_items, collocation.p, escape=False)
 
     # .. create separate Collocation for SOC
     if len(filter_queries) > 0:
         # TODO move to ccc_collocates()
 
-        # iterative query (topic on subcorpus) → matches
-        # subcorpus = topic → discourseme_i → topic
-        subcorpus_name = "Q" + str(collocation._query.discourseme.id) + "".join([str(discourseme.id) for discourseme in filter_discoursemes])
-        query = Query(discourseme_id=collocation._query.discourseme.id, corpus_id=collocation._query.corpus.id,
-                      cqp_query=collocation._query.cqp_query, nqr_name=subcorpus_name)
-        db.session.add(query)
-        db.session.commit()
-
         # get matches of original filter
         matches_df = ccc_query(collocation._query)
-
         # for filtering, we set whole context regions as cotext so we can easily filter iteratively
         corpus = Crps(corpus_name=collocation._query.corpus.cwb_id,
                       cqp_bin=current_app.config['CCC_CQP_BIN'],
@@ -455,6 +447,17 @@ def get_collocate_for_collocation(username, collocation):
             context_break=collocation.s_break, context=collocation.context
         ).df
 
+        # iterative query (topic on subcorpus) → matches
+        # subcorpus = topic → discourseme_i → topic
+        subcorpus_name = "SOC" + "-" + "-".join([str(collocation._query.discourseme.id)] + [str(discourseme.id) for discourseme in filter_discoursemes])
+
+        query = get_or_create_query(
+            corpus=collocation._query.corpus,
+            discourseme=collocation._query.discourseme,
+            subcorpus_name=subcorpus_name,
+            cqp_query=collocation._query.cqp_query
+        )
+
         # save to database
         matches['query_id'] = query.id
         matches = matches[['query_id']]
@@ -464,6 +467,8 @@ def get_collocate_for_collocation(username, collocation):
 
         # semantic map
         semantic_map = collocation.semantic_map
+
+        # new collocation analysis
         collocation = Collocation(query_id=query.id, p=collocation.p, s_break=collocation.s_break, context=collocation.context,
                                   user_id=user.id, constellation_id=collocation.constellation.id)
         db.session.add(collocation)
@@ -556,7 +561,9 @@ def get_concordance_for_collocation(username, collocation):
     filter_items = request.args.getlist('item', None)
     filter_queries = dict()
     for filter_discourseme in filter_discoursemes:
-        filter_queries[str(filter_discourseme.id)] = format_cqp_query(filter_discourseme.items.split("\t"), collocation.p, escape=False)
+        filter_queries[str(filter_discourseme.id)] = format_cqp_query(
+            filter_discourseme.get_items(collocation._query.corpus.id), collocation.p, escape=False
+        )
     if filter_items:
         filter_queries['collocate'] = format_cqp_query(filter_items, collocation.p, escape=False)
 
@@ -599,6 +606,7 @@ def get_breakdown_for_collocation(username, collocation):
 
     user = User.query.filter_by(username=username).first()
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
+    # TODO why many breakdowns?
     breakdown = [BreakdownItemsOut().dump(item) for item in collocation._query.breakdowns[0].items]
 
     return breakdown, 200
