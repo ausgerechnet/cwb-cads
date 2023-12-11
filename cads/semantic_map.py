@@ -39,7 +39,9 @@ def ccc_semmap(collocation, embeddings):
 
 
 def ccc_semmap_update(collocation):
-
+    """
+    make sure there's coordinates for all items
+    """
     semantic_map = collocation.semantic_map
     coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'item'])
     coordinates = coordinates.set_index('item')
@@ -47,25 +49,37 @@ def ccc_semmap_update(collocation):
     # sometimes there's duplicates, but why?
     coordinates = coordinates.loc[~coordinates.index.duplicated()]
 
+    # new items
     new_items = list(set([
         item.item for item in CollocationItems.query.filter(
             CollocationItems.collocation_id == collocation.id,
             ~ CollocationItems.item.in_(coordinates.index)
         ).all()
     ]))
-    if len(new_items) == 0:
-        return None
+    if len(new_items) > 0:
+        current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
+        semspace = SemanticSpace(semantic_map.embeddings)
+        semspace.coordinates = coordinates
+        new_coordinates = semspace.add(new_items)
+        new_coordinates.index.name = 'item'
+        new_coordinates['semantic_map_id'] = semantic_map.id
+        new_coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
+        db.session.commit()
+        coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'item'])
+        coordinates = coordinates.set_index('item')
 
-    current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
-    semspace = SemanticSpace(semantic_map.embeddings)
-    semspace.coordinates = coordinates
-    new_coordinates = semspace.add(new_items)
-    new_coordinates.index.name = 'item'
-    new_coordinates['semantic_map_id'] = semantic_map.id
-    new_coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
+    # discourseme items
+    current_app.logger.debug('ccc_semmap_update :: check discourseme coordinates')
+    for discourseme in collocation.constellation.highlight_discoursemes:
+        ind = coordinates.index.isin(discourseme.get_items())
+        coordinates.loc[ind, 'x_user'] = coordinates.loc[ind, 'x'].mean()
+        coordinates.loc[ind, 'y_user'] = coordinates.loc[ind, 'y'].mean()
+    coordinates['semantic_map_id'] = semantic_map.id
+    coordinates.index.name = 'item'
+    [db.session.delete(c) for c in semantic_map.coordinates]
     db.session.commit()
-
-    return new_coordinates
+    coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
+    db.session.commit()
 
 
 class SemanticMapIn(Schema):
