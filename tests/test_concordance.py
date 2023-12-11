@@ -24,10 +24,6 @@ def test_create_get_concordance(client, auth):
                             },
                             auth=('admin', '0000'))
 
-        # execute
-        query = client.post(url_for('query.execute', id=query.json['id']),
-                            auth=('admin', '0000'))
-
         # concordance
         lines = client.get(url_for('query.concordance.lines', query_id=query.json['id']),
                            auth=('admin', '0000'))
