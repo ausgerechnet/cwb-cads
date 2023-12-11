@@ -45,10 +45,10 @@ def create_app(config=CONFIG):
     app.config.from_object(config)
 
     # also log cwb-ccc INFO messages
-    if app.config['DEBUG']:
-        logger = logging.getLogger('ccc')
-        logger.addHandler(default_handler)
-        logger.setLevel(logging.INFO)
+    # if app.config['DEBUG']:
+    #     logger = logging.getLogger('ccc')
+    #     logger.addHandler(default_handler)
+    #     logger.setLevel(logging.WARNING)
 
     # init database connection
     if 'SQLALCHEMY_DATABASE_URI' not in app.config:
