@@ -18,18 +18,32 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
                     s_show=[], highlight_discoursemes=[],
                     filter_queries={}, order=42, cut_off=500,
                     window=None, htmlify_meta=True, cwb_ids=False,
-                    cwb_id=None, bools=False, topic_query=None):
+                    cwb_id=None, bools=False, topic_query=None,
+                    match_strategy='longest'):
+    """
+    retrieve concordance lines
+
+    if query is given
+
+    else: cwb_id, topic_query
+
+    """
 
     corpus = Corpus(corpus_name=query.corpus.cwb_id if query else cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
 
+    # activate subcorpus
     if query and query.nqr_name:
+        # TODO: check that exists
         corpus = corpus.subcorpus(query.nqr_name)
 
+    # topic query?
+    topic_query = query.cqp_query if query else topic_query if topic_query else ""
+
     lines = corpus.quick_conc(
-        topic_query=query.cqp_query if query else (topic_query if topic_query else ""),
+        topic_query=topic_query,
         filter_queries=filter_queries,
         highlight_queries={},
         s_context=context_break,
@@ -38,7 +52,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
         order=order,
         p_show=p_show,
         s_show=s_show,
-        match_strategy='longest',
+        match_strategy=match_strategy,
         htmlify_meta=htmlify_meta,
         cwb_ids=cwb_ids
     )
@@ -66,7 +80,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
 
 class ConcordanceIn(Schema):
 
-    context_break = String(default='text', required=False)
+    context_break = String(dump_default='text', required=False)
     p_show = List(String, default=['word', 'lemma'], required=False)
     s_show = List(String, default=[], required=False)
     order = Integer(default=42, required=False)
@@ -94,7 +108,7 @@ class ConcordanceLinesOut(Schema):
     structural = String()       # jsonified dict of: text_id, text_id_cwbid, ...
 
 
-@bp.post("/")
+@bp.get("/")
 @bp.input(ConcordanceIn)
 @bp.output(ConcordanceLinesOut(many=True))
 @bp.auth_required(auth)
