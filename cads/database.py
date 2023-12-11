@@ -8,6 +8,8 @@ from flask import Blueprint, current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
 from pandas import read_sql
+# from sqlalchemy_utils import IntRangeType
+from ccc.utils import time_it
 
 from . import db
 
@@ -142,15 +144,17 @@ class Discourseme(db.Model):
             return self.items.split("\t")
         return items
 
+    @time_it
     def get_cpos(self, corpus_id=None):
 
         queries = [query for query in self.queries if (not corpus_id or query.corpus_id == corpus_id)]
         cpos = set()
         for _query in queries:
             sql_query = Matches.query.filter(Matches.query_id == _query.id)
-            matches = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
-            for matches in _query.matches:
-                cpos.update(range(matches.match, matches.matchend + 1))
+            matches = read_sql(sql_query.statement, con=db.engine, index_col='id')
+            if len(matches) > 0:
+                sets = matches.apply(lambda row: set(range(row['match'], row['matchend'] + 1)), axis=1)
+                cpos.update(set.union(*sets.to_list()))
         return cpos
 
     @property
@@ -244,10 +248,11 @@ class Matches(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
 
-    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
     match = db.Column(db.Integer, nullable=False)
     matchend = db.Column(db.Integer, nullable=False)
+    # region = db.Column(IntRangeType)
 
 
 class Breakdown(db.Model):
