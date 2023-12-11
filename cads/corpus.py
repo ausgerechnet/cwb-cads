@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String
-from ccc import Corpus as CCCorpus
+from apiflask.fields import Integer, List, String, Nested
+from ccc import Corpus as CCCorpus, SubCorpus as CCCSubCorpus
 from flask import current_app
 from pandas import read_csv
-from ccc import SubCorpus
 import click
 from glob import glob
 import json
 
 from . import db
-from .database import Corpus
+from .database import Corpus, SubCorpus
 from .users import auth
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
@@ -83,31 +82,31 @@ def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, column='s
 
         # create Discourseme + Query + Matches
         click.echo(f"importing {name}")
-        corpus_id = Corpus.query.filter_by(cwb_id=cwb_id).first().id
-        from .database import Query, Discourseme
+        corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
 
-        discourseme = Discourseme(name=f'S-{cwb_id}-{name}', description='imported subcorpus')
-        db.session.add(discourseme)
-        db.session.commit()
-
-        # make sure it exists in CQP
+        # create NQR
         df = df.drop(column, axis=1)
-        nqr = SubCorpus(corpus_name=cwb_id,
-                        subcorpus_name=None,
-                        df_dump=df.set_index(['match', 'matchend']),
-                        cqp_bin=cqp_bin,
-                        registry_dir=registry_dir,
-                        data_dir=data_dir,
-                        overwrite=False)
+        nqr = CCCSubCorpus(corpus_name=cwb_id,
+                           subcorpus_name=None,
+                           df_dump=df.set_index(['match', 'matchend']),
+                           cqp_bin=cqp_bin,
+                           registry_dir=registry_dir,
+                           data_dir=data_dir,
+                           overwrite=False)
         nqr_name = nqr.subcorpus_name
 
-        # save query
-        query = Query(discourseme_id=discourseme.id, corpus_id=corpus_id, cqp_nqr_matches=nqr_name)
-        db.session.add(query)
+        # expose as SubCorpus
+        subcorpus = SubCorpus(corpus_id=corpus.id,
+                              name=name,
+                              description='imported subcorpus',
+                              cqp_nqr_matches=nqr_name)
+        db.session.add(subcorpus)
         db.session.commit()
 
-        df['query_id'] = query.id
+        # save Matches
+        df['subcorpus_id'] = subcorpus.id
         df.to_sql('matches', con=db.engine, if_exists='append', index=False)
+        db.session.commit()
 
 
 class CorpusOut(Schema):
@@ -123,6 +122,15 @@ class CorpusOut(Schema):
     s_annotations = List(String)
 
 
+class SubCorpusOut(Schema):
+
+    id = Integer()
+    corpus = Nested(CorpusOut)
+    name = String()
+    description = String()
+    cqp_nqr_matches = String()
+
+
 @bp.get('/')
 @bp.output(CorpusOut(many=True))
 @bp.auth_required(auth)
@@ -133,6 +141,18 @@ def get_corpora():
     corpora = Corpus.query.all()
 
     return [CorpusOut().dump(corpus) for corpus in corpora], 200
+
+
+@bp.get('/<id>/subcorpora/')
+@bp.output(SubCorpusOut(many=True))
+@bp.auth_required(auth)
+def get_subcorpora(id):
+    """Get all corpora.
+
+    """
+    subcorpora = SubCorpus.query.filter_by(corpus_id=id).all()
+
+    return [SubCorpusOut().dump(subcorpus) for subcorpus in subcorpora], 200
 
 
 @bp.get('/<id>')

@@ -103,6 +103,21 @@ class Corpus(db.Model):
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
 
 
+class SubCorpus(db.Model):
+    """SubCorpus
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    corpus_id = db.Column(db.Unicode)
+
+    name = db.Column(db.Unicode)
+    description = db.Column(db.Unicode)
+
+    cqp_nqr_matches = db.Column(db.Unicode)
+    matches = db.relationship('Matches', backref='subcorpus')
+
+
 # class Embeddings(db.Model):
 #     """Embeddings
 
@@ -226,17 +241,18 @@ class Query(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
 
     nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
     cqp_query = db.Column(db.Unicode)
-    cqp_nqr_matches = db.Column(db.Unicode)  # resulting NQR in CWB
     match_strategy = db.Column(db.Unicode, default='longest')
 
-    matches = db.relationship('Matches', backref='_query')
-    breakdowns = db.relationship('Breakdown', backref='_query')
-    collocations = db.relationship('Collocation', backref='_query')
+    cqp_nqr_matches = db.Column(db.Unicode)  # resulting NQR in CWB
+
+    matches = db.relationship('Matches', backref='_query', passive_deletes=True)
+    breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True)
+    collocations = db.relationship('Collocation', backref='_query', passive_deletes=True)
     # concordances = db.relationship('Concordance', backref='_query')
 
 
@@ -246,9 +262,10 @@ class Matches(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.utcnow)
+    # created = db.Column(db.DateTime, default=datetime.utcnow)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
+    subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), index=True)
 
     match = db.Column(db.Integer, nullable=False)
     matchend = db.Column(db.Integer, nullable=False)
@@ -395,7 +412,7 @@ class Collocation(db.Model):
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
-    items = db.relationship('CollocationItems', backref='collocation')
+    items = db.relationship('CollocationItems', backref='collocation', passive_deletes=True)
 
     @property
     def serialize(self):
@@ -406,10 +423,15 @@ class Collocation(db.Model):
 
         """
 
-        try:
-            subcorpus = Query.query.filter_by(cqp_nqr_matches=self._query.nqr_name).first().discourseme.name if self._query.nqr_name else None
-        except AttributeError:  # SOC
-            subcorpus = 'SOC'
+        # is this on a subcorpus?
+        nqr_name = self._query.nqr_name
+        if nqr_name:
+            if nqr_name.startswith("SOC-"):
+                subcorpus = "SOC"
+            else:
+                subcorpus = SubCorpus.query.filter_by(cqp_nqr_matches=nqr_name).first().name
+        else:
+            subcorpus = None
 
         return {
             'id': self.id,
