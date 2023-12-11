@@ -9,12 +9,35 @@ from apiflask.fields import Integer, String
 from flask import request
 from pandas import DataFrame, read_csv
 from glob import glob
+import gzip
+import json
 
 from . import db
 from .database import Discourseme
 from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
+
+
+def read_ldjson(path_ldjson):
+
+    discoursemes = defaultdict(list)
+    with gzip.open(path_ldjson, "rt") as f:
+        for line in f:
+            sachgruppe = json.loads(line)
+            discoursemes[sachgruppe['meta']['name']] = [val for sublist in sachgruppe['items'] for val in sublist]
+
+    return discoursemes
+
+
+def read_tsv(path_in):
+
+    df = read_csv(path_in, sep="\t")
+    discoursemes = defaultdict(list)
+    for row in df.iterrows():
+        discoursemes[row[1]['name']].append(row[1]['query'])
+
+    return discoursemes
 
 
 class DiscoursemeIn(Schema):
@@ -87,24 +110,17 @@ def get_discoursemes():
     return [DiscoursemeOut().dump(discourseme) for discourseme in discoursemes], 200
 
 
-def import_discoursemes(path_in):
-
-    df = read_csv(path_in, sep="\t")
-    discoursemes = defaultdict(list)
-    for row in df.iterrows():
-        discoursemes[row[1]['name']].append(row[1]['query'])
-
-    for name, query_list in discoursemes.items():
-        db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))
-
-    db.session.commit()
-
-
 @bp.cli.command('import')
 @click.option('--path_in', default='discoursemes.tsv')
-def _import_discoursemes(path_in):
+def import_discoursemes(path_in):
+
+    # TODO exclude the ones that are already in database?
     for path in glob(path_in):
-        import_discoursemes(path)
+        discoursemes = read_tsv(path)
+        for name, query_list in discoursemes.items():
+            db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))
+
+    db.session.commit()
 
 
 @bp.cli.command('export')
