@@ -43,15 +43,16 @@ def ccc_query(query, return_df=True):
 
     if len(matches) == 0:
 
-        current_app.logger.debug(f'ccc_query :: querying corpus {query.corpus.cwb_id}')
+        current_app.logger.debug(f'ccc_query :: querying corpus {query.corpus.cwb_id} (subcorpus: {query.nqr_name})')
         corpus = Corpus(query.corpus.cwb_id,
                         cqp_bin=current_app.config['CCC_CQP_BIN'],
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                         data_dir=current_app.config['CCC_DATA_DIR'])
         if query.nqr_name:
             # TODO check that subcorpus exists
-            # print(query.nqr_name)
             # nqrs = corpus.show_nqr()
+            # print(nqrs)
+            # print(query.nqr_name in nqrs['subcorpus'])
             corpus = corpus.subcorpus(query.nqr_name)
 
         matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy)
