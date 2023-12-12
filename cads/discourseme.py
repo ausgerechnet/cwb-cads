@@ -5,16 +5,18 @@ from collections import defaultdict
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String
+from apiflask.fields import Integer, String, Boolean
 from flask import request
 from pandas import DataFrame, read_csv
 from glob import glob
 import gzip
 import json
+from ccc.utils import format_cqp_query
 
 from . import db
 from .database import Discourseme
 from .users import auth
+from .query import Query, QueryOut, ccc_query
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 
@@ -108,6 +110,43 @@ def get_discoursemes():
 
     discoursemes = Discourseme.query.all()
     return [DiscoursemeOut().dump(discourseme) for discourseme in discoursemes], 200
+
+
+class DiscoursemeQueryIn(Schema):
+
+    corpus_id = Integer()
+    match_strategy = String(load_default='longest')
+    p_query = String(load_default='lemma')
+    s_query = String(load_default=None)
+    flags = String(load_default="")
+    escape = Boolean(load_default=True)
+    nqr_name = String(load_default=None)
+
+
+@bp.post('/<id>/query')
+@bp.input(DiscoursemeQueryIn)
+@bp.input({'execute': Boolean(load_default=True)}, location='query')
+@bp.output(QueryOut)
+@bp.auth_required(auth)
+def query(id, data, data_query):
+    """Create a discourseme query.
+
+    """
+    discourseme = db.get_or_404(Discourseme, id)
+    query = Query(
+        discourseme_id=discourseme.id,
+        corpus_id=data['corpus_id'],
+        match_strategy=data['match_strategy'],
+        cqp_query=format_cqp_query(discourseme.get_items(), data['p_query'], data['s_query'], data['flags'], data['escape']),
+        nqr_name=data['nqr_name']
+    )
+    db.session.add(query)
+    db.session.commit()
+
+    if data_query['execute']:
+        ccc_query(query)
+
+    return QueryOut().dump(query), 200
 
 
 @bp.cli.command('import')
