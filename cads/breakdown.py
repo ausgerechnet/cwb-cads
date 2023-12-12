@@ -57,7 +57,7 @@ class BreakdownItemsOut(Schema):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(BreakdownOut)
 @bp.auth_required(auth)
-def create(query_id, data, execute):
+def create(query_id, data, data_query):
     """Create new breakdown for query.
 
     """
@@ -65,7 +65,7 @@ def create(query_id, data, execute):
     db.session.add(breakdown)
     db.session.commit()
 
-    if execute:
+    if data_query['execute']:
         ccc_breakdown(breakdown)
 
     return BreakdownOut().dump(breakdown), 200

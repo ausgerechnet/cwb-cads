@@ -103,7 +103,7 @@ class QueryOut(Schema):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def create(data, execute):
+def create(data, data_query):
     """Create new query.
 
     """
@@ -111,7 +111,7 @@ def create(data, execute):
     db.session.add(query)
     db.session.commit()
 
-    if execute:
+    if data_query['execute']:
         ccc_query(query)
 
     return QueryOut().dump(query), 200
