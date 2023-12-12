@@ -13,8 +13,8 @@ bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
 class ConstellationIn(Schema):
 
-    name = String()
-    description = String()
+    name = String(required=False)
+    description = String(required=False)
     filter_discourseme_ids = List(Integer)
     highlight_discourseme_ids = List(Integer, required=False)
 
@@ -38,8 +38,8 @@ def create(data):
     filter_discoursemes = Discourseme.query.filter(Discourseme.id.in_(data['filter_discourseme_ids'])).all()
     constellation = Constellation(
         user_id=auth.current_user.id,
-        name=data['name'],
-        description=data['description']
+        name=data.pop('name', '-'.join([d.name for d in filter_discoursemes])),
+        description=data.pop('description', None)
     )
     [constellation.filter_discoursemes.append(discourseme) for discourseme in filter_discoursemes]
     db.session.add(constellation)
