@@ -16,8 +16,8 @@ from ..collocation import ccc_collocates, score_counts
 from ..concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut, ccc_concordance
 from ..corpus import ccc_corpus
 from ..database import (Breakdown, Collocation, CollocationItems,
-                        Constellation, Coordinates, Corpus, Discourseme,
-                        Matches, Query, User)
+                        Constellation, Coordinates, Corpus,
+                        Discourseme, Query, User, SubCorpus)
 from ..query import ccc_query, get_or_create_query
 from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update
 from .login_views import user_required
@@ -145,12 +145,6 @@ def create_collocation(username):
     # Semantic Map
     current_app.logger.info('Creating collocation :: semantic map')
     ccc_semmap(collocation, collocation._query.corpus.embeddings)
-
-    # Update Items
-    # current_app.logger.info('Creating collocation :: adding surface realisations to items')
-    # new_items = set([cqp_escape(item.item) for item in breakdown.items])
-    # old_items = set(filter_discourseme.get_items())
-    # filter_discourseme.items = "\t".join({item for item in new_items.union(old_items) if len(item) > 0})
     db.session.commit()
 
     return jsonify({'msg': collocation.id}), 201
@@ -423,60 +417,67 @@ def get_collocate_for_collocation(username, collocation):
 
     # .. create separate Collocation for SOC
     if len(filter_queries) > 0:
-        # TODO move to ccc_collocates()
 
-        # get matches of original filter
-        matches_df = ccc_query(collocation._query)
-        # for filtering, we set whole context regions as cotext so we can easily filter iteratively
+        # SubCorpus
+        # - subcorpus = topic → discourseme_i → topic
+        # - iterative query (topic on subcorpus) → matches
+
+        # - make sure subcorpus exists in CWB and get NQR name
         corpus = Crps(corpus_name=collocation._query.corpus.cwb_id,
                       cqp_bin=current_app.config['CCC_CQP_BIN'],
                       registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                       data_dir=current_app.config['CCC_DATA_DIR'])
-        matches = corpus.subcorpus(df_dump=matches_df, overwrite=False).set_context(
-            context_break=collocation.s_break, overwrite=False
-        )
+        nqr_name = corpus.quick_query(collocation.s_break,
+                                      topic_query=collocation._query.cqp_query,
+                                      filter_queries=filter_queries.values())
 
-        current_app.logger.info('Getting SOC collocation items :: filtering')
-        cotext_of_matches = matches.set_context_as_matches(overwrite=True)
-        for name, cqp_query in filter_queries.items():
-            disc = cotext_of_matches.query(cqp_query, context_break=collocation.s_break)
-            cotext_of_matches = disc.set_context_as_matches(overwrite=True)
-
-        # focus back on topic:
-        matches = cotext_of_matches.query(collocation._query.cqp_query, context_break=collocation.s_break).set_context(
-            context_break=collocation.s_break, context=collocation.context
-        ).df
-
-        # iterative query (topic on subcorpus) → matches
-        # subcorpus = topic → discourseme_i → topic
+        # SubCorpus
         subcorpus_name = "SOC" + "-" + "-".join([str(collocation._query.discourseme.id)] + [str(discourseme.id) for discourseme in filter_discoursemes])
+        subcorpus = SubCorpus.query.filter_by(
+            corpus_id=collocation._query.corpus.id, name=subcorpus_name, description='SOC', cqp_nqr_matches=nqr_name
+        ).first()
+        if not subcorpus:
+            subcorpus = SubCorpus(corpus_id=collocation._query.corpus.id, name=subcorpus_name, description='SOC', cqp_nqr_matches=nqr_name)
+            db.session.add(subcorpus)
 
+        # Query
         query = get_or_create_query(
             corpus=collocation._query.corpus,
             discourseme=collocation._query.discourseme,
-            subcorpus_name=subcorpus_name,
+            subcorpus_name=nqr_name,
             cqp_query=collocation._query.cqp_query
         )
+        ccc_query(query, return_df=False)
 
-        # save to database
-        matches['query_id'] = query.id
-        matches = matches[['query_id']]
-        for m in matches.reset_index().to_dict(orient='records'):
-            db.session.add(Matches(**m))
-        db.session.commit()
+        # Breakdown
+        breakdown = Breakdown.query.filter_by(query_id=query.id, p=collocation.p).first()
+        if not breakdown:
+            breakdown = Breakdown(query_id=query.id, p=collocation.p)
+            db.session.add(breakdown)
+            db.session.commit()
+            ccc_breakdown(breakdown)
 
-        # semantic map
-        semantic_map = collocation.semantic_map
+        # Collocation
+        new_collocation = Collocation.query.filter_by(query_id=query.id,
+                                                      p=collocation.p,
+                                                      s_break=collocation.s_break,
+                                                      context=collocation.context,
+                                                      user_id=user.id,
+                                                      constellation_id=collocation.constellation.id,
+                                                      semantic_map_id=collocation.semantic_map.id).first()
+        if not new_collocation:
+            new_collocation = Collocation(query_id=query.id,
+                                          p=collocation.p,
+                                          s_break=collocation.s_break,
+                                          context=collocation.context,
+                                          user_id=user.id,
+                                          constellation_id=collocation.constellation.id,
+                                          semantic_map_id=collocation.semantic_map.id)
+            db.session.add(new_collocation)
+            db.session.commit()
+            ccc_collocates(new_collocation, cut_off=cut_off, min_freq=min_freq)
 
-        # new collocation analysis
-        collocation = Collocation(query_id=query.id, p=collocation.p, s_break=collocation.s_break, context=collocation.context,
-                                  user_id=user.id, constellation_id=collocation.constellation.id)
-        db.session.add(collocation)
-        db.session.commit()
-        ccc_collocates(collocation, cut_off=cut_off, min_freq=min_freq)
-        collocation.semantic_map_id = semantic_map.id
-        db.session.add(collocation)
-        db.session.commit()
+        collocation = new_collocation
 
     # counts
     items = CollocationItems.query.filter_by(collocation_id=collocation.id, window=window).all()
@@ -557,13 +558,29 @@ def get_concordance_for_collocation(username, collocation):
 
     # .. create filter discoursemes  TODO simplify
     filter_ids = request.args.getlist('discourseme', None)
+
+    if filter_ids:
+        subcorpus_name = "SOC" + "-" + "-".join([str(collocation._query.discourseme.id)] + [str(filter_id) for filter_id in filter_ids])
+        corpus_id = Corpus.query.filter_by(cwb_id=collocation._query.corpus.cwb_id).first().id
+        subcorpus = SubCorpus.query.filter_by(corpus_id=corpus_id,
+                                              name=subcorpus_name).first()
+        query = Query.query.filter_by(corpus_id=corpus_id,
+                                      discourseme=collocation._query.discourseme,
+                                      nqr_name=subcorpus.cqp_nqr_matches,
+                                      cqp_query=collocation._query.cqp_query).first()
+        collocation = Collocation.query.filter_by(query_id=query.id,
+                                                  s_break=collocation.s_break,
+                                                  context=collocation.context,
+                                                  user_id=user.id,
+                                                  constellation_id=collocation.constellation.id).first()
+
     filter_discoursemes = [db.get_or_404(Discourseme, id) for id in filter_ids]
     filter_items = request.args.getlist('item', None)
     filter_queries = dict()
-    for filter_discourseme in filter_discoursemes:
-        filter_queries[str(filter_discourseme.id)] = format_cqp_query(
-            filter_discourseme.get_items(collocation._query.corpus.id), collocation.p, escape=False
-        )
+    # for filter_discourseme in filter_discoursemes:
+    #     filter_queries[str(filter_discourseme.id)] = format_cqp_query(
+    #         filter_discourseme.get_items(collocation._query.corpus.id), collocation.p, escape=False
+    #     )
     if filter_items:
         filter_queries['collocate'] = format_cqp_query(filter_items, collocation.p, escape=False)
 
@@ -572,7 +589,7 @@ def get_concordance_for_collocation(username, collocation):
 
     # .. actual concordancing
     concordance_lines = ccc_concordance(collocation._query, collocation.s_break, p_show, s_show,
-                                        highlight_discoursemes, filter_queries,
+                                        highlight_discoursemes + filter_discoursemes, filter_queries,
                                         order=order, cut_off=cut_off, window=window)
     if concordance_lines is None:
         return jsonify({'msg': 'empty concordance'}), 404
