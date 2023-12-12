@@ -11,7 +11,7 @@ from pandas import DataFrame, concat, read_sql
 
 from . import db
 from .database import (Collocation, CollocationItems, Cotext,
-                       CotextLines, Query)
+                       CotextLines, Discourseme, Query)
 from .query import ccc_query, get_or_create_query
 from .semantic_map import SemanticMapIn, SemanticMapOut, CoordinatesOut, ccc_semmap
 from .users import auth
@@ -461,3 +461,17 @@ def get_semantic_map(query_id, collocation_id):
 
     collocation = db.get_or_404(Collocation, collocation_id)
     return SemanticMapOut().dump(collocation.semantic_map), 200
+
+
+@bp.put('/<id>/auto-associate')
+@bp.output(CollocationOut)
+@bp.auth_required(auth)
+def assoicate_discoursemes(query_id, collocation_id):
+
+    collocation = db.get_or_404(Collocation, collocation_id)
+    collocation_items = [item.item for item in collocation.items]
+    discoursemes = Discourseme.query.all()
+    for discourseme in discoursemes:
+        if len(set(discourseme.get_items()).intersection(collocation_items)) > 0:
+            collocation.constellation.highlight_discoursemes.append(discourseme)
+    db.session.commit()
