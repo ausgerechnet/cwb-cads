@@ -439,6 +439,7 @@ class Collocation(db.Model):
             'subcorpus': subcorpus,
             'user_id': self.user_id,
             'topic_id': self._query.discourseme.id,
+            'constellation_id': self.constellation_id,
             'p_query': 'lemma',
             'flags_query': '',
             'escape_query': False,
