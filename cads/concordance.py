@@ -61,8 +61,7 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
     highlight = dict()
     if highlight_discoursemes:
         for discourseme in highlight_discoursemes:
-            if str(discourseme.id) not in filter_queries.keys():
-                highlight[str(discourseme.id)] = discourseme.get_cpos(corpus_id=corpus_id)
+            highlight[str(discourseme.id)] = discourseme.get_cpos(corpus_id=corpus_id)
 
     for line in lines:
         if bools:
