@@ -75,7 +75,7 @@ def meta_from_tsv(cwb_id, path):
     pass
 
 
-def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, column='subcorpus'):
+def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=None, column='subcorpus'):
 
     df = read_csv(path, sep='\t')  # .set_index(['match', 'matchend'])
     for name, df in df.groupby(column):
@@ -92,6 +92,7 @@ def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, column='s
                            cqp_bin=cqp_bin,
                            registry_dir=registry_dir,
                            data_dir=data_dir,
+                           lib_dir=lib_dir,
                            overwrite=False)
         nqr_name = nqr.subcorpus_name
 
