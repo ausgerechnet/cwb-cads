@@ -49,13 +49,11 @@ def ccc_query(query, return_df=True):
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                         data_dir=current_app.config['CCC_DATA_DIR'])
         if query.nqr_name:
-            # TODO check that subcorpus exists
-            # nqrs = corpus.show_nqr()
-            # print(nqrs)
-            # print(query.nqr_name in nqrs['subcorpus'])
+            if query.nqr_name not in corpus.show_nqr()['subcorpus'].values:
+                raise NotImplementedError('dynamic subcorpus creation not implemented')
             corpus = corpus.subcorpus(query.nqr_name)
 
-        matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy)
+        matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy, propagate_error=True)
         query.cqp_nqr_matches = matches.subcorpus_name
         df_matches = matches.df.reset_index()[['match', 'matchend']]
         df_matches['query_id'] = query.id
