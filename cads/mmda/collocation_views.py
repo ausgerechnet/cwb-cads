@@ -9,6 +9,7 @@ from ccc import Corpus as Crps
 from ccc.utils import cqp_escape, cqp_unescape, format_cqp_query
 from flask import current_app, jsonify, request
 from pandas import DataFrame
+from numpy.random import normal
 
 from .. import db
 from ..breakdown import BreakdownItemsOut, ccc_breakdown
@@ -19,7 +20,7 @@ from ..database import (Breakdown, Collocation, CollocationItems,
                         Constellation, Coordinates, Corpus,
                         Discourseme, Query, User, SubCorpus)
 from ..query import ccc_query, get_or_create_query
-from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update
+from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update, ccc_semmap_discoursemes
 from .login_views import user_required
 
 collocation_blueprint = APIBlueprint('collocation', __name__, url_prefix='/user/<username>/collocation')
@@ -623,7 +624,7 @@ def get_breakdown_for_collocation(username, collocation):
 
     user = User.query.filter_by(username=username).first()
     collocation = Collocation.query.filter_by(id=collocation, user_id=user.id).first()
-    # TODO why many breakdowns?
+    # select appropriate breakdown via p-att
     breakdown = [BreakdownItemsOut().dump(item) for item in collocation._query.breakdowns[0].items]
 
     return breakdown, 200
@@ -712,9 +713,6 @@ def get_coordinates(username, collocation):
     if not collocation:
         return jsonify({'msg': 'no such collocation analysis'}), 404
 
-    current_app.logger.info('Getting collocation items :: making sure there are coordinates for all items')
-    ccc_semmap_update(collocation)
-
     # load coordinates
     sem_map = collocation.semantic_map
 
@@ -742,6 +740,10 @@ def update_collocation(username, collocation):
         current_app.logger.info(f'Updating collocation :: window {window}')
         ccc_collocates(collocation, window)
 
+    current_app.logger.info('Updating collocation :: update positions')
+    ccc_semmap_update(collocation)
+    ccc_semmap_discoursemes(collocation)
+
     return jsonify({'msg': 'updated'}), 200
 
 
@@ -762,14 +764,27 @@ def update_coordinates(username, collocation):
 
     # set coordinates
     semantic_map = collocation.semantic_map
+
+    # TODO: remove loop via dataframe operations
+    # NB the current frontend (2023-12) only updates one set of coordinates at a time
+    sigma_wiggle = 1
     for item, xy in items.items():
         coordinates = Coordinates.query.filter_by(item=cqp_unescape(item), semantic_map_id=semantic_map.id).first()
         if not (isinstance(xy['x_user'], float) and isinstance(xy['y_user'], float)):
+            # 'null' values
             coordinates.x_user = None
             coordinates.y_user = None
         else:
-            coordinates.x_user = xy['x_user']
-            coordinates.y_user = xy['y_user']
-    db.session.commit()
+            # update discourseme position
+            for discourseme in collocation.constellation.highlight_discoursemes:
+                discourseme_items = discourseme.get_items()
+                if item in discourseme_items:
+                    discourseme_coordinates = Coordinates.query.filter(Coordinates.item.in_(discourseme_items),
+                                                                       Coordinates.semantic_map_id == semantic_map.id).all()
+                    for coordinates in discourseme_coordinates:
+                        coordinates.x_user = xy['x_user'] + normal(0, sigma_wiggle, 1)[0]
+                        coordinates.y_user = xy['y_user'] + normal(0, sigma_wiggle, 1)[0]
+
+        db.session.commit()
 
     return jsonify({'msg': 'updated'}), 200
