@@ -9,7 +9,7 @@ init:
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
 	flask --app cads database init && \
 	flask --app cads discourseme import --path_in "../thesis/ccc-analyses/case-studies/norm-rechts/*-discoursemes.tsv" && \
-	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-lp.tsv"
+	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
 #	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
 #	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv" && \
 
@@ -41,3 +41,7 @@ export:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
 	flask --app cads discourseme export
+
+apispec:
+	. venv/bin/activate && \
+	flask --app cads spec > openapi.json

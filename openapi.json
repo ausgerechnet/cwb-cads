@@ -1,0 +1,5657 @@
+{
+  "info": {
+    "title": "cwb-cads",
+    "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
+    "contact": {
+      "name": "Philipp Heinrich",
+      "url": "https://philipp-heinrich.eu",
+      "email": "philipp.heinrich@fau.de"
+    },
+    "version": "0.1.0"
+  },
+  "tags": [
+    {
+      "name": "User"
+    },
+    {
+      "name": "Corpus"
+    },
+    {
+      "name": "Discourseme"
+    },
+    {
+      "name": "Constellation"
+    },
+    {
+      "name": "Semantic_Map"
+    },
+    {
+      "name": "Query"
+    },
+    {
+      "name": "Query.Breakdown"
+    },
+    {
+      "name": "Query.Collocation"
+    },
+    {
+      "name": "Query.Concordance"
+    },
+    {
+      "name": "Mmda"
+    },
+    {
+      "name": "Mmda.Admin"
+    },
+    {
+      "name": "Mmda.Collocation"
+    },
+    {
+      "name": "Mmda.Constellation"
+    },
+    {
+      "name": "Mmda.Corpus"
+    },
+    {
+      "name": "Mmda.Discourseme"
+    },
+    {
+      "name": "Mmda.Keyword"
+    },
+    {
+      "name": "Mmda.Login"
+    },
+    {
+      "name": "Mmda.User"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Easter Eggs"
+        ],
+        "summary": "Redirect to API docs."
+      }
+    },
+    "/hello": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Easter Eggs"
+        ],
+        "summary": "Say hello."
+      }
+    },
+    "/user/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Get all users.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Register new user.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/query/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QueryOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Get all queries.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "execute",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Create new query.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/corpus/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CorpusOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Get all corpora.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/user/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Get details of user.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Update details of a user.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/user/login": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Login with name and password.",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/UserIn"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/query/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Get details of a query.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Delete a query.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/user/logout": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Logout current user.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/corpus/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Get details of a corpus.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/login/": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Login"
+        ],
+        "summary": "Login route to get JWT token to access the API"
+      }
+    },
+    "/discourseme/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoursemeOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Discourseme"
+        ],
+        "summary": "Get all discoursemes.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Discourseme"
+        ],
+        "summary": "Create new discourseme.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/corpus/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Corpus"
+        ],
+        "summary": "Returns a list of available corpora as JSON array with their details."
+      }
+    },
+    "/mmda/refresh/": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Login"
+        ],
+        "summary": "Return a new token if the user has a refresh token"
+      }
+    },
+    "/constellation/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConstellationOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Constellation"
+        ],
+        "summary": "Get all constellations.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Constellation"
+        ],
+        "summary": "Create new constellation.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConstellationIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/corpus/{id}/meta": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Get meta data of corpus.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Set meta data of corpus.",
+        "description": "- from within XML\n- from TSV",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/discourseme/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Discourseme"
+        ],
+        "summary": "Get details of a discourseme.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Discourseme"
+        ],
+        "summary": "Delete one discourseme.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/admin/user/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Return a list of all users"
+      },
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Add new user to database"
+      }
+    },
+    "/mmda/test-login/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Login"
+        ],
+        "summary": "Access the identity of the current user with get_jwt_identity"
+      }
+    },
+    "/mmda/test-admin/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Login"
+        ],
+        "summary": "Access the roles of the current user with get_jwt_claims"
+      }
+    },
+    "/semantic_map/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticMapOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Semantic_Map"
+        ],
+        "summary": "Get semantic map.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Semantic_Map"
+        ],
+        "summary": "Delete semantic map.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/constellation/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Constellation"
+        ],
+        "summary": "Get details of a constellation.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Constellation"
+        ],
+        "summary": "Delete one constellation.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/query/{id}/execute": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Execute query: create matches.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/admin/keyword/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: List all keyword analyses"
+      }
+    },
+    "/corpus/{id}/subcorpus": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Create Subcorpus",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/corpus/{corpus}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Corpus"
+        ],
+        "summary": "Returns a list of available corpora as JSON array with their details."
+      }
+    },
+    "/mmda/user/{username}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.User"
+        ],
+        "summary": "Return details of a user"
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.User"
+        ],
+        "summary": "Update details of a user"
+      }
+    },
+    "/discourseme/{id}/query": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "execute",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Discourseme"
+        ],
+        "summary": "Create a discourseme query.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeQueryIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/corpus/{id}/subcorpora/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubCorpusOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Get all corpora.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/admin/collocation/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: List all collocation analyses"
+      }
+    },
+    "/mmda/admin/discourseme/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: List all discoursme"
+      }
+    },
+    "/mmda/admin/constellation/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: List all constellation"
+      }
+    },
+    "/query/{query_id}/breakdown/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BreakdownOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Breakdown"
+        ],
+        "summary": "Get all breakdowns of query.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "execute",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Breakdown"
+        ],
+        "summary": "Create new breakdown for query.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreakdownIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/admin/user/{username}/": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Delete a user"
+      }
+    },
+    "/mmda/test-login/{username}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Login"
+        ],
+        "summary": "Access the username and validate"
+      }
+    },
+    "/semantic_map/{id}/coordinates": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoordinatesOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Semantic_Map"
+        ],
+        "summary": "Get coordinates of semantic map.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/query/{query_id}/collocation/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollocationOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Get collocation.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "execute",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "semantic_map_id",
+            "schema": {
+              "type": "integer",
+              "default": null,
+              "nullable": true
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Create new collocation analysis.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollocationIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/query/{query_id}/concordance/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConcordanceLinesOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Concordance"
+        ],
+        "summary": "Get concordance lines.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConcordanceIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/admin/keyword/{keyword}/": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Remove a Keyword Analysis"
+      }
+    },
+    "/mmda/user/{username}/keyword/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "List all keyword analyses for given user.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\nresponses:\n200:\ndescription: list of serialized analyses"
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Create new keyword analysis for given user.",
+        "description": "parameters:\n- name: username\ntype: str\n\n- name: corpus\ntype: str\ndescription: name of corpus in API\n- name: corpus_reference\ntype: str\ndescription: name of corpus in API\n\n- name: p\ntype: list\ndescription: p-attributes to query on [lemma]\n- name: p_reference\ntype: list\ndescription: p-attributes to query on [lemma]\n\n- name: s_break\ntype: str\ndescription: where to limit concordance lines\n\n- name: cut_off\ntype: int\ndescription: how many keywords? [None]\ndefault: 500\n- name: order\ntype: str\ndescription: how to sort them? (column in result table) [log_likelihood]\n\nresponses:\n201:\ndescription: keywords.id\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/password/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.User"
+        ],
+        "summary": "Update a password for a user"
+      }
+    },
+    "/query/{query_id}/breakdown/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Breakdown"
+        ],
+        "summary": "Get breakdown.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Breakdown"
+        ],
+        "summary": "Delete breakdown.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/query/{query_id}/collocation/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Get collocation.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Delete collocation.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/user/{username}/collocation/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "List all analyses for given user.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\nresponses:\n200:\ndescription: list of serialized analyses"
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Create new collocation analysis for given user.",
+        "description": "parameters:\n- name: username\ntype: str\n\n- name: corpus\ntype: str\ndescription: name of corpus in API\n- name: discourseme\ntype: str or dict\ndescription: new discourseme (<str>) or existing discourseme (<dict>)\n- name: items\ntype: list\ndescription: items to search for\n\n- name: p_query\ntype: str\ndescription: p-attribute to query on [lemma]\n- name: p_collocation\ntype: str\ndescription: p-attribute to use for collocates [lemma]\n- name: s_break\ntype: str\ndescription: s-attribute to break context at [text]\n- name: context\ntype: int\ndescription: context size in tokens\ndefault: 10\n\n- name: cut_off\ntype: int\ndescription: how many collocates?\ndefault: 200\n- name: order\ntype: str\ndescription: how to sort them? (column in result table) [log_likelihood]\n\nresponses:\n201:\ndescription: collocation.id\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/discourseme/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Discourseme"
+        ],
+        "summary": "List discoursemes for a user."
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Discourseme"
+        ],
+        "summary": "Create a new discourseme."
+      }
+    },
+    "/mmda/user/{username}/constellation/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "List all constellations for a user."
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Create new constellation."
+      }
+    },
+    "/mmda/admin/user/{username}/password/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Update a password for a user"
+      }
+    },
+    "/query/{query_id}/breakdown/{id}/items": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BreakdownItemsOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Breakdown"
+        ],
+        "summary": "Get breakdown items.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/admin/collocation/{collocation}/": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Remove a Collocation Analysis"
+      }
+    },
+    "/mmda/admin/discourseme/{discourseme}/": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Remove a Discourseme"
+      }
+    },
+    "/query/{query_id}/breakdown/{id}/execute": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Breakdown"
+        ],
+        "summary": "Execute breakdown: Calculate frequencies of query matches.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/user/{username}/keyword/{keyword}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Get details of keyword analysis.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\n- name: keyword_id\ntype: str\ndescription: keyword id\nresponses:\n200:\ndescription: dict of keyword details\n404:\ndescription: \"no such analysis\""
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Delete keyword analysis.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\n- name: keyword\ntype: str\ndescription: keyword analysis id\nresponses:\n200:\ndescription: \"deleted\"\n404:\ndescription: \"no such keyword analysis\""
+      }
+    },
+    "/mmda/admin/constellation/{constellation}/": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Admin"
+        ],
+        "summary": "Admin: Remove a constellation"
+      }
+    },
+    "/query/{query_id}/collocation/{id}/collocates": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Get collocation items.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Execute collocation: Create collocation items.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/query/{query_id}/collocation/{id}/semantic_map/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticMapOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Get semantic map of collocation analysis.",
+        "description": "TODO: allow many-to-many relationship",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticMapOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Create new semantic map for collocation items.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SemanticMapIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Get details of collocation analysis.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\n- name: collocation\ntype: str\ndescription: collocation id\nresponses:\n200:\ndescription: dict of collocation analysis details\n404:\ndescription: \"no such analysis\""
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Delete collocation.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\n- name: collocation\ntype: str\ndescription: collocation id\nresponses:\n200:\ndescription: \"deleted\"\n404:\ndescription: \"no such collocation\""
+      }
+    },
+    "/mmda/user/{username}/discourseme/{discourseme}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Discourseme"
+        ],
+        "summary": "Get the details of a discourseme."
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Discourseme"
+        ],
+        "summary": "Update the details of a discourseme"
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Discourseme"
+        ],
+        "summary": "Delete a discourseme"
+      }
+    },
+    "/query/{query_id}/collocation/{id}/auto-associate": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Collocation"
+        ],
+        "summary": "Assoicate Discoursemes",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/mmda/user/{username}/keyword/{keyword}/keywords/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Get keywords table for keyword analysis.",
+        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: analysis\ndescription: analysis id\n\n- name: window_size\ntype: int\ndescription: window size\n\n- name: discourseme\ntype: list\nrequired: False\ndescription: discourseme id(s) to include in constellation\n- name: collocate\ntype: list\nrequired: False\ndescription: lose item(s) for ad-hoc discourseme to include\n\n- name: cut_off\ntype: int\ndescription: how many collocates?\ndefault: 500\n- name: order\ntype: str\ndescription: how to sort them? (column in result table) [log_likelihood]\n\nresponses:\n200:\ndescription: collocates\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/constellation/{constellation}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Get details for constellation."
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Update constellation details."
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Delete constellation."
+      }
+    },
+    "/mmda/user/{username}/keyword/{keyword}/discourseme/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Return list of discoursemes for keyword analysis.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\n- name: keyword\ntype: str\ndescription: keyword analysis id\nresponses:\n200:\ndescription: list of associated discoursemes\n404:\ndescription: \"no such keyword analysis\""
+      }
+    },
+    "/mmda/user/{username}/keyword/{keyword}/concordance/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Get concordance lines for analysis.",
+        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: keyword\ndescription: keyword_analysis_id\n- name: item\ntype: str\ndescription: item to get lines for\n- name: cut_off\ntype: int\ndescription: how many lines?\ndefault: 500\n- name: order\ntype: str\ndescription: how to sort them? (column in result table)\ndefault: random\nresponses:\n200:\ndescription: concordance\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/keyword/{keyword}/coordinates/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Get coordinates for keyword analysis."
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Update user coordinates."
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/meta/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Get concordance lines for collocation.",
+        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: collocation\ndescription: collocation_id\nresponses:\n200:\ndescription: breakdown\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/collocate/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Get collocate items for collocation analysis.",
+        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: collocation\ndescription: collocation id\n\n- name: window_size\ntype: int\ndescription: window size\n\n- name: discourseme\ntype: list\nrequired: False\ndescription: discourseme id(s) to include in constellation\n- name: collocate\ntype: list\nrequired: False\ndescription: lose item(s) for ad-hoc discourseme to include\n\n- name: cut_off\ntype: int\ndescription: how many collocates?\ndefault: 200\n- name: order\ntype: str\ndescription: how to sort them? (column in result table) [log_likelihood]\n\nresponses:\n200:\ndescription: collocates\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/breakdown/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Get breakdown for collocation.",
+        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: collocation\ndescription: collocation_id\nresponses:\n200:\ndescription: breakdown\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/keyword/{keyword}/coordinates/reload/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Re-calculate coordinates for keyword analysis."
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/discourseme/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Return list of discoursemes for collocation.",
+        "description": "parameters:\n- username: username\ntype: str\ndescription: username, links to user\n- name: collocation\ntype: str\ndescription: collocation id\nresponses:\n200:\ndescription: list of associated discoursemes\n404:\ndescription: \"no such collocation\""
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/concordance/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Get concordance lines for collocation.",
+        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: collocation\ndescription: collocation_id\n- name: window_size\ntype: int\ndescription: window size for context\ndefault: 3\n- name: item\ntype: list\nrequired: False\ndescription: lose item(s) for additional discourseme to include\n- name: cut_off\ntype: int\ndescription: how many lines?\ndefault: 1000\n- name: order\ntype: str\ndescription: how to sort them? (column in result table)\ndefault: random\n- name: s_meta\ntype: str\ndescription: what s-att-annotation to retrieve\ndefault: collocation.s_break\nresponses:\n200:\ndescription: concordance\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/coordinates/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Get coordinates for collocation analysis."
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Update user coordinates. If \"none\": delete user coordinates."
+      }
+    },
+    "/mmda/user/{username}/constellation/{constellation}/discourseme/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "List discoursemes for constellation."
+      }
+    },
+    "/mmda/user/{username}/constellation/{constellation}/concordance/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Get concordance lines for a constellation."
+      }
+    },
+    "/mmda/user/{username}/constellation/{constellation}/association/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Get association scores for all discoursemes in constellation."
+      }
+    },
+    "/mmda/user/{username}/keyword/{keyword}/discourseme/{discourseme}/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Associate a discourseme with keyword analysis.",
+        "description": "parameters:\n- name: username\ntype: str\ndescription: username, links to user\n- name: keyword\ntype: int\ndescription: keyword analysis id\n- name: discourseme\ntype: int\ndescription: discourseme id to associate\nresponses:\n200:\ndescription: \"already linked\"\ndescription: \"updated\"\n404:\ndescription: \"no such keyword analysis\"\ndescription: \"no such discourseme\""
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "keyword",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Keyword"
+        ],
+        "summary": "Remove discourseme from keyword analysis.",
+        "description": "parameters:\n- name: username\ntype: str\ndescription: username, links to user\n- name: keyword\ntype: int\ndescription: keyword analysis id\n- name: discourseme\ntype: int\ndescription: discourseme id to remove\nresponses:\n200:\ndescription: \"deleted discourseme from keyword analysis\"\n404:\ndescription: \"no such keyword analysis\"\ndescription: \"no such discourseme\"\ndescription: \"discourseme not linked to keyword analysis\""
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/coordinates/reload/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Re-calculate collocation scores"
+      }
+    },
+    "/mmda/user/{username}/collocation/{collocation}/discourseme/{discourseme}/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Associate a discourseme with collocation.",
+        "description": "parameters:\n- name: username\ntype: str\ndescription: username, links to user\n- name: collocation\ntype: int\ndescription: collocation id\n- name: discourseme\ntype: int\ndescription: discourseme id to associate\nresponses:\n200:\ndescription: \"already linked\"\ndescription: \"updated\"\n404:\ndescription: \"no such collocation\"\ndescription: \"no such discourseme\"\n409:\ndescription: \"discourseme is already topic of collocation\""
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "collocation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Collocation"
+        ],
+        "summary": "Remove discourseme from collocation.",
+        "description": "parameters:\n- name: username\ntype: str\ndescription: username, links to user\n- name: collocation\ntype: int\ndescription: collocation id\n- name: discourseme\ntype: int\ndescription: discourseme id to remove\nresponses:\n200:\ndescription: \"deleted discourseme from collocation\"\n404:\ndescription: \"no such analysis\"\ndescription: \"no such discourseme\"\ndescription: \"discourseme not linked to collocation\""
+      }
+    },
+    "/mmda/user/{username}/constellation/{constellation}/discourseme/{discourseme}/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Put a discourseme into a constellation."
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "username",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "constellation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "discourseme",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Mmda.Constellation"
+        ],
+        "summary": "Remove a discourseme from a constellation"
+      }
+    }
+  },
+  "openapi": "3.0.2",
+  "components": {
+    "schemas": {
+      "ValidationError": {
+        "properties": {
+          "detail": {
+            "type": "object",
+            "properties": {
+              "<location>": {
+                "type": "object",
+                "properties": {
+                  "<field_name>": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "HTTPError": {
+        "properties": {
+          "detail": {
+            "type": "object"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UserOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "username": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ]
+      },
+      "UserIn": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ]
+      },
+      "QueryOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "type": "string"
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "nqr_name": {
+            "type": "string"
+          },
+          "cqp_nqr_matches": {
+            "type": "string"
+          }
+        }
+      },
+      "QueryIn": {
+        "type": "object",
+        "properties": {
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "type": "string"
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "nqr_name": {
+            "type": "string"
+          }
+        }
+      },
+      "CorpusOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "cwb_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "register": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "p_atts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "s_atts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "s_annotations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UserUpdate": {
+        "type": "object",
+        "properties": {
+          "old_password": {
+            "type": "string"
+          },
+          "new_password": {
+            "type": "string"
+          },
+          "confirm_password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirm_password",
+          "new_password",
+          "old_password"
+        ]
+      },
+      "DiscoursemeOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "DiscoursemeIn": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ConstellationOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "ConstellationIn": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "filter_discourseme_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "highlight_discourseme_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "SemanticMapOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "collocation_id": {
+            "type": "integer"
+          },
+          "keyword_id": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          }
+        }
+      },
+      "DiscoursemeQueryIn": {
+        "type": "object",
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "type": "string",
+            "default": "longest"
+          },
+          "p_query": {
+            "type": "string",
+            "default": "lemma"
+          },
+          "s_query": {
+            "type": "string",
+            "default": null,
+            "nullable": true
+          },
+          "flags": {
+            "type": "string",
+            "default": ""
+          },
+          "escape": {
+            "type": "boolean",
+            "default": true
+          },
+          "nqr_name": {
+            "type": "string",
+            "default": null,
+            "nullable": true
+          }
+        }
+      },
+      "SubCorpusOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "corpus": {
+            "$ref": "#/components/schemas/CorpusOut"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cqp_nqr_matches": {
+            "type": "string"
+          }
+        }
+      },
+      "BreakdownOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "query_id": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          }
+        }
+      },
+      "BreakdownIn": {
+        "type": "object",
+        "properties": {
+          "query_id": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          }
+        }
+      },
+      "CoordinatesOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "semantic_map_id": {
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "x_user": {
+            "type": "number"
+          },
+          "y_user": {
+            "type": "number"
+          }
+        }
+      },
+      "CollocationOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          },
+          "s_break": {
+            "type": "string"
+          },
+          "context": {
+            "type": "integer"
+          },
+          "sem_map_id": {
+            "type": "integer"
+          },
+          "constellation_id": {
+            "type": "integer"
+          }
+        }
+      },
+      "CollocationIn": {
+        "type": "object",
+        "properties": {
+          "query_id": {
+            "type": "integer"
+          },
+          "constellation_id": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          },
+          "s_break": {
+            "type": "string"
+          },
+          "context": {
+            "type": "integer"
+          }
+        }
+      },
+      "ConcordanceIn": {
+        "type": "object",
+        "properties": {
+          "context_break": {
+            "type": "string"
+          },
+          "p_show": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "s_show": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "order": {
+            "type": "integer"
+          },
+          "cut_off": {
+            "type": "integer"
+          },
+          "window": {
+            "type": "integer"
+          }
+        }
+      },
+      "ConcordanceLinesOut": {
+        "type": "object",
+        "properties": {
+          "match": {
+            "type": "integer"
+          },
+          "positional": {
+            "type": "string"
+          },
+          "structural": {
+            "type": "string"
+          }
+        }
+      },
+      "BreakdownItemsOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "breakdown_id": {
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "freq": {
+            "type": "integer"
+          }
+        }
+      },
+      "SemanticMapIn": {
+        "type": "object",
+        "properties": {
+          "collocation_id": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "BasicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      }
+    }
+  }
+}
