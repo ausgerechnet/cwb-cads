@@ -513,7 +513,7 @@ def get_concordance_for_collocation(username, collocation):
       - name: window_size
         type: int
         description: window size for context
-        default: 3
+        default: 10
       - name: item
         type: list
         required: False
@@ -547,7 +547,7 @@ def get_concordance_for_collocation(username, collocation):
         return jsonify({'msg': 'empty result'}), 404
 
     # .. parameters
-    window = int(request.args.get('window_size', 3))
+    window = int(request.args.get('window_size', 10))
     corpus = ccc_corpus(collocation._query.corpus.cwb_id,
                         cqp_bin=current_app.config['CCC_CQP_BIN'],
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
