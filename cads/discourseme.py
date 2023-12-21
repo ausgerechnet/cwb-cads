@@ -5,7 +5,7 @@ from collections import defaultdict
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Boolean
+from apiflask.fields import Integer, String, Boolean, List
 from flask import request
 from pandas import DataFrame, read_csv
 from glob import glob
@@ -53,6 +53,7 @@ class DiscoursemeOut(Schema):
     id = Integer()
     name = String()
     description = String()
+    _items = List(String())
 
 
 @bp.post('/')
@@ -119,7 +120,7 @@ class DiscoursemeQueryIn(Schema):
     p_query = String(load_default='lemma')
     s_query = String(load_default=None)
     flags = String(load_default="")
-    escape = Boolean(load_default=True)
+    escape = Boolean(load_default=False)
     nqr_name = String(load_default=None)
 
 
