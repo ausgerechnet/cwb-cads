@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Boolean
+from apiflask.fields import Integer, String, Boolean, Nested
 from ccc import Corpus
 from ccc.utils import format_cqp_query
 from flask import current_app
@@ -10,6 +10,7 @@ from pandas import DataFrame
 
 from . import db
 from .database import Query
+from .corpus import CorpusOut
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -22,7 +23,7 @@ def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, m
 
     current_app.logger.debug(f"get_or_create_query :: discourseme {discourseme.name} on corpus {corpus.cwb_id} (subcorpus: {subcorpus_name})")
     if not cqp_query:
-        cqp_query = format_cqp_query(discourseme.items.split("\t"), p_query, context_break, escape=False)
+        cqp_query = format_cqp_query(discourseme.get_items(), p_query, context_break, escape=False)
     query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query,
                                   nqr_name=subcorpus_name, match_strategy=match_strategy).order_by(Query.id.desc()).first()
 
@@ -34,7 +35,7 @@ def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, m
     return query
 
 
-def ccc_query(query, return_df=True):
+def ccc_query(query, return_df=True, p_breakdown=None):
     """create or get matches of this query
 
     """
@@ -74,6 +75,14 @@ def ccc_query(query, return_df=True):
         current_app.logger.debug("get_or_create_matches :: matches already exist in database")
         matches_df = None
 
+    # if matches_df and p_breakdown:
+    #     breakdowns = Breakdown.query.filter_by(query_id=query.id, p=p_breakdown).all()
+    #     if len(breakdowns) == 0:
+    #         breakdown = Breakdown(query_id=query.id, p=p_breakdown)
+    #         db.session.add(breakdown)
+    #         db.session.commit()
+    #         if not matches:
+
     return matches_df
 
 
@@ -90,11 +99,12 @@ class QueryOut(Schema):
 
     id = Integer()
     discourseme_id = Integer()
-    corpus_id = Integer()
+    corpus = Nested(CorpusOut)
     match_strategy = String()
-    cqp_query = String()
+    # cqp_query = String()
     nqr_name = String()
     cqp_nqr_matches = String()
+    subcorpus = String()
 
 
 @bp.post('/')
