@@ -3,15 +3,15 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String, Boolean
-from ccc import Corpus
-from flask import current_app
 
 from . import db
 from .database import Breakdown, Query
 from .users import auth
 from .query import ccc_query
+from ccc import Corpus
+from flask import current_app
 
-bp = APIBlueprint('breakdown', __name__, url_prefix='/<query_id>/breakdown')
+bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 
 
 def ccc_breakdown(breakdown):
@@ -52,7 +52,61 @@ class BreakdownItemsOut(Schema):
     freq = Integer()
 
 
-@bp.post('/')
+@bp.get('/<id>')
+@bp.output(BreakdownOut)
+@bp.auth_required(auth)
+def get_breakdown(id):
+    """Get breakdown.
+
+    """
+
+    breakdown = db.get_or_404(Breakdown, id)
+    return BreakdownOut().dump(breakdown), 200
+
+
+@bp.delete('/<id>')
+@bp.auth_required(auth)
+def delete_breakdown(id):
+    """Delete breakdown.
+
+    """
+
+    breakdown = db.get_or_404(Breakdown, id)
+    db.session.delete(breakdown)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
+
+
+@bp.post('/<id>/execute')
+@bp.output(BreakdownOut)
+@bp.auth_required(auth)
+def execute(id):
+    """Execute breakdown: Calculate frequencies of query matches.
+
+    """
+
+    breakdown = db.get_or_404(Breakdown, id)
+    ccc_breakdown(breakdown)
+
+    return BreakdownOut().dump(breakdown), 200
+
+
+@bp.get("/<id>/items")
+@bp.output(BreakdownItemsOut(many=True))
+@bp.auth_required(auth)
+def get_breakdown_items(id):
+    """Get breakdown items.
+
+    """
+
+    breakdown = db.get_or_404(Breakdown, id)
+
+    return [BreakdownItemsOut().dump(item) for item in breakdown.items], 200
+
+
+# QUERY
+@bp.post('/query/<query_id>')
 @bp.input(BreakdownIn)
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(BreakdownOut)
@@ -71,7 +125,7 @@ def create(query_id, data, data_query):
     return BreakdownOut().dump(breakdown), 200
 
 
-@bp.get('/')
+@bp.get('/query/<query_id>')
 @bp.output(BreakdownOut(many=True))
 @bp.auth_required(auth)
 def get_breakdowns(query_id):
@@ -81,56 +135,3 @@ def get_breakdowns(query_id):
 
     query = db.get_or_404(Query, query_id)
     return [BreakdownOut().dump(breakdown) for breakdown in query.breakdowns], 200
-
-
-@bp.get('/<id>')
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def get_breakdown(query_id, id):
-    """Get breakdown.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-    return BreakdownOut().dump(breakdown), 200
-
-
-@bp.delete('/<id>')
-@bp.auth_required(auth)
-def delete_breakdown(query_id, id):
-    """Delete breakdown.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-    db.session.delete(breakdown)
-    db.session.commit()
-
-    return 'Deletion successful.', 200
-
-
-@bp.post('/<id>/execute')
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def execute(query_id, id):
-    """Execute breakdown: Calculate frequencies of query matches.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-    ccc_breakdown(breakdown)
-
-    return BreakdownOut().dump(breakdown), 200
-
-
-@bp.get("/<id>/items")
-@bp.output(BreakdownItemsOut(many=True))
-@bp.auth_required(auth)
-def get_breakdown_items(query_id, id):
-    """Get breakdown items.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-
-    return [BreakdownItemsOut().dump(item) for item in breakdown.items], 200

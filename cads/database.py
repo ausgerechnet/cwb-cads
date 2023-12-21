@@ -9,7 +9,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
 from pandas import read_sql
 # from sqlalchemy_utils import IntRangeType
-from ccc.utils import time_it
+from ccc.utils import time_it, cqp_escape
 
 from . import db
 
@@ -148,16 +148,18 @@ class Discourseme(db.Model):
 
     queries = db.relationship("Query", backref="discourseme", lazy=True)
 
+    @property
+    def _items(self):
+        return self.get_items()
+
     def get_items(self, corpus_id=None):
 
-        items = list()
+        items = set(self.items.split("\t"))
         queries = [query for query in self.queries if (not corpus_id or query.corpus_id == corpus_id)]
         for _query in queries:
-            if _query.breakdowns:  # TODO why several?
-                items.extend([item.item for item in _query.breakdowns[0].items])
-        if len(items) == 0 and self.items:
-            return self.items.split("\t")
-        return items
+            if _query.breakdowns:  # TODO several for different p-atts, here ignored
+                items = items.union(set([cqp_escape(item.item) for item in _query.breakdowns[0].items]))
+        return sorted(list(items))
 
     @time_it
     def get_cpos(self, corpus_id=None):
@@ -254,6 +256,20 @@ class Query(db.Model):
     breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True)
     collocations = db.relationship('Collocation', backref='_query', passive_deletes=True)
     # concordances = db.relationship('Concordance', backref='_query')
+
+    @property
+    def subcorpus(self):
+
+        # is this on a subcorpus?
+        if self.nqr_name:
+            if self.nqr_name.startswith("SOC-"):
+                subcorpus = "SOC"
+            else:
+                subcorpus = SubCorpus.query.filter_by(cqp_nqr_matches=self.nqr_name).first().name
+        else:
+            subcorpus = None
+
+        return subcorpus
 
 
 class Matches(db.Model):
@@ -387,9 +403,9 @@ class Coordinates(db.Model):
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
-    item = db.Column(db.Unicode)
-    x = db.Column(db.Float)
-    y = db.Column(db.Float)
+    item = db.Column(db.Unicode, nullable=False)
+    x = db.Column(db.Float, nullable=False)
+    y = db.Column(db.Float, nullable=False)
     x_user = db.Column(db.Float)
     y_user = db.Column(db.Float)
 

@@ -99,13 +99,13 @@ def create_app(config=CONFIG):
 
     app.register_blueprint(discourseme.bp)
     app.register_blueprint(constellation.bp)
-    app.register_blueprint(semantic_map.bp)
 
-    query.bp.register_blueprint(breakdown.bp)
-    query.bp.register_blueprint(collocation.bp)
     query.bp.register_blueprint(concordance.bp)
-
     app.register_blueprint(query.bp)
+
+    app.register_blueprint(breakdown.bp)
+    app.register_blueprint(collocation.bp)
+    app.register_blueprint(semantic_map.bp)
 
     # API for old frontend
     from .mmda import mmda_blueprint
