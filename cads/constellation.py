@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String
+from apiflask.fields import Integer, List, String, Nested
 
 from . import db
 from .database import Constellation, Discourseme
+from .discourseme import DiscoursemeOut
 from .users import auth
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
@@ -25,6 +26,7 @@ class ConstellationOut(Schema):
     name = String()
     description = String()
     # filter_discoursemes = List(DiscoursemeOut)
+    highlight_discoursemes = Nested(DiscoursemeOut(many=True))
 
 
 @bp.post('/')
