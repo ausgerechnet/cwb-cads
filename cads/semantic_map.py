@@ -71,6 +71,9 @@ def ccc_semmap_update(collocation):
 
 
 def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
+    """
+    update coordinates of items belonging to a discourseme
+    """
 
     semantic_map = collocation.semantic_map
     coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item'])
