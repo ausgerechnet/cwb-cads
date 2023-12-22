@@ -44,7 +44,7 @@ def test_create_collocation(client, auth):
 
         # collocation
         # - create
-        collocation = client.post(url_for('query.collocation.create', query_id=query.json['id']),
+        collocation = client.post(url_for('collocation.create', query_id=query.json['id']),
                                   json={
                                       'constellation_id': 1,
                                       'p': 'lemma',
@@ -98,7 +98,7 @@ def test_create_or_get_cooc(client, auth):
 
         # collocation
         # - create
-        collocation = client.post(url_for('query.collocation.create', query_id=query.json['id']),
+        collocation = client.post(url_for('collocation.create', query_id=query.json['id']),
                                   json={
                                       'constellation_id': 1,
                                       'p': 'lemma',
@@ -122,13 +122,13 @@ def test_execute_collocation(client, auth):
     with client:
         client.get("/")
 
-        collocation = client.post(url_for('query.collocation.execute', query_id=1, id=1),
+        collocation = client.post(url_for('collocation.execute', query_id=1, id=1),
                                   auth=('admin', '0000'))
 
-        collocation = client.post(url_for('query.collocation.execute', query_id=1, id=1),
+        collocation = client.post(url_for('collocation.execute', query_id=1, id=1),
                                   auth=('admin', '0000'))
 
-        items = client.get(url_for('query.collocation.get_collocation_items', query_id=1, id=collocation.json['id']),
+        items = client.get(url_for('collocation.get_collocation_items', query_id=1, id=collocation.json['id']),
                            auth=('admin', '0000'))
 
         assert items.status_code == 200

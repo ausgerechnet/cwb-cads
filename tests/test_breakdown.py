@@ -29,7 +29,7 @@ def test_create_get_breakdown(client, auth):
                             auth=('admin', '0000'))
 
         # breakdown
-        breakdown = client.post(url_for('query.breakdown.create', query_id=query.json['id']),
+        breakdown = client.post(url_for('breakdown.create', query_id=query.json['id']),
                                 json={
                                     'p': 'lemma'
                                 },
@@ -37,13 +37,13 @@ def test_create_get_breakdown(client, auth):
 
         assert breakdown.status_code == 200
 
-        breakdowns = client.get(url_for('query.breakdown.get_breakdowns', query_id=1),
+        breakdowns = client.get(url_for('breakdown.get_breakdowns', query_id=1),
                                 auth=('admin', '0000'))
 
-        response = client.get(url_for('query.breakdown.get_breakdown', query_id=breakdowns.json[0]['query_id'], id=breakdowns.json[0]['id']),
+        response = client.get(url_for('breakdown.get_breakdown', query_id=breakdowns.json[0]['query_id'], id=breakdowns.json[0]['id']),
                               auth=('admin', '0000'))
 
-        response = client.post(url_for('query.breakdown.execute', query_id=1, id=1),
+        response = client.post(url_for('breakdown.execute', query_id=1, id=1),
                                json={'p': 'lemma'},
                                auth=('admin', '0000'))
         assert response.status_code == 200

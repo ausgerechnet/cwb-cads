@@ -38,7 +38,7 @@ def test_create_semmap(client, auth):
                             auth=('admin', '0000'))
 
         # collocation
-        collocation = client.post(url_for('query.collocation.create', query_id=query.json['id']),
+        collocation = client.post(url_for('collocation.create', query_id=query.json['id']),
                                   json={
                                       'constellation_id': constellation.json['id'],
                                       'p': 'lemma',
@@ -47,16 +47,16 @@ def test_create_semmap(client, auth):
                                   },
                                   auth=('admin', '0000'))
 
-        collocation = client.get(url_for('query.collocation.get_collocation', query_id=query.json['id'], id=collocation.json['id']),
+        collocation = client.get(url_for('collocation.get_collocation', query_id=query.json['id'], id=collocation.json['id']),
                                  auth=('admin', '0000'))
 
-        collocation = client.post(url_for('query.collocation.execute', query_id=query.json['id'], id=collocation.json['id']),
+        collocation = client.post(url_for('collocation.execute', query_id=query.json['id'], id=collocation.json['id']),
                                   auth=('admin', '0000'))
 
         assert collocation.status_code == 200
 
         # semmap
-        semantic_map = client.post(url_for('query.collocation.create_semantic_map', query_id=query.json['id'], id=collocation.json['id']),
+        semantic_map = client.post(url_for('collocation.create_semantic_map', query_id=query.json['id'], id=collocation.json['id']),
                                    auth=('admin', '0000'))
 
         assert semantic_map.status_code == 200

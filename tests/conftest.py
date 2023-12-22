@@ -5,14 +5,21 @@ import pytest
 
 from cads import create_app
 from cads.database import init_db
-from cads.discourseme import import_discoursemes
+from cads import db
+from cads.database import Discourseme
+from cads.discourseme import read_tsv
 
 app = create_app('cfg.TestConfig')
 
 # create new database
 with app.app_context():
     init_db()
-    import_discoursemes("tests/discoursemes/germaparl.tsv")
+
+    # TODO exclude the ones that are already in database?
+    discoursemes = read_tsv("tests/discoursemes/germaparl.tsv")
+    for name, query_list in discoursemes.items():
+        db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))
+    db.session.commit()
 
 
 class AuthActions(object):
