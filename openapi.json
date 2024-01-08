@@ -23,19 +23,19 @@
       "name": "Constellation"
     },
     {
-      "name": "Semantic_Map"
-    },
-    {
       "name": "Query"
     },
     {
-      "name": "Query.Breakdown"
-    },
-    {
-      "name": "Query.Collocation"
-    },
-    {
       "name": "Query.Concordance"
+    },
+    {
+      "name": "Breakdown"
+    },
+    {
+      "name": "Collocation"
+    },
+    {
+      "name": "Semantic_Map"
     },
     {
       "name": "Mmda"
@@ -810,6 +810,45 @@
         ]
       }
     },
+    "/collocation/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CollocationOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Get all collocations.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
     "/mmda/corpus/": {
       "get": {
         "parameters": [],
@@ -933,6 +972,112 @@
             }
           }
         },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/breakdown/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Breakdown"
+        ],
+        "summary": "Get breakdown.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Breakdown"
+        ],
+        "summary": "Delete breakdown.",
         "security": [
           {
             "BasicAuth": []
@@ -1148,6 +1293,112 @@
           "Discourseme"
         ],
         "summary": "Delete one discourseme.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/collocation/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Get collocation.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Delete collocation.",
         "security": [
           {
             "BasicAuth": []
@@ -1515,6 +1766,64 @@
         "summary": "Admin: List all keyword analyses"
       }
     },
+    "/breakdown/{id}/items": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BreakdownItemsOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Breakdown"
+        ],
+        "summary": "Get breakdown items.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
     "/corpus/{id}/subcorpus": {
       "put": {
         "parameters": [
@@ -1763,6 +2072,61 @@
         ]
       }
     },
+    "/breakdown/{id}/execute": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Breakdown"
+        ],
+        "summary": "Execute breakdown: Calculate frequencies of query matches.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
     "/corpus/{id}/subcorpora/": {
       "get": {
         "parameters": [
@@ -1878,7 +2242,7 @@
         "summary": "Admin: List all constellation"
       }
     },
-    "/query/{query_id}/breakdown/": {
+    "/breakdown/query/{query_id}": {
       "get": {
         "parameters": [
           {
@@ -1926,7 +2290,7 @@
           }
         },
         "tags": [
-          "Query.Breakdown"
+          "Breakdown"
         ],
         "summary": "Get all breakdowns of query.",
         "security": [
@@ -1998,7 +2362,7 @@
           }
         },
         "tags": [
-          "Query.Breakdown"
+          "Breakdown"
         ],
         "summary": "Create new breakdown for query.",
         "requestBody": {
@@ -2010,6 +2374,112 @@
             }
           }
         },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/collocation/{id}/collocates": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Get collocation items.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Execute collocation: Create collocation items.",
         "security": [
           {
             "BasicAuth": []
@@ -2093,121 +2563,7 @@
         "summary": "Access the username and validate"
       }
     },
-    "/semantic_map/{id}/coordinates": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CoordinatesOut"
-                  }
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Semantic_Map"
-        ],
-        "summary": "Get coordinates of semantic map.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
-    "/query/{query_id}/collocation/": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CollocationOut"
-                  }
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Collocation"
-        ],
-        "summary": "Get collocation.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      },
+    "/collocation/query/{query_id}": {
       "post": {
         "parameters": [
           {
@@ -2281,7 +2637,7 @@
           }
         },
         "tags": [
-          "Query.Collocation"
+          "Collocation"
         ],
         "summary": "Create new collocation analysis.",
         "requestBody": {
@@ -2370,6 +2726,64 @@
             }
           }
         },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/semantic_map/{id}/coordinates": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoordinatesOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Semantic_Map"
+        ],
+        "summary": "Get coordinates of semantic map.",
         "security": [
           {
             "BasicAuth": []
@@ -2491,6 +2905,134 @@
         "description": "parameters:\n- name: username\ntype: str\n\n- name: corpus\ntype: str\ndescription: name of corpus in API\n- name: corpus_reference\ntype: str\ndescription: name of corpus in API\n\n- name: p\ntype: list\ndescription: p-attributes to query on [lemma]\n- name: p_reference\ntype: list\ndescription: p-attributes to query on [lemma]\n\n- name: s_break\ntype: str\ndescription: where to limit concordance lines\n\n- name: cut_off\ntype: int\ndescription: how many keywords? [None]\ndefault: 500\n- name: order\ntype: str\ndescription: how to sort them? (column in result table) [log_likelihood]\n\nresponses:\n201:\ndescription: keywords.id\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
       }
     },
+    "/collocation/{id}/semantic_map/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticMapOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Get semantic map of collocation analysis.",
+        "description": "TODO: allow many-to-many relationship",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticMapOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Create new semantic map for collocation items.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SemanticMapIn"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
     "/mmda/user/{username}/password/": {
       "put": {
         "parameters": [
@@ -2529,139 +3071,9 @@
         "summary": "Update a password for a user"
       }
     },
-    "/query/{query_id}/breakdown/{id}": {
-      "get": {
+    "/collocation/{id}/auto-associate": {
+      "put": {
         "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BreakdownOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Breakdown"
-        ],
-        "summary": "Get breakdown.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Breakdown"
-        ],
-        "summary": "Delete breakdown.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
-    "/query/{query_id}/collocation/{id}": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
           {
             "in": "path",
             "name": "id",
@@ -2704,68 +3116,9 @@
           }
         },
         "tags": [
-          "Query.Collocation"
+          "Collocation"
         ],
-        "summary": "Get collocation.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      },
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Collocation"
-        ],
-        "summary": "Delete collocation.",
+        "summary": "Associate Discoursemes",
         "security": [
           {
             "BasicAuth": []
@@ -3035,72 +3388,6 @@
         "summary": "Admin: Update a password for a user"
       }
     },
-    "/query/{query_id}/breakdown/{id}/items": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BreakdownItemsOut"
-                  }
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Breakdown"
-        ],
-        "summary": "Get breakdown items.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
     "/mmda/admin/collocation/{collocation}/": {
       "delete": {
         "parameters": [
@@ -3175,69 +3462,6 @@
           "Mmda.Admin"
         ],
         "summary": "Admin: Remove a Discourseme"
-      }
-    },
-    "/query/{query_id}/breakdown/{id}/execute": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BreakdownOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Breakdown"
-        ],
-        "summary": "Execute breakdown: Calculate frequencies of query matches.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
       }
     },
     "/mmda/user/{username}/keyword/{keyword}/": {
@@ -3368,272 +3592,6 @@
           "Mmda.Admin"
         ],
         "summary": "Admin: Remove a constellation"
-      }
-    },
-    "/query/{query_id}/collocation/{id}/collocates": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Collocation"
-        ],
-        "summary": "Get collocation items.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      },
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CollocationOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Collocation"
-        ],
-        "summary": "Execute collocation: Create collocation items.",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
-    "/query/{query_id}/collocation/{id}/semantic_map/": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SemanticMapOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Collocation"
-        ],
-        "summary": "Get semantic map of collocation analysis.",
-        "description": "TODO: allow many-to-many relationship",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
-      },
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SemanticMapOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Collocation"
-        ],
-        "summary": "Create new semantic map for collocation items.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SemanticMapIn"
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
       }
     },
     "/mmda/user/{username}/collocation/{collocation}/": {
@@ -3860,69 +3818,6 @@
           "Mmda.Discourseme"
         ],
         "summary": "Delete a discourseme"
-      }
-    },
-    "/query/{query_id}/collocation/{id}/auto-associate": {
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CollocationOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Collocation"
-        ],
-        "summary": "Assoicate Discoursemes",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ]
       }
     },
     "/mmda/user/{username}/keyword/{keyword}/keywords/": {
@@ -4568,7 +4463,7 @@
           "Mmda.Collocation"
         ],
         "summary": "Get concordance lines for collocation.",
-        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: collocation\ndescription: collocation_id\n- name: window_size\ntype: int\ndescription: window size for context\ndefault: 3\n- name: item\ntype: list\nrequired: False\ndescription: lose item(s) for additional discourseme to include\n- name: cut_off\ntype: int\ndescription: how many lines?\ndefault: 1000\n- name: order\ntype: str\ndescription: how to sort them? (column in result table)\ndefault: random\n- name: s_meta\ntype: str\ndescription: what s-att-annotation to retrieve\ndefault: collocation.s_break\nresponses:\n200:\ndescription: concordance\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+        "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: collocation\ndescription: collocation_id\n- name: window_size\ntype: int\ndescription: window size for context\ndefault: 10\n- name: item\ntype: list\nrequired: False\ndescription: lose item(s) for additional discourseme to include\n- name: cut_off\ntype: int\ndescription: how many lines?\ndefault: 1000\n- name: order\ntype: str\ndescription: how to sort them? (column in result table)\ndefault: random\n- name: s_meta\ntype: str\ndescription: what s-att-annotation to retrieve\ndefault: collocation.s_break\nresponses:\n200:\ndescription: concordance\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
       }
     },
     "/mmda/user/{username}/collocation/{collocation}/coordinates/": {
@@ -5242,52 +5137,6 @@
           "username"
         ]
       },
-      "QueryOut": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "discourseme_id": {
-            "type": "integer"
-          },
-          "corpus_id": {
-            "type": "integer"
-          },
-          "match_strategy": {
-            "type": "string"
-          },
-          "cqp_query": {
-            "type": "string"
-          },
-          "nqr_name": {
-            "type": "string"
-          },
-          "cqp_nqr_matches": {
-            "type": "string"
-          }
-        }
-      },
-      "QueryIn": {
-        "type": "object",
-        "properties": {
-          "discourseme_id": {
-            "type": "integer"
-          },
-          "corpus_id": {
-            "type": "integer"
-          },
-          "match_strategy": {
-            "type": "string"
-          },
-          "cqp_query": {
-            "type": "string"
-          },
-          "nqr_name": {
-            "type": "string"
-          }
-        }
-      },
       "CorpusOut": {
         "type": "object",
         "properties": {
@@ -5329,6 +5178,52 @@
           }
         }
       },
+      "QueryOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "corpus": {
+            "$ref": "#/components/schemas/CorpusOut"
+          },
+          "match_strategy": {
+            "type": "string"
+          },
+          "nqr_name": {
+            "type": "string"
+          },
+          "cqp_nqr_matches": {
+            "type": "string"
+          },
+          "subcorpus": {
+            "type": "string"
+          }
+        }
+      },
+      "QueryIn": {
+        "type": "object",
+        "properties": {
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "type": "string"
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "nqr_name": {
+            "type": "string"
+          }
+        }
+      },
       "UserUpdate": {
         "type": "object",
         "properties": {
@@ -5359,6 +5254,12 @@
           },
           "description": {
             "type": "string"
+          },
+          "_items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -5373,6 +5274,32 @@
           }
         }
       },
+      "CollocationOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "_query": {
+            "$ref": "#/components/schemas/QueryOut"
+          },
+          "p": {
+            "type": "string"
+          },
+          "s_break": {
+            "type": "string"
+          },
+          "context": {
+            "type": "integer"
+          },
+          "sem_map_id": {
+            "type": "integer"
+          },
+          "constellation_id": {
+            "type": "integer"
+          }
+        }
+      },
       "ConstellationOut": {
         "type": "object",
         "properties": {
@@ -5384,6 +5311,12 @@
           },
           "description": {
             "type": "string"
+          },
+          "highlight_discoursemes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoursemeOut"
+            }
           }
         }
       },
@@ -5410,6 +5343,20 @@
           }
         }
       },
+      "BreakdownOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "query_id": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          }
+        }
+      },
       "SemanticMapOut": {
         "type": "object",
         "properties": {
@@ -5424,6 +5371,23 @@
           },
           "p": {
             "type": "string"
+          }
+        }
+      },
+      "BreakdownItemsOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "breakdown_id": {
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "freq": {
+            "type": "integer"
           }
         }
       },
@@ -5452,7 +5416,7 @@
           },
           "escape": {
             "type": "boolean",
-            "default": true
+            "default": false
           },
           "nqr_name": {
             "type": "string",
@@ -5481,20 +5445,6 @@
           }
         }
       },
-      "BreakdownOut": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "query_id": {
-            "type": "integer"
-          },
-          "p": {
-            "type": "string"
-          }
-        }
-      },
       "BreakdownIn": {
         "type": "object",
         "properties": {
@@ -5503,58 +5453,6 @@
           },
           "p": {
             "type": "string"
-          }
-        }
-      },
-      "CoordinatesOut": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "semantic_map_id": {
-            "type": "integer"
-          },
-          "item": {
-            "type": "string"
-          },
-          "x": {
-            "type": "number"
-          },
-          "y": {
-            "type": "number"
-          },
-          "x_user": {
-            "type": "number"
-          },
-          "y_user": {
-            "type": "number"
-          }
-        }
-      },
-      "CollocationOut": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "corpus_id": {
-            "type": "integer"
-          },
-          "p": {
-            "type": "string"
-          },
-          "s_break": {
-            "type": "string"
-          },
-          "context": {
-            "type": "integer"
-          },
-          "sem_map_id": {
-            "type": "integer"
-          },
-          "constellation_id": {
-            "type": "integer"
           }
         }
       },
@@ -5621,20 +5519,29 @@
           }
         }
       },
-      "BreakdownItemsOut": {
+      "CoordinatesOut": {
         "type": "object",
         "properties": {
           "id": {
             "type": "integer"
           },
-          "breakdown_id": {
+          "semantic_map_id": {
             "type": "integer"
           },
           "item": {
             "type": "string"
           },
-          "freq": {
-            "type": "integer"
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "x_user": {
+            "type": "number"
+          },
+          "y_user": {
+            "type": "number"
           }
         }
       },
