@@ -251,14 +251,17 @@ def subcorpora(cwb_id, glob_in):
 
 
 @bp.cli.command('update')
-@click.argument('path')
-def update(path, delete_old=True):
+@click.option('--path', default=None)
+@click.option('--keep_old', default=False, is_flag=True)
+def update(path=None, keep_old=False):
     """update corpora according to JSON file
 
     - existing corpora (same CWB_ID) keep the same ID
     - corpora that are not included in JSON file are deleted
     - new corpora are added
     """
+
+    path = current_app.config['CORPORA'] if path is None else path
 
     # get dictionaries for both sets of corpora
     corpora_old = {corpus.cwb_id: corpus for corpus in Corpus.query.all()}
@@ -267,7 +270,7 @@ def update(path, delete_old=True):
     corpora_update_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id in corpora_new.keys()]
     corpora_add_ids = [cwb_id for cwb_id in corpora_new.keys() if cwb_id not in corpora_old.keys()]
 
-    if delete_old:
+    if not keep_old:
         corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
         for cwb_id in corpora_delete_ids:
             click.echo(f'deleting corpus {cwb_id}')
