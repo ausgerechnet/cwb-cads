@@ -154,7 +154,7 @@ class Discourseme(db.Model):
 
     def get_items(self, corpus_id=None):
 
-        items = set(self.items.split("\t"))
+        items = set(self.items.split("\t")) if self.items else set()
         queries = [query for query in self.queries if (not corpus_id or query.corpus_id == corpus_id)]
         for _query in queries:
             if _query.breakdowns:  # TODO several for different p-atts, here ignored
@@ -478,6 +478,7 @@ class CollocationItems(db.Model):
 
     item = db.Column(db.Unicode)
     window = db.Column(db.Integer)
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id'))
 
     f = db.Column(db.Integer)
     f1 = db.Column(db.Integer)

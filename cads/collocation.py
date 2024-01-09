@@ -201,7 +201,7 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
         if 'f' not in df.columns:
             df['f'] = 0         # empty queries
 
-        df['discourseme'] = discourseme.id
+        df['discourseme_id'] = discourseme.id
         highlight_breakdowns.append(df)
 
         # update set of cpos of highlight_discoursemes
@@ -248,14 +248,20 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
         df['f1'] = f1_discoursemes
         df['N'] = corpus.corpus_size
         df = df.fillna(0)
+        counts = concat([counts, df])
 
         # concat
-        counts = concat([counts, df])
         # TODO: items can belong to several discoursemes
-        # but assumption: if an item belongs to a discourseme, it always does → cannot be part of item counts
+        # assumption: if an item belongs to a discourseme, it always does → cannot be part of item counts
         # here: just keep it once, even if actual association might be different (if part of MWU in discourseme(s))
-        counts = counts.drop('discourseme', axis=1)
-        counts = counts[~counts.index.duplicated(keep='first')]
+        # counts = counts.drop('discourseme_id', axis=1)
+        # counts = counts[~counts.index.duplicated(keep='first')]
+
+        disc_counts = counts.groupby('discourseme_id').agg({'f': sum, 'f2': sum, 'N': max, 'f1': max}).reset_index().fillna(0)
+        disc_counts['discourseme_id'] = disc_counts['discourseme_id'].astype(int)
+        disc_counts['item'] = 'DISCOURSEME ' + disc_counts['discourseme_id'].astype(str)
+        disc_counts = disc_counts.set_index('item')
+        counts = concat([counts, disc_counts])
 
     ####################
     # SAVE TO DATABASE #
@@ -338,6 +344,7 @@ class CollocationItemsOut(Schema):
 
     collocation_id = Integer()
     window = Integer()
+    discourseme_id = Integer()
     id = Integer()
     item = String()
     ams = String()
@@ -407,9 +414,9 @@ def get_collocation_items(id):
     """
 
     collocation = db.get_or_404(Collocation, id)
-    counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N'])
+    counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'discourseme_id', 'f', 'f1', 'f2', 'N'])
     df_collocates = score_counts(counts, cut_off=None, min_freq=1, show_negative=False, rename=False)
-    df_collocates = counts[['item', 'window']].join(df_collocates, how='left')
+    df_collocates = counts[['item', 'window', 'discourseme_id']].join(df_collocates, how='left')
 
     # TODO: return long format (CollocationItemsOut)
 

@@ -26,7 +26,7 @@ def ccc_semmap(collocation, embeddings):
     db.session.add(collocation)
     db.session.commit()
 
-    items = list(set([item.item for item in collocation.items]))
+    items = list(set([item.item for item in collocation.items if not item.item.startswith("DISCOURSEME")]))
 
     current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)
@@ -57,7 +57,7 @@ def ccc_semmap_update(collocation):
         item.item for item in CollocationItems.query.filter(
             CollocationItems.collocation_id == collocation.id,
             ~ CollocationItems.item.in_(coordinates.index)
-        ).all()
+        ).all() if not item.item.startswith("DISCOURSEME")
     ]))
     if len(new_items) > 0:
         current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
