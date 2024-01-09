@@ -597,6 +597,11 @@ def get_concordance_for_collocation(username, collocation):
 
     conc_json = [ConcordanceLinesOut().dump(line) for line in concordance_lines]
 
+    # disgusting hack because the frontend needs a "lemma" layer
+    for line in conc_json:
+        if 'lemma' not in line.keys():
+            line['lemma'] = line[collocation.p]
+
     return conc_json, 200
 
 
