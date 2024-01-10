@@ -1,0 +1,3182 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
+import { z } from 'zod'
+
+const UserOut = z
+  .object({
+    id: z.number().int(),
+    username: z.string(),
+    roles: z.array(z.string()).optional(),
+  })
+  .passthrough()
+const HTTPError = z
+  .object({ detail: z.object({}).partial().passthrough(), message: z.string() })
+  .partial()
+  .passthrough()
+const UserIn = z
+  .object({ username: z.string(), password: z.string() })
+  .passthrough()
+const ValidationError = z
+  .object({
+    detail: z
+      .object({
+        '<location>': z
+          .object({ '<field_name>': z.array(z.string()) })
+          .partial()
+          .passthrough(),
+      })
+      .partial()
+      .passthrough(),
+    message: z.string(),
+  })
+  .partial()
+  .passthrough()
+const CorpusOut = z
+  .object({
+    id: z.number().int(),
+    cwb_id: z.string(),
+    name: z.string(),
+    language: z.string(),
+    register: z.string(),
+    description: z.string(),
+    p_atts: z.array(z.string()),
+    s_atts: z.array(z.string()),
+    s_annotations: z.array(z.string()),
+  })
+  .partial()
+  .passthrough()
+const QueryOut = z
+  .object({
+    id: z.number().int(),
+    discourseme_id: z.number().int(),
+    corpus: CorpusOut,
+    match_strategy: z.string(),
+    nqr_name: z.string(),
+    cqp_nqr_matches: z.string(),
+    subcorpus: z.string(),
+  })
+  .partial()
+  .passthrough()
+const QueryIn = z
+  .object({
+    discourseme_id: z.number().int(),
+    corpus_id: z.number().int(),
+    match_strategy: z.string(),
+    cqp_query: z.string(),
+    nqr_name: z.string(),
+  })
+  .partial()
+  .passthrough()
+const UserUpdate = z
+  .object({
+    old_password: z.string(),
+    new_password: z.string(),
+    confirm_password: z.string(),
+  })
+  .passthrough()
+const DiscoursemeOut = z
+  .object({
+    id: z.number().int(),
+    name: z.string(),
+    description: z.string(),
+    _items: z.array(z.string()),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeIn = z
+  .object({ name: z.string(), description: z.string() })
+  .partial()
+  .passthrough()
+const CollocationOut = z
+  .object({
+    id: z.number().int(),
+    _query: QueryOut,
+    p: z.string(),
+    s_break: z.string(),
+    context: z.number().int(),
+    sem_map_id: z.number().int(),
+    constellation_id: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationOut = z
+  .object({
+    id: z.number().int(),
+    name: z.string(),
+    description: z.string(),
+    highlight_discoursemes: z.array(DiscoursemeOut),
+  })
+  .partial()
+  .passthrough()
+const ConstellationIn = z
+  .object({
+    name: z.string(),
+    description: z.string(),
+    filter_discourseme_ids: z.array(z.number()),
+    highlight_discourseme_ids: z.array(z.number()),
+  })
+  .partial()
+  .passthrough()
+const BreakdownOut = z
+  .object({ id: z.number().int(), query_id: z.number().int(), p: z.string() })
+  .partial()
+  .passthrough()
+const SemanticMapOut = z
+  .object({
+    id: z.number().int(),
+    collocation_id: z.number().int(),
+    keyword_id: z.number().int(),
+    p: z.string(),
+  })
+  .partial()
+  .passthrough()
+const BreakdownItemsOut = z
+  .object({
+    id: z.number().int(),
+    breakdown_id: z.number().int(),
+    item: z.string(),
+    freq: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeQueryIn = z
+  .object({
+    corpus_id: z.number().int(),
+    match_strategy: z.string().default('longest'),
+    p_query: z.string().default('lemma'),
+    s_query: z.string().nullable(),
+    flags: z.string(),
+    escape: z.boolean(),
+    nqr_name: z.string().nullable(),
+  })
+  .partial()
+  .passthrough()
+const SubCorpusOut = z
+  .object({
+    id: z.number().int(),
+    corpus: CorpusOut,
+    name: z.string(),
+    description: z.string(),
+    cqp_nqr_matches: z.string(),
+  })
+  .partial()
+  .passthrough()
+const BreakdownIn = z
+  .object({ query_id: z.number().int(), p: z.string() })
+  .partial()
+  .passthrough()
+const CollocationIn = z
+  .object({
+    query_id: z.number().int(),
+    constellation_id: z.number().int(),
+    p: z.string(),
+    s_break: z.string(),
+    context: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const ConcordanceIn = z
+  .object({
+    context_break: z.string(),
+    p_show: z.array(z.string()),
+    s_show: z.array(z.string()),
+    order: z.number().int(),
+    cut_off: z.number().int(),
+    window: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const ConcordanceLinesOut = z
+  .object({
+    match: z.number().int(),
+    positional: z.string(),
+    structural: z.string(),
+  })
+  .partial()
+  .passthrough()
+const CoordinatesOut = z
+  .object({
+    id: z.number().int(),
+    semantic_map_id: z.number().int(),
+    item: z.string(),
+    x: z.number(),
+    y: z.number(),
+    x_user: z.number(),
+    y_user: z.number(),
+  })
+  .partial()
+  .passthrough()
+const SemanticMapIn = z
+  .object({ collocation_id: z.number().int() })
+  .partial()
+  .passthrough()
+
+export const schemas = {
+  UserOut,
+  HTTPError,
+  UserIn,
+  ValidationError,
+  CorpusOut,
+  QueryOut,
+  QueryIn,
+  UserUpdate,
+  DiscoursemeOut,
+  DiscoursemeIn,
+  CollocationOut,
+  ConstellationOut,
+  ConstellationIn,
+  BreakdownOut,
+  SemanticMapOut,
+  BreakdownItemsOut,
+  DiscoursemeQueryIn,
+  SubCorpusOut,
+  BreakdownIn,
+  CollocationIn,
+  ConcordanceIn,
+  ConcordanceLinesOut,
+  CoordinatesOut,
+  SemanticMapIn,
+}
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/',
+    alias: 'get',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'get',
+    path: '/breakdown/:id',
+    alias: 'getBreakdownId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: BreakdownOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/breakdown/:id',
+    alias: 'deleteBreakdownId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/breakdown/:id/execute',
+    alias: 'postBreakdownIdexecute',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: BreakdownOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/breakdown/:id/items',
+    alias: 'getBreakdownIditems',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(BreakdownItemsOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/breakdown/query/:query_id',
+    alias: 'getBreakdownqueryQuery_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(BreakdownOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/breakdown/query/:query_id',
+    alias: 'postBreakdownqueryQuery_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: BreakdownIn,
+      },
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: BreakdownOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/',
+    alias: 'getCollocation',
+    requestFormat: 'json',
+    response: z.array(CollocationOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/:id',
+    alias: 'getCollocationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/collocation/:id',
+    alias: 'deleteCollocationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/collocation/:id/auto-associate',
+    alias: 'putCollocationIdautoAssociate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/:id/collocates',
+    alias: 'getCollocationIdcollocates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/collocation/:id/collocates',
+    alias: 'postCollocationIdcollocates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/:id/semantic_map/',
+    alias: 'getCollocationIdsemantic_map',
+    description: `TODO: allow many-to-many relationship`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SemanticMapOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/collocation/:id/semantic_map/',
+    alias: 'postCollocationIdsemantic_map',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z
+          .object({ collocation_id: z.number().int() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SemanticMapOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/collocation/query/:query_id',
+    alias: 'postCollocationqueryQuery_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: CollocationIn,
+      },
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+      {
+        name: 'semantic_map_id',
+        type: 'Query',
+        schema: z.number().int().nullish(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/constellation/',
+    alias: 'getConstellation',
+    requestFormat: 'json',
+    response: z.array(ConstellationOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/constellation/',
+    alias: 'postConstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationIn,
+      },
+    ],
+    response: ConstellationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/constellation/:id',
+    alias: 'getConstellationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/constellation/:id',
+    alias: 'deleteConstellationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/',
+    alias: 'getCorpus',
+    requestFormat: 'json',
+    response: z.array(CorpusOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/:id',
+    alias: 'getCorpusId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CorpusOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/:id/meta',
+    alias: 'getCorpusIdmeta',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CorpusOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/corpus/:id/meta',
+    alias: 'putCorpusIdmeta',
+    description: `- from within XML
+- from TSV`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CorpusOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/:id/subcorpora/',
+    alias: 'getCorpusIdsubcorpora',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(SubCorpusOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/corpus/:id/subcorpus',
+    alias: 'putCorpusIdsubcorpus',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/discourseme/',
+    alias: 'getDiscourseme',
+    requestFormat: 'json',
+    response: z.array(DiscoursemeOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/discourseme/',
+    alias: 'postDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIn,
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/discourseme/:id',
+    alias: 'getDiscoursemeId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/discourseme/:id',
+    alias: 'deleteDiscoursemeId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/discourseme/:id/query',
+    alias: 'postDiscoursemeIdquery',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeQueryIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: QueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/hello',
+    alias: 'getHello',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'get',
+    path: '/mmda/admin/collocation/',
+    alias: 'getMmdaadmincollocation',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'delete',
+    path: '/mmda/admin/collocation/:collocation/',
+    alias: 'deleteMmdaadmincollocationCollocation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/admin/constellation/',
+    alias: 'getMmdaadminconstellation',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'delete',
+    path: '/mmda/admin/constellation/:constellation/',
+    alias: 'deleteMmdaadminconstellationConstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/admin/discourseme/',
+    alias: 'getMmdaadmindiscourseme',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'delete',
+    path: '/mmda/admin/discourseme/:discourseme/',
+    alias: 'deleteMmdaadmindiscoursemeDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/admin/keyword/',
+    alias: 'getMmdaadminkeyword',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'delete',
+    path: '/mmda/admin/keyword/:keyword/',
+    alias: 'deleteMmdaadminkeywordKeyword',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/admin/user/',
+    alias: 'getMmdaadminuser',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'post',
+    path: '/mmda/admin/user/',
+    alias: 'postMmdaadminuser',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'delete',
+    path: '/mmda/admin/user/:username/',
+    alias: 'deleteMmdaadminuserUsername',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/admin/user/:username/password/',
+    alias: 'putMmdaadminuserUsernamepassword',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/corpus/',
+    alias: 'getMmdacorpus',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'get',
+    path: '/mmda/corpus/:corpus/',
+    alias: 'getMmdacorpusCorpus',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'corpus',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/login/',
+    alias: 'postMmdalogin',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'post',
+    path: '/mmda/refresh/',
+    alias: 'postMmdarefresh',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'get',
+    path: '/mmda/test-admin/',
+    alias: 'getMmdatestAdmin',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'get',
+    path: '/mmda/test-login/',
+    alias: 'getMmdatestLogin',
+    requestFormat: 'json',
+    response: z.unknown(),
+  },
+  {
+    method: 'get',
+    path: '/mmda/test-login/:username/',
+    alias: 'getMmdatestLoginUsername',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/',
+    alias: 'getMmdauserUsername',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/',
+    alias: 'putMmdauserUsername',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/',
+    alias: 'getMmdauserUsernamecollocation',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+responses:
+200:
+description: list of serialized analyses`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/user/:username/collocation/',
+    alias: 'postMmdauserUsernamecollocation',
+    description: `parameters:
+- name: username
+type: str
+
+- name: corpus
+type: str
+description: name of corpus in API
+- name: discourseme
+type: str or dict
+description: new discourseme (&lt;str&gt;) or existing discourseme (&lt;dict&gt;)
+- name: items
+type: list
+description: items to search for
+
+- name: p_query
+type: str
+description: p-attribute to query on [lemma]
+- name: p_collocation
+type: str
+description: p-attribute to use for collocates [lemma]
+- name: s_break
+type: str
+description: s-attribute to break context at [text]
+- name: context
+type: int
+description: context size in tokens
+default: 10
+
+- name: cut_off
+type: int
+description: how many collocates?
+default: 200
+- name: order
+type: str
+description: how to sort them? (column in result table) [log_likelihood]
+
+responses:
+201:
+description: collocation.id
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/:collocation/',
+    alias: 'getMmdauserUsernamecollocationCollocation',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+- name: collocation
+type: str
+description: collocation id
+responses:
+200:
+description: dict of collocation analysis details
+404:
+description: &quot;no such analysis&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/user/:username/collocation/:collocation/',
+    alias: 'deleteMmdauserUsernamecollocationCollocation',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+- name: collocation
+type: str
+description: collocation id
+responses:
+200:
+description: &quot;deleted&quot;
+404:
+description: &quot;no such collocation&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/:collocation/breakdown/',
+    alias: 'getMmdauserUsernamecollocationCollocationbreakdown',
+    description: `parameters:
+- name: username
+description: username, links to user
+- name: collocation
+description: collocation_id
+responses:
+200:
+description: breakdown
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/:collocation/collocate/',
+    alias: 'getMmdauserUsernamecollocationCollocationcollocate',
+    description: `parameters:
+- name: username
+description: username, links to user
+- name: collocation
+description: collocation id
+
+- name: window_size
+type: int
+description: window size
+
+- name: discourseme
+type: list
+required: False
+description: discourseme id(s) to include in constellation
+- name: collocate
+type: list
+required: False
+description: lose item(s) for ad-hoc discourseme to include
+
+- name: cut_off
+type: int
+description: how many collocates?
+default: 200
+- name: order
+type: str
+description: how to sort them? (column in result table) [log_likelihood]
+
+responses:
+200:
+description: collocates
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/:collocation/concordance/',
+    alias: 'getMmdauserUsernamecollocationCollocationconcordance',
+    description: `parameters:
+- name: username
+description: username, links to user
+- name: collocation
+description: collocation_id
+- name: window_size
+type: int
+description: window size for context
+default: 10
+- name: item
+type: list
+required: False
+description: lose item(s) for additional discourseme to include
+- name: cut_off
+type: int
+description: how many lines?
+default: 1000
+- name: order
+type: str
+description: how to sort them? (column in result table)
+default: random
+- name: s_meta
+type: str
+description: what s-att-annotation to retrieve
+default: collocation.s_break
+responses:
+200:
+description: concordance
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/:collocation/coordinates/',
+    alias: 'getMmdauserUsernamecollocationCollocationcoordinates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/collocation/:collocation/coordinates/',
+    alias: 'putMmdauserUsernamecollocationCollocationcoordinates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/collocation/:collocation/coordinates/reload/',
+    alias: 'putMmdauserUsernamecollocationCollocationcoordinatesreload',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/:collocation/discourseme/',
+    alias: 'getMmdauserUsernamecollocationCollocationdiscourseme',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+- name: collocation
+type: str
+description: collocation id
+responses:
+200:
+description: list of associated discoursemes
+404:
+description: &quot;no such collocation&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/collocation/:collocation/discourseme/:discourseme/',
+    alias: 'putMmdauserUsernamecollocationCollocationdiscoursemeDiscourseme',
+    description: `parameters:
+- name: username
+type: str
+description: username, links to user
+- name: collocation
+type: int
+description: collocation id
+- name: discourseme
+type: int
+description: discourseme id to associate
+responses:
+200:
+description: &quot;already linked&quot;
+description: &quot;updated&quot;
+404:
+description: &quot;no such collocation&quot;
+description: &quot;no such discourseme&quot;
+409:
+description: &quot;discourseme is already topic of collocation&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/user/:username/collocation/:collocation/discourseme/:discourseme/',
+    alias: 'deleteMmdauserUsernamecollocationCollocationdiscoursemeDiscourseme',
+    description: `parameters:
+- name: username
+type: str
+description: username, links to user
+- name: collocation
+type: int
+description: collocation id
+- name: discourseme
+type: int
+description: discourseme id to remove
+responses:
+200:
+description: &quot;deleted discourseme from collocation&quot;
+404:
+description: &quot;no such analysis&quot;
+description: &quot;no such discourseme&quot;
+description: &quot;discourseme not linked to collocation&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/collocation/:collocation/meta/',
+    alias: 'getMmdauserUsernamecollocationCollocationmeta',
+    description: `parameters:
+- name: username
+description: username, links to user
+- name: collocation
+description: collocation_id
+responses:
+200:
+description: breakdown
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/constellation/',
+    alias: 'getMmdauserUsernameconstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/user/:username/constellation/',
+    alias: 'postMmdauserUsernameconstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/constellation/:constellation/',
+    alias: 'getMmdauserUsernameconstellationConstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/constellation/:constellation/',
+    alias: 'putMmdauserUsernameconstellationConstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/user/:username/constellation/:constellation/',
+    alias: 'deleteMmdauserUsernameconstellationConstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/constellation/:constellation/association/',
+    alias: 'getMmdauserUsernameconstellationConstellationassociation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/constellation/:constellation/concordance/',
+    alias: 'getMmdauserUsernameconstellationConstellationconcordance',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/constellation/:constellation/discourseme/',
+    alias: 'getMmdauserUsernameconstellationConstellationdiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/constellation/:constellation/discourseme/:discourseme/',
+    alias:
+      'putMmdauserUsernameconstellationConstellationdiscoursemeDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/user/:username/constellation/:constellation/discourseme/:discourseme/',
+    alias:
+      'deleteMmdauserUsernameconstellationConstellationdiscoursemeDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'constellation',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/discourseme/',
+    alias: 'getMmdauserUsernamediscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/user/:username/discourseme/',
+    alias: 'postMmdauserUsernamediscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/discourseme/:discourseme/',
+    alias: 'getMmdauserUsernamediscoursemeDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/discourseme/:discourseme/',
+    alias: 'putMmdauserUsernamediscoursemeDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/user/:username/discourseme/:discourseme/',
+    alias: 'deleteMmdauserUsernamediscoursemeDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/keyword/',
+    alias: 'getMmdauserUsernamekeyword',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+responses:
+200:
+description: list of serialized analyses`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/user/:username/keyword/',
+    alias: 'postMmdauserUsernamekeyword',
+    description: `parameters:
+- name: username
+type: str
+
+- name: corpus
+type: str
+description: name of corpus in API
+- name: corpus_reference
+type: str
+description: name of corpus in API
+
+- name: p
+type: list
+description: p-attributes to query on [lemma]
+- name: p_reference
+type: list
+description: p-attributes to query on [lemma]
+
+- name: s_break
+type: str
+description: where to limit concordance lines
+
+- name: cut_off
+type: int
+description: how many keywords? [None]
+default: 500
+- name: order
+type: str
+description: how to sort them? (column in result table) [log_likelihood]
+
+responses:
+201:
+description: keywords.id
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/keyword/:keyword/',
+    alias: 'getMmdauserUsernamekeywordKeyword',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+- name: keyword_id
+type: str
+description: keyword id
+responses:
+200:
+description: dict of keyword details
+404:
+description: &quot;no such analysis&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/user/:username/keyword/:keyword/',
+    alias: 'deleteMmdauserUsernamekeywordKeyword',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+- name: keyword
+type: str
+description: keyword analysis id
+responses:
+200:
+description: &quot;deleted&quot;
+404:
+description: &quot;no such keyword analysis&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/keyword/:keyword/concordance/',
+    alias: 'getMmdauserUsernamekeywordKeywordconcordance',
+    description: `parameters:
+- name: username
+description: username, links to user
+- name: keyword
+description: keyword_analysis_id
+- name: item
+type: str
+description: item to get lines for
+- name: cut_off
+type: int
+description: how many lines?
+default: 500
+- name: order
+type: str
+description: how to sort them? (column in result table)
+default: random
+responses:
+200:
+description: concordance
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/keyword/:keyword/coordinates/',
+    alias: 'getMmdauserUsernamekeywordKeywordcoordinates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/keyword/:keyword/coordinates/',
+    alias: 'putMmdauserUsernamekeywordKeywordcoordinates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/keyword/:keyword/coordinates/reload/',
+    alias: 'putMmdauserUsernamekeywordKeywordcoordinatesreload',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/keyword/:keyword/discourseme/',
+    alias: 'getMmdauserUsernamekeywordKeyworddiscourseme',
+    description: `parameters:
+- username: username
+type: str
+description: username, links to user
+- name: keyword
+type: str
+description: keyword analysis id
+responses:
+200:
+description: list of associated discoursemes
+404:
+description: &quot;no such keyword analysis&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/keyword/:keyword/discourseme/:discourseme/',
+    alias: 'putMmdauserUsernamekeywordKeyworddiscoursemeDiscourseme',
+    description: `parameters:
+- name: username
+type: str
+description: username, links to user
+- name: keyword
+type: int
+description: keyword analysis id
+- name: discourseme
+type: int
+description: discourseme id to associate
+responses:
+200:
+description: &quot;already linked&quot;
+description: &quot;updated&quot;
+404:
+description: &quot;no such keyword analysis&quot;
+description: &quot;no such discourseme&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/user/:username/keyword/:keyword/discourseme/:discourseme/',
+    alias: 'deleteMmdauserUsernamekeywordKeyworddiscoursemeDiscourseme',
+    description: `parameters:
+- name: username
+type: str
+description: username, links to user
+- name: keyword
+type: int
+description: keyword analysis id
+- name: discourseme
+type: int
+description: discourseme id to remove
+responses:
+200:
+description: &quot;deleted discourseme from keyword analysis&quot;
+404:
+description: &quot;no such keyword analysis&quot;
+description: &quot;no such discourseme&quot;
+description: &quot;discourseme not linked to keyword analysis&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/user/:username/keyword/:keyword/keywords/',
+    alias: 'getMmdauserUsernamekeywordKeywordkeywords',
+    description: `parameters:
+- name: username
+description: username, links to user
+- name: analysis
+description: analysis id
+
+- name: window_size
+type: int
+description: window size
+
+- name: discourseme
+type: list
+required: False
+description: discourseme id(s) to include in constellation
+- name: collocate
+type: list
+required: False
+description: lose item(s) for ad-hoc discourseme to include
+
+- name: cut_off
+type: int
+description: how many collocates?
+default: 500
+- name: order
+type: str
+description: how to sort them? (column in result table) [log_likelihood]
+
+responses:
+200:
+description: collocates
+400:
+description: &quot;wrong request parameters&quot;
+404:
+description: &quot;empty result&quot;`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/user/:username/password/',
+    alias: 'putMmdauserUsernamepassword',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'username',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/query/',
+    alias: 'getQuery',
+    requestFormat: 'json',
+    response: z.array(QueryOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/query/',
+    alias: 'postQuery',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: QueryIn,
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: QueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/query/:id',
+    alias: 'getQueryId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: QueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/query/:id',
+    alias: 'deleteQueryId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/query/:id/execute',
+    alias: 'postQueryIdexecute',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: QueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/query/:query_id/concordance/',
+    alias: 'getQueryQuery_idconcordance',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConcordanceIn,
+      },
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(ConcordanceLinesOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/semantic_map/:id',
+    alias: 'getSemantic_mapId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SemanticMapOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/semantic_map/:id',
+    alias: 'deleteSemantic_mapId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/semantic_map/:id/coordinates',
+    alias: 'getSemantic_mapIdcoordinates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(CoordinatesOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/user/',
+    alias: 'getUser',
+    requestFormat: 'json',
+    response: z.array(UserOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/user/',
+    alias: 'postUser',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: UserIn,
+      },
+    ],
+    response: UserOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/user/:id',
+    alias: 'getUserId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: UserOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/user/:id',
+    alias: 'patchUserId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: UserUpdate,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: UserOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/user/login',
+    alias: 'postUserlogin',
+    requestFormat: 'form-url',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: UserIn,
+      },
+    ],
+    response: UserOut,
+    errors: [
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/user/logout',
+    alias: 'postUserlogout',
+    requestFormat: 'json',
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+])
+
+export const api = new Zodios(endpoints)
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
+  return new Zodios(baseUrl, endpoints, options)
+}
