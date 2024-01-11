@@ -591,7 +591,7 @@ def get_concordance_for_collocation(username, collocation):
     # .. actual concordancing
     concordance_lines = ccc_concordance(collocation._query, collocation.s_break, p_show, s_show,
                                         highlight_discoursemes + filter_discoursemes, filter_queries,
-                                        order=order, cut_off=cut_off, window=window)
+                                        order=order, cut_off=cut_off, window=window, p_items=collocation.p)
     if concordance_lines is None:
         return jsonify({'msg': 'empty concordance'}), 404
 
