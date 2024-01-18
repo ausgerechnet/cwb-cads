@@ -64,6 +64,9 @@ def create_app(config=CONFIG):
     app.register_blueprint(database.bp)
     db.init_app(app)
 
+    # TODO increase timeout
+    # connect_args={'timeout': 15}
+
     # ensure FOREIGN KEY for sqlite3
     if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
         def _fk_pragma_on_connect(dbapi_con, con_record):  # noqa
