@@ -76,6 +76,28 @@ def login(data):
     return UserOut().dump(user), 200
 
 
+@bp.get('/session')
+@bp.output(UserOut)
+def login_session():
+    """Identify who is logged in via session"""
+
+    user_id = session.get('user_id', None)
+    if not user_id:
+        return abort(404, 'no user in session')
+    user = db.get_or_404(User, user_id)
+
+    return UserOut().dump(user), 200
+
+
+@bp.get('/auth')
+@bp.output(UserOut)
+@bp.auth_required(auth)
+def login_auth():
+    """Identify who is logged in via auth"""
+
+    return UserOut().dump(auth.current_user), 200
+
+
 @bp.post('/logout')
 @bp.auth_required(auth)
 def logout():
