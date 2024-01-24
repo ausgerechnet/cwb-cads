@@ -16,4 +16,13 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/tests/vitest.setup.ts',
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+  },
 })
