@@ -104,8 +104,22 @@ const QueryIn = z
     corpus_id: z.number().int(),
     cqp_query: z.string(),
     discourseme_id: z.number().int(),
-    match_strategy: z.string(),
-    nqr_name: z.string(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']),
+    nqr_name: z.string().nullable(),
+  })
+  .partial()
+  .passthrough()
+const QueryAssistedIn = z
+  .object({
+    corpus_id: z.number().int(),
+    discourseme_id: z.number().int(),
+    escape: z.boolean(),
+    flags: z.enum(['%cd', '%c', '%d', '']),
+    items: z.array(z.string()),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']),
+    nqr_name: z.string().nullable(),
+    p: z.string(),
+    s: z.string(),
   })
   .partial()
   .passthrough()
@@ -222,6 +236,7 @@ export const schemas = {
   DiscoursemeQueryIn,
   QueryOut,
   QueryIn,
+  QueryAssistedIn,
   BreakdownOut,
   BreakdownIn,
   BreakdownItemsOut,
@@ -2522,6 +2537,37 @@ description: &quot;empty result&quot;`,
       {
         status: 404,
         description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/query/assisted/',
+    alias: 'postQueryassisted',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: QueryAssistedIn,
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: QueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
         schema: HTTPError,
       },
       {
