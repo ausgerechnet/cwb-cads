@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Boolean, Nested
+from apiflask.fields import Integer, String, Boolean, Nested, List
+from apiflask.validators import OneOf
 from ccc import Corpus
 from ccc.utils import format_cqp_query
 from flask import current_app
@@ -90,9 +91,22 @@ class QueryIn(Schema):
 
     discourseme_id = Integer()
     corpus_id = Integer()
-    match_strategy = String()
+    match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     cqp_query = String()
-    nqr_name = String(required=False)
+    nqr_name = String(required=False, nullable=True)
+
+
+class QueryAssistedIn(Schema):
+
+    discourseme_id = Integer()
+    corpus_id = Integer()
+    match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
+    nqr_name = String(required=False, nullable=True)
+    items = List(String)
+    p = String()
+    s = String()
+    flags = String(required=False, validate=OneOf(['%cd', '%c', '%d', '']), default='%cd')
+    escape = Boolean(required=False, default=True)
 
 
 class QueryOut(Schema):
@@ -116,6 +130,33 @@ def create(data, data_query):
     """Create new query.
 
     """
+    query = Query(**data)
+    db.session.add(query)
+    db.session.commit()
+
+    if data_query['execute']:
+        ccc_query(query)
+
+    return QueryOut().dump(query), 200
+
+
+@bp.post('/assisted/')
+@bp.input(QueryAssistedIn)
+@bp.input({'execute': Boolean(load_default=True)}, location='query')
+@bp.output(QueryOut)
+@bp.auth_required(auth)
+def create_assisted(data, data_query):
+    """Create new query in assisted mode.
+
+    """
+
+    items = data.pop('items')
+    p = data.pop('p')
+    s = data.pop('s')
+    flags = data.pop('flags')
+    escape = data.pop('escape')
+    data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
+    print(data)
     query = Query(**data)
     db.session.add(query)
     db.session.commit()

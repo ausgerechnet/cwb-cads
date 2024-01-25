@@ -337,6 +337,42 @@
         ]
       }
     },
+    "/user/auth": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Identify who is logged in via auth",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
     "/user/{id}": {
       "get": {
         "parameters": [
@@ -718,6 +754,27 @@
         "summary": "Login route to get JWT token to access the API"
       }
     },
+    "/user/session": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Identify who is logged in via session"
+      }
+    },
     "/discourseme/": {
       "get": {
         "parameters": [],
@@ -1078,6 +1135,71 @@
           "Breakdown"
         ],
         "summary": "Delete breakdown.",
+        "security": [
+          {
+            "BasicAuth": []
+          }
+        ]
+      }
+    },
+    "/query/assisted/": {
+      "post": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "execute",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Create new query in assisted mode.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryAssistedIn"
+              }
+            }
+          }
+        },
         "security": [
           {
             "BasicAuth": []
@@ -5214,13 +5336,19 @@
             "type": "integer"
           },
           "match_strategy": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ]
           },
           "cqp_query": {
             "type": "string"
           },
           "nqr_name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -5354,6 +5482,53 @@
           },
           "p": {
             "type": "string"
+          }
+        }
+      },
+      "QueryAssistedIn": {
+        "type": "object",
+        "properties": {
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "type": "string",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ]
+          },
+          "nqr_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "p": {
+            "type": "string"
+          },
+          "s": {
+            "type": "string"
+          },
+          "flags": {
+            "type": "string",
+            "enum": [
+              "%cd",
+              "%c",
+              "%d",
+              ""
+            ]
+          },
+          "escape": {
+            "type": "boolean"
           }
         }
       },
