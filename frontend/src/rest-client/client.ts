@@ -1,6 +1,8 @@
 import { QueryClient } from '@tanstack/react-query'
 import { redirect } from '@tanstack/react-router'
+
 import { createApiClient } from './__generated__client'
+import { sessionQueryOptions } from '@/data/queries'
 
 export const queryClient = new QueryClient()
 
@@ -15,7 +17,7 @@ apiClient.axios.interceptors.response.use(
     // Unless the request was to the login endpoint
     const status = error?.response?.status
     if (status === 401) {
-      queryClient.setQueryData(['authenticated'], false)
+      queryClient.invalidateQueries(sessionQueryOptions)
       redirect({
         to: '/login',
         search: {

@@ -1,10 +1,17 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
+import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { FileRoute, useNavigate } from '@tanstack/react-router'
-import { apiClient } from '@/rest-client'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { sessionQueryOptions } from '@/data/queries'
+import { apiClient } from '@/rest-client'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Headline1 } from '@/components/ui/typography'
+import { FieldErrorMessage } from '@/components/ui/field-error-message'
 
 export const Route = new FileRoute('/login').createRoute({
   component: Login,
@@ -38,8 +45,8 @@ function Login() {
       return await apiClient.postUserlogin(credentials)
     },
     onSuccess: () => {
-      queryClient.setQueryData(['authenticated'], true)
-      navigate({ to: redirect || '/app' })
+      queryClient.invalidateQueries(sessionQueryOptions)
+      navigate({ to: redirect || '/queries' })
     },
   })
 
@@ -50,33 +57,30 @@ function Login() {
   const isDisabled = isPending
 
   return (
-    <div className="p-2">
-      <h3>Login</h3>
+    <div className="mx-auto mt-8 max-w-sm p-2">
+      <Headline1 className="mb-8">Login</Headline1>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <label htmlFor="username">Username</label>
-        <input
+        <Label htmlFor="username">Username</Label>
+        <Input
           type="text"
           {...register('username', {
             required: 'Dieses Feld ist erforderlich',
           })}
           disabled={isDisabled}
         />
-        {formErrors.username && (
-          <p>{formErrors?.username.message?.toString()}</p>
-        )}
+        <FieldErrorMessage error={formErrors.username} />
 
-        <label htmlFor="password">Password</label>
-        <input
+        <Label htmlFor="password">Password</Label>
+        <Input
           type="password"
           {...register('password', {
             required: 'Dieses Feld ist erforderlich',
           })}
           disabled={isDisabled}
         />
-        {formErrors.password && (
-          <p>{formErrors?.password.message?.toString()}</p>
-        )}
+        <FieldErrorMessage error={formErrors.password} />
         <Button type="submit" disabled={isDisabled}>
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Login
         </Button>
       </form>

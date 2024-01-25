@@ -1,12 +1,19 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as VignetteImport } from './routes/vignette'
+import { Route as LogoutImport } from './routes/logout'
 import { Route as LoginImport } from './routes/login'
-import { Route as AppImport } from './routes/app'
+import { Route as AppImport } from './routes/_app'
 import { Route as IndexImport } from './routes/index'
-import { Route as AppQueriesNewImport } from './routes/app/queries/new'
+import { Route as AppQueriesImport } from './routes/_app/queries'
+import { Route as AppQueriesNewImport } from './routes/_app/queries_.new'
 
 const VignetteRoute = VignetteImport.update({
   path: '/vignette',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const LogoutRoute = LogoutImport.update({
+  path: '/logout',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -16,13 +23,18 @@ const LoginRoute = LoginImport.update({
 } as any)
 
 const AppRoute = AppImport.update({
-  path: '/app',
+  id: '/_app',
   getParentRoute: () => rootRoute,
 } as any)
 
 const IndexRoute = IndexImport.update({
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AppQueriesRoute = AppQueriesImport.update({
+  path: '/queries',
+  getParentRoute: () => AppRoute,
 } as any)
 
 const AppQueriesNewRoute = AppQueriesNewImport.update({
@@ -35,7 +47,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/app': {
+    '/_app': {
       preLoaderRoute: typeof AppImport
       parentRoute: typeof rootRoute
     }
@@ -43,11 +55,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
+    '/logout': {
+      preLoaderRoute: typeof LogoutImport
+      parentRoute: typeof rootRoute
+    }
     '/vignette': {
       preLoaderRoute: typeof VignetteImport
       parentRoute: typeof rootRoute
     }
-    '/app/queries/new': {
+    '/_app/queries': {
+      preLoaderRoute: typeof AppQueriesImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/queries/new': {
       preLoaderRoute: typeof AppQueriesNewImport
       parentRoute: typeof AppImport
     }
@@ -55,7 +75,8 @@ declare module '@tanstack/react-router' {
 }
 export const routeTree = rootRoute.addChildren([
   IndexRoute,
-  AppRoute.addChildren([AppQueriesNewRoute]),
+  AppRoute.addChildren([AppQueriesRoute, AppQueriesNewRoute]),
   LoginRoute,
+  LogoutRoute,
   VignetteRoute,
 ])

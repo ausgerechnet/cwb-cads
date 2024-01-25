@@ -1,8 +1,17 @@
 import { Link, Outlet, rootRouteWithContext } from '@tanstack/react-router'
+import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient, useQuery } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { LoginStatus } from '@/components/LoginStatus'
+import { ModeToggle } from '@/components/mode-toggle'
+import {
+  NavigationMenuItem,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from '@/components/ui/navigation-menu'
+import { Home } from 'lucide-react'
+import { buttonVariants } from '@/components/ui/button'
+import { sessionQueryOptions } from '@/data/queries'
 
 export const Route = rootRouteWithContext<{
   queryClient: QueryClient
@@ -12,24 +21,56 @@ export const Route = rootRouteWithContext<{
 })
 
 function RootComponent() {
+  const { data, isLoading, error } = useQuery(sessionQueryOptions)
+
+  const isLoggedIn = data && !isLoading && !error
+
   return (
     <>
-      <h1>MMDA Root</h1>
-      <div className="flex gap-3">
-        <Link to="/" activeProps={{ className: 'font-bold' }}>
-          Home
-        </Link>
-        <Link to="/vignette" activeProps={{ className: 'font-bold' }}>
-          Vignette
-        </Link>
-        <Link to="/login" activeProps={{ className: 'font-bold' }}>
-          Login
-        </Link>
-        <LoginStatus />
+      <div className="p-2">
+        <NavigationMenu>
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <Link className={navigationMenuTriggerStyle()} to="/">
+                <Home className="mr-2 h-4 w-4" />
+                Mixed Methods Discourse Analysis
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem className="flex-grow justify-end">
+              <Link className={navigationMenuTriggerStyle()} to="/vignette">
+                Vignette
+              </Link>
+            </NavigationMenuItem>
+            {isLoggedIn && (
+              <>
+                <NavigationMenuItem>
+                  <Link to="/queries" className={buttonVariants()}>
+                    Analysis
+                  </Link>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <Link to="/logout" className={navigationMenuTriggerStyle()}>
+                    Logout
+                  </Link>
+                </NavigationMenuItem>
+              </>
+            )}
+            {!isLoggedIn && (
+              <NavigationMenuItem className="flex flex-grow justify-end">
+                <Link to="/login" className={buttonVariants()}>
+                  Login
+                </Link>
+              </NavigationMenuItem>
+            )}
+            <NavigationMenuItem>
+              <ModeToggle />
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
       </div>
       <hr />
       <Outlet />
-      <ReactQueryDevtools buttonPosition="top-right" />
+      <ReactQueryDevtools buttonPosition="bottom-left" />
       <TanStackRouterDevtools position="bottom-right" />
     </>
   )
