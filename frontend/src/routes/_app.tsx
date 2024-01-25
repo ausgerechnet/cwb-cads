@@ -3,10 +3,6 @@ import { FileRoute, Link, Outlet } from '@tanstack/react-router'
 
 export const Route = new FileRoute('/_app').createRoute({
   component: () => <App />,
-  loader: ({ context: { apiClient, queryClient } }) => {
-    console.log(apiClient, queryClient)
-    return 42
-  },
 })
 
 function App() {

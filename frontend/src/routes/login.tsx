@@ -9,9 +9,15 @@ import { sessionQueryOptions } from '@/data/queries'
 import { apiClient } from '@/rest-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Headline1 } from '@/components/ui/typography'
-import { FieldErrorMessage } from '@/components/ui/field-error-message'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 
 export const Route = new FileRoute('/login').createRoute({
   component: Login,
@@ -21,8 +27,16 @@ export const Route = new FileRoute('/login').createRoute({
 })
 
 const Credentials = z.object({
-  username: z.string().min(1, 'Dieses Feld ist erforderlich'),
-  password: z.string().min(1, 'Dieses Feld ist erforderlich'),
+  username: z
+    .string({
+      required_error: 'Dieses Feld ist erforderlich',
+    })
+    .min(1, 'Dieses Feld ist erforderlich'),
+  password: z
+    .string({
+      required_error: 'Dieses Feld ist erforderlich',
+    })
+    .min(1, 'Dieses Feld ist erforderlich'),
 })
 
 type Credentials = z.infer<typeof Credentials>
@@ -32,11 +46,7 @@ function Login() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors: formErrors },
-  } = useForm<Credentials>({
+  const form = useForm<Credentials>({
     resolver: zodResolver(Credentials),
   })
 
@@ -59,31 +69,43 @@ function Login() {
   return (
     <div className="mx-auto mt-8 max-w-sm p-2">
       <Headline1 className="mb-8">Login</Headline1>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
-        <Label htmlFor="username">Username</Label>
-        <Input
-          type="text"
-          {...register('username', {
-            required: 'Dieses Feld ist erforderlich',
-          })}
-          disabled={isDisabled}
-        />
-        <FieldErrorMessage error={formErrors.username} />
-
-        <Label htmlFor="password">Password</Label>
-        <Input
-          type="password"
-          {...register('password', {
-            required: 'Dieses Feld ist erforderlich',
-          })}
-          disabled={isDisabled}
-        />
-        <FieldErrorMessage error={formErrors.password} />
-        <Button type="submit" disabled={isDisabled}>
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Login
-        </Button>
-      </form>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-3"
+        >
+          <FormField
+            control={form.control}
+            name="username"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Username</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" disabled={isDisabled}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Login
+          </Button>
+        </form>
+      </Form>
       {error && <p>Error: {String(error)}</p>}
       {redirect && <p>Redirect: {redirect}</p>}
     </div>

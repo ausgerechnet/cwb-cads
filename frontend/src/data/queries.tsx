@@ -14,6 +14,11 @@ export const sessionQueryOptions = queryOptions({
   retry: false,
 })
 
+export const corporaQueryOptions = queryOptions({
+  queryKey: ['corpora'],
+  queryFn: () => apiClient.getCorpus(),
+})
+
 export const logoutMutationOptions: MutationOptions = {
   mutationFn: () => apiClient.postUserlogout(undefined),
   onSuccess: () => {

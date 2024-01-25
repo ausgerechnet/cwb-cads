@@ -23,7 +23,7 @@ function Logout() {
   return (
     <div className="mx-auto mt-8 max-w-md p-2">
       {isPending && <Loader2 className="mx-auto h-8 w-8 animate-spin" />}
-      {isSuccess && <Headline1>Erfolgreich abemeldet</Headline1>}
+      {isSuccess && <Headline1>Erfolgreich abgemeldet</Headline1>}
       {error && !isPending && (
         <Alert variant="destructive" className="[&:not(:first-child)]:mt-8">
           <AlertCircle className="h-4 w-4" />
