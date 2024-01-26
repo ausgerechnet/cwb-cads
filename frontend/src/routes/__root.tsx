@@ -26,7 +26,7 @@ function RootComponent() {
 
   return (
     <>
-      <div className="p-2">
+      <div className="border-1 sticky top-0 border-b bg-background p-2">
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>
@@ -61,7 +61,6 @@ function RootComponent() {
           </NavigationMenuList>
         </NavigationMenu>
       </div>
-      <hr />
       <Outlet />
       <ReactQueryDevtools buttonPosition="bottom-left" />
       <TanStackRouterDevtools position="bottom-right" />
