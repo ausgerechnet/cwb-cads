@@ -6,9 +6,7 @@ import { sessionQueryOptions } from '@/data/queries'
 
 export const queryClient = new QueryClient()
 
-export const apiClient = createApiClient(
-  import.meta.env.VITE_API_URL || ':3000',
-)
+export const apiClient = createApiClient(import.meta.env.VITE_API_URL || '/api')
 
 apiClient.axios.interceptors.response.use(
   (response) => response,
