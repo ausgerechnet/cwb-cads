@@ -98,7 +98,7 @@ class QueryIn(Schema):
 
 class QueryAssistedIn(Schema):
 
-    discourseme_id = Integer()
+    discourseme_id = Integer(required=False)
     corpus_id = Integer()
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     nqr_name = String(required=False, nullable=True)
