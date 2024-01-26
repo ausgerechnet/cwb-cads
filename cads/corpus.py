@@ -201,8 +201,15 @@ def get_corpora():
 
     """
     corpora = Corpus.query.all()
+    out = list()
+    for corpus in corpora:
+        attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
+                                current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+        corpus = CorpusOut().dump(corpus)
+        corpus = {**corpus, **attributes}
+        out.append(corpus)
 
-    return [CorpusOut().dump(corpus) for corpus in corpora], 200
+    return out, 200
 
 
 @bp.get('/<id>/subcorpora/')
