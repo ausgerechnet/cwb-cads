@@ -5315,10 +5315,13 @@
           "match_strategy": {
             "type": "string"
           },
-          "nqr_name": {
+          "cqp_query": {
             "type": "string"
           },
           "cqp_nqr_matches": {
+            "type": "string"
+          },
+          "nqr_name": {
             "type": "string"
           },
           "subcorpus": {

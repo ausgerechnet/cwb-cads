@@ -89,7 +89,7 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 
 class QueryIn(Schema):
 
-    discourseme_id = Integer()
+    discourseme_id = Integer(required=False)
     corpus_id = Integer()
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     cqp_query = String()
@@ -115,10 +115,10 @@ class QueryOut(Schema):
     discourseme_id = Integer()
     corpus = Nested(CorpusOut)
     match_strategy = String()
-    # cqp_query = String()
-    nqr_name = String()
+    cqp_query = String()
     cqp_nqr_matches = String()
-    subcorpus = String()
+    nqr_name = String(required=False)
+    subcorpus = String(required=False)
 
 
 @bp.post('/')
@@ -156,7 +156,6 @@ def create_assisted(data, data_query):
     flags = data.pop('flags')
     escape = data.pop('escape')
     data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
-    print(data)
     query = Query(**data)
     db.session.add(query)
     db.session.commit()
