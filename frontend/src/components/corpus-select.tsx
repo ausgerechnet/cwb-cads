@@ -63,7 +63,7 @@ export function CorpusSelect({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-80 max-w-96 p-0">
         <Command>
           <CommandInput placeholder="Search corpus..." />
           <CommandEmpty>No corpus found.</CommandEmpty>

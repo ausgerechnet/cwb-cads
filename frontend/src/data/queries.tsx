@@ -38,3 +38,15 @@ export const postQueryMutationOptions: MutationOptions<
     queryClient.invalidateQueries(queriesQueryOptions)
   },
 }
+
+export const postQueryAssistedMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  z.infer<typeof schemas.QueryAssistedIn>
+> = {
+  mutationFn: (body: z.infer<typeof schemas.QueryAssistedIn>) =>
+    apiClient.postQueryassisted(body),
+  onSuccess: () => {
+    queryClient.invalidateQueries(queriesQueryOptions)
+  },
+}

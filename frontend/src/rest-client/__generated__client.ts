@@ -14,11 +14,11 @@ type QueryOut = Partial<{
   corpus: CorpusOut
   cqp_nqr_matches: string
   cqp_query: string
-  discourseme_id: number
+  discourseme_id: number | null
   id: number
   match_strategy: string
-  nqr_name: string
-  subcorpus: string
+  nqr_name: string | null
+  subcorpus: string | null
 }>
 type CorpusOut = Partial<{
   cwb_id: string
@@ -106,11 +106,11 @@ const QueryOut: z.ZodType<QueryOut> = z
     corpus: CorpusOut,
     cqp_nqr_matches: z.string(),
     cqp_query: z.string(),
-    discourseme_id: z.number().int(),
+    discourseme_id: z.number().int().nullable(),
     id: z.number().int(),
     match_strategy: z.string(),
-    nqr_name: z.string(),
-    subcorpus: z.string(),
+    nqr_name: z.string().nullable(),
+    subcorpus: z.string().nullable(),
   })
   .partial()
   .passthrough()
@@ -206,7 +206,7 @@ const QueryIn = z
   .object({
     corpus_id: z.number().int(),
     cqp_query: z.string(),
-    discourseme_id: z.number().int(),
+    discourseme_id: z.number().int().nullable(),
     match_strategy: z.enum(['longest', 'shortest', 'standard']),
     nqr_name: z.string().nullable(),
   })
@@ -215,7 +215,7 @@ const QueryIn = z
 const QueryAssistedIn = z
   .object({
     corpus_id: z.number().int(),
-    discourseme_id: z.number().int(),
+    discourseme_id: z.number().int().nullable(),
     escape: z.boolean(),
     flags: z.enum(['%cd', '%c', '%d', '']),
     items: z.array(z.string()),

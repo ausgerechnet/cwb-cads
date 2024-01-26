@@ -6,7 +6,11 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu'
 import { Headline1 } from '@/components/ui/typography'
-import { corporaQueryOptions, postQueryMutationOptions } from '@/data/queries'
+import {
+  corporaQueryOptions,
+  postQueryAssistedMutationOptions,
+  postQueryMutationOptions,
+} from '@/data/queries'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
@@ -31,6 +35,7 @@ import {
 import { ItemsInput } from '@/components/ui/items-input'
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
+import { Alert, AlertTitle } from '@/components/ui/alert'
 
 export const Route = new FileRoute('/_app/queries/new').createRoute({
   component: QueriesNew,
@@ -94,7 +99,11 @@ const InputCQP = z.object({
 
 function FormCQP() {
   const { corpora } = Route.useLoaderData()
-  const { mutate: postQuery, isPending } = useMutation(postQueryMutationOptions)
+  const {
+    mutate: postQuery,
+    isPending,
+    error,
+  } = useMutation(postQueryMutationOptions)
   const form = useForm<z.infer<typeof InputCQP>>({
     resolver: zodResolver(InputCQP),
   })
@@ -108,7 +117,7 @@ function FormCQP() {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="@lg:grid-cols-2 grid max-w-3xl grid-cols-1 gap-3"
+          className="grid max-w-3xl grid-cols-1 gap-3 @lg:grid-cols-2"
         >
           <FormField
             control={form.control}
@@ -200,6 +209,11 @@ function FormCQP() {
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <>Submit</>
           </Button>
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>{error.message}</AlertTitle>
+            </Alert>
+          )}
         </form>
       </Form>
     </div>
@@ -208,10 +222,13 @@ function FormCQP() {
 
 const InputAssisted = z.object({
   corpus_id: z.number({ required_error: 'Dieses Feld ist erforderlich' }).int(),
+  match_strategy: z.enum(['shortest', 'longest', 'standard'], {
+    required_error: 'Dieses Feld ist erforderlich',
+  }),
   items: z
     .array(z.string(), { required_error: 'Dieses Feld ist erforderlich' })
     .min(1, { message: 'Dieses Feld ist erforderlich' }),
-  query_layer: z.string({ required_error: 'Dieses Feld ist erforderlich' }),
+  p: z.string({ required_error: 'Dieses Feld ist erforderlich' }),
 })
 
 function FormAssisted() {
@@ -222,15 +239,22 @@ function FormAssisted() {
   const corpusId = form.getValues('corpus_id')
   const selectedCorpus = corpora.find(({ id }) => id === corpusId)
 
-  function onSubmit(data: z.infer<typeof InputAssisted>) {
-    console.log(data)
+  const {
+    mutate: postQueryAssisted,
+    isPending,
+    error,
+  } = useMutation(postQueryAssistedMutationOptions)
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  function onSubmit(data: z.infer<typeof InputAssisted>): void {
+    postQueryAssisted(data)
   }
 
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="@lg:grid-cols-2 grid max-w-3xl grid-cols-1 gap-3"
+        className="grid max-w-3xl grid-cols-2 gap-3 @lg:grid-cols-2"
       >
         <FormField
           control={form.control}
@@ -274,7 +298,34 @@ function FormAssisted() {
         />
         <FormField
           control={form.control}
-          name="query_layer"
+          name="match_strategy"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Match Strategy</FormLabel>
+              <FormControl>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Match strategy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="shortest">Shortest</SelectItem>
+                      <SelectItem value="longest">Longest</SelectItem>
+                      <SelectItem value="standard">Standard</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="p"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Query Layer</FormLabel>
@@ -302,7 +353,15 @@ function FormAssisted() {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        <Button type="submit" disabled={isPending} className="col-span-full">
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Submit
+        </Button>
+        {error && (
+          <Alert variant="destructive" className="col-span-full">
+            <AlertTitle>{error.message}</AlertTitle>
+          </Alert>
+        )}
       </form>
     </Form>
   )

@@ -1,21 +1,21 @@
-import { Plus } from 'lucide-react'
+import { AlertCircle, Plus } from 'lucide-react'
 import { ReactNode } from 'react'
-import { FileRoute, Link } from '@tanstack/react-router'
+import { ErrorRouteProps, FileRoute, Link } from '@tanstack/react-router'
 
+import { cn } from '@/lib/utils'
 import { queriesQueryOptions } from '@/data/queries'
 import { buttonVariants } from '@/components/ui/button'
 import { Headline1, Large } from '@/components/ui/typography'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export const Route = new FileRoute('/_app/queries').createRoute({
   component: Queries,
   pendingComponent: QueriesPending,
-  loader: async ({ context: { queryClient } }) => {
-    return {
-      queries: await queryClient.ensureQueryData(queriesQueryOptions),
-    }
-  },
+  errorComponent: QueriesError,
+  loader: async ({ context: { queryClient } }) => ({
+    queries: await queryClient.ensureQueryData(queriesQueryOptions),
+  }),
 })
 
 function Queries() {
@@ -38,7 +38,32 @@ function Queries() {
           </Link>
         </div>
       )}
-      {queries.length > 0 && <p>Queries: {queries.length}</p>}
+      {queries.map((query) => (
+        <div
+          key={query.id}
+          className="mono flex flex-col gap-2 whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground"
+        >
+          {JSON.stringify(query, null, 2)}
+        </div>
+      ))}
+    </QueriesFrame>
+  )
+}
+
+function QueriesError({ error }: ErrorRouteProps) {
+  const errorMessage =
+    typeof error === 'object' && error !== null && 'message' in error
+      ? String(error.message)
+      : 'Unknown error'
+  return (
+    <QueriesFrame>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>An error occurred while loading the queries.</AlertTitle>
+        <AlertDescription className="whitespace-pre">
+          {errorMessage}
+        </AlertDescription>
+      </Alert>
     </QueriesFrame>
   )
 }
