@@ -36,9 +36,11 @@ import { ItemsInput } from '@/components/ui/items-input'
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
 import { Alert, AlertTitle } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export const Route = new FileRoute('/_app/queries/new').createRoute({
   component: QueriesNew,
+  pendingComponent: QueriesNewPending,
   validateSearch: z.object({
     cqpMode: z.enum(['cqp', 'assisted']).optional(),
   }),
@@ -81,6 +83,26 @@ function QueriesNew() {
             <FormAssisted />
           </TabsContent>
         </Tabs>
+      </Card>
+    </div>
+  )
+}
+
+function QueriesNewPending() {
+  const { cqpMode = 'assisted' } = Route.useSearch()
+  return (
+    <div className="p-2">
+      <Link to="/queries" className={navigationMenuTriggerStyle()}>
+        <ChevronLeft className="mr-2 h-4 w-4" />
+        Queries
+      </Link>
+      <Headline1 className="mb-8">New Query</Headline1>
+      <Card className="flex max-w-xl flex-col gap-4 p-4">
+        <Skeleton className="mb-4 h-12 w-full" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-10 w-full" />
       </Card>
     </div>
   )
