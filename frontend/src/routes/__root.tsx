@@ -26,7 +26,7 @@ function RootComponent() {
 
   return (
     <>
-      <div className="border-1 z-1 sticky top-0 border-b bg-background p-2">
+      <div className="border-1 sticky top-0 z-10 border-b bg-background p-2">
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>

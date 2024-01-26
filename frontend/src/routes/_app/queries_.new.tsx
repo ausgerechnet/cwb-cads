@@ -89,7 +89,6 @@ function QueriesNew() {
 }
 
 function QueriesNewPending() {
-  const { cqpMode = 'assisted' } = Route.useSearch()
   return (
     <div className="p-2">
       <Link to="/queries" className={navigationMenuTriggerStyle()}>
