@@ -210,7 +210,7 @@ function FormCQP() {
             <>Submit</>
           </Button>
           {error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="col-span-full">
               <AlertTitle>{error.message}</AlertTitle>
             </Alert>
           )}
