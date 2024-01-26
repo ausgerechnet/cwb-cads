@@ -9,9 +9,10 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
 from pandas import read_sql
 # from sqlalchemy_utils import IntRangeType
-from ccc.utils import time_it, cqp_escape
+from ccc.utils import cqp_escape
 
 from . import db
+from .utils import time_it
 
 bp = Blueprint('database', __name__, url_prefix='/database', cli_group='database')
 
@@ -127,6 +128,57 @@ class SubCorpus(db.Model):
 #     language = db.Column(db.Unicode)
 #     register = db.Column(db.Unicode)
 #     p = db.Column(db.Unicode)
+
+
+class Segmentation(db.Model):
+    """Corpus segmentation / annotation layers
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
+    level = db.Column(db.Unicode)  # collection, text, p, s
+    spans = db.relationship('SegmentationSpan', backref='segmentation', passive_deletes=True, cascade='all, delete')
+    annotations = db.relationship('SegmentationAnnotation', backref='segmentation', passive_deletes=True, cascade='all, delete')
+
+
+class SegmentationAnnotation(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    segmentation_id = db.Column(db.Integer, db.ForeignKey('segmentation.id', ondelete='CASCADE'), index=True)
+    key = db.Column(db.Unicode)
+    value_type = db.Column(db.Unicode)
+    segmentation_span_annotation = db.relationship('SegmentationSpanAnnotation', backref='segmentation_annotation',
+                                                   passive_deletes=True, cascade='all, delete')
+
+
+class SegmentationSpan(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    segmentation_id = db.Column(db.Integer, db.ForeignKey('segmentation.id', ondelete='CASCADE'), index=True)
+    match = db.Column(db.Integer)
+    matchend = db.Column(db.Integer)
+    segmentation_span_annotation = db.relationship('SegmentationSpanAnnotation', backref='segmentation_span', passive_deletes=True, cascade='all, delete')
+
+
+class SegmentationSpanAnnotation(db.Model):
+    """Segmentation annotation (= meta data)
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+    segmentation_annotation_id = db.Column(db.Integer, db.ForeignKey('segmentation_annotation.id', ondelete='CASCADE'), index=True)
+    segmentation_span_id = db.Column(db.Integer, db.ForeignKey('segmentation_span.id', ondelete='CASCADE'), index=True)
+    value_boolean = db.Column(db.Boolean)
+    value_unicode = db.Column(db.Unicode)
+    value_datetime = db.Column(db.DateTime)
+    value_numeric = db.Column(db.Numeric)
 
 
 class Discourseme(db.Model):

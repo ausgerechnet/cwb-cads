@@ -5,14 +5,16 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String, Nested
 from ccc import Corpus as CCCorpus, SubCorpus as CCCSubCorpus
 from flask import current_app
-from pandas import read_csv
+from pandas import read_csv, DataFrame
 import click
 from glob import glob
 import json
 
 from . import db
-from .database import Corpus, SubCorpus
+from .database import Corpus, SubCorpus, Segmentation, SegmentationAnnotation
 from .users import auth
+from .utils import time_it
+
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
 
@@ -68,11 +70,70 @@ def ccc_corpus(corpus_name, cqp_bin, registry_dir, data_dir):
     return crps
 
 
-def meta_from_tsv(cwb_id, path):
+@time_it
+def meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'}):
+    """corpus meta data is read as a DataFrame indexed by match, matchend
+
     """
-    corpus meta data is stored as DataFrame index by match, matchend
-    """
-    pass
+
+    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
+
+    current_app.logger.debug("reading meta data")
+    d = read_csv(path, sep="\t")
+
+    # segmentation
+    segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
+    if segmentation is not None:
+        current_app.logger.debug("segmentation already exists")
+    else:
+        current_app.logger.debug("storing segmentation")
+        segmentation = Segmentation(
+            corpus_id=corpus.id,
+            level=level
+        )
+        db.session.add(segmentation)
+        db.session.commit()
+        # segmentation spans
+        current_app.logger.debug("storing segmentation spans")
+        d['segmentation_id'] = segmentation.id
+        d[['segmentation_id', 'match', 'matchend']].to_sql("segmentation_span", con=db.engine, if_exists='append', index=False)
+        db.session.commit()
+        d = d.drop('segmentation_id', axis=1)
+
+    # segmentation spans
+    current_app.logger.debug("retrieving stored segmentation spans")
+    segmentation_spans = DataFrame([vars(s) for s in segmentation.spans]).rename({'id': 'segmentation_span_id'}, axis=1)
+
+    current_app.logger.debug("merging with new information")
+    d = segmentation_spans.merge(d, on=['match', 'matchend'])
+
+    for col, value_type in column_mapping.items():
+
+        current_app.logger.debug(f'key: "{col}", value_type: "{value_type}"')
+
+        if col not in d.columns:
+            current_app.logger.error(f'column "{col}" not found')
+            continue
+
+        # segmentation annotation
+        segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=col).first()
+        if segmentation_annotation is not None:
+            current_app.logger.debug("segmentation annotation already exists")
+        else:
+            current_app.logger.debug("storing segmentation annotation")
+            segmentation_annotation = SegmentationAnnotation(
+                segmentation_id=segmentation.id,
+                key=col,
+                value_type=value_type
+            )
+            db.session.add(segmentation_annotation)
+            db.session.commit()
+            # segmentation span annotation
+            current_app.logger.debug("storing segmentation span annotations")
+            df = d[['segmentation_span_id', col]].copy()
+            df = df.rename({col: f'value_{value_type}'}, axis=1)
+            df['segmentation_annotation_id'] = segmentation_annotation.id
+            df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
 
 
 def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=None, column='subcorpus'):

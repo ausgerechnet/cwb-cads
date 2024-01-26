@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import logging
+# import logging
 import os
 
 from apiflask import APIFlask
 from flask import redirect, request
-from flask.logging import default_handler
+# from flask.logging import default_handler
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
