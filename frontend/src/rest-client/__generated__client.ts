@@ -13,6 +13,7 @@ type CollocationOut = Partial<{
 type QueryOut = Partial<{
   corpus: CorpusOut
   cqp_nqr_matches: string
+  cqp_query: string
   discourseme_id: number
   id: number
   match_strategy: string
@@ -50,35 +51,16 @@ type SubCorpusOut = Partial<{
   name: string
 }>
 
-const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
-  .object({
-    _items: z.array(z.string()),
-    description: z.string(),
-    id: z.number().int(),
-    name: z.string(),
-  })
-  .partial()
-  .passthrough()
-const ConstellationOut: z.ZodType<ConstellationOut> = z
-  .object({
-    description: z.string(),
-    highlight_discoursemes: z.array(DiscoursemeOut),
-    id: z.number().int(),
-    name: z.string(),
-  })
+const BreakdownOut = z
+  .object({ id: z.number().int(), p: z.string(), query_id: z.number().int() })
   .partial()
   .passthrough()
 const HTTPError = z
   .object({ detail: z.object({}).partial().passthrough(), message: z.string() })
   .partial()
   .passthrough()
-const ConstellationIn = z
-  .object({
-    description: z.string(),
-    filter_discourseme_ids: z.array(z.number()),
-    highlight_discourseme_ids: z.array(z.number()),
-    name: z.string(),
-  })
+const BreakdownIn = z
+  .object({ p: z.string(), query_id: z.number().int() })
   .partial()
   .passthrough()
 const ValidationError = z
@@ -96,6 +78,15 @@ const ValidationError = z
   })
   .partial()
   .passthrough()
+const BreakdownItemsOut = z
+  .object({
+    breakdown_id: z.number().int(),
+    freq: z.number().int(),
+    id: z.number().int(),
+    item: z.string(),
+  })
+  .partial()
+  .passthrough()
 const CorpusOut: z.ZodType<CorpusOut> = z
   .object({
     cwb_id: z.string(),
@@ -110,82 +101,16 @@ const CorpusOut: z.ZodType<CorpusOut> = z
   })
   .partial()
   .passthrough()
-const SubCorpusOut: z.ZodType<SubCorpusOut> = z
-  .object({
-    corpus: CorpusOut,
-    cqp_nqr_matches: z.string(),
-    description: z.string(),
-    id: z.number().int(),
-    name: z.string(),
-  })
-  .partial()
-  .passthrough()
-const DiscoursemeIn = z
-  .object({ description: z.string(), name: z.string() })
-  .partial()
-  .passthrough()
-const DiscoursemeQueryIn = z
-  .object({
-    corpus_id: z.number().int(),
-    escape: z.boolean(),
-    flags: z.string(),
-    match_strategy: z.string().default('longest'),
-    nqr_name: z.string().nullable(),
-    p_query: z.string().default('lemma'),
-    s_query: z.string().nullable(),
-  })
-  .partial()
-  .passthrough()
 const QueryOut: z.ZodType<QueryOut> = z
   .object({
     corpus: CorpusOut,
     cqp_nqr_matches: z.string(),
+    cqp_query: z.string(),
     discourseme_id: z.number().int(),
     id: z.number().int(),
     match_strategy: z.string(),
     nqr_name: z.string(),
     subcorpus: z.string(),
-  })
-  .partial()
-  .passthrough()
-const QueryIn = z
-  .object({
-    corpus_id: z.number().int(),
-    cqp_query: z.string(),
-    discourseme_id: z.number().int(),
-    match_strategy: z.enum(['longest', 'shortest', 'standard']),
-    nqr_name: z.string().nullable(),
-  })
-  .partial()
-  .passthrough()
-const QueryAssistedIn = z
-  .object({
-    corpus_id: z.number().int(),
-    discourseme_id: z.number().int(),
-    escape: z.boolean(),
-    flags: z.enum(['%cd', '%c', '%d', '']),
-    items: z.array(z.string()),
-    match_strategy: z.enum(['longest', 'shortest', 'standard']),
-    nqr_name: z.string().nullable(),
-    p: z.string(),
-    s: z.string(),
-  })
-  .partial()
-  .passthrough()
-const BreakdownOut = z
-  .object({ id: z.number().int(), p: z.string(), query_id: z.number().int() })
-  .partial()
-  .passthrough()
-const BreakdownIn = z
-  .object({ p: z.string(), query_id: z.number().int() })
-  .partial()
-  .passthrough()
-const BreakdownItemsOut = z
-  .object({
-    breakdown_id: z.number().int(),
-    freq: z.number().int(),
-    id: z.number().int(),
-    item: z.string(),
   })
   .partial()
   .passthrough()
@@ -222,6 +147,83 @@ const SemanticMapOut = z
   .passthrough()
 const SemanticMapIn = z
   .object({ collocation_id: z.number().int() })
+  .partial()
+  .passthrough()
+const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
+  .object({
+    _items: z.array(z.string()),
+    description: z.string(),
+    id: z.number().int(),
+    name: z.string(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationOut: z.ZodType<ConstellationOut> = z
+  .object({
+    description: z.string(),
+    highlight_discoursemes: z.array(DiscoursemeOut),
+    id: z.number().int(),
+    name: z.string(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationIn = z
+  .object({
+    description: z.string(),
+    filter_discourseme_ids: z.array(z.number()),
+    highlight_discourseme_ids: z.array(z.number()),
+    name: z.string(),
+  })
+  .partial()
+  .passthrough()
+const SubCorpusOut: z.ZodType<SubCorpusOut> = z
+  .object({
+    corpus: CorpusOut,
+    cqp_nqr_matches: z.string(),
+    description: z.string(),
+    id: z.number().int(),
+    name: z.string(),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeIn = z
+  .object({ description: z.string(), name: z.string() })
+  .partial()
+  .passthrough()
+const DiscoursemeQueryIn = z
+  .object({
+    corpus_id: z.number().int(),
+    escape: z.boolean(),
+    flags: z.string(),
+    match_strategy: z.string().default('longest'),
+    nqr_name: z.string().nullable(),
+    p_query: z.string().default('lemma'),
+    s_query: z.string().nullable(),
+  })
+  .partial()
+  .passthrough()
+const QueryIn = z
+  .object({
+    corpus_id: z.number().int(),
+    cqp_query: z.string(),
+    discourseme_id: z.number().int(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']),
+    nqr_name: z.string().nullable(),
+  })
+  .partial()
+  .passthrough()
+const QueryAssistedIn = z
+  .object({
+    corpus_id: z.number().int(),
+    discourseme_id: z.number().int(),
+    escape: z.boolean(),
+    flags: z.enum(['%cd', '%c', '%d', '']),
+    items: z.array(z.string()),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']),
+    nqr_name: z.string().nullable(),
+    p: z.string(),
+    s: z.string(),
+  })
   .partial()
   .passthrough()
 const ConcordanceIn = z
@@ -274,25 +276,25 @@ const UserUpdate = z
   .passthrough()
 
 export const schemas = {
-  DiscoursemeOut,
-  ConstellationOut,
-  HTTPError,
-  ConstellationIn,
-  ValidationError,
-  CorpusOut,
-  SubCorpusOut,
-  DiscoursemeIn,
-  DiscoursemeQueryIn,
-  QueryOut,
-  QueryIn,
-  QueryAssistedIn,
   BreakdownOut,
+  HTTPError,
   BreakdownIn,
+  ValidationError,
   BreakdownItemsOut,
+  CorpusOut,
+  QueryOut,
   CollocationOut,
   CollocationIn,
   SemanticMapOut,
   SemanticMapIn,
+  DiscoursemeOut,
+  ConstellationOut,
+  ConstellationIn,
+  SubCorpusOut,
+  DiscoursemeIn,
+  DiscoursemeQueryIn,
+  QueryIn,
+  QueryAssistedIn,
   ConcordanceIn,
   ConcordanceLinesOut,
   CoordinatesOut,
@@ -308,6 +310,433 @@ const endpoints = makeApi([
     alias: 'get',
     requestFormat: 'json',
     response: z.unknown(),
+  },
+  {
+    method: 'delete',
+    path: '/breakdown/:id',
+    alias: 'deleteBreakdownId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/breakdown/:id',
+    alias: 'getBreakdownId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: BreakdownOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/breakdown/:id/execute',
+    alias: 'postBreakdownIdexecute',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: BreakdownOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/breakdown/:id/items',
+    alias: 'getBreakdownIditems',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(BreakdownItemsOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/breakdown/query/:query_id',
+    alias: 'getBreakdownqueryQuery_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(BreakdownOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/breakdown/query/:query_id',
+    alias: 'postBreakdownqueryQuery_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: BreakdownIn,
+      },
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: BreakdownOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/',
+    alias: 'getCollocation',
+    requestFormat: 'json',
+    response: z.array(CollocationOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/collocation/:id',
+    alias: 'deleteCollocationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/:id',
+    alias: 'getCollocationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/collocation/:id/auto-associate',
+    alias: 'putCollocationIdautoAssociate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/:id/collocates',
+    alias: 'getCollocationIdcollocates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/collocation/:id/collocates',
+    alias: 'postCollocationIdcollocates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/collocation/:id/semantic_map/',
+    alias: 'getCollocationIdsemantic_map',
+    description: `TODO: allow many-to-many relationship`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SemanticMapOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/collocation/:id/semantic_map/',
+    alias: 'postCollocationIdsemantic_map',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z
+          .object({ collocation_id: z.number().int() })
+          .partial()
+          .passthrough(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SemanticMapOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/collocation/query/:query_id',
+    alias: 'postCollocationqueryQuery_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: CollocationIn,
+      },
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+      {
+        name: 'semantic_map_id',
+        type: 'Query',
+        schema: z.number().int().nullish(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
   },
   {
     method: 'get',
@@ -2617,433 +3046,6 @@ description: &quot;empty result&quot;`,
       {
         status: 401,
         description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/query/breakdown/:id',
-    alias: 'deleteQuerybreakdownId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/query/breakdown/:id',
-    alias: 'getQuerybreakdownId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: BreakdownOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/query/breakdown/:id/execute',
-    alias: 'postQuerybreakdownIdexecute',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: BreakdownOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/query/breakdown/:id/items',
-    alias: 'getQuerybreakdownIditems',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.array(BreakdownItemsOut),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/query/breakdown/query/:query_id',
-    alias: 'getQuerybreakdownqueryQuery_id',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'query_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.array(BreakdownOut),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/query/breakdown/query/:query_id',
-    alias: 'postQuerybreakdownqueryQuery_id',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: BreakdownIn,
-      },
-      {
-        name: 'query_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'execute',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
-      },
-    ],
-    response: BreakdownOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/query/collocation/',
-    alias: 'getQuerycollocation',
-    requestFormat: 'json',
-    response: z.array(CollocationOut),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/query/collocation/:id',
-    alias: 'deleteQuerycollocationId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/query/collocation/:id',
-    alias: 'getQuerycollocationId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: CollocationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/query/collocation/:id/auto-associate',
-    alias: 'putQuerycollocationIdautoAssociate',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: CollocationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/query/collocation/:id/collocates',
-    alias: 'getQuerycollocationIdcollocates',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/query/collocation/:id/collocates',
-    alias: 'postQuerycollocationIdcollocates',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: CollocationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/query/collocation/:id/semantic_map/',
-    alias: 'getQuerycollocationIdsemantic_map',
-    description: `TODO: allow many-to-many relationship`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: SemanticMapOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/query/collocation/:id/semantic_map/',
-    alias: 'postQuerycollocationIdsemantic_map',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z
-          .object({ collocation_id: z.number().int() })
-          .partial()
-          .passthrough(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: SemanticMapOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/query/collocation/query/:query_id',
-    alias: 'postQuerycollocationqueryQuery_id',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: CollocationIn,
-      },
-      {
-        name: 'query_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'execute',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
-      },
-      {
-        name: 'semantic_map_id',
-        type: 'Query',
-        schema: z.number().int().nullish(),
-      },
-    ],
-    response: CollocationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
         schema: HTTPError,
       },
       {
