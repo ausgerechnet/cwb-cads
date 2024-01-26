@@ -1,5 +1,6 @@
-import { apiClient, queryClient } from '@/rest-client'
+import { apiClient, queryClient, schemas } from '@/rest-client'
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
+import { z } from 'zod'
 
 // "queries" as in "cqp queries", but "query" as in "react-query"
 export const queriesQueryOptions = queryOptions({
@@ -22,6 +23,18 @@ export const corporaQueryOptions = queryOptions({
 export const logoutMutationOptions: MutationOptions = {
   mutationFn: () => apiClient.postUserlogout(undefined),
   onSuccess: () => {
-    queryClient.invalidateQueries(sessionQueryOptions)
+    void queryClient.invalidateQueries(sessionQueryOptions)
+  },
+}
+
+export const postQueryMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  z.infer<typeof schemas.QueryIn>
+> = {
+  mutationFn: (body: z.infer<typeof schemas.QueryIn>) =>
+    apiClient.postQuery(body),
+  onSuccess: () => {
+    queryClient.invalidateQueries(queriesQueryOptions)
   },
 }

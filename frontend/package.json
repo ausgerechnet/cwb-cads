@@ -11,7 +11,7 @@
     "format": "prettier --write .",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "generate-client": "openapi-zod-client https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/openapi.json --export-schemas --with-alias --output ./src/rest-client/__generated__client.ts",
+    "generate-client": "openapi-zod-client https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/openapi.json --export-schemas --export-types --with-alias --output ./src/rest-client/__generated__client.ts",
     "postgenerate-client": "prettier --write ./src/rest-client/__generated__client.ts",
     "generate-component": "npx shadcn-ui@latest add"
   },
@@ -26,6 +26,8 @@
     "@radix-ui/react-select": "^2.0.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/react-query": "^5.17.9",
     "@tanstack/react-router": "^1.3.0",
     "@tanstack/router-cli": "^1.3.5",

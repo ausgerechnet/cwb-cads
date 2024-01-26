@@ -1,7 +1,56 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
 
-const DiscoursemeOut = z
+type CollocationOut = Partial<{
+  _query: QueryOut
+  constellation_id: number
+  context: number
+  id: number
+  p: string
+  s_break: string
+  sem_map_id: number
+}>
+type QueryOut = Partial<{
+  corpus: CorpusOut
+  cqp_nqr_matches: string
+  discourseme_id: number
+  id: number
+  match_strategy: string
+  nqr_name: string
+  subcorpus: string
+}>
+type CorpusOut = Partial<{
+  cwb_id: string
+  description: string
+  id: number
+  language: string
+  name: string
+  p_atts: Array<string>
+  register: string
+  s_annotations: Array<string>
+  s_atts: Array<string>
+}>
+type ConstellationOut = Partial<{
+  description: string
+  highlight_discoursemes: Array<DiscoursemeOut>
+  id: number
+  name: string
+}>
+type DiscoursemeOut = Partial<{
+  _items: Array<string>
+  description: string
+  id: number
+  name: string
+}>
+type SubCorpusOut = Partial<{
+  corpus: CorpusOut
+  cqp_nqr_matches: string
+  description: string
+  id: number
+  name: string
+}>
+
+const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
   .object({
     _items: z.array(z.string()),
     description: z.string(),
@@ -10,7 +59,7 @@ const DiscoursemeOut = z
   })
   .partial()
   .passthrough()
-const ConstellationOut = z
+const ConstellationOut: z.ZodType<ConstellationOut> = z
   .object({
     description: z.string(),
     highlight_discoursemes: z.array(DiscoursemeOut),
@@ -47,7 +96,7 @@ const ValidationError = z
   })
   .partial()
   .passthrough()
-const CorpusOut = z
+const CorpusOut: z.ZodType<CorpusOut> = z
   .object({
     cwb_id: z.string(),
     description: z.string(),
@@ -61,7 +110,7 @@ const CorpusOut = z
   })
   .partial()
   .passthrough()
-const SubCorpusOut = z
+const SubCorpusOut: z.ZodType<SubCorpusOut> = z
   .object({
     corpus: CorpusOut,
     cqp_nqr_matches: z.string(),
@@ -87,7 +136,7 @@ const DiscoursemeQueryIn = z
   })
   .partial()
   .passthrough()
-const QueryOut = z
+const QueryOut: z.ZodType<QueryOut> = z
   .object({
     corpus: CorpusOut,
     cqp_nqr_matches: z.string(),
@@ -140,7 +189,7 @@ const BreakdownItemsOut = z
   })
   .partial()
   .passthrough()
-const CollocationOut = z
+const CollocationOut: z.ZodType<CollocationOut> = z
   .object({
     _query: QueryOut,
     constellation_id: z.number().int(),
