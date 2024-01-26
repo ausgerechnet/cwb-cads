@@ -112,7 +112,7 @@ class QueryAssistedIn(Schema):
 class QueryOut(Schema):
 
     id = Integer()
-    discourseme_id = Integer()
+    discourseme_id = Integer(required=False)
     corpus = Nested(CorpusOut)
     match_strategy = String()
     cqp_query = String()
