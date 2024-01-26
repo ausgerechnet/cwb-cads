@@ -89,7 +89,7 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 
 class QueryIn(Schema):
 
-    discourseme_id = Integer(required=False)
+    discourseme_id = Integer(required=False, nullable=True)
     corpus_id = Integer()
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     cqp_query = String()
@@ -98,7 +98,7 @@ class QueryIn(Schema):
 
 class QueryAssistedIn(Schema):
 
-    discourseme_id = Integer(required=False)
+    discourseme_id = Integer(required=False, nullable=True)
     corpus_id = Integer()
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     nqr_name = String(required=False, nullable=True)
@@ -112,13 +112,13 @@ class QueryAssistedIn(Schema):
 class QueryOut(Schema):
 
     id = Integer()
-    discourseme_id = Integer(required=False)
+    discourseme_id = Integer(nullable=True)
     corpus = Nested(CorpusOut)
     match_strategy = String()
     cqp_query = String()
     cqp_nqr_matches = String()
-    nqr_name = String(required=False)
-    subcorpus = String(required=False)
+    nqr_name = String(nullable=True)
+    subcorpus = String(nullable=True)
 
 
 @bp.post('/')

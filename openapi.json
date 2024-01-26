@@ -5307,7 +5307,8 @@
             "type": "integer"
           },
           "discourseme_id": {
-            "type": "integer"
+            "type": "integer",
+            "nullable": true
           },
           "corpus": {
             "$ref": "#/components/schemas/CorpusOut"
@@ -5322,10 +5323,12 @@
             "type": "string"
           },
           "nqr_name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "subcorpus": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -5333,7 +5336,8 @@
         "type": "object",
         "properties": {
           "discourseme_id": {
-            "type": "integer"
+            "type": "integer",
+            "nullable": true
           },
           "corpus_id": {
             "type": "integer"
@@ -5492,7 +5496,8 @@
         "type": "object",
         "properties": {
           "discourseme_id": {
-            "type": "integer"
+            "type": "integer",
+            "nullable": true
           },
           "corpus_id": {
             "type": "integer"
