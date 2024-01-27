@@ -1,8 +1,8 @@
 import { QueryClient } from '@tanstack/react-query'
-import { redirect } from '@tanstack/react-router'
 
 import { createApiClient } from './__generated__client'
 import { sessionQueryOptions } from '@/data/queries'
+import { router } from '@/router'
 
 export const queryClient = new QueryClient()
 
@@ -11,16 +11,20 @@ export const apiClient = createApiClient(import.meta.env.VITE_API_URL || '/api')
 apiClient.axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Observe all errors and redirect to login page if the user is not authenticated
-    // Unless the request was to the login endpoint
+    // Redirect to login page if the user is not authenticated for anything
+    // The redirect search param is used to redirect back to the original page
     const status = error?.response?.status
     if (status === 401) {
       queryClient.invalidateQueries(sessionQueryOptions)
-      redirect({
+      const { pathname, search } = location
+      router.navigate({
         to: '/login',
-        search: {
-          redirect: location.href,
-        },
+        search:
+          pathname === '/login'
+            ? {}
+            : {
+                redirect: pathname + search,
+              },
       })
     }
     return Promise.reject(error)

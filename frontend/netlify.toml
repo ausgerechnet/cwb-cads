@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/api/*"
+  to = "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/:splat"
+  force = true
+

@@ -22,7 +22,7 @@ import {
 export const Route = new FileRoute('/login').createRoute({
   component: Login,
   validateSearch: z.object({
-    redirect: z.string().url().optional(),
+    redirect: z.string().optional(),
   }),
 })
 
@@ -56,6 +56,7 @@ function Login() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(sessionQueryOptions)
+      console.log('redirect', redirect)
       navigate({ to: redirect || '/queries' })
     },
   })
@@ -107,7 +108,6 @@ function Login() {
         </form>
       </Form>
       {error && <p>Error: {String(error)}</p>}
-      {redirect && <p>Redirect: {redirect}</p>}
     </div>
   )
 }
