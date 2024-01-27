@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { required_error } from '@/lib/strings'
 
 export const Route = new FileRoute('/login').createRoute({
   component: Login,
@@ -27,16 +28,8 @@ export const Route = new FileRoute('/login').createRoute({
 })
 
 const Credentials = z.object({
-  username: z
-    .string({
-      required_error: 'Dieses Feld ist erforderlich',
-    })
-    .min(1, 'Dieses Feld ist erforderlich'),
-  password: z
-    .string({
-      required_error: 'Dieses Feld ist erforderlich',
-    })
-    .min(1, 'Dieses Feld ist erforderlich'),
+  username: z.string({ required_error }).min(1, 'Dieses Feld ist erforderlich'),
+  password: z.string({ required_error }).min(1, 'Dieses Feld ist erforderlich'),
 })
 
 type Credentials = z.infer<typeof Credentials>
@@ -56,7 +49,6 @@ function Login() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(sessionQueryOptions)
-      console.log('redirect', redirect)
       navigate({ to: redirect || '/queries' })
     },
   })

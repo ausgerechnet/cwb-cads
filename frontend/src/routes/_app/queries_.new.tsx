@@ -37,6 +37,7 @@ import { Tabs, TabsList, TabsContent, TabsTrigger } from '@/components/ui/tabs'
 import { Card } from '@/components/ui/card'
 import { Alert, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { required_error } from '@/lib/strings'
 
 export const Route = new FileRoute('/_app/queries/new').createRoute({
   component: QueriesNew,
@@ -44,10 +45,9 @@ export const Route = new FileRoute('/_app/queries/new').createRoute({
   validateSearch: z.object({
     cqpMode: z.enum(['cqp', 'assisted']).optional(),
   }),
-  loader: async ({ context: { queryClient } }) => {
-    const corpora = await queryClient.ensureQueryData(corporaQueryOptions)
-    return { corpora }
-  },
+  loader: async ({ context: { queryClient } }) => ({
+    corpora: await queryClient.ensureQueryData(corporaQueryOptions),
+  }),
 })
 
 function QueriesNew() {
@@ -108,13 +108,13 @@ function QueriesNewPending() {
 }
 
 const InputCQP = z.object({
-  corpus_id: z.number({ required_error: 'Dieses Feld ist erforderlich' }).int(),
-  cqp_query: z.string({ required_error: 'Dieses Feld ist erforderlich' }),
+  corpus_id: z.number({ required_error }).int(),
+  cqp_query: z.string({ required_error }),
   match_strategy: z.enum(['shortest', 'longest', 'standard'], {
-    required_error: 'Dieses Feld ist erforderlich',
+    required_error,
   }),
   context_break: z.enum(['p', 's'], {
-    required_error: 'Dieses Feld ist erforderlich',
+    required_error,
   }),
 })
 
@@ -242,14 +242,14 @@ function FormCQP() {
 }
 
 const InputAssisted = z.object({
-  corpus_id: z.number({ required_error: 'Dieses Feld ist erforderlich' }).int(),
+  corpus_id: z.number({ required_error }).int(),
   match_strategy: z.enum(['shortest', 'longest', 'standard'], {
-    required_error: 'Dieses Feld ist erforderlich',
+    required_error,
   }),
   items: z
-    .array(z.string(), { required_error: 'Dieses Feld ist erforderlich' })
-    .min(1, { message: 'Dieses Feld ist erforderlich' }),
-  p: z.string({ required_error: 'Dieses Feld ist erforderlich' }),
+    .array(z.string(), { required_error })
+    .min(1, { message: required_error }),
+  p: z.string({ required_error }),
 })
 
 function FormAssisted() {
