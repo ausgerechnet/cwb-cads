@@ -20,6 +20,8 @@ export function ItemsInput({
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean)
+      // Filter out duplicates
+      .filter((item, index, self) => self.indexOf(item) === index)
     setItems(newValues)
     setValue(newValues.join(', '))
     onChange?.(newValues)
