@@ -3,7 +3,7 @@ import { ReactNode } from 'react'
 import { ErrorRouteProps, FileRoute, Link } from '@tanstack/react-router'
 
 import { cn } from '@/lib/utils'
-import { queriesQueryOptions } from '@/data/queries'
+import { queriesQueryOptions } from '@/lib/queries'
 import { buttonVariants } from '@/components/ui/button'
 import { Headline1, Large } from '@/components/ui/typography'
 import { Skeleton } from '@/components/ui/skeleton'

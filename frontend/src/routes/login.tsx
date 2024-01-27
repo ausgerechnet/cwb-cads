@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { FileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { sessionQueryOptions } from '@/data/queries'
+import { sessionQueryOptions } from '@/lib/queries'
 import { apiClient } from '@/rest-client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

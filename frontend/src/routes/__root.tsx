@@ -10,7 +10,7 @@ import {
   NavigationMenuList,
 } from '@/components/ui/navigation-menu'
 import { Home } from 'lucide-react'
-import { sessionQueryOptions } from '@/data/queries'
+import { sessionQueryOptions } from '@/lib/queries'
 
 export const Route = rootRouteWithContext<{
   queryClient: QueryClient

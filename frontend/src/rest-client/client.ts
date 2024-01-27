@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query'
 
 import { createApiClient } from './__generated__client'
-import { sessionQueryOptions } from '@/data/queries'
+import { sessionQueryOptions } from '@/lib/queries'
 import { router } from '@/router'
 
 export const queryClient = new QueryClient()

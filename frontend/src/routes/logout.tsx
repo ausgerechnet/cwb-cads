@@ -1,10 +1,11 @@
-import { FileRoute } from '@tanstack/react-router'
-import { Headline1 } from '@/components/ui/typography'
-import { useMutation } from '@tanstack/react-query'
-import { logoutMutationOptions } from '@/data/queries'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { useEffect } from 'react'
+import { FileRoute } from '@tanstack/react-router'
+import { useMutation } from '@tanstack/react-query'
+import { AlertCircle, Loader2 } from 'lucide-react'
+
+import { logoutMutationOptions } from '@/lib/queries'
+import { Headline1 } from '@/components/ui/typography'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 
 export const Route = new FileRoute('/logout').createRoute({

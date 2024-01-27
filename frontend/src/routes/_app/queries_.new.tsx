@@ -10,7 +10,7 @@ import {
   corporaQueryOptions,
   postQueryAssistedMutationOptions,
   postQueryMutationOptions,
-} from '@/data/queries'
+} from '@/lib/queries'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
