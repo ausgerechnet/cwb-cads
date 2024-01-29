@@ -8,6 +8,12 @@ export const queriesQueryOptions = queryOptions({
   queryFn: () => apiClient.getQuery(),
 })
 
+export const queryQueryOptions = (queryId: string) =>
+  queryOptions({
+    queryKey: ['query', queryId],
+    queryFn: () => apiClient.getQueryId({ params: { id: queryId } }),
+  })
+
 export const sessionQueryOptions = queryOptions({
   queryKey: ['session'],
   queryFn: () => apiClient.getUsersession(),
@@ -18,6 +24,11 @@ export const sessionQueryOptions = queryOptions({
 export const corporaQueryOptions = queryOptions({
   queryKey: ['corpora'],
   queryFn: () => apiClient.getCorpus(),
+})
+
+export const discoursemesQueryOptions = queryOptions({
+  queryKey: ['discoursemes'],
+  queryFn: () => apiClient.getDiscourseme(),
 })
 
 export const logoutMutationOptions: MutationOptions = {

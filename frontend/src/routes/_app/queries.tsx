@@ -1,18 +1,39 @@
-import { AlertCircle, Plus } from 'lucide-react'
-import { ReactNode } from 'react'
-import { ErrorRouteProps, FileRoute, Link } from '@tanstack/react-router'
+import { AlertCircle, Eye, Plus } from 'lucide-react'
+import {
+  ErrorRouteProps,
+  FileRoute,
+  Link,
+  ReactNode,
+} from '@tanstack/react-router'
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 
 import { cn } from '@/lib/utils'
 import { queriesQueryOptions } from '@/lib/queries'
 import { buttonVariants } from '@/components/ui/button'
-import { Headline1, Large } from '@/components/ui/typography'
+import { Large } from '@/components/ui/typography'
+import { schemas } from '@/rest-client'
+import { z } from 'zod'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export const Route = new FileRoute('/_app/queries').createRoute({
   component: Queries,
-  pendingComponent: QueriesPending,
   errorComponent: QueriesError,
+  pendingComponent: QueriesPending,
   loader: async ({ context: { queryClient } }) => ({
     queries: await queryClient.ensureQueryData(queriesQueryOptions),
   }),
@@ -21,7 +42,7 @@ export const Route = new FileRoute('/_app/queries').createRoute({
 function Queries() {
   const { queries } = Route.useLoaderData()
   return (
-    <QueriesFrame>
+    <QueriesLayout>
       {queries.length === 0 && (
         <div className="start flex flex-col gap-4">
           <Large>
@@ -38,15 +59,55 @@ function Queries() {
           </Link>
         </div>
       )}
+      <QueryTable queries={queries} />
       {queries.map((query) => (
         <div
           key={query.id}
-          className="mono flex flex-col gap-2 whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground"
+          className="mono my-4 flex flex-col gap-2 whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground"
         >
           {JSON.stringify(query, null, 2)}
         </div>
       ))}
-    </QueriesFrame>
+    </QueriesLayout>
+  )
+}
+
+const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
+  {
+    accessorKey: 'id',
+    header: 'ID',
+  },
+  {
+    accessorKey: 'corpus.name',
+    header: 'Corpus',
+  },
+  {
+    header: 'Select',
+    cell: (cell) => {
+      const queryId = cell.row.original.id
+      if (queryId === undefined) {
+        throw new Error('Query ID is undefined')
+      }
+      return (
+        <Link to="/queries/$queryId" params={{ queryId: String(queryId) }}>
+          <Eye className="h-4 w-4" />
+        </Link>
+      )
+    },
+  },
+]
+
+export default function QueriesPending() {
+  return (
+    <QueriesLayout>
+      <div className="flex flex-col gap-1">
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-6 w-full" />
+      </div>
+    </QueriesLayout>
   )
 }
 
@@ -56,7 +117,7 @@ function QueriesError({ error }: ErrorRouteProps) {
       ? String(error.message)
       : 'Unknown error'
   return (
-    <QueriesFrame>
+    <QueriesLayout>
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>An error occurred while loading the queries.</AlertTitle>
@@ -64,35 +125,78 @@ function QueriesError({ error }: ErrorRouteProps) {
           {errorMessage}
         </AlertDescription>
       </Alert>
-    </QueriesFrame>
+    </QueriesLayout>
   )
 }
 
-function QueriesFrame({ children }: { children: ReactNode }) {
+function QueriesLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="p-2">
-      <div className="mb-8 flex gap-4">
-        <Headline1 className="flex-grow">Queries Overview</Headline1>
-        <Link to="/queries/new" className={buttonVariants()}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Query
-        </Link>
-      </div>
-      <div className="col-span-full">{children}</div>
+    <AppPageFrame
+      title="Queries"
+      cta={{
+        to: '/queries/new',
+        label: 'New Query',
+      }}
+    >
+      {children}
+    </AppPageFrame>
+  )
+}
+
+function QueryTable({
+  queries,
+}: {
+  queries: z.infer<typeof schemas.QueryOut>[]
+}) {
+  const table = useReactTable({
+    data: queries,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  })
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => {
+                return (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
+                )
+              })}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows?.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow
+                key={row.id}
+                data-state={row.getIsSelected() && 'selected'}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="h-24 text-center">
+                No results.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
-  )
-}
-
-function QueriesPending() {
-  return (
-    <QueriesFrame>
-      <div className="flex flex-col gap-1">
-        <Skeleton className="h-6 w-full" />
-        <Skeleton className="h-6 w-full" />
-        <Skeleton className="h-6 w-full" />
-        <Skeleton className="h-6 w-full" />
-        <Skeleton className="h-6 w-full" />
-      </div>
-    </QueriesFrame>
   )
 }

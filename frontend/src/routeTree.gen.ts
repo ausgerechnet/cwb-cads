@@ -11,6 +11,8 @@ import { Route as AppDiscoursemesImport } from './routes/_app/discoursemes'
 import { Route as AppCollocationAnalysisImport } from './routes/_app/collocation-analysis'
 import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_.new'
+import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_.$queryId'
+import { Route as AppDiscoursemesNewImport } from './routes/_app/discoursemes_.new'
 
 const VignetteRoute = VignetteImport.update({
   path: '/vignette',
@@ -71,6 +73,16 @@ const AppQueriesNewRoute = AppQueriesNewImport.update({
   path: '/queries/new',
   getParentRoute: () => AppRoute,
 } as any)
+
+const AppQueriesQueryIdRoute = AppQueriesQueryIdImport.update({
+  path: '/queries/$queryId',
+  getParentRoute: () => AppRoute,
+} as any)
+
+const AppDiscoursemesNewRoute = AppDiscoursemesNewImport.update({
+  path: '/discoursemes/new',
+  getParentRoute: () => AppRoute,
+} as any)
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/': {
@@ -117,6 +129,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubcorporaImport
       parentRoute: typeof AppImport
     }
+    '/_app/discoursemes/new': {
+      preLoaderRoute: typeof AppDiscoursemesNewImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/queries/$queryId': {
+      preLoaderRoute: typeof AppQueriesQueryIdImport
+      parentRoute: typeof AppImport
+    }
     '/_app/queries/new': {
       preLoaderRoute: typeof AppQueriesNewImport
       parentRoute: typeof AppImport
@@ -132,6 +152,8 @@ export const routeTree = rootRoute.addChildren([
     AppKeywordAnalysisRoute,
     AppQueriesRoute,
     AppSubcorporaRoute,
+    AppDiscoursemesNewRoute,
+    AppQueriesQueryIdRoute,
     AppQueriesNewRoute,
   ]),
   LoginRoute,

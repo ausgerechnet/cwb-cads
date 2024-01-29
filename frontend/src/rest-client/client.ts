@@ -4,7 +4,14 @@ import { createApiClient } from './__generated__client'
 import { sessionQueryOptions } from '@/lib/queries'
 import { router } from '@/router'
 
-export const queryClient = new QueryClient()
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 export const apiClient = createApiClient(import.meta.env.VITE_API_URL || '/api')
 
