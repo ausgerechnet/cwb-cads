@@ -54,6 +54,7 @@ function Login() {
   })
 
   const onSubmit = (values: Credentials) => {
+    if (isPending) return
     mutate(values)
   }
 

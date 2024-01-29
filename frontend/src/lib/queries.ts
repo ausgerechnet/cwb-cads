@@ -26,10 +26,24 @@ export const corporaQueryOptions = queryOptions({
   queryFn: () => apiClient.getCorpus(),
 })
 
+export const subcorporaQueryOptions = (corpusId: string) =>
+  queryOptions({
+    queryKey: ['subcorpora', corpusId],
+    queryFn: () =>
+      apiClient.getCorpusIdsubcorpora({ params: { id: corpusId } }),
+  })
+
 export const discoursemesQueryOptions = queryOptions({
   queryKey: ['discoursemes'],
   queryFn: () => apiClient.getDiscourseme(),
 })
+
+export const discoursemeQueryOptions = (discoursemeId: string) =>
+  queryOptions({
+    queryKey: ['discourseme', discoursemeId],
+    queryFn: () =>
+      apiClient.getDiscoursemeId({ params: { id: discoursemeId } }),
+  })
 
 export const logoutMutationOptions: MutationOptions = {
   mutationFn: () => apiClient.postUserlogout(undefined),
@@ -38,13 +52,23 @@ export const logoutMutationOptions: MutationOptions = {
   },
 }
 
+export const postDiscoursemeMutationOptions: MutationOptions<
+  z.infer<typeof schemas.DiscoursemeOut>,
+  Error,
+  z.infer<typeof schemas.DiscoursemeIn>
+> = {
+  mutationFn: (body) => apiClient.postDiscourseme(body),
+  onSuccess: () => {
+    queryClient.invalidateQueries(discoursemesQueryOptions)
+  },
+}
+
 export const postQueryMutationOptions: MutationOptions<
   unknown,
   Error,
   z.infer<typeof schemas.QueryIn>
 > = {
-  mutationFn: (body: z.infer<typeof schemas.QueryIn>) =>
-    apiClient.postQuery(body),
+  mutationFn: (body) => apiClient.postQuery(body),
   onSuccess: () => {
     queryClient.invalidateQueries(queriesQueryOptions)
   },
@@ -55,8 +79,7 @@ export const postQueryAssistedMutationOptions: MutationOptions<
   Error,
   z.infer<typeof schemas.QueryAssistedIn>
 > = {
-  mutationFn: (body: z.infer<typeof schemas.QueryAssistedIn>) =>
-    apiClient.postQueryassisted(body),
+  mutationFn: (body) => apiClient.postQueryassisted(body),
   onSuccess: () => {
     queryClient.invalidateQueries(queriesQueryOptions)
   },
