@@ -120,17 +120,29 @@ const InputCQP = z.object({
 
 function FormCQP() {
   const { corpora } = Route.useLoaderData()
+  const navigate = useNavigate()
   const {
     mutate: postQuery,
     isPending,
+    isSuccess,
     error,
-  } = useMutation(postQueryMutationOptions)
+  } = useMutation({
+    ...postQueryMutationOptions,
+    onSuccess: (data, variables, context) => {
+      postQueryMutationOptions.onSuccess?.(data, variables, context)
+      navigate({
+        to: '/queries/$queryId',
+        params: { queryId: String(data.id) },
+      })
+    },
+  })
   const form = useForm<z.infer<typeof InputCQP>>({
     resolver: zodResolver(InputCQP),
   })
+  const isDisabled = isPending || isSuccess
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function onSubmit({ context_break, ...data }: z.infer<typeof InputCQP>) {
-    if (isPending) return
+    if (isDisabled) return
     postQuery(data)
   }
   return (
@@ -226,7 +238,7 @@ function FormCQP() {
               </FormItem>
             )}
           />
-          <Button className="col-span-full" type="submit" disabled={isPending}>
+          <Button className="col-span-full" type="submit" disabled={isDisabled}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <>Submit</>
           </Button>

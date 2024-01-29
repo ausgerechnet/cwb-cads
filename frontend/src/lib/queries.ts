@@ -76,7 +76,7 @@ export const postDiscoursemeMutationOptions: MutationOptions<
 }
 
 export const postQueryMutationOptions: MutationOptions<
-  unknown,
+  z.infer<typeof schemas.QueryOut>,
   Error,
   z.infer<typeof schemas.QueryIn>
 > = {
