@@ -33,6 +33,18 @@ export const subcorporaQueryOptions = (corpusId: string) =>
       apiClient.getCorpusIdsubcorpora({ params: { id: corpusId } }),
   })
 
+export const putSubcorpusMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  string
+> = {
+  mutationFn: async (id: string) =>
+    apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
+  onSuccess: () => {
+    queryClient.invalidateQueries(corporaQueryOptions)
+  },
+}
+
 export const discoursemesQueryOptions = queryOptions({
   queryKey: ['discoursemes'],
   queryFn: () => apiClient.getDiscourseme(),

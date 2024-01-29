@@ -10,6 +10,7 @@ import { Route as AppKeywordAnalysisImport } from './routes/_app/keyword-analysi
 import { Route as AppDiscoursemesImport } from './routes/_app/discoursemes'
 import { Route as AppCollocationAnalysisImport } from './routes/_app/collocation-analysis'
 import { Route as AppAdminImport } from './routes/_app/admin'
+import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_.new'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_.new'
 import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_.$queryId'
 import { Route as AppDiscoursemesNewImport } from './routes/_app/discoursemes_.new'
@@ -67,6 +68,11 @@ const AppCollocationAnalysisRoute = AppCollocationAnalysisImport.update({
 
 const AppAdminRoute = AppAdminImport.update({
   path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+
+const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
+  path: '/subcorpora/new',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -152,6 +158,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppQueriesNewImport
       parentRoute: typeof AppImport
     }
+    '/_app/subcorpora/new': {
+      preLoaderRoute: typeof AppSubcorporaNewImport
+      parentRoute: typeof AppImport
+    }
   }
 }
 export const routeTree = rootRoute.addChildren([
@@ -167,6 +177,7 @@ export const routeTree = rootRoute.addChildren([
     AppDiscoursemesNewRoute,
     AppQueriesQueryIdRoute,
     AppQueriesNewRoute,
+    AppSubcorporaNewRoute,
   ]),
   LoginRoute,
   LogoutRoute,

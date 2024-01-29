@@ -13,7 +13,7 @@ export function AppPageFrame({
   title: string
   cta?: {
     to: ComponentProps<typeof Link>['to']
-    label: string
+    label: ReactNode
   }
 }) {
   return (
