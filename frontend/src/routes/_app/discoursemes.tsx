@@ -1,11 +1,11 @@
-import { FileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { Eye } from 'lucide-react'
 
 import { discoursemesQueryOptions } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Large } from '@/components/ui/typography'
 
-export const Route = new FileRoute('/_app/discoursemes').createRoute({
+export const Route = createFileRoute('/_app/discoursemes')({
   component: Discoursemes,
   loader: async ({ context: { queryClient } }) => ({
     discoursemes: await queryClient.ensureQueryData(discoursemesQueryOptions),

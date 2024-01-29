@@ -1,9 +1,9 @@
 import { AlertCircle, Eye, Plus } from 'lucide-react'
 import {
-  ErrorRouteProps,
-  FileRoute,
+  ErrorComponentProps,
   Link,
   ReactNode,
+  createFileRoute,
 } from '@tanstack/react-router'
 import {
   ColumnDef,
@@ -11,13 +11,13 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { z } from 'zod'
 
 import { cn } from '@/lib/utils'
 import { queriesQueryOptions } from '@/lib/queries'
+import { schemas } from '@/rest-client'
 import { buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
-import { schemas } from '@/rest-client'
-import { z } from 'zod'
 import {
   Table,
   TableBody,
@@ -30,10 +30,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
-export const Route = new FileRoute('/_app/queries').createRoute({
+export const Route = createFileRoute('/_app/queries')({
   component: Queries,
   errorComponent: QueriesError,
-  pendingComponent: QueriesPending,
   loader: async ({ context: { queryClient } }) => ({
     queries: await queryClient.ensureQueryData(queriesQueryOptions),
   }),
@@ -68,6 +67,24 @@ function Queries() {
           {JSON.stringify(query, null, 2)}
         </div>
       ))}
+    </QueriesLayout>
+  )
+}
+
+function QueriesError({ error }: ErrorComponentProps) {
+  const errorMessage =
+    typeof error === 'object' && error !== null && 'message' in error
+      ? String(error.message)
+      : 'Unknown error'
+  return (
+    <QueriesLayout>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>An error occurred while loading the queries.</AlertTitle>
+        <AlertDescription className="whitespace-pre">
+          {errorMessage}
+        </AlertDescription>
+      </Alert>
     </QueriesLayout>
   )
 }
@@ -107,24 +124,6 @@ export default function QueriesPending() {
         <Skeleton className="h-6 w-full" />
         <Skeleton className="h-6 w-full" />
       </div>
-    </QueriesLayout>
-  )
-}
-
-function QueriesError({ error }: ErrorRouteProps) {
-  const errorMessage =
-    typeof error === 'object' && error !== null && 'message' in error
-      ? String(error.message)
-      : 'Unknown error'
-  return (
-    <QueriesLayout>
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>An error occurred while loading the queries.</AlertTitle>
-        <AlertDescription className="whitespace-pre">
-          {errorMessage}
-        </AlertDescription>
-      </Alert>
     </QueriesLayout>
   )
 }

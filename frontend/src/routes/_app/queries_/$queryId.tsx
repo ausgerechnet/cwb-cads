@@ -1,8 +1,8 @@
 import { AppPageFrame } from '@/components/app-page-frame'
 import { queryQueryOptions } from '@/lib/queries'
-import { FileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 
-export const Route = new FileRoute('/_app/queries/$queryId').createRoute({
+export const Route = createFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
   loader: async ({ context: { queryClient }, params: { queryId } }) => ({
     query: await queryClient.ensureQueryData(queryQueryOptions(queryId)),

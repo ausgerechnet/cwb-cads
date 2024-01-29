@@ -1,4 +1,4 @@
-import { FileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Loader2, Plus } from 'lucide-react'
@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 
-export const Route = new FileRoute('/_app/subcorpora').createRoute({
+export const Route = createFileRoute('/_app/subcorpora')({
   component: Subcorpora,
   pendingComponent: LoaderSubcorpora,
   loader: async ({ context: { queryClient } }) => ({

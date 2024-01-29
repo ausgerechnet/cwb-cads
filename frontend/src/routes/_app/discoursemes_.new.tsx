@@ -1,4 +1,4 @@
-import { FileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -22,7 +22,7 @@ import { postDiscoursemeMutationOptions } from '@/lib/queries'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
-export const Route = new FileRoute('/_app/discoursemes/new').createRoute({
+export const Route = createFileRoute('/_app/discoursemes/new')({
   component: DiscoursemesNew,
 })
 

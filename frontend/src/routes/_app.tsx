@@ -1,7 +1,7 @@
-import { FileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { MenuLink } from '@/components/menu-link'
 
-export const Route = new FileRoute('/_app').createRoute({
+export const Route = createFileRoute('/_app')({
   component: () => <App />,
 })
 

@@ -1,8 +1,8 @@
+import { createFileRoute } from '@tanstack/react-router'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { discoursemeQueryOptions } from '@/lib/queries'
-import { FileRoute } from '@tanstack/react-router'
 
-export const Route = new FileRoute('/_app/discoursemes/$discoursemeId').createRoute({
+export const Route = createFileRoute('/_app/discoursemes/$discoursemeId')({
   component: SingleDiscourseme,
   loader: async ({ context: { queryClient }, params: { discoursemeId } }) => ({
     query: await queryClient.ensureQueryData(

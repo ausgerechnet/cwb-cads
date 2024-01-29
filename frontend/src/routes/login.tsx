@@ -2,11 +2,11 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { FileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { sessionQueryOptions } from '@/lib/queries'
 import { apiClient } from '@/rest-client'
+import { sessionQueryOptions } from '@/lib/queries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Headline1 } from '@/components/ui/typography'
@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/form'
 import { required_error } from '@/lib/strings'
 
-export const Route = new FileRoute('/login').createRoute({
+export const Route = createFileRoute('/login')({
   component: Login,
   validateSearch: z.object({
     redirect: z.string().optional(),

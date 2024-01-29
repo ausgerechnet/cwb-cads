@@ -1,8 +1,8 @@
-import { Router } from '@tanstack/react-router'
+import { createRouter } from '@tanstack/react-router'
 import { apiClient, queryClient } from '@/rest-client/client'
 import { routeTree } from './routeTree.gen'
 
-export const router = new Router({
+export const router = createRouter({
   routeTree,
   defaultStaleTime: 0,
   defaultPreload: 'intent',

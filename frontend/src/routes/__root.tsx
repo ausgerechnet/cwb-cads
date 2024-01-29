@@ -1,18 +1,19 @@
-import { Outlet, rootRouteWithContext } from '@tanstack/react-router'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Home } from 'lucide-react'
+
 import { ModeToggle } from '@/components/mode-toggle'
 import { MenuLink } from '@/components/menu-link'
 import {
   NavigationMenuItem,
   NavigationMenuList,
 } from '@/components/ui/navigation-menu'
-import { Home } from 'lucide-react'
 import { sessionQueryOptions } from '@/lib/queries'
 
-export const Route = rootRouteWithContext<{
+export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
   apiClient: typeof import('@/rest-client').apiClient
 }>()({

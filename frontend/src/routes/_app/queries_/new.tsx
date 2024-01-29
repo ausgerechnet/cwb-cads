@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { ChevronLeft, Loader2 } from 'lucide-react'
-import { Link, FileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -39,7 +39,7 @@ import { Alert, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { required_error } from '@/lib/strings'
 
-export const Route = new FileRoute('/_app/queries/new').createRoute({
+export const Route = createFileRoute('/_app/queries/new')({
   component: QueriesNew,
   pendingComponent: QueriesNewPending,
   validateSearch: z.object({
