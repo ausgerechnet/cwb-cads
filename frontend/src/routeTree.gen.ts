@@ -75,7 +75,9 @@ const AppAdminRoute = AppAdminImport.update({
 const AppQueriesRouteRoute = AppQueriesRouteImport.update({
   path: '/queries',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/queries/route.lazy').then((d) => d.Route),
+)
 
 const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
   path: '/subcorpora/new',
