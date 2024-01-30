@@ -39,11 +39,13 @@ import { Alert, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { required_error } from '@/lib/strings'
 
+const FormMode = z.enum(['cqp', 'assisted']).optional()
+
 export const Route = createFileRoute('/_app/queries/new')({
   component: QueriesNew,
   pendingComponent: QueriesNewPending,
   validateSearch: z.object({
-    cqpMode: z.enum(['cqp', 'assisted']).optional(),
+    formMode: FormMode,
   }),
   loader: async ({ context: { queryClient } }) => ({
     corpora: await queryClient.ensureQueryData(corporaQueryOptions),
@@ -51,7 +53,7 @@ export const Route = createFileRoute('/_app/queries/new')({
 })
 
 function QueriesNew() {
-  const { cqpMode = 'assisted' } = Route.useSearch()
+  const { formMode = 'assisted' } = Route.useSearch()
   const navigate = useNavigate()
 
   return (
@@ -63,9 +65,15 @@ function QueriesNew() {
       <Headline1 className="mb-8">New Query</Headline1>
       <Card className="max-w-xl p-4">
         <Tabs
-          defaultValue={cqpMode}
-          onValueChange={(value) => {
-            navigate({ search: { cqpMode: value } })
+          defaultValue={formMode}
+          onValueChange={(formMode) => {
+            if (formMode === 'cqp' || formMode === 'assisted') {
+              navigate({
+                to: '/queries/new',
+                search: { formMode },
+                replace: true,
+              })
+            }
           }}
         >
           <TabsList className="w-full">

@@ -29,7 +29,7 @@ function Subcorpora() {
     <AppPageFrame
       title="Subcorpora"
       cta={{
-        to: '/subcorpora/new',
+        nav: { to: '/subcorpora/new' },
         label: 'New Subcorpus',
       }}
     >
@@ -87,7 +87,7 @@ function LoaderSubcorpora() {
     <AppPageFrame
       title="Subcorpora"
       cta={{
-        to: '/subcorpora/new',
+        nav: { to: '/subcorpora/new' },
         label: 'New Subcorpus',
       }}
     >

@@ -133,7 +133,7 @@ function QueriesLayout({ children }: { children: ReactNode }) {
     <AppPageFrame
       title="Queries"
       cta={{
-        to: '/queries/new',
+        nav: { to: '/queries/new' },
         label: 'New Query',
       }}
     >

@@ -18,7 +18,7 @@ function Discoursemes() {
     <AppPageFrame
       title="Discoursemes"
       cta={{
-        to: '/discoursemes/new',
+        nav: { to: '/discoursemes/new' },
         label: 'New Discourseme',
       }}
     >

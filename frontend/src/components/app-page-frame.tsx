@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Headline1 } from '@/components/ui/typography'
 import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export function AppPageFrame({
   title,
@@ -12,7 +13,7 @@ export function AppPageFrame({
   children: ReactNode
   title: string
   cta?: {
-    to: ComponentProps<typeof Link>['to']
+    nav: ComponentProps<typeof Link>
     label: ReactNode
   }
 }) {
@@ -21,7 +22,10 @@ export function AppPageFrame({
       <div className="mb-8 flex gap-4">
         <Headline1 className="flex-grow">{title}</Headline1>
         {cta && (
-          <Link to={cta.to} className={buttonVariants()}>
+          <Link
+            {...cta.nav}
+            className={cn(buttonVariants(), cta.nav.className)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             {cta.label}
           </Link>
