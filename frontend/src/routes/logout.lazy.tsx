@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createLazyFileRoute } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
@@ -8,7 +8,7 @@ import { Headline1 } from '@/components/ui/typography'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 
-export const Route = createFileRoute('/logout')({
+export const Route = createLazyFileRoute('/logout')({
   component: Logout,
 })
 

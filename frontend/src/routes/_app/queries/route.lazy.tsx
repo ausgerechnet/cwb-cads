@@ -1,7 +1,14 @@
 import { Eye, Plus } from 'lucide-react'
-import { Link, createLazyFileRoute } from '@tanstack/react-router'
+import {
+  Link,
+  createLazyFileRoute,
+  useLoaderData,
+  ErrorComponentProps,
+} from '@tanstack/react-router'
 import { z } from 'zod'
+import { AlertCircle } from 'lucide-react'
 
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@/components/ui/button'
@@ -24,10 +31,11 @@ import { QueriesLayout } from './-queries-layout'
 
 export const Route = createLazyFileRoute('/_app/queries')({
   component: Queries,
+  errorComponent: QueriesError,
 })
 
 function Queries() {
-  const { queries } = Route.useLoaderData()
+  const { queries } = useLoaderData({ from: '/_app/queries', strict: true })
   return (
     <QueriesLayout>
       {queries.length === 0 && (
@@ -55,6 +63,24 @@ function Queries() {
           {JSON.stringify(query, null, 2)}
         </div>
       ))}
+    </QueriesLayout>
+  )
+}
+
+function QueriesError({ error }: ErrorComponentProps) {
+  const errorMessage =
+    typeof error === 'object' && error !== null && 'message' in error
+      ? String(error.message)
+      : 'Unknown error'
+  return (
+    <QueriesLayout>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>An error occurred while loading the queries.</AlertTitle>
+        <AlertDescription className="whitespace-pre">
+          {errorMessage}
+        </AlertDescription>
+      </Alert>
     </QueriesLayout>
   )
 }

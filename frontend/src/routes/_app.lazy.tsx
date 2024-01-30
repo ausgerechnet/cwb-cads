@@ -1,7 +1,7 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { Outlet, createLazyFileRoute } from '@tanstack/react-router'
 import { MenuLink } from '@/components/menu-link'
 
-export const Route = createFileRoute('/_app')({
+export const Route = createLazyFileRoute('/_app')({
   component: () => <App />,
 })
 

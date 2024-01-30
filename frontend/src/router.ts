@@ -1,5 +1,5 @@
 import { createRouter } from '@tanstack/react-router'
-import { apiClient, queryClient } from '@/rest-client/client'
+import { queryClient } from '@/rest-client/client'
 import { routeTree } from './routeTree.gen'
 
 export const router = createRouter({
@@ -8,7 +8,6 @@ export const router = createRouter({
   defaultPreload: 'intent',
   context: {
     queryClient,
-    apiClient,
   },
 })
 

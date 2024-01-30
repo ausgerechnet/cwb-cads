@@ -4,7 +4,6 @@ import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Home } from 'lucide-react'
-
 import { ModeToggle } from '@/components/mode-toggle'
 import { MenuLink } from '@/components/menu-link'
 import {
@@ -15,7 +14,6 @@ import { sessionQueryOptions } from '@/lib/queries'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
-  apiClient: typeof import('@/rest-client').apiClient
 }>()({
   component: RootComponent,
 })
