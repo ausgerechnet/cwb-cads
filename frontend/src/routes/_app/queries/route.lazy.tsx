@@ -1,30 +1,37 @@
+import { useEffect, useMemo, useState } from 'react'
 import { Eye, Plus } from 'lucide-react'
 import {
   Link,
   createLazyFileRoute,
   useLoaderData,
   ErrorComponentProps,
+  useNavigate,
 } from '@tanstack/react-router'
 import { z } from 'zod'
 import { AlertCircle } from 'lucide-react'
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 import { schemas } from '@/rest-client'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Pagination } from '@/components/pagination'
 import { buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
 import {
   ColumnDef,
+  PaginationState,
+  Table as TableType,
+  Updater,
   flexRender,
   getCoreRowModel,
+  getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 import {
   Table,
-  TableBody,
-  TableCell,
-  TableHead,
   TableHeader,
+  TableCell,
+  TableBody,
+  TableHead,
   TableRow,
 } from '@/components/ui/table'
 import { QueriesLayout } from './-queries-layout'
@@ -115,55 +122,112 @@ function QueryTable({
 }: {
   queries: z.infer<typeof schemas.QueryOut>[]
 }) {
+  const tableOptions = useTableSearchPagination()
   const table = useReactTable({
     data: queries,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    autoResetPageIndex: true,
+    ...tableOptions,
   })
+  useTableOverflowPrevention(table)
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && 'selected'}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+    <div className="flex flex-col gap-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <Pagination table={table} />
     </div>
   )
+}
+
+function useTableSearchPagination() {
+  const navigate = useNavigate()
+  const { pageIndex: initialPageIndex = 0, pageSize: initialPageSize = 5 } =
+    Route.useSearch()
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: initialPageIndex,
+    pageSize: initialPageSize,
+  })
+
+  return useMemo(() => {
+    return {
+      state: { pagination },
+      onPaginationChange: (updater: Updater<PaginationState>) => {
+        let newPagination: undefined | PaginationState
+        if (typeof updater === 'function') {
+          newPagination = updater(pagination)
+        } else {
+          newPagination = updater
+        }
+        navigate({
+          replace: true,
+          params: {},
+          search: (search) => ({ ...search, ...newPagination }),
+        })
+        setPagination(newPagination)
+      },
+    }
+  }, [navigate, pagination])
+}
+
+function useTableOverflowPrevention(
+  table: Pick<TableType<unknown>, 'getPageCount' | 'getState' | 'setPageIndex'>,
+) {
+  const pageCount = table.getPageCount()
+  const tablePageIndex = table.getState().pagination.pageIndex
+  useEffect(() => {
+    if (tablePageIndex >= pageCount) {
+      table.setPageIndex(pageCount - 1)
+    }
+  }, [pageCount, table, tablePageIndex])
 }
