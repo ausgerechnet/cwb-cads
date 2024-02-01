@@ -3,6 +3,7 @@ import {
   createLazyRoute,
   useLoaderData,
   useNavigate,
+  useRouter,
 } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { ChevronLeft, Loader2 } from 'lucide-react'
@@ -128,6 +129,7 @@ function FormCQP() {
     strict: true,
   })
   const navigate = useNavigate()
+  const router = useRouter()
   const {
     mutate: postQuery,
     isPending,
@@ -137,6 +139,7 @@ function FormCQP() {
     ...postQueryMutationOptions,
     onSuccess: (data, variables, context) => {
       postQueryMutationOptions.onSuccess?.(data, variables, context)
+      router.invalidate()
       navigate({
         to: '/queries/$queryId',
         params: { queryId: String(data.id) },
@@ -247,7 +250,7 @@ function FormCQP() {
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <>Submit</>
           </Button>
-          <ErrorMessage error={error} />
+          <ErrorMessage className="col-span-full" error={error} />
         </form>
       </Form>
     </div>

@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Eye, Plus } from 'lucide-react'
+import {
+  Eye,
+  Loader2,
+  MoreVertical,
+  Plus,
+  TextSelect,
+  XSquare,
+} from 'lucide-react'
 import {
   Link,
   createLazyFileRoute,
@@ -7,6 +14,7 @@ import {
   ErrorComponentProps,
   useNavigate,
 } from '@tanstack/react-router'
+import { useMutation } from '@tanstack/react-query'
 import { z } from 'zod'
 import { AlertCircle } from 'lucide-react'
 
@@ -14,7 +22,7 @@ import { cn } from '@/lib/utils'
 import { schemas } from '@/rest-client'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Pagination } from '@/components/pagination'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
 import {
   ColumnDef,
@@ -35,6 +43,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { QueriesLayout } from './-queries-layout'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { deleteQueryMutationOptions } from '@/lib/queries'
 
 export const Route = createLazyFileRoute('/_app/queries')({
   component: Queries,
@@ -102,20 +116,71 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
     header: 'Corpus',
   },
   {
-    header: 'Select',
+    header: 'Actions',
     cell: (cell) => {
       const queryId = cell.row.original.id
       if (queryId === undefined) {
         throw new Error('Query ID is undefined')
       }
       return (
-        <Link to="/queries/$queryId" params={{ queryId: String(queryId) }}>
-          <Eye className="h-4 w-4" />
-        </Link>
+        <div className="flex gap-1">
+          <Link
+            className={cn(
+              buttonVariants({ variant: 'ghost' }),
+              'align-center flex place-items-center gap-2 whitespace-nowrap',
+            )}
+            to="/queries/$queryId"
+            params={{ queryId: String(queryId) }}
+          >
+            <Eye className="h-4 w-4" />
+            View Details
+          </Link>
+          <QueryPopover queryId={queryId.toString()} />
+        </div>
       )
     },
   },
 ]
+
+function QueryPopover({ queryId }: { queryId: string }) {
+  const { mutate, isPending } = useMutation(deleteQueryMutationOptions)
+  return (
+    <Popover>
+      <PopoverTrigger
+        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
+      >
+        <MoreVertical className="h-4 w-4" />
+      </PopoverTrigger>
+      <PopoverContent className="flex flex-col gap-2 ">
+        <Link
+          to="/collocation-analysis/new"
+          search={{ queryId }}
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'w-full',
+          )}
+        >
+          <TextSelect className="mr-2 h-4 w-4" />
+          Create Collocation Analysis
+        </Link>
+        <Button
+          disabled={isPending}
+          variant="destructive"
+          className="w-full"
+          onClick={() => mutate(queryId)}
+          size="sm"
+        >
+          {isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <XSquare className="mr-2 h-4 w-4" />
+          )}
+          Delete
+        </Button>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 function QueryTable({
   queries,
@@ -162,8 +227,13 @@ function QueryTable({
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                  {row.getVisibleCells().map((cell, index, rows) => (
+                    <TableCell
+                      key={cell.id}
+                      className={cn(
+                        (index === 0 || index === rows.length - 1) && 'w-0',
+                      )}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),

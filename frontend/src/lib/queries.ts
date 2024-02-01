@@ -45,6 +45,11 @@ export const putSubcorpusMutationOptions: MutationOptions<
   },
 }
 
+export const getUsersQueryOptions = queryOptions({
+  queryKey: ['all-users'],
+  queryFn: () => apiClient.getUser(),
+})
+
 export const discoursemesQueryOptions = queryOptions({
   queryKey: ['discoursemes'],
   queryFn: () => apiClient.getDiscourseme(),
@@ -82,6 +87,7 @@ export const postQueryMutationOptions: MutationOptions<
 > = {
   mutationFn: (body) => apiClient.postQuery(body),
   onSuccess: () => {
+    console.log('invalidating queries')
     queryClient.invalidateQueries(queriesQueryOptions)
   },
 }
@@ -92,6 +98,18 @@ export const postQueryAssistedMutationOptions: MutationOptions<
   z.infer<typeof schemas.QueryAssistedIn>
 > = {
   mutationFn: (body) => apiClient.postQueryassisted(body),
+  onSuccess: () => {
+    queryClient.invalidateQueries(queriesQueryOptions)
+  },
+}
+
+export const deleteQueryMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  string
+> = {
+  mutationFn: (queryId: string) =>
+    apiClient.deleteQueryId(undefined, { params: { id: queryId } }),
   onSuccess: () => {
     queryClient.invalidateQueries(queriesQueryOptions)
   },

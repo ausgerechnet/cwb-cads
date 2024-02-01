@@ -18,6 +18,7 @@ import {
   CommandItem,
 } from '@/components/ui/command'
 import { Small } from '@/components/ui/typography'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function CorpusSelect({
   corpora,
@@ -47,7 +48,7 @@ export function CorpusSelect({
   const [open, setOpen] = useState(false)
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -68,38 +69,40 @@ export function CorpusSelect({
           <CommandInput placeholder="Search corpus..." />
           <CommandEmpty>No corpus found.</CommandEmpty>
           <CommandGroup>
-            {searchableCorpora.map(
-              ({ searchValue, id, cwb_id, name, description }) => {
-                if (cwb_id === undefined || id === undefined) {
-                  return null
-                }
-                return (
-                  <CommandItem
-                    key={cwb_id}
-                    value={searchValue}
-                    onSelect={() => {
-                      onChange?.(id)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        id === corpusId ? 'opacity-100' : 'opacity-0',
-                      )}
-                    />
-                    {name}
-                    <div>
-                      {description && (
-                        <Small className="block text-muted-foreground">
-                          {description}
-                        </Small>
-                      )}
-                    </div>
-                  </CommandItem>
-                )
-              },
-            )}
+            <ScrollArea className="h-80 max-h-[30svh]">
+              {searchableCorpora.map(
+                ({ searchValue, id, cwb_id, name, description }) => {
+                  if (cwb_id === undefined || id === undefined) {
+                    return null
+                  }
+                  return (
+                    <CommandItem
+                      key={cwb_id}
+                      value={searchValue}
+                      onSelect={() => {
+                        onChange?.(id)
+                        setOpen(false)
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          id === corpusId ? 'opacity-100' : 'opacity-0',
+                        )}
+                      />
+                      {name}
+                      <div>
+                        {description && (
+                          <Small className="block text-muted-foreground">
+                            {description}
+                          </Small>
+                        )}
+                      </div>
+                    </CommandItem>
+                  )
+                },
+              )}
+            </ScrollArea>
           </CommandGroup>
         </Command>
       </PopoverContent>

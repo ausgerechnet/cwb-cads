@@ -9,15 +9,16 @@ import { Route as VignetteImport } from './routes/vignette'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
 import { Route as AppKeywordAnalysisImport } from './routes/_app/keyword-analysis'
-import { Route as AppCollocationAnalysisImport } from './routes/_app/collocation-analysis'
 import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
+import { Route as AppCollocationAnalysisRouteImport } from './routes/_app/collocation-analysis/route'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
 import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_/$queryId'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
+import { Route as AppCollocationAnalysisNewImport } from './routes/_app/collocation-analysis_/new'
 
 // Create Virtual Routes
 
@@ -57,11 +58,6 @@ const AppKeywordAnalysisRoute = AppKeywordAnalysisImport.update({
   getParentRoute: () => AppLazyRoute,
 } as any)
 
-const AppCollocationAnalysisRoute = AppCollocationAnalysisImport.update({
-  path: '/collocation-analysis',
-  getParentRoute: () => AppLazyRoute,
-} as any)
-
 const AppAdminRoute = AppAdminImport.update({
   path: '/admin',
   getParentRoute: () => AppLazyRoute,
@@ -87,6 +83,12 @@ const AppDiscoursemesRouteRoute = AppDiscoursemesRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_app/discoursemes/route.lazy').then((d) => d.Route),
 )
+
+const AppCollocationAnalysisRouteRoute =
+  AppCollocationAnalysisRouteImport.update({
+    path: '/collocation-analysis',
+    getParentRoute: () => AppLazyRoute,
+  } as any)
 
 const AppDiscoursemesNewLazyRoute = AppDiscoursemesNewLazyImport.update({
   path: '/discoursemes/new',
@@ -126,6 +128,13 @@ const AppDiscoursemesDiscoursemeIdRoute =
     ),
   )
 
+const AppCollocationAnalysisNewRoute = AppCollocationAnalysisNewImport.update({
+  path: '/collocation-analysis/new',
+  getParentRoute: () => AppLazyRoute,
+} as any).lazy(() =>
+  import('./routes/_app/collocation-analysis_/new.lazy').then((d) => d.Route),
+)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -150,6 +159,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogoutLazyImport
       parentRoute: typeof rootRoute
     }
+    '/_app/collocation-analysis': {
+      preLoaderRoute: typeof AppCollocationAnalysisRouteImport
+      parentRoute: typeof AppLazyImport
+    }
     '/_app/discoursemes': {
       preLoaderRoute: typeof AppDiscoursemesRouteImport
       parentRoute: typeof AppLazyImport
@@ -166,12 +179,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminImport
       parentRoute: typeof AppLazyImport
     }
-    '/_app/collocation-analysis': {
-      preLoaderRoute: typeof AppCollocationAnalysisImport
-      parentRoute: typeof AppLazyImport
-    }
     '/_app/keyword-analysis': {
       preLoaderRoute: typeof AppKeywordAnalysisImport
+      parentRoute: typeof AppLazyImport
+    }
+    '/_app/collocation-analysis/new': {
+      preLoaderRoute: typeof AppCollocationAnalysisNewImport
       parentRoute: typeof AppLazyImport
     }
     '/_app/discoursemes/$discoursemeId': {
@@ -204,12 +217,13 @@ export const routeTree = rootRoute.addChildren([
   LoginRoute,
   VignetteRoute,
   AppLazyRoute.addChildren([
+    AppCollocationAnalysisRouteRoute,
     AppDiscoursemesRouteRoute,
     AppQueriesRouteRoute,
     AppSubcorporaRouteRoute,
     AppAdminRoute,
-    AppCollocationAnalysisRoute,
     AppKeywordAnalysisRoute,
+    AppCollocationAnalysisNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
     AppQueriesQueryIdRoute,
     AppQueriesNewRoute,
