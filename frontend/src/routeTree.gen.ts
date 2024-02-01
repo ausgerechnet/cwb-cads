@@ -8,16 +8,16 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as VignetteImport } from './routes/vignette'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
-import { Route as AppSubcorporaImport } from './routes/_app/subcorpora'
 import { Route as AppKeywordAnalysisImport } from './routes/_app/keyword-analysis'
-import { Route as AppDiscoursemesImport } from './routes/_app/discoursemes'
 import { Route as AppCollocationAnalysisImport } from './routes/_app/collocation-analysis'
 import { Route as AppAdminImport } from './routes/_app/admin'
+import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
-import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_.new'
+import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
+import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
 import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_/$queryId'
-import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_.$discoursemeId'
+import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 
 // Create Virtual Routes
 
@@ -52,24 +52,10 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AppSubcorporaRoute = AppSubcorporaImport.update({
-  path: '/subcorpora',
-  getParentRoute: () => AppLazyRoute,
-} as any).lazy(() =>
-  import('./routes/_app/subcorpora.lazy').then((d) => d.Route),
-)
-
 const AppKeywordAnalysisRoute = AppKeywordAnalysisImport.update({
   path: '/keyword-analysis',
   getParentRoute: () => AppLazyRoute,
 } as any)
-
-const AppDiscoursemesRoute = AppDiscoursemesImport.update({
-  path: '/discoursemes',
-  getParentRoute: () => AppLazyRoute,
-} as any).lazy(() =>
-  import('./routes/_app/discoursemes.lazy').then((d) => d.Route),
-)
 
 const AppCollocationAnalysisRoute = AppCollocationAnalysisImport.update({
   path: '/collocation-analysis',
@@ -81,6 +67,13 @@ const AppAdminRoute = AppAdminImport.update({
   getParentRoute: () => AppLazyRoute,
 } as any)
 
+const AppSubcorporaRouteRoute = AppSubcorporaRouteImport.update({
+  path: '/subcorpora',
+  getParentRoute: () => AppLazyRoute,
+} as any).lazy(() =>
+  import('./routes/_app/subcorpora/route.lazy').then((d) => d.Route),
+)
+
 const AppQueriesRouteRoute = AppQueriesRouteImport.update({
   path: '/queries',
   getParentRoute: () => AppLazyRoute,
@@ -88,18 +81,25 @@ const AppQueriesRouteRoute = AppQueriesRouteImport.update({
   import('./routes/_app/queries/route.lazy').then((d) => d.Route),
 )
 
+const AppDiscoursemesRouteRoute = AppDiscoursemesRouteImport.update({
+  path: '/discoursemes',
+  getParentRoute: () => AppLazyRoute,
+} as any).lazy(() =>
+  import('./routes/_app/discoursemes/route.lazy').then((d) => d.Route),
+)
+
 const AppDiscoursemesNewLazyRoute = AppDiscoursemesNewLazyImport.update({
   path: '/discoursemes/new',
   getParentRoute: () => AppLazyRoute,
 } as any).lazy(() =>
-  import('./routes/_app/discoursemes_.new.lazy').then((d) => d.Route),
+  import('./routes/_app/discoursemes_/new.lazy').then((d) => d.Route),
 )
 
 const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
   path: '/subcorpora/new',
   getParentRoute: () => AppLazyRoute,
 } as any).lazy(() =>
-  import('./routes/_app/subcorpora_.new.lazy').then((d) => d.Route),
+  import('./routes/_app/subcorpora_/new.lazy').then((d) => d.Route),
 )
 
 const AppQueriesNewRoute = AppQueriesNewImport.update({
@@ -121,7 +121,7 @@ const AppDiscoursemesDiscoursemeIdRoute =
     path: '/discoursemes/$discoursemeId',
     getParentRoute: () => AppLazyRoute,
   } as any).lazy(() =>
-    import('./routes/_app/discoursemes_.$discoursemeId.lazy').then(
+    import('./routes/_app/discoursemes_/$discoursemeId.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -150,8 +150,16 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogoutLazyImport
       parentRoute: typeof rootRoute
     }
+    '/_app/discoursemes': {
+      preLoaderRoute: typeof AppDiscoursemesRouteImport
+      parentRoute: typeof AppLazyImport
+    }
     '/_app/queries': {
       preLoaderRoute: typeof AppQueriesRouteImport
+      parentRoute: typeof AppLazyImport
+    }
+    '/_app/subcorpora': {
+      preLoaderRoute: typeof AppSubcorporaRouteImport
       parentRoute: typeof AppLazyImport
     }
     '/_app/admin': {
@@ -162,16 +170,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCollocationAnalysisImport
       parentRoute: typeof AppLazyImport
     }
-    '/_app/discoursemes': {
-      preLoaderRoute: typeof AppDiscoursemesImport
-      parentRoute: typeof AppLazyImport
-    }
     '/_app/keyword-analysis': {
       preLoaderRoute: typeof AppKeywordAnalysisImport
-      parentRoute: typeof AppLazyImport
-    }
-    '/_app/subcorpora': {
-      preLoaderRoute: typeof AppSubcorporaImport
       parentRoute: typeof AppLazyImport
     }
     '/_app/discoursemes/$discoursemeId': {
@@ -204,12 +204,12 @@ export const routeTree = rootRoute.addChildren([
   LoginRoute,
   VignetteRoute,
   AppLazyRoute.addChildren([
+    AppDiscoursemesRouteRoute,
     AppQueriesRouteRoute,
+    AppSubcorporaRouteRoute,
     AppAdminRoute,
     AppCollocationAnalysisRoute,
-    AppDiscoursemesRoute,
     AppKeywordAnalysisRoute,
-    AppSubcorporaRoute,
     AppDiscoursemesDiscoursemeIdRoute,
     AppQueriesQueryIdRoute,
     AppQueriesNewRoute,
