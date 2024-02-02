@@ -11,6 +11,7 @@ import {
   NavigationMenuList,
 } from '@/components/ui/navigation-menu'
 import { sessionQueryOptions } from '@/lib/queries'
+import { Toaster } from '@/components/ui/sonner'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -61,6 +62,7 @@ function RootComponent() {
         </NavigationMenu>
       </header>
       <Outlet />
+      <Toaster />
       <ReactQueryDevtools buttonPosition="bottom-left" />
       <TanStackRouterDevtools position="bottom-right" />
     </>

@@ -2,6 +2,7 @@ import { apiClient, queryClient, schemas } from '@/rest-client'
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 
+// ==================== QUERIES ====================
 // "queries" as in "cqp queries", but "query" as in "react-query"
 export const queriesQueryOptions = queryOptions({
   queryKey: ['queries'],
@@ -21,63 +22,14 @@ export const sessionQueryOptions = queryOptions({
   retry: false,
 })
 
-export const corporaQueryOptions = queryOptions({
-  queryKey: ['corpora'],
-  queryFn: () => apiClient.getCorpus(),
-})
-
-export const subcorporaQueryOptions = (corpusId: string) =>
-  queryOptions({
-    queryKey: ['subcorpora', corpusId],
-    queryFn: () =>
-      apiClient.getCorpusIdsubcorpora({ params: { id: corpusId } }),
-  })
-
-export const putSubcorpusMutationOptions: MutationOptions<
+export const executeQueryMutationOptions: MutationOptions<
   unknown,
   Error,
   string
 > = {
-  mutationFn: async (id: string) =>
-    apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
-  onSuccess: () => {
-    queryClient.invalidateQueries(corporaQueryOptions)
-  },
-}
-
-export const getUsersQueryOptions = queryOptions({
-  queryKey: ['all-users'],
-  queryFn: () => apiClient.getUser(),
-})
-
-export const discoursemesQueryOptions = queryOptions({
-  queryKey: ['discoursemes'],
-  queryFn: () => apiClient.getDiscourseme(),
-})
-
-export const discoursemeQueryOptions = (discoursemeId: string) =>
-  queryOptions({
-    queryKey: ['discourseme', discoursemeId],
-    queryFn: () =>
-      apiClient.getDiscoursemeId({ params: { id: discoursemeId } }),
-  })
-
-export const logoutMutationOptions: MutationOptions = {
-  mutationFn: () => apiClient.postUserlogout(undefined),
-  onSuccess: () => {
-    void queryClient.invalidateQueries(sessionQueryOptions)
-  },
-}
-
-export const postDiscoursemeMutationOptions: MutationOptions<
-  z.infer<typeof schemas.DiscoursemeOut>,
-  Error,
-  z.infer<typeof schemas.DiscoursemeIn>
-> = {
-  mutationFn: (body) => apiClient.postDiscourseme(body),
-  onSuccess: () => {
-    queryClient.invalidateQueries(discoursemesQueryOptions)
-  },
+  mutationFn: (queryId: string) =>
+    apiClient.postQueryIdexecute(undefined, { params: { id: queryId } }),
+  onSuccess: () => queryClient.invalidateQueries(queriesQueryOptions),
 }
 
 export const postQueryMutationOptions: MutationOptions<
@@ -113,4 +65,100 @@ export const deleteQueryMutationOptions: MutationOptions<
   onSuccess: () => {
     queryClient.invalidateQueries(queriesQueryOptions)
   },
+}
+
+// ==================== CORPORA ====================
+
+export const corporaQueryOptions = queryOptions({
+  queryKey: ['corpora'],
+  queryFn: () => apiClient.getCorpus(),
+})
+
+export const subcorporaQueryOptions = (corpusId: string) =>
+  queryOptions({
+    queryKey: ['subcorpora', corpusId],
+    queryFn: () =>
+      apiClient.getCorpusIdsubcorpora({ params: { id: corpusId } }),
+  })
+
+export const putSubcorpusMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  string
+> = {
+  mutationFn: async (id: string) =>
+    apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
+  onSuccess: () => {
+    queryClient.invalidateQueries(corporaQueryOptions)
+  },
+}
+
+// ==================== USERS ====================
+
+export const loginMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  z.infer<typeof schemas.UserIn>
+> = {
+  mutationFn: async (credentials) => {
+    return await apiClient.postUserlogin(credentials)
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries(sessionQueryOptions)
+  },
+}
+
+export const getUsersQueryOptions = queryOptions({
+  queryKey: ['all-users'],
+  queryFn: () => apiClient.getUser(),
+})
+
+export const logoutMutationOptions: MutationOptions = {
+  mutationFn: () => apiClient.postUserlogout(undefined),
+  onSuccess: () => {
+    void queryClient.invalidateQueries(sessionQueryOptions)
+  },
+}
+
+// ==================== DISCOURSEMES ====================
+
+export const discoursemesQueryOptions = queryOptions({
+  queryKey: ['discoursemes'],
+  queryFn: () => apiClient.getDiscourseme(),
+})
+
+export const discoursemeQueryOptions = (discoursemeId: string) =>
+  queryOptions({
+    queryKey: ['discourseme', discoursemeId],
+    queryFn: () =>
+      apiClient.getDiscoursemeId({ params: { id: discoursemeId } }),
+  })
+
+export const postDiscoursemeMutationOptions: MutationOptions<
+  z.infer<typeof schemas.DiscoursemeOut>,
+  Error,
+  z.infer<typeof schemas.DiscoursemeIn>
+> = {
+  mutationFn: (body) => apiClient.postDiscourseme(body),
+  onSuccess: () => {
+    queryClient.invalidateQueries(discoursemesQueryOptions)
+  },
+}
+
+// ==================== COLLOCATIONS ====================
+
+export const collocationsQueryOptions = queryOptions({
+  queryKey: ['collocations'],
+  queryFn: () => apiClient.getCollocation(),
+})
+
+export const postCollocationQueryMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  z.infer<typeof schemas.CollocationIn>
+> = {
+  mutationFn: (collocationIn) =>
+    apiClient.postCollocationqueryQuery_id(collocationIn, {
+      params: { query_id: collocationIn.query_id?.toString() ?? '' },
+    }),
 }

@@ -19,6 +19,7 @@ import { z } from 'zod'
 import { AlertCircle } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { deleteQueryMutationOptions } from '@/lib/queries'
 import { schemas } from '@/rest-client'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Pagination } from '@/components/pagination'
@@ -42,13 +43,12 @@ import {
   TableHead,
   TableRow,
 } from '@/components/ui/table'
-import { QueriesLayout } from './-queries-layout'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { deleteQueryMutationOptions } from '@/lib/queries'
+import { QueriesLayout } from './-queries-layout'
 
 export const Route = createLazyFileRoute('/_app/queries')({
   component: Queries,
@@ -116,7 +116,8 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
     header: 'Corpus',
   },
   {
-    header: 'Actions',
+    id: 'actions',
+    header: '',
     cell: (cell) => {
       const queryId = cell.row.original.id
       if (queryId === undefined) {
@@ -154,7 +155,7 @@ function QueryPopover({ queryId }: { queryId: string }) {
       <PopoverContent className="flex flex-col gap-2 ">
         <Link
           to="/collocation-analysis/new"
-          search={{ queryId }}
+          search={{ queryId: parseInt(queryId) }}
           className={cn(
             buttonVariants({ variant: 'outline', size: 'sm' }),
             'w-full',

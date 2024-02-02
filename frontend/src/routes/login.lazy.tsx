@@ -3,10 +3,9 @@ import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 
-import { apiClient } from '@/rest-client'
-import { sessionQueryOptions } from '@/lib/queries'
+import { loginMutationOptions } from '@/lib/queries'
 import { required_error } from '@/lib/strings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,19 +34,18 @@ type Credentials = z.infer<typeof Credentials>
 function Login() {
   const { redirect } = Route.useSearch()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
 
   const form = useForm<Credentials>({
     resolver: zodResolver(Credentials),
   })
 
   const { isPending, mutate, error } = useMutation({
-    mutationFn: async (credentials: Credentials) => {
-      return await apiClient.postUserlogin(credentials)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(sessionQueryOptions)
-      navigate({ to: redirect || '/queries' })
+    ...loginMutationOptions,
+    onSuccess: (...args) => {
+      loginMutationOptions?.onSuccess?.(...args)
+      navigate({
+        to: redirect || '/queries',
+      })
     },
   })
 
