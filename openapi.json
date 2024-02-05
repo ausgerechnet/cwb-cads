@@ -138,7 +138,7 @@
         "summary": "Get all users.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -184,14 +184,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UserIn"
+                "$ref": "#/components/schemas/UserRegister"
               }
             }
           }
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -230,7 +230,7 @@
         "summary": "Get all queries.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -293,7 +293,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -332,43 +332,7 @@
         "summary": "Get all corpora.",
         "security": [
           {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
-    "/user/auth": {
-      "get": {
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          }
-        },
-        "tags": [
-          "User"
-        ],
-        "summary": "Identify who is logged in via auth",
-        "security": [
-          {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -423,7 +387,7 @@
         "summary": "Get details of user.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -495,7 +459,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -508,7 +472,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserOut"
+                  "$ref": "#/components/schemas/TokenOut"
                 }
               }
             },
@@ -528,7 +492,7 @@
         "tags": [
           "User"
         ],
-        "summary": "Login with name and password.",
+        "summary": "Login with name and password to get JWT token",
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
@@ -590,7 +554,7 @@
         "summary": "Get details of a query.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -641,41 +605,7 @@
         "summary": "Delete a query.",
         "security": [
           {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
-    "/user/logout": {
-      "post": {
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          }
-        },
-        "tags": [
-          "User"
-        ],
-        "summary": "Logout current user.",
-        "security": [
-          {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -730,7 +660,7 @@
         "summary": "Get details of a corpus.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -752,27 +682,6 @@
           "Mmda.Login"
         ],
         "summary": "Login route to get JWT token to access the API"
-      }
-    },
-    "/user/session": {
-      "get": {
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          }
-        },
-        "tags": [
-          "User"
-        ],
-        "summary": "Identify who is logged in via session"
       }
     },
     "/discourseme/": {
@@ -809,7 +718,7 @@
         "summary": "Get all discoursemes.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -862,7 +771,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -901,7 +810,7 @@
         "summary": "Get all collocations.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -923,6 +832,40 @@
           "Mmda.Corpus"
         ],
         "summary": "Returns a list of available corpora as JSON array with their details."
+      }
+    },
+    "/user/identify": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Identify who is logged with token",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/mmda/refresh/": {
@@ -978,7 +921,7 @@
         "summary": "Get all constellations.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1031,7 +974,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1086,7 +1029,7 @@
         "summary": "Get breakdown.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1137,7 +1080,7 @@
         "summary": "Delete breakdown.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1202,7 +1145,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1257,7 +1200,7 @@
         "summary": "Get meta data of corpus.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1311,7 +1254,7 @@
         "description": "- from within XML\n- from TSV",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1366,7 +1309,7 @@
         "summary": "Get details of a discourseme.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1417,7 +1360,7 @@
         "summary": "Delete one discourseme.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1472,7 +1415,7 @@
         "summary": "Get collocation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1523,7 +1466,7 @@
         "summary": "Delete collocation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1652,7 +1595,7 @@
         "summary": "Get semantic map.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1703,7 +1646,7 @@
         "summary": "Delete semantic map.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1758,7 +1701,7 @@
         "summary": "Get details of a constellation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1809,7 +1752,7 @@
         "summary": "Delete one constellation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1864,7 +1807,7 @@
         "summary": "Execute query: create matches.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1941,7 +1884,7 @@
         "summary": "Get breakdown items.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1994,7 +1937,7 @@
         "summary": "Create Subcorpus",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2189,7 +2132,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2244,7 +2187,7 @@
         "summary": "Execute breakdown: Calculate frequencies of query matches.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2302,7 +2245,7 @@
         "summary": "Get all corpora.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2417,7 +2360,7 @@
         "summary": "Get all breakdowns of query.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -2498,7 +2441,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2551,7 +2494,7 @@
         "summary": "Get collocation items.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -2604,7 +2547,7 @@
         "summary": "Execute collocation: Create collocation items.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2773,7 +2716,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2850,7 +2793,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2908,7 +2851,7 @@
         "summary": "Get coordinates of semantic map.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -3078,7 +3021,7 @@
         "description": "TODO: allow many-to-many relationship",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -3150,7 +3093,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -3243,7 +3186,7 @@
         "summary": "Associate Discoursemes",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -5231,12 +5174,6 @@
           },
           "username": {
             "type": "string"
-          },
-          "roles": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         },
         "required": [
@@ -5244,17 +5181,30 @@
           "username"
         ]
       },
-      "UserIn": {
+      "UserRegister": {
         "type": "object",
         "properties": {
           "username": {
             "type": "string"
           },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
           "password": {
+            "type": "string"
+          },
+          "confirm_password": {
             "type": "string"
           }
         },
         "required": [
+          "confirm_password",
           "password",
           "username"
         ]
@@ -5280,19 +5230,13 @@
           "description": {
             "type": "string"
           },
-          "p_atts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "s_atts": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "s_annotations": {
+          "p_atts": {
             "type": "array",
             "items": {
               "type": "string"
@@ -5377,6 +5321,29 @@
           "new_password",
           "old_password"
         ]
+      },
+      "UserIn": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ]
+      },
+      "TokenOut": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string"
+          }
+        }
       },
       "DiscoursemeOut": {
         "type": "object",
@@ -5738,9 +5705,9 @@
       }
     },
     "securitySchemes": {
-      "BasicAuth": {
+      "BearerAuth": {
         "type": "http",
-        "scheme": "basic"
+        "scheme": "bearer"
       }
     }
   }
