@@ -156,6 +156,7 @@ def import_discoursemes(path_in):
 
     # TODO exclude the ones that are already in database?
     for path in glob(path_in):
+        click.echo(path)
         discoursemes = read_tsv(path)
         for name, query_list in discoursemes.items():
             db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))
