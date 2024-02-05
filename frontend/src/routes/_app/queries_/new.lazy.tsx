@@ -1,18 +1,16 @@
 import {
-  Link,
   createLazyRoute,
   useLoaderData,
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
-import { ChevronLeft, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
 import { Card } from '@/components/ui/card'
-import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu'
 import { Headline1 } from '@/components/ui/typography'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -55,10 +53,6 @@ function QueriesNew() {
 
   return (
     <div className="p-2">
-      <Link to="/queries" className={navigationMenuTriggerStyle()}>
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        Queries
-      </Link>
       <Headline1 className="mb-8">New Query</Headline1>
       <Card className="max-w-xl p-4">
         <Tabs
@@ -96,10 +90,6 @@ function QueriesNew() {
 function QueriesNewPending() {
   return (
     <div className="p-2">
-      <Link to="/queries" className={navigationMenuTriggerStyle()}>
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        Queries
-      </Link>
       <Headline1 className="mb-8">New Query</Headline1>
       <Card className="flex max-w-xl flex-col gap-4 p-4">
         <Skeleton className="mb-4 h-12 w-full" />

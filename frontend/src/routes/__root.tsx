@@ -3,14 +3,15 @@ import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { Home } from 'lucide-react'
+import { Home, Info, User, ScrollText } from 'lucide-react'
+
+import { sessionQueryOptions } from '@/lib/queries'
 import { ModeToggle } from '@/components/mode-toggle'
 import { MenuLink } from '@/components/menu-link'
 import {
   NavigationMenuItem,
   NavigationMenuList,
 } from '@/components/ui/navigation-menu'
-import { sessionQueryOptions } from '@/lib/queries'
 import { Toaster } from '@/components/ui/sonner'
 
 export const Route = createRootRouteWithContext<{
@@ -36,23 +37,33 @@ function RootComponent() {
               </MenuLink>
             </NavigationMenuItem>
             <NavigationMenuItem className="flex-grow justify-end">
-              <MenuLink to="/vignette">Vignette</MenuLink>
+              <MenuLink to="/vignette">
+                <Info className="mr-2 h-4 w-4" />
+                Vignette
+              </MenuLink>
             </NavigationMenuItem>
             {isLoggedIn && (
               <>
                 <NavigationMenuItem>
                   <MenuLink to="/queries" highlight>
+                    <ScrollText className="mr-2 h-4 w-4" />
                     Analysis
                   </MenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <MenuLink to="/logout">Logout</MenuLink>
+                  <MenuLink to="/logout">
+                    <User className="mr-2 h-4 w-4" />
+                    Logout
+                  </MenuLink>
                 </NavigationMenuItem>
               </>
             )}
             {!isLoggedIn && (
               <NavigationMenuItem className="flex flex-grow justify-end">
-                <MenuLink to="/login">Login</MenuLink>
+                <MenuLink to="/login">
+                  <User className="mr-2 h-4 h-5" />
+                  Login
+                </MenuLink>
               </NavigationMenuItem>
             )}
             <NavigationMenuItem>
