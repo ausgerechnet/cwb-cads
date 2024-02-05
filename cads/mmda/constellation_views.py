@@ -15,7 +15,7 @@ from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
-from ..corpus import ccc_corpus
+from ..corpus import ccc_corpus_attributes
 from ..concordance import ccc_concordance
 from ..database import Constellation, Corpus, Discourseme, User
 from ..query import ccc_query, get_or_create_query
@@ -251,7 +251,7 @@ def get_constellation_concordance(username, constellation):
     p_show = ['word', 'lemma']
 
     corpus = Corpus.query.filter_by(cwb_id=corpus_name).first()
-    crps = ccc_corpus(corpus_name,
+    crps = ccc_corpus_attributes(corpus_name,
                       cqp_bin=current_app.config['CCC_CQP_BIN'],
                       registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                       data_dir=current_app.config['CCC_DATA_DIR'])

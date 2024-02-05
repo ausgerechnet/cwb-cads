@@ -39,7 +39,7 @@ def sort_s(s_atts, order=['tweet', 's', 'p', 'text']):
     return ordered
 
 
-def ccc_corpus(corpus_name, cqp_bin, registry_dir, data_dir):
+def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
     """get available corpus attributes
 
     :param str corpus_name: name of corpus in CWB registry
@@ -61,13 +61,13 @@ def ccc_corpus(corpus_name, cqp_bin, registry_dir, data_dir):
     s_annotations = list(s_atts[s_atts['annotation']]['attribute'].values)
     s_atts = list(s_atts[~s_atts['annotation']]['attribute'].values)
 
-    crps = {
+    attributes = {
         'p_atts': sort_p(p_atts),  # all p-attributes
         's_atts': sort_s(s_atts),  # s-attributes without annotation
         's_annotations': s_annotations  # s-attributes with annotation
     }
 
-    return crps
+    return attributes
 
 
 @time_it
@@ -203,8 +203,8 @@ def get_corpora():
     corpora = Corpus.query.all()
     out = list()
     for corpus in corpora:
-        attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
-                                current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+        attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
+                                           current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
         corpus = CorpusOut().dump(corpus)
         corpus = {**corpus, **attributes}
         out.append(corpus)
@@ -232,7 +232,7 @@ def get_corpus(id):
 
     """
     corpus = db.get_or_404(Corpus, id)
-    attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+    attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
     corpus = CorpusOut().dump(corpus)
     corpus = {**corpus, **attributes}
 
@@ -248,7 +248,7 @@ def get_meta(id):
     """
     pass
     # corpus = db.get_or_404(Corpus, id)
-    # attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+    # attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
     # corpus = CorpusOut().dump(corpus)
     # corpus = {**corpus, **attributes}
 
