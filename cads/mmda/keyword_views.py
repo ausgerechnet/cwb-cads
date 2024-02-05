@@ -5,16 +5,15 @@ Keywords view
 """
 
 from apiflask import APIBlueprint
-
 from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
+from ..concordance import ccc_concordance
+from ..corpus import ccc_corpus_attributes
 from ..database import (Constellation, Coordinates, Corpus, Discourseme,
                         Keyword, User)
-from ..corpus import ccc_corpus_attributes
-from ..concordance import ccc_concordance
 from ..keyword import ccc_keywords
 from ..semantic_map import CoordinatesOut, ccc_semmap
 from .collocation_views import score_counts

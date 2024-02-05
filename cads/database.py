@@ -4,12 +4,12 @@
 import json
 from datetime import datetime
 
-from flask import Blueprint, current_app
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash
-from pandas import read_sql
 # from sqlalchemy_utils import IntRangeType
 from ccc.utils import cqp_escape
+from flask import Blueprint, current_app
+from flask_login import UserMixin
+from pandas import read_sql
+from werkzeug.security import generate_password_hash
 
 from . import db
 from .utils import time_it

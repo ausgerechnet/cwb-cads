@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String, Nested
+from apiflask.fields import Integer, List, Nested, String
 
 from . import db
 from .database import Constellation, Discourseme

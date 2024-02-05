@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Float, Boolean, Nested
+from apiflask.fields import Boolean, Float, Integer, Nested, String
 from association_measures import measures
 from ccc import Corpus
 from ccc.collocates import dump2cooc
@@ -10,10 +10,12 @@ from flask import current_app
 from pandas import DataFrame, concat, read_sql
 
 from . import db
-from .database import (Collocation, CollocationItems, Cotext,
-                       CotextLines, Discourseme)
-from .query import ccc_query, get_or_create_query, QueryOut
-from .semantic_map import SemanticMapIn, SemanticMapOut, CoordinatesOut, ccc_semmap, ccc_semmap_discoursemes, ccc_semmap_update
+from .database import (Collocation, CollocationItems, Cotext, CotextLines,
+                       Discourseme)
+from .query import QueryOut, ccc_query, get_or_create_query
+from .semantic_map import (CoordinatesOut, SemanticMapIn, SemanticMapOut,
+                           ccc_semmap, ccc_semmap_discoursemes,
+                           ccc_semmap_update)
 from .users import auth
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')

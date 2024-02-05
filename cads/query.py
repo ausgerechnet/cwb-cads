@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Boolean, Nested, List
+from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus
 from ccc.utils import format_cqp_query
@@ -10,8 +10,8 @@ from flask import current_app
 from pandas import DataFrame
 
 from . import db
-from .database import Query
 from .corpus import CorpusOut
+from .database import Query
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')

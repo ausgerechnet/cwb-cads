@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from json import dumps
+
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
 from ccc import Corpus
 from flask import current_app
-from json import dumps
 
 from . import db
 from .database import Query

@@ -4,9 +4,9 @@
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, String
 from flask import current_app
+from numpy.random import normal
 from pandas import DataFrame
 from semmap import SemanticSpace
-from numpy.random import normal
 
 from . import db
 from .database import CollocationItems, SemanticMap

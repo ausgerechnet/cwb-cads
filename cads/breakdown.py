@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Boolean
+from apiflask.fields import Boolean, Integer, String
+from ccc import Corpus
+from flask import current_app
 
 from . import db
 from .database import Breakdown, Query
-from .users import auth
 from .query import ccc_query
-from ccc import Corpus
-from flask import current_app
+from .users import auth
 
 bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 

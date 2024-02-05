@@ -1,20 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String, Nested
-from ccc import Corpus as CCCorpus, SubCorpus as CCCSubCorpus
-from flask import current_app
-from pandas import read_csv, DataFrame
-import click
-from glob import glob
 import json
+from glob import glob
+
+import click
+from apiflask import APIBlueprint, Schema
+from apiflask.fields import Integer, List, Nested, String
+from ccc import Corpus as CCCorpus
+from ccc import SubCorpus as CCCSubCorpus
+from flask import current_app
+from pandas import DataFrame, read_csv
 
 from . import db
-from .database import Corpus, SubCorpus, Segmentation, SegmentationAnnotation
+from .database import Corpus, Segmentation, SegmentationAnnotation, SubCorpus
 from .users import auth
 from .utils import time_it
-
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
 
