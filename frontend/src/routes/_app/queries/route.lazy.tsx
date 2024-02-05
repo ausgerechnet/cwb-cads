@@ -128,7 +128,7 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
           <Link
             className={cn(
               buttonVariants({ variant: 'ghost' }),
-              'align-center flex place-items-center gap-2 whitespace-nowrap',
+              'align-center -my-3 flex place-items-center gap-2 whitespace-nowrap',
             )}
             to="/queries/$queryId"
             params={{ queryId: String(queryId) }}
@@ -148,7 +148,10 @@ function QueryPopover({ queryId }: { queryId: string }) {
   return (
     <Popover>
       <PopoverTrigger
-        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: 'icon' }),
+          '-my-3',
+        )}
       >
         <MoreVertical className="h-4 w-4" />
       </PopoverTrigger>
