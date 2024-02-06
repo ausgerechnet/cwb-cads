@@ -33,7 +33,7 @@ def ccc_breakdown(breakdown):
 
 class BreakdownIn(Schema):
 
-    p = String()
+    p = String(required=True)
 
 
 class BreakdownItemsOut(Schema):

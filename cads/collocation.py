@@ -316,11 +316,11 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
 
 class CollocationIn(Schema):
 
-    query_id = Integer()
+    query_id = Integer(required=True)
     constellation_id = Integer()
-    p = String()
-    s_break = String()
-    context = Integer()
+    p = String(required=True)
+    s_break = String(required=True)
+    context = Integer(required=True)
 
 
 class CollocationOut(Schema):

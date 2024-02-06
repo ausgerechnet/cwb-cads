@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema, abort
+from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus
@@ -90,22 +90,22 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 class QueryIn(Schema):
 
     discourseme_id = Integer(required=False, nullable=True)
-    corpus_id = Integer()
+    corpus_id = Integer(required=True)
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
-    cqp_query = String()
+    cqp_query = String(required=True)
     nqr_name = String(required=False, nullable=True)
-    s = String()
+    s = String(required=True)
 
 
 class QueryAssistedIn(Schema):
 
     discourseme_id = Integer(required=False, nullable=True)
-    corpus_id = Integer()
+    corpus_id = Integer(required=True)
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     nqr_name = String(required=False, nullable=True)
-    items = List(String)
-    p = String()
-    s = String()
+    items = List(String, required=True)
+    p = String(required=True)
+    s = String(required=True)
     ignore_case = Boolean(required=False, default=True)
     ignore_diacritics = Boolean(required=False, default=True)
     escape = Boolean(required=False, default=True)

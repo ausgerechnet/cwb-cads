@@ -17,11 +17,11 @@ bp = APIBlueprint('user', __name__, url_prefix='/user')
 class UserRegister(Schema):
 
     username = String(required=True)
+    password = String(required=True)
+    confirm_password = String(required=True)
     first_name = String()
     last_name = String()
     email = String()
-    password = String(required=True)
-    confirm_password = String(required=True)
 
 
 class UserIn(Schema):
@@ -47,11 +47,6 @@ class UserOut(Schema):
 class TokenOut(Schema):
 
     access_token = String()
-    refresh_token = String()
-
-
-class TokenIn(Schema):
-
     refresh_token = String()
 
 
