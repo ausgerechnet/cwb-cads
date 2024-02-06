@@ -5,7 +5,7 @@
 from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Integer, String
 from flask import current_app
-from flask_jwt_extended import create_access_token, decode_token
+from flask_jwt_extended import create_access_token, decode_token, create_refresh_token
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import auth, db
@@ -47,6 +47,12 @@ class UserOut(Schema):
 class TokenOut(Schema):
 
     access_token = String()
+    refresh_token = String()
+
+
+class TokenIn(Schema):
+
+    refresh_token = String()
 
 
 @auth.verify_token
@@ -75,12 +81,35 @@ def login(data):
     if not check_password_hash(user.password_hash, password):
         return abort(401, 'incorrect password')
 
-    return {'access_token': create_access_token(UserOut().dump(user))}, 200
+    tokens = {
+        'access_token': create_access_token(UserOut().dump(user)),
+        'refresh_token': create_refresh_token(UserOut().dump(user))
+    }
+
+    return tokens, 200
+
+
+@bp.post('/refresh')
+@bp.output(TokenOut)
+@bp.auth_required(auth)
+def refresh():
+    """Return a new token if the user has a refresh token
+
+    """
+
+    user = auth.current_user
+
+    tokens = {
+        'access_token': create_access_token(UserOut().dump(user)),
+        'refresh_token': create_refresh_token(UserOut().dump(user))
+    }
+
+    return tokens, 200
 
 
 @bp.get('/identify')
 @bp.auth_required(auth)
-def login_identify():
+def identify():
     """Identify who is logged with token
 
     """
