@@ -4,7 +4,7 @@
 # import logging
 import os
 
-from apiflask import APIFlask
+from apiflask import APIFlask, HTTPTokenAuth
 from flask import redirect, request
 # from flask.logging import default_handler
 from flask_cors import CORS
@@ -13,13 +13,14 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .version import __version__
 
-CONFIG = os.getenv('CWB_CADS_CONFIG', default='cfg.TestConfig')
+CONFIG = os.getenv('CWB_CADS_CONFIG', default='cfg.ProdConfig')
 
 NAME = 'cads'
 TITLE = 'cwb-cads'
 
 db = SQLAlchemy()
 jwt = JWTManager()
+auth = HTTPTokenAuth()
 
 
 def create_app(config=CONFIG):

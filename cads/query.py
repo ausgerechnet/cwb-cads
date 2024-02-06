@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Boolean, Nested, List
+from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus
 from ccc.utils import format_cqp_query
@@ -10,8 +10,8 @@ from flask import current_app
 from pandas import DataFrame
 
 from . import db
-from .database import Query
 from .corpus import CorpusOut
+from .database import Query
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -90,22 +90,24 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 class QueryIn(Schema):
 
     discourseme_id = Integer(required=False, nullable=True)
-    corpus_id = Integer()
+    corpus_id = Integer(required=True)
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
-    cqp_query = String()
+    cqp_query = String(required=True)
     nqr_name = String(required=False, nullable=True)
+    s = String(required=True)
 
 
 class QueryAssistedIn(Schema):
 
     discourseme_id = Integer(required=False, nullable=True)
-    corpus_id = Integer()
+    corpus_id = Integer(required=True)
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     nqr_name = String(required=False, nullable=True)
-    items = List(String)
-    p = String()
-    s = String()
-    flags = String(required=False, validate=OneOf(['%cd', '%c', '%d', '']), default='%cd')
+    items = List(String, required=True)
+    p = String(required=True)
+    s = String(required=True)
+    ignore_case = Boolean(required=False, default=True)
+    ignore_diacritics = Boolean(required=False, default=True)
     escape = Boolean(required=False, default=True)
 
 
@@ -152,10 +154,19 @@ def create_assisted(data, data_query):
 
     items = data.pop('items')
     p = data.pop('p')
-    s = data.pop('s')
-    flags = data.pop('flags')
     escape = data.pop('escape')
-    data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
+    ignore_diacritics = data.pop('ignore_diacritics')
+    ignore_case = data.pop('ignore_case')
+    flags = ''
+    if ignore_case or ignore_diacritics:
+        flags = '%'
+        if ignore_case:
+            flags += 'c'
+        if ignore_diacritics:
+            flags += 'd'
+
+    data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=data['s'], flags=flags, escape=escape)
+
     query = Query(**data)
     db.session.add(query)
     db.session.commit()
@@ -188,6 +199,30 @@ def get_query(id):
     """
 
     query = db.get_or_404(Query, id)
+
+    return QueryOut().dump(query), 200
+
+
+@bp.patch('/<id>')
+@bp.input(QueryIn(partial=True))
+@bp.output(QueryOut)
+@bp.auth_required(auth)
+def patch_query(id, data):
+
+    # TODO: delete matches
+    # TODO: queries belong to users
+
+    # user_id = auth.current_user.id
+
+    query = db.get_or_404(Query, id)
+
+    # if query.user_id != user_id:
+    #     return abort(409, 'query does not belong to user')
+
+    for attr, value in data.items():
+        setattr(query, attr, value)
+
+    db.session.commit()
 
     return QueryOut().dump(query), 200
 

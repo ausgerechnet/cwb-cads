@@ -1,20 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String, Nested
-from ccc import Corpus as CCCorpus, SubCorpus as CCCSubCorpus
-from flask import current_app
-from pandas import read_csv, DataFrame
-import click
-from glob import glob
 import json
+from glob import glob
+
+import click
+from apiflask import APIBlueprint, Schema
+from apiflask.fields import Integer, List, Nested, String
+from ccc import Corpus as CCCorpus
+from ccc import SubCorpus as CCCSubCorpus
+from flask import current_app
+from pandas import DataFrame, read_csv
 
 from . import db
-from .database import Corpus, SubCorpus, Segmentation, SegmentationAnnotation
+from .database import Corpus, Segmentation, SegmentationAnnotation, SubCorpus, CorpusAttributes
 from .users import auth
 from .utils import time_it
-
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
 
@@ -39,7 +40,7 @@ def sort_s(s_atts, order=['tweet', 's', 'p', 'text']):
     return ordered
 
 
-def ccc_corpus(corpus_name, cqp_bin, registry_dir, data_dir):
+def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
     """get available corpus attributes
 
     :param str corpus_name: name of corpus in CWB registry
@@ -61,13 +62,13 @@ def ccc_corpus(corpus_name, cqp_bin, registry_dir, data_dir):
     s_annotations = list(s_atts[s_atts['annotation']]['attribute'].values)
     s_atts = list(s_atts[~s_atts['annotation']]['attribute'].values)
 
-    crps = {
+    attributes = {
         'p_atts': sort_p(p_atts),  # all p-attributes
         's_atts': sort_s(s_atts),  # s-attributes without annotation
         's_annotations': s_annotations  # s-attributes with annotation
     }
 
-    return crps
+    return attributes
 
 
 @time_it
@@ -179,9 +180,8 @@ class CorpusOut(Schema):
     language = String()
     register = String()
     description = String()
-    p_atts = List(String)
     s_atts = List(String)
-    s_annotations = List(String)
+    p_atts = List(String)
 
 
 class SubCorpusOut(Schema):
@@ -201,15 +201,8 @@ def get_corpora():
 
     """
     corpora = Corpus.query.all()
-    out = list()
-    for corpus in corpora:
-        attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
-                                current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
-        corpus = CorpusOut().dump(corpus)
-        corpus = {**corpus, **attributes}
-        out.append(corpus)
 
-    return out, 200
+    return [CorpusOut().dump(corpus) for corpus in corpora], 200
 
 
 @bp.get('/<id>/subcorpora/')
@@ -232,11 +225,8 @@ def get_corpus(id):
 
     """
     corpus = db.get_or_404(Corpus, id)
-    attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
-    corpus = CorpusOut().dump(corpus)
-    corpus = {**corpus, **attributes}
 
-    return corpus, 200
+    return CorpusOut().dump(corpus), 200
 
 
 @bp.get('/<id>/meta')
@@ -248,7 +238,7 @@ def get_meta(id):
     """
     pass
     # corpus = db.get_or_404(Corpus, id)
-    # attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+    # attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
     # corpus = CorpusOut().dump(corpus)
     # corpus = {**corpus, **attributes}
 
@@ -318,15 +308,17 @@ def subcorpora(cwb_id, glob_in):
                             data_dir=current_app.config['CCC_DATA_DIR'])
 
 
-@bp.cli.command('update')
+@bp.cli.command('import')
 @click.option('--path', default=None)
-@click.option('--keep_old', default=False, is_flag=True)
-def update(path=None, keep_old=False):
+@click.option('--keep_old', default=True, is_flag=True)
+@click.option('--reread_attributes', default=False, is_flag=True)
+def update(path, keep_old, reread_attributes):
     """update corpora according to JSON file
-
-    - existing corpora (same CWB_ID) keep the same ID
-    - corpora that are not included in JSON file are deleted
+    - by default, this uses the CORPORA path defined in config
+    - corpora are identified via CWBID
+    - existing corpora included in file are updated but keep the same ID (if not deleted via keep_old=False)
     - new corpora are added
+    - attributes will be (re-)read from CWB only for new corpora (if not forced via reread_attributes=True)
     """
 
     path = current_app.config['CORPORA'] if path is None else path
@@ -338,21 +330,43 @@ def update(path=None, keep_old=False):
     corpora_update_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id in corpora_new.keys()]
     corpora_add_ids = [cwb_id for cwb_id in corpora_new.keys() if cwb_id not in corpora_old.keys()]
 
+    # DELETE
     if not keep_old:
         corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
         for cwb_id in corpora_delete_ids:
             click.echo(f'deleting corpus {cwb_id}')
             db.session.delete(corpora_old[cwb_id])
 
+    # UPDATE
     for cwb_id in corpora_update_ids:
-        corpus = corpora_old[cwb_id]
         click.echo(f'updating corpus {cwb_id}')
+        corpus = corpora_old[cwb_id]
+        if reread_attributes:
+            [db.session.delete(att) for att in corpus.attributes]
+            attributes = ccc_corpus_attributes(cwb_id,
+                                               cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                               registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                               data_dir=current_app.config['CCC_DATA_DIR'])
+            for attribute, levels in attributes.items():
+                for level in levels:
+                    db.session.add(CorpusAttributes(corpus_id=corpus.id, level=level, attribute=attribute))
+
         for key, value in corpora_new[cwb_id].items():
             setattr(corpus, key, value)
 
+    # ADD
     for cwb_id in corpora_add_ids:
         click.echo(f'adding corpus {cwb_id}')
-        db.session.add(Corpus(**corpora_new[cwb_id]))
+        corpus = Corpus(**corpora_new[cwb_id])
+        db.session.add(corpus)
+        db.session.commit()
+        attributes = ccc_corpus_attributes(cwb_id,
+                                           cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                           registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                           data_dir=current_app.config['CCC_DATA_DIR'])
+        for attribute, levels in attributes.items():
+            for level in levels:
+                db.session.add(CorpusAttributes(corpus_id=corpus.id, level=level, attribute=attribute))
 
     # add new corpora
     db.session.commit()

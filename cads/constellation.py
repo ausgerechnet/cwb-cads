@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String, Nested
+from apiflask.fields import Integer, List, Nested, String
 
 from . import db
 from .database import Constellation, Discourseme
@@ -16,7 +16,7 @@ class ConstellationIn(Schema):
 
     name = String(required=False)
     description = String(required=False)
-    filter_discourseme_ids = List(Integer)
+    filter_discourseme_ids = List(Integer, required=True)
     highlight_discourseme_ids = List(Integer, required=False)
 
 

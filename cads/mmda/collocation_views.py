@@ -8,19 +8,21 @@ from apiflask import APIBlueprint
 from ccc import Corpus as Crps
 from ccc.utils import cqp_escape, cqp_unescape, format_cqp_query
 from flask import current_app, jsonify, request
-from pandas import DataFrame
 from numpy.random import normal
+from pandas import DataFrame
 
 from .. import db
 from ..breakdown import BreakdownItemsOut, ccc_breakdown
 from ..collocation import ccc_collocates, score_counts
-from ..concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut, ccc_concordance
-from ..corpus import ccc_corpus
+from ..concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut
+from ..concordance import ccc_concordance
+from ..corpus import ccc_corpus_attributes
 from ..database import (Breakdown, Collocation, CollocationItems,
-                        Constellation, Coordinates, Corpus,
-                        Discourseme, Query, User, SubCorpus)
+                        Constellation, Coordinates, Corpus, Discourseme, Query,
+                        SubCorpus, User)
 from ..query import ccc_query, get_or_create_query
-from ..semantic_map import CoordinatesOut, ccc_semmap, ccc_semmap_update, ccc_semmap_discoursemes
+from ..semantic_map import (CoordinatesOut, ccc_semmap,
+                            ccc_semmap_discoursemes, ccc_semmap_update)
 from .login_views import user_required
 
 collocation_blueprint = APIBlueprint('collocation', __name__, url_prefix='/user/<username>/collocation')
@@ -548,7 +550,7 @@ def get_concordance_for_collocation(username, collocation):
 
     # .. parameters
     window = int(request.args.get('window_size', 10))
-    corpus = ccc_corpus(collocation._query.corpus.cwb_id,
+    corpus = ccc_corpus_attributes(collocation._query.corpus.cwb_id,
                         cqp_bin=current_app.config['CCC_CQP_BIN'],
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                         data_dir=current_app.config['CCC_DATA_DIR'])
@@ -668,7 +670,7 @@ def get_meta_for_collocation(username, collocation):
 
     # pack p-attributes
     # ... where's the meta data?
-    # corpus = ccc_corpus(collocation.corpus,
+    # corpus = ccc_corpus_attributes(collocation.corpus,
     #                     cqp_bin=current_app.config['CCC_CQP_BIN'],
     #                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
     #                     data_dir=current_app.config['CCC_DATA_DIR'])

@@ -1,15 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import json
 from datetime import datetime
 
-from flask import Blueprint, current_app
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash
-from pandas import read_sql
 # from sqlalchemy_utils import IntRangeType
 from ccc.utils import cqp_escape
+from flask import Blueprint, current_app
+from flask_login import UserMixin
+from pandas import read_sql
+from werkzeug.security import generate_password_hash
 
 from . import db
 from .utils import time_it
@@ -102,6 +101,25 @@ class Corpus(db.Model):
     embeddings = db.Column(db.Unicode)  # TODO
 
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
+    attributes = db.relationship('CorpusAttributes', backref='corpus', passive_deletes=True, cascade='all, delete')
+
+    @property
+    def s_atts(self):
+        return [att.level for att in self.attributes if att.attribute == 's_atts']
+
+    @property
+    def p_atts(self):
+        return [att.level for att in self.attributes if att.attribute == 'p_atts']
+
+
+class CorpusAttributes(db.Model):
+    """Corpus Attributes
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
+    attribute = db.Column(db.Unicode())  # p or s
+    level = db.Column(db.Unicode())  # text, p, s, ...
 
 
 class SubCorpus(db.Model):
@@ -297,6 +315,7 @@ class Query(db.Model):
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+    s = db.Column(db.Unicode)
 
     nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
     cqp_query = db.Column(db.Unicode)
@@ -615,10 +634,4 @@ def init_db():
                  email='admin@istrination.com')
     admin.roles.append(admin_role)
     db.session.add(admin)
-    db.session.commit()
-
-    # corpora
-    corpora = json.load(open(current_app.config['CORPORA'], 'rt'))
-    for corpus in corpora:
-        db.session.add(Corpus(**corpus))
     db.session.commit()

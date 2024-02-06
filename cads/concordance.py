@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from json import dumps
+
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, String
 from ccc import Corpus
 from flask import current_app
-from json import dumps
 
 from . import db
 from .database import Query
@@ -137,7 +138,7 @@ class ConcordanceLinesOut(Schema):
 
 
 @bp.get("/")
-@bp.input(ConcordanceIn)
+@bp.input(ConcordanceIn, location='query')
 @bp.output(ConcordanceLinesOut(many=True))
 @bp.auth_required(auth)
 def lines(query_id, data):

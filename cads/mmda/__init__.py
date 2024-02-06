@@ -13,7 +13,6 @@ from .keyword_views import keyword_blueprint
 from .login_views import login_blueprint
 from .user_views import user_blueprint
 
-
 mmda_blueprint = APIBlueprint('mmda', __name__, url_prefix='/mmda')
 
 

@@ -5,16 +5,15 @@ Keywords view
 """
 
 from apiflask import APIBlueprint
-
 from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
+from ..concordance import ccc_concordance
+from ..corpus import ccc_corpus_attributes
 from ..database import (Constellation, Coordinates, Corpus, Discourseme,
                         Keyword, User)
-from ..corpus import ccc_corpus
-from ..concordance import ccc_concordance
 from ..keyword import ccc_keywords
 from ..semantic_map import CoordinatesOut, ccc_semmap
 from .collocation_views import score_counts
@@ -436,10 +435,10 @@ def get_concordance_for_keyword(username, keyword):
     p_show = ['word', keyword.p]
 
     corpus = Corpus.query.filter_by(id=keyword.corpus_id).first()
-    s_show = ccc_corpus(corpus.cwb_id,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])['s_annotations']
+    s_show = ccc_corpus_attributes(corpus.cwb_id,
+                                   cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                   data_dir=current_app.config['CCC_DATA_DIR'])['s_annotations']
 
     lines = ccc_concordance(
         query=None,

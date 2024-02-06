@@ -1,22 +1,22 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import gzip
+import json
 from collections import defaultdict
+from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Boolean, List
+from apiflask.fields import Boolean, Integer, List, String
+from ccc.utils import format_cqp_query
 from flask import request
 from pandas import DataFrame, read_csv
-from glob import glob
-import gzip
-import json
-from ccc.utils import format_cqp_query
 
 from . import db
 from .database import Discourseme
-from .users import auth
 from .query import Query, QueryOut, ccc_query
+from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 
@@ -156,6 +156,7 @@ def import_discoursemes(path_in):
 
     # TODO exclude the ones that are already in database?
     for path in glob(path_in):
+        click.echo(path)
         discoursemes = read_tsv(path)
         for name, query_list in discoursemes.items():
             db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))

@@ -7,7 +7,7 @@ from apiflask import APIBlueprint
 from flask import current_app, jsonify
 from flask_jwt_extended import jwt_required
 
-from ..corpus import CorpusOut, ccc_corpus
+from ..corpus import CorpusOut, ccc_corpus_attributes
 from ..database import Corpus
 
 corpus_blueprint = APIBlueprint('corpus', __name__, url_prefix='/corpus')
@@ -22,7 +22,7 @@ def get_corpora():
 
     corpora = list()
     for corpus in [CorpusOut().dump(corpus) for corpus in Corpus.query.all()]:
-        attributes = ccc_corpus(corpus['cwb_id'],
+        attributes = ccc_corpus_attributes(corpus['cwb_id'],
                                 current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
         corpus['pQueries'] = attributes['p_atts']
         corpus['sBreaks'] = attributes['s_atts']
@@ -42,7 +42,7 @@ def get_corpus(corpus):
     corpus = Corpus.query.filter_by(cwb_id=corpus).first()
     if not corpus:
         return jsonify({'msg': 'no such corpus'}), 404
-    attributes = ccc_corpus(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+    attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
     corpus = CorpusOut().dump(corpus)
     corpus['pQueries'] = attributes['p_atts']
     corpus['sBreaks'] = attributes['s_atts']

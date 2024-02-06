@@ -7,7 +7,7 @@
       "url": "https://philipp-heinrich.eu",
       "email": "philipp.heinrich@fau.de"
     },
-    "version": "0.1.0"
+    "version": "0.2.0.dev"
   },
   "tags": [
     {
@@ -138,7 +138,7 @@
         "summary": "Get all users.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -184,14 +184,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UserIn"
+                "$ref": "#/components/schemas/UserRegister"
               }
             }
           }
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -230,7 +230,7 @@
         "summary": "Get all queries.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -293,7 +293,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -332,43 +332,7 @@
         "summary": "Get all corpora.",
         "security": [
           {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
-    "/user/auth": {
-      "get": {
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          }
-        },
-        "tags": [
-          "User"
-        ],
-        "summary": "Identify who is logged in via auth",
-        "security": [
-          {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -423,7 +387,7 @@
         "summary": "Get details of user.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -495,7 +459,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -508,7 +472,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserOut"
+                  "$ref": "#/components/schemas/TokenOut"
                 }
               }
             },
@@ -528,7 +492,7 @@
         "tags": [
           "User"
         ],
-        "summary": "Login with name and password.",
+        "summary": "Login with name and password to get JWT token",
         "requestBody": {
           "content": {
             "application/x-www-form-urlencoded": {
@@ -590,7 +554,79 @@
         "summary": "Get details of a query.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Patch Query",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryInUpdate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -641,41 +677,7 @@
         "summary": "Delete a query.",
         "security": [
           {
-            "BasicAuth": []
-          }
-        ]
-      }
-    },
-    "/user/logout": {
-      "post": {
-        "parameters": [],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          }
-        },
-        "tags": [
-          "User"
-        ],
-        "summary": "Logout current user.",
-        "security": [
-          {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -730,7 +732,7 @@
         "summary": "Get details of a corpus.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -754,25 +756,40 @@
         "summary": "Login route to get JWT token to access the API"
       }
     },
-    "/user/session": {
-      "get": {
+    "/user/refresh": {
+      "post": {
         "parameters": [],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserOut"
+                  "$ref": "#/components/schemas/TokenOut"
                 }
               }
             },
             "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
           }
         },
         "tags": [
           "User"
         ],
-        "summary": "Identify who is logged in via session"
+        "summary": "Return a new token if the user has a refresh token",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/discourseme/": {
@@ -809,7 +826,7 @@
         "summary": "Get all discoursemes.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -862,7 +879,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -901,7 +918,7 @@
         "summary": "Get all collocations.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -923,6 +940,40 @@
           "Mmda.Corpus"
         ],
         "summary": "Returns a list of available corpora as JSON array with their details."
+      }
+    },
+    "/user/identify": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Identify who is logged with token",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/mmda/refresh/": {
@@ -978,7 +1029,7 @@
         "summary": "Get all constellations.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1031,7 +1082,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1086,7 +1137,7 @@
         "summary": "Get breakdown.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1137,7 +1188,7 @@
         "summary": "Delete breakdown.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1202,7 +1253,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1257,7 +1308,7 @@
         "summary": "Get meta data of corpus.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1311,7 +1362,7 @@
         "description": "- from within XML\n- from TSV",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1366,7 +1417,7 @@
         "summary": "Get details of a discourseme.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1417,7 +1468,7 @@
         "summary": "Delete one discourseme.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1472,7 +1523,7 @@
         "summary": "Get collocation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1523,7 +1574,7 @@
         "summary": "Delete collocation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1652,7 +1703,7 @@
         "summary": "Get semantic map.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1703,7 +1754,7 @@
         "summary": "Delete semantic map.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1758,7 +1809,7 @@
         "summary": "Get details of a constellation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -1809,7 +1860,7 @@
         "summary": "Delete one constellation.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1864,7 +1915,7 @@
         "summary": "Execute query: create matches.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1941,7 +1992,7 @@
         "summary": "Get breakdown items.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -1994,7 +2045,7 @@
         "summary": "Create Subcorpus",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2189,7 +2240,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2244,7 +2295,7 @@
         "summary": "Execute breakdown: Calculate frequencies of query matches.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2302,7 +2353,7 @@
         "summary": "Get all corpora.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2417,7 +2468,7 @@
         "summary": "Get all breakdowns of query.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -2498,7 +2549,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2551,7 +2602,7 @@
         "summary": "Get collocation items.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -2604,7 +2655,7 @@
         "summary": "Execute collocation: Create collocation items.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2773,7 +2824,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2788,6 +2839,64 @@
               "type": "string"
             },
             "required": true
+          },
+          {
+            "in": "query",
+            "name": "context_break",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "p_show",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "s_show",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "cut_off",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -2839,18 +2948,9 @@
           "Query.Concordance"
         ],
         "summary": "Get concordance lines.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConcordanceIn"
-              }
-            }
-          }
-        },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -2908,7 +3008,7 @@
         "summary": "Get coordinates of semantic map.",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -3078,7 +3178,7 @@
         "description": "TODO: allow many-to-many relationship",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       },
@@ -3150,7 +3250,7 @@
         },
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -3243,7 +3343,7 @@
         "summary": "Associate Discoursemes",
         "security": [
           {
-            "BasicAuth": []
+            "BearerAuth": []
           }
         ]
       }
@@ -5231,12 +5331,6 @@
           },
           "username": {
             "type": "string"
-          },
-          "roles": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
           }
         },
         "required": [
@@ -5244,7 +5338,7 @@
           "username"
         ]
       },
-      "UserIn": {
+      "UserRegister": {
         "type": "object",
         "properties": {
           "username": {
@@ -5252,9 +5346,22 @@
           },
           "password": {
             "type": "string"
+          },
+          "confirm_password": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
           }
         },
         "required": [
+          "confirm_password",
           "password",
           "username"
         ]
@@ -5280,19 +5387,13 @@
           "description": {
             "type": "string"
           },
-          "p_atts": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "s_atts": {
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "s_annotations": {
+          "p_atts": {
             "type": "array",
             "items": {
               "type": "string"
@@ -5356,8 +5457,16 @@
           "nqr_name": {
             "type": "string",
             "nullable": true
+          },
+          "s": {
+            "type": "string"
           }
-        }
+        },
+        "required": [
+          "corpus_id",
+          "cqp_query",
+          "s"
+        ]
       },
       "UserUpdate": {
         "type": "object",
@@ -5377,6 +5486,62 @@
           "new_password",
           "old_password"
         ]
+      },
+      "UserIn": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ]
+      },
+      "TokenOut": {
+        "type": "object",
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "type": "string"
+          }
+        }
+      },
+      "QueryInUpdate": {
+        "type": "object",
+        "properties": {
+          "discourseme_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "type": "string",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ]
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "nqr_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "s": {
+            "type": "string"
+          }
+        }
       },
       "DiscoursemeOut": {
         "type": "object",
@@ -5476,6 +5641,26 @@
               "type": "integer"
             }
           }
+        },
+        "required": [
+          "filter_discourseme_ids"
+        ]
+      },
+      "BreakdownItemsOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "breakdown_id": {
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "freq": {
+            "type": "integer"
+          }
         }
       },
       "BreakdownOut": {
@@ -5489,6 +5674,12 @@
           },
           "p": {
             "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItemsOut"
+            }
           }
         }
       },
@@ -5526,19 +5717,22 @@
           "s": {
             "type": "string"
           },
-          "flags": {
-            "type": "string",
-            "enum": [
-              "%cd",
-              "%c",
-              "%d",
-              ""
-            ]
+          "ignore_case": {
+            "type": "boolean"
+          },
+          "ignore_diacritics": {
+            "type": "boolean"
           },
           "escape": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "corpus_id",
+          "items",
+          "p",
+          "s"
+        ]
       },
       "SemanticMapOut": {
         "type": "object",
@@ -5554,23 +5748,6 @@
           },
           "p": {
             "type": "string"
-          }
-        }
-      },
-      "BreakdownItemsOut": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "breakdown_id": {
-            "type": "integer"
-          },
-          "item": {
-            "type": "string"
-          },
-          "freq": {
-            "type": "integer"
           }
         }
       },
@@ -5631,13 +5808,13 @@
       "BreakdownIn": {
         "type": "object",
         "properties": {
-          "query_id": {
-            "type": "integer"
-          },
           "p": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "p"
+        ]
       },
       "CollocationIn": {
         "type": "object",
@@ -5657,36 +5834,13 @@
           "context": {
             "type": "integer"
           }
-        }
-      },
-      "ConcordanceIn": {
-        "type": "object",
-        "properties": {
-          "context_break": {
-            "type": "string"
-          },
-          "p_show": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "s_show": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "order": {
-            "type": "integer"
-          },
-          "cut_off": {
-            "type": "integer"
-          },
-          "window": {
-            "type": "integer"
-          }
-        }
+        },
+        "required": [
+          "context",
+          "p",
+          "query_id",
+          "s_break"
+        ]
       },
       "ConcordanceLinesOut": {
         "type": "object",
@@ -5738,9 +5892,9 @@
       }
     },
     "securitySchemes": {
-      "BasicAuth": {
+      "BearerAuth": {
         "type": "http",
-        "scheme": "basic"
+        "scheme": "bearer"
       }
     }
   }
