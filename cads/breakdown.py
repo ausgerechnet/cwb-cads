@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Integer, String
+from apiflask.fields import Boolean, Integer, Nested, String
 from ccc import Corpus
 from flask import current_app
 
@@ -33,14 +33,6 @@ def ccc_breakdown(breakdown):
 
 class BreakdownIn(Schema):
 
-    query_id = Integer()
-    p = String()
-
-
-class BreakdownOut(Schema):
-
-    id = Integer()
-    query_id = Integer()
     p = String()
 
 
@@ -50,6 +42,14 @@ class BreakdownItemsOut(Schema):
     breakdown_id = Integer()
     item = String()
     freq = Integer()
+
+
+class BreakdownOut(Schema):
+
+    id = Integer()
+    query_id = Integer()
+    p = String()
+    items = Nested(BreakdownItemsOut(many=True))
 
 
 @bp.get('/<id>')

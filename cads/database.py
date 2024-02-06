@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import json
 from datetime import datetime
 
 # from sqlalchemy_utils import IntRangeType
@@ -316,8 +315,8 @@ class Query(db.Model):
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
-
     s = db.Column(db.Unicode)
+
     nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
     cqp_query = db.Column(db.Unicode)
     match_strategy = db.Column(db.Unicode, default='longest')
