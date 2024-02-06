@@ -138,7 +138,7 @@ class ConcordanceLinesOut(Schema):
 
 
 @bp.get("/")
-@bp.input(ConcordanceIn)
+@bp.input(ConcordanceIn, location='query')
 @bp.output(ConcordanceLinesOut(many=True))
 @bp.auth_required(auth)
 def lines(query_id, data):
