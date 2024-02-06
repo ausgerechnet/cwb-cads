@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema
+from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus
@@ -199,6 +199,30 @@ def get_query(id):
     """
 
     query = db.get_or_404(Query, id)
+
+    return QueryOut().dump(query), 200
+
+
+@bp.patch('/<id>')
+@bp.input(QueryIn(partial=True))
+@bp.output(QueryOut)
+@bp.auth_required(auth)
+def patch_query(id, data):
+
+    # TODO: delete matches
+    # TODO: queries belong to users
+
+    # user_id = auth.current_user.id
+
+    query = db.get_or_404(Query, id)
+
+    # if query.user_id != user_id:
+    #     return abort(409, 'query does not belong to user')
+
+    for attr, value in data.items():
+        setattr(query, attr, value)
+
+    db.session.commit()
 
     return QueryOut().dump(query), 200
 
