@@ -105,7 +105,8 @@ class QueryAssistedIn(Schema):
     items = List(String)
     p = String()
     s = String()
-    flags = String(required=False, validate=OneOf(['%cd', '%c', '%d', '']), default='%cd')
+    ignore_case = Boolean(required=False, default=True)
+    ignore_diacritics = Boolean(required=False, default=True)
     escape = Boolean(required=False, default=True)
 
 
@@ -153,9 +154,20 @@ def create_assisted(data, data_query):
     items = data.pop('items')
     p = data.pop('p')
     s = data.pop('s')
-    flags = data.pop('flags')
     escape = data.pop('escape')
+
+    ignore_diacritics = data.pop('ignore_diacritics')
+    ignore_case = data.pop('ignore_case')
+    flags = ''
+    if ignore_case or ignore_diacritics:
+        flags = '%'
+        if ignore_case:
+            flags += 'c'
+        if ignore_diacritics:
+            flags += 'd'
+
     data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
+
     query = Query(**data)
     db.session.add(query)
     db.session.commit()
