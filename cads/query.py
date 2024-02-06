@@ -94,6 +94,7 @@ class QueryIn(Schema):
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
     cqp_query = String()
     nqr_name = String(required=False, nullable=True)
+    s = String()
 
 
 class QueryAssistedIn(Schema):
@@ -153,9 +154,7 @@ def create_assisted(data, data_query):
 
     items = data.pop('items')
     p = data.pop('p')
-    s = data.pop('s')
     escape = data.pop('escape')
-
     ignore_diacritics = data.pop('ignore_diacritics')
     ignore_case = data.pop('ignore_case')
     flags = ''
@@ -166,7 +165,7 @@ def create_assisted(data, data_query):
         if ignore_diacritics:
             flags += 'd'
 
-    data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
+    data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=data['s'], flags=flags, escape=escape)
 
     query = Query(**data)
     db.session.add(query)

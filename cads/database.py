@@ -317,6 +317,7 @@ class Query(db.Model):
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
 
+    s_id = db.Column(db.Integer, db.ForeignKey('corpus_attributes.id', ondelete='CASCADE'))
     nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
     cqp_query = db.Column(db.Unicode)
     match_strategy = db.Column(db.Unicode, default='longest')
