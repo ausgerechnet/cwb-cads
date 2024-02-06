@@ -13,11 +13,23 @@ init:
 #	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
 #	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv" && \
 
+init_prod:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.ProdConfig && \
+	flask --app cads database init
+
 corpora:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
 	flask --app cads corpus import
 #	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
+
+corpora_prod:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.ProdConfig && \
+	flask --app cads corpus import
+#	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
+
 
 discoursemes:
 	. venv/bin/activate && \
@@ -34,6 +46,7 @@ init_test:
 	flask --app cads database init && \
 	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv" && \
 	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv"
+
 
 run:
 	. venv/bin/activate && \
