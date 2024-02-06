@@ -7,7 +7,7 @@
       "url": "https://philipp-heinrich.eu",
       "email": "philipp.heinrich@fau.de"
     },
-    "version": "0.1.0"
+    "version": "0.2.0.dev"
   },
   "tags": [
     {
@@ -558,6 +558,78 @@
           }
         ]
       },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Patch Query",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryInUpdate"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
       "delete": {
         "parameters": [
           {
@@ -682,6 +754,42 @@
           "Mmda.Login"
         ],
         "summary": "Login route to get JWT token to access the API"
+      }
+    },
+    "/user/refresh": {
+      "post": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "tags": [
+          "User"
+        ],
+        "summary": "Return a new token if the user has a refresh token",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/discourseme/": {
@@ -2731,6 +2839,64 @@
               "type": "string"
             },
             "required": true
+          },
+          {
+            "in": "query",
+            "name": "context_break",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "p_show",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "s_show",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "cut_off",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "schema": {
+              "type": "integer"
+            },
+            "required": false
           }
         ],
         "responses": {
@@ -2782,15 +2948,6 @@
           "Query.Concordance"
         ],
         "summary": "Get concordance lines.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConcordanceIn"
-              }
-            }
-          }
-        },
         "security": [
           {
             "BearerAuth": []
@@ -5187,6 +5344,12 @@
           "username": {
             "type": "string"
           },
+          "password": {
+            "type": "string"
+          },
+          "confirm_password": {
+            "type": "string"
+          },
           "first_name": {
             "type": "string"
           },
@@ -5194,12 +5357,6 @@
             "type": "string"
           },
           "email": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "confirm_password": {
             "type": "string"
           }
         },
@@ -5300,8 +5457,16 @@
           "nqr_name": {
             "type": "string",
             "nullable": true
+          },
+          "s": {
+            "type": "string"
           }
-        }
+        },
+        "required": [
+          "corpus_id",
+          "cqp_query",
+          "s"
+        ]
       },
       "UserUpdate": {
         "type": "object",
@@ -5341,6 +5506,39 @@
         "type": "object",
         "properties": {
           "access_token": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "type": "string"
+          }
+        }
+      },
+      "QueryInUpdate": {
+        "type": "object",
+        "properties": {
+          "discourseme_id": {
+            "type": "integer",
+            "nullable": true
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "type": "string",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ]
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "nqr_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "s": {
             "type": "string"
           }
         }
@@ -5443,6 +5641,26 @@
               "type": "integer"
             }
           }
+        },
+        "required": [
+          "filter_discourseme_ids"
+        ]
+      },
+      "BreakdownItemsOut": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "breakdown_id": {
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "freq": {
+            "type": "integer"
+          }
         }
       },
       "BreakdownOut": {
@@ -5456,6 +5674,12 @@
           },
           "p": {
             "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BreakdownItemsOut"
+            }
           }
         }
       },
@@ -5493,19 +5717,22 @@
           "s": {
             "type": "string"
           },
-          "flags": {
-            "type": "string",
-            "enum": [
-              "%cd",
-              "%c",
-              "%d",
-              ""
-            ]
+          "ignore_case": {
+            "type": "boolean"
+          },
+          "ignore_diacritics": {
+            "type": "boolean"
           },
           "escape": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "corpus_id",
+          "items",
+          "p",
+          "s"
+        ]
       },
       "SemanticMapOut": {
         "type": "object",
@@ -5521,23 +5748,6 @@
           },
           "p": {
             "type": "string"
-          }
-        }
-      },
-      "BreakdownItemsOut": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "breakdown_id": {
-            "type": "integer"
-          },
-          "item": {
-            "type": "string"
-          },
-          "freq": {
-            "type": "integer"
           }
         }
       },
@@ -5598,13 +5808,13 @@
       "BreakdownIn": {
         "type": "object",
         "properties": {
-          "query_id": {
-            "type": "integer"
-          },
           "p": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "p"
+        ]
       },
       "CollocationIn": {
         "type": "object",
@@ -5624,36 +5834,13 @@
           "context": {
             "type": "integer"
           }
-        }
-      },
-      "ConcordanceIn": {
-        "type": "object",
-        "properties": {
-          "context_break": {
-            "type": "string"
-          },
-          "p_show": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "s_show": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "order": {
-            "type": "integer"
-          },
-          "cut_off": {
-            "type": "integer"
-          },
-          "window": {
-            "type": "integer"
-          }
-        }
+        },
+        "required": [
+          "context",
+          "p",
+          "query_id",
+          "s_break"
+        ]
       },
       "ConcordanceLinesOut": {
         "type": "object",
