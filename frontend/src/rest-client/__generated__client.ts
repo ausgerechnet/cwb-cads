@@ -28,7 +28,6 @@ type CorpusOut = Partial<{
   name: string
   p_atts: Array<string>
   register: string
-  s_annotations: Array<string>
   s_atts: Array<string>
 }>
 type ConstellationOut = Partial<{
@@ -96,7 +95,6 @@ const CorpusOut: z.ZodType<CorpusOut> = z
     name: z.string(),
     p_atts: z.array(z.string()),
     register: z.string(),
-    s_annotations: z.array(z.string()),
     s_atts: z.array(z.string()),
   })
   .partial()
@@ -258,15 +256,22 @@ const CoordinatesOut = z
   .partial()
   .passthrough()
 const UserOut = z
+  .object({ id: z.number().int(), username: z.string() })
+  .passthrough()
+const UserRegister = z
   .object({
-    id: z.number().int(),
-    roles: z.array(z.string()).optional(),
+    confirm_password: z.string(),
+    email: z.string().optional(),
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
+    password: z.string(),
     username: z.string(),
   })
   .passthrough()
 const UserIn = z
   .object({ password: z.string(), username: z.string() })
   .passthrough()
+const TokenOut = z.object({ access_token: z.string() }).partial().passthrough()
 const UserUpdate = z
   .object({
     confirm_password: z.string(),
@@ -299,7 +304,9 @@ export const schemas = {
   ConcordanceLinesOut,
   CoordinatesOut,
   UserOut,
+  UserRegister,
   UserIn,
+  TokenOut,
   UserUpdate,
 }
 
@@ -3156,7 +3163,7 @@ description: &quot;empty result&quot;`,
       {
         name: 'body',
         type: 'Body',
-        schema: UserIn,
+        schema: UserRegister,
       },
     ],
     response: UserOut,
@@ -3237,10 +3244,10 @@ description: &quot;empty result&quot;`,
   },
   {
     method: 'get',
-    path: '/user/auth',
-    alias: 'getUserauth',
+    path: '/user/identify',
+    alias: 'getUseridentify',
     requestFormat: 'json',
-    response: UserOut,
+    response: z.unknown(),
     errors: [
       {
         status: 401,
@@ -3261,7 +3268,7 @@ description: &quot;empty result&quot;`,
         schema: UserIn,
       },
     ],
-    response: UserOut,
+    response: z.object({ access_token: z.string() }).partial().passthrough(),
     errors: [
       {
         status: 422,
@@ -3269,27 +3276,6 @@ description: &quot;empty result&quot;`,
         schema: ValidationError,
       },
     ],
-  },
-  {
-    method: 'post',
-    path: '/user/logout',
-    alias: 'postUserlogout',
-    requestFormat: 'json',
-    response: z.unknown(),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/user/session',
-    alias: 'getUsersession',
-    requestFormat: 'json',
-    response: UserOut,
   },
 ])
 

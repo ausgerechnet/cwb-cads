@@ -15,6 +15,14 @@ export const queryClient = new QueryClient({
 
 export const apiClient = createApiClient(import.meta.env.VITE_API_URL || '/api')
 
+apiClient.axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth-token')
+  if (token) {
+    config.headers.set('Authorization', `Bearer ${token}`)
+  }
+  return config
+})
+
 apiClient.axios.interceptors.response.use(
   (response) => response,
   (error) => {

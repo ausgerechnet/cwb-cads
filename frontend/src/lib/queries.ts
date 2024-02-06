@@ -17,7 +17,7 @@ export const queryQueryOptions = (queryId: string) =>
 
 export const sessionQueryOptions = queryOptions({
   queryKey: ['session'],
-  queryFn: () => apiClient.getUsersession(),
+  queryFn: () => apiClient.getUseridentify(),
   refetchInterval: 60_000,
   retry: false,
 })
@@ -96,14 +96,15 @@ export const putSubcorpusMutationOptions: MutationOptions<
 // ==================== USERS ====================
 
 export const loginMutationOptions: MutationOptions<
-  unknown,
+  z.infer<typeof schemas.TokenOut>,
   Error,
   z.infer<typeof schemas.UserIn>
 > = {
-  mutationFn: async (credentials) => {
-    return await apiClient.postUserlogin(credentials)
-  },
-  onSuccess: () => {
+  mutationFn: (credentials) => apiClient.postUserlogin(credentials),
+  onSuccess: ({ access_token }) => {
+    if (access_token) {
+      localStorage.setItem('auth-token', access_token)
+    }
     queryClient.invalidateQueries(sessionQueryOptions)
   },
 }
@@ -114,7 +115,9 @@ export const getUsersQueryOptions = queryOptions({
 })
 
 export const logoutMutationOptions: MutationOptions = {
-  mutationFn: () => apiClient.postUserlogout(undefined),
+  mutationFn: async () => {
+    localStorage.removeItem('auth-token')
+  },
   onSuccess: () => {
     void queryClient.invalidateQueries(sessionQueryOptions)
   },
