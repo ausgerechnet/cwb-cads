@@ -58,6 +58,8 @@ class TokenIn(Schema):
 @auth.verify_token
 def verify_token(token):
 
+    if not token:
+        return abort(403, "invalid token")
     data = decode_token(token)
     user = db.get_or_404(User, data['sub']['id'])
 
