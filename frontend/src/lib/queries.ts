@@ -1,18 +1,21 @@
-import { apiClient, queryClient, schemas } from '@/rest-client'
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
+import { apiClient, queryClient, schemas } from '@/rest-client'
 
 // ==================== QUERIES ====================
 // "queries" as in "cqp queries", but "query" as in "react-query"
 export const queriesQueryOptions = queryOptions({
   queryKey: ['queries'],
-  queryFn: () => apiClient.getQuery(),
+  queryFn: ({ signal }) => apiClient.getQuery({ signal }),
+  placeholderData: [],
 })
 
 export const queryQueryOptions = (queryId: string) =>
   queryOptions({
     queryKey: ['query', queryId],
-    queryFn: () => apiClient.getQueryId({ params: { id: queryId } }),
+    queryFn: ({ signal }) =>
+      apiClient.getQueryId({ params: { id: queryId }, signal }),
+    placeholderData: {},
   })
 
 export const executeQueryMutationOptions: MutationOptions<
@@ -63,14 +66,14 @@ export const deleteQueryMutationOptions: MutationOptions<
 
 export const corporaQueryOptions = queryOptions({
   queryKey: ['corpora'],
-  queryFn: () => apiClient.getCorpus(),
+  queryFn: ({ signal }) => apiClient.getCorpus({ signal }),
 })
 
 export const subcorporaQueryOptions = (corpusId: string) =>
   queryOptions({
     queryKey: ['subcorpora', corpusId],
-    queryFn: () =>
-      apiClient.getCorpusIdsubcorpora({ params: { id: corpusId } }),
+    queryFn: ({ signal }) =>
+      apiClient.getCorpusIdsubcorpora({ params: { id: corpusId }, signal }),
   })
 
 export const putSubcorpusMutationOptions: MutationOptions<
@@ -89,7 +92,7 @@ export const putSubcorpusMutationOptions: MutationOptions<
 
 export const sessionQueryOptions = queryOptions({
   queryKey: ['session'],
-  queryFn: () => apiClient.getUseridentify(),
+  queryFn: ({ signal }) => apiClient.getUseridentify({ signal }),
   retry: false,
 })
 
@@ -109,7 +112,7 @@ export const loginMutationOptions: MutationOptions<
 
 export const getUsersQueryOptions = queryOptions({
   queryKey: ['all-users'],
-  queryFn: () => apiClient.getUser(),
+  queryFn: ({ signal }) => apiClient.getUser({ signal }),
 })
 
 export const logoutMutationOptions: MutationOptions = {
@@ -125,14 +128,14 @@ export const logoutMutationOptions: MutationOptions = {
 
 export const discoursemesQueryOptions = queryOptions({
   queryKey: ['discoursemes'],
-  queryFn: () => apiClient.getDiscourseme(),
+  queryFn: ({ signal }) => apiClient.getDiscourseme({ signal }),
 })
 
 export const discoursemeQueryOptions = (discoursemeId: string) =>
   queryOptions({
     queryKey: ['discourseme', discoursemeId],
-    queryFn: () =>
-      apiClient.getDiscoursemeId({ params: { id: discoursemeId } }),
+    queryFn: ({ signal }) =>
+      apiClient.getDiscoursemeId({ params: { id: discoursemeId }, signal }),
   })
 
 export const postDiscoursemeMutationOptions: MutationOptions<
@@ -150,7 +153,7 @@ export const postDiscoursemeMutationOptions: MutationOptions<
 
 export const collocationsQueryOptions = queryOptions({
   queryKey: ['collocations'],
-  queryFn: () => apiClient.getCollocation(),
+  queryFn: ({ signal }) => apiClient.getCollocation({ signal }),
 })
 
 export const postCollocationQueryMutationOptions: MutationOptions<
