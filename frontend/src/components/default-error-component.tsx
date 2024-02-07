@@ -10,7 +10,11 @@ export function DefaultErrorComponent({
     <Alert variant="destructive">
       <AlertCircle className="mr-2 h-4 w-4" />
       <AlertTitle>{title}</AlertTitle>
-      {Boolean(error) && <AlertDescription>{String(error)}</AlertDescription>}
+      {Boolean(error) && (
+        <AlertDescription className="whitespace-pre">
+          {String(error)}
+        </AlertDescription>
+      )}
     </Alert>
   )
 }
