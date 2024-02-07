@@ -38,7 +38,7 @@ export const postQueryMutationOptions: MutationOptions<
 }
 
 export const postQueryAssistedMutationOptions: MutationOptions<
-  unknown,
+  z.infer<typeof schemas.QueryOut>,
   Error,
   z.infer<typeof schemas.QueryAssistedIn>
 > = {

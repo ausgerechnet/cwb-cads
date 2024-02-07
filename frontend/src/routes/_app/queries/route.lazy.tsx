@@ -16,12 +16,10 @@ import {
 } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { z } from 'zod'
-import { AlertCircle } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { deleteQueryMutationOptions } from '@/lib/queries'
 import { schemas } from '@/rest-client'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Pagination } from '@/components/pagination'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
@@ -49,6 +47,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { QueriesLayout } from './-queries-layout'
+import { DefaultErrorComponent } from '@/components/default-error-component'
 
 export const Route = createLazyFileRoute('/_app/queries')({
   component: Queries,
@@ -88,20 +87,13 @@ function Queries() {
   )
 }
 
-function QueriesError({ error }: ErrorComponentProps) {
-  const errorMessage =
-    typeof error === 'object' && error !== null && 'message' in error
-      ? String(error.message)
-      : 'Unknown error'
+function QueriesError(props: ErrorComponentProps) {
   return (
     <QueriesLayout>
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>An error occurred while loading the queries.</AlertTitle>
-        <AlertDescription className="whitespace-pre">
-          {errorMessage}
-        </AlertDescription>
-      </Alert>
+      <DefaultErrorComponent
+        title="An error occurred while loading the queries."
+        {...props}
+      />
     </QueriesLayout>
   )
 }

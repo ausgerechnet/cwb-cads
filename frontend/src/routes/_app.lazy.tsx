@@ -19,9 +19,10 @@ export const Route = createLazyFileRoute('/_app')({
 })
 
 function App() {
-  const isAdmin = !!useQuery({ ...sessionQueryOptions }).data?.roles?.includes(
-    '<Role 1>',
-  )
+  // TODO: Endpoint does not return user role right now.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const isAdmin = useQuery(sessionQueryOptions)?.data?.username === 'admin'
 
   return (
     <main className="flex">
@@ -70,6 +71,7 @@ function AppMenuLink({
 }: ComponentProps<typeof Link>) {
   return (
     <Link
+      preloadDelay={250}
       {...props}
       activeProps={{
         ...activeProps,

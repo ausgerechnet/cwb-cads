@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
 import { queriesQueryOptions } from '@/lib/queries'
 import { Skeleton } from '@/components/ui/skeleton'
 import { QueriesLayout } from './-queries-layout'
-import { z } from 'zod'
 
 export const Route = createFileRoute('/_app/queries')({
   pendingComponent: QueriesPending,
@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_app/queries')({
     pageSize: z.number().positive().optional(),
   }),
   loader: async ({ context: { queryClient } }) => ({
-    queries: await queryClient.ensureQueryData(queriesQueryOptions),
+    queries: await queryClient.fetchQuery(queriesQueryOptions),
   }),
 })
 

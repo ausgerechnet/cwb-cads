@@ -1,24 +1,8 @@
-import { useMemo, useState } from 'react'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { useMemo } from 'react'
 import { z } from 'zod'
 
-import { cn } from '@/lib/utils'
 import { schemas } from '@/rest-client'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command'
-import { Small } from '@/components/ui/typography'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ComplexSelect } from '@/components/complex-select'
 
 export function CorpusSelect({
   corpora,
@@ -28,84 +12,42 @@ export function CorpusSelect({
 }: {
   corpora: z.infer<typeof schemas.CorpusOut>[]
   corpusId?: number
-  onChange?: (corpusId: number) => void
+  onChange?: (corpusId: number | undefined) => void
   className?: string
 }) {
   const searchableCorpora = useMemo(
-    () =>
-      corpora
+    () => [
+      {
+        id: undefined,
+        name: 'No Corpus Selected',
+        searchValue: 'no_empty_nothing',
+        renderValue: <span className="italic">No corpus</span>,
+      },
+      ...corpora
         .filter(
-          ({ cwb_id, name }) => cwb_id !== undefined && name !== undefined,
+          ({ cwb_id, name, id }) =>
+            id !== undefined && cwb_id !== undefined && name !== undefined,
         )
         .map((corpus) => ({
-          ...corpus,
+          id: corpus.id as number,
+          name: corpus.name ?? '',
           searchValue: `${corpus.cwb_id} ${corpus.name} ${corpus.description}`
             .toLowerCase()
             .replace(/\s+/g, '_'),
         })),
+    ],
     [corpora],
   )
-  const [open, setOpen] = useState(false)
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn('flex justify-between', className)}
-          name="corpus"
-          value={corpusId?.toString()}
-        >
-          {corpusId === undefined
-            ? 'Select a corpus'
-            : searchableCorpora.find(({ id }) => id === corpusId)?.name ?? ''}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 max-w-96 p-0">
-        <Command>
-          <CommandInput placeholder="Search corpus..." />
-          <CommandEmpty>No corpus found.</CommandEmpty>
-          <CommandGroup>
-            <ScrollArea className="h-80 max-h-[30svh]">
-              {searchableCorpora.map(
-                ({ searchValue, id, cwb_id, name, description }) => {
-                  if (cwb_id === undefined || id === undefined) {
-                    return null
-                  }
-                  return (
-                    <CommandItem
-                      key={cwb_id}
-                      value={searchValue}
-                      onSelect={() => {
-                        onChange?.(id)
-                        setOpen(false)
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          'mr-2 h-4 w-4',
-                          id === corpusId ? 'opacity-100' : 'opacity-0',
-                        )}
-                      />
-                      {name}
-                      <div>
-                        {description && (
-                          <Small className="block text-muted-foreground">
-                            {description}
-                          </Small>
-                        )}
-                      </div>
-                    </CommandItem>
-                  )
-                },
-              )}
-            </ScrollArea>
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <ComplexSelect
+      selectMessage="Select a corpus"
+      placeholder="Search for a corpus..."
+      emptyMessage="No corpora found."
+      items={searchableCorpora}
+      itemId={corpusId}
+      onChange={onChange}
+      className={className}
+    />
   )
 }
