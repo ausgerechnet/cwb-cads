@@ -96,7 +96,7 @@ function Login() {
           </Button>
         </form>
       </Form>
-      <ErrorMessage error={error} />
+      <ErrorMessage error={error} className="mt-4" />
     </div>
   )
 }

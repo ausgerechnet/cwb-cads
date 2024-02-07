@@ -15,13 +15,6 @@ export const queryQueryOptions = (queryId: string) =>
     queryFn: () => apiClient.getQueryId({ params: { id: queryId } }),
   })
 
-export const sessionQueryOptions = queryOptions({
-  queryKey: ['session'],
-  queryFn: () => apiClient.getUseridentify(),
-  refetchInterval: 60_000,
-  retry: false,
-})
-
 export const executeQueryMutationOptions: MutationOptions<
   unknown,
   Error,
@@ -94,6 +87,12 @@ export const putSubcorpusMutationOptions: MutationOptions<
 }
 
 // ==================== USERS ====================
+
+export const sessionQueryOptions = queryOptions({
+  queryKey: ['session'],
+  queryFn: () => apiClient.getUseridentify(),
+  retry: false,
+})
 
 export const loginMutationOptions: MutationOptions<
   z.infer<typeof schemas.TokenOut>,

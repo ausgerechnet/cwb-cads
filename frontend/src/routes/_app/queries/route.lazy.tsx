@@ -75,7 +75,7 @@ function Queries() {
           </Link>
         </div>
       )}
-      <QueryTable queries={queries} />
+      {queries.length > 0 && <QueryTable queries={queries} />}
       {queries.map((query) => (
         <div
           key={query.id}
