@@ -30,7 +30,6 @@ import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/discourseme-select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { legalDefaultValue } from '@/lib/legal-default-value'
 import { Large } from '@/components/ui/typography'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 
