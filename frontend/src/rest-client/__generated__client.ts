@@ -1,6 +1,18 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
 
+type BreakdownOut = Partial<{
+  id: number
+  items: Array<BreakdownItemsOut>
+  p: string
+  query_id: number
+}>
+type BreakdownItemsOut = Partial<{
+  breakdown_id: number
+  freq: number
+  id: number
+  item: string
+}>
 type CollocationOut = Partial<{
   _query: QueryOut
   constellation_id: number
@@ -50,18 +62,29 @@ type SubCorpusOut = Partial<{
   name: string
 }>
 
-const BreakdownOut = z
-  .object({ id: z.number().int(), p: z.string(), query_id: z.number().int() })
+const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
+  .object({
+    breakdown_id: z.number().int(),
+    freq: z.number().int(),
+    id: z.number().int(),
+    item: z.string(),
+  })
+  .partial()
+  .passthrough()
+const BreakdownOut: z.ZodType<BreakdownOut> = z
+  .object({
+    id: z.number().int(),
+    items: z.array(BreakdownItemsOut),
+    p: z.string(),
+    query_id: z.number().int(),
+  })
   .partial()
   .passthrough()
 const HTTPError = z
   .object({ detail: z.object({}).partial().passthrough(), message: z.string() })
   .partial()
   .passthrough()
-const BreakdownIn = z
-  .object({ p: z.string(), query_id: z.number().int() })
-  .partial()
-  .passthrough()
+const BreakdownIn = z.object({ p: z.string() }).passthrough()
 const ValidationError = z
   .object({
     detail: z
@@ -74,15 +97,6 @@ const ValidationError = z
       .partial()
       .passthrough(),
     message: z.string(),
-  })
-  .partial()
-  .passthrough()
-const BreakdownItemsOut = z
-  .object({
-    breakdown_id: z.number().int(),
-    freq: z.number().int(),
-    id: z.number().int(),
-    item: z.string(),
   })
   .partial()
   .passthrough()
@@ -126,13 +140,12 @@ const CollocationOut: z.ZodType<CollocationOut> = z
   .passthrough()
 const CollocationIn = z
   .object({
-    constellation_id: z.number().int(),
+    constellation_id: z.number().int().optional(),
     context: z.number().int(),
     p: z.string(),
     query_id: z.number().int(),
     s_break: z.string(),
   })
-  .partial()
   .passthrough()
 const SemanticMapOut = z
   .object({
@@ -167,12 +180,11 @@ const ConstellationOut: z.ZodType<ConstellationOut> = z
   .passthrough()
 const ConstellationIn = z
   .object({
-    description: z.string(),
+    description: z.string().optional(),
     filter_discourseme_ids: z.array(z.number()),
-    highlight_discourseme_ids: z.array(z.number()),
-    name: z.string(),
+    highlight_discourseme_ids: z.array(z.number()).optional(),
+    name: z.string().optional(),
   })
-  .partial()
   .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
   .object({
@@ -204,34 +216,34 @@ const QueryIn = z
   .object({
     corpus_id: z.number().int(),
     cqp_query: z.string(),
-    discourseme_id: z.number().int().nullable(),
-    match_strategy: z.enum(['longest', 'shortest', 'standard']),
-    nqr_name: z.string().nullable(),
+    discourseme_id: z.number().int().nullish(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
+    nqr_name: z.string().nullish(),
+    s: z.string(),
   })
-  .partial()
   .passthrough()
 const QueryAssistedIn = z
   .object({
     corpus_id: z.number().int(),
-    discourseme_id: z.number().int().nullable(),
-    escape: z.boolean(),
-    flags: z.enum(['%cd', '%c', '%d', '']),
+    discourseme_id: z.number().int().nullish(),
+    escape: z.boolean().optional(),
+    ignore_case: z.boolean().optional(),
+    ignore_diacritics: z.boolean().optional(),
     items: z.array(z.string()),
-    match_strategy: z.enum(['longest', 'shortest', 'standard']),
-    nqr_name: z.string().nullable(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
+    nqr_name: z.string().nullish(),
     p: z.string(),
     s: z.string(),
   })
-  .partial()
   .passthrough()
-const ConcordanceIn = z
+const QueryInUpdate = z
   .object({
-    context_break: z.string(),
-    cut_off: z.number().int(),
-    order: z.number().int(),
-    p_show: z.array(z.string()),
-    s_show: z.array(z.string()),
-    window: z.number().int(),
+    corpus_id: z.number().int(),
+    cqp_query: z.string(),
+    discourseme_id: z.number().int().nullable(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']),
+    nqr_name: z.string().nullable(),
+    s: z.string(),
   })
   .partial()
   .passthrough()
@@ -271,7 +283,10 @@ const UserRegister = z
 const UserIn = z
   .object({ password: z.string(), username: z.string() })
   .passthrough()
-const TokenOut = z.object({ access_token: z.string() }).partial().passthrough()
+const TokenOut = z
+  .object({ access_token: z.string(), refresh_token: z.string() })
+  .partial()
+  .passthrough()
 const UserUpdate = z
   .object({
     confirm_password: z.string(),
@@ -281,11 +296,11 @@ const UserUpdate = z
   .passthrough()
 
 export const schemas = {
+  BreakdownItemsOut,
   BreakdownOut,
   HTTPError,
   BreakdownIn,
   ValidationError,
-  BreakdownItemsOut,
   CorpusOut,
   QueryOut,
   CollocationOut,
@@ -300,7 +315,7 @@ export const schemas = {
   DiscoursemeQueryIn,
   QueryIn,
   QueryAssistedIn,
-  ConcordanceIn,
+  QueryInUpdate,
   ConcordanceLinesOut,
   CoordinatesOut,
   UserOut,
@@ -457,7 +472,7 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: BreakdownIn,
+        schema: z.object({ p: z.string() }).passthrough(),
       },
       {
         name: 'query_id',
@@ -2970,6 +2985,42 @@ description: &quot;empty result&quot;`,
     ],
   },
   {
+    method: 'patch',
+    path: '/query/:id',
+    alias: 'patchQueryId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: QueryInUpdate,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: QueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'post',
     path: '/query/:id/execute',
     alias: 'postQueryIdexecute',
@@ -3002,14 +3053,39 @@ description: &quot;empty result&quot;`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'body',
-        type: 'Body',
-        schema: ConcordanceIn,
-      },
-      {
         name: 'query_id',
         type: 'Path',
         schema: z.string(),
+      },
+      {
+        name: 'context_break',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'p_show',
+        type: 'Query',
+        schema: z.array(z.string()).optional(),
+      },
+      {
+        name: 's_show',
+        type: 'Query',
+        schema: z.array(z.string()).optional(),
+      },
+      {
+        name: 'order',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'cut_off',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'window',
+        type: 'Query',
+        schema: z.number().int().optional(),
       },
     ],
     response: z.array(ConcordanceLinesOut),
@@ -3268,12 +3344,26 @@ description: &quot;empty result&quot;`,
         schema: UserIn,
       },
     ],
-    response: z.object({ access_token: z.string() }).partial().passthrough(),
+    response: TokenOut,
     errors: [
       {
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/user/refresh',
+    alias: 'postUserrefresh',
+    requestFormat: 'json',
+    response: TokenOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
       },
     ],
   },
