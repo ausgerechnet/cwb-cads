@@ -37,6 +37,10 @@ function Login() {
 
   const form = useForm<Credentials>({
     resolver: zodResolver(Credentials),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
   })
 
   const { isPending, mutate, error } = useMutation({
