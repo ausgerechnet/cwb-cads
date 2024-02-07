@@ -25,8 +25,8 @@ export const Route = createLazyFileRoute('/login')({
 })
 
 const Credentials = z.object({
-  username: z.string({ required_error }).min(1, 'Dieses Feld ist erforderlich'),
-  password: z.string({ required_error }).min(1, 'Dieses Feld ist erforderlich'),
+  username: z.string({ required_error }).min(1, required_error),
+  password: z.string({ required_error }).min(1, required_error),
 })
 
 type Credentials = z.infer<typeof Credentials>
