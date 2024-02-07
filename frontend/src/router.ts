@@ -6,8 +6,7 @@ import { routeTree } from './routeTree.gen'
 export const router = createRouter({
   routeTree,
   defaultStaleTime: 0,
-  defaultPreloadStaleTime: 3_000,
-  defaultPreload: 'intent',
+  defaultPreload: false,
   defaultErrorComponent: DefaultErrorComponent,
   context: { queryClient },
 })
