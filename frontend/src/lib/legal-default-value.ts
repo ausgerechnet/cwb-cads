@@ -4,7 +4,7 @@ type NoInfer<T> = T & { [K in keyof T]: T[K] }
 export function legalDefaultValue<T, V>(
   defaultValue: T,
   legalValues: V[] | undefined,
-  fallback: NoInfer<V> | undefined,
+  fallback: NoInfer<V> | undefined = undefined,
 ): V | undefined {
   if (!legalValues) {
     return fallback

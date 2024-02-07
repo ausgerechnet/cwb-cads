@@ -32,6 +32,7 @@ import { DiscoursemeSelect } from '@/components/discourseme-select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { legalDefaultValue } from '@/lib/legal-default-value'
 import { Large } from '@/components/ui/typography'
+import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 
 const InputAssisted = z.object({
   corpus_id: z.number({ required_error }).int(),
@@ -65,8 +66,12 @@ export function FormAssisted() {
   const corpusId = form.watch('corpus_id')
   const selectedCorpus = corpora.find(({ id }) => id === corpusId)
 
+  useFormFieldDependency(form, 's', selectedCorpus?.s_atts)
+  useFormFieldDependency(form, 'p', selectedCorpus?.p_atts)
+
   const {
     mutate: postQueryAssisted,
+    isSuccess,
     isPending,
     error,
   } = useMutation({
@@ -80,233 +85,228 @@ export function FormAssisted() {
     },
   })
 
+  const isDisabled = isPending || isSuccess
+
   function onSubmit(data: z.infer<typeof InputAssisted>): void {
     postQueryAssisted(data)
   }
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="grid max-w-3xl grid-cols-2 gap-3 @lg:grid-cols-2"
-      >
-        <FormField
-          control={form.control}
-          name="corpus_id"
-          render={({ field }) => (
-            <FormItem className="col-span-full">
-              <FormLabel>Corpus</FormLabel>
-              <FormControl>
-                <CorpusSelect
-                  className="w-full"
-                  corpora={corpora}
-                  corpusId={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Large className="col-span-full text-destructive-foreground">
-          ToDo: Subcorpus selection
-        </Large>
-        <FormField
-          control={form.control}
-          name="discourseme_id"
-          render={({ field }) => (
-            <FormItem className="col-span-full">
-              <FormLabel>Discourseme</FormLabel>
-              <FormControl>
-                <DiscoursemeSelect
-                  className="w-full"
-                  discoursemes={discoursemes}
-                  discoursemeId={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="items"
-          render={({ field }) => (
-            <FormItem className="col-span-full">
-              <FormLabel>Items</FormLabel>
-              <FormControl>
-                <ItemsInput
-                  defaultValue={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormDescription>
-                Komma-separierte Liste von Items, die in der Query verwendet
-                werden sollen.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="escape"
-          render={({ field }) => (
-            <FormItem className="col-span-full">
-              <div className="flex items-center">
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <fieldset
+          disabled={isDisabled}
+          className="grid max-w-3xl grid-cols-2 gap-3 @lg:grid-cols-2"
+        >
+          <FormField
+            control={form.control}
+            name="corpus_id"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <FormLabel>Corpus</FormLabel>
                 <FormControl>
-                  <Checkbox
-                    className="mr-2"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
+                  <CorpusSelect
+                    className="w-full"
+                    corpora={corpora}
+                    corpusId={field.value}
+                    onChange={field.onChange}
                   />
                 </FormControl>
-                <FormLabel>Escape special characters</FormLabel>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="ignore_case"
-          render={({ field }) => (
-            <FormItem className="col-span-full">
-              <div className="flex items-center">
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Large className="col-span-full text-destructive-foreground">
+            ToDo: Subcorpus selection
+          </Large>
+          <FormField
+            control={form.control}
+            name="discourseme_id"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <FormLabel>Discourseme</FormLabel>
                 <FormControl>
-                  <Checkbox
-                    className="mr-2"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
+                  <DiscoursemeSelect
+                    className="w-full"
+                    discoursemes={discoursemes}
+                    discoursemeId={field.value}
+                    onChange={field.onChange}
                   />
                 </FormControl>
-                <FormLabel>Ignore Case</FormLabel>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="ignore_diacritics"
-          render={({ field }) => (
-            <FormItem className="col-span-full">
-              <div className="flex items-center">
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="items"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <FormLabel>Items</FormLabel>
                 <FormControl>
-                  <Checkbox
-                    className="mr-2"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
+                  <ItemsInput
+                    defaultValue={field.value}
+                    onChange={field.onChange}
                   />
                 </FormControl>
-                <FormLabel>Ignore Diacritics</FormLabel>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="match_strategy"
-          render={({ field }) => (
-            <FormItem className="col-span-full">
-              <FormLabel>Match Strategy</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Match strategy" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="shortest">Shortest</SelectItem>
-                      <SelectItem value="longest">Longest</SelectItem>
-                      <SelectItem value="standard">Standard</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          key={corpusId}
-          control={form.control}
-          name="p"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Query Layer</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={legalDefaultValue(
-                    field.value,
-                    selectedCorpus?.p_atts,
-                    undefined,
-                  )}
-                  disabled={!selectedCorpus}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="No Query Layer Selected" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {(selectedCorpus?.p_atts ?? []).map((layer) => (
-                        <SelectItem key={layer} value={layer}>
-                          {layer}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="s"
-          render={({ field }) => (
-            <FormItem key={corpusId}>
-              <FormLabel>Context Break</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={legalDefaultValue(
-                    field.value,
-                    selectedCorpus?.s_atts,
-                    undefined,
-                  )}
-                  disabled={!selectedCorpus}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="No Context Break Selected" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {(selectedCorpus?.s_atts ?? []).map((layer) => (
-                        <SelectItem key={layer} value={layer}>
-                          {layer}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" disabled={isPending} className="col-span-full">
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Submit
-        </Button>
-        <ErrorMessage error={error} />
+                <FormDescription>
+                  Komma-separierte Liste von Items, die in der Query verwendet
+                  werden sollen.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="escape"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <div className="flex items-center">
+                  <FormControl>
+                    <Checkbox
+                      className="mr-2"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel>Escape special characters</FormLabel>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="ignore_case"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <div className="flex items-center">
+                  <FormControl>
+                    <Checkbox
+                      className="mr-2"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel>Ignore Case</FormLabel>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="ignore_diacritics"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <div className="flex items-center">
+                  <FormControl>
+                    <Checkbox
+                      className="mr-2"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel>Ignore Diacritics</FormLabel>
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="match_strategy"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <FormLabel>Match Strategy</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Match strategy" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="shortest">Shortest</SelectItem>
+                        <SelectItem value="longest">Longest</SelectItem>
+                        <SelectItem value="standard">Standard</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="p"
+            render={({ field: { onChange, ...field } }) => (
+              <FormItem key={field.value}>
+                <FormLabel>Query Layer</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={onChange}
+                    disabled={!selectedCorpus}
+                    {...field}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="No Query Layer Selected" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {(selectedCorpus?.p_atts ?? []).map((layer) => (
+                          <SelectItem key={layer} value={layer}>
+                            {layer}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="s"
+            render={({ field: { onChange, ...field } }) => (
+              <FormItem key={field.value}>
+                <FormLabel>Context Break</FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={onChange}
+                    disabled={!selectedCorpus}
+                    {...field}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="No Context Break Selected" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {(selectedCorpus?.s_atts ?? []).map((layer) => (
+                          <SelectItem key={layer} value={layer}>
+                            {layer}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" disabled={isDisabled} className="col-span-full">
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Submit
+          </Button>
+          <ErrorMessage error={error} />
+        </fieldset>
       </form>
     </Form>
   )

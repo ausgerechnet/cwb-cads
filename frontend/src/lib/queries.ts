@@ -32,7 +32,6 @@ export const postQueryMutationOptions: MutationOptions<
 > = {
   mutationFn: (body) => apiClient.postQuery(body),
   onSuccess: () => {
-    console.log('invalidating queries')
     queryClient.invalidateQueries(queriesQueryOptions)
   },
 }
