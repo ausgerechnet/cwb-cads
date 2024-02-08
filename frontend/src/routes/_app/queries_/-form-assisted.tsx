@@ -245,14 +245,14 @@ export function FormAssisted() {
           <FormField
             control={form.control}
             name="p"
-            render={({ field: { onChange, ...field } }) => (
-              <FormItem key={field.value}>
+            render={({ field: { onChange, value, disabled } }) => (
+              <FormItem key={value}>
                 <FormLabel>Query Layer</FormLabel>
                 <FormControl>
                   <Select
                     onValueChange={onChange}
-                    disabled={!selectedCorpus}
-                    {...field}
+                    disabled={!selectedCorpus || disabled}
+                    value={value}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="No Query Layer Selected" />
@@ -275,14 +275,14 @@ export function FormAssisted() {
           <FormField
             control={form.control}
             name="s"
-            render={({ field: { onChange, ...field } }) => (
-              <FormItem key={field.value}>
+            render={({ field: { onChange, value, disabled } }) => (
+              <FormItem key={value}>
                 <FormLabel>Context Break</FormLabel>
                 <FormControl>
                   <Select
                     onValueChange={onChange}
-                    disabled={!selectedCorpus}
-                    {...field}
+                    disabled={!selectedCorpus || disabled}
+                    value={value}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="No Context Break Selected" />

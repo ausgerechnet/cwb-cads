@@ -147,11 +147,15 @@ export function FormCQP() {
             <FormField
               control={form.control}
               name="match_strategy"
-              render={({ field: { onChange, ...field } }) => (
+              render={({ field: { onChange, value, disabled } }) => (
                 <FormItem>
                   <FormLabel>Match Strategy</FormLabel>
                   <FormControl>
-                    <Select onValueChange={onChange} {...field}>
+                    <Select
+                      onValueChange={onChange}
+                      value={value}
+                      disabled={disabled}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Match strategy" />
                       </SelectTrigger>
@@ -172,14 +176,14 @@ export function FormCQP() {
               key={fieldValueS}
               control={form.control}
               name="s"
-              render={({ field: { onChange, ...field } }) => (
-                <FormItem key={field.value}>
+              render={({ field: { onChange, disabled, value } }) => (
+                <FormItem key={value}>
                   <FormLabel>Context Break</FormLabel>
                   <FormControl>
                     <Select
-                      disabled={!selectedCorpus}
+                      disabled={!selectedCorpus || disabled}
                       onValueChange={onChange}
-                      {...field}
+                      value={value}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Context Break" />
