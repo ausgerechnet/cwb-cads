@@ -56,6 +56,11 @@ def ccc_query(query, return_df=True, p_breakdown=None):
             corpus = corpus.subcorpus(query.nqr_name)
 
         matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy, propagate_error=True)
+        if isinstance(matches, str):
+            current_app.logger.error(f"{matches}")
+            db.session.delete(query)
+            db.session.commit()
+            return matches
         query.cqp_nqr_matches = matches.subcorpus_name
         df_matches = matches.df.reset_index()[['match', 'matchend']]
         df_matches['query_id'] = query.id
@@ -137,7 +142,10 @@ def create(data, data_query):
     db.session.commit()
 
     if data_query['execute']:
-        ccc_query(query)
+        ret = ccc_query(query)
+        if isinstance(ret, str):  # CQP error
+            from apiflask import abort
+            return abort(409, ret)
 
     return QueryOut().dump(query), 200
 
@@ -172,7 +180,10 @@ def create_assisted(data, data_query):
     db.session.commit()
 
     if data_query['execute']:
-        ccc_query(query)
+        ret = ccc_query(query)
+        if isinstance(ret, str):  # CQP error
+            from apiflask import abort
+            return abort(409, ret)
 
     return QueryOut().dump(query), 200
 
