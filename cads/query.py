@@ -145,7 +145,7 @@ def create(data, data_query):
         ret = ccc_query(query)
         if isinstance(ret, str):  # CQP error
             from apiflask import abort
-            return abort(409, ret)
+            return abort(400, ret)
 
     return QueryOut().dump(query), 200
 
