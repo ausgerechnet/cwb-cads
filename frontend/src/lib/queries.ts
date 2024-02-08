@@ -62,6 +62,45 @@ export const deleteQueryMutationOptions: MutationOptions<
   },
 }
 
+export const queryBreakdownsQueryOptions = (queryId: string) =>
+  queryOptions({
+    queryKey: ['query-breakdowns', queryId],
+    queryFn: ({ signal }) =>
+      apiClient.getBreakdownqueryQuery_id({
+        params: { query_id: queryId },
+        signal,
+      }),
+  })
+
+export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
+  queryOptions({
+    queryKey: ['query-breakdown', queryId, p],
+    queryFn: async () => {
+      const allBreakdowns = z
+        .array(schemas.BreakdownOut)
+        .parse(queryClient.getQueryData(['query-breakdowns', queryId]) ?? [])
+      const breakdown = allBreakdowns.find((b) => b.p === p)
+      if (breakdown) return breakdown
+      const newBreakdown = await apiClient.postBreakdownqueryQuery_id(
+        { p },
+        { params: { query_id: queryId } },
+      )
+      allBreakdowns.push(newBreakdown)
+      queryClient.invalidateQueries(queryBreakdownsQueryOptions(queryId))
+      return newBreakdown
+    },
+  })
+
+export const queryConcordancesQueryOptions = (queryId: string) =>
+  queryOptions({
+    queryKey: ['query-concordances', queryId],
+    queryFn: ({ signal }) =>
+      apiClient.getQueryQuery_idconcordance({
+        params: { query_id: queryId },
+        signal,
+      }),
+  })
+
 // ==================== CORPORA ====================
 
 export const corporaQueryOptions = queryOptions({

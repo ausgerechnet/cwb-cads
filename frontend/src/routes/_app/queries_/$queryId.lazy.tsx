@@ -7,7 +7,8 @@ import { AlertCircle } from 'lucide-react'
 
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Large } from '@/components/ui/typography'
+import { Headline2, Large } from '@/components/ui/typography'
+import { QueryBreakdown } from './-query-breakdown'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -15,10 +16,22 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 })
 
 function SingleQuery() {
+  const { query, concordances } = Route.useLoaderData()
+  const queryId = Route.useParams().queryId
+
   return (
     <AppPageFrame title="Query">
-      <div className="mono whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground">
-        {JSON.stringify(Route.useLoaderData().query, null, 2)}
+      <div className="flex flex-col gap-4">
+        <Headline2>Breakdown</Headline2>
+        <QueryBreakdown queryId={queryId} />
+        <Headline2>Query</Headline2>
+        <div className="mono whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground">
+          {JSON.stringify(query, null, 2)}
+        </div>
+        <Headline2>Concordances</Headline2>
+        <div className="mono whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground">
+          {JSON.stringify(concordances, null, 2)}
+        </div>
       </div>
     </AppPageFrame>
   )

@@ -1,6 +1,7 @@
 import { createRouter } from '@tanstack/react-router'
 import { queryClient } from '@/rest-client/client'
 import { DefaultErrorComponent } from '@/components/default-error-component'
+import { DefaultPendingComponent } from '@/components/default-pending-component'
 import { routeTree } from './routeTree.gen'
 
 export const router = createRouter({
@@ -8,6 +9,7 @@ export const router = createRouter({
   defaultStaleTime: 0,
   defaultPreload: false,
   defaultErrorComponent: DefaultErrorComponent,
+  defaultPendingComponent: DefaultPendingComponent,
   context: { queryClient },
 })
 
