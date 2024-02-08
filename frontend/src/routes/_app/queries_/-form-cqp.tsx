@@ -15,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { CorpusSelect } from '@/components/corpus-select'
 import {
   Select,
   SelectContent,
@@ -27,9 +26,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { Textarea } from '@/components/ui/textarea'
-import { DiscoursemeSelect } from '@/components/discourseme-select'
+import { CorpusSelect } from '@/components/select-corpus'
+import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { Large } from '@/components/ui/typography'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
+import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 
 const InputCQP = z.object({
   corpus_id: z.number({ required_error }).int(),
@@ -108,23 +109,24 @@ export function FormCQP() {
                 </FormItem>
               )}
             />
-            <Large className="col-span-full text-destructive-foreground">
-              ToDo: Subcorpus selection
-            </Large>
+            <Large className="col-span-full">ToDo: Subcorpus selection</Large>
             <FormField
               control={form.control}
               name="discourseme_id"
               render={({ field }) => (
                 <FormItem className="col-span-full">
                   <FormLabel>Discourseme</FormLabel>
-                  <FormControl>
-                    <DiscoursemeSelect
-                      className="w-full"
-                      discoursemes={discoursemes}
-                      discoursemeId={field.value}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
+                  <div className="col-span-full flex gap-4">
+                    <FormControl>
+                      <DiscoursemeSelect
+                        className="w-full"
+                        discoursemes={discoursemes}
+                        discoursemeId={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <QuickCreateDiscourseme />
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

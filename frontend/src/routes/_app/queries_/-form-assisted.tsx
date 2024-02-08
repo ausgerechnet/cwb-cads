@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
 import { postQueryAssistedMutationOptions } from '@/lib/queries'
+import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
   Form,
   FormControl,
@@ -16,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { CorpusSelect } from '@/components/corpus-select'
 import { ItemsInput } from '@/components/ui/items-input'
 import {
   Select,
@@ -28,10 +28,11 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
-import { DiscoursemeSelect } from '@/components/discourseme-select'
+import { CorpusSelect } from '@/components/select-corpus'
+import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Large } from '@/components/ui/typography'
-import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
+import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 
 const InputAssisted = z.object({
   corpus_id: z.number({ required_error }).int(),
@@ -115,23 +116,24 @@ export function FormAssisted() {
               </FormItem>
             )}
           />
-          <Large className="col-span-full text-destructive-foreground">
-            ToDo: Subcorpus selection
-          </Large>
+          <Large className="col-span-full">ToDo: Subcorpus selection</Large>
           <FormField
             control={form.control}
             name="discourseme_id"
             render={({ field }) => (
               <FormItem className="col-span-full">
                 <FormLabel>Discourseme</FormLabel>
-                <FormControl>
-                  <DiscoursemeSelect
-                    className="w-full"
-                    discoursemes={discoursemes}
-                    discoursemeId={field.value}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
+                <div className="col-span-full flex gap-4">
+                  <FormControl>
+                    <DiscoursemeSelect
+                      className="w-full"
+                      discoursemes={discoursemes}
+                      discoursemeId={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <QuickCreateDiscourseme />
+                </div>
                 <FormMessage />
               </FormItem>
             )}

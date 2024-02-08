@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import { ComplexSelect } from '@/components/complex-select'
+import { ComplexSelect } from '@/components/select-complex'
 
 export function DiscoursemeSelect({
   discoursemes,

@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 import { putSubcorpusMutationOptions } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { CorpusSelect } from '@/components/corpus-select'
+import { CorpusSelect } from '@/components/select-corpus'
 import {
   Form,
   FormControl,
