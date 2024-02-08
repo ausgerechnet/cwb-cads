@@ -12,27 +12,15 @@ import {
 } from '@/components/ui/select'
 import { Small } from '@/components/ui/typography'
 
-export function Pagination({
-  table,
-}: {
-  table: Pick<
-    Table<unknown>,
-    | 'previousPage'
-    | 'nextPage'
-    | 'getCanPreviousPage'
-    | 'getCanNextPage'
-    | 'getState'
-    | 'getPageCount'
-    | 'setPageIndex'
-    | 'setPageSize'
-  >
-}) {
+export function Pagination<T>({ table }: { table: Table<T> }) {
   const { pageIndex, pageSize } = table.getState().pagination
   const pageCount = table.getPageCount()
   const pages = getPages(pageIndex, pageCount)
+  const totalRows = table.getCoreRowModel().rows.length
 
   return (
     <div className="grid grid-cols-[1fr_auto_1fr]">
+      <Small className="my-auto">{totalRows} entries</Small>
       <div className="col-start-2 flex place-items-center gap-2">
         <Button
           disabled={!table.getCanPreviousPage()}

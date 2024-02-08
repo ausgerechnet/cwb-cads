@@ -25,8 +25,8 @@ export const Route = createLazyFileRoute('/login')({
 })
 
 const Credentials = z.object({
-  username: z.string({ required_error }).min(1, 'Dieses Feld ist erforderlich'),
-  password: z.string({ required_error }).min(1, 'Dieses Feld ist erforderlich'),
+  username: z.string({ required_error }).min(1, required_error),
+  password: z.string({ required_error }).min(1, required_error),
 })
 
 type Credentials = z.infer<typeof Credentials>
@@ -37,6 +37,10 @@ function Login() {
 
   const form = useForm<Credentials>({
     resolver: zodResolver(Credentials),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
   })
 
   const { isPending, mutate, error } = useMutation({
@@ -96,7 +100,7 @@ function Login() {
           </Button>
         </form>
       </Form>
-      <ErrorMessage error={error} />
+      <ErrorMessage error={error} className="mt-4" />
     </div>
   )
 }

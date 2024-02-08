@@ -23,7 +23,7 @@ export const Route = createRootRouteWithContext<{
 function RootComponent() {
   const { data, isLoading, error } = useQuery(sessionQueryOptions)
 
-  const isLoggedIn = data && !isLoading && !error
+  const isLoggedIn = Boolean(data && !isLoading && !error)
 
   return (
     <>

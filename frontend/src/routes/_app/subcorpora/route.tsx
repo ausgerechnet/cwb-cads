@@ -3,6 +3,6 @@ import { corporaQueryOptions } from '@/lib/queries'
 
 export const Route = createFileRoute('/_app/subcorpora')({
   loader: async ({ context: { queryClient } }) => ({
-    corpora: await queryClient.ensureQueryData(corporaQueryOptions),
+    corpora: await queryClient.fetchQuery(corporaQueryOptions),
   }),
 })

@@ -12,7 +12,6 @@ import { postCollocationQueryMutationOptions } from '@/lib/queries'
 import { required_error } from '@/lib/strings'
 import { schemas } from '@/rest-client'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -33,8 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { QuerySelect } from './-query-select'
-import { DiscoursemeSelect } from './-discourseme-select'
+import { QuickCreateQuery } from '@/components/quick-create-query'
+import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
+import { DiscoursemeSelect } from '@/components/select-discourseme'
+import { QuerySelect } from '@/components/select-query'
 
 export const Route = createLazyFileRoute('/_app/collocation-analysis/new')({
   component: NewCollocationAnalysis,
@@ -114,7 +115,7 @@ function NewCollocationAnalysis() {
                         queryId={isNaN(field.value) ? undefined : field.value}
                         onChange={(newQueryId) => field.onChange(newQueryId)}
                       />
-                      <QueryQuickCreate />
+                      <QuickCreateQuery />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -137,10 +138,10 @@ function NewCollocationAnalysis() {
                             : parseInt(field.value)
                         }
                         onChange={(id) => {
-                          field.onChange(id.toString())
+                          field.onChange(id?.toString())
                         }}
                       />
-                      <DiscoursemeQuickCreate />
+                      <QuickCreateDiscourseme />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -274,27 +275,5 @@ function NewCollocationAnalysis() {
         </form>
       </Form>
     </AppPageFrame>
-  )
-}
-
-function QueryQuickCreate() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="secondary">Create Query</Button>
-      </DialogTrigger>
-      <DialogContent>Form goes here</DialogContent>
-    </Dialog>
-  )
-}
-
-function DiscoursemeQuickCreate() {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="secondary">Create Discourseme</Button>
-      </DialogTrigger>
-      <DialogContent>Form goes here</DialogContent>
-    </Dialog>
   )
 }

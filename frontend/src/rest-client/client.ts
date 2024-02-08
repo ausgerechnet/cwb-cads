@@ -1,7 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 
 import { createApiClient } from './__generated__client'
-import { sessionQueryOptions } from '@/lib/queries'
 import { router } from '@/router'
 
 export const queryClient = new QueryClient({
@@ -26,21 +25,13 @@ apiClient.axios.interceptors.request.use((config) => {
 apiClient.axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Redirect to login page if the user is not authenticated for anything
-    // The redirect search param is used to redirect back to the original page
+    // If the API returns a 401 or 403, it means the token is invalid or expired
+    // Re-routing the user in such a case is handled by the router, so we can just
+    // invalidate the route and let it take care of the rest
+    // See: src/routes/_app.tsx
     const status = error?.response?.status
-    if (status === 401) {
-      queryClient.invalidateQueries(sessionQueryOptions)
-      const { pathname, search } = location
-      router.navigate({
-        to: '/login',
-        search:
-          pathname === '/login'
-            ? {}
-            : {
-                redirect: pathname + search,
-              },
-      })
+    if (status === 401 || status === 403) {
+      router.invalidate()
     }
     return Promise.reject(error)
   },

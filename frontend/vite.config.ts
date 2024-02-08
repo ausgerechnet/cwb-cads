@@ -19,7 +19,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/',
+        target: 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
