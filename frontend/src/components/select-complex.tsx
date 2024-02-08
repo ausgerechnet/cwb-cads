@@ -63,26 +63,24 @@ export function ComplexSelect({
           <CommandEmpty>{emptyMessage}</CommandEmpty>
           <CommandGroup>
             <ScrollArea className="h-80 max-h-[30svh]">
-              {items.map(({ searchValue, id, renderValue, name }) => {
-                return (
-                  <CommandItem
-                    key={id}
-                    value={searchValue}
-                    onSelect={() => {
-                      onChange?.(id)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        'mr-2 h-4 w-4',
-                        id === itemId ? 'opacity-100' : 'opacity-0',
-                      )}
-                    />
-                    {renderValue ? renderValue : name}
-                  </CommandItem>
-                )
-              })}
+              {items.map(({ searchValue, id, renderValue, name }) => (
+                <CommandItem
+                  key={id ?? 'empty'}
+                  value={searchValue}
+                  onSelect={() => {
+                    onChange?.(id)
+                    setOpen(false)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4',
+                      id === itemId ? 'opacity-100' : 'opacity-0',
+                    )}
+                  />
+                  {renderValue ? renderValue : name}
+                </CommandItem>
+              ))}
             </ScrollArea>
           </CommandGroup>
         </Command>

@@ -86,7 +86,7 @@ export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
         { params: { query_id: queryId } },
       )
       allBreakdowns.push(newBreakdown)
-      queryClient.invalidateQueries(queryBreakdownsQueryOptions(queryId))
+      queryClient.setQueryData(['query-breakdowns', queryId], allBreakdowns)
       return newBreakdown
     },
   })
