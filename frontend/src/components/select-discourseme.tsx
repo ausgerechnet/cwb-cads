@@ -5,7 +5,7 @@ import { schemas } from '@/rest-client'
 import { ComplexSelect } from '@/components/select-complex'
 
 export function DiscoursemeSelect({
-  discoursemes,
+  discoursemes = [],
   discoursemeId,
   onChange,
   className,

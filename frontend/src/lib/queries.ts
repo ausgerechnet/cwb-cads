@@ -215,7 +215,7 @@ export const collocationsQueryOptions = queryOptions({
 })
 
 export const postCollocationQueryMutationOptions: MutationOptions<
-  unknown,
+  z.infer<typeof schemas.CollocationOut>,
   Error,
   z.infer<typeof schemas.CollocationIn>
 > = {

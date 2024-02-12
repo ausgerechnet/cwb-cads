@@ -21,6 +21,7 @@ import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
 import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_/$queryId'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 import { Route as AppCollocationAnalysisNewImport } from './routes/_app/collocation-analysis_/new'
+import { Route as AppCollocationAnalysisCollocationIdImport } from './routes/_app/collocation-analysis_/$collocationId'
 
 // Create Virtual Routes
 
@@ -141,6 +142,12 @@ const AppCollocationAnalysisNewRoute = AppCollocationAnalysisNewImport.update({
   import('./routes/_app/collocation-analysis_/new.lazy').then((d) => d.Route),
 )
 
+const AppCollocationAnalysisCollocationIdRoute =
+  AppCollocationAnalysisCollocationIdImport.update({
+    path: '/collocation-analysis/$collocationId',
+    getParentRoute: () => AppRoute,
+  } as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -193,6 +200,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKeywordAnalysisImport
       parentRoute: typeof AppImport
     }
+    '/_app/collocation-analysis/$collocationId': {
+      preLoaderRoute: typeof AppCollocationAnalysisCollocationIdImport
+      parentRoute: typeof AppImport
+    }
     '/_app/collocation-analysis/new': {
       preLoaderRoute: typeof AppCollocationAnalysisNewImport
       parentRoute: typeof AppImport
@@ -232,6 +243,7 @@ export const routeTree = rootRoute.addChildren([
     AppSubcorporaRouteRoute,
     AppAdminRoute,
     AppKeywordAnalysisRoute,
+    AppCollocationAnalysisCollocationIdRoute,
     AppCollocationAnalysisNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
     AppQueriesQueryIdRoute,
