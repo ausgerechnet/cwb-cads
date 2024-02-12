@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import {
+  Await,
   ErrorComponentProps,
   Link,
   createLazyFileRoute,
@@ -8,14 +9,15 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
+import { patchQueryMutationOptions } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Headline2, Large } from '@/components/ui/typography'
 import { Button } from '@/components/ui/button'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
-import { QueryBreakdown } from './-query-breakdown'
-import { patchQueryMutationOptions } from '@/lib/queries'
 import { ErrorMessage } from '@/components/error-message'
+import { Skeleton } from '@/components/ui/skeleton'
+import { QueryBreakdown } from './-query-breakdown'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -24,7 +26,7 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 
 function SingleQuery() {
   const { queryId } = Route.useParams()
-  const { queryDiscourseme } = Route.useLoaderData()
+  const { queryDiscourseme, concordances } = Route.useLoaderData()
 
   return (
     <AppPageFrame title="Query">
@@ -32,6 +34,15 @@ function SingleQuery() {
         {queryDiscourseme ? <Discourseme /> : <AttachDiscourseme />}
         <Headline2>Breakdown</Headline2>
         <QueryBreakdown queryId={queryId} />
+        <Suspense fallback={<Skeleton className="h-8 w-full rounded-md" />}>
+          <Await promise={concordances}>
+            {(data) => (
+              <div className="whitespace-pre-wrap rounded-md bg-muted p-2 font-mono text-sm leading-tight text-muted-foreground">
+                {JSON.stringify(data, null, 2)}
+              </div>
+            )}
+          </Await>
+        </Suspense>
       </div>
     </AppPageFrame>
   )
