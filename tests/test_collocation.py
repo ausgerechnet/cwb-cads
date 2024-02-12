@@ -1,5 +1,6 @@
 from flask import url_for
 from cads.database import Collocation
+import pytest
 
 
 def test_create_collocation(client, auth):
@@ -16,6 +17,7 @@ def test_create_collocation(client, auth):
                                       'description': 'Test Discourseme 1'
                                   },
                                   headers=auth_header)
+
         # constellation
         constellation = client.post(url_for('constellation.create'),
                                     json={
@@ -24,6 +26,8 @@ def test_create_collocation(client, auth):
                                         'filter_discourseme_ids': [discourseme.json['id']]
                                     },
                                     headers=auth_header)
+
+        assert constellation.status_code == 200
 
         constellation = client.get(url_for('constellation.get_constellation', id=constellation.json['id']),
                                    headers=auth_header)
@@ -34,12 +38,9 @@ def test_create_collocation(client, auth):
                             json={
                                 'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[lemma="und"]'
+                                'cqp_query': '[lemma="und"]',
+                                's': 's'
                             },
-                            headers=auth_header)
-
-        # - execute
-        query = client.post(url_for('query.execute', id=query.json['id']),
                             headers=auth_header)
 
         # collocation
@@ -88,7 +89,8 @@ def test_create_or_get_cooc(client, auth):
                             json={
                                 'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[lemma="und"]'
+                                'cqp_query': '[lemma="und"]',
+                                's': 's'
                             },
                             headers=auth_header)
 

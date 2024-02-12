@@ -21,10 +21,11 @@ def test_create_query(client, auth):
                             json={
                                 'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[word="der"] [lemma="Bundeskanzler"]'
+                                'cqp_query': '[word="der"] [lemma="Bundeskanzler"]',
+                                's': 's'
                             },
                             headers=auth_header)
-        print(query.json)
+
         assert query.status_code == 200
 
         queries = client.get(url_for('query.get_queries'),

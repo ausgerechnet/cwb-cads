@@ -29,7 +29,8 @@ def test_create_semmap(client, auth):
                             json={
                                 'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[lemma="Bundeskanzler"]'
+                                'cqp_query': '[lemma="Bundeskanzler"]',
+                                's': 's'
                             },
                             headers=auth_header)
 

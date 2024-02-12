@@ -7,25 +7,13 @@ def test_create_get_breakdown(client, auth):
     with client:
         client.get("/")
 
-        # discourseme
-        discourseme = client.post(url_for('discourseme.create'),
-                                  json={
-                                      'name': 'CDU',
-                                      'description': 'Test Query'
-                                  },
-                                  headers=auth_header)
-
         # query
         query = client.post(url_for('query.create'),
                             json={
-                                'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[word="die"]? [lemma="CDU"]'
+                                'cqp_query': '[word="die"]? [lemma="CDU"]',
+                                's': 's'
                             },
-                            headers=auth_header)
-
-        # create matches
-        query = client.post(url_for('query.execute', id=query.json['id']),
                             headers=auth_header)
 
         # breakdown

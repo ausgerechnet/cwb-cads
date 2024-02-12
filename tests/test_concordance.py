@@ -20,12 +20,13 @@ def test_create_get_concordance(client, auth):
                             json={
                                 'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[lemma="Bundeskanzler"]'
+                                'cqp_query': '[lemma="Bundeskanzler"]',
+                                's': 's'
                             },
                             headers=auth_header)
 
         # concordance
-        lines = client.get(url_for('query.concordance.lines', query_id=query.json['id']),
+        lines = client.get(url_for('query.concordance.lines', query_id=query.json['id'], s_show=['text_parliamentary_group']),
                            headers=auth_header)
 
         assert lines.status_code == 200
