@@ -143,13 +143,12 @@ export function DataTable<RowData>({
                     onRowClick?.(row.original)
                   }}
                 >
-                  {row.getVisibleCells().map((cell, index, rows) => (
+                  {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={cn(
-                        (index === 0 || index === rows.length - 1) && 'w-0',
-                      )}
+                      className={cell.column.columnDef.meta?.className}
                     >
+                      {console.log(cell.column.columnDef.meta?.className)}
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),

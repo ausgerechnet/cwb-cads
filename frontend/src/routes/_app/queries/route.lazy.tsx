@@ -14,11 +14,14 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 
 import { cn } from '@/lib/utils'
-import { deleteQueryMutationOptions } from '@/lib/queries'
+import {
+  deleteQueryMutationOptions,
+  discoursemeQueryOptions,
+} from '@/lib/queries'
 import { schemas } from '@/rest-client'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
@@ -96,15 +99,44 @@ function QueriesError(props: ErrorComponentProps) {
 const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
   {
     accessorKey: 'id',
-    header: ({ column }) => <SortButton column={column}>Query ID</SortButton>,
+    header: ({ column }) => <SortButton column={column}>ID</SortButton>,
+    meta: { className: 'w-0' },
   },
   {
     accessorKey: 'corpus.name',
     header: ({ column }) => <SortButton column={column}>Corpus</SortButton>,
+    meta: { className: 'w-48' },
+  },
+  {
+    accessorKey: 'cqp_query',
+    header: ({ column }) => <SortButton column={column}>Query</SortButton>,
+  },
+  {
+    accessorKey: 'discourseme_id',
+    header: 'Discourseme (TODO: include in queries response?)',
+    cell: (cell) => {
+      const discoursemeId = cell.row.original.discourseme_id ?? null
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const { data, isLoading } = useQuery({
+        ...discoursemeQueryOptions(discoursemeId?.toString() as string),
+        enabled: discoursemeId !== null,
+      })
+      if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />
+      return (
+        <>{data?._items?.join(', ') || <span className="italic">empty</span>}</>
+      )
+    },
+  },
+  {
+    accessorKey: 'cqp_nqr_matches',
+    header: ({ column }) => (
+      <SortButton column={column}>NQR Matches</SortButton>
+    ),
   },
   {
     id: 'actions',
     header: '',
+    meta: { className: 'w-0' },
     cell: (cell) => {
       const queryId = cell.row.original.id
       if (queryId === undefined) {

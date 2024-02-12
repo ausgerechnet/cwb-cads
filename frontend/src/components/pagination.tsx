@@ -20,7 +20,9 @@ export function Pagination<T>({ table }: { table: Table<T> }) {
 
   return (
     <div className="grid grid-cols-[1fr_auto_1fr]">
-      <Small className="my-auto">{totalRows} entries</Small>
+      <Small className="my-auto">
+        {totalRows || 'no'} {totalRows === 1 ? 'entry' : 'entries'}
+      </Small>
       <div className="col-start-2 flex place-items-center gap-2">
         <Button
           disabled={!table.getCanPreviousPage()}

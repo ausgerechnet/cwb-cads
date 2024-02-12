@@ -1,4 +1,5 @@
 import {
+  Await,
   ErrorComponentProps,
   Link,
   createLazyFileRoute,
@@ -16,7 +17,7 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 })
 
 function SingleQuery() {
-  const queryId = Route.useParams().queryId
+  const { queryId } = Route.useParams()
 
   return (
     <AppPageFrame title="Query">

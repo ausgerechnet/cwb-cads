@@ -19,15 +19,22 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DataTable, SortButton } from '@/components/data-table'
+import { ErrorMessage } from '@/components/error-message'
 
 const emptyArray = [] as const
 
 export function QueryBreakdown({ queryId }: { queryId: string }) {
   const { pAtt } = useSearch({ from: '/_app/queries/$queryId' })
-  const { data: query } = useQuery(queryQueryOptions(queryId))
+  const { data: query, error: errorQuery } = useQuery(
+    queryQueryOptions(queryId),
+  )
   const parsePAtt = useCallback(
     (pAtt: string | undefined) => {
-      if (pAtt !== undefined && query?.corpus?.p_atts?.includes(pAtt)) {
+      const availablePAtts = query?.corpus?.p_atts ?? []
+      if (pAtt === undefined && availablePAtts.length > 0) {
+        return availablePAtts[0]
+      }
+      if (pAtt !== undefined && availablePAtts.includes(pAtt)) {
         return pAtt
       }
       return undefined
@@ -40,6 +47,7 @@ export function QueryBreakdown({ queryId }: { queryId: string }) {
     data: breakdown,
     isLoading,
     isPaused,
+    error: errorBreakdown,
   } = useQuery({
     ...queryBreakdownForPQueryOptions(queryId, validatedPAtt as string),
     enabled: validatedPAtt !== undefined,
@@ -78,6 +86,8 @@ export function QueryBreakdown({ queryId }: { queryId: string }) {
       {!breakdown && isLoading && !isPaused && (
         <Skeleton className="h-80 max-w-md rounded-md" />
       )}
+      <ErrorMessage className="mt-4" error={errorQuery} />
+      <ErrorMessage className="mt-4" error={errorBreakdown} />
     </>
   )
 }
