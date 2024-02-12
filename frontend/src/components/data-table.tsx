@@ -142,6 +142,7 @@ export function DataTable<RowData>({
                   onClick={() => {
                     onRowClick?.(row.original)
                   }}
+                  className={onRowClick ? 'cursor-pointer' : ''}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

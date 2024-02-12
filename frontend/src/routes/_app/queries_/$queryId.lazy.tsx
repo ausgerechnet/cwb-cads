@@ -1,15 +1,18 @@
-import { Suspense, useState } from 'react'
+import { useState } from 'react'
 import {
-  Await,
   ErrorComponentProps,
   Link,
   createLazyFileRoute,
   useRouter,
 } from '@tanstack/react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
-import { patchQueryMutationOptions } from '@/lib/queries'
+import {
+  patchQueryMutationOptions,
+  queryConcordancesQueryOptions,
+} from '@/lib/queries'
+import { errorString } from '@/lib/error-string'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Headline2, Large } from '@/components/ui/typography'
@@ -26,7 +29,8 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 
 function SingleQuery() {
   const { queryId } = Route.useParams()
-  const { queryDiscourseme, concordances } = Route.useLoaderData()
+  const { queryDiscourseme } = Route.useLoaderData()
+  const { data, isLoading } = useQuery(queryConcordancesQueryOptions(queryId))
 
   return (
     <AppPageFrame title="Query">
@@ -34,15 +38,12 @@ function SingleQuery() {
         {queryDiscourseme ? <Discourseme /> : <AttachDiscourseme />}
         <Headline2>Breakdown</Headline2>
         <QueryBreakdown queryId={queryId} />
-        <Suspense fallback={<Skeleton className="h-8 w-full rounded-md" />}>
-          <Await promise={concordances}>
-            {(data) => (
-              <div className="whitespace-pre-wrap rounded-md bg-muted p-2 font-mono text-sm leading-tight text-muted-foreground">
-                {JSON.stringify(data, null, 2)}
-              </div>
-            )}
-          </Await>
-        </Suspense>
+        {data && (
+          <div className="whitespace-pre-wrap rounded-md bg-muted p-2 font-mono text-sm leading-tight text-muted-foreground">
+            {JSON.stringify(data, null, 2)}
+          </div>
+        )}
+        {isLoading && <Skeleton className="h-52 w-full rounded-md" />}
       </div>
     </AppPageFrame>
   )
@@ -133,7 +134,9 @@ function SingleQueryError({ error }: ErrorComponentProps) {
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>An error occurred while loading the query.</AlertTitle>
-        {Boolean(error) && <AlertDescription>{String(error)}</AlertDescription>}
+        {Boolean(error) && (
+          <AlertDescription>{errorString(error)}</AlertDescription>
+        )}
       </Alert>
     </AppPageFrame>
   )

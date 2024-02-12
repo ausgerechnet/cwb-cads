@@ -157,9 +157,12 @@ export const loginMutationOptions: MutationOptions<
   z.infer<typeof schemas.UserIn>
 > = {
   mutationFn: (credentials) => apiClient.postUserlogin(credentials),
-  onSuccess: ({ access_token }) => {
+  onSuccess: ({ access_token, refresh_token }) => {
     if (access_token) {
       localStorage.setItem('auth-token', access_token)
+    }
+    if (refresh_token) {
+      localStorage.setItem('refresh-token', refresh_token)
     }
     queryClient.invalidateQueries(sessionQueryOptions)
   },

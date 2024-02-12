@@ -1,9 +1,8 @@
-import { createFileRoute, defer } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
 import {
   discoursemesQueryOptions,
   queryBreakdownsQueryOptions,
-  queryConcordancesQueryOptions,
   queryQueryOptions,
 } from '@/lib/queries'
 import { z } from 'zod'
@@ -27,9 +26,6 @@ export const Route = createFileRoute('/_app/queries/$queryId')({
       breakdown,
       discoursemes,
       queryDiscourseme,
-      concordances: defer(
-        queryClient.ensureQueryData(queryConcordancesQueryOptions(queryId)),
-      ),
     }
   },
   pendingComponent: DefaultPendingComponent,
