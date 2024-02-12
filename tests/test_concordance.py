@@ -3,7 +3,7 @@ from flask import url_for
 
 def test_create_get_concordance(client, auth):
 
-    auth.login()
+    auth_header = auth.login()
     with client:
         client.get("/")
 
@@ -13,7 +13,7 @@ def test_create_get_concordance(client, auth):
                                       'name': 'CDU',
                                       'description': 'Test Query'
                                   },
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
 
         # query
         query = client.post(url_for('query.create'),
@@ -22,10 +22,10 @@ def test_create_get_concordance(client, auth):
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="Bundeskanzler"]'
                             },
-                            auth=('admin', '0000'))
+                            headers=auth_header)
 
         # concordance
         lines = client.get(url_for('query.concordance.lines', query_id=query.json['id']),
-                           auth=('admin', '0000'))
+                           headers=auth_header)
 
         assert lines.status_code == 200

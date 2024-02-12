@@ -3,7 +3,7 @@ from flask import url_for
 
 def test_create_get_constellation(client, auth):
 
-    auth.login()
+    auth_header = auth.login()
     with client:
         client.get("/")
 
@@ -13,7 +13,7 @@ def test_create_get_constellation(client, auth):
                                       'name': 'CDU',
                                       'description': 'Test Discourseme'
                                   },
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
 
         # constellation
         constellation = client.post(url_for('constellation.create'),
@@ -22,12 +22,12 @@ def test_create_get_constellation(client, auth):
                                         'description': 'Test Constellation',
                                         'filter_discourseme_ids': [discourseme.json['id']]
                                     },
-                                    auth=('admin', '0000'))
+                                    headers=auth_header)
 
         constellation = client.get(url_for('constellation.get_constellation', id=constellation.json['id']),
-                                   auth=('admin', '0000'))
+                                   headers=auth_header)
 
         constellations = client.get(url_for('constellation.get_constellations'),
-                                    auth=('admin', '0000'))
+                                    headers=auth_header)
 
         assert constellations.status_code == 200
