@@ -59,7 +59,7 @@ class HTTPRefreshTokenIn(Schema):
 def verify_token(token):
 
     if not token:
-        return abort(403, "invalid token")
+        return abort(403, "missing authorization header")
     data = decode_token(token)
     user = db.get_or_404(User, data['sub']['id'])
 
