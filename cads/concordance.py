@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from json import dumps
-
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, Nested, String, Boolean, Dict
 from ccc import Corpus
@@ -39,9 +37,9 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
 
     # activate subcorpus
-    if query and query.nqr_name:
+    if query and query.nqr_cqp:
         # TODO: check that exists
-        corpus = corpus.subcorpus(query.nqr_name)
+        corpus = corpus.subcorpus(query.nqr_cqp)
 
     current_app.logger.debug('ccc_concordance :: quick concordancing')
     lines = corpus.quick_conc(
@@ -143,7 +141,7 @@ class ConcordanceLineOut(Schema):
 
     match = Integer()
     tokens = Nested(TokenOut(many=True))
-    structural = List(Dict)       # key-value pairs ohne entsprechende "Types"
+    structural = Dict()       # key-value pairs ohne entsprechende "Types"
 
 
 # Concordance Sorting / Pagination
@@ -179,6 +177,8 @@ def lines(query_id, data):
         pass
 
     p_show = data.get('p_show', ['word', 'lemma'])
+    if len(p_show) != 2:        # if len() == 1: p_show += ['lemma']
+        raise NotImplementedError()
     s_show = data.get('s_show', [])
 
     concordance_lines = ccc_concordance(query,
@@ -195,19 +195,27 @@ def lines(query_id, data):
 
     rows = list()
     for line in concordance_lines:
-
-        positional = dict()
-        for p_att in ['cpos', 'offset', 'role'] + p_show:
-            positional[p_att] = line[p_att]
+        tokens = list()
+        for cpos, offset, prim, sec, roles in zip(line['cpos'], line['offset'], line[p_show[0]], line[p_show[0]], line['role']):
+            tokens.append({
+                'cpos': cpos,
+                'offset': offset,
+                'word': prim,
+                'lemma': sec,
+                'is_out_of_window': 'out_of_window' in roles,
+                'is_node': 'node' in roles,
+                'discourseme_ids': [r for r in roles if r not in ['node', 'out_of_window']]
+            })
 
         structural = dict()
         for s_att in s_show + [s + "_cwbid" for s in s_show]:
             structural[s_att] = line[s_att]
+        print(structural)
 
         rows.append({
             'match': line['match'],
-            'positional': dumps(positional),
-            'structural': dumps(structural)
+            'tokens': tokens,
+            'structural': structural
         })
 
     return [ConcordanceLineOut().dump(line) for line in rows], 200
