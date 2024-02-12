@@ -148,7 +148,6 @@ export function DataTable<RowData>({
                       key={cell.id}
                       className={cell.column.columnDef.meta?.className}
                     >
-                      {console.log(cell.column.columnDef.meta?.className)}
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
