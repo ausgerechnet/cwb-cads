@@ -88,13 +88,11 @@ def login(data):
 
 @bp.post('/refresh')
 @bp.output(TokenOut)
-@bp.auth_required(auth)
 def refresh():
     """Return a new token if the user has a refresh token
 
     """
-
-    user = auth.current_user
+    # TODO: parse refresh token
 
     tokens = {
         'access_token': create_access_token(UserOut().dump(user)),

@@ -46,6 +46,7 @@ class DiscoursemeIn(Schema):
 
     name = String()
     description = String()
+    # _items = List(String())     # TODO
 
 
 class DiscoursemeOut(Schema):
@@ -53,7 +54,10 @@ class DiscoursemeOut(Schema):
     id = Integer()
     name = String()
     description = String()
-    _items = List(String())
+    _items = List(String())     # TODO
+
+
+# Endpunkt, um Items aus Diskurem entfernen
 
 
 @bp.post('/')

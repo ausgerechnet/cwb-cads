@@ -4,7 +4,7 @@
 from json import dumps
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String
+from apiflask.fields import Integer, List, Nested, String, Boolean, Dict
 from ccc import Corpus
 from flask import current_app
 
@@ -129,17 +129,35 @@ class ConcordanceLinesOutMMDA(Schema):
     role = List(List(String))
 
 
-class ConcordanceLinesOut(Schema):
+class TokenOut(Schema):
+
+    cpos = Integer()
+    offset = Integer()
+    word = String()
+    lemma = String()
+    out_of_window = Boolean()
+    discourseme_ids = List(Integer)
+
+
+class ConcordanceLineOut(Schema):
 
     match = Integer()
+    tokens = Nested(TokenOut(many=True))
+    structural = List(Dict)       # key-value pairs ohne entsprechende "Types"
 
-    positional = String()       # jsonified dict of: cpos, offset, role, word, lemma, ...
-    structural = String()       # jsonified dict of: text_id, text_id_cwbid, ...
+
+# Concordance Sorting / Pagination
+# - sorting according to position
+# - ascending / descending
+# - page size / page number
+
+# Concordance context extension
+# - concordance lines have to be identifable!
 
 
 @bp.get("/")
 @bp.input(ConcordanceIn, location='query')
-@bp.output(ConcordanceLinesOut(many=True))
+@bp.output(ConcordanceLineOut(many=True))
 @bp.auth_required(auth)
 def lines(query_id, data):
     """Get concordance lines.
@@ -192,4 +210,4 @@ def lines(query_id, data):
             'structural': dumps(structural)
         })
 
-    return [ConcordanceLinesOut().dump(line) for line in rows], 200
+    return [ConcordanceLineOut().dump(line) for line in rows], 200
