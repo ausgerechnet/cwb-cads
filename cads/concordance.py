@@ -196,7 +196,7 @@ def lines(query_id, data):
     rows = list()
     for line in concordance_lines:
         tokens = list()
-        for cpos, offset, prim, sec, roles in zip(line['cpos'], line['offset'], line[p_show[0]], line[p_show[0]], line['role']):
+        for cpos, offset, prim, sec, roles in zip(line['cpos'], line['offset'], line[p_show[0]], line[p_show[1]], line['role']):
             tokens.append({
                 'cpos': cpos,
                 'offset': offset,
