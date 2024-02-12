@@ -1,14 +1,21 @@
+import { useState } from 'react'
 import {
   ErrorComponentProps,
   Link,
   createLazyFileRoute,
+  useRouter,
 } from '@tanstack/react-router'
-import { AlertCircle } from 'lucide-react'
+import { useMutation } from '@tanstack/react-query'
+import { AlertCircle, Loader2 } from 'lucide-react'
 
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Headline2, Large } from '@/components/ui/typography'
+import { Button } from '@/components/ui/button'
+import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { QueryBreakdown } from './-query-breakdown'
+import { patchQueryMutationOptions } from '@/lib/queries'
+import { ErrorMessage } from '@/components/error-message'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -17,14 +24,76 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 
 function SingleQuery() {
   const { queryId } = Route.useParams()
+  const { queryDiscourseme } = Route.useLoaderData()
 
   return (
     <AppPageFrame title="Query">
       <div className="flex flex-col gap-4">
+        {queryDiscourseme ? <Discourseme /> : <AttachDiscourseme />}
         <Headline2>Breakdown</Headline2>
         <QueryBreakdown queryId={queryId} />
       </div>
     </AppPageFrame>
+  )
+}
+
+function Discourseme() {
+  const { queryDiscourseme } = Route.useLoaderData()
+  if (!queryDiscourseme) return null
+
+  return (
+    <div>
+      <Headline2>Discourseme</Headline2>
+      <div className="grid grid-cols-[auto_auto] gap-3">
+        <span>Id:</span>
+        <span>{queryDiscourseme.id}</span>
+        <span>Items:</span>
+        <span>
+          {queryDiscourseme._items?.join(', ') ?? (
+            <span className="italic">empty</span>
+          )}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function AttachDiscourseme() {
+  const { discoursemes, query } = Route.useLoaderData()
+  const [discoursemeId, setDiscoursemeId] = useState<number | undefined>()
+  const router = useRouter()
+  const { mutate, isPending, error } = useMutation({
+    ...patchQueryMutationOptions,
+    onSuccess: (...args) => {
+      patchQueryMutationOptions.onSuccess?.(...args)
+      router.invalidate()
+    },
+  })
+
+  const queryId = query.id
+
+  const attachDiscourseme = () => {
+    if (!queryId) return
+    mutate({
+      queryId: queryId.toString(),
+      discourseme_id: discoursemeId,
+    })
+  }
+
+  return (
+    <div>
+      <Headline2>No discourseme attached</Headline2>
+      <DiscoursemeSelect
+        discoursemes={discoursemes}
+        discoursemeId={discoursemeId}
+        onChange={setDiscoursemeId}
+      />
+      <Button onClick={attachDiscourseme} disabled={isPending}>
+        {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+        Attach
+      </Button>
+      <ErrorMessage error={error} />
+    </div>
   )
 }
 

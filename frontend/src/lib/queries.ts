@@ -18,6 +18,22 @@ export const queryQueryOptions = (queryId: string) =>
     placeholderData: {},
   })
 
+export const patchQueryMutationOptions: MutationOptions<
+  z.infer<typeof schemas.QueryOut>,
+  Error,
+  { queryId: string } & z.infer<typeof schemas.QueryInUpdate>
+> = {
+  mutationFn: ({ queryId, ...body }) =>
+    apiClient.patchQueryId(body, { params: { id: queryId } }),
+  onSuccess: (data) => {
+    const queryId = data.id
+    if (queryId !== undefined) {
+      queryClient.invalidateQueries(queryQueryOptions(queryId.toString()))
+    }
+    queryClient.invalidateQueries(queriesQueryOptions)
+  },
+}
+
 export const executeQueryMutationOptions: MutationOptions<
   unknown,
   Error,
