@@ -11,12 +11,10 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { required_error } from '@/lib/strings'
 import { Button } from '@/components/ui/button'
-import { ItemsInput } from '@/components/ui/items-input'
 import { useMutation } from '@tanstack/react-query'
 import { postDiscoursemeMutationOptions } from '@/lib/queries'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -78,23 +76,6 @@ function DiscoursemesNew() {
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="items"
-              render={({ field }) => (
-                <FormItem className="col-span-full">
-                  <FormLabel>Items</FormLabel>
-                  <FormControl>
-                    <ItemsInput
-                      defaultValue={field.value}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormDescription>Komma-separierte Items</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
