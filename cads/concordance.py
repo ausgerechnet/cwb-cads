@@ -210,7 +210,6 @@ def lines(query_id, data):
         structural = dict()
         for s_att in s_show + [s + "_cwbid" for s in s_show]:
             structural[s_att] = line[s_att]
-        print(structural)
 
         rows.append({
             'match': line['match'],
