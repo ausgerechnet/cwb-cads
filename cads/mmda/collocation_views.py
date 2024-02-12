@@ -437,10 +437,10 @@ def get_collocate_for_collocation(username, collocation):
         # SubCorpus
         subcorpus_name = "SOC" + "-" + "-".join([str(collocation._query.discourseme.id)] + [str(discourseme.id) for discourseme in filter_discoursemes])
         subcorpus = SubCorpus.query.filter_by(
-            corpus_id=collocation._query.corpus.id, name=subcorpus_name, description='SOC', cqp_nqr_matches=nqr_name
+            corpus_id=collocation._query.corpus.id, name=subcorpus_name, description='SOC', nqr_cqp=nqr_name
         ).first()
         if not subcorpus:
-            subcorpus = SubCorpus(corpus_id=collocation._query.corpus.id, name=subcorpus_name, description='SOC', cqp_nqr_matches=nqr_name)
+            subcorpus = SubCorpus(corpus_id=collocation._query.corpus.id, name=subcorpus_name, description='SOC', nqr_cqp=nqr_name)
             db.session.add(subcorpus)
 
         # Query
@@ -551,9 +551,9 @@ def get_concordance_for_collocation(username, collocation):
     # .. parameters
     window = int(request.args.get('window_size', 10))
     corpus = ccc_corpus_attributes(collocation._query.corpus.cwb_id,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
+                                   cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                   data_dir=current_app.config['CCC_DATA_DIR'])
     s_show = corpus['s_annotations']
     p_show = ['word', collocation.p]
     cut_off = request.args.get('cut_off', 500)
@@ -569,7 +569,7 @@ def get_concordance_for_collocation(username, collocation):
                                               name=subcorpus_name).first()
         query = Query.query.filter_by(corpus_id=corpus_id,
                                       discourseme=collocation._query.discourseme,
-                                      nqr_name=subcorpus.cqp_nqr_matches,
+                                      nqr_name=subcorpus.nqr_cqp,
                                       cqp_query=collocation._query.cqp_query).first()
         collocation = Collocation.query.filter_by(query_id=query.id,
                                                   s_break=collocation.s_break,

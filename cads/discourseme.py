@@ -120,12 +120,12 @@ def get_discoursemes():
 class DiscoursemeQueryIn(Schema):
 
     corpus_id = Integer()
-    match_strategy = String(load_default='longest')
-    p_query = String(load_default='lemma')
-    s_query = String(load_default=None)
-    flags = String(load_default="")
+    subcorpus_id = String(required=False, load_default=None)
+    match_strategy = String(required=False, load_default='longest')
+    p_query = String(required=False, load_default='word')
+    s_query = String(required=True)
+    flags = String(required=False, load_default="")
     escape = Boolean(load_default=False)
-    nqr_name = String(load_default=None)
 
 
 @bp.post('/<id>/query')
@@ -143,7 +143,7 @@ def query(id, data, data_query):
         corpus_id=data['corpus_id'],
         match_strategy=data['match_strategy'],
         cqp_query=format_cqp_query(discourseme.get_items(), data['p_query'], data['s_query'], data['flags'], data['escape']),
-        nqr_name=data['nqr_name']
+        subcorpus_id=data['subcorpus_id']
     )
     db.session.add(query)
     db.session.commit()

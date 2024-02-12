@@ -33,6 +33,12 @@ constellation_highlight_discoursemes = db.Table(
     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
 )
 
+subcorpus_segmentation_span = db.Table(
+    'SubCorpusSegmentation',
+    db.Column('subcorpus_id', db.Integer, db.ForeignKey('sub_corpus.id')),
+    db.Column('segmentation_span_id', db.Integer, db.ForeignKey('segmentation_span.id'))
+)
+
 
 class User(db.Model, UserMixin):
     """User
@@ -102,6 +108,7 @@ class Corpus(db.Model):
 
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
     attributes = db.relationship('CorpusAttributes', backref='corpus', passive_deletes=True, cascade='all, delete')
+    subcorpora = db.relationship('SubCorpus', backref='corpus', passive_deletes=True, cascade='all, delete')
 
     @property
     def s_atts(self):
@@ -128,13 +135,15 @@ class SubCorpus(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    corpus_id = db.Column(db.Unicode)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
+    segmentation_id = db.Column(db.Integer, db.ForeignKey('segmentation.id', ondelete='CASCADE'), index=True)
 
     name = db.Column(db.Unicode)
     description = db.Column(db.Unicode)
 
-    cqp_nqr_matches = db.Column(db.Unicode)
-    matches = db.relationship('Matches', backref='subcorpus')
+    nqr_cqp = db.Column(db.Unicode)
+    spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span,
+                            backref=db.backref('sub_corpus'))
 
 
 # class Embeddings(db.Model):
@@ -155,7 +164,7 @@ class Segmentation(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
-    level = db.Column(db.Unicode)  # collection, text, p, s
+    level = db.Column(db.Unicode)  # collection, text, p, s, ...
     spans = db.relationship('SegmentationSpan', backref='segmentation', passive_deletes=True, cascade='all, delete')
     annotations = db.relationship('SegmentationAnnotation', backref='segmentation', passive_deletes=True, cascade='all, delete')
 
@@ -168,7 +177,7 @@ class SegmentationAnnotation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     segmentation_id = db.Column(db.Integer, db.ForeignKey('segmentation.id', ondelete='CASCADE'), index=True)
     key = db.Column(db.Unicode)
-    value_type = db.Column(db.Unicode)
+    value_type = db.Column(db.Unicode)  # boolean, unicode, datetime, numeric
     segmentation_span_annotation = db.relationship('SegmentationSpanAnnotation', backref='segmentation_annotation',
                                                    passive_deletes=True, cascade='all, delete')
 
@@ -314,14 +323,14 @@ class Query(db.Model):
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
+    subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined NQR?
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+
+    match_strategy = db.Column(db.Unicode, default='longest')
+    cqp_query = db.Column(db.Unicode)
     s = db.Column(db.Unicode)
 
-    nqr_name = db.Column(db.Unicode)  # run on previously defined NQR?
-    cqp_query = db.Column(db.Unicode)
-    match_strategy = db.Column(db.Unicode, default='longest')
-
-    cqp_nqr_matches = db.Column(db.Unicode)  # resulting NQR in CWB
+    nqr_cqp = db.Column(db.Unicode)  # resulting NQR in CWB
 
     matches = db.relationship('Matches', backref='_query', passive_deletes=True)
     breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True)
@@ -332,11 +341,11 @@ class Query(db.Model):
     def subcorpus(self):
 
         # is this on a subcorpus?
-        if self.nqr_name:
-            if self.nqr_name.startswith("SOC-"):
+        if self.nqr_cqp:
+            if self.nqr_cqp.startswith("SOC-"):
                 subcorpus = "SOC"
             else:
-                subcorpus = SubCorpus.query.filter_by(cqp_nqr_matches=self.nqr_name).first().name
+                subcorpus = SubCorpus.query.filter_by(nqr_cqp=self.nqr_cqp).first().name
         else:
             subcorpus = None
 
@@ -352,7 +361,6 @@ class Matches(db.Model):
     # created = db.Column(db.DateTime, default=datetime.utcnow)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
-    subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), index=True)
 
     match = db.Column(db.Integer, nullable=False)
     matchend = db.Column(db.Integer, nullable=False)
@@ -511,12 +519,12 @@ class Collocation(db.Model):
         """
 
         # is this on a subcorpus?
-        nqr_name = self._query.nqr_name
-        if nqr_name:
-            if nqr_name.startswith("SOC-"):
+        nqr_cqp = self._query.nqr_cqp
+        if nqr_cqp:
+            if nqr_cqp.startswith("SOC-"):
                 subcorpus = "SOC"
             else:
-                subcorpus = SubCorpus.query.filter_by(cqp_nqr_matches=nqr_name).first().name
+                subcorpus = SubCorpus.query.filter_by(nqr_cqp=nqr_cqp).first().name
         else:
             subcorpus = None
 
@@ -614,7 +622,6 @@ class KeywordItems(db.Model):
     N2 = db.Column(db.Integer)
 
 
-@bp.cli.command('init')
 def init_db():
     """clear the existing data and create new tables"""
 
@@ -635,3 +642,9 @@ def init_db():
     admin.roles.append(admin_role)
     db.session.add(admin)
     db.session.commit()
+
+
+@bp.cli.command('init')
+def init_db_cmd():
+
+    init_db()
