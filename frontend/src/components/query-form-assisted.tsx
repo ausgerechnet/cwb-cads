@@ -1,12 +1,16 @@
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useLoaderData, useNavigate } from '@tanstack/react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
-import { postQueryAssistedMutationOptions } from '@/lib/queries'
+import {
+  corporaQueryOptions,
+  discoursemesQueryOptions,
+  postQueryAssistedMutationOptions,
+} from '@/lib/queries'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
   Form,
@@ -50,18 +54,19 @@ const InputAssisted = z.object({
   s: z.string({ required_error }),
 })
 
-export function FormAssisted() {
-  const { corpora, discoursemes } = useLoaderData({
-    from: '/_app/queries/new',
-    strict: true,
+export function QueryFormAssisted({
+  onSuccess,
+}: {
+  onSuccess?: (queryId: number) => void
+}) {
+  const [{ data: corpora }, { data: discoursemes }] = useSuspenseQueries({
+    queries: [corporaQueryOptions, discoursemesQueryOptions],
   })
+
   const form = useForm<z.infer<typeof InputAssisted>>({
     resolver: zodResolver(InputAssisted),
-    defaultValues: {
-      match_strategy: 'longest',
-    },
+    defaultValues: { match_strategy: 'longest' },
   })
-  const navigate = useNavigate()
 
   const corpusId = form.watch('corpus_id')
   const selectedCorpus = corpora.find(({ id }) => id === corpusId)
@@ -78,10 +83,13 @@ export function FormAssisted() {
     ...postQueryAssistedMutationOptions,
     onSuccess: (data, variables, context) => {
       postQueryAssistedMutationOptions.onSuccess?.(data, variables, context)
-      navigate({
-        to: '/queries/$queryId',
-        params: { queryId: String(data.id) },
-      })
+      const queryId = data.id
+      toast.success('Query created')
+      typeof queryId === 'number' && onSuccess?.(queryId)
+    },
+    onError: (...args) => {
+      postQueryAssistedMutationOptions.onError?.(...args)
+      toast.error('Failed to create query')
     },
   })
 
@@ -132,7 +140,7 @@ export function FormAssisted() {
                       onChange={field.onChange}
                     />
                   </FormControl>
-                  <QuickCreateDiscourseme />
+                  <QuickCreateDiscourseme onSuccess={field.onChange} />
                 </div>
                 <FormMessage />
               </FormItem>

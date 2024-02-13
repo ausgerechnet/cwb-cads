@@ -6,11 +6,9 @@ export const Route = createFileRoute('/_app/collocation-analysis/new')({
   validateSearch: z.object({
     queryId: z.coerce.number().int().nonnegative().optional().catch(undefined),
   }),
-  loader: async ({ context: { queryClient } }) => {
-    const [queries, discoursemes] = await Promise.all([
-      queryClient.fetchQuery(queriesQueryOptions),
-      queryClient.fetchQuery(discoursemesQueryOptions),
-    ])
-    return { queries, discoursemes }
-  },
+  loader: ({ context: { queryClient } }) =>
+    Promise.all([
+      queryClient.ensureQueryData(queriesQueryOptions),
+      queryClient.ensureQueryData(discoursemesQueryOptions),
+    ]),
 })

@@ -84,7 +84,7 @@ export function QueryBreakdown({ queryId }: { queryId: string }) {
       </div>
       {breakdown && <BreakdownTable breakdown={breakdown} />}
       {!breakdown && isLoading && !isPaused && (
-        <Skeleton className="h-80 max-w-md rounded-md" />
+        <Skeleton className="h-80 w-full rounded-md" />
       )}
       <ErrorMessage className="mt-4" error={errorQuery} />
       <ErrorMessage className="mt-4" error={errorBreakdown} />

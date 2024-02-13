@@ -24,13 +24,15 @@ export function Pagination<T>({ table }: { table: Table<T> }) {
         {totalRows || 'no'} {totalRows === 1 ? 'entry' : 'entries'}
       </Small>
       <div className="col-start-2 flex place-items-center gap-2">
-        <Button
-          disabled={!table.getCanPreviousPage()}
-          onClick={() => table.previousPage()}
-          variant="ghost"
-        >
-          <ChevronLeft className="mr-auto h-4 w-4" />
-        </Button>
+        {totalRows > 0 && (
+          <Button
+            disabled={!table.getCanPreviousPage()}
+            onClick={() => table.previousPage()}
+            variant="ghost"
+          >
+            <ChevronLeft className="mr-auto h-4 w-4" />
+          </Button>
+        )}
         {pages.map(({ pageIndex, isCurrent, isEllipsis }, i) => {
           if (isEllipsis) {
             return (
@@ -69,13 +71,15 @@ export function Pagination<T>({ table }: { table: Table<T> }) {
             </Button>
           )
         })}
-        <Button
-          disabled={!table.getCanNextPage()}
-          onClick={() => table.nextPage()}
-          variant="ghost"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+        {totalRows > 0 && (
+          <Button
+            disabled={!table.getCanNextPage()}
+            onClick={() => table.nextPage()}
+            variant="ghost"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
       </div>
       <div className="ml-auto flex w-min place-content-center place-items-center gap-3 self-end whitespace-pre">
         <Small>Items per Page</Small>

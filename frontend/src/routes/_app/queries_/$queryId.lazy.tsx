@@ -5,21 +5,24 @@ import {
   createLazyFileRoute,
   useRouter,
 } from '@tanstack/react-router'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 import {
+  discoursemesQueryOptions,
   patchQueryMutationOptions,
   queryConcordancesQueryOptions,
 } from '@/lib/queries'
 import { errorString } from '@/lib/error-string'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Headline2, Large } from '@/components/ui/typography'
+import { Headline2, Headline3, Large } from '@/components/ui/typography'
 import { Button } from '@/components/ui/button'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { ErrorMessage } from '@/components/error-message'
 import { Skeleton } from '@/components/ui/skeleton'
+import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
+import { Card } from '@/components/ui/card'
 import { QueryBreakdown } from './-query-breakdown'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
@@ -71,7 +74,8 @@ function Discourseme() {
 }
 
 function AttachDiscourseme() {
-  const { discoursemes, query } = Route.useLoaderData()
+  const { queryId } = Route.useParams()
+  const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)
   const [discoursemeId, setDiscoursemeId] = useState<number | undefined>()
   const router = useRouter()
   const { mutate, isPending, error } = useMutation({
@@ -82,8 +86,6 @@ function AttachDiscourseme() {
     },
   })
 
-  const queryId = query.id
-
   const attachDiscourseme = () => {
     if (!queryId) return
     mutate({
@@ -93,19 +95,27 @@ function AttachDiscourseme() {
   }
 
   return (
-    <div>
-      <Headline2>No discourseme attached</Headline2>
-      <DiscoursemeSelect
-        discoursemes={discoursemes}
-        discoursemeId={discoursemeId}
-        onChange={setDiscoursemeId}
-      />
-      <Button onClick={attachDiscourseme} disabled={isPending}>
-        {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-        Attach
-      </Button>
+    <Card className="max-w-md p-2">
+      <div className="flex flex-wrap gap-4 @container">
+        <Headline3 className="w-full">No discourseme attached</Headline3>
+        <DiscoursemeSelect
+          className="flex-grow"
+          discoursemes={discoursemes}
+          discoursemeId={discoursemeId}
+          onChange={setDiscoursemeId}
+        />
+        <QuickCreateDiscourseme className="w-full @sm:w-auto" />
+        <Button
+          className="w-full flex-grow"
+          onClick={attachDiscourseme}
+          disabled={isPending}
+        >
+          {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+          Attach
+        </Button>
+      </div>
       <ErrorMessage error={error} />
-    </div>
+    </Card>
   )
 }
 

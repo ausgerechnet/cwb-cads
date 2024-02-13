@@ -33,6 +33,7 @@ import {
 import { DefaultErrorComponent } from '@/components/default-error-component'
 import { DataTable, SortButton } from '@/components/data-table'
 import { QueriesLayout } from './-queries-layout'
+import { toast } from 'sonner'
 
 export const Route = createLazyFileRoute('/_app/queries')({
   component: Queries,
@@ -73,14 +74,6 @@ function Queries() {
           }}
         />
       )}
-      {queries.map((query) => (
-        <div
-          key={query.id}
-          className="mono my-4 flex flex-col gap-2 whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground"
-        >
-          {JSON.stringify(query, null, 2)}
-        </div>
-      ))}
     </QueriesLayout>
   )
 }
@@ -142,18 +135,23 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
       if (queryId === undefined) {
         throw new Error('Query ID is undefined')
       }
-      return <QueryPopover queryId={queryId.toString()} />
+      return <QuickActions key={queryId} queryId={queryId.toString()} />
     },
   },
 ]
 
-function QueryPopover({ queryId }: { queryId: string }) {
+function QuickActions({ queryId }: { queryId: string }) {
   const router = useRouter()
-  const { mutate, isPending } = useMutation({
+  const { mutate, isPending, isSuccess } = useMutation({
     ...deleteQueryMutationOptions,
     onSuccess: (...args) => {
       deleteQueryMutationOptions.onSuccess?.(...args)
       router.invalidate()
+      toast.success('Query deleted')
+    },
+    onError: (...args) => {
+      deleteQueryMutationOptions.onError?.(...args)
+      toast.error('An error occurred while deleting the query')
     },
   })
   return (
@@ -194,13 +192,13 @@ function QueryPopover({ queryId }: { queryId: string }) {
           Create Collocation Analysis
         </Link>
         <Button
-          disabled={isPending}
+          disabled={isPending || isSuccess}
           variant="destructive"
           className="w-full"
           onClick={() => mutate(queryId)}
           size="sm"
         >
-          {isPending ? (
+          {isPending || isSuccess ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <XSquare className="mr-2 h-4 w-4" />

@@ -1,12 +1,16 @@
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
-import { useLoaderData, useNavigate } from '@tanstack/react-router'
+import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
-import { postQueryMutationOptions } from '@/lib/queries'
+import {
+  corporaQueryOptions,
+  discoursemesQueryOptions,
+  postQueryMutationOptions,
+} from '@/lib/queries'
 import {
   Form,
   FormControl,
@@ -42,12 +46,14 @@ const InputCQP = z.object({
   s: z.string({ required_error }),
 })
 
-export function FormCQP() {
-  const { corpora, discoursemes } = useLoaderData({
-    from: '/_app/queries/new',
-    strict: true,
+export function QueryFormCQP({
+  onSuccess,
+}: {
+  onSuccess?: (queryId: number) => void
+}) {
+  const [{ data: corpora }, { data: discoursemes }] = useSuspenseQueries({
+    queries: [corporaQueryOptions, discoursemesQueryOptions],
   })
-  const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof InputCQP>>({
     resolver: zodResolver(InputCQP),
@@ -70,10 +76,13 @@ export function FormCQP() {
     ...postQueryMutationOptions,
     onSuccess: (data, variables, context) => {
       postQueryMutationOptions.onSuccess?.(data, variables, context)
-      navigate({
-        to: '/queries/$queryId',
-        params: { queryId: String(data.id) },
-      })
+      const queryId = data.id
+      toast.success('Query created')
+      typeof queryId === 'number' && onSuccess?.(queryId)
+    },
+    onError: (error, variables, context) => {
+      postQueryMutationOptions.onError?.(error, variables, context)
+      toast.error('Failed to create query')
     },
   })
 

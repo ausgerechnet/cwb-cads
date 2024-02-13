@@ -8,8 +8,9 @@ export const Route = createFileRoute('/_app/queries/new')({
   validateSearch: z.object({
     formMode: FormMode,
   }),
-  loader: async ({ context: { queryClient } }) => ({
-    corpora: await queryClient.fetchQuery(corporaQueryOptions),
-    discoursemes: await queryClient.fetchQuery(discoursemesQueryOptions),
-  }),
+  loader: ({ context: { queryClient } }) =>
+    Promise.all([
+      queryClient.ensureQueryData(corporaQueryOptions),
+      queryClient.ensureQueryData(discoursemesQueryOptions),
+    ]),
 })

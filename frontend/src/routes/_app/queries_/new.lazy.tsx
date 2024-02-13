@@ -4,8 +4,8 @@ import { Card } from '@/components/ui/card'
 import { Headline1 } from '@/components/ui/typography'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
-import { FormAssisted } from './-form-assisted'
-import { FormCQP } from './-form-cqp'
+import { QueryFormCQP } from '@/components/query-form-cqp'
+import { QueryFormAssisted } from '@/components/query-form-assisted'
 
 export const Route = createLazyRoute('/_app/queries/new')({
   component: QueriesNew,
@@ -15,6 +15,11 @@ export const Route = createLazyRoute('/_app/queries/new')({
 function QueriesNew() {
   const { formMode = 'assisted' } = Route.useSearch()
   const navigate = useNavigate()
+  const handleSuccess = (queryId: number) =>
+    navigate({
+      to: '/queries/$queryId',
+      params: { queryId: String(queryId) },
+    })
 
   return (
     <div className="p-2">
@@ -41,10 +46,10 @@ function QueriesNew() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="cqp">
-            <FormCQP />
+            <QueryFormCQP onSuccess={handleSuccess} />
           </TabsContent>
           <TabsContent value="assisted">
-            <FormAssisted />
+            <QueryFormAssisted onSuccess={handleSuccess} />
           </TabsContent>
         </Tabs>
       </Card>

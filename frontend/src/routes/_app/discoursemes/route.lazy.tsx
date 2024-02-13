@@ -1,8 +1,13 @@
 import { toast } from 'sonner'
-import { useState } from 'react'
-import { createLazyFileRoute, Link, useRouter } from '@tanstack/react-router'
+import {
+  createLazyFileRoute,
+  Link,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
-import { Loader2, MoreVertical, Plus, XSquare } from 'lucide-react'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { Eye, Loader2, MoreVertical, Plus, XSquare } from 'lucide-react'
 import { schemas } from '@/rest-client'
 import { z } from 'zod'
 
@@ -16,7 +21,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import {
   deleteDiscoursemeMutationOptions,
   discoursemesQueryOptions,
@@ -49,15 +53,20 @@ const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeOut>>[] = [
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <QuickActions key={row.original.id ?? ''} discourseme={row.original} />
-    ),
+    cell: ({ row }) => {
+      const discoursemeId = row.original.id?.toString()
+      if (discoursemeId === undefined) {
+        throw new Error('Discourseme ID is undefined')
+      }
+      return <QuickActions key={discoursemeId} discoursemeId={discoursemeId} />
+    },
     meta: { className: 'w-0' },
   },
 ]
 
 function Discoursemes() {
   const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)
+  const navigate = useNavigate()
   return (
     <AppPageFrame
       title="Discoursemes"
@@ -79,16 +88,21 @@ function Discoursemes() {
           </Link>
         </>
       )}
-      <DataTable columns={columns} rows={discoursemes} />
+      <DataTable
+        onRowClick={(row) =>
+          navigate({
+            to: '/discoursemes/$discoursemeId',
+            params: { discoursemeId: String(row.id) },
+          })
+        }
+        columns={columns}
+        rows={discoursemes}
+      />
     </AppPageFrame>
   )
 }
 
-function QuickActions({
-  discourseme,
-}: {
-  discourseme: z.infer<typeof schemas.DiscoursemeOut>
-}) {
+function QuickActions({ discoursemeId }: { discoursemeId: string }) {
   const router = useRouter()
   const { mutate, isPending, isSuccess } = useMutation({
     ...deleteDiscoursemeMutationOptions,
@@ -102,7 +116,6 @@ function QuickActions({
       toast.error('Failed to delete discourseme')
     },
   })
-  const discoursemeId = discourseme.id?.toString()
   return (
     <Popover>
       <PopoverTrigger
@@ -118,15 +131,22 @@ function QuickActions({
         className="flex flex-col gap-2 "
         onClick={(event) => event.stopPropagation()}
       >
+        <Link
+          to="/discoursemes/$discoursemeId"
+          params={{ discoursemeId }}
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'w-full',
+          )}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          View Discourseme
+        </Link>
         <Button
           disabled={isPending || isSuccess}
           variant="destructive"
           className="w-full"
-          onClick={() => {
-            if (discoursemeId !== undefined) {
-              mutate(discoursemeId)
-            }
-          }}
+          onClick={() => mutate(discoursemeId)}
           size="sm"
         >
           {isPending || isSuccess ? (

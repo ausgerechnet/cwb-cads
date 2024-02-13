@@ -1,14 +1,21 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation } from '@tanstack/react-query'
+import {
+  createLazyFileRoute,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, PlusIcon } from 'lucide-react'
 
 import { clamp } from '@/lib/clamp'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
-import { postCollocationQueryMutationOptions } from '@/lib/queries'
+import {
+  postCollocationQueryMutationOptions,
+  queriesQueryOptions,
+} from '@/lib/queries'
 import { required_error } from '@/lib/strings'
 import { schemas } from '@/rest-client'
 import { Button } from '@/components/ui/button'
@@ -51,9 +58,10 @@ const CollocationInWithQueryId = schemas.CollocationIn.extend({
 type CollocationInWithQueryId = z.infer<typeof CollocationInWithQueryId>
 
 function NewCollocationAnalysis() {
-  const { queries } = Route.useLoaderData()
+  const { data: queries } = useSuspenseQuery(queriesQueryOptions)
   const { queryId } = Route.useSearch()
   const navigate = useNavigate()
+  const router = useRouter()
   const { mutate, isPending, error } = useMutation({
     ...postCollocationQueryMutationOptions,
     onSuccess: (data, ...rest) => {
@@ -106,7 +114,7 @@ function NewCollocationAnalysis() {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Query {field.value}</FormLabel>
+                    <FormLabel>Query</FormLabel>
                     <FormControl>
                       <div className="flex w-full gap-2">
                         <QuerySelect
@@ -115,7 +123,9 @@ function NewCollocationAnalysis() {
                           onChange={(newQueryId) => field.onChange(newQueryId)}
                           className="flex-grow"
                         />
-                        <QuickCreateQuery />
+                        <QuickCreateQuery
+                          onSuccess={() => router.invalidate()}
+                        />
                       </div>
                     </FormControl>
                     <FormMessage />
