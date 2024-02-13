@@ -1,11 +1,11 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { putSubcorpusMutationOptions } from '@/lib/queries'
+import { corporaQueryOptions, putSubcorpusMutationOptions } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { CorpusSelect } from '@/components/select-corpus'
 import {
@@ -32,7 +32,7 @@ const SubcorpusPut = z.object({
 type SubcorpusPut = z.infer<typeof SubcorpusPut>
 
 function SubcorpusNew() {
-  const { corpora } = Route.useLoaderData()
+  const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
   const form = useForm<SubcorpusPut>({
     resolver: zodResolver(SubcorpusPut),
   })

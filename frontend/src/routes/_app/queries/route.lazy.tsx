@@ -7,13 +7,15 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
+import { toast } from 'sonner'
 
 import { cn } from '@/lib/utils'
 import {
   deleteQueryMutationOptions,
   discoursemeQueryOptions,
+  queriesQueryOptions,
 } from '@/lib/queries'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@/components/ui/button'
@@ -25,9 +27,8 @@ import {
 } from '@/components/ui/popover'
 import { DefaultErrorComponent } from '@/components/default-error-component'
 import { DataTable, SortButton } from '@/components/data-table'
-import { QueriesLayout } from './-queries-layout'
-import { toast } from 'sonner'
 import { ButtonAlert } from '@/components/button-alert'
+import { QueriesLayout } from './-queries-layout'
 
 export const Route = createLazyFileRoute('/_app/queries')({
   component: Queries,
@@ -35,7 +36,7 @@ export const Route = createLazyFileRoute('/_app/queries')({
 })
 
 function Queries() {
-  const { queries } = Route.useLoaderData()
+  const { data: queries } = useSuspenseQuery(queriesQueryOptions)
   const navigate = useNavigate()
   return (
     <QueriesLayout>

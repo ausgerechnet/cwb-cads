@@ -11,22 +11,11 @@ export const Route = createFileRoute('/_app/queries/$queryId')({
   validateSearch: z.object({
     pAtt: z.string().optional(),
   }),
-  loader: async ({ context: { queryClient }, params: { queryId } }) => {
-    const [query, breakdown, discoursemes] = await Promise.all([
-      queryClient.fetchQuery(queryQueryOptions(queryId)),
+  loader: ({ context: { queryClient }, params: { queryId } }) =>
+    Promise.all([
+      queryClient.ensureQueryData(queryQueryOptions(queryId)),
       queryClient.ensureQueryData(queryBreakdownsQueryOptions(queryId)),
-      queryClient.fetchQuery(discoursemesQueryOptions),
-    ])
-    const discoursemeId = query.discourseme_id
-    const queryDiscourseme = discoursemeId
-      ? discoursemes.find((discourseme) => discourseme.id === discoursemeId)
-      : undefined
-    return {
-      query,
-      breakdown,
-      discoursemes,
-      queryDiscourseme,
-    }
-  },
+      queryClient.ensureQueryData(discoursemesQueryOptions),
+    ]),
   pendingComponent: DefaultPendingComponent,
 })

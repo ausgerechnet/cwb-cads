@@ -10,9 +10,8 @@ export const Route = createFileRoute('/_app/queries')({
     pageIndex: z.number().int().nonnegative().optional().catch(0),
     pageSize: z.number().positive().optional(),
   }),
-  loader: async ({ context: { queryClient } }) => ({
-    queries: await queryClient.fetchQuery(queriesQueryOptions),
-  }),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(queriesQueryOptions),
 })
 
 function QueriesPending() {

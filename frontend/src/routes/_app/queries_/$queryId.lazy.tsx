@@ -7,8 +7,10 @@ import {
 } from '@tanstack/react-router'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
+import { z } from 'zod'
 
 import {
+  discoursemeQueryOptions,
   discoursemesQueryOptions,
   patchQueryMutationOptions,
   queryConcordancesQueryOptions,
@@ -24,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Card } from '@/components/ui/card'
 import { QueryBreakdown } from './-query-breakdown'
+import { schemas } from '@/rest-client'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -32,13 +35,17 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 
 function SingleQuery() {
   const { queryId } = Route.useParams()
-  const { queryDiscourseme } = Route.useLoaderData()
+  const { data: queryDiscourseme } = useQuery(discoursemeQueryOptions(queryId))
   const { data, isLoading } = useQuery(queryConcordancesQueryOptions(queryId))
 
   return (
     <AppPageFrame title="Query">
       <div className="flex flex-col gap-4">
-        {queryDiscourseme ? <Discourseme /> : <AttachDiscourseme />}
+        {queryDiscourseme ? (
+          <Discourseme discourseme={queryDiscourseme} />
+        ) : (
+          <AttachDiscourseme />
+        )}
         <Headline2>Breakdown</Headline2>
         <QueryBreakdown queryId={queryId} />
         {data && (
@@ -52,19 +59,22 @@ function SingleQuery() {
   )
 }
 
-function Discourseme() {
-  const { queryDiscourseme } = Route.useLoaderData()
-  if (!queryDiscourseme) return null
+function Discourseme({
+  discourseme,
+}: {
+  discourseme: z.infer<typeof schemas.DiscoursemeOut>
+}) {
+  if (!discourseme) return null
 
   return (
     <div>
       <Headline2>Discourseme</Headline2>
       <div className="grid grid-cols-[auto_auto] gap-3">
         <span>Id:</span>
-        <span>{queryDiscourseme.id}</span>
+        <span>{discourseme.id}</span>
         <span>Items:</span>
         <span>
-          {queryDiscourseme._items?.join(', ') ?? (
+          {discourseme._items?.join(', ') ?? (
             <span className="italic">empty</span>
           )}
         </span>

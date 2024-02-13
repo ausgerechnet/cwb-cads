@@ -1,5 +1,5 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Loader2, Plus } from 'lucide-react'
 
@@ -7,6 +7,7 @@ import { schemas } from '@/rest-client'
 import {
   subcorporaQueryOptions,
   putSubcorpusMutationOptions,
+  corporaQueryOptions,
 } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,7 +20,7 @@ export const Route = createLazyFileRoute('/_app/subcorpora')({
 })
 
 function Subcorpora() {
-  const { corpora } = Route.useLoaderData()
+  const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
 
   return (
     <AppPageFrame

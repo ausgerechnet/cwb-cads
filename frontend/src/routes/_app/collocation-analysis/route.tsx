@@ -1,4 +1,5 @@
 import { ErrorComponentProps, createFileRoute } from '@tanstack/react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { AlertCircle } from 'lucide-react'
 
 import { collocationsQueryOptions } from '@/lib/queries'
@@ -8,15 +9,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 export const Route = createFileRoute('/_app/collocation-analysis')({
   component: CollocationAnalysis,
   errorComponent: CollocationAnalysisError,
-  loader: async ({ context: { queryClient } }) => ({
-    collocationAnalyses: await queryClient.ensureQueryData(
-      collocationsQueryOptions,
-    ),
-  }),
+  loader: async ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(collocationsQueryOptions),
 })
 
 function CollocationAnalysis() {
-  const { collocationAnalyses } = Route.useLoaderData()
+  const { data: collocationAnalyses } = useSuspenseQuery(
+    collocationsQueryOptions,
+  )
   return (
     <Layout>
       Collocation Analysis goes here
