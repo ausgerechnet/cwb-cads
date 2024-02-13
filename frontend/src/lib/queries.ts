@@ -1,6 +1,7 @@
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient, queryClient, schemas } from '@/rest-client'
+import { w } from 'vitest/dist/reporters-qc5Smpt5.js'
 
 // ==================== QUERIES ====================
 // "queries" as in "cqp queries", but "query" as in "react-query"
@@ -203,6 +204,18 @@ export const postDiscoursemeMutationOptions: MutationOptions<
 > = {
   mutationFn: (body) => apiClient.postDiscourseme(body),
   onSuccess: () => {
+    queryClient.invalidateQueries(discoursemesQueryOptions)
+  },
+}
+
+export const deleteDiscoursemeMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  string
+> = {
+  mutationFn: (discoursemeId: string) =>
+    apiClient.deleteDiscoursemeId(undefined, { params: { id: discoursemeId } }),
+  onSettled: () => {
     queryClient.invalidateQueries(discoursemesQueryOptions)
   },
 }

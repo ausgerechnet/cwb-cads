@@ -8,6 +8,7 @@ export const router = createRouter({
   routeTree,
   defaultStaleTime: 0,
   defaultPreload: false,
+  defaultPreloadStaleTime: 0,
   defaultErrorComponent: DefaultErrorComponent,
   defaultPendingComponent: DefaultPendingComponent,
   context: { queryClient },
