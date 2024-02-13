@@ -1,15 +1,25 @@
 import { useState } from 'react'
+import { Plus } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { QueryFormCQP } from '@/components/query-form-cqp'
 import { QueryFormAssisted } from '@/components/query-form-assisted'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 export function QuickCreateQuery({
   onSuccess,
+  className,
 }: {
   onSuccess?: (queryId: number) => void
+  className?: string
 }) {
   const [formMode, setFormMode] = useState<'assisted' | 'cqp'>('assisted')
   const [isOpen, setIsOpen] = useState(false)
@@ -19,6 +29,22 @@ export function QuickCreateQuery({
   }
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className={cn(className, 'aspect-square')}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Create a new query</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DialogTrigger asChild>
         <Button variant="secondary">Create Query</Button>
       </DialogTrigger>
