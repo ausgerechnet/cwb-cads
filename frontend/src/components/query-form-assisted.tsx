@@ -15,7 +15,6 @@ import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -158,10 +157,6 @@ export function QueryFormAssisted({
                     onChange={field.onChange}
                   />
                 </FormControl>
-                <FormDescription>
-                  Komma-separierte Liste von Items, die in der Query verwendet
-                  werden sollen.
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
