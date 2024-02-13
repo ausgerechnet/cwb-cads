@@ -1,11 +1,4 @@
-import {
-  Eye,
-  Loader2,
-  MoreVertical,
-  Plus,
-  TextSelect,
-  XSquare,
-} from 'lucide-react'
+import { Eye, Loader2, MoreVertical, Plus, TextSelect } from 'lucide-react'
 import {
   Link,
   createLazyFileRoute,
@@ -23,7 +16,7 @@ import {
   discoursemeQueryOptions,
 } from '@/lib/queries'
 import { schemas } from '@/rest-client'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
 import {
   Popover,
@@ -34,6 +27,7 @@ import { DefaultErrorComponent } from '@/components/default-error-component'
 import { DataTable, SortButton } from '@/components/data-table'
 import { QueriesLayout } from './-queries-layout'
 import { toast } from 'sonner'
+import { ButtonAlert } from '@/components/button-alert'
 
 export const Route = createLazyFileRoute('/_app/queries')({
   component: Queries,
@@ -191,20 +185,13 @@ function QuickActions({ queryId }: { queryId: string }) {
           <TextSelect className="mr-2 h-4 w-4" />
           Create Collocation Analysis
         </Link>
-        <Button
+        <ButtonAlert
           disabled={isPending || isSuccess}
-          variant="destructive"
-          className="w-full"
+          labelDescription="This will permanently delete the query."
           onClick={() => mutate(queryId)}
-          size="sm"
         >
-          {isPending || isSuccess ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <XSquare className="mr-2 h-4 w-4" />
-          )}
-          Delete
-        </Button>
+          Delete Query
+        </ButtonAlert>
       </PopoverContent>
     </Popover>
   )

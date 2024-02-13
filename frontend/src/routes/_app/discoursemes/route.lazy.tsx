@@ -7,24 +7,25 @@ import {
 } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
-import { Eye, Loader2, MoreVertical, Plus, XSquare } from 'lucide-react'
+import { Eye, MoreVertical, Plus } from 'lucide-react'
 import { schemas } from '@/rest-client'
 import { z } from 'zod'
 
 import { cn } from '@/lib/utils'
+import {
+  deleteDiscoursemeMutationOptions,
+  discoursemesQueryOptions,
+} from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Large } from '@/components/ui/typography'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import { DataTable, SortButton } from '@/components/data-table'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import {
-  deleteDiscoursemeMutationOptions,
-  discoursemesQueryOptions,
-} from '@/lib/queries'
+import { ButtonAlert } from '@/components/button-alert'
 
 export const Route = createLazyFileRoute('/_app/discoursemes')({
   component: Discoursemes,
@@ -142,20 +143,13 @@ function QuickActions({ discoursemeId }: { discoursemeId: string }) {
           <Eye className="mr-2 h-4 w-4" />
           View Discourseme
         </Link>
-        <Button
-          disabled={isPending || isSuccess}
-          variant="destructive"
-          className="w-full"
+        <ButtonAlert
           onClick={() => mutate(discoursemeId)}
-          size="sm"
+          labelDescription="This will permanently delete the discourseme."
+          disabled={isPending || isSuccess}
         >
-          {isPending || isSuccess ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <XSquare className="mr-2 h-4 w-4" />
-          )}
-          Delete
-        </Button>
+          Delete Discourseme
+        </ButtonAlert>
       </PopoverContent>
     </Popover>
   )
