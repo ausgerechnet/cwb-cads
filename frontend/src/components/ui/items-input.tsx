@@ -59,6 +59,9 @@ export function ItemsInput({
       )
       setValue('')
     }
+    if (event.key === 'Backspace' && value === '') {
+      moveFocus(-1)
+    }
   }
 
   function removeItem(button: HTMLButtonElement, item: string) {
