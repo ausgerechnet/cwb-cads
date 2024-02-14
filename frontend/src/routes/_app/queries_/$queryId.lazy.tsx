@@ -5,15 +5,22 @@ import {
   createLazyFileRoute,
   useRouter,
 } from '@tanstack/react-router'
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useSuspenseQueries,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { z } from 'zod'
+import { toast } from 'sonner'
 
+import { schemas } from '@/rest-client'
 import {
-  discoursemeQueryOptions,
   discoursemesQueryOptions,
   patchQueryMutationOptions,
   queryConcordancesQueryOptions,
+  queryQueryOptions,
 } from '@/lib/queries'
 import { errorString } from '@/lib/error-string'
 import { AppPageFrame } from '@/components/app-page-frame'
@@ -26,7 +33,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Card } from '@/components/ui/card'
 import { QueryBreakdown } from './-query-breakdown'
-import { schemas } from '@/rest-client'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -35,7 +41,15 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 
 function SingleQuery() {
   const { queryId } = Route.useParams()
-  const { data: queryDiscourseme } = useQuery(discoursemeQueryOptions(queryId))
+  const queryDiscourseme = useSuspenseQueries({
+    queries: [queryQueryOptions(queryId), discoursemesQueryOptions],
+    combine: ([query, discoursemes]) => {
+      const queryDiscourseme = discoursemes.data?.find(
+        (discourseme) => discourseme.id === query.data?.discourseme_id,
+      )
+      return queryDiscourseme
+    },
+  })
   const { data, isLoading } = useQuery(queryConcordancesQueryOptions(queryId))
 
   return (
@@ -93,6 +107,11 @@ function AttachDiscourseme() {
     onSuccess: (...args) => {
       patchQueryMutationOptions.onSuccess?.(...args)
       router.invalidate()
+      toast.success('Discourseme attached')
+    },
+    onError: (...args) => {
+      patchQueryMutationOptions.onError?.(...args)
+      toast.error('Failed to attach discourseme')
     },
   })
 
@@ -120,7 +139,7 @@ function AttachDiscourseme() {
           onClick={attachDiscourseme}
           disabled={isPending}
         >
-          {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Attach
         </Button>
       </div>

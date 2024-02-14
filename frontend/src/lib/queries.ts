@@ -28,6 +28,7 @@ export const patchQueryMutationOptions: MutationOptions<
   onSuccess: (data) => {
     const queryId = data.id
     if (queryId !== undefined) {
+      console.log('Invalidating query', queryId)
       queryClient.invalidateQueries(queryQueryOptions(queryId.toString()))
     }
     queryClient.invalidateQueries(queriesQueryOptions)
