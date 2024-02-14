@@ -61,7 +61,7 @@ function RootComponent() {
             {!isLoggedIn && (
               <NavigationMenuItem className="flex flex-grow justify-end">
                 <MenuLink to="/login">
-                  <User className="mr-2 h-4 h-5" />
+                  <User className="mr-2 h-4 w-5" />
                   Login
                 </MenuLink>
               </NavigationMenuItem>
@@ -74,7 +74,7 @@ function RootComponent() {
       </header>
       <Outlet />
       <Toaster />
-      <ReactQueryDevtools buttonPosition="bottom-left" />
+      <ReactQueryDevtools buttonPosition="bottom-right" />
       <TanStackRouterDevtools position="bottom-right" />
     </>
   )
