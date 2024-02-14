@@ -19,7 +19,7 @@ export function Pagination<T>({ table }: { table: Table<T> }) {
   const totalRows = table.getCoreRowModel().rows.length
 
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr]">
+    <div className="sticky bottom-0 mx-[1px] grid grid-cols-[1fr_auto_1fr] bg-background/50 px-2 py-2 backdrop-blur-lg">
       <Small className="my-auto">
         {totalRows || 'no'} {totalRows === 1 ? 'entry' : 'entries'}
       </Small>

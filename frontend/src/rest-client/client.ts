@@ -6,8 +6,8 @@ import { router } from '@/router'
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0,
-      refetchOnWindowFocus: false,
+      staleTime: 10_000,
+      refetchOnWindowFocus: true,
     },
   },
 })
