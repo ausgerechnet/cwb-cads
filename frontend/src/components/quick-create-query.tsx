@@ -45,9 +45,6 @@ export function QuickCreateQuery({
           <TooltipContent>Create a new query</TooltipContent>
         </Tooltip>
       </TooltipProvider>
-      <DialogTrigger asChild>
-        <Button variant="secondary">Create Query</Button>
-      </DialogTrigger>
       <DialogContent>
         <Tabs
           className="mt-4"
