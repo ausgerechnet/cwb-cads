@@ -3,9 +3,10 @@ import {
   BookCopy,
   Crown,
   FormInput,
-  MessageCircle,
+  MessagesSquare,
   TextSelection,
   WholeWord,
+  MessageSquare,
 } from 'lucide-react'
 import { Outlet, createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
@@ -41,8 +42,12 @@ function App() {
             Keyword Analysis
           </AppMenuLink>
           <AppMenuLink to="/discoursemes">
-            <MessageCircle className="mr-2 h-4 w-4 flex-shrink-0" />
+            <MessageSquare className="mr-2 h-4 w-4 flex-shrink-0" />
             Discoursemes
+          </AppMenuLink>
+          <AppMenuLink to="/constellations">
+            <MessagesSquare className="mr-2 h-4 w-4 flex-shrink-0" />
+            Constellations
           </AppMenuLink>
           <AppMenuLink to="/subcorpora">
             <BookCopy className="mr-2 h-4 w-4 flex-shrink-0" />

@@ -1,6 +1,7 @@
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient, queryClient, schemas } from '@/rest-client'
+import { d } from 'vitest/dist/reporters-qc5Smpt5.js'
 
 // ==================== QUERIES ====================
 // "queries" as in "cqp queries", but "query" as in "react-query"
@@ -217,6 +218,45 @@ export const deleteDiscoursemeMutationOptions: MutationOptions<
     apiClient.deleteDiscoursemeId(undefined, { params: { id: discoursemeId } }),
   onSettled: () => {
     queryClient.invalidateQueries(discoursemesQueryOptions)
+  },
+}
+
+// =================== CONSTELLATIONS ====================
+
+export const constellationListQueryOptions = queryOptions({
+  queryKey: ['constellation-list'],
+  queryFn: ({ signal }) => apiClient.getConstellation({ signal }),
+})
+
+export const constellationQueryOptions = (constellationId: string) =>
+  queryOptions({
+    queryKey: ['constellation', constellationId],
+    queryFn: ({ signal }) =>
+      apiClient.getConstellationId({ params: { id: constellationId }, signal }),
+  })
+
+export const postConstellationMutationOptions: MutationOptions<
+  z.infer<typeof schemas.ConstellationOut>,
+  Error,
+  z.infer<typeof schemas.ConstellationIn>
+> = {
+  mutationFn: (body) => apiClient.postConstellation(body),
+  onSuccess: () => {
+    queryClient.invalidateQueries(constellationListQueryOptions)
+  },
+}
+
+export const deleteConstellationMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  string
+> = {
+  mutationFn: (constellationId: string) =>
+    apiClient.deleteConstellationId(undefined, {
+      params: { id: constellationId },
+    }),
+  onSuccess: () => {
+    queryClient.invalidateQueries(constellationListQueryOptions)
   },
 }
 

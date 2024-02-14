@@ -15,11 +15,14 @@ import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
+import { Route as AppConstellationsRouteImport } from './routes/_app/constellations/route'
 import { Route as AppCollocationAnalysisRouteImport } from './routes/_app/collocation-analysis/route'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
 import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_/$queryId'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
+import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
+import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
 import { Route as AppCollocationAnalysisNewImport } from './routes/_app/collocation-analysis_/new'
 import { Route as AppCollocationAnalysisCollocationIdImport } from './routes/_app/collocation-analysis_/$collocationId'
 
@@ -91,6 +94,13 @@ const AppDiscoursemesRouteRoute = AppDiscoursemesRouteImport.update({
   import('./routes/_app/discoursemes/route.lazy').then((d) => d.Route),
 )
 
+const AppConstellationsRouteRoute = AppConstellationsRouteImport.update({
+  path: '/constellations',
+  getParentRoute: () => AppRoute,
+} as any).lazy(() =>
+  import('./routes/_app/constellations/route.lazy').then((d) => d.Route),
+)
+
 const AppCollocationAnalysisRouteRoute =
   AppCollocationAnalysisRouteImport.update({
     path: '/collocation-analysis',
@@ -131,6 +141,23 @@ const AppDiscoursemesDiscoursemeIdRoute =
     getParentRoute: () => AppRoute,
   } as any).lazy(() =>
     import('./routes/_app/discoursemes_/$discoursemeId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
+const AppConstellationsNewRoute = AppConstellationsNewImport.update({
+  path: '/constellations/new',
+  getParentRoute: () => AppRoute,
+} as any).lazy(() =>
+  import('./routes/_app/constellations_/new.lazy').then((d) => d.Route),
+)
+
+const AppConstellationsConstellationIdRoute =
+  AppConstellationsConstellationIdImport.update({
+    path: '/constellations/$constellationId',
+    getParentRoute: () => AppRoute,
+  } as any).lazy(() =>
+    import('./routes/_app/constellations_/$constellationId.lazy').then(
       (d) => d.Route,
     ),
   )
@@ -180,6 +207,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCollocationAnalysisRouteImport
       parentRoute: typeof AppImport
     }
+    '/_app/constellations': {
+      preLoaderRoute: typeof AppConstellationsRouteImport
+      parentRoute: typeof AppImport
+    }
     '/_app/discoursemes': {
       preLoaderRoute: typeof AppDiscoursemesRouteImport
       parentRoute: typeof AppImport
@@ -206,6 +237,14 @@ declare module '@tanstack/react-router' {
     }
     '/_app/collocation-analysis/new': {
       preLoaderRoute: typeof AppCollocationAnalysisNewImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/constellations/$constellationId': {
+      preLoaderRoute: typeof AppConstellationsConstellationIdImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/constellations/new': {
+      preLoaderRoute: typeof AppConstellationsNewImport
       parentRoute: typeof AppImport
     }
     '/_app/discoursemes/$discoursemeId': {
@@ -238,6 +277,7 @@ export const routeTree = rootRoute.addChildren([
   Route,
   AppRoute.addChildren([
     AppCollocationAnalysisRouteRoute,
+    AppConstellationsRouteRoute,
     AppDiscoursemesRouteRoute,
     AppQueriesRouteRoute,
     AppSubcorporaRouteRoute,
@@ -245,6 +285,8 @@ export const routeTree = rootRoute.addChildren([
     AppKeywordAnalysisRoute,
     AppCollocationAnalysisCollocationIdRoute,
     AppCollocationAnalysisNewRoute,
+    AppConstellationsConstellationIdRoute,
+    AppConstellationsNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
     AppQueriesQueryIdRoute,
     AppQueriesNewRoute,

@@ -9,17 +9,19 @@ export function DiscoursemeSelect({
   discoursemeId,
   onChange,
   className,
+  undefinedName = 'No Discourseme Selected',
 }: {
   discoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
   discoursemeId?: number
   onChange?: (discoursemeId: number | undefined) => void
   className?: string
+  undefinedName?: string
 }) {
   const searchableItems = useMemo(
     () => [
       {
         id: undefined,
-        name: 'No Discourseme Selected',
+        name: undefinedName,
         searchValue: 'no_empty_nothing',
         renderValue: <span className="italic">No discourseme</span>,
       },
@@ -36,7 +38,7 @@ export function DiscoursemeSelect({
           renderValue: <span>{discourseme.name}</span>,
         })),
     ],
-    [discoursemes],
+    [discoursemes, undefinedName],
   )
 
   return (

@@ -10,12 +10,12 @@ export function AppPageFrame({
   cta,
   children,
 }: {
-  children: ReactNode
   title: string
   cta?: {
     nav: ComponentProps<typeof Link>
     label: ReactNode
   }
+  children?: ReactNode
 }) {
   return (
     <div className="p-2">
