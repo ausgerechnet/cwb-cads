@@ -75,7 +75,10 @@ function RootComponent() {
       <Outlet />
       <Toaster />
       <ReactQueryDevtools buttonPosition="bottom-right" />
-      <TanStackRouterDevtools position="bottom-right" />
+      <TanStackRouterDevtools
+        position="bottom-right"
+        toggleButtonProps={{ style: { bottom: 70 } }}
+      />
     </>
   )
 }
