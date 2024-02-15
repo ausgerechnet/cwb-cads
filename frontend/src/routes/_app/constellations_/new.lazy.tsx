@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, X } from 'lucide-react'
+import { Filter, Highlighter, Loader2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -36,7 +36,7 @@ type ConstellationIn = z.infer<typeof schemas.ConstellationIn>
 function NewConstellation() {
   return (
     <AppPageFrame title="Constellations">
-      <Card className="max-w-md p-4">
+      <Card className="max-w-2xl p-4">
         <NewConstellationForm />
       </Card>
     </AppPageFrame>
@@ -88,7 +88,10 @@ function NewConstellationForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((data) => mutate(data))}>
-        <fieldset disabled={isPending} className="flex flex-col gap-4">
+        <fieldset
+          disabled={isPending}
+          className="flex flex-col gap-4 @container"
+        >
           <FormField
             name="name"
             control={form.control}
@@ -115,41 +118,53 @@ function NewConstellationForm() {
               </FormItem>
             )}
           />
-          <FormField
-            name="highlight_discourseme_ids"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Highlight Discoursemes</FormLabel>
-                <FormControl>
-                  <DiscoursemeListSelect
-                    discoursemeIds={field.value}
-                    onChange={(ids) => field.onChange(ids)}
-                    selectableDiscoursemes={selectableDiscoursemes}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="filter_discourseme_ids"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Filter Discoursemes</FormLabel>
-                <FormControl>
-                  <DiscoursemeListSelect
-                    discoursemeIds={field.value}
-                    onChange={(ids) => field.onChange(ids)}
-                    selectableDiscoursemes={selectableDiscoursemes}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={isPending || isSuccess}>
+          <div className="grid gap-x-4 gap-y-4 @xl:grid-cols-2">
+            <FormField
+              name="highlight_discourseme_ids"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="inline-flex">
+                    <Highlighter className="mr-2 h-4 w-4" /> Highlight
+                    Discoursemes
+                  </FormLabel>
+                  <FormControl>
+                    <DiscoursemeListSelect
+                      discoursemeIds={field.value}
+                      onChange={(ids) => field.onChange(ids)}
+                      selectableDiscoursemes={selectableDiscoursemes}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="filter_discourseme_ids"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="inline-flex">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter Discoursemes
+                  </FormLabel>
+                  <FormControl>
+                    <DiscoursemeListSelect
+                      discoursemeIds={field.value}
+                      onChange={(ids) => field.onChange(ids)}
+                      selectableDiscoursemes={selectableDiscoursemes}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <Button
+            className="@xl:self-end"
+            type="submit"
+            disabled={isPending || isSuccess}
+          >
             {(isPending || isSuccess) && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
