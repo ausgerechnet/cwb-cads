@@ -188,25 +188,44 @@ function useTableOverflowPrevention(
 }
 
 export function SortButton<T>({
-  column,
   children,
+  column,
 }: {
   children: ReactNode
   column: SortingColumn<T>
 }) {
   return (
-    <Button
-      className="-m-3"
+    <SortButtonView
+      isSorted={column.getIsSorted()}
       onClick={() => column.toggleSorting()}
+    >
+      {children}
+    </SortButtonView>
+  )
+}
+
+export function SortButtonView({
+  onClick,
+  children,
+  className,
+  isSorted = false,
+}: {
+  children: ReactNode
+  onClick?: () => void
+  className?: string
+  isSorted?: false | 'asc' | 'desc'
+}) {
+  return (
+    <Button
+      className={cn('-m-3', className)}
+      onClick={onClick}
       variant="ghost"
       size="sm"
     >
       {children}
-      {column.getIsSorted() === 'asc' && <ArrowUp className="ml-2 h-4 w-4" />}
-      {column.getIsSorted() === 'desc' && (
-        <ArrowDown className="ml-2 h-4 w-4" />
-      )}
-      {column.getIsSorted() === false && (
+      {isSorted === 'asc' && <ArrowUp className="ml-2 h-4 w-4" />}
+      {isSorted === 'desc' && <ArrowDown className="ml-2 h-4 w-4" />}
+      {isSorted === false && (
         <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
       )}
     </Button>

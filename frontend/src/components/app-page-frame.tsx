@@ -20,7 +20,7 @@ export function AppPageFrame({
   return (
     <div className="p-2">
       <div className="mb-8 flex gap-4">
-        <Headline1 className="flex-grow">{title}</Headline1>
+        <Headline1 className="flex-grow overflow-hidden">{title}</Headline1>
         {cta && (
           <Link
             {...cta.nav}
