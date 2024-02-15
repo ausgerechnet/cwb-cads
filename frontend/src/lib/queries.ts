@@ -149,7 +149,7 @@ export const putSubcorpusMutationOptions: MutationOptions<
 export const sessionQueryOptions = queryOptions({
   queryKey: ['session'],
   queryFn: ({ signal }) => apiClient.getUseridentify({ signal }),
-  retry: false,
+  retry: 2,
 })
 
 export const loginMutationOptions: MutationOptions<
