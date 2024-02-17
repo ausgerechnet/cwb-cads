@@ -160,7 +160,7 @@ export const loginMutationOptions: MutationOptions<
   mutationFn: (credentials) => apiClient.postUserlogin(credentials),
   onSuccess: ({ access_token, refresh_token }) => {
     if (access_token) {
-      localStorage.setItem('auth-token', access_token)
+      localStorage.setItem('access-token', access_token)
     }
     if (refresh_token) {
       localStorage.setItem('refresh-token', refresh_token)
@@ -176,7 +176,7 @@ export const getUsersQueryOptions = queryOptions({
 
 export const logoutMutationOptions: MutationOptions = {
   mutationFn: async () => {
-    localStorage.removeItem('auth-token')
+    localStorage.removeItem('access-token')
   },
   onSuccess: () => {
     void queryClient.invalidateQueries(sessionQueryOptions)

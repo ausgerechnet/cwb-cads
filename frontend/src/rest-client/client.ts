@@ -15,7 +15,7 @@ export const queryClient = new QueryClient({
 export const apiClient = createApiClient(import.meta.env.VITE_API_URL || '/api')
 
 apiClient.axios.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth-token')
+  const token = localStorage.getItem('access-token')
   if (token) {
     config.headers.set('Authorization', `Bearer ${token}`)
   }
@@ -31,6 +31,7 @@ apiClient.axios.interceptors.response.use(
     // See: src/routes/_app.tsx
     const status = error?.response?.status
     if (status === 401 || status === 403) {
+      console.warn('Token expired or invalid, trying to refresh')
       await updateAuthToken()
       router.invalidate()
     }
@@ -40,17 +41,24 @@ apiClient.axios.interceptors.response.use(
 
 async function updateAuthToken() {
   const refreshToken = localStorage.getItem('refresh-token')
-  if (!refreshToken) return false
+  if (!refreshToken) {
+    console.warn('No refresh token found')
+    return false
+  }
   try {
     const response = await apiClient.postUserrefresh(undefined, {
       headers: { Authorization: `Bearer ${refreshToken}` },
     })
-    localStorage.setIten('auth-token', response.access_token)
+    console.warn('Token refreshed')
+    localStorage.setIten('access-token', response.access_token)
     localStorage.setIten('refresh-token', response.refresh_token)
     return true
   } catch (e) {
-    localStorage.removeItem('auth-token')
+    console.warn('Failed to refresh token')
+    localStorage.removeItem('access-token')
     localStorage.removeItem('refresh-token')
     return false
   }
 }
+
+window.updateAuthToken = updateAuthToken
