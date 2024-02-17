@@ -179,6 +179,7 @@ export const logoutMutationOptions: MutationOptions = {
     localStorage.removeItem('access-token')
   },
   onSuccess: () => {
+    queryClient.setQueryData(sessionQueryOptions.queryKey, null)
     void queryClient.invalidateQueries(sessionQueryOptions)
   },
 }
