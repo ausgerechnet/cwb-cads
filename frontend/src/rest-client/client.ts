@@ -46,15 +46,18 @@ async function updateAuthToken() {
     return false
   }
   try {
-    const response = await apiClient.postUserrefresh(undefined, {
-      headers: { Authorization: `Bearer ${refreshToken}` },
-    })
+    const { access_token, refresh_token } = await apiClient.postUserrefresh(
+      undefined,
+      { headers: { Authorization: `Bearer ${refreshToken}` } },
+    )
     console.warn('Token refreshed')
-    localStorage.setIten('access-token', response.access_token)
-    localStorage.setIten('refresh-token', response.refresh_token)
+    // TODO: API should return both tokens or fail.
+    access_token && localStorage.setItem('access-token', access_token)
+    refresh_token && localStorage.setItem('refresh-token', refresh_token)
     return true
   } catch (e) {
     console.warn('Failed to refresh token')
+    console.error(e)
     localStorage.removeItem('access-token')
     localStorage.removeItem('refresh-token')
     return false
