@@ -9,8 +9,7 @@ export const Route = createFileRoute(
 
 function CollocationAnalysis() {
   return (
-    <div>
-      <h1>Collocation Analysis</h1>
+    <div className="-m-2">
       <WordCloud />
     </div>
   )

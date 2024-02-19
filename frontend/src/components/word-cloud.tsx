@@ -7,17 +7,27 @@ type Word = {
   word: string
   x: number
   y: number
+  dragStartX?: number
+  dragStartY?: number
+  originX: number
+  originY: number
   significance: number
   radius: number
   discoursemes?: string[]
 }
 
 function createWord(override: Partial<Word> = {}): Word {
+  const position = [
+    faker.number.float({ min: 100, max: 800 }),
+    faker.number.float({ min: 100, max: 800 }),
+  ]
   return {
     id: faker.string.uuid(),
     word: faker.lorem.word(),
-    x: faker.number.float({ min: 100, max: 800 }),
-    y: faker.number.float({ min: 100, max: 800 }),
+    x: position[0],
+    y: position[1],
+    originX: position[0],
+    originY: position[1],
     significance: faker.number.float({ min: 0, max: 1 }),
     radius: 0,
     ...override,
@@ -46,66 +56,54 @@ export default function WordCloud({
   useEffect(() => {
     const data = words.map((word) => ({
       ...word,
-      x: word.x, // + Math.random() * 5000 - 2500,
-      y: word.y, // + Math.random() * 5000 - 2500,
-      originX: word.x,
-      originY: word.y,
-      radius: word.significance * 50 + 10,
+      radius: word.significance * 20 + 10,
     }))
 
     const drag = d3.drag<SVGCircleElement, Word>()
 
-    const originLines = d3
-      .select(svgRef.current)
-      .selectAll('line')
-      .data(data)
-      .join((enter) =>
-        enter
-          .append('line')
-          .attr('x1', (d) => d.x)
-          .attr('y1', (d) => d.y)
-          .attr('x2', (d) => d.originX)
-          .attr('y2', (d) => d.originY)
-          .attr('stroke', 'yellow')
-          .attr('stroke-opacity', 0.1)
-          .attr('stroke-width', 2),
-      )
+    const svg = d3.select(svgRef.current)
 
-    d3.select(svgRef.current)
-      .selectAll('g')
+    const container = svg.select('g').attr('cursor', 'grab')
+
+    const originLines = container
+      .selectAll('.origin-line')
       .data(data)
-      // @ts-expect-error TODO: type later
-      .join((enter) => {
-        const group = enter.append('g')
-        group
-          .append('circle')
-          .attr('class', 'hover:fill-blue-500')
-          .attr('fill', (d) =>
-            d.discoursemes?.includes('a') ? 'orange' : 'currentColor',
-          )
-          .attr('fill-opacity', 0.5)
-          .attr('cx', (d) => d.x)
-          .attr('cy', (d) => d.y)
-          .attr('r', 0)
-          .transition()
-          .duration(1_000)
-          .attr('r', (d) => d.radius)
-      })
+      .join('line')
+      .attr('stroke', 'currentColor')
+      .attr('stroke-opacity', 0.5)
+      .attr('x1', (d) => d.x)
+      .attr('y1', (d) => d.y)
+      .attr('x2', (d) => d.originX)
+      .attr('y2', (d) => d.originY)
+
+    const bubble = container
+      .selectAll('.word-bubble')
+      .data(data)
+      .join('circle')
+      .attr('class', 'hover:fill-blue-500 cursor-pointer')
+      .attr('fill', (d) =>
+        d.discoursemes?.includes('a') ? 'orange' : 'currentColor',
+      )
+      .attr('fill-opacity', 0.1)
+      .attr('transform', `translate(0, 0)`)
+      .attr('cx', (d) => d.x)
+      .attr('cy', (d) => d.y)
+      .attr('r', (d) => d.radius)
       .call(
         // @ts-expect-error TODO: type later
         drag.on('start', dragStarted).on('drag', dragged).on('end', dragEnded),
       )
 
     const simulation = d3
-      .forceSimulation(data)
+      .forceSimulation<d3.SimulationNodeDatum>(data)
       .force(
         'collide',
-        d3.forceCollide<Word>().radius((d) => d.radius),
+        // @ts-expect-error TODO: type later
+        d3.forceCollide().radius((d) => d.radius),
       )
       .force('origin', originForce)
       .on('tick', () => {
-        d3.select(svgRef.current)
-          .selectAll('circle')
+        bubble
           .data(data)
           .attr('cx', (d) => d.x)
           .attr('cy', (d) => d.y)
@@ -113,24 +111,57 @@ export default function WordCloud({
           .data(data)
           .attr('x1', (d) => d.x)
           .attr('y1', (d) => d.y)
-          .attr('x2', (d) => d.originX)
-          .attr('y2', (d) => d.originY)
       })
+
+    let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
+
+    // @ts-expect-error TODO: type later
+    svg.call(d3.zoom().scaleExtent([0.5, 5]).on('zoom', zoomed))
+
+    function zoomed({ transform }: { transform: d3.ZoomTransform }) {
+      const k = transform.k
+      transformationState = transform
+      // @ts-expect-error TODO: type later
+      bubble.attr('transform', transform).attr('r', (d) => d.radius / k)
+      // @ts-expect-error TODO: type later
+      originLines.attr('transform', transform)
+      simulation.alpha(0.3).restart()
+      // @ts-expect-error TODO: type later
+      simulation.force('collide')?.radius((d) => d.radius / k)
+    }
 
     // @ts-expect-error TODO: type later
     function dragStarted(event) {
       if (!event.active) simulation.alphaTarget(0.3).restart()
-      event.subject.fx = event.subject.x
-      event.subject.fy = event.subject.y
+      // event.subject.fx = event.subject.x
+      // event.subject.fy = event.subject.y
+      event.subject.dragStartX = event.subject.x
+      event.subject.dragStartY = event.subject.y
       // @ts-expect-error TODO: type later
       simulation.force('collide')?.strength?.(0)
       homeStrength = 0
     }
 
     // @ts-expect-error TODO: type later
-    function dragged(event) {
-      event.subject.fx = event.x
-      event.subject.fy = event.y
+    function dragged(event, d) {
+      // @ts-expect-error TODO: type later
+      d3.select(this)
+        .attr(
+          'cx',
+          (d.x = scaleFrom(
+            event.x,
+            d.dragStartX ?? d.originX,
+            transformationState.k,
+          )),
+        )
+        .attr(
+          'cy',
+          (d.y = scaleFrom(
+            event.y,
+            d.dragStartY ?? d.originY,
+            transformationState.k,
+          )),
+        )
     }
 
     // @ts-expect-error TODO: type later
@@ -140,11 +171,11 @@ export default function WordCloud({
       event.subject.fy = null
       // @ts-expect-error TODO: type later
       simulation.force('collide')?.strength?.(1)
-      homeStrength = 1
+      homeStrength = 0.5
     }
 
     // This value feels like a hack
-    let homeStrength = 1
+    let homeStrength = 0.5
     function originForce(alpha: number) {
       const nodes = simulation.nodes()
       for (let i = 0, n = nodes.length; i < n; ++i) {
@@ -156,7 +187,25 @@ export default function WordCloud({
         node.vy -= (node.y - node.originY) * k * 2
       }
     }
+
+    return () => {
+      bubble.remove()
+      originLines.remove()
+    }
   }, [words])
 
-  return <svg ref={svgRef} width={1000} height={1000} />
+  return (
+    <svg
+      ref={svgRef}
+      width={1000}
+      height={1000}
+      className="h-[calc(100svh-3.5rem)] w-full ring-2"
+    >
+      <g />
+    </svg>
+  )
+}
+
+function scaleFrom(position: number, origin: number, scale: number) {
+  return (position - origin) / scale + origin
 }
