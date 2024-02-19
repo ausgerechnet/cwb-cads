@@ -65,11 +65,11 @@ export default function WordCloud({
 
     const container = svg.select('g').attr('cursor', 'grab')
 
-    const originLines = container
+    const originLine = container
       .selectAll('.origin-line')
       .data(data)
       .join('line')
-      .attr('stroke', 'currentColor')
+      .attr('stroke', 'limegreen')
       .attr('stroke-opacity', 0.5)
       .attr('x1', (d) => d.x)
       .attr('y1', (d) => d.y)
@@ -81,10 +81,12 @@ export default function WordCloud({
       .data(data)
       .join('circle')
       .attr('class', 'hover:fill-blue-500 cursor-pointer')
-      .attr('fill', (d) =>
+      .attr('fill', 'transparent')
+      .attr('stroke-width', 2)
+      .attr('stroke', (d) =>
         d.discoursemes?.includes('a') ? 'orange' : 'currentColor',
       )
-      .attr('fill-opacity', 0.1)
+      .attr('stroke-opacity', (d) => (d.discoursemes?.includes('a') ? 1 : 0.05))
       .attr('transform', `translate(0, 0)`)
       .attr('cx', (d) => d.x)
       .attr('cy', (d) => d.y)
@@ -93,6 +95,20 @@ export default function WordCloud({
         // @ts-expect-error TODO: type later
         drag.on('start', dragStarted).on('drag', dragged).on('end', dragEnded),
       )
+
+    const text = container
+      .selectAll('.word-text')
+      .data(data)
+      .join('text')
+      .attr('class', 'pointer-events-none')
+      .attr('x', (d) => d.x)
+      .attr('y', (d) => d.y)
+      .attr('fill', 'currentColor')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .attr('lengthAdjust', 'spacingAndGlyphs')
+      .attr('textLength', (d) => d.radius * 2 - 5)
+      .text((d) => d.word)
 
     const simulation = d3
       .forceSimulation<d3.SimulationNodeDatum>(data)
@@ -107,10 +123,14 @@ export default function WordCloud({
           .data(data)
           .attr('cx', (d) => d.x)
           .attr('cy', (d) => d.y)
-        originLines
+        originLine
           .data(data)
           .attr('x1', (d) => d.x)
           .attr('y1', (d) => d.y)
+        text
+          .data(data)
+          .attr('x', (d) => d.x)
+          .attr('y', (d) => d.y)
       })
 
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
@@ -124,7 +144,11 @@ export default function WordCloud({
       // @ts-expect-error TODO: type later
       bubble.attr('transform', transform).attr('r', (d) => d.radius / k)
       // @ts-expect-error TODO: type later
-      originLines.attr('transform', transform)
+      originLine.attr('transform', transform)
+      text
+        // @ts-expect-error TODO: type later
+        .attr('transform', transform)
+        .attr('textLength', (d) => Math.max((d.radius * 2) / k - 5, 20))
       simulation.alpha(0.3).restart()
       // @ts-expect-error TODO: type later
       simulation.force('collide')?.radius((d) => d.radius / k)
@@ -190,7 +214,8 @@ export default function WordCloud({
 
     return () => {
       bubble.remove()
-      originLines.remove()
+      originLine.remove()
+      text.remove()
     }
   }, [words])
 
@@ -199,7 +224,7 @@ export default function WordCloud({
       ref={svgRef}
       width={1000}
       height={1000}
-      className="h-[calc(100svh-3.5rem)] w-full ring-2"
+      className="h-[calc(100svh-3.5rem)] w-full"
     >
       <g />
     </svg>
