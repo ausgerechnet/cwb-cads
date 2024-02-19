@@ -177,6 +177,7 @@ export const getUsersQueryOptions = queryOptions({
 export const logoutMutationOptions: MutationOptions = {
   mutationFn: async () => {
     localStorage.removeItem('access-token')
+    localStorage.removeItem('refresh-token')
   },
   onSuccess: () => {
     queryClient.setQueryData(sessionQueryOptions.queryKey, null)
