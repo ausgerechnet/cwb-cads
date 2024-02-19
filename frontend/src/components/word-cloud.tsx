@@ -54,10 +54,43 @@ export default function WordCloud({
   const svgRef = useRef(null)
 
   useEffect(() => {
-    const data = words.map((word) => ({
+    const bubbleData = words.map((word) => ({
       ...word,
       radius: word.significance * 20 + 10,
     }))
+
+    const discoursemeData = words
+      .map((words) => words.discoursemes ?? [])
+      .flat()
+      .map((id) => {
+        const bubbles = bubbleData.filter((b) => b.discoursemes?.includes(id))
+        const x =
+          bubbles.reduce((acc, bubble) => acc + bubble.x, 0) / bubbles.length
+        const y =
+          bubbles.reduce((acc, bubble) => acc + bubble.y, 0) / bubbles.length
+        return {
+          id: `discourseme:${id}`,
+          x,
+          y,
+          originX: x,
+          originY: y,
+          bubbles,
+        }
+      })
+
+    const discoursemeLinks = discoursemeData
+      .map(({ id: discoursemeId, x, y, bubbles }) =>
+        bubbles.map((bubble) => ({
+          source: discoursemeId,
+          sourceX: x,
+          sourceY: y,
+          target: bubble.id,
+          targetX: bubble.x,
+          targetY: bubble.y,
+          targetBubble: bubble,
+        })),
+      )
+      .flat()
 
     const drag = d3.drag<SVGCircleElement, Word>()
 
@@ -65,9 +98,29 @@ export default function WordCloud({
 
     const container = svg.select('g').attr('cursor', 'grab')
 
+    const discoursemeAnchor = container
+      .selectAll('.discourseme-anchor')
+      .data(discoursemeData)
+      .join('circle')
+      .attr('cx', (d) => d.x)
+      .attr('cy', (d) => d.y)
+      .attr('r', 2)
+      .attr('fill', 'yellow')
+
+    const discoursemeLink = container
+      .selectAll('.discourseme-link')
+      .data(discoursemeLinks)
+      .join('line')
+      .attr('x1', (d) => d.sourceX)
+      .attr('y1', (d) => d.sourceY)
+      .attr('x2', (d) => d.targetX)
+      .attr('y2', (d) => d.targetY)
+      .attr('stroke', 'yellow')
+      .attr('stroke-width', 0.1)
+
     const originLine = container
       .selectAll('.origin-line')
-      .data(data)
+      .data(bubbleData)
       .join('line')
       .attr('stroke', 'limegreen')
       .attr('stroke-opacity', 0.5)
@@ -78,10 +131,12 @@ export default function WordCloud({
 
     const bubble = container
       .selectAll('.word-bubble')
-      .data(data)
+      .data(bubbleData)
       .join('circle')
       .attr('class', 'hover:fill-blue-500 cursor-pointer')
-      .attr('fill', 'transparent')
+      .attr('fill', (d) =>
+        d.discoursemes?.includes('a') ? 'darkorange' : 'transparent',
+      )
       .attr('stroke-width', 2)
       .attr('stroke', (d) =>
         d.discoursemes?.includes('a') ? 'orange' : 'currentColor',
@@ -98,7 +153,7 @@ export default function WordCloud({
 
     const text = container
       .selectAll('.word-text')
-      .data(data)
+      .data(bubbleData)
       .join('text')
       .attr('class', 'pointer-events-none')
       .attr('x', (d) => d.x)
@@ -111,26 +166,41 @@ export default function WordCloud({
       .text((d) => d.word)
 
     const simulation = d3
-      .forceSimulation<d3.SimulationNodeDatum>(data)
+      .forceSimulation<d3.SimulationNodeDatum>([
+        ...bubbleData,
+        ...discoursemeData,
+      ])
       .force(
         'collide',
         // @ts-expect-error TODO: type later
         d3.forceCollide().radius((d) => d.radius),
       )
+      .force(
+        'link',
+        d3
+          .forceLink(discoursemeLinks)
+          // @ts-expect-error TODO: type later
+          .id((d) => d.id)
+          .distance(30),
+      )
       .force('origin', originForce)
       .on('tick', () => {
         bubble
-          .data(data)
+          .data(bubbleData)
           .attr('cx', (d) => d.x)
           .attr('cy', (d) => d.y)
         originLine
-          .data(data)
+          .data(bubbleData)
           .attr('x1', (d) => d.x)
           .attr('y1', (d) => d.y)
         text
-          .data(data)
+          .data(bubbleData)
           .attr('x', (d) => d.x)
           .attr('y', (d) => d.y)
+        discoursemeLink
+          .data(discoursemeLinks)
+          .attr('x2', (d) => d.targetBubble.x)
+          .attr('y2', (d) => d.targetBubble.y)
       })
 
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
@@ -145,6 +215,10 @@ export default function WordCloud({
       bubble.attr('transform', transform).attr('r', (d) => d.radius / k)
       // @ts-expect-error TODO: type later
       originLine.attr('transform', transform)
+      // @ts-expect-error TODO: type later
+      discoursemeAnchor.attr('transform', transform)
+      // @ts-expect-error TODO: type later
+      discoursemeLink.attr('transform', transform)
       text
         // @ts-expect-error TODO: type later
         .attr('transform', transform)
@@ -157,12 +231,13 @@ export default function WordCloud({
     // @ts-expect-error TODO: type later
     function dragStarted(event) {
       if (!event.active) simulation.alphaTarget(0.3).restart()
-      // event.subject.fx = event.subject.x
-      // event.subject.fy = event.subject.y
       event.subject.dragStartX = event.subject.x
       event.subject.dragStartY = event.subject.y
+      event.subject.isDragged = true
       // @ts-expect-error TODO: type later
       simulation.force('collide')?.strength?.(0)
+      // @ts-expect-error TODO: type later
+      simulation.force('link')?.strength?.(0)
       homeStrength = 0
     }
 
@@ -193,8 +268,11 @@ export default function WordCloud({
       if (!event.active) simulation.alphaTarget(0)
       event.subject.fx = null
       event.subject.fy = null
+      event.subject.isDragged = false
       // @ts-expect-error TODO: type later
       simulation.force('collide')?.strength?.(1)
+      // @ts-expect-error TODO: type later
+      simulation.force('link')?.strength?.(1)
       homeStrength = 0.5
     }
 
@@ -206,6 +284,8 @@ export default function WordCloud({
         const k = alpha * 0.8 * homeStrength
         const node = nodes[i]
         // @ts-expect-error TODO: type later
+        if (node.discoursemes?.length) continue
+        // @ts-expect-error TODO: type later
         node.vx -= (node.x - node.originX) * k * 2
         // @ts-expect-error TODO: type later
         node.vy -= (node.y - node.originY) * k * 2
@@ -216,16 +296,13 @@ export default function WordCloud({
       bubble.remove()
       originLine.remove()
       text.remove()
+      discoursemeAnchor.remove()
+      discoursemeLink.remove()
     }
   }, [words])
 
   return (
-    <svg
-      ref={svgRef}
-      width={1000}
-      height={1000}
-      className="h-[calc(100svh-3.5rem)] w-full"
-    >
+    <svg ref={svgRef} className="h-[calc(100svh-3.5rem)] w-full">
       <g />
     </svg>
   )
