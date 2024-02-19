@@ -45,6 +45,9 @@ async function updateAuthToken() {
     console.warn('No refresh token found')
     return false
   }
+  // Remove tokens here already to avoid infinite loop
+  localStorage.removeItem('access-token')
+  localStorage.removeItem('refresh-token')
   try {
     const { access_token, refresh_token } = await apiClient.postUserrefresh(
       undefined,
@@ -58,10 +61,6 @@ async function updateAuthToken() {
   } catch (e) {
     console.warn('Failed to refresh token')
     console.error(e)
-    localStorage.removeItem('access-token')
-    localStorage.removeItem('refresh-token')
     return false
   }
 }
-
-window.updateAuthToken = updateAuthToken
