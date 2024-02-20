@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { cn } from '@/lib/utils'
 import { SortButtonView } from '@/components/data-table'
 import {
   Tooltip,
@@ -20,8 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { cn } from '@/lib/utils'
-import { ButtonTooltip } from './button-tooltip'
+import { ButtonTooltip } from '@/components/button-tooltip'
 
 type Token = {
   word: string
@@ -178,12 +178,7 @@ function ConcordanceLineRender({
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell
-        className={cn(
-          'w-auto pr-1 text-right',
-          'overflow-hidden overflow-ellipsis whitespace-nowrap [direction:rtl]',
-        )}
-      >
+      <TableCell className="w-auto overflow-hidden overflow-ellipsis whitespace-nowrap pr-1 text-right [direction:rtl]">
         {preTokens.map((token, i) => (
           <TokenRender key={i} token={token} />
         ))}
@@ -191,7 +186,7 @@ function ConcordanceLineRender({
       <TableCell className="mx-auto flex w-max items-center whitespace-nowrap px-1 text-center">
         <TokenRender token={tokens[keywordIndex]} />
       </TableCell>
-      <TableCell className="flex w-auto items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap px-0 pl-1 text-left">
+      <TableCell className="w-auto items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap px-0 pl-1 text-left">
         {postTokens.map((token, i) => (
           <TokenRender key={i} token={token} />
         ))}
