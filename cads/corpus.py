@@ -261,6 +261,10 @@ def get_meta(id):
     # corpus = {**corpus, **attributes}
 
     # return corpus, 200
+    # datetime/numeric: min, maximum
+    # boolean: yes/no
+    # unicode: searchable endpoint: einzelne Auswahl
+    # array of filter_object:
 
 
 @bp.put('/<id>/meta')

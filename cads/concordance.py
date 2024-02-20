@@ -108,11 +108,22 @@ def highlight(lines, discoursemes, p_att='lemma', bools=True):
 class ConcordanceIn(Schema):
 
     context_break = String(dump_default='text', required=False)
-    p_show = List(String, default=['word', 'lemma'], required=False)
+    window = Integer(default=20, required=False)
+
     s_show = List(String, default=[], required=False)
+
+    p_show = List(String, default=['word', 'lemma'], required=False)
+    # primary
+    # secondary
+
     order = Integer(default=42, required=False)
     cut_off = Integer(default=500, required=False)
-    window = Integer(default=20, required=False)
+    # page_size
+    # page_index
+    # sort_by (offset)
+    # sort_order (ascending, descending)
+
+    # absolute context break
 
 
 class ConcordanceLinesOutMMDA(Schema):
@@ -135,6 +146,7 @@ class TokenOut(Schema):
     lemma = String()
     out_of_window = Boolean()
     discourseme_ids = List(Integer)
+    # is_highlight / search (also for concordance in!)
 
 
 class ConcordanceLineOut(Schema):
@@ -150,7 +162,8 @@ class ConcordanceLineOut(Schema):
 # - page size / page number
 
 # Concordance context extension
-# - concordance lines have to be identifable!
+# - concordance lines have to be identifiable!
+# - save display settings
 
 
 @bp.get("/")

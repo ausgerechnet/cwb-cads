@@ -48,6 +48,8 @@ class DiscoursemeIn(Schema):
     description = String()
     # _items = List(String())     # TODO
 
+    # color TODO
+
 
 class DiscoursemeOut(Schema):
 
