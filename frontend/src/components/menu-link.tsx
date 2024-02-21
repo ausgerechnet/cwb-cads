@@ -12,9 +12,10 @@ export function MenuLink({
   return (
     <Link
       className={cn(
-        highlight ? buttonVariants() : navigationMenuTriggerStyle(),
-        !highlight &&
-          '[&.is-active]:ring-primary-500 [&.is-active]:bg-muted [&.is-active]:focus:ring-2 [&.is-active]:focus:ring-primary [&.is-active]:focus:ring-offset-2 [&.is-active]:focus:ring-offset-background',
+        highlight
+          ? buttonVariants({ variant: 'outline' })
+          : navigationMenuTriggerStyle(),
+        'focus-visible:bg-muted focus-visible:ring-transparent',
         className,
       )}
       activeProps={{
