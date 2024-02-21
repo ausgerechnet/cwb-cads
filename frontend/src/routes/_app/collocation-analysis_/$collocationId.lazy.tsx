@@ -1,7 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createLazyFileRoute } from '@tanstack/react-router'
 import WordCloud from '@/components/word-cloud'
 
-export const Route = createFileRoute(
+export const Route = createLazyFileRoute(
   '/_app/collocation-analysis/$collocationId',
 )({
   component: CollocationAnalysis,

@@ -24,12 +24,14 @@ import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/disco
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
 import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
 import { Route as AppCollocationAnalysisNewImport } from './routes/_app/collocation-analysis_/new'
-import { Route as AppCollocationAnalysisCollocationIdImport } from './routes/_app/collocation-analysis_/$collocationId'
 
 // Create Virtual Routes
 
 const LogoutLazyImport = createFileRoute('/logout')()
 const AppDiscoursemesNewLazyImport = createFileRoute('/_app/discoursemes/new')()
+const AppCollocationAnalysisCollocationIdLazyImport = createFileRoute(
+  '/_app/collocation-analysis/$collocationId',
+)()
 
 // Create/Update Routes
 
@@ -114,6 +116,16 @@ const AppDiscoursemesNewLazyRoute = AppDiscoursemesNewLazyImport.update({
   import('./routes/_app/discoursemes_/new.lazy').then((d) => d.Route),
 )
 
+const AppCollocationAnalysisCollocationIdLazyRoute =
+  AppCollocationAnalysisCollocationIdLazyImport.update({
+    path: '/collocation-analysis/$collocationId',
+    getParentRoute: () => AppRoute,
+  } as any).lazy(() =>
+    import('./routes/_app/collocation-analysis_/$collocationId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
 const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
   path: '/subcorpora/new',
   getParentRoute: () => AppRoute,
@@ -168,12 +180,6 @@ const AppCollocationAnalysisNewRoute = AppCollocationAnalysisNewImport.update({
 } as any).lazy(() =>
   import('./routes/_app/collocation-analysis_/new.lazy').then((d) => d.Route),
 )
-
-const AppCollocationAnalysisCollocationIdRoute =
-  AppCollocationAnalysisCollocationIdImport.update({
-    path: '/collocation-analysis/$collocationId',
-    getParentRoute: () => AppRoute,
-  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -231,10 +237,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKeywordAnalysisImport
       parentRoute: typeof AppImport
     }
-    '/_app/collocation-analysis/$collocationId': {
-      preLoaderRoute: typeof AppCollocationAnalysisCollocationIdImport
-      parentRoute: typeof AppImport
-    }
     '/_app/collocation-analysis/new': {
       preLoaderRoute: typeof AppCollocationAnalysisNewImport
       parentRoute: typeof AppImport
@@ -263,6 +265,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubcorporaNewImport
       parentRoute: typeof AppImport
     }
+    '/_app/collocation-analysis/$collocationId': {
+      preLoaderRoute: typeof AppCollocationAnalysisCollocationIdLazyImport
+      parentRoute: typeof AppImport
+    }
     '/_app/discoursemes/new': {
       preLoaderRoute: typeof AppDiscoursemesNewLazyImport
       parentRoute: typeof AppImport
@@ -283,7 +289,6 @@ export const routeTree = rootRoute.addChildren([
     AppSubcorporaRouteRoute,
     AppAdminRoute,
     AppKeywordAnalysisRoute,
-    AppCollocationAnalysisCollocationIdRoute,
     AppCollocationAnalysisNewRoute,
     AppConstellationsConstellationIdRoute,
     AppConstellationsNewRoute,
@@ -291,6 +296,7 @@ export const routeTree = rootRoute.addChildren([
     AppQueriesQueryIdRoute,
     AppQueriesNewRoute,
     AppSubcorporaNewRoute,
+    AppCollocationAnalysisCollocationIdLazyRoute,
     AppDiscoursemesNewLazyRoute,
   ]),
   LoginRoute,
