@@ -10,10 +10,12 @@ from apiflask.fields import Integer, List, Nested, String
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
 from flask import current_app
+from numpy import array_split
 from pandas import DataFrame, read_csv
 
 from . import db
-from .database import Corpus, Segmentation, SegmentationAnnotation, SubCorpus, CorpusAttributes
+from .database import (Corpus, CorpusAttributes, Segmentation,
+                       SegmentationAnnotation, SegmentationSpan, SubCorpus)
 from .users import auth
 from .utils import time_it
 
@@ -142,6 +144,8 @@ def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=N
     df = read_csv(path, sep='\t')
     corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
 
+    # 3 min
+    level = 'text'
     for name, df in df.groupby(column):
         click.echo(f"importing {name}")
 
@@ -159,35 +163,32 @@ def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=N
                                overwrite=False)
             nqr_cqp = nqr.subcorpus_name
 
+        segmentation = Segmentation.query.filter(Segmentation.corpus_id == corpus.id, Segmentation.level == level)
+
+        # is there one and only one segmentation?
+        if len(segmentation.all()) > 1:
+            raise NotImplementedError('several corresponding segmentation founds')
+        segmentation = segmentation.first()
+        if not segmentation:
+            raise NotImplementedError('no corresponding segmentation found')
+
         # get segmentation spans
-        if len(df) > 500000:
-            from .database import SegmentationSpan
-            level = 'text'
-            segmentation = Segmentation.query.filter(Segmentation.corpus_id == corpus.id, Segmentation.level == level)
-            if not segmentation:
-                raise NotImplementedError()
-            if len(segmentation.all()) > 1:
-                raise NotImplementedError()
-            segmentation = segmentation.first()
-            spans = SegmentationSpan.query.filter(SegmentationSpan.segmentation_id == segmentation.id, SegmentationSpan.match.in_(df['match']))
+        # we need to batch here for select clause (hard limit: 500,000 for `df.in_()`)
+        nr_arrays = int(len(df) / 100000) + 1
+        dfs = array_split(df, nr_arrays)
+        spans = list()
+        for df in dfs:
+            spans.extend(SegmentationSpan.query.filter(SegmentationSpan.segmentation_id == segmentation.id, SegmentationSpan.match.in_(df['match'])).all())
 
-            # expose as SubCorpus
-            subcorpus = SubCorpus(corpus_id=corpus.id,
-                                  segmentation_id=segmentation.id,
-                                  name=name,
-                                  description='imported subcorpus',
-                                  nqr_cqp=nqr_cqp)
-            db.session.add(subcorpus)
-            db.session.commit()
-
-            subcorpus.spans.extend(spans.all())
-
-        # db.session.commit()
-        # subcorpus.spans = spans.all()
-        # print(spans.all())
-        # df['subcorpus_id'] = subcorpus.id
-        # df.to_sql('matches', con=db.engine, if_exists='append', index=False)
-        # db.session.commit()
+        # expose as SubCorpus
+        subcorpus = SubCorpus(corpus_id=corpus.id,
+                              segmentation_id=segmentation.id,
+                              name=name,
+                              description='imported subcorpus',
+                              nqr_cqp=nqr_cqp,
+                              spans=spans)
+        db.session.add(subcorpus)
+        db.session.commit()
 
 
 class CorpusOut(Schema):
