@@ -1,8 +1,7 @@
+import { lazy } from 'react'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
-import { TanStackRouterDevtools } from '@tanstack/router-devtools'
 import { QueryClient, useQuery } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Home, Info, User, ScrollText } from 'lucide-react'
 
 import { sessionQueryOptions } from '@/lib/queries'
@@ -19,6 +18,16 @@ export const Route = createRootRouteWithContext<{
 }>()({
   component: RootComponent,
 })
+
+// Lazy load devtools in development, but omit in production
+const Devtools =
+  process.env.NODE_ENV === 'production'
+    ? () => null
+    : lazy(() =>
+        import('@/components/dev-tools').then((res) => ({
+          default: res.DevTools,
+        })),
+      )
 
 function RootComponent() {
   const { data, isLoading, error } = useQuery(sessionQueryOptions)
@@ -74,11 +83,7 @@ function RootComponent() {
       </header>
       <Outlet />
       <Toaster />
-      <ReactQueryDevtools buttonPosition="bottom-right" />
-      <TanStackRouterDevtools
-        position="bottom-right"
-        toggleButtonProps={{ style: { bottom: 70 } }}
-      />
+      <Devtools />
     </>
   )
 }
