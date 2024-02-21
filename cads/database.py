@@ -397,6 +397,21 @@ class BreakdownItems(db.Model):
 
 
 # class Concordance(db.Model):
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     sort_order = db.Column(db.Integer)
+#     # sort_by =
+#     # sort_order
+
+
+# class ConcordanceLines(db.Model):
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     concordance_order_id = db.Column(db.Integer, db.ForeignKey('concordance.id'))
+#     match_pos = None
+
+
+# class Concordance(db.Model):
 #     """Concordance
 
 #     """
