@@ -146,10 +146,10 @@ class ConcordanceIn(Schema):
     page_size = Integer(load_default=10, required=False)
     page_number = Integer(load_default=1, required=False)
 
-    sort_order = Integer(load_default=42, nullable=True, required=False)  # random_seed / first = ascending / last = descending
+    sort_order = Integer(load_default=42, metadata={'nullable': True}, required=False)  # random_seed / first = ascending / last = descending
     sort_by = Integer(load_default=0, required=False)  # offset to sort on (always on secondary)
 
-    filter_item = String(nullable=True, required=False)  # search on secondary p-att
+    filter_item = String(metadata={'nullable': True}, required=False)  # search on secondary p-att
     filter_discourseme_ids = List(Integer, dump_default=[], required=False)
 
 

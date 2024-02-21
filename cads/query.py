@@ -101,11 +101,11 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 
 class QueryIn(Schema):
 
-    discourseme_id = Integer(required=False, nullable=True)
+    discourseme_id = Integer(required=False, metadata={'nullable': True})
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False)
 
-    match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
+    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
     cqp_query = String(required=True)
 
@@ -114,17 +114,17 @@ class QueryIn(Schema):
 
 class QueryAssistedIn(Schema):
 
-    discourseme_id = Integer(required=False, nullable=True)
+    discourseme_id = Integer(required=False, metadata={'nullable': True})
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False)
 
-    match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
+    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
     items = List(String, required=True)
     p = String(required=True)
-    ignore_case = Boolean(required=False, default=True)
-    ignore_diacritics = Boolean(required=False, default=True)
-    escape = Boolean(required=False, default=True)
+    ignore_case = Boolean(dump_default=True, required=False)
+    ignore_diacritics = Boolean(dump_default=True, required=False)
+    escape = Boolean(dump_default=True, required=False)
 
     s = String(required=True)
 
@@ -132,13 +132,13 @@ class QueryAssistedIn(Schema):
 class QueryOut(Schema):
 
     id = Integer()
-    discourseme_id = Integer(nullable=True)
+    discourseme_id = Integer(metadata={'nullable': True})
     corpus = Nested(CorpusOut)
     subcorpus_id = Integer(required=False)
     match_strategy = String()
     cqp_query = String()
     nqr_cqp = String()
-    subcorpus = String(nullable=True)
+    subcorpus = String(metadata={'nullable': True})
 
 
 @bp.post('/')

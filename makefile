@@ -23,6 +23,7 @@ corpora:
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
 	flask --app cads corpus import
 #	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
+#	flask --app cads corpus read-meta GERMAPARL-1949-2021 ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz && \
 
 discoursemes:
 	. venv/bin/activate && \

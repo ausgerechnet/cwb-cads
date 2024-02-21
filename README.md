@@ -1,25 +1,41 @@
 # cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies 
 
 - implemented in Python/APIFlask
+  + JWT authorization
   + interactive OpenAPI documentation at [cwb-cads/docs](https://corpora.linguistik.uni-erlangen.de/cwb-cads/docs)
 
 - uses cwb-ccc for connecting to the CWB
-  + CWB must be installed
-  + corpora must be imported via cwb-encode
-  + no further corpus installation needed (TODO: creating s-att tables, cache frequencies)
+  + CWB must be installed and corpora must be encoded via cwb-encode
+  + meta data can be stored separately or be parsed from s-attributes
 
 - MMDA backend available via [cwb-cads/mmda/](https://corpora.linguistik.uni-erlangen.de/cwb-cads/mmda/)
-  + JWT authorization
   + dedicated to old vue.js frontend
 
 ## Development
 
-- use makefile for testing and development
+```
+. venv/bin/activate
+export CWB_CADS_CONFIG=cfg.DevConfig
+```
+
+### CLI commands
+
+- database init
   ```
-  make install
-  make init
-  make run
-  make test
+  flask --app cads database init
+  ```
+
+- corpus management
+  ```
+  flask --app cads corpus import
+  flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
+  flask --app cads corpus read-meta GERMAPARL-1949-2021 ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz
+  ```
+  
+- discourseme management
+  ```
+  flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv"
+  flask --app cads discourseme export --path_out "discoursemes.tsv"
   ```
 
 ## Features
@@ -38,12 +54,10 @@
 - [x] coordiantes of elements within discoursemes
 - [x] subcorpus is corpus with matches
 - [x] discourseme → query → breakdown → items
+- [x] meta management
 - [ ] speed up supcorpus queries
 - [ ] subcorpus keyword analyses
 - [ ] directed collocation analyses
 - [ ] anchored queries
-- [ ] meta management
-  - save attributes in SQL (id -- level -- cwb_id -- match -- matchend)
-  - save annotation in SQL (id -- key -- value)
 - [ ] meta distribution
 - [ ] topographic maps

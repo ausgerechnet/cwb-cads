@@ -56,7 +56,9 @@ class User(db.Model, UserMixin):
     first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
 
-    roles = db.relationship('Role', secondary=users_roles, backref=db.backref('user'))
+    roles = db.relationship('Role', secondary=users_roles)
+    # backref=db.backref('user'))
+
     discoursemes = db.relationship('Discourseme', backref='user')
     constellations = db.relationship('Constellation', backref='user')
 
@@ -286,10 +288,10 @@ class Constellation(db.Model):
     name = db.Column(db.Unicode(255), nullable=True)
     description = db.Column(db.Unicode, nullable=True)
 
-    filter_discoursemes = db.relationship("Discourseme", secondary=constellation_filter_discoursemes,
-                                          backref=db.backref('constellations_filtered'))
-    highlight_discoursemes = db.relationship("Discourseme", secondary=constellation_highlight_discoursemes,
-                                             backref=db.backref('constellation_highlighted'))
+    filter_discoursemes = db.relationship("Discourseme", secondary=constellation_filter_discoursemes)
+    # backref=db.backref('constellations_filtered'))
+    highlight_discoursemes = db.relationship("Discourseme", secondary=constellation_highlight_discoursemes)
+    # backref=db.backref('constellation_highlighted'))
 
     collocation_analyses = db.relationship('Collocation', backref='constellation', cascade='all, delete')
     keyword_analyses = db.relationship('Keyword', backref='constellation', cascade='all, delete')
