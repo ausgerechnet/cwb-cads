@@ -1,4 +1,5 @@
 from flask import url_for
+# from pprint import pprint
 
 
 def test_create_get_concordance(client, auth):
@@ -25,8 +26,13 @@ def test_create_get_concordance(client, auth):
                             },
                             headers=auth_header)
 
-        # concordance
-        lines = client.get(url_for('query.concordance.lines', query_id=query.json['id'], s_show=['text_parliamentary_group']),
+        lines = client.get(url_for('query.concordance.lines', query_id=query.json['id'], s_show=['text_parliamentary_group'], page_size=10, page_number=6),
                            headers=auth_header)
-
         assert lines.status_code == 200
+
+        # pprint(lines.json[0])
+        # print(len(lines.json))
+
+        line = client.get(url_for('query.concordance.context', id=65059, query_id=query.json['id'], s_show=['text_parliamentary_group'], window=50),
+                          headers=auth_header)
+        assert line.status_code == 200
