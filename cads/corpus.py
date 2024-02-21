@@ -10,10 +10,12 @@ from apiflask.fields import Integer, List, Nested, String
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
 from flask import current_app
+from numpy import array_split
 from pandas import DataFrame, read_csv
 
 from . import db
-from .database import Corpus, Segmentation, SegmentationAnnotation, SubCorpus, CorpusAttributes
+from .database import (Corpus, CorpusAttributes, Segmentation,
+                       SegmentationAnnotation, SegmentationSpan, SubCorpus)
 from .users import auth
 from .utils import time_it
 
@@ -137,38 +139,55 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime'
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
 
 
-def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=None, column='subcorpus'):
+def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=None, column='subcorpus', create_nqr=False):
 
-    df = read_csv(path, sep='\t')  # .set_index(['match', 'matchend'])
+    df = read_csv(path, sep='\t')
+    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
+
+    # 3 min
+    level = 'text'
     for name, df in df.groupby(column):
-
-        # create Discourseme + Query + Matches
         click.echo(f"importing {name}")
-        corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
 
         # create NQR
         df = df.drop(column, axis=1)
-        nqr = CCCSubCorpus(corpus_name=cwb_id,
-                           subcorpus_name=None,
-                           df_dump=df.set_index(['match', 'matchend']),
-                           cqp_bin=cqp_bin,
-                           registry_dir=registry_dir,
-                           data_dir=data_dir,
-                           lib_dir=lib_dir,
-                           overwrite=False)
-        nqr_name = nqr.subcorpus_name
+        nqr_cqp = None
+        if create_nqr:
+            nqr = CCCSubCorpus(corpus_name=cwb_id,
+                               subcorpus_name=None,
+                               df_dump=df.set_index(['match', 'matchend']),
+                               cqp_bin=cqp_bin,
+                               registry_dir=registry_dir,
+                               data_dir=data_dir,
+                               lib_dir=lib_dir,
+                               overwrite=False)
+            nqr_cqp = nqr.subcorpus_name
+
+        segmentation = Segmentation.query.filter(Segmentation.corpus_id == corpus.id, Segmentation.level == level)
+
+        # is there one and only one segmentation?
+        if len(segmentation.all()) > 1:
+            raise NotImplementedError('several corresponding segmentation founds')
+        segmentation = segmentation.first()
+        if not segmentation:
+            raise NotImplementedError('no corresponding segmentation found')
+
+        # get segmentation spans
+        # we need to batch here for select clause (hard limit: 500,000 for `df.in_()`)
+        nr_arrays = int(len(df) / 100000) + 1
+        dfs = array_split(df, nr_arrays)
+        spans = list()
+        for df in dfs:
+            spans.extend(SegmentationSpan.query.filter(SegmentationSpan.segmentation_id == segmentation.id, SegmentationSpan.match.in_(df['match'])).all())
 
         # expose as SubCorpus
         subcorpus = SubCorpus(corpus_id=corpus.id,
+                              segmentation_id=segmentation.id,
                               name=name,
                               description='imported subcorpus',
-                              cqp_nqr_matches=nqr_name)
+                              nqr_cqp=nqr_cqp,
+                              spans=spans)
         db.session.add(subcorpus)
-        db.session.commit()
-
-        # save Matches
-        df['subcorpus_id'] = subcorpus.id
-        df.to_sql('matches', con=db.engine, if_exists='append', index=False)
         db.session.commit()
 
 
@@ -190,7 +209,7 @@ class SubCorpusOut(Schema):
     corpus = Nested(CorpusOut)
     name = String()
     description = String()
-    cqp_nqr_matches = String()
+    nqr_cqp = String()
 
 
 @bp.get('/')
@@ -243,6 +262,10 @@ def get_meta(id):
     # corpus = {**corpus, **attributes}
 
     # return corpus, 200
+    # datetime/numeric: min, maximum
+    # boolean: yes/no
+    # unicode: searchable endpoint: einzelne Auswahl
+    # array of filter_object:
 
 
 @bp.put('/<id>/meta')
@@ -275,6 +298,11 @@ def read_meta(cwb_id, path):
 @bp.auth_required(auth)
 def create_subcorpus(id, data):
 
+    data['corpus_id'],
+    data['subcorpus_name']
+    data['segmentation_key']
+    data['segmentation_annotation']
+
     pass
     # Discourseme(
     #     name,
@@ -284,7 +312,7 @@ def create_subcorpus(id, data):
     # Query(
     #     discourseme_id,
     #     corpus_id,
-    #     # nqr_name,
+    #     # nqr_cqp,
     #     cqp_query,
     #     match_strategy
     # )
@@ -308,18 +336,7 @@ def subcorpora(cwb_id, glob_in):
                             data_dir=current_app.config['CCC_DATA_DIR'])
 
 
-@bp.cli.command('import')
-@click.option('--path', default=None)
-@click.option('--keep_old', default=True, is_flag=True)
-@click.option('--reread_attributes', default=False, is_flag=True)
-def update(path, keep_old, reread_attributes):
-    """update corpora according to JSON file
-    - by default, this uses the CORPORA path defined in config
-    - corpora are identified via CWBID
-    - existing corpora included in file are updated but keep the same ID (if not deleted via keep_old=False)
-    - new corpora are added
-    - attributes will be (re-)read from CWB only for new corpora (if not forced via reread_attributes=True)
-    """
+def init_corpora(path=None, keep_old=True, reread_attributes=False):
 
     path = current_app.config['CORPORA'] if path is None else path
 
@@ -370,3 +387,19 @@ def update(path, keep_old, reread_attributes):
 
     # add new corpora
     db.session.commit()
+
+
+@bp.cli.command('import')
+@click.option('--path', default=None)
+@click.option('--keep_old', default=True, is_flag=True)
+@click.option('--reread_attributes', default=False, is_flag=True)
+def update_corpora_cmd(path, keep_old, reread_attributes):
+    """update corpora according to JSON file
+    - by default, this uses the CORPORA path defined in config
+    - corpora are identified via CWBID
+    - existing corpora included in file are updated but keep the same ID (if not deleted via keep_old=False)
+    - new corpora are added
+    - attributes will be (re-)read from CWB only for new corpora (if not forced via reread_attributes=True)
+    """
+
+    init_corpora(path, keep_old, reread_attributes)

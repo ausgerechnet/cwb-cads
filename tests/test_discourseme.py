@@ -3,7 +3,8 @@ from flask import url_for
 
 def test_create_get_discourseme(client, auth):
 
-    auth.login()
+    auth_header = auth.login()
+
     with client:
         client.get("/")
         discourseme = client.post(url_for('discourseme.create'),
@@ -11,14 +12,15 @@ def test_create_get_discourseme(client, auth):
                                       'name': 'test discourseme',
                                       'description': 'this is a test discourseme'
                                   },
-                                  auth=('admin', '0000'))
+                                  content_type='application/json',
+                                  headers=auth_header)
 
         assert discourseme.status_code == 200
 
         discourseme = client.get(url_for('discourseme.get_discourseme', id=discourseme.json['id']),
-                                 auth=('admin', '0000'))
+                                 headers=auth_header)
 
         discoursemes = client.get(url_for('discourseme.get_discoursemes'),
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
 
         assert discoursemes.status_code == 200

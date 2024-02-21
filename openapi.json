@@ -472,7 +472,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenOut"
+                  "$ref": "#/components/schemas/HTTPTokenOut"
                 }
               }
             },
@@ -764,32 +764,36 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TokenOut"
+                  "$ref": "#/components/schemas/HTTPTokenOut"
                 }
               }
             },
             "description": "Successful response"
           },
-          "401": {
+          "422": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
+                  "$ref": "#/components/schemas/ValidationError"
                 }
               }
             },
-            "description": "Authentication error"
+            "description": "Validation error"
           }
         },
         "tags": [
           "User"
         ],
         "summary": "Return a new token if the user has a refresh token",
-        "security": [
-          {
-            "BearerAuth": []
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPRefreshTokenIn"
+              }
+            }
           }
-        ]
+        }
       }
     },
     "/discourseme/": {
@@ -2906,7 +2910,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ConcordanceLinesOut"
+                    "$ref": "#/components/schemas/ConcordanceLineOut"
                   }
                 }
               }
@@ -5414,18 +5418,17 @@
           "corpus": {
             "$ref": "#/components/schemas/CorpusOut"
           },
+          "subcorpus_id": {
+            "type": "integer"
+          },
           "match_strategy": {
             "type": "string"
           },
           "cqp_query": {
             "type": "string"
           },
-          "cqp_nqr_matches": {
+          "nqr_cqp": {
             "type": "string"
-          },
-          "nqr_name": {
-            "type": "string",
-            "nullable": true
           },
           "subcorpus": {
             "type": "string",
@@ -5443,6 +5446,9 @@
           "corpus_id": {
             "type": "integer"
           },
+          "subcorpus_id": {
+            "type": "integer"
+          },
           "match_strategy": {
             "type": "string",
             "enum": [
@@ -5453,10 +5459,6 @@
           },
           "cqp_query": {
             "type": "string"
-          },
-          "nqr_name": {
-            "type": "string",
-            "nullable": true
           },
           "s": {
             "type": "string"
@@ -5502,7 +5504,7 @@
           "username"
         ]
       },
-      "TokenOut": {
+      "HTTPTokenOut": {
         "type": "object",
         "properties": {
           "access_token": {
@@ -5523,6 +5525,9 @@
           "corpus_id": {
             "type": "integer"
           },
+          "subcorpus_id": {
+            "type": "integer"
+          },
           "match_strategy": {
             "type": "string",
             "enum": [
@@ -5534,11 +5539,15 @@
           "cqp_query": {
             "type": "string"
           },
-          "nqr_name": {
-            "type": "string",
-            "nullable": true
-          },
           "s": {
+            "type": "string"
+          }
+        }
+      },
+      "HTTPRefreshTokenIn": {
+        "type": "object",
+        "properties": {
+          "refresh_token": {
             "type": "string"
           }
         }
@@ -5693,6 +5702,9 @@
           "corpus_id": {
             "type": "integer"
           },
+          "subcorpus_id": {
+            "type": "integer"
+          },
           "match_strategy": {
             "type": "string",
             "enum": [
@@ -5700,10 +5712,6 @@
               "shortest",
               "standard"
             ]
-          },
-          "nqr_name": {
-            "type": "string",
-            "nullable": true
           },
           "items": {
             "type": "array",
@@ -5714,9 +5722,6 @@
           "p": {
             "type": "string"
           },
-          "s": {
-            "type": "string"
-          },
           "ignore_case": {
             "type": "boolean"
           },
@@ -5725,6 +5730,9 @@
           },
           "escape": {
             "type": "boolean"
+          },
+          "s": {
+            "type": "string"
           }
         },
         "required": [
@@ -5757,18 +5765,21 @@
           "corpus_id": {
             "type": "integer"
           },
+          "subcorpus_id": {
+            "type": "string",
+            "default": null,
+            "nullable": true
+          },
           "match_strategy": {
             "type": "string",
             "default": "longest"
           },
           "p_query": {
             "type": "string",
-            "default": "lemma"
+            "default": "word"
           },
           "s_query": {
-            "type": "string",
-            "default": null,
-            "nullable": true
+            "type": "string"
           },
           "flags": {
             "type": "string",
@@ -5777,13 +5788,11 @@
           "escape": {
             "type": "boolean",
             "default": false
-          },
-          "nqr_name": {
-            "type": "string",
-            "default": null,
-            "nullable": true
           }
-        }
+        },
+        "required": [
+          "s_query"
+        ]
       },
       "SubCorpusOut": {
         "type": "object",
@@ -5800,7 +5809,7 @@
           "description": {
             "type": "string"
           },
-          "cqp_nqr_matches": {
+          "nqr_cqp": {
             "type": "string"
           }
         }
@@ -5819,9 +5828,6 @@
       "CollocationIn": {
         "type": "object",
         "properties": {
-          "query_id": {
-            "type": "integer"
-          },
           "constellation_id": {
             "type": "integer"
           },
@@ -5838,21 +5844,49 @@
         "required": [
           "context",
           "p",
-          "query_id",
           "s_break"
         ]
       },
-      "ConcordanceLinesOut": {
+      "TokenOut": {
+        "type": "object",
+        "properties": {
+          "cpos": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "word": {
+            "type": "string"
+          },
+          "lemma": {
+            "type": "string"
+          },
+          "out_of_window": {
+            "type": "boolean"
+          },
+          "discourseme_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "ConcordanceLineOut": {
         "type": "object",
         "properties": {
           "match": {
             "type": "integer"
           },
-          "positional": {
-            "type": "string"
+          "tokens": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TokenOut"
+            }
           },
           "structural": {
-            "type": "string"
+            "type": "object"
           }
         }
       },

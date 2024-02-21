@@ -40,7 +40,7 @@ class ProdConfig(Config):
 
     CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/mmda-ccc-data/'))
 
-    JWT_ACCESS_TOKEN_EXPIRES = 60*60*12
+    JWT_ACCESS_TOKEN_EXPIRES = 60*30
     JWT_REFRESH_TOKEN_EXPIRES = 60*60*12
 
 

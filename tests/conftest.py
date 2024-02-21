@@ -4,8 +4,9 @@
 import pytest
 
 from cads import create_app
-from cads.database import init_db
 from cads import db
+from cads.database import init_db
+from cads.corpus import init_corpora
 from cads.database import Discourseme
 from cads.discourseme import read_tsv
 
@@ -13,7 +14,10 @@ app = create_app('cfg.TestConfig')
 
 # create new database
 with app.app_context():
+
     init_db()
+
+    init_corpora()
 
     # TODO exclude the ones that are already in database?
     discoursemes = read_tsv("tests/discoursemes/germaparl.tsv")
@@ -28,11 +32,12 @@ class AuthActions(object):
         self._client = client
 
     def login(self, username="admin", password="0000"):
-        return self._client.post(
+        token = self._client.post(
             "/user/login",
             data={"username": username, "password": password},
             content_type='application/x-www-form-urlencoded'
-        )
+        ).json['access_token']
+        return {"Authorization": f"Bearer {token}"}
 
     def logout(self):
         return self._client.get("/auth/logout")

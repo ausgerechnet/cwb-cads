@@ -1,15 +1,14 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from json import dumps
-
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String
-from ccc import Corpus
+from apiflask.fields import Boolean, Dict, Integer, List, Nested, String
+from ccc import Corpus, SubCorpus
 from flask import current_app
+from pandas import DataFrame
 
 from . import db
-from .database import Query
+from .database import Matches, Query
 from .users import auth
 
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')
@@ -39,9 +38,9 @@ def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
 
     # activate subcorpus
-    if query and query.nqr_name:
+    if query and query.nqr_cqp:
         # TODO: check that exists
-        corpus = corpus.subcorpus(query.nqr_name)
+        corpus = corpus.subcorpus(query.nqr_cqp)
 
     current_app.logger.debug('ccc_concordance :: quick concordancing')
     lines = corpus.quick_conc(
@@ -107,14 +106,63 @@ def highlight(lines, discoursemes, p_att='lemma', bools=True):
     return lines
 
 
+def ccc2attributes(line, primary, secondary, s_show):
+
+    structural = dict()
+    for s_att in s_show:
+        structural[s_att] = line[s_att]
+
+    line = line['dict']
+    tokens = list()
+    for cpos, offset, prim, sec in zip(line['cpos'], line['offset'], line[primary], line[secondary]):
+        tokens.append({
+            'cpos': cpos,
+            'offset': offset,
+            'primary': prim,
+            'secondary': sec,
+            'out_of_window': False
+        })
+
+    row = {
+        'tokens': tokens,
+        'structural': structural
+    }
+
+    return row
+
+
 class ConcordanceIn(Schema):
 
-    context_break = String(dump_default='text', required=False)
-    p_show = List(String, default=['word', 'lemma'], required=False)
-    s_show = List(String, default=[], required=False)
-    order = Integer(default=42, required=False)
-    cut_off = Integer(default=500, required=False)
-    window = Integer(default=20, required=False)
+    # these two parameters determine 'out_of_window'
+    context_break = String(load_default='text', required=False)
+    window = Integer(load_default=20, required=False)
+
+    # NB the absolute context break ("more context") is determined via corpus settings
+    s_show = List(String, load_default=[], required=False)  # TODO: get from corpus settings
+
+    primary = String(load_default='word', required=False)
+    secondary = String(load_default='lemma', required=False)
+
+    page_size = Integer(load_default=10, required=False)
+    page_number = Integer(load_default=1, required=False)
+
+    sort_order = Integer(load_default=42, nullable=True, required=False)  # random_seed / first = ascending / last = descending
+    sort_by = Integer(load_default=0, required=False)  # offset to sort on (always on secondary)
+
+    filter_item = String(nullable=True, required=False)  # search on secondary p-att
+    filter_discourseme_ids = List(Integer, dump_default=[], required=False)
+
+
+class ConcordanceContextIn(Schema):
+
+    context_break = String(load_default='text', required=False)
+    window = Integer(load_default=20, required=False)
+
+    # NB the absolute context break ("more context") is determined via corpus settings
+    s_show = List(String, load_default=[], required=False)  # TODO: get from corpus settings
+
+    primary = String(load_default='word', required=False)
+    secondary = String(load_default='lemma', required=False)
 
 
 class ConcordanceLinesOutMMDA(Schema):
@@ -129,67 +177,138 @@ class ConcordanceLinesOutMMDA(Schema):
     role = List(List(String))
 
 
-class ConcordanceLinesOut(Schema):
+class DiscoursemeRangeOut(Schema):
 
-    match = Integer()
+    discourseme_id = Integer()
+    start = Integer()
+    end = Integer()
 
-    positional = String()       # jsonified dict of: cpos, offset, role, word, lemma, ...
-    structural = String()       # jsonified dict of: text_id, text_id_cwbid, ...
+
+class TokenOut(Schema):
+
+    cpos = Integer()
+    offset = Integer()
+    primary = String()
+    secondary = String()
+    out_of_window = Boolean()
+
+    # is_highlight / search (also for concordance in!)
+
+
+class ConcordanceLineOut(Schema):
+
+    id = Integer()
+    tokens = Nested(TokenOut(many=True))
+    structural = Dict()       # key-value pairs ohne entsprechende "Types"
+    discourseme_ranges = Nested(DiscoursemeRangeOut(many=True))
+    nr_lines_total = Integer(required=False)
+    # local_filter_ranges =
+
+
+# Concordance Sorting / Pagination
+# - sorting according to position
+# - ascending / descending
+# - page size / page number
+
+# - concordance lines are sorted by ConcordanceSort
+# - sort keys are created on demand
+# - default: cpos at match
+# - ascending / descending
 
 
 @bp.get("/")
 @bp.input(ConcordanceIn, location='query')
-@bp.output(ConcordanceLinesOut(many=True))
+@bp.output(ConcordanceLineOut(many=True))
 @bp.auth_required(auth)
 def lines(query_id, data):
     """Get concordance lines.
 
     """
 
+    # display options
+    context_break = data.get('context_break')
+    window = data.get('window')
+    s_show = data.get('s_show')
+    primary = data.get('primary')
+    secondary = data.get('secondary')
+
+    # pagination
+    page_size = data.get('page_size')
+    page_number = data.get('page_number')
+
+    # TODO: sorting
+    # sort_order = data.get('sort_order')
+    # try:
+    #     sort_order = int(sort_order)
+    # except TypeError:
+    #     pass
+    # sort_by = data.get('sort_by')
+    # filter_item = data.get('filter_item')
+    # filter_discourseme_ids = data.get('filter_discourseme_ids')
+
     query = db.get_or_404(Query, query_id)
+    matches = Matches.query.filter_by(query_id=query.id).paginate(page=page_number, per_page=page_size)
+    nr_lines_total = matches.total
+    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
 
-    order = data.get('order', 42)
-    try:
-        order = int(order)
-    except TypeError:
-        pass
+    lines = SubCorpus(
+        subcorpus_name=None,
+        df_dump=df_dump,
+        corpus_name=query.corpus.cwb_id,
+        cqp_bin=current_app.config['CCC_CQP_BIN'],
+        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+        data_dir=current_app.config['CCC_DATA_DIR'],
+        overwrite=False
+    ).set_context(context=window, context_break=context_break)
 
-    cut_off = data.get('cut_off', None)
-    try:
-        cut_off = int(cut_off)
-    except TypeError:
-        pass
-
-    p_show = data.get('p_show', ['word', 'lemma'])
-    s_show = data.get('s_show', [])
-
-    concordance_lines = ccc_concordance(query,
-                                        context_break=data.get('context_break', 's'),
-                                        p_show=p_show,
-                                        s_show=s_show,
-                                        highlight_discoursemes=[],
-                                        filter_queries={},
-                                        order=order,
-                                        cut_off=cut_off,
-                                        window=int(data.get('window', 5)),
-                                        htmlify_meta=False,
-                                        cwb_ids=True)
+    lines = lines.concordance(form='dict', p_show=[primary, secondary], s_show=s_show)
 
     rows = list()
-    for line in concordance_lines:
+    for line in lines.iterrows():
+        match = line[0][0]
+        row = ccc2attributes(line[1], primary, secondary, s_show)
+        row['id'] = match
+        row['discourseme_ranges'] = []
+        row['nr_lines_total'] = nr_lines_total
+        rows.append(row)
 
-        positional = dict()
-        for p_att in ['cpos', 'offset', 'role'] + p_show:
-            positional[p_att] = line[p_att]
+    return [ConcordanceLineOut().dump(line) for line in rows], 200
 
-        structural = dict()
-        for s_att in s_show + [s + "_cwbid" for s in s_show]:
-            structural[s_att] = line[s_att]
 
-        rows.append({
-            'match': line['match'],
-            'positional': dumps(positional),
-            'structural': dumps(structural)
-        })
+@bp.get("/<id>")
+@bp.input(ConcordanceContextIn, location='query')
+@bp.output(ConcordanceLineOut)
+@bp.auth_required(auth)
+def context(query_id, id, data):
+    """Get (additional context of) one concordance line.
 
-    return [ConcordanceLinesOut().dump(line) for line in rows], 200
+    """
+
+    # display options
+    context_break = data.get('context_break')
+    window = data.get('window')
+    s_show = data.get('s_show')
+    primary = data.get('primary')
+    secondary = data.get('secondary')
+
+    query = db.get_or_404(Query, query_id)
+    matches = Matches.query.filter_by(match=id, query_id=query.id).all()
+    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
+
+    lines = SubCorpus(
+        subcorpus_name=None,
+        df_dump=df_dump,
+        corpus_name=query.corpus.cwb_id,
+        cqp_bin=current_app.config['CCC_CQP_BIN'],
+        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+        data_dir=current_app.config['CCC_DATA_DIR'],
+        overwrite=False
+    ).set_context(context=window, context_break=context_break)
+
+    line = lines.concordance(form='dict', p_show=[primary, secondary], s_show=s_show).iloc[0]
+
+    row = ccc2attributes(line, primary, secondary, s_show)
+    row['id'] = id
+    row['discourseme_ranges'] = []
+
+    return ConcordanceLineOut().dump(row), 200

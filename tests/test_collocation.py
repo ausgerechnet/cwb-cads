@@ -1,10 +1,11 @@
 from flask import url_for
 from cads.database import Collocation
+import pytest
 
 
 def test_create_collocation(client, auth):
 
-    auth.login()
+    auth_header = auth.login()
     with client:
         client.get("/")
 
@@ -15,7 +16,8 @@ def test_create_collocation(client, auth):
                                       'name': 'CDU',
                                       'description': 'Test Discourseme 1'
                                   },
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
+
         # constellation
         constellation = client.post(url_for('constellation.create'),
                                     json={
@@ -23,10 +25,12 @@ def test_create_collocation(client, auth):
                                         'description': 'Test Constellation 1',
                                         'filter_discourseme_ids': [discourseme.json['id']]
                                     },
-                                    auth=('admin', '0000'))
+                                    headers=auth_header)
+
+        assert constellation.status_code == 200
 
         constellation = client.get(url_for('constellation.get_constellation', id=constellation.json['id']),
-                                   auth=('admin', '0000'))
+                                   headers=auth_header)
 
         # query
         # - create
@@ -34,13 +38,10 @@ def test_create_collocation(client, auth):
                             json={
                                 'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[lemma="und"]'
+                                'cqp_query': '[lemma="und"]',
+                                's': 's'
                             },
-                            auth=('admin', '0000'))
-
-        # - execute
-        query = client.post(url_for('query.execute', id=query.json['id']),
-                            auth=('admin', '0000'))
+                            headers=auth_header)
 
         # collocation
         # - create
@@ -51,14 +52,14 @@ def test_create_collocation(client, auth):
                                       's_break': 's',
                                       'context': 10,
                                   },
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
 
         assert collocation.status_code == 200
 
 
 def test_create_or_get_cooc(client, auth):
 
-    auth.login()
+    auth_header = auth.login()
     with client:
         client.get("/")
 
@@ -69,7 +70,7 @@ def test_create_or_get_cooc(client, auth):
                                       'name': 'CDU',
                                       'description': 'Test Discourseme 2'
                                   },
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
         # constellation
         constellation = client.post(url_for('constellation.create'),
                                     json={
@@ -77,10 +78,10 @@ def test_create_or_get_cooc(client, auth):
                                         'description': 'Test Constellation 2',
                                         'filter_discourseme_ids': [discourseme.json['id']]
                                     },
-                                    auth=('admin', '0000'))
+                                    headers=auth_header)
 
         constellation = client.get(url_for('constellation.get_constellation', id=constellation.json['id']),
-                                   auth=('admin', '0000'))
+                                   headers=auth_header)
 
         # query
         # - create
@@ -88,13 +89,14 @@ def test_create_or_get_cooc(client, auth):
                             json={
                                 'discourseme_id': discourseme.json['id'],
                                 'corpus_id': 1,
-                                'cqp_query': '[lemma="und"]'
+                                'cqp_query': '[lemma="und"]',
+                                's': 's'
                             },
-                            auth=('admin', '0000'))
+                            headers=auth_header)
 
         # - execute
         query = client.post(url_for('query.execute', id=query.json['id']),
-                            auth=('admin', '0000'))
+                            headers=auth_header)
 
         # collocation
         # - create
@@ -105,7 +107,7 @@ def test_create_or_get_cooc(client, auth):
                                       's_break': 's',
                                       'context': 10,
                                   },
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
 
         collocation = Collocation.query.filter_by(id=collocation.json['id']).first()
 
@@ -118,17 +120,17 @@ def test_create_or_get_cooc(client, auth):
 
 def test_execute_collocation(client, auth):
 
-    auth.login()
+    auth_header = auth.login()
     with client:
         client.get("/")
 
         collocation = client.post(url_for('collocation.execute', query_id=1, id=1),
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
 
         collocation = client.post(url_for('collocation.execute', query_id=1, id=1),
-                                  auth=('admin', '0000'))
+                                  headers=auth_header)
 
         items = client.get(url_for('collocation.get_collocation_items', query_id=1, id=collocation.json['id']),
-                           auth=('admin', '0000'))
+                           headers=auth_header)
 
         assert items.status_code == 200

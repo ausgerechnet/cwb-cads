@@ -17,19 +17,24 @@ from .users import auth
 bp = APIBlueprint('query', __name__, url_prefix='/query')
 
 
-def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, match_strategy='longest', subcorpus_name=None, cqp_query=None):
+def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, match_strategy='longest', subcorpus_id=None, cqp_query=None):
     """
 
     """
+    current_app.logger.debug(f"get_or_create_query :: discourseme {discourseme.name} on corpus {corpus.cwb_id} (subcorpus: {subcorpus_id})")
 
-    current_app.logger.debug(f"get_or_create_query :: discourseme {discourseme.name} on corpus {corpus.cwb_id} (subcorpus: {subcorpus_name})")
     if not cqp_query:
-        cqp_query = format_cqp_query(discourseme.get_items(), p_query, context_break, escape=False)
+        items = discourseme.get_items()
+        cqp_query = format_cqp_query(items, p_query, context_break, escape=False)
+
     query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query,
-                                  nqr_name=subcorpus_name, match_strategy=match_strategy).order_by(Query.id.desc()).first()
+                                  subcorpus_id=subcorpus_id, match_strategy=match_strategy).order_by(Query.id.desc()).first()
+
+    if query.subcorpus:
+        current_app.logger.debug(f"get_or_create_query :: subcorpus {query.subcorpus.name}")
 
     if not query:
-        query = Query(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query, nqr_name=subcorpus_name, match_strategy=match_strategy)
+        query = Query(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query, subcorpus_id=subcorpus_id, match_strategy=match_strategy)
         db.session.add(query)
         db.session.commit()
 
@@ -45,15 +50,17 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 
     if len(matches) == 0:
 
-        current_app.logger.debug(f'ccc_query :: querying corpus {query.corpus.cwb_id} (subcorpus: {query.nqr_name})')
+        current_app.logger.debug(f'ccc_query :: querying corpus {query.corpus.cwb_id}')
+        if query.subcorpus:
+            current_app.logger.debug(f'ccc_query :: subcorpus {query.subcorpus.name}')
         corpus = Corpus(query.corpus.cwb_id,
                         cqp_bin=current_app.config['CCC_CQP_BIN'],
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                         data_dir=current_app.config['CCC_DATA_DIR'])
-        if query.nqr_name:
-            if query.nqr_name not in corpus.show_nqr()['subcorpus'].values:
+        if query.subcorpus_id:
+            if query.subcorpus.nqr_cqp not in corpus.show_nqr()['subcorpus'].values:
                 raise NotImplementedError('dynamic subcorpus creation not implemented')
-            corpus = corpus.subcorpus(query.nqr_name)
+            corpus = corpus.subcorpus(query.subcorpus.cqr_cqps)
 
         matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy, propagate_error=True)
         if isinstance(matches, str):
@@ -61,7 +68,7 @@ def ccc_query(query, return_df=True, p_breakdown=None):
             db.session.delete(query)
             db.session.commit()
             return matches
-        query.cqp_nqr_matches = matches.subcorpus_name
+        query.nqr_cqp = matches.subcorpus_name
         df_matches = matches.df.reset_index()[['match', 'matchend']]
         df_matches['query_id'] = query.id
 
@@ -96,9 +103,12 @@ class QueryIn(Schema):
 
     discourseme_id = Integer(required=False, nullable=True)
     corpus_id = Integer(required=True)
+    subcorpus_id = Integer(required=False)
+
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
+
     cqp_query = String(required=True)
-    nqr_name = String(required=False, nullable=True)
+
     s = String(required=True)
 
 
@@ -106,14 +116,17 @@ class QueryAssistedIn(Schema):
 
     discourseme_id = Integer(required=False, nullable=True)
     corpus_id = Integer(required=True)
+    subcorpus_id = Integer(required=False)
+
     match_strategy = String(required=False, validate=OneOf(['longest', 'shortest', 'standard']), default='longest')
-    nqr_name = String(required=False, nullable=True)
+
     items = List(String, required=True)
     p = String(required=True)
-    s = String(required=True)
     ignore_case = Boolean(required=False, default=True)
     ignore_diacritics = Boolean(required=False, default=True)
     escape = Boolean(required=False, default=True)
+
+    s = String(required=True)
 
 
 class QueryOut(Schema):
@@ -121,10 +134,10 @@ class QueryOut(Schema):
     id = Integer()
     discourseme_id = Integer(nullable=True)
     corpus = Nested(CorpusOut)
+    subcorpus_id = Integer(required=False)
     match_strategy = String()
     cqp_query = String()
-    cqp_nqr_matches = String()
-    nqr_name = String(nullable=True)
+    nqr_cqp = String()
     subcorpus = String(nullable=True)
 
 

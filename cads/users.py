@@ -44,9 +44,14 @@ class UserOut(Schema):
     # roles = List(String())
 
 
-class TokenOut(Schema):
+class HTTPTokenOut(Schema):
 
-    access_token = String()
+    access_token = String(required=False)
+    refresh_token = String(required=False)
+
+
+class HTTPRefreshTokenIn(Schema):
+
     refresh_token = String()
 
 
@@ -54,7 +59,7 @@ class TokenOut(Schema):
 def verify_token(token):
 
     if not token:
-        return abort(403, "invalid token")
+        return abort(403, "missing authorization header")
     data = decode_token(token)
     user = db.get_or_404(User, data['sub']['id'])
 
@@ -63,7 +68,7 @@ def verify_token(token):
 
 @bp.post('/login')
 @bp.input(UserIn, location='form')
-@bp.output(TokenOut)
+@bp.output(HTTPTokenOut)
 def login(data):
     """Login with name and password to get JWT token
 
@@ -87,14 +92,16 @@ def login(data):
 
 
 @bp.post('/refresh')
-@bp.output(TokenOut)
-@bp.auth_required(auth)
-def refresh():
+@bp.input(HTTPRefreshTokenIn)
+@bp.output(HTTPTokenOut)
+def refresh(data):
     """Return a new token if the user has a refresh token
 
     """
 
-    user = auth.current_user
+    refresh_token = data['refresh_token']
+    data = decode_token(refresh_token)
+    user = db.get_or_404(User, data['sub']['id'])
 
     tokens = {
         'access_token': create_access_token(UserOut().dump(user)),
