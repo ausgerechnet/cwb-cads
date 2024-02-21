@@ -205,17 +205,6 @@ class ConcordanceLineOut(Schema):
     # local_filter_ranges =
 
 
-# Concordance Sorting / Pagination
-# - sorting according to position
-# - ascending / descending
-# - page size / page number
-
-# - concordance lines are sorted by ConcordanceSort
-# - sort keys are created on demand
-# - default: cpos at match
-# - ascending / descending
-
-
 @bp.get("/")
 @bp.input(ConcordanceIn, location='query')
 @bp.output(ConcordanceLineOut(many=True))
@@ -236,7 +225,13 @@ def lines(query_id, data):
     page_size = data.get('page_size')
     page_number = data.get('page_number')
 
-    # TODO: sorting
+    # TODO: Concordance Sorting and Filtering
+    # - concordance lines are sorted by ConcordanceSort
+    # - sort keys are created on demand
+    # - sorting according to {p-att} on {offset}
+    # - default: cpos at match
+    # - ascending / descending
+
     # sort_order = data.get('sort_order')
     # try:
     #     sort_order = int(sort_order)
