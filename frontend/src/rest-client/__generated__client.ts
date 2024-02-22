@@ -24,13 +24,13 @@ type CollocationOut = Partial<{
 }>
 type QueryOut = Partial<{
   corpus: CorpusOut
-  cqp_nqr_matches: string
   cqp_query: string
   discourseme_id: number | null
   id: number
   match_strategy: string
-  nqr_name: string | null
+  nqr_cqp: string
   subcorpus: string | null
+  subcorpus_id: number
 }>
 type CorpusOut = Partial<{
   cwb_id: string
@@ -41,6 +41,25 @@ type CorpusOut = Partial<{
   p_atts: Array<string>
   register: string
   s_atts: Array<string>
+}>
+type ConcordanceLineOut = Partial<{
+  discourseme_ranges: Array<DiscoursemeRangeOut>
+  id: number
+  nr_lines_total: number
+  structural: {}
+  tokens: Array<TokenOut>
+}>
+type DiscoursemeRangeOut = Partial<{
+  discourseme_id: number
+  end: number
+  start: number
+}>
+type TokenOut = Partial<{
+  cpos: number
+  offset: number
+  out_of_window: boolean
+  primary: string
+  secondary: string
 }>
 type ConstellationOut = Partial<{
   description: string
@@ -56,10 +75,10 @@ type DiscoursemeOut = Partial<{
 }>
 type SubCorpusOut = Partial<{
   corpus: CorpusOut
-  cqp_nqr_matches: string
   description: string
   id: number
   name: string
+  nqr_cqp: string
 }>
 
 const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
@@ -116,13 +135,13 @@ const CorpusOut: z.ZodType<CorpusOut> = z
 const QueryOut: z.ZodType<QueryOut> = z
   .object({
     corpus: CorpusOut,
-    cqp_nqr_matches: z.string(),
     cqp_query: z.string(),
     discourseme_id: z.number().int().nullable(),
     id: z.number().int(),
     match_strategy: z.string(),
-    nqr_name: z.string().nullable(),
+    nqr_cqp: z.string(),
     subcorpus: z.string().nullable(),
+    subcorpus_id: z.number().int(),
   })
   .partial()
   .passthrough()
@@ -143,7 +162,6 @@ const CollocationIn = z
     constellation_id: z.number().int().optional(),
     context: z.number().int(),
     p: z.string(),
-    query_id: z.number().int(),
     s_break: z.string(),
   })
   .passthrough()
@@ -189,10 +207,10 @@ const ConstellationIn = z
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
   .object({
     corpus: CorpusOut,
-    cqp_nqr_matches: z.string(),
     description: z.string(),
     id: z.number().int(),
     name: z.string(),
+    nqr_cqp: z.string(),
   })
   .partial()
   .passthrough()
@@ -202,15 +220,14 @@ const DiscoursemeIn = z
   .passthrough()
 const DiscoursemeQueryIn = z
   .object({
-    corpus_id: z.number().int(),
-    escape: z.boolean(),
-    flags: z.string(),
-    match_strategy: z.string().default('longest'),
-    nqr_name: z.string().nullable(),
-    p_query: z.string().default('lemma'),
-    s_query: z.string().nullable(),
+    corpus_id: z.number().int().optional(),
+    escape: z.boolean().optional(),
+    flags: z.string().optional(),
+    match_strategy: z.string().optional().default('longest'),
+    p_query: z.string().optional().default('word'),
+    s_query: z.string(),
+    subcorpus_id: z.string().nullish(),
   })
-  .partial()
   .passthrough()
 const QueryIn = z
   .object({
@@ -218,8 +235,8 @@ const QueryIn = z
     cqp_query: z.string(),
     discourseme_id: z.number().int().nullish(),
     match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
-    nqr_name: z.string().nullish(),
     s: z.string(),
+    subcorpus_id: z.number().int().optional(),
   })
   .passthrough()
 const QueryAssistedIn = z
@@ -231,9 +248,9 @@ const QueryAssistedIn = z
     ignore_diacritics: z.boolean().optional(),
     items: z.array(z.string()),
     match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
-    nqr_name: z.string().nullish(),
     p: z.string(),
     s: z.string(),
+    subcorpus_id: z.number().int().optional(),
   })
   .passthrough()
 const QueryInUpdate = z
@@ -242,16 +259,36 @@ const QueryInUpdate = z
     cqp_query: z.string(),
     discourseme_id: z.number().int().nullable(),
     match_strategy: z.enum(['longest', 'shortest', 'standard']),
-    nqr_name: z.string().nullable(),
     s: z.string(),
+    subcorpus_id: z.number().int(),
   })
   .partial()
   .passthrough()
-const ConcordanceLinesOut = z
+const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
   .object({
-    match: z.number().int(),
-    positional: z.string(),
-    structural: z.string(),
+    discourseme_id: z.number().int(),
+    end: z.number().int(),
+    start: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const TokenOut: z.ZodType<TokenOut> = z
+  .object({
+    cpos: z.number().int(),
+    offset: z.number().int(),
+    out_of_window: z.boolean(),
+    primary: z.string(),
+    secondary: z.string(),
+  })
+  .partial()
+  .passthrough()
+const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
+  .object({
+    discourseme_ranges: z.array(DiscoursemeRangeOut),
+    id: z.number().int(),
+    nr_lines_total: z.number().int(),
+    structural: z.object({}).partial().passthrough(),
+    tokens: z.array(TokenOut),
   })
   .partial()
   .passthrough()
@@ -283,8 +320,12 @@ const UserRegister = z
 const UserIn = z
   .object({ password: z.string(), username: z.string() })
   .passthrough()
-const TokenOut = z
+const HTTPTokenOut = z
   .object({ access_token: z.string(), refresh_token: z.string() })
+  .partial()
+  .passthrough()
+const HTTPRefreshTokenIn = z
+  .object({ refresh_token: z.string() })
   .partial()
   .passthrough()
 const UserUpdate = z
@@ -316,12 +357,15 @@ export const schemas = {
   QueryIn,
   QueryAssistedIn,
   QueryInUpdate,
-  ConcordanceLinesOut,
+  DiscoursemeRangeOut,
+  TokenOut,
+  ConcordanceLineOut,
   CoordinatesOut,
   UserOut,
   UserRegister,
   UserIn,
-  TokenOut,
+  HTTPTokenOut,
+  HTTPRefreshTokenIn,
   UserUpdate,
 }
 
@@ -3060,35 +3104,121 @@ description: &quot;empty result&quot;`,
       {
         name: 'context_break',
         type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'p_show',
-        type: 'Query',
-        schema: z.array(z.string()).optional(),
-      },
-      {
-        name: 's_show',
-        type: 'Query',
-        schema: z.array(z.string()).optional(),
-      },
-      {
-        name: 'order',
-        type: 'Query',
-        schema: z.number().int().optional(),
-      },
-      {
-        name: 'cut_off',
-        type: 'Query',
-        schema: z.number().int().optional(),
+        schema: z.string().optional().default('text'),
       },
       {
         name: 'window',
         type: 'Query',
+        schema: z.number().int().optional().default(20),
+      },
+      {
+        name: 's_show',
+        type: 'Query',
+        schema: z.array(z.string()).optional().default([]),
+      },
+      {
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
+      },
+      {
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z.number().int().nullish().default(42),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
         schema: z.number().int().optional(),
       },
+      {
+        name: 'filter_item',
+        type: 'Query',
+        schema: z.string().nullish(),
+      },
+      {
+        name: 'filter_discourseme_ids',
+        type: 'Query',
+        schema: z.array(z.number()).optional(),
+      },
     ],
-    response: z.array(ConcordanceLinesOut),
+    response: z.array(ConcordanceLineOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/query/:query_id/concordance/:id',
+    alias: 'getQueryQuery_idconcordanceId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'context_break',
+        type: 'Query',
+        schema: z.string().optional().default('text'),
+      },
+      {
+        name: 'window',
+        type: 'Query',
+        schema: z.number().int().optional().default(20),
+      },
+      {
+        name: 's_show',
+        type: 'Query',
+        schema: z.array(z.string()).optional().default([]),
+      },
+      {
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
+      },
+      {
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+    ],
+    response: ConcordanceLineOut,
     errors: [
       {
         status: 401,
@@ -3344,7 +3474,7 @@ description: &quot;empty result&quot;`,
         schema: UserIn,
       },
     ],
-    response: TokenOut,
+    response: HTTPTokenOut,
     errors: [
       {
         status: 422,
@@ -3358,12 +3488,19 @@ description: &quot;empty result&quot;`,
     path: '/user/refresh',
     alias: 'postUserrefresh',
     requestFormat: 'json',
-    response: TokenOut,
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ refresh_token: z.string() }).partial().passthrough(),
+      },
+    ],
+    response: HTTPTokenOut,
     errors: [
       {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
       },
     ],
   },
