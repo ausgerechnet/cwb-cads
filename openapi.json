@@ -2848,49 +2848,8 @@
             "in": "query",
             "name": "context_break",
             "schema": {
-              "type": "string"
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "p_show",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "required": false,
-            "explode": true,
-            "style": "form"
-          },
-          {
-            "in": "query",
-            "name": "s_show",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "required": false,
-            "explode": true,
-            "style": "form"
-          },
-          {
-            "in": "query",
-            "name": "order",
-            "schema": {
-              "type": "integer"
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "cut_off",
-            "schema": {
-              "type": "integer"
+              "type": "string",
+              "default": "text"
             },
             "required": false
           },
@@ -2898,9 +2857,101 @@
             "in": "query",
             "name": "window",
             "schema": {
-              "type": "integer"
+              "type": "integer",
+              "default": 20
             },
             "required": false
+          },
+          {
+            "in": "query",
+            "name": "s_show",
+            "schema": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "string"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "primary",
+            "schema": {
+              "type": "string",
+              "default": "word"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "secondary",
+            "schema": {
+              "type": "string",
+              "default": "lemma"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "schema": {
+              "type": "integer",
+              "default": 42,
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_item",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_discourseme_ids",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
           }
         ],
         "responses": {
@@ -3345,6 +3396,129 @@
           "Collocation"
         ],
         "summary": "Associate Discoursemes",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/query/{query_id}/concordance/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "context_break",
+            "schema": {
+              "type": "string",
+              "default": "text"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "s_show",
+            "schema": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "string"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "primary",
+            "schema": {
+              "type": "string",
+              "default": "word"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "secondary",
+            "schema": {
+              "type": "string",
+              "default": "lemma"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConcordanceLineOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Concordance"
+        ],
+        "summary": "Get (additional context of) one concordance line.",
         "security": [
           {
             "BearerAuth": []
@@ -5856,27 +6030,35 @@
           "offset": {
             "type": "integer"
           },
-          "word": {
+          "primary": {
             "type": "string"
           },
-          "lemma": {
+          "secondary": {
             "type": "string"
           },
           "out_of_window": {
             "type": "boolean"
+          }
+        }
+      },
+      "DiscoursemeRangeOut": {
+        "type": "object",
+        "properties": {
+          "discourseme_id": {
+            "type": "integer"
           },
-          "discourseme_ids": {
-            "type": "array",
-            "items": {
-              "type": "integer"
-            }
+          "start": {
+            "type": "integer"
+          },
+          "end": {
+            "type": "integer"
           }
         }
       },
       "ConcordanceLineOut": {
         "type": "object",
         "properties": {
-          "match": {
+          "id": {
             "type": "integer"
           },
           "tokens": {
@@ -5887,6 +6069,15 @@
           },
           "structural": {
             "type": "object"
+          },
+          "discourseme_ranges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoursemeRangeOut"
+            }
+          },
+          "nr_lines_total": {
+            "type": "integer"
           }
         }
       },
