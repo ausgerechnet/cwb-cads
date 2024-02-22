@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Pagination } from '@/components/pagination'
+import { PaginationForTable } from '@/components/pagination'
 import { Button } from '@/components/ui/button'
 import { safeJsonParse } from '@/lib/safe-json-parse'
 
@@ -170,7 +170,7 @@ export function DataTable<RowData>({
           </TableBody>
         </Table>
       </div>
-      <Pagination table={table} />
+      <PaginationForTable table={table} />
     </div>
   )
 }
