@@ -141,7 +141,7 @@ const QueryOut: z.ZodType<QueryOut> = z
     match_strategy: z.string(),
     nqr_cqp: z.string(),
     subcorpus: z.string().nullable(),
-    subcorpus_id: z.number().int(),
+    subcorpus_id: z.number().int().nullable(),
   })
   .partial()
   .passthrough()
