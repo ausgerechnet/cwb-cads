@@ -309,7 +309,7 @@ export function QueryFormAssisted({
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit
           </Button>
-          <ErrorMessage error={error} />
+          <ErrorMessage error={error} className="col-span-full" />
         </fieldset>
       </form>
     </Form>

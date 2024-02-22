@@ -153,7 +153,7 @@ export const sessionQueryOptions = queryOptions({
 })
 
 export const loginMutationOptions: MutationOptions<
-  z.infer<typeof schemas.TokenOut>,
+  z.infer<typeof schemas.HTTPTokenOut>,
   Error,
   z.infer<typeof schemas.UserIn>
 > = {

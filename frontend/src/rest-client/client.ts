@@ -49,10 +49,9 @@ async function updateAuthToken() {
   localStorage.removeItem('access-token')
   localStorage.removeItem('refresh-token')
   try {
-    const { access_token, refresh_token } = await apiClient.postUserrefresh(
-      undefined,
-      { headers: { Authorization: `Bearer ${refreshToken}` } },
-    )
+    const { access_token, refresh_token } = await apiClient.postUserrefresh({
+      refresh_token: refreshToken,
+    })
     console.warn('Token refreshed')
     // TODO: API should return both tokens or fail.
     access_token && localStorage.setItem('access-token', access_token)
