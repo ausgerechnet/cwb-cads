@@ -28,7 +28,6 @@ export const patchQueryMutationOptions: MutationOptions<
   onSuccess: (data) => {
     const queryId = data.id
     if (queryId !== undefined) {
-      console.log('Invalidating query', queryId)
       queryClient.invalidateQueries(queryQueryOptions(queryId.toString()))
     }
     queryClient.invalidateQueries(queriesQueryOptions)
@@ -108,14 +107,72 @@ export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
     },
   })
 
-export const queryConcordancesQueryOptions = (queryId: string) =>
+export const queryConcordancesQueryOptions = (
+  queryId: string,
+  {
+    contextBreak: context_break,
+    window,
+    sShow: s_show,
+    primary,
+    secondary,
+    filterItem: filter_item,
+    filterDiscoursemeIds: filter_discourseme_ids,
+  }: {
+    contextBreak?: string
+    window?: number
+    sShow?: string[]
+    primary?: string
+    secondary?: string
+    filterItem?: string
+    filterDiscoursemeIds?: number[]
+  } = {},
+  {
+    pageSize: page_size,
+    pageNumber: page_number,
+    sortOrder: sort_order,
+    sortBy: sort_by,
+  }: {
+    pageSize?: number
+    pageNumber?: number
+    sortOrder?: number
+    sortBy?: number
+  } = {},
+) =>
   queryOptions({
-    queryKey: ['query-concordances', queryId],
+    queryKey: [
+      'query-concordances',
+      queryId,
+      context_break,
+      window,
+      s_show,
+      primary,
+      secondary,
+      filter_item,
+      filter_discourseme_ids,
+      page_size,
+      page_number,
+      sort_order,
+      sort_by,
+    ],
     queryFn: ({ signal }) =>
       apiClient.getQueryQuery_idconcordance({
         params: { query_id: queryId },
+        queries: {
+          context_break,
+          window,
+          s_show,
+          primary,
+          secondary,
+          filter_item,
+          filter_discourseme_ids,
+          page_size,
+          page_number,
+          sort_order,
+          sort_by,
+        },
         signal,
       }),
+    staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
 // ==================== CORPORA ====================
