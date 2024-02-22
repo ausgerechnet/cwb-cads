@@ -62,14 +62,18 @@ def ccc_query(query, return_df=True, p_breakdown=None):
                 raise NotImplementedError('dynamic subcorpus creation not implemented')
             corpus = corpus.subcorpus(query.subcorpus.cqr_cqps)
 
-        matches = corpus.query(cqp_query=query.cqp_query, match_strategy=query.match_strategy, propagate_error=True)
+        matches = corpus.query(cqp_query=query.cqp_query, context_break=query.s, match_strategy=query.match_strategy, propagate_error=True)
         if isinstance(matches, str):
             current_app.logger.error(f"{matches}")
             db.session.delete(query)
             db.session.commit()
             return matches
+        if len(matches.df) == 0:
+            current_app.logger.debug("0 matches")
+            return None
         query.nqr_cqp = matches.subcorpus_name
-        df_matches = matches.df.reset_index()[['match', 'matchend']]
+        df_matches = matches.df.reset_index()[['match', 'matchend', 'contextid']]
+        df_matches['contextid'] = df_matches['contextid'].astype(int)
         df_matches['query_id'] = query.id
 
         current_app.logger.debug(f"get_or_create_matches :: saving {len(df_matches)} lines to database")
@@ -175,9 +179,9 @@ def create_assisted(data, data_query):
 
     items = data.pop('items')
     p = data.pop('p')
-    escape = data.pop('escape')
-    ignore_diacritics = data.pop('ignore_diacritics')
-    ignore_case = data.pop('ignore_case')
+    escape = data.pop('escape', data.get('escape'))
+    ignore_diacritics = data.pop('ignore_diacritics', data.get('ignore_diacritics'))
+    ignore_case = data.pop('ignore_case', data.get('ignore_case'))
     flags = ''
     if ignore_case or ignore_diacritics:
         flags = '%'

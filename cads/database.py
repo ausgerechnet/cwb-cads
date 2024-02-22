@@ -146,6 +146,7 @@ class SubCorpus(db.Model):
     nqr_cqp = db.Column(db.Unicode)
     spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span,
                             backref=db.backref('sub_corpus'))
+    queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
 
 
 # class Embeddings(db.Model):
@@ -330,7 +331,7 @@ class Query(db.Model):
 
     match_strategy = db.Column(db.Unicode, default='longest')
     cqp_query = db.Column(db.Unicode)
-    s = db.Column(db.Unicode)
+    s = db.Column(db.Unicode)   # should be segmentation_id
 
     nqr_cqp = db.Column(db.Unicode)  # resulting NQR in CWB
 
@@ -338,20 +339,6 @@ class Query(db.Model):
     breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True)
     collocations = db.relationship('Collocation', backref='_query', passive_deletes=True)
     # concordances = db.relationship('Concordance', backref='_query')
-
-    @property
-    def subcorpus(self):
-
-        # is this on a subcorpus?
-        if self.nqr_cqp:
-            if self.nqr_cqp.startswith("SOC-"):
-                subcorpus = "SOC"
-            else:
-                subcorpus = SubCorpus.query.filter_by(nqr_cqp=self.nqr_cqp).first().name
-        else:
-            subcorpus = None
-
-        return subcorpus
 
 
 class Matches(db.Model):
@@ -362,11 +349,11 @@ class Matches(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # created = db.Column(db.DateTime, default=datetime.utcnow)
 
+    contextid = db.Column(db.Integer, index=True)  # should be segmentation_span_id
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
     match = db.Column(db.Integer, nullable=False)
     matchend = db.Column(db.Integer, nullable=False)
-    # region = db.Column(IntRangeType)
 
 
 class Breakdown(db.Model):
