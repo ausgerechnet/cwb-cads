@@ -117,6 +117,10 @@ export const queryConcordancesQueryOptions = (
     secondary,
     filterItem: filter_item,
     filterDiscoursemeIds: filter_discourseme_ids,
+    pageSize: page_size,
+    pageNumber: page_number,
+    sortOrder: sort_order,
+    sortBy: sort_by,
   }: {
     contextBreak?: string
     window?: number
@@ -125,13 +129,6 @@ export const queryConcordancesQueryOptions = (
     secondary?: string
     filterItem?: string
     filterDiscoursemeIds?: number[]
-  } = {},
-  {
-    pageSize: page_size,
-    pageNumber: page_number,
-    sortOrder: sort_order,
-    sortBy: sort_by,
-  }: {
     pageSize?: number
     pageNumber?: number
     sortOrder?: number

@@ -1,4 +1,4 @@
-import { Fragment, useRef } from 'react'
+import { Fragment, useMemo, useRef } from 'react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -79,27 +79,37 @@ export function ConcordanceLines({
     isLoading,
     error,
   } = useQuery(
-    queryConcordancesQueryOptions(
-      queryId,
-      {
-        contextBreak,
-        primary,
-        secondary,
-        window: windowSize,
-        filterItem,
-      },
-      {
-        pageSize: clPageSize,
-        pageNumber: clPageIndex + 1,
-        sortBy: clSortBy,
-        sortOrder: clSortOrder,
-      },
-    ),
+    queryConcordancesQueryOptions(queryId, {
+      contextBreak,
+      primary,
+      secondary,
+      window: windowSize,
+      filterItem,
+      pageSize: clPageSize,
+      pageNumber: clPageIndex + 1,
+      sortBy: clSortBy,
+      sortOrder: clSortOrder,
+    }),
   )
 
   totalRowsRef.current =
     concordanceLines?.[0]?.nr_lines_total ?? totalRowsRef.current ?? 0
   const pageCount = Math.ceil(totalRowsRef.current / clPageSize)
+
+  // TODO: Make it type safe
+  const setSearch = useMemo(() => {
+    const timeoutMap: Record<string, ReturnType<typeof setTimeout>> = {}
+    return (paramName: string, value: string | number) => {
+      clearTimeout(timeoutMap[paramName])
+      timeoutMap[paramName] = setTimeout(() => {
+        navigate({
+          params: (p) => p,
+          search: (s) => ({ ...s, [paramName]: value }),
+          replace: true,
+        })
+      }, 200)
+    }
+  }, [navigate])
 
   return (
     <div className={className}>
@@ -107,14 +117,8 @@ export function ConcordanceLines({
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
           <span>Window Size {windowSize}</span>
           <Slider
-            value={[windowSize]}
-            onValueChange={([newValue]) => {
-              navigate({
-                params: (p) => p,
-                search: (s) => ({ ...s, windowSize: newValue }),
-                replace: true,
-              })
-            }}
+            defaultValue={[windowSize]}
+            onValueChange={([newValue]) => setSearch('windowSize', newValue)}
             min={0}
             max={24}
             className="my-auto"
@@ -124,13 +128,7 @@ export function ConcordanceLines({
           <span>Sort By {clSortBy}</span>
           <Slider
             value={[clSortBy]}
-            onValueChange={([newValue]) => {
-              navigate({
-                params: (p) => p,
-                search: (s) => ({ ...s, clSortBy: newValue }),
-                replace: true,
-              })
-            }}
+            onValueChange={([newValue]) => setSearch('clSortBy', newValue)}
             min={-5}
             max={5}
             className="my-auto"
@@ -144,11 +142,7 @@ export function ConcordanceLines({
             type="number"
             onChange={(event) => {
               const value = parseInt(event.target.value)
-              navigate({
-                params: (p) => p,
-                search: (s) => ({ ...s, clSortOrder: value }),
-                replace: true,
-              })
+              setSearch('clSortOrder', value)
             }}
           />
         </div>
@@ -157,13 +151,7 @@ export function ConcordanceLines({
           <span>Context Break</span>
           <Select
             value={contextBreak}
-            onValueChange={(value) => {
-              navigate({
-                params: (p) => p,
-                search: (s) => ({ ...s, contextBreak: value }),
-                replace: true,
-              })
-            }}
+            onValueChange={(value) => setSearch('contextBreak', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Context Break" />
@@ -211,13 +199,7 @@ export function ConcordanceLines({
           <span>Secondary</span>
           <Select
             value={secondary}
-            onValueChange={(value) => {
-              navigate({
-                params: (p) => p,
-                search: (s) => ({ ...s, secondary: value }),
-                replace: true,
-              })
-            }}
+            onValueChange={(value) => setSearch('secondary', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Secondary" />
