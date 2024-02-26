@@ -10,7 +10,6 @@ import { Route as LoginImport } from './routes/login'
 import { Route as AppImport } from './routes/_app'
 import { Route as Import } from './routes/*'
 import { Route as IndexImport } from './routes/index'
-import { Route as AppKeywordAnalysisImport } from './routes/_app/keyword-analysis'
 import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
@@ -28,6 +27,7 @@ import { Route as AppCollocationAnalysisNewImport } from './routes/_app/collocat
 // Create Virtual Routes
 
 const LogoutLazyImport = createFileRoute('/logout')()
+const AppKeywordAnalysisLazyImport = createFileRoute('/_app/keyword-analysis')()
 const AppDiscoursemesNewLazyImport = createFileRoute('/_app/discoursemes/new')()
 const AppCollocationAnalysisCollocationIdLazyImport = createFileRoute(
   '/_app/collocation-analysis/$collocationId',
@@ -65,10 +65,12 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AppKeywordAnalysisRoute = AppKeywordAnalysisImport.update({
+const AppKeywordAnalysisLazyRoute = AppKeywordAnalysisLazyImport.update({
   path: '/keyword-analysis',
   getParentRoute: () => AppRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_app/keyword-analysis.lazy').then((d) => d.Route),
+)
 
 const AppAdminRoute = AppAdminImport.update({
   path: '/admin',
@@ -234,7 +236,7 @@ declare module '@tanstack/react-router' {
       parentRoute: typeof AppImport
     }
     '/_app/keyword-analysis': {
-      preLoaderRoute: typeof AppKeywordAnalysisImport
+      preLoaderRoute: typeof AppKeywordAnalysisLazyImport
       parentRoute: typeof AppImport
     }
     '/_app/collocation-analysis/new': {
@@ -288,7 +290,7 @@ export const routeTree = rootRoute.addChildren([
     AppQueriesRouteRoute,
     AppSubcorporaRouteRoute,
     AppAdminRoute,
-    AppKeywordAnalysisRoute,
+    AppKeywordAnalysisLazyRoute,
     AppCollocationAnalysisNewRoute,
     AppConstellationsConstellationIdRoute,
     AppConstellationsNewRoute,

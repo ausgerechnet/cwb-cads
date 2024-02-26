@@ -1,6 +1,11 @@
-import { AppPageFrame } from '@/components/app-page-frame'
-import { getUsersQueryOptions } from '@/lib/queries'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { ColumnDef } from '@tanstack/react-table'
+
+import { schemas } from '@/rest-client'
+import { getUsersQueryOptions } from '@/lib/queries'
+import { AppPageFrame } from '@/components/app-page-frame'
+import { DataTable, SortButton } from '@/components/data-table'
 
 export const Route = createFileRoute('/_app/admin')({
   component: Admin,
@@ -10,12 +15,24 @@ export const Route = createFileRoute('/_app/admin')({
 })
 
 function Admin() {
-  const { users } = Route.useLoaderData()
+  const { data: users = [] } = useSuspenseQuery(getUsersQueryOptions)
   return (
     <AppPageFrame title="Admin">
-      <div className="whitespace-pre rounded-md bg-muted p-2 text-muted-foreground">
-        {JSON.stringify(users, null, '  ')}
-      </div>
+      <DataTable columns={columns} rows={users} />
     </AppPageFrame>
   )
 }
+
+const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
+  {
+    accessorKey: 'id',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}>ID</SortButton>,
+    meta: { className: 'w-0' },
+  },
+  {
+    accessorKey: 'username',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}>Username</SortButton>,
+  },
+]
