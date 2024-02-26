@@ -112,7 +112,7 @@ function NewConstellationForm() {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Input {...field} autoFocus={true} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
