@@ -44,7 +44,8 @@ def ccc2attributes(line, primary, secondary, s_show, window):
 
 class ConcordanceIn(Schema):
 
-    # we return whole <context_break> regions but mark everything further away from the node than <window> as 'out_of_window'
+    # context_break = query.s
+
     window = Integer(load_default=10, required=False)
 
     primary = String(load_default='word', required=False)
@@ -53,10 +54,10 @@ class ConcordanceIn(Schema):
     page_size = Integer(load_default=10, required=False)
     page_number = Integer(load_default=1, required=False)
 
-    sort_order = Integer(load_default='random', required=False, validate=OneOf(['random', 'ascending', 'descending']))
+    sort_order = String(load_default='random', required=False, validate=OneOf(['random', 'ascending', 'descending']))
 
     sort_by_cpos = Integer(load_default=0, required=False)
-    sort_by_p_att = String(required=False)
+    sort_by_p_att = String(load_default='word', required=False)
 
     filter_item = String(metadata={'nullable': True}, required=False)
     filter_item_p_att = String(required=False)

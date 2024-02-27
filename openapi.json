@@ -2846,35 +2846,12 @@
           },
           {
             "in": "query",
-            "name": "context_break",
-            "schema": {
-              "type": "string",
-              "default": "text"
-            },
-            "required": false
-          },
-          {
-            "in": "query",
             "name": "window",
             "schema": {
               "type": "integer",
-              "default": 20
+              "default": 10
             },
             "required": false
-          },
-          {
-            "in": "query",
-            "name": "s_show",
-            "schema": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            },
-            "required": false,
-            "explode": true,
-            "style": "form"
           },
           {
             "in": "query",
@@ -2916,18 +2893,31 @@
             "in": "query",
             "name": "sort_order",
             "schema": {
-              "type": "integer",
-              "default": 42,
-              "nullable": true
+              "type": "string",
+              "default": "random",
+              "enum": [
+                "random",
+                "ascending",
+                "descending"
+              ]
             },
             "required": false
           },
           {
             "in": "query",
-            "name": "sort_by",
+            "name": "sort_by_cpos",
             "schema": {
               "type": "integer",
               "default": 0
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_p_att",
+            "schema": {
+              "type": "string",
+              "default": "word"
             },
             "required": false
           },
@@ -2942,9 +2932,18 @@
           },
           {
             "in": "query",
+            "name": "filter_item_p_att",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
             "name": "filter_discourseme_ids",
             "schema": {
               "type": "array",
+              "default": [],
               "items": {
                 "type": "integer"
               }
@@ -2959,10 +2958,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ConcordanceLineOut"
-                  }
+                  "$ref": "#/components/schemas/ConcordanceOut"
                 }
               }
             },
@@ -3424,10 +3420,19 @@
           },
           {
             "in": "query",
-            "name": "context_break",
+            "name": "extended_context_break",
             "schema": {
               "type": "string",
               "default": "text"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "extended_window",
+            "schema": {
+              "type": "integer",
+              "default": 50
             },
             "required": false
           },
@@ -3439,20 +3444,6 @@
               "default": 20
             },
             "required": false
-          },
-          {
-            "in": "query",
-            "name": "s_show",
-            "schema": {
-              "type": "array",
-              "default": [],
-              "items": {
-                "type": "string"
-              }
-            },
-            "required": false,
-            "explode": true,
-            "style": "form"
           },
           {
             "in": "query",
@@ -3748,6 +3739,59 @@
           "Mmda.Constellation"
         ],
         "summary": "Create new constellation."
+      }
+    },
+    "/query/{query_id}/concordance/shuffle": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query.Concordance"
+        ],
+        "summary": "Shuffle",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/mmda/admin/user/{username}/password/": {
@@ -6038,6 +6082,9 @@
           },
           "out_of_window": {
             "type": "boolean"
+          },
+          "is_filter_item": {
+            "type": "boolean"
           }
         }
       },
@@ -6075,9 +6122,26 @@
             "items": {
               "$ref": "#/components/schemas/DiscoursemeRangeOut"
             }
-          },
-          "nr_lines_total": {
+          }
+        }
+      },
+      "ConcordanceOut": {
+        "type": "object",
+        "properties": {
+          "nr_lines": {
             "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConcordanceLineOut"
+            }
           }
         }
       },
