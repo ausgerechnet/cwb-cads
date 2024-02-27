@@ -132,6 +132,8 @@ const CorpusOut: z.ZodType<CorpusOut> = z
   })
   .partial()
   .passthrough()
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 const QueryOut: z.ZodType<QueryOut> = z
   .object({
     corpus: CorpusOut,

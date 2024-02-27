@@ -1,5 +1,9 @@
 import { lazy } from 'react'
-import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import {
+  Outlet,
+  ScrollRestoration,
+  createRootRouteWithContext,
+} from '@tanstack/react-router'
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { Home, Info, User, ScrollText } from 'lucide-react'
@@ -82,6 +86,7 @@ function RootComponent() {
         </NavigationMenu>
       </header>
       <Outlet />
+      <ScrollRestoration getKey={(location) => location.pathname} />
       <Toaster />
       <Devtools />
     </>

@@ -29,8 +29,8 @@ import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { ErrorMessage } from '@/components/error-message'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Card } from '@/components/ui/card'
+import { ConcordanceLines } from './-concordance-lines'
 import { QueryBreakdown } from './-query-breakdown'
-import { ConcordanceLines } from '@/components/concordance-lines'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -70,7 +70,7 @@ function SingleQuery() {
           <QueryBreakdown queryId={queryId} />
         </Card>
 
-        <ConcordanceLines className="col-span-full" />
+        <ConcordanceLines queryId={queryId} className="col-span-full" />
       </div>
     </AppPageFrame>
   )

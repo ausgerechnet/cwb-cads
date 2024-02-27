@@ -1,1 +1,1 @@
-export const required_error = 'Dieses Feld ist erforderlich'
+export const required_error = 'This field is required'
