@@ -15,7 +15,7 @@ from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
-from ..concordance import ccc_concordance
+from .concordance import ccc_concordance
 from ..corpus import ccc_corpus_attributes
 from ..database import Constellation, Corpus, Discourseme, User
 from ..query import ccc_query, get_or_create_query

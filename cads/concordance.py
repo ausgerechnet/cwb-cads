@@ -3,7 +3,8 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Dict, Integer, List, Nested, String
-from ccc import Corpus, SubCorpus
+from apiflask.validators import OneOf
+from ccc import SubCorpus
 from flask import current_app
 from pandas import DataFrame
 
@@ -14,100 +15,9 @@ from .users import auth
 bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')
 
 
-def ccc_concordance(query, context_break, p_show=['word', 'lemma'],
-                    s_show=[], highlight_discoursemes=[],
-                    filter_queries={}, order=42, cut_off=500,
-                    window=None, htmlify_meta=True, cwb_ids=False,
-                    bools=False, cwb_id=None, topic_query=None,
-                    match_strategy='longest', p_items='lemma'):
-    """Retrieve concordance lines.
+def ccc2attributes(line, primary, secondary, s_show, window):
 
-    if query is given: get all relevant info from query
-
-    else: cwb_id, topic_query, match_strategy
-
-    """
-
-    cwb_id = query.corpus.cwb_id if query else cwb_id
-    topic_query = query.cqp_query if query else topic_query if topic_query else ""
-    match_strategy = query.match_strategy if query else match_strategy
-
-    corpus = Corpus(corpus_name=cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
-
-    # activate subcorpus
-    if query and query.nqr_cqp:
-        # TODO: check that exists
-        corpus = corpus.subcorpus(query.nqr_cqp)
-
-    current_app.logger.debug('ccc_concordance :: quick concordancing')
-    lines = corpus.quick_conc(
-        topic_query=topic_query,
-        filter_queries=filter_queries,
-        highlight_queries={},
-        s_context=context_break,
-        window=window,
-        cut_off=cut_off,
-        order=order,
-        p_show=p_show,
-        s_show=s_show,
-        match_strategy=match_strategy,
-        htmlify_meta=htmlify_meta,
-        cwb_ids=cwb_ids
-    )
-
-    current_app.logger.debug(f'ccc_concordance :: highlighting {len(highlight_discoursemes)} discoursemes')
-    lines = highlight(lines, highlight_discoursemes, p_att=p_items, bools=bools)
-
-    return lines
-
-
-def find_subseq(subseq, seq):
-    """Return all starting positions of `subseq`uence in the `seq`uence.
-
-    """
-    i, n, m = -1, len(seq), len(subseq)
-    out = []
-    try:
-        while True:
-            i = seq.index(subseq[0], i + 1, n - m + 1)
-            if subseq == seq[i:i + m]:
-                out.append(i)
-    except ValueError:
-        pass
-    return out
-
-
-def highlight(lines, discoursemes, p_att='lemma', bools=True):
-    """Highlight all discoursemes in lines.
-
-    """
-    items = dict()
-    for discourseme in discoursemes:
-        items[str(discourseme.id)] = discourseme.get_items()
-
-    for line in lines:
-        if bools:
-            for discourseme in items.keys():
-                line[discourseme + "_BOOL"] = False
-        for discourseme, disc_items in items.items():
-            for disc_item in disc_items:
-                disc_item = disc_item.split(" ")
-                indices = find_subseq(disc_item, line[p_att])
-                if len(indices) > 0:
-                    if bools:
-                        line[discourseme + "_BOOL"] = True
-                    for ind in indices:
-                        for role in line['role'][ind:(ind+len(disc_item))]:
-                            role.extend([discourseme])
-
-    return lines
-
-
-def ccc2attributes(line, primary, secondary, s_show):
-
+    match = line.name[0]
     structural = dict()
     for s_att in s_show:
         structural[s_att] = line[s_att]
@@ -120,12 +30,13 @@ def ccc2attributes(line, primary, secondary, s_show):
             'offset': offset,
             'primary': prim,
             'secondary': sec,
-            'out_of_window': False
+            'out_of_window': False if offset <= window else True
         })
 
     row = {
         'tokens': tokens,
-        'structural': structural
+        'structural': structural,
+        'id': match
     }
 
     return row
@@ -133,12 +44,8 @@ def ccc2attributes(line, primary, secondary, s_show):
 
 class ConcordanceIn(Schema):
 
-    # these two parameters determine 'out_of_window'
-    context_break = String(load_default='text', required=False)
-    window = Integer(load_default=20, required=False)
-
-    # NB the absolute context break ("more context") is determined via corpus settings
-    s_show = List(String, load_default=[], required=False)  # TODO: get from corpus settings
+    # we return whole <context_break> regions but mark everything further away from the node than <window> as 'out_of_window'
+    window = Integer(load_default=10, required=False)
 
     primary = String(load_default='word', required=False)
     secondary = String(load_default='lemma', required=False)
@@ -146,35 +53,25 @@ class ConcordanceIn(Schema):
     page_size = Integer(load_default=10, required=False)
     page_number = Integer(load_default=1, required=False)
 
-    sort_order = Integer(load_default=42, metadata={'nullable': True}, required=False)  # random_seed / first = ascending / last = descending
-    sort_by = Integer(load_default=0, required=False)  # offset to sort on (always on secondary)
+    sort_order = Integer(load_default='random', required=False, validate=OneOf(['random', 'ascending', 'descending']))
 
-    filter_item = String(metadata={'nullable': True}, required=False)  # search on secondary p-att
-    filter_discourseme_ids = List(Integer, dump_default=[], required=False)
+    sort_by_cpos = Integer(load_default=0, required=False)
+    sort_by_p_att = String(required=False)
+
+    filter_item = String(metadata={'nullable': True}, required=False)
+    filter_item_p_att = String(required=False)
+
+    filter_discourseme_ids = List(Integer, load_default=[], required=False)
 
 
-class ConcordanceContextIn(Schema):
+class ConcordanceLineIn(Schema):
 
-    context_break = String(load_default='text', required=False)
+    extended_context_break = String(load_default='text', required=False)  # or determine via corpus settings
+    extended_window = Integer(load_default=50, required=False)
     window = Integer(load_default=20, required=False)
-
-    # NB the absolute context break ("more context") is determined via corpus settings
-    s_show = List(String, load_default=[], required=False)  # TODO: get from corpus settings
 
     primary = String(load_default='word', required=False)
     secondary = String(load_default='lemma', required=False)
-
-
-class ConcordanceLinesOutMMDA(Schema):
-
-    match = Integer()
-    meta = String()
-
-    cpos = List(Integer)
-    offset = List(Integer)
-    word = List(String)
-    lemma = List(String)
-    role = List(List(String))
 
 
 class DiscoursemeRangeOut(Schema):
@@ -190,24 +87,37 @@ class TokenOut(Schema):
     offset = Integer()
     primary = String()
     secondary = String()
-    out_of_window = Boolean()
-
-    # is_highlight / search (also for concordance in!)
+    out_of_window = Boolean(dump_default=False)
+    is_filter_item = Boolean(dump_default=False)
 
 
 class ConcordanceLineOut(Schema):
 
     id = Integer()
     tokens = Nested(TokenOut(many=True))
-    structural = Dict()       # key-value pairs ohne entsprechende "Types"
+    structural = Dict()
     discourseme_ranges = Nested(DiscoursemeRangeOut(many=True))
-    nr_lines_total = Integer(required=False)
-    # local_filter_ranges =
+
+
+class ConcordanceOut(Schema):
+
+    nr_lines = Integer()
+    page_size = Integer()
+    page_number = Integer()
+
+    lines = Nested(ConcordanceLineOut(many=True))
+
+
+@bp.post("/shuffle")
+@bp.auth_required(auth)
+def shuffle(query_id):
+    # TODO
+    return {'msg': 'shuffled'}, 200
 
 
 @bp.get("/")
 @bp.input(ConcordanceIn, location='query')
-@bp.output(ConcordanceLineOut(many=True))
+@bp.output(ConcordanceOut)
 @bp.auth_required(auth)
 def lines(query_id, data):
     """Get concordance lines.
@@ -215,9 +125,7 @@ def lines(query_id, data):
     """
 
     # display options
-    context_break = data.get('context_break')
     window = data.get('window')
-    s_show = data.get('s_show')
     primary = data.get('primary')
     secondary = data.get('secondary')
 
@@ -233,17 +141,15 @@ def lines(query_id, data):
     # - ascending / descending
 
     # sort_order = data.get('sort_order')
-    # try:
-    #     sort_order = int(sort_order)
-    # except TypeError:
-    #     pass
     # sort_by = data.get('sort_by')
     # filter_item = data.get('filter_item')
     # filter_discourseme_ids = data.get('filter_discourseme_ids')
 
     query = db.get_or_404(Query, query_id)
+    s_show = query.corpus.s_annotations
+    context_break = query.s
+
     matches = Matches.query.filter_by(query_id=query.id).paginate(page=page_number, per_page=page_size)
-    nr_lines_total = matches.total
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
 
     lines = SubCorpus(
@@ -253,25 +159,34 @@ def lines(query_id, data):
         cqp_bin=current_app.config['CCC_CQP_BIN'],
         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
         data_dir=current_app.config['CCC_DATA_DIR'],
-        overwrite=False
-    ).set_context(context=window, context_break=context_break)
+        overwrite=False,
+        lib_dir=None
+    ).set_context(
+        context_break=context_break
+    ).concordance(
+        form='dict',
+        p_show=[primary, secondary],
+        s_show=s_show
+    )
 
-    lines = lines.concordance(form='dict', p_show=[primary, secondary], s_show=s_show)
+    rows = lines.apply(lambda line: ccc2attributes(line, primary, secondary, s_show, window), axis=1)
 
-    rows = list()
-    for line in lines.iterrows():
-        match = line[0][0]
-        row = ccc2attributes(line[1], primary, secondary, s_show)
-        row['id'] = match
-        row['discourseme_ranges'] = []
-        row['nr_lines_total'] = nr_lines_total
-        rows.append(row)
+    # for line in lines.iterrows():
+    #     row['discourseme_ranges'] = []
+    #     rows.append(row)
 
-    return [ConcordanceLineOut().dump(line) for line in rows], 200
+    concordance = {
+        'lines': [ConcordanceLineOut().dump(line) for line in rows],
+        'nr_lines': matches.total,
+        'page_size': page_size,
+        'page_number': page_number
+    }
+
+    return ConcordanceOut().dump(concordance), 200
 
 
 @bp.get("/<id>")
-@bp.input(ConcordanceContextIn, location='query')
+@bp.input(ConcordanceLineIn, location='query')
 @bp.output(ConcordanceLineOut)
 @bp.auth_required(auth)
 def context(query_id, id, data):
@@ -280,30 +195,37 @@ def context(query_id, id, data):
     """
 
     # display options
-    context_break = data.get('context_break')
+    extended_context_break = data.get('extended_context_break')
+    extended_window = data.get('extended_window')
     window = data.get('window')
-    s_show = data.get('s_show')
     primary = data.get('primary')
     secondary = data.get('secondary')
 
     query = db.get_or_404(Query, query_id)
+    s_show = query.corpus.s_annotations
+
     matches = Matches.query.filter_by(match=id, query_id=query.id).all()
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
 
-    lines = SubCorpus(
+    line = SubCorpus(
         subcorpus_name=None,
         df_dump=df_dump,
         corpus_name=query.corpus.cwb_id,
         cqp_bin=current_app.config['CCC_CQP_BIN'],
         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
         data_dir=current_app.config['CCC_DATA_DIR'],
-        overwrite=False
-    ).set_context(context=window, context_break=context_break)
+        overwrite=False,
+        lib_dir=None
+    ).set_context(
+        context=extended_window,
+        context_break=extended_context_break
+    ).concordance(
+        form='dict',
+        p_show=[primary, secondary],
+        s_show=s_show
+    ).iloc[0]
 
-    line = lines.concordance(form='dict', p_show=[primary, secondary], s_show=s_show).iloc[0]
-
-    row = ccc2attributes(line, primary, secondary, s_show)
-    row['id'] = id
-    row['discourseme_ranges'] = []
+    row = ccc2attributes(line, primary, secondary, s_show, window)
+    # row['discourseme_ranges'] = []
 
     return ConcordanceLineOut().dump(row), 200

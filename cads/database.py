@@ -113,12 +113,16 @@ class Corpus(db.Model):
     subcorpora = db.relationship('SubCorpus', backref='corpus', passive_deletes=True, cascade='all, delete')
 
     @property
+    def p_atts(self):
+        return [att.level for att in self.attributes if att.attribute == 'p_atts']
+
+    @property
     def s_atts(self):
         return [att.level for att in self.attributes if att.attribute == 's_atts']
 
     @property
-    def p_atts(self):
-        return [att.level for att in self.attributes if att.attribute == 'p_atts']
+    def s_annotations(self):
+        return [att.level for att in self.attributes if att.attribute == 's_annotations']
 
 
 class CorpusAttributes(db.Model):

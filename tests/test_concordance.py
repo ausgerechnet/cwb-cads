@@ -10,7 +10,7 @@ def test_concordance(client, auth):
 
         discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
         union = discoursemes[0]
-        kanzler = discoursemes[-1]
+        kanzler = discoursemes[3]
 
         # create query matches for beifall
         client.post(url_for('query.create_assisted'),
@@ -36,17 +36,17 @@ def test_concordance(client, auth):
                                   },
                                   headers=auth_header)
 
-        lines = client.get(url_for('query.concordance.lines', query_id=union_query.json['id'], s_show=['text_parliamentary_group'],
-                                   page_size=10, page_number=6),
+        lines = client.get(url_for('query.concordance.lines', query_id=union_query.json['id'],
+                                   page_size=10, page_number=5),
                            headers=auth_header)
         assert lines.status_code == 200
 
-        # print(len(lines.json))
-        # pprint(lines.json[0])
+        # pprint(lines.json)
+        # pprint(lines.json['lines'][0])
 
-        line = client.get(url_for('query.concordance.context', id=lines.json[0]['id'], query_id=union_query.json['id'],
-                                  s_show=['text_parliamentary_group'], window=50),
+        line = client.get(url_for('query.concordance.context', id=lines.json['lines'][0]['id'], query_id=union_query.json['id'],
+                                  window=50),
                           headers=auth_header)
 
         assert line.status_code == 200
-        pprint(line.json)
+        # pprint(line.json)

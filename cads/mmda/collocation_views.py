@@ -14,8 +14,8 @@ from pandas import DataFrame
 from .. import db
 from ..breakdown import BreakdownItemsOut, ccc_breakdown
 from ..collocation import ccc_collocates, score_counts
-from ..concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut
-from ..concordance import ccc_concordance
+from .concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut
+from .concordance import ccc_concordance
 from ..corpus import ccc_corpus_attributes
 from ..database import (Breakdown, Collocation, CollocationItems,
                         Constellation, Coordinates, Corpus, Discourseme, Query,

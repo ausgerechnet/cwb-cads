@@ -10,7 +10,7 @@ from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
-from ..concordance import ccc_concordance
+from .concordance import ccc_concordance
 from ..corpus import ccc_corpus_attributes
 from ..database import (Constellation, Coordinates, Corpus, Discourseme,
                         Keyword, User)
