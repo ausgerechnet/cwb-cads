@@ -2905,7 +2905,7 @@
           },
           {
             "in": "query",
-            "name": "sort_by_cpos",
+            "name": "sort_by_offset",
             "schema": {
               "type": "integer",
               "default": 0
@@ -6135,6 +6135,9 @@
             "type": "integer"
           },
           "page_number": {
+            "type": "integer"
+          },
+          "page_count": {
             "type": "integer"
           },
           "lines": {

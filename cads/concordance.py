@@ -56,7 +56,7 @@ class ConcordanceIn(Schema):
 
     sort_order = String(load_default='random', required=False, validate=OneOf(['random', 'ascending', 'descending']))
 
-    sort_by_cpos = Integer(load_default=0, required=False)
+    sort_by_offset = Integer(load_default=0, required=False)
     sort_by_p_att = String(load_default='word', required=False)
 
     filter_item = String(metadata={'nullable': True}, required=False)
@@ -105,6 +105,7 @@ class ConcordanceOut(Schema):
     nr_lines = Integer()
     page_size = Integer()
     page_number = Integer()
+    page_count = Integer()
 
     lines = Nested(ConcordanceLineOut(many=True))
 
@@ -151,8 +152,12 @@ def lines(query_id, data):
     context_break = query.s
 
     matches = Matches.query.filter_by(query_id=query.id).paginate(page=page_number, per_page=page_size)
-    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
 
+    nr_lines = matches.total
+    page_count = matches.pages
+
+    # actual concordancing
+    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
     lines = SubCorpus(
         subcorpus_name=None,
         df_dump=df_dump,
@@ -178,9 +183,10 @@ def lines(query_id, data):
 
     concordance = {
         'lines': [ConcordanceLineOut().dump(line) for line in rows],
-        'nr_lines': matches.total,
+        'nr_lines': nr_lines,
         'page_size': page_size,
-        'page_number': page_number
+        'page_number': page_number,
+        'page_count': page_count
     }
 
     return ConcordanceOut().dump(concordance), 200
