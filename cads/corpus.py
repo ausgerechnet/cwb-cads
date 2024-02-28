@@ -17,7 +17,6 @@ from . import db
 from .database import (Corpus, CorpusAttributes, Segmentation,
                        SegmentationAnnotation, SegmentationSpan, SubCorpus)
 from .users import auth
-from .utils import time_it
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
 
@@ -73,7 +72,6 @@ def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
     return attributes
 
 
-@time_it
 def meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'}):
     """corpus meta data is read as a DataFrame indexed by match, matchend
 
@@ -191,151 +189,6 @@ def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=N
         db.session.commit()
 
 
-class CorpusOut(Schema):
-
-    id = Integer()
-    cwb_id = String()
-    name = String()
-    language = String()
-    register = String()
-    description = String()
-    s_atts = List(String)
-    p_atts = List(String)
-
-
-class SubCorpusOut(Schema):
-
-    id = Integer()
-    corpus = Nested(CorpusOut)
-    name = String()
-    description = String()
-    nqr_cqp = String()
-
-
-@bp.get('/')
-@bp.output(CorpusOut(many=True))
-@bp.auth_required(auth)
-def get_corpora():
-    """Get all corpora.
-
-    """
-    corpora = Corpus.query.all()
-
-    return [CorpusOut().dump(corpus) for corpus in corpora], 200
-
-
-@bp.get('/<id>/subcorpora/')
-@bp.output(SubCorpusOut(many=True))
-@bp.auth_required(auth)
-def get_subcorpora(id):
-    """Get all corpora.
-
-    """
-    subcorpora = SubCorpus.query.filter_by(corpus_id=id).all()
-
-    return [SubCorpusOut().dump(subcorpus) for subcorpus in subcorpora], 200
-
-
-@bp.get('/<id>')
-@bp.output(CorpusOut)
-@bp.auth_required(auth)
-def get_corpus(id):
-    """Get details of a corpus.
-
-    """
-    corpus = db.get_or_404(Corpus, id)
-
-    return CorpusOut().dump(corpus), 200
-
-
-@bp.get('/<id>/meta')
-@bp.output(CorpusOut)
-@bp.auth_required(auth)
-def get_meta(id):
-    """Get meta data of corpus.
-
-    """
-    pass
-    # corpus = db.get_or_404(Corpus, id)
-    # attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'], current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
-    # corpus = CorpusOut().dump(corpus)
-    # corpus = {**corpus, **attributes}
-
-    # return corpus, 200
-    # datetime/numeric: min, maximum
-    # boolean: yes/no
-    # unicode: searchable endpoint: einzelne Auswahl
-    # array of filter_object:
-
-
-@bp.put('/<id>/meta')
-@bp.output(CorpusOut)
-@bp.auth_required(auth)
-def set_meta(id):
-    """Set meta data of corpus.
-
-    - from within XML
-    - from TSV
-
-    """
-    pass
-
-
-@bp.cli.command('read-meta')
-@click.argument('cwb_id')
-@click.argument('path')
-def read_meta(cwb_id, path):
-    """Set meta data of corpus.
-
-    - from within XML
-    - from TSV
-
-    """
-    meta_from_tsv(cwb_id, path)
-
-
-@bp.put('/<id>/subcorpus')
-@bp.auth_required(auth)
-def create_subcorpus(id, data):
-
-    data['corpus_id'],
-    data['subcorpus_name']
-    data['segmentation_key']
-    data['segmentation_annotation']
-
-    pass
-    # Discourseme(
-    #     name,
-    #     description
-    # )
-
-    # Query(
-    #     discourseme_id,
-    #     corpus_id,
-    #     # nqr_cqp,
-    #     cqp_query,
-    #     match_strategy
-    # )
-
-
-@bp.cli.command('subcorpora')
-@click.argument('cwb_id')
-@click.argument('glob_in')
-def subcorpora(cwb_id, glob_in):
-    """Set meta data of corpus.
-
-    - from within XML
-    - from TSV
-
-    """
-    paths = glob(glob_in)
-    for path in paths:
-        subcorpora_from_tsv(cwb_id, path,
-                            cqp_bin=current_app.config['CCC_CQP_BIN'],
-                            registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                            data_dir=current_app.config['CCC_DATA_DIR'])
-
-
 def init_corpora(path=None, keep_old=True, reread_attributes=False):
 
     path = current_app.config['CORPORA'] if path is None else path
@@ -387,6 +240,154 @@ def init_corpora(path=None, keep_old=True, reread_attributes=False):
 
     # add new corpora
     db.session.commit()
+
+
+class CorpusOut(Schema):
+
+    id = Integer()
+    cwb_id = String()
+    name = String()
+    language = String()
+    register = String()
+    description = String()
+    s_atts = List(String)
+    p_atts = List(String)
+
+
+class SubCorpusOut(Schema):
+
+    id = Integer()
+    corpus = Nested(CorpusOut)
+    name = String()
+    description = String()
+    nqr_cqp = String()
+
+
+@bp.get('/')
+@bp.output(CorpusOut(many=True))
+@bp.auth_required(auth)
+def get_corpora():
+    """Get all corpora.
+
+    """
+    corpora = Corpus.query.all()
+
+    return [CorpusOut().dump(corpus) for corpus in corpora], 200
+
+
+@bp.get('/<id>')
+@bp.output(CorpusOut)
+@bp.auth_required(auth)
+def get_corpus(id):
+    """Get details of a corpus.
+
+    """
+    corpus = db.get_or_404(Corpus, id)
+
+    return CorpusOut().dump(corpus), 200
+
+
+@bp.get('/<id>/subcorpus/')
+@bp.output(SubCorpusOut(many=True))
+@bp.auth_required(auth)
+def get_subcorpora(id):
+    """Get all corpora.
+
+    """
+    subcorpora = SubCorpus.query.filter_by(corpus_id=id).all()
+
+    return [SubCorpusOut().dump(subcorpus) for subcorpus in subcorpora], 200
+
+
+@bp.put('/<id>/subcorpus/')
+@bp.auth_required(auth)
+def create_subcorpus(id, data):
+
+    data['corpus_id'],
+    data['subcorpus_name']
+    data['segmentation_key']
+    data['segmentation_annotation']
+
+    pass
+    # Discourseme(
+    #     name,
+    #     description
+    # )
+
+    # Query(
+    #     discourseme_id,
+    #     corpus_id,
+    #     # nqr_cqp,
+    #     cqp_query,
+    #     match_strategy
+    # )
+
+
+@bp.get('/<id>/meta')
+@bp.output(CorpusOut)
+@bp.auth_required(auth)
+def get_meta(id):
+    """Get meta data of corpus.
+
+    """
+
+    pass
+    # corpus = db.get_or_404(Corpus, id)
+    # attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
+    # current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+    # corpus = CorpusOut().dump(corpus)
+    # corpus = {**corpus, **attributes}
+
+    # return corpus, 200
+    # datetime/numeric: min, maximum
+    # boolean: yes/no
+    # unicode: searchable endpoint: einzelne Auswahl
+    # array of filter_object:
+
+
+@bp.put('/<id>/meta')
+@bp.output(CorpusOut)
+@bp.auth_required(auth)
+def set_meta(id):
+    """Set meta data of corpus.
+
+    - from within XML
+    - from TSV
+
+    """
+
+    pass
+
+
+@bp.cli.command('read-meta')
+@click.argument('cwb_id')
+@click.argument('path')
+def read_meta(cwb_id, path):
+    """Set meta data of corpus.
+
+    - from within XML
+    - from TSV
+
+    """
+    meta_from_tsv(cwb_id, path)
+
+
+@bp.cli.command('subcorpora')
+@click.argument('cwb_id')
+@click.argument('glob_in')
+def subcorpora(cwb_id, glob_in):
+    """Set meta data of corpus.
+
+    - from within XML
+    - from TSV
+
+    """
+    paths = glob(glob_in)
+    for path in paths:
+        subcorpora_from_tsv(cwb_id, path,
+                            cqp_bin=current_app.config['CCC_CQP_BIN'],
+                            registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                            data_dir=current_app.config['CCC_DATA_DIR'])
 
 
 @bp.cli.command('import')
