@@ -558,78 +558,6 @@
           }
         ]
       },
-      "patch": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QueryOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query"
-        ],
-        "summary": "Patch Query",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/QueryInUpdate"
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      },
       "delete": {
         "parameters": [
           {
@@ -2001,59 +1929,6 @@
         ]
       }
     },
-    "/corpus/{id}/subcorpus": {
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Corpus"
-        ],
-        "summary": "Create Subcorpus",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
     "/mmda/corpus/{corpus}/": {
       "get": {
         "parameters": [
@@ -2164,6 +2039,115 @@
           "Mmda.User"
         ],
         "summary": "Update details of a user"
+      }
+    },
+    "/corpus/{id}/subcorpus/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubCorpusOut"
+                  }
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Get all corpora.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Corpus"
+        ],
+        "summary": "Create Subcorpus",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/discourseme/{id}/query": {
@@ -2297,64 +2281,6 @@
           "Breakdown"
         ],
         "summary": "Execute breakdown: Calculate frequencies of query matches.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/corpus/{id}/subcorpora/": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SubCorpusOut"
-                  }
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Corpus"
-        ],
-        "summary": "Get all corpora.",
         "security": [
           {
             "BearerAuth": []
@@ -2850,6 +2776,15 @@
             "schema": {
               "type": "integer",
               "default": 10
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "extended_window",
+            "schema": {
+              "type": "integer",
+              "default": 20
             },
             "required": false
           },
@@ -3420,10 +3355,10 @@
           },
           {
             "in": "query",
-            "name": "extended_context_break",
+            "name": "window",
             "schema": {
-              "type": "string",
-              "default": "text"
+              "type": "integer",
+              "default": 10
             },
             "required": false
           },
@@ -3438,10 +3373,10 @@
           },
           {
             "in": "query",
-            "name": "window",
+            "name": "extended_context_break",
             "schema": {
-              "type": "integer",
-              "default": 20
+              "type": "string",
+              "default": "text"
             },
             "required": false
           },
@@ -5733,35 +5668,6 @@
           }
         }
       },
-      "QueryInUpdate": {
-        "type": "object",
-        "properties": {
-          "discourseme_id": {
-            "type": "integer",
-            "nullable": true
-          },
-          "corpus_id": {
-            "type": "integer"
-          },
-          "subcorpus_id": {
-            "type": "integer"
-          },
-          "match_strategy": {
-            "type": "string",
-            "enum": [
-              "longest",
-              "shortest",
-              "standard"
-            ]
-          },
-          "cqp_query": {
-            "type": "string"
-          },
-          "s": {
-            "type": "string"
-          }
-        }
-      },
       "HTTPRefreshTokenIn": {
         "type": "object",
         "properties": {
@@ -5777,12 +5683,14 @@
             "type": "integer"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "nullable": true
           },
-          "_items": {
+          "items": {
             "type": "array",
             "items": {
               "type": "string"
@@ -5798,6 +5706,12 @@
           },
           "description": {
             "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -5977,41 +5891,6 @@
           }
         }
       },
-      "DiscoursemeQueryIn": {
-        "type": "object",
-        "properties": {
-          "corpus_id": {
-            "type": "integer"
-          },
-          "subcorpus_id": {
-            "type": "string",
-            "default": null,
-            "nullable": true
-          },
-          "match_strategy": {
-            "type": "string",
-            "default": "longest"
-          },
-          "p_query": {
-            "type": "string",
-            "default": "word"
-          },
-          "s_query": {
-            "type": "string"
-          },
-          "flags": {
-            "type": "string",
-            "default": ""
-          },
-          "escape": {
-            "type": "boolean",
-            "default": false
-          }
-        },
-        "required": [
-          "s_query"
-        ]
-      },
       "SubCorpusOut": {
         "type": "object",
         "properties": {
@@ -6031,6 +5910,47 @@
             "type": "string"
           }
         }
+      },
+      "DiscoursemeQueryIn": {
+        "type": "object",
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "subcorpus_id": {
+            "type": "string",
+            "default": null,
+            "nullable": true
+          },
+          "match_strategy": {
+            "type": "string",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ]
+          },
+          "p": {
+            "type": "string",
+            "default": "word"
+          },
+          "ignore_case": {
+            "type": "boolean"
+          },
+          "ignore_diacritics": {
+            "type": "boolean"
+          },
+          "escape": {
+            "type": "boolean",
+            "default": false
+          },
+          "s": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "s"
+        ]
       },
       "BreakdownIn": {
         "type": "object",
