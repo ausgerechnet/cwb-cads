@@ -12,10 +12,13 @@ export const Route = createFileRoute('/_app/queries/$queryId')({
     pAtt: z.string().optional(),
     contextBreak: z.string().optional().catch(undefined),
     windowSize: z.number().positive().min(2).int().optional().catch(undefined),
-    primary: z.string().optional().catch(undefined),
+    primary: z.string().optional(),
     secondary: z.string().optional().catch(undefined),
-    clSortBy: z.number().int().optional().catch(undefined),
-    clSortOrder: z.number().int().optional().catch(undefined),
+    clSortOrder: z
+      .enum(['ascending', 'descending', 'random'] as const)
+      .optional()
+      .catch(undefined),
+    clSortByOffset: z.number().int().optional().catch(undefined),
     clPageSize: z.number().positive().int().optional().catch(undefined),
     clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
     filterItem: z.string().optional().catch(undefined),

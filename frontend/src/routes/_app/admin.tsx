@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
+import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
 import { getUsersQueryOptions } from '@/lib/queries'
@@ -18,7 +19,10 @@ function Admin() {
   const { data: users = [] } = useSuspenseQuery(getUsersQueryOptions)
   return (
     <AppPageFrame title="Admin">
-      <DataTable columns={columns} rows={users} />
+      <DataTable<z.infer<typeof schemas.ConstellationOut>>
+        columns={columns}
+        rows={users}
+      />
     </AppPageFrame>
   )
 }
