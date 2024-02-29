@@ -249,7 +249,7 @@ export function QueryFormAssisted({
             control={form.control}
             name="p"
             render={({ field: { onChange, value, disabled } }) => (
-              <FormItem key={value}>
+              <FormItem>
                 <FormLabel>Query Layer</FormLabel>
                 <FormControl>
                   <Select
@@ -279,7 +279,7 @@ export function QueryFormAssisted({
             control={form.control}
             name="s"
             render={({ field: { onChange, value, disabled } }) => (
-              <FormItem key={value}>
+              <FormItem>
                 <FormLabel>Context Break</FormLabel>
                 <FormControl>
                   <Select
