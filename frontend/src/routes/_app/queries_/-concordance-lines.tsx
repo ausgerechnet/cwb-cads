@@ -134,15 +134,24 @@ export function ConcordanceLines({
         </div>
 
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Sort Order (Why int?)</span>
-          <Input
+          <span>Sort Order</span>
+          <Select
             value={clSortOrder}
-            type="number"
-            onChange={(event) => {
-              const value = parseInt(event.target.value)
-              setSearch('clSortOrder', value)
-            }}
-          />
+            onValueChange={(value) => setSearch('clSortOrder', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sort Order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {['ascending', 'descending', 'random'].map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
