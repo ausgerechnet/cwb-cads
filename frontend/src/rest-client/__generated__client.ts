@@ -28,7 +28,7 @@ type QueryOut = Partial<{
   discourseme_id: number | null
   id: number
   match_strategy: string
-  nqr_cqp: string
+  nqr_cqp: string | null
   subcorpus: string | null
   subcorpus_id: number | null
 }>
@@ -146,7 +146,7 @@ const QueryOut: z.ZodType<QueryOut> = z
     discourseme_id: z.number().int().nullable(),
     id: z.number().int(),
     match_strategy: z.string(),
-    nqr_cqp: z.string(),
+    nqr_cqp: z.string().nullable(),
     subcorpus: z.string().nullable(),
     subcorpus_id: z.number().int().nullable(),
   })
