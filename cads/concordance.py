@@ -44,9 +44,8 @@ def ccc2attributes(line, primary, secondary, s_show, window):
 
 class ConcordanceIn(Schema):
 
-    # context_break = query.s
-
     window = Integer(load_default=10, required=False)
+    extended_window = Integer(load_default=20, required=False)
 
     primary = String(load_default='word', required=False)
     secondary = String(load_default='lemma', required=False)
@@ -67,9 +66,9 @@ class ConcordanceIn(Schema):
 
 class ConcordanceLineIn(Schema):
 
-    extended_context_break = String(load_default='text', required=False)  # or determine via corpus settings
+    window = Integer(load_default=10, required=False)
     extended_window = Integer(load_default=50, required=False)
-    window = Integer(load_default=20, required=False)
+    extended_context_break = String(load_default='text', required=False)  # or determine via corpus settings
 
     primary = String(load_default='word', required=False)
     secondary = String(load_default='lemma', required=False)
@@ -130,6 +129,7 @@ def lines(query_id, data):
     window = data.get('window')
     primary = data.get('primary')
     secondary = data.get('secondary')
+    extended_window = data.get('extended_window')
 
     # pagination
     page_size = data.get('page_size')
@@ -168,6 +168,7 @@ def lines(query_id, data):
         overwrite=False,
         lib_dir=None
     ).set_context(
+        context=extended_window,
         context_break=context_break
     ).concordance(
         form='dict',
