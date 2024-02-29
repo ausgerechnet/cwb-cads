@@ -110,62 +110,58 @@ export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
 export const queryConcordancesQueryOptions = (
   queryId: string,
   {
-    contextBreak: context_break,
     window,
-    sShow: s_show,
     primary,
     secondary,
     filterItem: filter_item,
+    filterItemPAtt: filter_item_p_att,
     filterDiscoursemeIds: filter_discourseme_ids,
     pageSize: page_size,
     pageNumber: page_number,
     sortOrder: sort_order,
-    sortBy: sort_by,
+    sortByOffset: sort_by_offset,
   }: {
-    contextBreak?: string
     window?: number
-    sShow?: string[]
     primary?: string
     secondary?: string
     filterItem?: string
+    filterItemPAtt?: string
     filterDiscoursemeIds?: number[]
     pageSize?: number
     pageNumber?: number
-    sortOrder?: number
-    sortBy?: number
+    sortOrder?: 'ascending' | 'descending' | 'random'
+    sortByOffset?: number
   } = {},
 ) =>
   queryOptions({
     queryKey: [
       'query-concordances',
       queryId,
-      context_break,
       window,
-      s_show,
       primary,
       secondary,
       filter_item,
+      filter_item_p_att,
       filter_discourseme_ids,
       page_size,
       page_number,
       sort_order,
-      sort_by,
+      sort_by_offset,
     ],
     queryFn: ({ signal }) =>
       apiClient.getQueryQuery_idconcordance({
         params: { query_id: queryId },
         queries: {
-          context_break,
           window,
-          s_show,
           primary,
           secondary,
           filter_item,
+          filter_item_p_att,
           filter_discourseme_ids,
           page_size,
           page_number,
           sort_order,
-          sort_by,
+          sort_by_offset,
         },
         signal,
       }),
@@ -203,7 +199,7 @@ export const putSubcorpusMutationOptions: MutationOptions<
 export const sessionQueryOptions = queryOptions({
   queryKey: ['session'],
   queryFn: ({ signal }) => apiClient.getUseridentify({ signal }),
-  retry: 2,
+  retry: 1,
 })
 
 export const loginMutationOptions: MutationOptions<

@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef } from 'react'
+import { Fragment, useMemo } from 'react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -50,7 +50,6 @@ export function ConcordanceLines({
   const { data: query } = useSuspenseQuery(queryQueryOptions(queryId))
   const navigate = useNavigate()
 
-  const totalRowsRef = useRef(0)
   const searchParams = useSearch({ from: '/_app/queries/$queryId' })
   const contextBreakList = query.corpus?.s_atts ?? emptyArray
   const pAttributes = query.corpus?.p_atts ?? emptyArray
@@ -69,8 +68,8 @@ export function ConcordanceLines({
     windowSize = 3,
     clPageSize = 10,
     clPageIndex = 0,
-    clSortBy = 0,
-    clSortOrder = 0,
+    clSortByOffset = 0,
+    clSortOrder = 'random',
     filterItem,
   } = searchParams
 
@@ -80,21 +79,18 @@ export function ConcordanceLines({
     error,
   } = useQuery(
     queryConcordancesQueryOptions(queryId, {
-      contextBreak,
       primary,
       secondary,
       window: windowSize,
       filterItem,
       pageSize: clPageSize,
       pageNumber: clPageIndex + 1,
-      sortBy: clSortBy,
       sortOrder: clSortOrder,
+      sortByOffset: clSortByOffset,
     }),
   )
 
-  totalRowsRef.current =
-    concordanceLines?.[0]?.nr_lines_total ?? totalRowsRef.current ?? 0
-  const pageCount = Math.ceil(totalRowsRef.current / clPageSize)
+  const pageCount = concordanceLines?.page_count ?? 0
 
   // TODO: Make it type safe
   const setSearch = useMemo(() => {
@@ -125,10 +121,12 @@ export function ConcordanceLines({
           />
         </div>
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Sort By {clSortBy}</span>
+          <span>Sort By Offset {clSortByOffset}</span>
           <Slider
-            value={[clSortBy]}
-            onValueChange={([newValue]) => setSearch('clSortBy', newValue)}
+            value={[clSortByOffset]}
+            onValueChange={([newValue]) =>
+              setSearch('clSortByOffset', newValue)
+            }
             min={-5}
             max={5}
             className="my-auto"
@@ -136,15 +134,24 @@ export function ConcordanceLines({
         </div>
 
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Sort Order (Why int?)</span>
-          <Input
+          <span>Sort Order</span>
+          <Select
             value={clSortOrder}
-            type="number"
-            onChange={(event) => {
-              const value = parseInt(event.target.value)
-              setSearch('clSortOrder', value)
-            }}
-          />
+            onValueChange={(value) => setSearch('clSortOrder', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sort Order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {['ascending', 'descending', 'random'].map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
@@ -234,7 +241,7 @@ export function ConcordanceLines({
               </TableRow>
             </TableHeader>
             <TableBody className="col-span-full grid grid-cols-subgrid">
-              {concordanceLines?.map((line) => (
+              {concordanceLines?.lines?.map((line) => (
                 <ConcordanceLineRender key={line.id} concordanceLine={line} />
               ))}
               {isLoading && (
@@ -253,7 +260,7 @@ export function ConcordanceLines({
           className="col-span-full"
           pageSize={clPageSize}
           pageCount={pageCount}
-          totalRows={totalRowsRef.current}
+          totalRows={concordanceLines?.nr_lines ?? 0}
           pageIndex={clPageIndex}
           setPageSize={(pageSize) => {
             navigate({

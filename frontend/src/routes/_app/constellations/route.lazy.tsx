@@ -1,12 +1,29 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import {
+  createLazyFileRoute,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
+import { MoreVertical } from 'lucide-react'
+import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import { constellationListQueryOptions } from '@/lib/queries'
+import {
+  constellationListQueryOptions,
+  deleteConstellationMutationOptions,
+} from '@/lib/queries'
+import { cn } from '@/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { DataTable, SortButton } from '@/components/data-table'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { buttonVariants } from '@/components/ui/button'
+import { ButtonAlert } from '@/components/button-alert'
 
 export const Route = createLazyFileRoute('/_app/constellations')({
   component: ConstellationOverview,
@@ -63,4 +80,55 @@ const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
       <SortButton column={column}>Description</SortButton>
     ),
   },
+  {
+    id: 'actions',
+    enableSorting: true,
+    meta: { className: 'w-0' },
+    cell: ({ row }) => (
+      <QuickActions queryId={row.original.id} key={row.original.id} />
+    ),
+  },
 ]
+
+// TODO: queryId should never be undefined and in practice it is not.
+// The API spec should be updated to reflect this.
+function QuickActions({ queryId }: { queryId: number | undefined }) {
+  const router = useRouter()
+  const { mutate, isPending, isSuccess } = useMutation({
+    ...deleteConstellationMutationOptions,
+    onSuccess: (...args) => {
+      deleteConstellationMutationOptions.onSuccess?.(...args)
+      router.invalidate()
+      toast.success('Constellation deleted')
+    },
+    onError: (...args) => {
+      deleteConstellationMutationOptions.onError?.(...args)
+      toast.error('An error occurred while deleting the constellation')
+    },
+  })
+  return (
+    <Popover>
+      <PopoverTrigger
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: 'icon' }),
+          '-my-3',
+        )}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <MoreVertical className="h-4 w-4" />
+      </PopoverTrigger>
+      <PopoverContent
+        className="flex flex-col gap-2 "
+        onClick={(event) => event.stopPropagation()}
+      >
+        <ButtonAlert
+          disabled={isPending || isSuccess}
+          labelDescription="This will permanently delete the constellation."
+          onClick={() => mutate(String(queryId))}
+        >
+          Delete Constellation
+        </ButtonAlert>
+      </PopoverContent>
+    </Popover>
+  )
+}

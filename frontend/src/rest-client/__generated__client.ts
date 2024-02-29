@@ -28,9 +28,9 @@ type QueryOut = Partial<{
   discourseme_id: number | null
   id: number
   match_strategy: string
-  nqr_cqp: string
+  nqr_cqp: string | null
   subcorpus: string | null
-  subcorpus_id: number
+  subcorpus_id: number | null
 }>
 type CorpusOut = Partial<{
   cwb_id: string
@@ -45,7 +45,6 @@ type CorpusOut = Partial<{
 type ConcordanceLineOut = Partial<{
   discourseme_ranges: Array<DiscoursemeRangeOut>
   id: number
-  nr_lines_total: number
   structural: {}
   tokens: Array<TokenOut>
 }>
@@ -56,10 +55,18 @@ type DiscoursemeRangeOut = Partial<{
 }>
 type TokenOut = Partial<{
   cpos: number
+  is_filter_item: boolean
   offset: number
   out_of_window: boolean
   primary: string
   secondary: string
+}>
+type ConcordanceOut = Partial<{
+  lines: Array<ConcordanceLineOut>
+  nr_lines: number
+  page_count: number
+  page_number: number
+  page_size: number
 }>
 type ConstellationOut = Partial<{
   description: string
@@ -132,8 +139,6 @@ const CorpusOut: z.ZodType<CorpusOut> = z
   })
   .partial()
   .passthrough()
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
 const QueryOut: z.ZodType<QueryOut> = z
   .object({
     corpus: CorpusOut,
@@ -141,7 +146,7 @@ const QueryOut: z.ZodType<QueryOut> = z
     discourseme_id: z.number().int().nullable(),
     id: z.number().int(),
     match_strategy: z.string(),
-    nqr_cqp: z.string(),
+    nqr_cqp: z.string().nullable(),
     subcorpus: z.string().nullable(),
     subcorpus_id: z.number().int().nullable(),
   })
@@ -277,6 +282,7 @@ const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
 const TokenOut: z.ZodType<TokenOut> = z
   .object({
     cpos: z.number().int(),
+    is_filter_item: z.boolean(),
     offset: z.number().int(),
     out_of_window: z.boolean(),
     primary: z.string(),
@@ -288,9 +294,18 @@ const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
   .object({
     discourseme_ranges: z.array(DiscoursemeRangeOut),
     id: z.number().int(),
-    nr_lines_total: z.number().int(),
     structural: z.object({}).partial().passthrough(),
     tokens: z.array(TokenOut),
+  })
+  .partial()
+  .passthrough()
+const ConcordanceOut: z.ZodType<ConcordanceOut> = z
+  .object({
+    lines: z.array(ConcordanceLineOut),
+    nr_lines: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
   })
   .partial()
   .passthrough()
@@ -362,6 +377,7 @@ export const schemas = {
   DiscoursemeRangeOut,
   TokenOut,
   ConcordanceLineOut,
+  ConcordanceOut,
   CoordinatesOut,
   UserOut,
   UserRegister,
@@ -3104,19 +3120,9 @@ description: &quot;empty result&quot;`,
         schema: z.string(),
       },
       {
-        name: 'context_break',
-        type: 'Query',
-        schema: z.string().optional().default('text'),
-      },
-      {
         name: 'window',
         type: 'Query',
-        schema: z.number().int().optional().default(20),
-      },
-      {
-        name: 's_show',
-        type: 'Query',
-        schema: z.array(z.string()).optional().default([]),
+        schema: z.number().int().optional().default(10),
       },
       {
         name: 'primary',
@@ -3141,12 +3147,20 @@ description: &quot;empty result&quot;`,
       {
         name: 'sort_order',
         type: 'Query',
-        schema: z.number().int().nullish().default(42),
+        schema: z
+          .enum(['random', 'ascending', 'descending'])
+          .optional()
+          .default('random'),
       },
       {
-        name: 'sort_by',
+        name: 'sort_by_offset',
         type: 'Query',
         schema: z.number().int().optional(),
+      },
+      {
+        name: 'sort_by_p_att',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
       },
       {
         name: 'filter_item',
@@ -3154,12 +3168,17 @@ description: &quot;empty result&quot;`,
         schema: z.string().nullish(),
       },
       {
+        name: 'filter_item_p_att',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
         name: 'filter_discourseme_ids',
         type: 'Query',
-        schema: z.array(z.number()).optional(),
+        schema: z.array(z.number()).optional().default([]),
       },
     ],
-    response: z.array(ConcordanceLineOut),
+    response: ConcordanceOut,
     errors: [
       {
         status: 401,
@@ -3195,19 +3214,19 @@ description: &quot;empty result&quot;`,
         schema: z.string(),
       },
       {
-        name: 'context_break',
+        name: 'extended_context_break',
         type: 'Query',
         schema: z.string().optional().default('text'),
+      },
+      {
+        name: 'extended_window',
+        type: 'Query',
+        schema: z.number().int().optional().default(50),
       },
       {
         name: 'window',
         type: 'Query',
         schema: z.number().int().optional().default(20),
-      },
-      {
-        name: 's_show',
-        type: 'Query',
-        schema: z.array(z.string()).optional().default([]),
       },
       {
         name: 'primary',
@@ -3236,6 +3255,32 @@ description: &quot;empty result&quot;`,
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/query/:query_id/concordance/shuffle',
+    alias: 'postQueryQuery_idconcordanceshuffle',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
       },
     ],
   },
