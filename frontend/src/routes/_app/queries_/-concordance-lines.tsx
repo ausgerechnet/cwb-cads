@@ -335,7 +335,7 @@ export function ConcordanceLines({
   )
 }
 
-function MetaValue({ value }: { value: Date | string | boolean | number }) {
+function MetaValue({ value }: { value: unknown }) {
   if (typeof value === 'string') {
     return <>{value}</>
   }
@@ -345,11 +345,19 @@ function MetaValue({ value }: { value: Date | string | boolean | number }) {
   if (typeof value === 'boolean') {
     return <>{value ? 'true' : 'false'}</>
   }
-  return <>{value.toISOString()}</>
+  if (value instanceof Date) {
+    return <>{value.toISOString()}</>
+  }
+  return String(value)
 }
 
 function ConcordanceLineRender({
-  concordanceLine: { id, tokens = [], discourseme_ranges: discoursemeRanges },
+  concordanceLine: {
+    id,
+    tokens = [],
+    discourseme_ranges: discoursemeRanges,
+    structural = {},
+  },
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
@@ -363,7 +371,7 @@ function ConcordanceLineRender({
   const postTokens =
     tokens.filter(({ offset = NaN }) => offset > 0) ?? emptyArray
 
-  const meta: { key: string; value: string }[] = []
+  const meta = Object.entries(structural)
   const isExpanded = false
 
   return (
@@ -377,7 +385,7 @@ function ConcordanceLineRender({
             {meta.length > 0 && (
               <TooltipContent side="top" sideOffset={10}>
                 <dl className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
-                  {meta.map(({ key, value }) => (
+                  {meta.map(([key, value]) => (
                     <Fragment key={key}>
                       <dt className="even:bg-muted">{key}</dt>
                       <dd className="font-mono">
