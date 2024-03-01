@@ -168,6 +168,22 @@ export const queryConcordancesQueryOptions = (
     staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
+export const queryConcordancesShuffleMutationOptions: MutationOptions<
+  unknown,
+  Error,
+  string
+> = {
+  mutationFn: (queryId) =>
+    apiClient.postQueryQuery_idconcordanceshuffle(undefined, {
+      params: { query_id: queryId },
+    }),
+  onSuccess: () => {
+    queryClient.invalidateQueries({
+      queryKey: ['query-concordances'],
+    })
+  },
+}
+
 // ==================== CORPORA ====================
 
 export const corporaQueryOptions = queryOptions({
