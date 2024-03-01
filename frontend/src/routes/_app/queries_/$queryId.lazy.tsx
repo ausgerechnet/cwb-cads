@@ -48,17 +48,31 @@ function SingleQuery() {
       return { query, queryDiscourseme }
     },
   })
+  const hasDiscourseme = Boolean(queryDiscourseme)
 
   return (
-    <AppPageFrame title="Query">
+    <AppPageFrame
+      title="Query"
+      cta={
+        hasDiscourseme
+          ? {
+              label: 'New Collocation Analysis',
+              nav: {
+                to: '/collocation-analysis/new',
+                search: { queryId: parseInt(queryId) },
+              },
+            }
+          : undefined
+      }
+    >
       <div className="grid grid-cols-3 grid-rows-[max-content_1fr_auto] gap-8">
         <Card className="mb-auto p-4 font-mono">
-          <Headline3>Query</Headline3>
+          <Headline3 className="mb-2 text-lg leading-normal">Query</Headline3>
           <div className="whitespace-pre-line rounded-md bg-muted p-2 text-muted-foreground">
             {query.data?.cqp_query}
           </div>
         </Card>
-        <Card className="align-start row-start-2 mb-auto p-4">
+        <Card className="align-start row-start-2 m-0 mb-auto p-4">
           {queryDiscourseme ? (
             <Discourseme discourseme={queryDiscourseme} />
           ) : (
@@ -66,7 +80,6 @@ function SingleQuery() {
           )}
         </Card>
         <Card className="col-span-2 row-span-2 p-4">
-          <Headline3>Breakdown</Headline3>
           <QueryBreakdown queryId={queryId} />
         </Card>
 
@@ -85,20 +98,20 @@ function Discourseme({
 
   return (
     <>
-      <Headline3>Discourseme</Headline3>
-      <div className="grid grid-cols-[auto_auto] gap-3">
-        <span>Id:</span>
-        <span>{discourseme.id}</span>
-        <span>Name:</span>
-        <span>{discourseme.name}</span>
-        <span>Description:</span>
-        <span>{discourseme.description}</span>
-        <span>Items:</span>
-        <span>
+      <Headline3 className="mb-2 text-lg leading-normal">Discourseme</Headline3>
+      <div className="flex flex-col text-sm">
+        <span className="font-bold">{discourseme.name}</span>
+        {discourseme.description && (
+          <p className="col-span-full text-muted-foreground">
+            {discourseme.description}
+          </p>
+        )}
+        <span className="mt-2 font-bold">Items</span>
+        <p>
           {discourseme._items?.join(', ') ?? (
             <span className="italic">empty</span>
           )}
-        </span>
+        </p>
       </div>
     </>
   )
