@@ -6,7 +6,7 @@ import pytest
 from cads import create_app
 from cads import db
 from cads.database import init_db
-from cads.corpus import init_corpora
+from cads.corpus import read_corpora
 from cads.database import Discourseme
 from cads.discourseme import read_tsv
 
@@ -17,7 +17,7 @@ with app.app_context():
 
     init_db()
 
-    init_corpora()
+    read_corpora()
 
     # TODO exclude the ones that are already in database?
     discoursemes = read_tsv("tests/discoursemes/germaparl.tsv")

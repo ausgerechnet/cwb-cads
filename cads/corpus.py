@@ -189,7 +189,7 @@ def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=N
         db.session.commit()
 
 
-def init_corpora(path=None, keep_old=True, reread_attributes=False):
+def read_corpora(path=None, keep_old=True, reread_attributes=False):
 
     path = current_app.config['CORPORA'] if path is None else path
 
@@ -394,7 +394,7 @@ def subcorpora(cwb_id, glob_in):
 @click.option('--path', default=None)
 @click.option('--keep_old', default=True, is_flag=True)
 @click.option('--reread_attributes', default=False, is_flag=True)
-def update_corpora_cmd(path, keep_old, reread_attributes):
+def update_corpora(path, keep_old, reread_attributes):
     """update corpora according to JSON file
     - by default, this uses the CORPORA path defined in config
     - corpora are identified via CWBID
@@ -403,4 +403,4 @@ def update_corpora_cmd(path, keep_old, reread_attributes):
     - attributes will be (re-)read from CWB only for new corpora (if not forced via reread_attributes=True)
     """
 
-    init_corpora(path, keep_old, reread_attributes)
+    read_corpora(path, keep_old, reread_attributes)
