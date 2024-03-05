@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
+from apiflask import abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus
@@ -199,7 +200,6 @@ def create_assisted(data, data_query):
     if data_query['execute']:
         ret = ccc_query(query)
         if isinstance(ret, str):  # CQP error
-            from apiflask import abort
             return abort(409, ret)
 
     return QueryOut().dump(query), 200
@@ -231,28 +231,28 @@ def get_query(id):
     return QueryOut().dump(query), 200
 
 
-@bp.patch('/<id>')
-@bp.input(QueryIn(partial=True))
-@bp.output(QueryOut)
-@bp.auth_required(auth)
-def patch_query(id, data):
+# @bp.patch('/<id>')
+# @bp.input(QueryIn(partial=True))
+# @bp.output(QueryOut)
+# @bp.auth_required(auth)
+# def patch_query(id, data):
 
-    # TODO: delete matches
-    # TODO: queries belong to users
+#     # TODO: delete matches
+#     # TODO: queries belong to users
 
-    # user_id = auth.current_user.id
+#     # user_id = auth.current_user.id
 
-    query = db.get_or_404(Query, id)
+#     query = db.get_or_404(Query, id)
 
-    # if query.user_id != user_id:
-    #     return abort(409, 'query does not belong to user')
+#     # if query.user_id != user_id:
+#     #     return abort(409, 'query does not belong to user')
 
-    for attr, value in data.items():
-        setattr(query, attr, value)
+#     for attr, value in data.items():
+#         setattr(query, attr, value)
 
-    db.session.commit()
+#     db.session.commit()
 
-    return QueryOut().dump(query), 200
+#     return QueryOut().dump(query), 200
 
 
 @bp.delete('/<id>')
