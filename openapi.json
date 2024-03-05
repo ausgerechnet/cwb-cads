@@ -3692,7 +3692,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/Generated"
+                }
               }
             },
             "description": "Successful response"
@@ -6098,6 +6100,14 @@
         "type": "object",
         "properties": {
           "collocation_id": {
+            "type": "integer"
+          }
+        }
+      },
+      "Generated": {
+        "type": "object",
+        "properties": {
+          "query_id": {
             "type": "integer"
           }
         }

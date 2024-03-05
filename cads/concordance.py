@@ -111,9 +111,10 @@ class ConcordanceOut(Schema):
 
 @bp.post("/shuffle")
 @bp.auth_required(auth)
+@bp.output({'query_id': Integer()})
 def shuffle(query_id):
     # TODO
-    return {'msg': 'shuffled'}, 200
+    return {'query.id': query_id}, 200
 
 
 @bp.get("/")
