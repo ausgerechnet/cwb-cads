@@ -1,5 +1,4 @@
 from flask import url_for
-from pprint import pprint
 
 
 def test_concordance(client, auth):
@@ -36,7 +35,7 @@ def test_concordance(client, auth):
                                   },
                                   headers=auth_header)
 
-        lines = client.get(url_for('query.concordance.lines', query_id=union_query.json['id'],
+        lines = client.get(url_for('query.query-concordance.lines', query_id=union_query.json['id'],
                                    page_size=10, page_number=5),
                            headers=auth_header)
         assert lines.status_code == 200
@@ -44,7 +43,7 @@ def test_concordance(client, auth):
         # pprint(lines.json)
         # pprint(lines.json['lines'][0])
 
-        line = client.get(url_for('query.concordance.context', id=lines.json['lines'][0]['id'], query_id=union_query.json['id'],
+        line = client.get(url_for('query.query-concordance.context', id=lines.json['lines'][0]['id'], query_id=union_query.json['id'],
                                   window=50),
                           headers=auth_header)
 

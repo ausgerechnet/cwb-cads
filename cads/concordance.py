@@ -12,7 +12,9 @@ from . import db
 from .database import Matches, Query
 from .users import auth
 
-bp = APIBlueprint('concordance', __name__, url_prefix='/<query_id>/concordance')
+bp_query = APIBlueprint('query-concordance', __name__, url_prefix='/<query_id>/concordance')
+bp_discourseme = APIBlueprint('discourseme-concordance', __name__, url_prefix='/<discourseme_id>/corpus/<corpus_id>/concordance')
+bp_constellation = APIBlueprint('constellation-concordance', __name__, url_prefix='/<constellation_id>/corpus/<corpus_id>/concordance')
 
 
 def ccc2attributes(line, primary, secondary, s_show, window):
@@ -109,18 +111,18 @@ class ConcordanceOut(Schema):
     lines = Nested(ConcordanceLineOut(many=True))
 
 
-@bp.post("/shuffle")
-@bp.auth_required(auth)
-@bp.output({'query_id': Integer()})
+@bp_query.post("/shuffle")
+@bp_query.auth_required(auth)
+@bp_query.output({'query_id': Integer()})
 def shuffle(query_id):
     # TODO
     return {'query.id': query_id}, 200
 
 
-@bp.get("/")
-@bp.input(ConcordanceIn, location='query')
-@bp.output(ConcordanceOut)
-@bp.auth_required(auth)
+@bp_query.get("/")
+@bp_query.input(ConcordanceIn, location='query')
+@bp_query.output(ConcordanceOut)
+@bp_query.auth_required(auth)
 def lines(query_id, data):
     """Get concordance lines.
 
@@ -194,10 +196,10 @@ def lines(query_id, data):
     return ConcordanceOut().dump(concordance), 200
 
 
-@bp.get("/<id>")
-@bp.input(ConcordanceLineIn, location='query')
-@bp.output(ConcordanceLineOut)
-@bp.auth_required(auth)
+@bp_query.get("/<id>")
+@bp_query.input(ConcordanceLineIn, location='query')
+@bp_query.output(ConcordanceLineOut)
+@bp_query.auth_required(auth)
 def context(query_id, id, data):
     """Get (additional context of) one concordance line.
 

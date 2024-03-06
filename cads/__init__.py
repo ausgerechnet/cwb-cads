@@ -101,11 +101,14 @@ def create_app(config=CONFIG):
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)
 
-    app.register_blueprint(discourseme.bp)
-    app.register_blueprint(constellation.bp)
-
-    query.bp.register_blueprint(concordance.bp)
+    query.bp.register_blueprint(concordance.bp_query)
     app.register_blueprint(query.bp)
+
+    constellation.bp.register_blueprint(concordance.bp_discourseme)
+    app.register_blueprint(discourseme.bp)
+
+    constellation.bp.register_blueprint(concordance.bp_constellation)
+    app.register_blueprint(constellation.bp)
 
     app.register_blueprint(breakdown.bp)
     app.register_blueprint(collocation.bp)
