@@ -8,14 +8,13 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Integer, List, String
-from ccc.utils import format_cqp_query
-from flask import request
+from apiflask.fields import Integer, List, String, Nested
 from pandas import DataFrame, read_csv
 
 from . import db
-from .database import Discourseme
-from .query import Query, QueryOut, ccc_query
+from .query import QueryOut, query_discourseme
+from .concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
+from .database import Discourseme, DiscoursemeTemplateItems, Corpus, get_or_create
 from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
@@ -42,24 +41,51 @@ def read_tsv(path_in):
     return discoursemes
 
 
+def import_discoursemes(path_in, user_id=1):
+    """import discoursemes from TSV file
+
+    """
+    for path in glob(path_in):
+        click.echo(path)
+        discoursemes = read_tsv(path)
+        for name, query_list in discoursemes.items():
+            discourseme = get_or_create(Discourseme, user_id=user_id, name=name)
+            db.session.add(discourseme)
+            db.session.commit()
+            for item in query_list:
+                db.session.add(DiscoursemeTemplateItems(discourseme_id=discourseme.id, surface=item, p='lemma'))
+                db.session.commit()
+    db.session.commit()
+
+
+class DiscoursemeTemplateItem(Schema):
+
+    surface = String(metadata={'nullable': True})
+    p = String(metadata={'nullable': True})
+    cqp_query = String(metadata={'nullable': True})
+
+
 class DiscoursemeIn(Schema):
 
-    name = String()
-    description = String()
-    # _items = List(String())     # TODO
-
-    # color TODO
+    name = String(required=False)
+    description = String(required=False)
+    # TODO @FloMei
+    # template = Nested(DiscoursemeTemplateItem(many=True))
+    items = List(String())
 
 
 class DiscoursemeOut(Schema):
 
     id = Integer()
-    name = String()
-    description = String()
-    _items = List(String())     # TODO
+    name = String(metadata={'nullable': True})
+    description = String(metadata={'nullable': True})
+    template = Nested(DiscoursemeTemplateItem(many=True))
 
 
-# Endpunkt, um Items aus Diskurem entfernen
+class DiscoursemeQueryIn(Schema):
+
+    corpus_id = Integer()
+    subcorpus_id = String(load_default=None, required=False)
 
 
 @bp.post('/')
@@ -71,13 +97,17 @@ def create(data):
 
     """
 
+    items = data.pop('items')
     discourseme = Discourseme(
         user_id=auth.current_user.id,
-        name=request.json['name'],
-        description=request.json['description'],
+        name=data.get('name'),
+        description=data.get('description')
     )
     db.session.add(discourseme)
     db.session.commit()
+    for item in items:
+        db.session.add(DiscoursemeTemplateItems(discourseme_id=discourseme.id, surface=item))
+        db.session.commit()
     return DiscoursemeOut().dump(discourseme), 200
 
 
@@ -119,55 +149,65 @@ def get_discoursemes():
     return [DiscoursemeOut().dump(discourseme) for discourseme in discoursemes], 200
 
 
-class DiscoursemeQueryIn(Schema):
-
-    corpus_id = Integer()
-    subcorpus_id = String(required=False, load_default=None)
-    match_strategy = String(required=False, load_default='longest')
-    p_query = String(required=False, load_default='word')
-    s_query = String(required=True)
-    flags = String(required=False, load_default="")
-    escape = Boolean(load_default=False)
-
-
-@bp.post('/<id>/query')
-@bp.input(DiscoursemeQueryIn)
-@bp.input({'execute': Boolean(load_default=True)}, location='query')
+@bp.get('/<id>/corpus/<corpus_id>/')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def query(id, data, data_query):
+def query(id, corpus_id):
     """Create a discourseme query.
 
     """
-    discourseme = db.get_or_404(Discourseme, id)
-    query = Query(
-        discourseme_id=discourseme.id,
-        corpus_id=data['corpus_id'],
-        match_strategy=data['match_strategy'],
-        cqp_query=format_cqp_query(discourseme.get_items(), data['p_query'], data['s_query'], data['flags'], data['escape']),
-        subcorpus_id=data['subcorpus_id']
-    )
-    db.session.add(query)
-    db.session.commit()
 
-    if data_query['execute']:
-        ccc_query(query)
+    discourseme = db.get_or_404(Discourseme, id)
+    corpus = db.get_or_404(Corpus, corpus_id)
+    query = query_discourseme(discourseme, corpus)
 
     return QueryOut().dump(query), 200
 
 
+@bp.get("/<id>/corpus/<corpus_id>/concordance")
+@bp.input(ConcordanceIn, location='query')
+@bp.output(ConcordanceOut)
+@bp.auth_required(auth)
+def concordance_lines(id, corpus_id, data):
+    """Get concordance lines.
+
+    """
+
+    # display options
+    window = data.get('window')
+    primary = data.get('primary')
+    secondary = data.get('secondary')
+    extended_window = data.get('extended_window')
+
+    # pagination
+    page_size = data.get('page_size')
+    page_number = data.get('page_number')
+
+    # TODO: Concordance Sorting and Filtering
+    # - concordance lines are sorted by ConcordanceSort
+    # - sort keys are created on demand
+    # - sorting according to {p-att} on {offset}
+    # - default: cpos at match
+    # - ascending / descending
+
+    # sort_order = data.get('sort_order')
+    # sort_by = data.get('sort_by')
+    # filter_item = data.get('filter_item')
+    # filter_discourseme_ids = data.get('filter_discourseme_ids')
+
+    discourseme = db.get_or_404(Discourseme, id)
+    corpus = db.get_or_404(Corpus, corpus_id)
+    query = query_discourseme(discourseme, corpus)
+    concordance = ccc_concordance([query], primary, secondary, window, extended_window, page_number, page_size)
+
+    return ConcordanceOut().dump(concordance), 200
+
+
 @bp.cli.command('import')
 @click.option('--path_in', default='discoursemes.tsv')
-def import_discoursemes(path_in):
+def import_discoursemes_cmd(path_in):
 
-    # TODO exclude the ones that are already in database?
-    for path in glob(path_in):
-        click.echo(path)
-        discoursemes = read_tsv(path)
-        for name, query_list in discoursemes.items():
-            db.session.add(Discourseme(user_id=1, name=name, items="\t".join(sorted(query_list))))
-
-    db.session.commit()
+    import_discoursemes(path_in)
 
 
 @bp.cli.command('export')
@@ -176,8 +216,8 @@ def export_discoursemes(path_out):
 
     records = list()
     for discourseme in Discourseme.query.all():
-        for item in discourseme.get_items():
-            records.append({'name': discourseme.name, 'query': item})  # , 'username': discourseme.user.username})
+        for item in discourseme.items:
+            records.append({'name': discourseme.name, 'query': item.surface})  # , 'username': discourseme.user.username})
 
     discoursemes = DataFrame(records)
     discoursemes.to_csv(path_out, sep="\t", index=False)

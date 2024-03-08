@@ -5,10 +5,12 @@ from apiflask import APIBlueprint, Schema
 from apiflask import abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
-from ccc import Corpus
 from ccc.utils import format_cqp_query
+from ccc import Corpus
 from flask import current_app
 from pandas import DataFrame
+
+from .concordance import ccc_concordance, ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut, ConcordanceOut
 
 from . import db
 from .corpus import CorpusOut
@@ -38,6 +40,63 @@ def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, m
         query = Query(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query, subcorpus_id=subcorpus_id, match_strategy=match_strategy)
         db.session.add(query)
         db.session.commit()
+
+    return query
+
+
+def query_item(item, p, s, corpus):
+
+    # TODO only on subcorpus
+    cqp_query = format_cqp_query([item], p_query=p, escape=True)
+    query = Query(
+        corpus_id=corpus.id,
+        cqp_query=cqp_query,
+        s=s
+    )
+    db.session.add(query)
+    db.session.commit()
+    ccc_query(query)
+    return query
+
+
+def query_discourseme(discourseme, corpus):
+    """create a discourseme query with standard settings
+
+    """
+
+    # try to retrieve query in corpus
+    q = [q for q in discourseme.queries if q.corpus_id == corpus.id]
+    if len(q) == 1:
+        query = q[0]
+
+    # create query
+    elif len(q) == 0:
+
+        # create template if necessary
+        if len(discourseme.template) == 0:
+            discourseme.generate_template()
+
+        s = corpus.s_atts[0]           # TODO better default
+        p = discourseme.template[0].p  # TODO check with p-atts of corpus
+        match_strategy = 'longest'
+
+        items = [i.surface for i in discourseme.template]
+        cqp_query = format_cqp_query(items, p_query=p, s_query=s, escape=False)
+
+        query = Query(
+            discourseme_id=discourseme.id,
+            corpus_id=corpus.id,
+            cqp_query=cqp_query,
+            s=s,
+            match_strategy=match_strategy
+        )
+        db.session.add(query)
+        db.session.commit()
+        ccc_query(query)
+
+    # does not happen due to unique constraint
+    else:
+        raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
 
     return query
 
@@ -281,3 +340,77 @@ def execute(id):
     ccc_query(query)
 
     return QueryOut().dump(query), 200
+
+
+@bp.get("/<query_id>/concordance")
+@bp.input(ConcordanceIn, location='query')
+@bp.output(ConcordanceOut)
+@bp.auth_required(auth)
+def concordance_lines(query_id, data):
+    """Get concordance lines.
+
+    """
+
+    # display options
+    window = data.get('window')
+    primary = data.get('primary')
+    secondary = data.get('secondary')
+    extended_window = data.get('extended_window')
+
+    # pagination
+    page_size = data.get('page_size')
+    page_number = data.get('page_number')
+
+    # TODO: Concordance Sorting
+    # - concordance lines are sorted by ConcordanceSort
+    # - sort keys are created on demand
+    # - sorting according to {p-att} on {offset}
+    # - default: cpos at match
+    # - ascending / descending
+    # sort_order = data.get('sort_order')
+    # sort_by = data.get('sort_by')
+
+    query = db.get_or_404(Query, query_id)
+
+    # filtering
+    filter_queries = [query]
+    filter_item = data.get('filter_item')
+    filter_item_p_att = data.get('filter_item_p_att')
+
+    if filter_item:
+        fq = query_item(filter_item, filter_item_p_att, query.s, query.corpus)
+        filter_queries.append(fq)
+
+    concordance = ccc_concordance(filter_queries, primary, secondary, window, extended_window, page_number, page_size)
+
+    return ConcordanceOut().dump(concordance), 200
+
+
+@bp.post("/<query_id>/concordance/shuffle")
+@bp.auth_required(auth)
+@bp.output({'query_id': Integer()})
+def concordance_shuffle(query_id):
+    # TODO
+    return {'query.id': query_id}, 200
+
+
+@bp.get("/<query_id>/concordance/<match_id>")
+@bp.input(ConcordanceLineIn, location='query')
+@bp.output(ConcordanceLineOut)
+@bp.auth_required(auth)
+def concordance_line(query_id, match_id, data):
+    """Get (additional context of) one concordance line.
+
+    """
+
+    # display options
+    extended_context_break = data.get('extended_context_break')
+    extended_window = data.get('extended_window')
+    window = data.get('window')
+    primary = data.get('primary')
+    secondary = data.get('secondary')
+
+    query = db.get_or_404(Query, query_id)
+    concordance = ccc_concordance([query], primary, secondary, window, extended_window, context_break=extended_context_break, match_id=match_id)
+
+    return ConcordanceLineOut().dump(concordance['lines'][0]), 200

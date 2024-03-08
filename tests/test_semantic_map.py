@@ -7,36 +7,25 @@ def test_create_semmap(client, auth):
     with client:
         client.get("/")
 
-        # discourseme
-        discourseme = client.post(url_for('discourseme.create'),
-                                  json={
-                                      'name': 'CDU',
-                                      'description': 'Test Query'
-                                  },
-                                  headers=auth_header)
+        # get discoursemes
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+                                  content_type='application/json',
+                                  headers=auth_header).json
+
+        discourseme = discoursemes[0]
+
+        query = client.get(url_for('discourseme.query', id=discourseme['id'], corpus_id=1),
+                           content_type='application/json',
+                           headers=auth_header)
 
         # constellation
         constellation = client.post(url_for('constellation.create'),
                                     json={
                                         'name': 'CDU',
                                         'description': 'Test Constellation 1',
-                                        'filter_discourseme_ids': [discourseme.json['id']]
+                                        'filter_discourseme_ids': [discourseme['id']]
                                     },
                                     headers=auth_header)
-
-        # query
-        query = client.post(url_for('query.create'),
-                            json={
-                                'discourseme_id': discourseme.json['id'],
-                                'corpus_id': 1,
-                                'cqp_query': '[lemma="Bundeskanzler"]',
-                                's': 's'
-                            },
-                            headers=auth_header)
-
-        # execute
-        query = client.post(url_for('query.execute', id=query.json['id']),
-                            headers=auth_header)
 
         # collocation
         collocation = client.post(url_for('collocation.create', query_id=query.json['id']),

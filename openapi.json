@@ -17,16 +17,13 @@
       "name": "Corpus"
     },
     {
+      "name": "Query"
+    },
+    {
       "name": "Discourseme"
     },
     {
       "name": "Constellation"
-    },
-    {
-      "name": "Query"
-    },
-    {
-      "name": "Query.Concordance"
     },
     {
       "name": "Breakdown"
@@ -1691,6 +1688,61 @@
         ]
       }
     },
+    "/query/{id}/execute": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Execute query: create matches.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/constellation/{id}": {
       "get": {
         "parameters": [
@@ -1790,61 +1842,6 @@
           "Constellation"
         ],
         "summary": "Delete one constellation.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/query/{id}/execute": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QueryOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query"
-        ],
-        "summary": "Execute query: create matches.",
         "security": [
           {
             "BearerAuth": []
@@ -2143,89 +2140,6 @@
           "Corpus"
         ],
         "summary": "Create Subcorpus",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/discourseme/{id}/query": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "execute",
-            "schema": {
-              "type": "boolean",
-              "default": true
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QueryOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Discourseme"
-        ],
-        "summary": "Create a discourseme query.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DiscoursemeQueryIn"
-              }
-            }
-          }
-        },
         "security": [
           {
             "BearerAuth": []
@@ -2666,100 +2580,7 @@
         "summary": "Access the username and validate"
       }
     },
-    "/collocation/query/{query_id}": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "execute",
-            "schema": {
-              "type": "boolean",
-              "default": true
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "semantic_map_id",
-            "schema": {
-              "type": "integer",
-              "default": null,
-              "nullable": true
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CollocationOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Collocation"
-        ],
-        "summary": "Create new collocation analysis.",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CollocationIn"
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/query/{query_id}/concordance/": {
+    "/query/{query_id}/concordance": {
       "get": {
         "parameters": [
           {
@@ -2869,7 +2690,8 @@
             "in": "query",
             "name": "filter_item_p_att",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "default": "lemma"
             },
             "required": false
           },
@@ -2931,9 +2753,102 @@
           }
         },
         "tags": [
-          "Query.Concordance"
+          "Query"
         ],
         "summary": "Get concordance lines.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/collocation/query/{query_id}": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "execute",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "semantic_map_id",
+            "schema": {
+              "type": "integer",
+              "default": null,
+              "nullable": true
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Collocation"
+        ],
+        "summary": "Create new collocation analysis.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollocationIn"
+              }
+            }
+          }
+        },
         "security": [
           {
             "BearerAuth": []
@@ -3334,124 +3249,6 @@
         ]
       }
     },
-    "/query/{query_id}/concordance/{id}": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "id",
-            "schema": {
-              "type": "string"
-            },
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "window",
-            "schema": {
-              "type": "integer",
-              "default": 10
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "extended_window",
-            "schema": {
-              "type": "integer",
-              "default": 50
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "extended_context_break",
-            "schema": {
-              "type": "string",
-              "default": "text"
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "primary",
-            "schema": {
-              "type": "string",
-              "default": "word"
-            },
-            "required": false
-          },
-          {
-            "in": "query",
-            "name": "secondary",
-            "schema": {
-              "type": "string",
-              "default": "lemma"
-            },
-            "required": false
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConcordanceLineOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "tags": [
-          "Query.Concordance"
-        ],
-        "summary": "Get (additional context of) one concordance line.",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
     "/mmda/user/{username}/collocation/": {
       "get": {
         "parameters": [
@@ -3721,9 +3518,72 @@
           }
         },
         "tags": [
-          "Query.Concordance"
+          "Query"
         ],
-        "summary": "Shuffle",
+        "summary": "Concordance Shuffle",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/discourseme/{id}/corpus/{corpus_id}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Discourseme"
+        ],
+        "summary": "Create a discourseme query.",
         "security": [
           {
             "BearerAuth": []
@@ -3843,6 +3703,124 @@
           "Mmda.Admin"
         ],
         "summary": "Admin: Remove a Discourseme"
+      }
+    },
+    "/query/{query_id}/concordance/{match_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "match_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "extended_window",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "extended_context_break",
+            "schema": {
+              "type": "string",
+              "default": "text"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "primary",
+            "schema": {
+              "type": "string",
+              "default": "word"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "secondary",
+            "schema": {
+              "type": "string",
+              "default": "lemma"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConcordanceLineOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Query"
+        ],
+        "summary": "Get (additional context of) one concordance line.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/mmda/user/{username}/keyword/{keyword}/": {
@@ -3973,6 +3951,197 @@
           "Mmda.Admin"
         ],
         "summary": "Admin: Remove a constellation"
+      }
+    },
+    "/discourseme/{id}/corpus/{corpus_id}/concordance": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "extended_window",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "primary",
+            "schema": {
+              "type": "string",
+              "default": "word"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "secondary",
+            "schema": {
+              "type": "string",
+              "default": "lemma"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "schema": {
+              "type": "string",
+              "default": "random",
+              "enum": [
+                "random",
+                "ascending",
+                "descending"
+              ]
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_offset",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_p_att",
+            "schema": {
+              "type": "string",
+              "default": "word"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_item",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_item_p_att",
+            "schema": {
+              "type": "string",
+              "default": "lemma"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_discourseme_ids",
+            "schema": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "integer"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConcordanceOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Discourseme"
+        ],
+        "summary": "Get concordance lines.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/mmda/user/{username}/collocation/{collocation}/": {
@@ -4246,6 +4415,197 @@
         ],
         "summary": "Get keywords table for keyword analysis.",
         "description": "parameters:\n- name: username\ndescription: username, links to user\n- name: analysis\ndescription: analysis id\n\n- name: window_size\ntype: int\ndescription: window size\n\n- name: discourseme\ntype: list\nrequired: False\ndescription: discourseme id(s) to include in constellation\n- name: collocate\ntype: list\nrequired: False\ndescription: lose item(s) for ad-hoc discourseme to include\n\n- name: cut_off\ntype: int\ndescription: how many collocates?\ndefault: 500\n- name: order\ntype: str\ndescription: how to sort them? (column in result table) [log_likelihood]\n\nresponses:\n200:\ndescription: collocates\n400:\ndescription: \"wrong request parameters\"\n404:\ndescription: \"empty result\""
+      }
+    },
+    "/constellation/{id}/corpus/{corpus_id}/concordance/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "window",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "extended_window",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "primary",
+            "schema": {
+              "type": "string",
+              "default": "word"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "secondary",
+            "schema": {
+              "type": "string",
+              "default": "lemma"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "schema": {
+              "type": "string",
+              "default": "random",
+              "enum": [
+                "random",
+                "ascending",
+                "descending"
+              ]
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_offset",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_p_att",
+            "schema": {
+              "type": "string",
+              "default": "word"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_item",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_item_p_att",
+            "schema": {
+              "type": "string",
+              "default": "lemma"
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "filter_discourseme_ids",
+            "schema": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "integer"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConcordanceOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Constellation"
+        ],
+        "summary": "Get concordance lines.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/mmda/user/{username}/constellation/{constellation}/": {
@@ -5678,6 +6038,23 @@
           }
         }
       },
+      "DiscoursemeTemplateItem": {
+        "type": "object",
+        "properties": {
+          "surface": {
+            "type": "string",
+            "nullable": true
+          },
+          "p": {
+            "type": "string",
+            "nullable": true
+          },
+          "cqp_query": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
       "DiscoursemeOut": {
         "type": "object",
         "properties": {
@@ -5692,10 +6069,10 @@
             "type": "string",
             "nullable": true
           },
-          "items": {
+          "template": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/DiscoursemeTemplateItem"
             }
           }
         }
@@ -5755,6 +6132,12 @@
           "description": {
             "type": "string"
           },
+          "filter_discoursemes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiscoursemeOut"
+            }
+          },
           "highlight_discoursemes": {
             "type": "array",
             "items": {
@@ -5780,6 +6163,7 @@
           },
           "highlight_discourseme_ids": {
             "type": "array",
+            "default": [],
             "items": {
               "type": "integer"
             }
@@ -5913,47 +6297,6 @@
           }
         }
       },
-      "DiscoursemeQueryIn": {
-        "type": "object",
-        "properties": {
-          "corpus_id": {
-            "type": "integer"
-          },
-          "subcorpus_id": {
-            "type": "string",
-            "default": null,
-            "nullable": true
-          },
-          "match_strategy": {
-            "type": "string",
-            "enum": [
-              "longest",
-              "shortest",
-              "standard"
-            ]
-          },
-          "p": {
-            "type": "string",
-            "default": "word"
-          },
-          "ignore_case": {
-            "type": "boolean"
-          },
-          "ignore_diacritics": {
-            "type": "boolean"
-          },
-          "escape": {
-            "type": "boolean",
-            "default": false
-          },
-          "s": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "s"
-        ]
-      },
       "BreakdownIn": {
         "type": "object",
         "properties": {
@@ -5963,28 +6306,6 @@
         },
         "required": [
           "p"
-        ]
-      },
-      "CollocationIn": {
-        "type": "object",
-        "properties": {
-          "constellation_id": {
-            "type": "integer"
-          },
-          "p": {
-            "type": "string"
-          },
-          "s_break": {
-            "type": "string"
-          },
-          "context": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "context",
-          "p",
-          "s_break"
         ]
       },
       "TokenOut": {
@@ -6069,6 +6390,28 @@
             }
           }
         }
+      },
+      "CollocationIn": {
+        "type": "object",
+        "properties": {
+          "constellation_id": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          },
+          "s_break": {
+            "type": "string"
+          },
+          "context": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "context",
+          "p",
+          "s_break"
+        ]
       },
       "CoordinatesOut": {
         "type": "object",

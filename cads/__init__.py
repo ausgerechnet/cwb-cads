@@ -95,19 +95,16 @@ def create_app(config=CONFIG):
         return redirect(request.base_url + "docs")
 
     # register blueprints
-    from . import (breakdown, collocation, concordance, constellation, corpus,
+    from . import (breakdown, collocation, constellation, corpus,
                    discourseme, query, semantic_map, users)
 
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)
 
-    query.bp.register_blueprint(concordance.bp_query)
     app.register_blueprint(query.bp)
 
-    constellation.bp.register_blueprint(concordance.bp_discourseme)
     app.register_blueprint(discourseme.bp)
 
-    constellation.bp.register_blueprint(concordance.bp_constellation)
     app.register_blueprint(constellation.bp)
 
     app.register_blueprint(breakdown.bp)

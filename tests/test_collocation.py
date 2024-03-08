@@ -1,6 +1,5 @@
 from flask import url_for
 from cads.database import Collocation
-import pytest
 
 
 def test_create_collocation(client, auth):
@@ -9,39 +8,32 @@ def test_create_collocation(client, auth):
     with client:
         client.get("/")
 
-        # discourseme
+        # get discoursemes
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+                                  content_type='application/json',
+                                  headers=auth_header).json
+        discourseme = discoursemes[0]
+
+        # query
         # - create
-        discourseme = client.post(url_for('discourseme.create'),
-                                  json={
-                                      'name': 'CDU',
-                                      'description': 'Test Discourseme 1'
-                                  },
-                                  headers=auth_header)
+        query = client.get(url_for('discourseme.query', id=discourseme['id'], corpus_id=1),
+                           content_type='application/json',
+                           headers=auth_header)
+        assert query.status_code == 200
 
         # constellation
         constellation = client.post(url_for('constellation.create'),
                                     json={
                                         'name': 'CDU',
                                         'description': 'Test Constellation 1',
-                                        'filter_discourseme_ids': [discourseme.json['id']]
+                                        'filter_discourseme_ids': [discourseme['id']]
                                     },
                                     headers=auth_header)
-
         assert constellation.status_code == 200
 
         constellation = client.get(url_for('constellation.get_constellation', id=constellation.json['id']),
                                    headers=auth_header)
-
-        # query
-        # - create
-        query = client.post(url_for('query.create'),
-                            json={
-                                'discourseme_id': discourseme.json['id'],
-                                'corpus_id': 1,
-                                'cqp_query': '[lemma="und"]',
-                                's': 's'
-                            },
-                            headers=auth_header)
+        assert constellation.status_code == 200
 
         # collocation
         # - create
@@ -53,7 +45,6 @@ def test_create_collocation(client, auth):
                                       'context': 10,
                                   },
                                   headers=auth_header)
-
         assert collocation.status_code == 200
 
 
@@ -63,20 +54,19 @@ def test_create_or_get_cooc(client, auth):
     with client:
         client.get("/")
 
-        # discourseme
-        # - create
-        discourseme = client.post(url_for('discourseme.create'),
-                                  json={
-                                      'name': 'CDU',
-                                      'description': 'Test Discourseme 2'
-                                  },
-                                  headers=auth_header)
+        # get discoursemes
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+                                  content_type='application/json',
+                                  headers=auth_header).json
+
+        discourseme = discoursemes[0]
+
         # constellation
         constellation = client.post(url_for('constellation.create'),
                                     json={
                                         'name': 'CDU',
                                         'description': 'Test Constellation 2',
-                                        'filter_discourseme_ids': [discourseme.json['id']]
+                                        'filter_discourseme_ids': [discourseme['id']]
                                     },
                                     headers=auth_header)
 
@@ -85,18 +75,10 @@ def test_create_or_get_cooc(client, auth):
 
         # query
         # - create
-        query = client.post(url_for('query.create'),
-                            json={
-                                'discourseme_id': discourseme.json['id'],
-                                'corpus_id': 1,
-                                'cqp_query': '[lemma="und"]',
-                                's': 's'
-                            },
-                            headers=auth_header)
-
-        # - execute
-        query = client.post(url_for('query.execute', id=query.json['id']),
-                            headers=auth_header)
+        query = client.get(url_for('discourseme.query', id=1, corpus_id=1),
+                           content_type='application/json',
+                           headers=auth_header)
+        assert query.status_code == 200
 
         # collocation
         # - create

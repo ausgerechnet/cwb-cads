@@ -7,13 +7,28 @@ from datetime import datetime
 from ccc.utils import cqp_escape
 from flask import Blueprint, current_app
 from flask_login import UserMixin
-from pandas import read_sql
 from werkzeug.security import generate_password_hash
 
 from . import db
-from .utils import time_it
 
 bp = Blueprint('database', __name__, url_prefix='/database', cli_group='database')
+
+
+def get_or_create(model, **kwargs):
+    """
+    """
+
+    instance = model.query.filter_by(**kwargs).first()
+
+    if instance:
+        return instance
+    else:
+        instance = model(**kwargs)
+        db.session.add(instance)
+        db.session.commit()
+
+    return instance
+
 
 users_roles = db.Table(
     'UsersRoles',
@@ -55,13 +70,10 @@ class User(db.Model, UserMixin):
     active = db.Column('is_active', db.Boolean(), nullable=False, server_default='0')
     first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
-
     roles = db.relationship('Role', secondary=users_roles)
-    # backref=db.backref('user'))
 
     discoursemes = db.relationship('Discourseme', backref='user')
     constellations = db.relationship('Constellation', backref='user')
-
     collocations = db.relationship('Collocation', backref='user')
     # keyword_analyses = db.relationship('Keyword', backref='user', lazy=True)
 
@@ -230,35 +242,17 @@ class Discourseme(db.Model):
     name = db.Column(db.Unicode(255), nullable=True)
     description = db.Column(db.Unicode, nullable=True)
 
-    items = db.Column(db.Unicode)  # "\t"-joined list
-
     queries = db.relationship("Query", backref="discourseme", lazy=True)
+    template = db.RelationshipProperty("DiscoursemeTemplateItems", backref="discourseme")
 
-    @property
-    def _items(self):
-        return self.get_items()
-
-    def get_items(self, corpus_id=None):
-
-        items = set(self.items.split("\t")) if self.items else set()
-        queries = [query for query in self.queries if (not corpus_id or query.corpus_id == corpus_id)]
-        for _query in queries:
-            if _query.breakdowns:  # TODO several for different p-atts, here ignored
-                items = items.union(set([cqp_escape(item.item) for item in _query.breakdowns[0].items]))
-        return sorted(list(items))
-
-    @time_it
-    def get_cpos(self, corpus_id=None):
-
-        queries = [query for query in self.queries if (not corpus_id or query.corpus_id == corpus_id)]
-        cpos = set()
-        for _query in queries:
-            sql_query = Matches.query.filter(Matches.query_id == _query.id)
-            matches = read_sql(sql_query.statement, con=db.engine, index_col='id')
-            if len(matches) > 0:
-                sets = matches.apply(lambda row: set(range(row['match'], row['matchend'] + 1)), axis=1)
-                cpos.update(set.union(*sets.to_list()))
-        return cpos
+    def generate_template(self, p='word'):
+        items = set(self.template_items)
+        for _query in self.queries:
+            for breakdown in _query.breakdowns:
+                if breakdown.p == p:
+                    items = items.union(set([cqp_escape(item.item) for item in breakdown.items]))
+        items = sorted(list(items))
+        raise NotImplementedError("insert items in db")
 
     @property
     def serialize(self):
@@ -277,6 +271,19 @@ class Discourseme(db.Model):
             'items': self.get_items(),
             'collocation_analyses': []
         }
+
+
+class DiscoursemeTemplateItems(db.Model):
+    """Constellation
+
+    """
+
+    __table_args__ = {'sqlite_autoincrement': True}
+    id = db.Column(db.Integer(), primary_key=True)
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+    surface = db.Column(db.String(), nullable=True)
+    p = db.Column(db.String(), nullable=True)
+    cqp_query = db.Column(db.String(), nullable=True)
 
 
 class Constellation(db.Model):
@@ -324,13 +331,17 @@ class Query(db.Model):
 
     """
 
-    __table_args__ = {'sqlite_autoincrement': True}
+    __table_args__ = (
+        db.UniqueConstraint('discourseme_id', 'corpus_id', name='_customer_location_uc'),
+        {'sqlite_autoincrement': True},
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
-    subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined NQR?
+    subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
+
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
 
     match_strategy = db.Column(db.Unicode, default='longest')
@@ -343,6 +354,10 @@ class Query(db.Model):
     breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True)
     collocations = db.relationship('Collocation', backref='_query', passive_deletes=True)
     # concordances = db.relationship('Concordance', backref='_query')
+
+    @property
+    def number_matches(self):
+        return len(self.matches)
 
 
 class Matches(db.Model):
