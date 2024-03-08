@@ -1,12 +1,16 @@
-import { Fragment, useMemo } from 'react'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { Fragment, useMemo, useRef } from 'react'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
+import { ChevronsDownUp, ChevronsUpDown, Loader2, Shuffle } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
 import { cn } from '@/lib/utils'
-import { queryConcordancesQueryOptions, queryQueryOptions } from '@/lib/queries'
+import {
+  queryConcordancesQueryOptions,
+  queryConcordancesShuffleMutationOptions,
+  queryQueryOptions,
+} from '@/lib/queries'
 import { formatNumber } from '@/lib/format-number'
 import {
   Table,
@@ -36,7 +40,7 @@ import { Slider } from '@/components/ui/slider'
 import { Repeat } from '@/components/repeat'
 import { Pagination } from '@/components/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 const emptyArray = [] as const
 
@@ -49,6 +53,8 @@ export function ConcordanceLines({
 }) {
   const { data: query } = useSuspenseQuery(queryQueryOptions(queryId))
   const navigate = useNavigate()
+  const nrLinesRef = useRef<number>(0)
+  const pageCountRef = useRef<number>(0)
 
   const searchParams = useSearch({ from: '/_app/queries/$queryId' })
   const contextBreakList = query.corpus?.s_atts ?? emptyArray
@@ -71,26 +77,35 @@ export function ConcordanceLines({
     clSortByOffset = 0,
     clSortOrder = 'random',
     filterItem,
+    filterItemPAtt,
   } = searchParams
 
   const {
     data: concordanceLines,
     isLoading,
     error,
+    refetch: refetchConcordanceLines,
   } = useQuery(
     queryConcordancesQueryOptions(queryId, {
       primary,
       secondary,
       window: windowSize,
       filterItem,
+      filterItemPAtt,
       pageSize: clPageSize,
       pageNumber: clPageIndex + 1,
       sortOrder: clSortOrder,
       sortByOffset: clSortByOffset,
     }),
   )
+  const { mutate: shuffle, isPending: isShuffling } = useMutation({
+    ...queryConcordancesShuffleMutationOptions,
+    onSettled: () => refetchConcordanceLines(),
+  })
 
-  const pageCount = concordanceLines?.page_count ?? 0
+  pageCountRef.current =
+    concordanceLines?.page_count ?? pageCountRef.current ?? 0
+  nrLinesRef.current = concordanceLines?.nr_lines ?? nrLinesRef.current ?? 0
 
   // TODO: Make it type safe
   const setSearch = useMemo(() => {
@@ -109,7 +124,7 @@ export function ConcordanceLines({
 
   return (
     <div className={className}>
-      <div className="mb-8 grid grid-cols-6 gap-8">
+      <div className="mb-8 grid grid-cols-8 gap-2">
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
           <span>Window Size {windowSize}</span>
           <Slider
@@ -123,7 +138,7 @@ export function ConcordanceLines({
         <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
           <span>Sort By Offset {clSortByOffset}</span>
           <Slider
-            value={[clSortByOffset]}
+            defaultValue={[clSortByOffset]}
             onValueChange={([newValue]) =>
               setSearch('clSortByOffset', newValue)
             }
@@ -147,6 +162,27 @@ export function ConcordanceLines({
                 {['ascending', 'descending', 'random'].map((value) => (
                   <SelectItem key={value} value={value}>
                     {value}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
+          <span>Filter Item PAtt</span>
+          <Select
+            value={filterItemPAtt}
+            onValueChange={(value) => setSearch('filterItemPAtt', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter Item PAttr" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {pAttributes.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
                   </SelectItem>
                 ))}
               </SelectGroup>
@@ -222,8 +258,25 @@ export function ConcordanceLines({
             </SelectContent>
           </Select>
         </div>
+
+        <Button
+          className="mt-auto"
+          onClick={() => {
+            shuffle(queryId)
+          }}
+          disabled={isShuffling}
+        >
+          {isShuffling ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Shuffle className="mr-2 h-4 w-4" />
+          )}
+          Shuffle
+        </Button>
       </div>
+
       <ErrorMessage className="col-span-full" error={error} />
+
       <div className="relative col-span-full flex flex-col gap-4">
         <div className="max-w-full rounded-md border">
           <Table className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden">
@@ -259,8 +312,8 @@ export function ConcordanceLines({
         <Pagination
           className="col-span-full"
           pageSize={clPageSize}
-          pageCount={pageCount}
-          totalRows={concordanceLines?.nr_lines ?? 0}
+          pageCount={pageCountRef.current}
+          totalRows={nrLinesRef.current}
           pageIndex={clPageIndex}
           setPageSize={(pageSize) => {
             navigate({
@@ -282,7 +335,7 @@ export function ConcordanceLines({
   )
 }
 
-function MetaValue({ value }: { value: Date | string | boolean | number }) {
+function MetaValue({ value }: { value: unknown }) {
   if (typeof value === 'string') {
     return <>{value}</>
   }
@@ -292,11 +345,19 @@ function MetaValue({ value }: { value: Date | string | boolean | number }) {
   if (typeof value === 'boolean') {
     return <>{value ? 'true' : 'false'}</>
   }
-  return <>{value.toISOString()}</>
+  if (value instanceof Date) {
+    return <>{value.toISOString()}</>
+  }
+  return String(value)
 }
 
 function ConcordanceLineRender({
-  concordanceLine: { id, tokens = [], discourseme_ranges: discoursemeRanges },
+  concordanceLine: {
+    id,
+    tokens = [],
+    discourseme_ranges: discoursemeRanges,
+    structural = {},
+  },
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
@@ -310,7 +371,7 @@ function ConcordanceLineRender({
   const postTokens =
     tokens.filter(({ offset = NaN }) => offset > 0) ?? emptyArray
 
-  const meta: { key: string; value: string }[] = []
+  const meta = Object.entries(structural)
   const isExpanded = false
 
   return (
@@ -324,7 +385,7 @@ function ConcordanceLineRender({
             {meta.length > 0 && (
               <TooltipContent side="top" sideOffset={10}>
                 <dl className="grid grid-cols-[auto_auto] gap-x-3 gap-y-1">
-                  {meta.map(({ key, value }) => (
+                  {meta.map(([key, value]) => (
                     <Fragment key={key}>
                       <dt className="even:bg-muted">{key}</dt>
                       <dd className="font-mono">
@@ -370,7 +431,6 @@ function ConcordanceLineRender({
 }
 
 function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
-  const { filterItem } = useSearch({ from: '/_app/queries/$queryId' })
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
@@ -382,8 +442,8 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
             className={cn(
               'cursor-pointer rounded-md hover:bg-muted hover:ring-2 hover:ring-muted',
               token.out_of_window && 'text-muted-foreground/70',
+              token.is_filter_item && 'bg-primary/50',
               token.offset === 0 && 'font-bold',
-              token.primary === filterItem && 'bg-primary/50',
             )}
           >
             {token.primary}{' '}

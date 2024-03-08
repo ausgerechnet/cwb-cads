@@ -20,6 +20,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { DataTable, SortButton } from '@/components/data-table'
 import { ErrorMessage } from '@/components/error-message'
+import { Headline3 } from '@/components/ui/typography'
 
 const emptyArray = [] as const
 
@@ -65,10 +66,12 @@ export function QueryBreakdown({ queryId }: { queryId: string }) {
 
   return (
     <>
-      <div className="inline-block max-w-md">
-        <h1>Query Breakdown</h1>
+      <div className="mb-2 flex w-full justify-between">
+        <Headline3 className="mr-auto w-max text-lg leading-normal">
+          Frequency Breakdown
+        </Headline3>
         <Select onValueChange={handlePAttChange} value={validatedPAtt}>
-          <SelectTrigger>
+          <SelectTrigger className="ml-auto h-7 w-auto">
             <SelectValue placeholder="Select a Comparison Layer" />
           </SelectTrigger>
           <SelectContent>
@@ -96,11 +99,13 @@ const columns: ColumnDef<z.infer<typeof schemas.BreakdownItemsOut>>[] = [
   {
     accessorKey: 'item',
     header: ({ column }) => <SortButton column={column}>Item</SortButton>,
+    meta: { className: 'w-1/2' },
   },
   {
     accessorKey: 'freq',
     enableSorting: true,
     header: ({ column }) => <SortButton column={column}>Frequency</SortButton>,
+    meta: { className: 'w-1/2' },
   },
 ]
 

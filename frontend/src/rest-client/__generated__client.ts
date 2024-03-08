@@ -260,17 +260,6 @@ const QueryAssistedIn = z
     subcorpus_id: z.number().int().optional(),
   })
   .passthrough()
-const QueryInUpdate = z
-  .object({
-    corpus_id: z.number().int(),
-    cqp_query: z.string(),
-    discourseme_id: z.number().int().nullable(),
-    match_strategy: z.enum(['longest', 'shortest', 'standard']),
-    s: z.string(),
-    subcorpus_id: z.number().int(),
-  })
-  .partial()
-  .passthrough()
 const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
   .object({
     discourseme_id: z.number().int(),
@@ -307,6 +296,10 @@ const ConcordanceOut: z.ZodType<ConcordanceOut> = z
     page_number: z.number().int(),
     page_size: z.number().int(),
   })
+  .partial()
+  .passthrough()
+const Generated = z
+  .object({ query_id: z.number().int() })
   .partial()
   .passthrough()
 const CoordinatesOut = z
@@ -373,11 +366,11 @@ export const schemas = {
   DiscoursemeQueryIn,
   QueryIn,
   QueryAssistedIn,
-  QueryInUpdate,
   DiscoursemeRangeOut,
   TokenOut,
   ConcordanceLineOut,
   ConcordanceOut,
+  Generated,
   CoordinatesOut,
   UserOut,
   UserRegister,
@@ -1010,8 +1003,8 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/corpus/:id/subcorpora/',
-    alias: 'getCorpusIdsubcorpora',
+    path: '/corpus/:id/subcorpus/',
+    alias: 'getCorpusIdsubcorpus',
     requestFormat: 'json',
     parameters: [
       {
@@ -1036,7 +1029,7 @@ const endpoints = makeApi([
   },
   {
     method: 'put',
-    path: '/corpus/:id/subcorpus',
+    path: '/corpus/:id/subcorpus/',
     alias: 'putCorpusIdsubcorpus',
     requestFormat: 'json',
     parameters: [
@@ -3047,42 +3040,6 @@ description: &quot;empty result&quot;`,
     ],
   },
   {
-    method: 'patch',
-    path: '/query/:id',
-    alias: 'patchQueryId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: QueryInUpdate,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: QueryOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
     method: 'post',
     path: '/query/:id/execute',
     alias: 'postQueryIdexecute',
@@ -3123,6 +3080,11 @@ description: &quot;empty result&quot;`,
         name: 'window',
         type: 'Query',
         schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'extended_window',
+        type: 'Query',
+        schema: z.number().int().optional().default(20),
       },
       {
         name: 'primary',
@@ -3214,9 +3176,9 @@ description: &quot;empty result&quot;`,
         schema: z.string(),
       },
       {
-        name: 'extended_context_break',
+        name: 'window',
         type: 'Query',
-        schema: z.string().optional().default('text'),
+        schema: z.number().int().optional().default(10),
       },
       {
         name: 'extended_window',
@@ -3224,9 +3186,9 @@ description: &quot;empty result&quot;`,
         schema: z.number().int().optional().default(50),
       },
       {
-        name: 'window',
+        name: 'extended_context_break',
         type: 'Query',
-        schema: z.number().int().optional().default(20),
+        schema: z.string().optional().default('text'),
       },
       {
         name: 'primary',
@@ -3270,7 +3232,7 @@ description: &quot;empty result&quot;`,
         schema: z.string(),
       },
     ],
-    response: z.unknown(),
+    response: z.object({ query_id: z.number().int() }).partial().passthrough(),
     errors: [
       {
         status: 401,

@@ -54,9 +54,13 @@ export function ItemsInput({
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
       event.preventDefault()
-      setItems((items) =>
-        items.includes(value.trim()) ? items : [...items, value.trim()],
-      )
+      setItems((items) => {
+        const newItems = items.includes(value.trim())
+          ? items
+          : [...items, value.trim()]
+        onChange?.(newItems)
+        return newItems
+      })
       setValue('')
     }
     if (event.key === 'Backspace' && value === '') {

@@ -22,6 +22,7 @@ export const Route = createFileRoute('/_app/queries/$queryId')({
     clPageSize: z.number().positive().int().optional().catch(undefined),
     clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
     filterItem: z.string().optional().catch(undefined),
+    filterItemPAtt: z.string().optional().catch(undefined),
   }),
   loader: ({ context: { queryClient }, params: { queryId } }) =>
     Promise.all([

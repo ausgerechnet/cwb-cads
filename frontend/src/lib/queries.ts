@@ -21,10 +21,20 @@ export const queryQueryOptions = (queryId: string) =>
 export const patchQueryMutationOptions: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
   Error,
-  { queryId: string } & z.infer<typeof schemas.QueryInUpdate>
+  { queryId: string; discourseme_id: number | undefined }
 > = {
-  mutationFn: ({ queryId, ...body }) =>
-    apiClient.patchQueryId(body, { params: { id: queryId } }),
+  mutationFn: async ({ queryId }) => {
+    // TODO: implement patchQueryMutationOptions
+    console.warn('Query Patch is not implemented yet')
+    const mockResponse: z.infer<typeof schemas.QueryOut> = {
+      id: parseInt(queryId),
+      corpus: {
+        id: 1,
+        name: 'corpus',
+      },
+    }
+    return mockResponse
+  },
   onSuccess: (data) => {
     const queryId = data.id
     if (queryId !== undefined) {
@@ -168,6 +178,23 @@ export const queryConcordancesQueryOptions = (
     staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
+export const queryConcordancesShuffleMutationOptions: MutationOptions<
+  { query_id?: number },
+  Error,
+  string
+> = {
+  mutationFn: (queryId) =>
+    apiClient.postQueryQuery_idconcordanceshuffle(undefined, {
+      params: { query_id: queryId },
+    }),
+  onSuccess: (data) => {
+    const queryId =
+      data.query_id === undefined ? undefined : data.query_id.toString()
+    if (queryId === undefined) return
+    queryClient.invalidateQueries(queryConcordancesQueryOptions(queryId))
+  },
+}
+
 // ==================== CORPORA ====================
 
 export const corporaQueryOptions = queryOptions({
@@ -179,7 +206,7 @@ export const subcorporaQueryOptions = (corpusId: string) =>
   queryOptions({
     queryKey: ['subcorpora', corpusId],
     queryFn: ({ signal }) =>
-      apiClient.getCorpusIdsubcorpora({ params: { id: corpusId }, signal }),
+      apiClient.getCorpusIdsubcorpus({ params: { id: corpusId }, signal }),
   })
 
 export const putSubcorpusMutationOptions: MutationOptions<
