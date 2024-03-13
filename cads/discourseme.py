@@ -49,13 +49,16 @@ def import_discoursemes(glob_in, username='admin'):
     """
     user = User.query.filter_by(username=username).first()
     for path in glob(glob_in):
-        click.echo(path)
+        click.echo(f'path: {path}')
         discoursemes = read_tsv(path)
-        for name, query_list in discoursemes.items():
+        for name, item_list in discoursemes.items():
+            # TODO append items if discourseme already exists
+            click.echo(f'importing discourseme "{name}" with {len(item_list)} items')
             discourseme = get_or_create(Discourseme, user_id=user.id, name=name)
             db.session.add(discourseme)
             db.session.commit()
-            for item in query_list:
+            # TODO: bulk insert
+            for item in item_list:
                 db.session.add(DiscoursemeTemplateItems(discourseme_id=discourseme.id, surface=item, p='lemma'))
                 db.session.commit()
     db.session.commit()
@@ -67,7 +70,7 @@ def export_discoursemes(path_out):
     """
     records = list()
     for discourseme in Discourseme.query.all():
-        for item in discourseme.items:
+        for item in discourseme.template:
             records.append({'name': discourseme.name, 'query': item.surface, 'username': discourseme.user.username})
     discoursemes = DataFrame(records)
 
@@ -203,7 +206,7 @@ def concordance_lines(id, corpus_id, data):
 @click.option('--path_in', default='discoursemes.tsv')
 def import_discoursemes_cmd(path_in):
 
-    import_discoursemes(path_in, user_id=1)
+    import_discoursemes(path_in, username='admin')
 
 
 @bp.cli.command('export')
