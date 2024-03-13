@@ -12,7 +12,8 @@ from flask import current_app
 from pandas import DataFrame
 
 from . import db
-from .database import Concordance, ConcordanceLines, CotextLines, Matches
+from .database import (Concordance, ConcordanceLines, Cotext, CotextLines,
+                       Matches)
 
 
 def ccc2attributes(line, primary, secondary, s_show, window):
@@ -69,7 +70,7 @@ def sort_matches(query, sort_by, sort_offset=0):
 
         else:
             if sort_offset > 0:
-                sort_clause = f"sort {query.nqr_cqp} by {sort_by} on match .. matchend[{sort_offset}]"
+                sort_clause = f"sort {query.nqr_cqp} by {sort_by} on matchend[{sort_offset}] .. match"
             elif sort_offset < 0:
                 sort_clause = f"sort {query.nqr_cqp} by {sort_by} on match[{sort_offset}] .. matchend"
             else:
@@ -90,7 +91,6 @@ def sort_matches(query, sort_by, sort_offset=0):
 
 def get_or_create_cotext(query, window, context_break):
 
-    from .database import Cotext
     from .query import ccc_query
 
     cotext = Cotext.query.filter_by(query_id=query.id, context=window, context_break=context_break).first()
@@ -139,7 +139,7 @@ def ccc_concordance(focus_query,
                     window, extended_window, context_break=None,
                     filter_queries=[], highlight_queries=[],
                     match_id=None, page_number=None, page_size=None,
-                    sort_by=None, sort_offset=0, sort_order='ascending'):
+                    sort_by=None, sort_offset=0, sort_order='ascending', sort_by_s_att=None):
     """Central concordance function.
 
     :param Query focus_query: focus in KWIC view
@@ -160,7 +160,7 @@ def ccc_concordance(focus_query,
     :param str sort_by: p-attribute to sort on
     :param int sort_offset: offset of token resp. match (negative) or matchend (positive) to sort on
     :param str sort_order: ascending / descending / random
-    :param int random_seed: random seed to use when displaying in random order
+    :param str sort_by_s_att: s-attribute to sort on
 
     """
 
@@ -169,11 +169,14 @@ def ccc_concordance(focus_query,
     highlight_queries = list(highlight_queries)
 
     # check parameters
-    if sort_order == 'random' and sort_by:
+    if sort_order == 'random' and (sort_by or sort_by_s_att):
         raise ValueError("either get random or sorted concordance lines, not both")
 
     if len(filter_queries) > 0 and match_id:
-        raise ValueError("can't filter with specific match id")
+        raise ValueError("cannot filter with specific match id")
+
+    if sort_by and sort_by_s_att:
+        raise NotImplementedError("cannot sort by s-att and p-att")
 
     # get s-attribute settings
     context_break = context_break if context_break else focus_query.s
@@ -190,48 +193,49 @@ def ccc_concordance(focus_query,
 
         matches = Matches.query.filter_by(query_id=focus_query.id)
 
-        # filter
+        # filtering
         if len(filter_queries) > 0:
+
+            # TODO learn proper SQLalchemy
+            matches_tmp = matches.all()
+            match_pos = set([m.match for m in matches_tmp])
+
+            # get relevant cotext lines
             cotext = get_or_create_cotext(focus_query, window, context_break)
-            cotext_lines = CotextLines.query.filter_by(cotext_id=cotext.id)
+            cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
+                                                    CotextLines.offset <= window)
             for fq in filter_queries:
 
-                # TODO learn proper SQLalchemy #
-                matches_tmp = [m.match for m in matches.all()]
-
-                current_app.logger.debug("ccc_concordance :: joining cotext lines and matches")
-                # current_app.logger.debug(f"ccc_concordance :: number of cotext_lines before filtering: {len(cotext_lines.all())}")
+                current_app.logger.debug("ccc_concordance :: filtering cotext lines by joining matches")
                 cotext_lines_tmp = cotext_lines.join(
                     Matches,
                     (Matches.query_id == fq.id) &
                     (Matches.match == CotextLines.cpos)
                 )
-                # current_app.logger.debug(f"ccc_concordance :: number of cotext_lines after filtering: {len(cotext_lines_tmp.all())}")
+                match_pos = match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
 
-                current_app.logger.debug("ccc_concordance :: joining matches and cotext lines")
-                # current_app.logger.debug(f"ccc_concordance :: number of matches before filtering: {len(matches.all())}")
-                match_pos = [cotext_line.match_pos for cotext_line in cotext_lines_tmp.all()]
-                match_pos = [cotext_line.match_pos for cotext_line in cotext_lines_tmp.all() if abs(cotext_line.offset) <= window]
-                matches = Matches.query.filter(
-                    Matches.query_id == focus_query.id,
-                    Matches.match.in_(matches_tmp),
-                    Matches.match.in_(match_pos)
-                )
-                # current_app.logger.debug(f"ccc_concordance :: number of matches after filtering: {len(matches.all())}")
+            current_app.logger.debug("ccc_concordance :: filtering matches")
 
-                if len(matches.all()) == 0:
-                    current_app.logger.error(f"no concordance lines left after filtering for query {fq.cqp_query}")
-                    return
+            matches = Matches.query.filter(
+                Matches.query_id == focus_query.id,
+                Matches.match.in_(match_pos)
+            )
+
+            if len(matches.all()) == 0:
+                current_app.logger.error(f"no concordance lines left after filtering for query {fq.cqp_query}")
+                return
 
         # sorting
         current_app.logger.debug("ccc_concordance :: sorting")
-        concordance = sort_matches(focus_query, sort_by, sort_offset)
-        matches = matches.join(
-            ConcordanceLines,
-            (ConcordanceLines.concordance_id == concordance.id) &
-            (ConcordanceLines.match == Matches.match) &
-            (ConcordanceLines.contextid == Matches.contextid)
-        )
+        if sort_order != 'first':
+            concordance = sort_matches(focus_query, sort_by, sort_offset)
+            matches = matches.join(
+                ConcordanceLines,
+                (ConcordanceLines.concordance_id == concordance.id) &
+                (ConcordanceLines.match == Matches.match) &
+                (ConcordanceLines.contextid == Matches.contextid)
+            )
+
         if sort_order == 'ascending':
             matches = matches.order_by(ConcordanceLines.id)
         elif sort_order == 'descending':
@@ -307,10 +311,11 @@ class ConcordanceIn(Schema):
     page_size = Integer(load_default=10, required=False)
     page_number = Integer(load_default=1, required=False)
 
-    sort_order = String(load_default='random', required=False, validate=OneOf(['random', 'ascending', 'descending']))
+    sort_order = String(load_default='random', required=False, validate=OneOf(['first', 'random', 'ascending', 'descending']))
 
     sort_by_offset = Integer(load_default=0, required=False)
     sort_by_p_att = String(load_default=None, required=False)
+    sort_by_s_att = String(load_default=None, required=False)
 
     filter_item = String(metadata={'nullable': True}, required=False)
     filter_item_p_att = String(load_default='lemma', required=False)

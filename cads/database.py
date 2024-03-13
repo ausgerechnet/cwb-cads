@@ -372,7 +372,7 @@ class Matches(db.Model):
     contextid = db.Column(db.Integer, index=True)  # should be segmentation_span_id
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
-    match = db.Column(db.Integer, nullable=False)
+    match = db.Column(db.Integer, nullable=False, index=True)
     matchend = db.Column(db.Integer, nullable=False)
 
 
@@ -479,10 +479,10 @@ class CotextLines(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    cotext_id = db.Column(db.Integer, db.ForeignKey('cotext.id', ondelete='CASCADE'))
+    cotext_id = db.Column(db.Integer, db.ForeignKey('cotext.id', ondelete='CASCADE'), index=True)
 
-    match_pos = db.Column(db.Integer)
-    cpos = db.Column(db.Integer)
+    match_pos = db.Column(db.Integer, index=True)
+    cpos = db.Column(db.Integer, index=True)
     offset = db.Column(db.Integer)
 
 
