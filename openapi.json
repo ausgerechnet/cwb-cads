@@ -566,7 +566,7 @@
         "tags": [
           "Query"
         ],
-        "summary": "Get details of a query.",
+        "summary": "Get details of query.",
         "security": [
           {
             "BearerAuth": []
@@ -617,7 +617,7 @@
         "tags": [
           "Query"
         ],
-        "summary": "Delete a query.",
+        "summary": "Delete query.",
         "security": [
           {
             "BearerAuth": []
@@ -2743,6 +2743,7 @@
               "type": "string",
               "default": "random",
               "enum": [
+                "first",
                 "random",
                 "ascending",
                 "descending"
@@ -2762,6 +2763,16 @@
           {
             "in": "query",
             "name": "sort_by_p_att",
+            "schema": {
+              "type": "string",
+              "default": null,
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_s_att",
             "schema": {
               "type": "string",
               "default": null,
@@ -4140,6 +4151,7 @@
               "type": "string",
               "default": "random",
               "enum": [
+                "first",
                 "random",
                 "ascending",
                 "descending"
@@ -4159,6 +4171,16 @@
           {
             "in": "query",
             "name": "sort_by_p_att",
+            "schema": {
+              "type": "string",
+              "default": null,
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_s_att",
             "schema": {
               "type": "string",
               "default": null,
@@ -4620,6 +4642,7 @@
               "type": "string",
               "default": "random",
               "enum": [
+                "first",
                 "random",
                 "ascending",
                 "descending"
@@ -4639,6 +4662,16 @@
           {
             "in": "query",
             "name": "sort_by_p_att",
+            "schema": {
+              "type": "string",
+              "default": null,
+              "nullable": true
+            },
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "sort_by_s_att",
             "schema": {
               "type": "string",
               "default": null,
