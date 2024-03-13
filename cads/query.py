@@ -448,31 +448,31 @@ def concordance_line(query_id, match_id, data):
     return ConcordanceLineOut().dump(concordance['lines'][0]), 200
 
 
-class CollocationIn(Schema):
+# class CollocationIn(Schema):
 
-    p = String(required=True)
-    window = Integer(required=True)
-
-
-class CollocationOut(Schema):
-
-    id = Integer()
-    p = String()
-    s_break = String()
-    window = Integer()
-
-    sem_map_id = Integer()
-
-    _query = Nested(QueryOut)
-    constellation_id = Integer()
+#     p = String(required=True)
+#     window = Integer(required=True)
 
 
-@bp.get("/<query_id>/collocation")
-@bp.input(CollocationIn, location='query')
-@bp.output(CollocationOut)
-@bp.auth_required(auth)
-def collocation(query_id, data):
-    """Get collocation id
+# class CollocationOut(Schema):
 
-    """
-    pass
+#     id = Integer()
+#     p = String()
+#     s_break = String()
+#     window = Integer()
+
+#     sem_map_id = Integer()
+
+#     _query = Nested(QueryOut)
+#     constellation_id = Integer()
+
+
+# @bp.get("/<query_id>/collocation")
+# @bp.input(CollocationIn, location='query')
+# @bp.output(CollocationOut)
+# @bp.auth_required(auth)
+# def collocation(query_id, data):
+#     """Get collocation id
+
+#     """
+#     pass

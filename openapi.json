@@ -62,6 +62,24 @@
       "name": "Mmda.User"
     }
   ],
+  "servers": [
+    {
+      "name": "Development Server",
+      "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"
+    },
+    {
+      "name": "Local",
+      "url": "http://127.0.0.1:5000/"
+    },
+    {
+      "name": "Production Server",
+      "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads/"
+    }
+  ],
+  "externalDocs": {
+    "description": "GitHub repository",
+    "url": "https://github.com/ausgerechnet/cwb-cads"
+  },
   "paths": {
     "/": {
       "get": {
@@ -2605,7 +2623,8 @@
             "name": "extended_window",
             "schema": {
               "type": "integer",
-              "default": 20
+              "default": null,
+              "nullable": true
             },
             "required": false
           },
@@ -2673,7 +2692,8 @@
             "name": "sort_by_p_att",
             "schema": {
               "type": "string",
-              "default": "word"
+              "default": null,
+              "nullable": true
             },
             "required": false
           },
@@ -2698,6 +2718,20 @@
           {
             "in": "query",
             "name": "filter_discourseme_ids",
+            "schema": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "integer"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "highlight_discourseme_ids",
             "schema": {
               "type": "array",
               "default": [],
@@ -3520,7 +3554,7 @@
         "tags": [
           "Query"
         ],
-        "summary": "Concordance Shuffle",
+        "summary": "Shuffle concordance lines.",
         "security": [
           {
             "BearerAuth": []
@@ -3986,7 +4020,8 @@
             "name": "extended_window",
             "schema": {
               "type": "integer",
-              "default": 20
+              "default": null,
+              "nullable": true
             },
             "required": false
           },
@@ -4054,7 +4089,8 @@
             "name": "sort_by_p_att",
             "schema": {
               "type": "string",
-              "default": "word"
+              "default": null,
+              "nullable": true
             },
             "required": false
           },
@@ -4079,6 +4115,20 @@
           {
             "in": "query",
             "name": "filter_discourseme_ids",
+            "schema": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "integer"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "highlight_discourseme_ids",
             "schema": {
               "type": "array",
               "default": [],
@@ -4450,7 +4500,8 @@
             "name": "extended_window",
             "schema": {
               "type": "integer",
-              "default": 20
+              "default": null,
+              "nullable": true
             },
             "required": false
           },
@@ -4518,7 +4569,8 @@
             "name": "sort_by_p_att",
             "schema": {
               "type": "string",
-              "default": "word"
+              "default": null,
+              "nullable": true
             },
             "required": false
           },
@@ -4543,6 +4595,20 @@
           {
             "in": "query",
             "name": "filter_discourseme_ids",
+            "schema": {
+              "type": "array",
+              "default": [],
+              "items": {
+                "type": "integer"
+              }
+            },
+            "required": false,
+            "explode": true,
+            "style": "form"
+          },
+          {
+            "in": "query",
+            "name": "highlight_discourseme_ids",
             "schema": {
               "type": "array",
               "default": [],
@@ -4600,7 +4666,7 @@
         "tags": [
           "Constellation"
         ],
-        "summary": "Get concordance lines.",
+        "summary": "Concordance Lines",
         "security": [
           {
             "BearerAuth": []
