@@ -9,7 +9,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, dir_path)
 
 from cads import create_app
-from cfg import DevConfig
+from cfg import ProdConfig
 
 dictConfig({
     'version': 1,
@@ -31,4 +31,4 @@ dictConfig({
     }
 })
 
-application = create_app(DevConfig)
+application = create_app(ProdConfig)
