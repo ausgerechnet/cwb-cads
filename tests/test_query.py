@@ -47,7 +47,7 @@ def test_query_concordance(client, auth):
         union = discoursemes[0]
 
         # create query matches for union
-        union_query = client.get(url_for('discourseme.query', id=union['id'], corpus_id=1),
+        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
                                  content_type='application/json',
                                  headers=auth_header)
 
@@ -73,7 +73,7 @@ def test_query_concordance_filter(client, auth):
         union = discoursemes[0]
 
         # create query matches for union
-        union_query = client.get(url_for('discourseme.query', id=union['id'], corpus_id=1),
+        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
                                  content_type='application/json',
                                  headers=auth_header)
 
@@ -99,7 +99,7 @@ def test_query_concordance_sort(client, auth):
         union = discoursemes[0]
 
         # create query matches for union
-        union_query = client.get(url_for('discourseme.query', id=union['id'], corpus_id=1),
+        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
                                  content_type='application/json',
                                  headers=auth_header)
 
@@ -142,7 +142,7 @@ def test_query_concordance_filter_sort(client, auth):
         union = discoursemes[0]
 
         # create query matches for union
-        union_query = client.get(url_for('discourseme.query', id=union['id'], corpus_id=1),
+        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
                                  content_type='application/json',
                                  headers=auth_header)
 

@@ -14,7 +14,7 @@ def test_create_semmap(client, auth):
 
         discourseme = discoursemes[0]
 
-        query = client.get(url_for('discourseme.query', id=discourseme['id'], corpus_id=1),
+        query = client.get(url_for('discourseme.get_query', id=discourseme['id'], corpus_id=1),
                            content_type='application/json',
                            headers=auth_header)
 

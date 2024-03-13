@@ -48,7 +48,7 @@ def test_discourseme_query(client, auth):
         discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
         union = discoursemes[0]
 
-        query = client.get(url_for('discourseme.query', id=union['id'], corpus_id=1),
+        query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
                            content_type='application/json',
                            headers=auth_header)
 

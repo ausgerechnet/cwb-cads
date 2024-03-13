@@ -7,7 +7,7 @@
       "url": "https://philipp-heinrich.eu",
       "email": "philipp.heinrich@fau.de"
     },
-    "version": "0.2.0.dev"
+    "version": "0.2.0.dev4"
   },
   "tags": [
     {
@@ -1361,7 +1361,7 @@
         "tags": [
           "Discourseme"
         ],
-        "summary": "Get details of a discourseme.",
+        "summary": "Get details of discourseme.",
         "security": [
           {
             "BearerAuth": []
@@ -1412,7 +1412,7 @@
         "tags": [
           "Discourseme"
         ],
-        "summary": "Delete one discourseme.",
+        "summary": "Delete discourseme.",
         "security": [
           {
             "BearerAuth": []
@@ -1808,7 +1808,79 @@
         "tags": [
           "Constellation"
         ],
-        "summary": "Get details of a constellation.",
+        "summary": "Get details of constellation.",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "tags": [
+          "Constellation"
+        ],
+        "summary": "Patch constellation. Use for updating name / description / highlight-discoursemes.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConstellationInUpdate"
+              }
+            }
+          }
+        },
         "security": [
           {
             "BearerAuth": []
@@ -1859,7 +1931,7 @@
         "tags": [
           "Constellation"
         ],
-        "summary": "Delete one constellation.",
+        "summary": "Delete constellation.",
         "security": [
           {
             "BearerAuth": []
@@ -3617,7 +3689,7 @@
         "tags": [
           "Discourseme"
         ],
-        "summary": "Create a discourseme query.",
+        "summary": "Get query of discourseme in corpus. Will automatically create one if it doesn't exist.",
         "security": [
           {
             "BearerAuth": []
@@ -4186,7 +4258,7 @@
         "tags": [
           "Discourseme"
         ],
-        "summary": "Get concordance lines.",
+        "summary": "Get concordance lines of discourseme in corpus. Redirects to query endpoint.",
         "security": [
           {
             "BearerAuth": []
@@ -4666,7 +4738,7 @@
         "tags": [
           "Constellation"
         ],
-        "summary": "Concordance Lines",
+        "summary": "Get concordance lines of constellation in corpus. Redirects to query endpoint.",
         "security": [
           {
             "BearerAuth": []
@@ -6340,6 +6412,30 @@
           },
           "p": {
             "type": "string"
+          }
+        }
+      },
+      "ConstellationInUpdate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "filter_discourseme_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          },
+          "highlight_discourseme_ids": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "integer"
+            }
           }
         }
       },

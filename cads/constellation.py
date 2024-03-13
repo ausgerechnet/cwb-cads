@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema
+from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Integer, List, Nested, String
 from flask import redirect, url_for
 
@@ -15,6 +15,9 @@ from .users import auth
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
 
+################
+# API schemata #
+################
 class ConstellationIn(Schema):
 
     name = String(required=False)
@@ -32,6 +35,9 @@ class ConstellationOut(Schema):
     highlight_discoursemes = Nested(DiscoursemeOut(many=True))
 
 
+#################
+# API endpoints #
+#################
 @bp.post('/')
 @bp.input(ConstellationIn)
 @bp.output(ConstellationOut)
@@ -40,6 +46,7 @@ def create(data):
     """Create new constellation.
 
     """
+    # TODO: only one filter discourseme
     filter_discoursemes = Discourseme.query.filter(Discourseme.id.in_(data['filter_discourseme_ids'])).all()
     highlight_discoursemes = Discourseme.query.filter(Discourseme.id.in_(data.get('highlight_discourseme_ids'))).all()
     constellation = Constellation(
@@ -47,6 +54,7 @@ def create(data):
         name=data.pop('name', '-'.join([d.name for d in filter_discoursemes])),
         description=data.pop('description', None),
     )
+    # TODO: fill database table, do not append
     [constellation.filter_discoursemes.append(discourseme) for discourseme in filter_discoursemes]
     [constellation.highlight_discoursemes.append(discourseme) for discourseme in highlight_discoursemes]
     db.session.add(constellation)
@@ -59,7 +67,7 @@ def create(data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def get_constellation(id):
-    """Get details of a constellation.
+    """Get details of constellation.
 
     """
 
@@ -70,7 +78,7 @@ def get_constellation(id):
 @bp.delete('/<id>')
 @bp.auth_required(auth)
 def delete_constellation(id):
-    """Delete one constellation.
+    """Delete constellation.
 
     """
 
@@ -81,25 +89,33 @@ def delete_constellation(id):
     return 'Deletion successful.', 200
 
 
-# @bp.patch('/<id>')
-# @bp.input(ConstellationIn(partial=True))
-# @bp.output(ConstellationOut)
-# @bp.auth_required(auth)
-# def create(data):
-#     """Create new constellation.
+@bp.patch('/<id>')
+@bp.input(ConstellationIn(partial=True))
+@bp.output(ConstellationOut)
+@bp.auth_required(auth)
+def patch_constellation(data):
+    """Patch constellation. Use for updating name / description / highlight-discoursemes.
 
-#     """
-#     filter_discoursemes = Discourseme.query.filter(Discourseme.id.in_(data['filter_discourseme_ids'])).all()
-#     constellation = Constellation(
-#         user_id=auth.current_user.id,
-#         name=data.pop('name', '-'.join([d.name for d in filter_discoursemes])),
-#         description=data.pop('description', None)
-#     )
-#     [constellation.filter_discoursemes.append(discourseme) for discourseme in filter_discoursemes]
-#     db.session.add(constellation)
-#     db.session.commit()
+    """
+    constellation = db.get_or_404(Constellation, id)
 
-#     return ConstellationOut().dump(constellation), 200
+    if constellation.user_id != auth.current_user.id:
+        return abort(409, 'constellation does not belong to user')
+
+    if len(data.get('filter_discourseme_ids')) > 0:
+        return abort(409, 'cannot change filter discourseme, create a new constellation instead')
+
+    constellation.name = data.get('name') if data.get('name') else constellation.name
+    constellation.description = data.get('description') if data.get('description') else constellation.description
+
+    highlight_discoursemes_ids = data.get('highlight_discourseme_ids')
+    if len(highlight_discoursemes_ids) > 0:
+        highlight_discoursemes = [db.get_or_404(Discourseme, did) for did in highlight_discoursemes_ids]
+        constellation.highlight_discoursemes = []
+        [constellation.highlight_discoursemes.append(discourseme) for discourseme in highlight_discoursemes]
+        db.session.commit()
+
+    return ConstellationOut().dump(constellation), 200
 
 
 @bp.get('/')
@@ -119,6 +135,9 @@ def get_constellations():
 @bp.output(ConcordanceOut)
 @bp.auth_required(auth)
 def concordance_lines(id, corpus_id, data):
+    """Get concordance lines of constellation in corpus. Redirects to query endpoint.
+
+    """
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)

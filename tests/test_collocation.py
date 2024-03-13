@@ -16,7 +16,7 @@ def test_create_collocation(client, auth):
 
         # query
         # - create
-        query = client.get(url_for('discourseme.query', id=discourseme['id'], corpus_id=1),
+        query = client.get(url_for('discourseme.get_query', id=discourseme['id'], corpus_id=1),
                            content_type='application/json',
                            headers=auth_header)
         assert query.status_code == 200
@@ -75,7 +75,7 @@ def test_create_or_get_cooc(client, auth):
 
         # query
         # - create
-        query = client.get(url_for('discourseme.query', id=1, corpus_id=1),
+        query = client.get(url_for('discourseme.get_query', id=1, corpus_id=1),
                            content_type='application/json',
                            headers=auth_header)
         assert query.status_code == 200
