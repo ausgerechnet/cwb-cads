@@ -14,8 +14,6 @@ from pandas import DataFrame
 from .. import db
 from ..breakdown import BreakdownItemsOut, ccc_breakdown
 from ..collocation import ccc_collocates, score_counts
-from .concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut
-from .concordance import ccc_concordance
 from ..corpus import ccc_corpus_attributes
 from ..database import (Breakdown, Collocation, CollocationItems,
                         Constellation, Coordinates, Corpus, Discourseme, Query,
@@ -23,6 +21,8 @@ from ..database import (Breakdown, Collocation, CollocationItems,
 from ..query import ccc_query, get_or_create_query
 from ..semantic_map import (CoordinatesOut, ccc_semmap,
                             ccc_semmap_discoursemes, ccc_semmap_update)
+from .concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut
+from .concordance import ccc_concordance
 from .login_views import user_required
 
 collocation_blueprint = APIBlueprint('collocation', __name__, url_prefix='/user/<username>/collocation')

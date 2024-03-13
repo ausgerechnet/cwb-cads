@@ -3,14 +3,14 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, Nested, String
+from flask import redirect, url_for
 
 from . import db
-from .database import Constellation, Discourseme
+from .concordance import ConcordanceIn, ConcordanceOut
+from .database import Constellation, Corpus, Discourseme
 from .discourseme import DiscoursemeOut
+from .query import query_discourseme
 from .users import auth
-from .database import Corpus
-from .concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
-from .query import query_discourseme, query_item
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -119,68 +119,15 @@ def get_constellations():
 @bp.output(ConcordanceOut)
 @bp.auth_required(auth)
 def concordance_lines(id, corpus_id, data):
-    """Get concordance lines.
-
-    """
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
+    # TODO: constellations should really only have one filter_discourseme
+    filter_discourseme = constellation.filter_discoursemes[0]
+    query_id = query_discourseme(filter_discourseme, corpus).id
 
-    # display options
-    window = data.get('window')
-    primary = data.get('primary')
-    secondary = data.get('secondary')
-    extended_window = data.get('extended_window')
+    # append highlight and discoursemes
+    data['highlight_discourseme_ids'] = data.get('highlight_discourseme_ids') + \
+        [d.id for d in constellation.highlight_discoursemes]
 
-    # pagination
-    page_size = data.get('page_size')
-    page_number = data.get('page_number')
-
-    # FILTERING #
-    #############
-    filter_item = data.get('filter_item')
-    filter_item_p_att = data.get('filter_item_p_att')
-    filter_discourseme_ids = data.get('filter_discourseme_ids')
-
-    filter_queries = set()
-
-    # TODO:
-    # filter queries should run on subcorpus and specify the corresponding match
-
-    for fd in constellation.filter_discoursemes:
-        fq = query_discourseme(fd, corpus)
-        filter_queries.add(fq)
-
-    for discourseme_id in filter_discourseme_ids:
-        fd = db.get_or_404(Discourseme, discourseme_id)
-        fq = query_discourseme(fd, corpus)
-        filter_queries.add(fq)
-
-    if filter_item:
-        fq = query_item(filter_item, filter_item_p_att, next(iter(filter_queries)).s, corpus)
-        filter_queries.add(fq)
-
-    filter_queries = sorted(list(filter_queries), key=lambda x: x.number_matches)
-
-    # HIGHLIGHTING #
-    ################
-    highlight_queries = list()
-    for hd in constellation.highlight_discoursemes:
-        highlight_queries.append(query_discourseme(hd, corpus))
-
-    # SORTING #
-    ###########
-    # TODO
-    # sort_order = data.get('sort_order')
-    # sort_by = data.get('sort_by')
-    # - concordance lines are sorted by ConcordanceSort
-    # - sort keys are created on demand
-    # - sorting according to {p-att} on {offset}
-    # - default: cpos at match
-    # - ascending / descending
-
-    # actual concordancing
-    concordance = ccc_concordance(filter_queries, primary, secondary, window, extended_window, page_number, page_size,
-                                  highlight_queries=highlight_queries)
-
-    return ConcordanceOut().dump(concordance), 200
+    return redirect(url_for('query.concordance_lines', query_id=query_id, **data))

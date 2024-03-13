@@ -349,11 +349,13 @@ class Query(db.Model):
     s = db.Column(db.Unicode)   # should be segmentation_id
 
     nqr_cqp = db.Column(db.Unicode)  # resulting NQR in CWB
+    random_seed = db.Column(db.Integer, default=42)  # for concordancing
 
     matches = db.relationship('Matches', backref='_query', passive_deletes=True)
     breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True)
     collocations = db.relationship('Collocation', backref='_query', passive_deletes=True)
-    # concordances = db.relationship('Concordance', backref='_query')
+    concordances = db.relationship('Concordance', backref='_query', passive_deletes=True)
+    cotexts = db.relationship('Cotext', backref='_query', passive_deletes=True)
 
     @property
     def number_matches(self):
@@ -366,7 +368,6 @@ class Matches(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    # created = db.Column(db.DateTime, default=datetime.utcnow)
 
     contextid = db.Column(db.Integer, index=True)  # should be segmentation_span_id
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
@@ -404,19 +405,24 @@ class BreakdownItems(db.Model):
     freq = db.Column(db.Integer)
 
 
-# class Concordance(db.Model):
+class Concordance(db.Model):
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     sort_order = db.Column(db.Integer)
-#     # sort_by =
-#     # sort_order
+    id = db.Column(db.Integer, primary_key=True)
+
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
+    sort_by = db.Column(db.String)
+    sort_offset = db.Column(db.Integer)
+    random_seed = db.Column(db.Integer)
+
+    lines = db.relationship('ConcordanceLines', backref='concordance')
 
 
-# class ConcordanceLines(db.Model):
+class ConcordanceLines(db.Model):
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     concordance_order_id = db.Column(db.Integer, db.ForeignKey('concordance.id'))
-#     match_pos = None
+    id = db.Column(db.Integer, primary_key=True)
+    concordance_id = db.Column(db.Integer, db.ForeignKey('concordance.id', ondelete='CASCADE'))
+    match = db.Column(db.Integer)  # , db.ForeignKey('matches.id', ondelete='CASCADE'))
+    contextid = db.Column(db.Integer)
 
 
 # class Concordance(db.Model):

@@ -15,10 +15,10 @@ from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
-from .concordance import ccc_concordance
 from ..corpus import ccc_corpus_attributes
 from ..database import Constellation, Corpus, Discourseme, User
 from ..query import ccc_query, get_or_create_query
+from .concordance import ccc_concordance
 from .login_views import user_required
 
 constellation_blueprint = APIBlueprint('constellation', __name__, url_prefix='/user/<username>/constellation')

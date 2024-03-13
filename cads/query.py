@@ -1,20 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema
-from apiflask import abort
+from random import randint
+
+from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
-from ccc.utils import format_cqp_query
 from ccc import Corpus
+from ccc.utils import format_cqp_query
 from flask import current_app
 from pandas import DataFrame
 
-from .concordance import ccc_concordance, ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut, ConcordanceOut
-
 from . import db
+from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
+                          ConcordanceOut, ccc_concordance)
 from .corpus import CorpusOut
-from .database import Query
+from .database import Discourseme, Query
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -351,6 +352,9 @@ def concordance_lines(query_id, data):
 
     """
 
+    query = db.get_or_404(Query, query_id)
+    corpus = query.corpus
+
     # display options
     window = data.get('window')
     primary = data.get('primary')
@@ -361,27 +365,45 @@ def concordance_lines(query_id, data):
     page_size = data.get('page_size')
     page_number = data.get('page_number')
 
-    # TODO: Concordance Sorting
-    # - concordance lines are sorted by ConcordanceSort
-    # - sort keys are created on demand
-    # - sorting according to {p-att} on {offset}
-    # - default: cpos at match
-    # - ascending / descending
-    # sort_order = data.get('sort_order')
-    # sort_by = data.get('sort_by')
-
-    query = db.get_or_404(Query, query_id)
+    # sorting
+    sort_order = data.get('sort_order')
+    sort_by = data.get('sort_by_p_att')
+    sort_offset = data.get('sort_by_offset')
 
     # filtering
-    filter_queries = [query]
     filter_item = data.get('filter_item')
     filter_item_p_att = data.get('filter_item_p_att')
+    filter_discourseme_ids = data.get('filter_discourseme_ids')
+
+    # highlighting
+    highlight_discourseme_ids = data.get('highlight_discourseme_ids')
+
+    # prepare filter queries
+    filter_queries = set()
+
+    for discourseme_id in filter_discourseme_ids:
+        fd = db.get_or_404(Discourseme, discourseme_id)
+        fq = query_discourseme(fd, corpus)
+        filter_queries.add(fq)
 
     if filter_item:
-        fq = query_item(filter_item, filter_item_p_att, query.s, query.corpus)
-        filter_queries.append(fq)
+        fq = query_item(filter_item, filter_item_p_att, query.s, corpus)
+        filter_queries.add(fq)
 
-    concordance = ccc_concordance(filter_queries, primary, secondary, window, extended_window, page_number, page_size)
+    # prepare highlight queries
+    highlight_queries = set()
+
+    for discourseme_id in highlight_discourseme_ids:
+        hd = db.get_or_404(Discourseme, discourseme_id)
+        hq = query_discourseme(hd, corpus)
+        highlight_queries.add(hq)
+
+    concordance = ccc_concordance(query,
+                                  primary, secondary,
+                                  window, extended_window,
+                                  filter_queries=filter_queries, highlight_queries=highlight_queries,
+                                  page_number=page_number, page_size=page_size,
+                                  sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order)
 
     return ConcordanceOut().dump(concordance), 200
 
@@ -390,7 +412,13 @@ def concordance_lines(query_id, data):
 @bp.auth_required(auth)
 @bp.output({'query_id': Integer()})
 def concordance_shuffle(query_id):
-    # TODO
+    """Shuffle concordance lines.
+
+    """
+    query = db.get_or_404(Query, query_id)
+    query.random_seed = randint(1, 10000)
+    db.session.commit()
+
     return {'query.id': query_id}, 200
 
 
@@ -403,6 +431,8 @@ def concordance_line(query_id, match_id, data):
 
     """
 
+    query = db.get_or_404(Query, query_id)
+
     # display options
     extended_context_break = data.get('extended_context_break')
     extended_window = data.get('extended_window')
@@ -410,7 +440,39 @@ def concordance_line(query_id, match_id, data):
     primary = data.get('primary')
     secondary = data.get('secondary')
 
-    query = db.get_or_404(Query, query_id)
-    concordance = ccc_concordance([query], primary, secondary, window, extended_window, context_break=extended_context_break, match_id=match_id)
+    concordance = ccc_concordance(query,
+                                  primary, secondary,
+                                  window, extended_window, context_break=extended_context_break,
+                                  match_id=match_id)
 
     return ConcordanceLineOut().dump(concordance['lines'][0]), 200
+
+
+class CollocationIn(Schema):
+
+    p = String(required=True)
+    window = Integer(required=True)
+
+
+class CollocationOut(Schema):
+
+    id = Integer()
+    p = String()
+    s_break = String()
+    window = Integer()
+
+    sem_map_id = Integer()
+
+    _query = Nested(QueryOut)
+    constellation_id = Integer()
+
+
+@bp.get("/<query_id>/collocation")
+@bp.input(CollocationIn, location='query')
+@bp.output(CollocationOut)
+@bp.auth_required(auth)
+def collocation(query_id, data):
+    """Get collocation id
+
+    """
+    pass

@@ -17,7 +17,25 @@ class Config:
             'url': 'https://philipp-heinrich.eu',
             'email': 'philipp.heinrich@fau.de'
         },
-        'version': __version__
+        'version': __version__,
+    }
+    SERVERS = [
+        {
+            'name': 'Development Server',
+            'url': 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/'
+        },
+        {
+            'name': 'Local',
+            'url': 'http://127.0.0.1:5000/'
+        },
+        {
+            'name': 'Production Server',
+            'url': 'https://corpora.linguistik.uni-erlangen.de/cwb-cads/'
+        }
+    ]
+    EXTERNAL_DOCS = {
+        'description': 'GitHub repository',
+        'url': 'https://github.com/ausgerechnet/cwb-cads'
     }
 
     CCC_CQP_BIN = str(getenv('CQP_BIN', default='cqp'))

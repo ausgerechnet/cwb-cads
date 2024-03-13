@@ -1,7 +1,7 @@
-from ccc import Corpus
-from flask import current_app
 from apiflask import Schema
 from apiflask.fields import Integer, List, String
+from ccc import Corpus
+from flask import current_app
 
 
 class ConcordanceLinesOutMMDA(Schema):

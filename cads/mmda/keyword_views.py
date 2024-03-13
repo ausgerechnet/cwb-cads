@@ -10,13 +10,13 @@ from flask import current_app, jsonify, request
 from pandas import DataFrame
 
 from .. import db
-from .concordance import ccc_concordance
 from ..corpus import ccc_corpus_attributes
 from ..database import (Constellation, Coordinates, Corpus, Discourseme,
                         Keyword, User)
 from ..keyword import ccc_keywords
 from ..semantic_map import CoordinatesOut, ccc_semmap
 from .collocation_views import score_counts
+from .concordance import ccc_concordance
 from .login_views import user_required
 
 keyword_blueprint = APIBlueprint('keyword', __name__, url_prefix='/user/<username>/keyword')

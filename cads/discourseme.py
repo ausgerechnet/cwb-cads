@@ -8,13 +8,15 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, String, Nested
+from apiflask.fields import Integer, List, Nested, String
+from flask import redirect, url_for
 from pandas import DataFrame, read_csv
 
 from . import db
+from .concordance import ConcordanceIn, ConcordanceOut
+from .database import (Corpus, Discourseme, DiscoursemeTemplateItems,
+                       get_or_create)
 from .query import QueryOut, query_discourseme
-from .concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
-from .database import Discourseme, DiscoursemeTemplateItems, Corpus, get_or_create
 from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
@@ -173,34 +175,11 @@ def concordance_lines(id, corpus_id, data):
 
     """
 
-    # display options
-    window = data.get('window')
-    primary = data.get('primary')
-    secondary = data.get('secondary')
-    extended_window = data.get('extended_window')
-
-    # pagination
-    page_size = data.get('page_size')
-    page_number = data.get('page_number')
-
-    # TODO: Concordance Sorting and Filtering
-    # - concordance lines are sorted by ConcordanceSort
-    # - sort keys are created on demand
-    # - sorting according to {p-att} on {offset}
-    # - default: cpos at match
-    # - ascending / descending
-
-    # sort_order = data.get('sort_order')
-    # sort_by = data.get('sort_by')
-    # filter_item = data.get('filter_item')
-    # filter_discourseme_ids = data.get('filter_discourseme_ids')
-
     discourseme = db.get_or_404(Discourseme, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    query = query_discourseme(discourseme, corpus)
-    concordance = ccc_concordance([query], primary, secondary, window, extended_window, page_number, page_size)
+    query_id = query_discourseme(discourseme, corpus).id
 
-    return ConcordanceOut().dump(concordance), 200
+    return redirect(url_for('query.concordance_lines', query_id=query_id, **data))
 
 
 @bp.cli.command('import')
