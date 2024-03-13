@@ -27,6 +27,28 @@ def test_create_query(client, auth):
         assert query.status_code == 200
 
 
+def test_create_query_assisted(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # query
+        query = client.post(url_for('query.create_assisted'),
+                            json={
+                                'corpus_id': 1,
+                                'items': ['bei', 'zu'],
+                                'p': 'lemma',
+                                'ignore_case': True,
+                                'ignore_diacritics': True,
+                                's': 's'
+                            },
+                            headers=auth_header,
+                            follow_redirects=True)
+
+        assert query.status_code == 200
+
+
 def test_execute_query(client, auth):
 
     auth_header = auth.login()

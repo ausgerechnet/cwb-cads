@@ -31,6 +31,9 @@ def ccc_breakdown(breakdown):
     return breakdown_df
 
 
+################
+# API schemata #
+################
 class BreakdownIn(Schema):
 
     p = String(required=True)
@@ -52,6 +55,9 @@ class BreakdownOut(Schema):
     items = Nested(BreakdownItemsOut(many=True))
 
 
+#################
+# API endpoints #
+#################
 @bp.get('/<id>')
 @bp.output(BreakdownOut)
 @bp.auth_required(auth)

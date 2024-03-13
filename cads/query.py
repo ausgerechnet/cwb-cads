@@ -47,7 +47,7 @@ def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, m
 
 def query_item(item, p, s, corpus):
 
-    # TODO only on subcorpus
+    # TODO run only on subcorpus
     cqp_query = format_cqp_query([item], p_query=p, escape=True)
     query = Query(
         corpus_id=corpus.id,
@@ -95,8 +95,7 @@ def query_discourseme(discourseme, corpus):
         db.session.commit()
         ccc_query(query)
 
-    # does not happen due to unique constraint
-    else:
+    else:                   # does not happen due to unique constraint
         raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
 
     return query
@@ -164,6 +163,9 @@ def ccc_query(query, return_df=True, p_breakdown=None):
     return matches_df
 
 
+################
+# API schemata #
+################
 class QueryIn(Schema):
 
     discourseme_id = Integer(required=False, metadata={'nullable': True})
@@ -206,6 +208,9 @@ class QueryOut(Schema):
     subcorpus = String(metadata={'nullable': True})
 
 
+#################
+# API endpoints #
+#################
 @bp.post('/')
 @bp.input(QueryIn)
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
@@ -215,6 +220,7 @@ def create(data, data_query):
     """Create new query.
 
     """
+
     query = Query(**data)
     db.session.add(query)
     db.session.commit()
@@ -222,7 +228,6 @@ def create(data, data_query):
     if data_query['execute']:
         ret = ccc_query(query)
         if isinstance(ret, str):  # CQP error
-            from apiflask import abort
             return abort(400, ret)
 
     return QueryOut().dump(query), 200
@@ -282,7 +287,7 @@ def get_queries():
 @bp.output(QueryOut)
 @bp.auth_required(auth)
 def get_query(id):
-    """Get details of a query.
+    """Get details of query.
 
     """
 
@@ -318,7 +323,7 @@ def get_query(id):
 @bp.delete('/<id>')
 @bp.auth_required(auth)
 def delete_query(id):
-    """Delete a query.
+    """Delete query.
 
     """
 
@@ -368,6 +373,7 @@ def concordance_lines(query_id, data):
     # sorting
     sort_order = data.get('sort_order')
     sort_by = data.get('sort_by_p_att')
+    sort_by_s_att = data.get('sort_by_s_att')
     sort_offset = data.get('sort_by_offset')
 
     # filtering
@@ -403,7 +409,7 @@ def concordance_lines(query_id, data):
                                   window, extended_window,
                                   filter_queries=filter_queries, highlight_queries=highlight_queries,
                                   page_number=page_number, page_size=page_size,
-                                  sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order)
+                                  sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order, sort_by_s_att=sort_by_s_att)
 
     return ConcordanceOut().dump(concordance), 200
 
@@ -446,6 +452,16 @@ def concordance_line(query_id, match_id, data):
                                   match_id=match_id)
 
     return ConcordanceLineOut().dump(concordance['lines'][0]), 200
+
+
+# @bp.get("/<query_id>/breakdown")
+# def get_breakdowns(query_id):
+#     """Get breakdowns of query. Will create if it doesn't exist.
+
+#     """
+
+#     query = db.get_or_404(Query, query_id)
+#     return [BreakdownOut().dump(breakdown) for breakdown in query.breakdowns], 200
 
 
 # class CollocationIn(Schema):
