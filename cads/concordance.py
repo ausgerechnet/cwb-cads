@@ -6,14 +6,12 @@ from collections import defaultdict
 from apiflask import Schema
 from apiflask.fields import Boolean, Dict, Integer, List, Nested, String
 from apiflask.validators import OneOf
-from ccc import Corpus, SubCorpus
-from ccc.collocates import dump2cooc
+from ccc import SubCorpus
 from flask import current_app
 from pandas import DataFrame
 
 from . import db
-from .database import (Concordance, ConcordanceLines, Cotext, CotextLines,
-                       Matches)
+from .database import Concordance, ConcordanceLines, CotextLines, Matches
 
 
 def ccc2attributes(line, primary, secondary, s_show, window):
@@ -49,6 +47,7 @@ def sort_matches(query, sort_by, sort_offset=0):
 
     random_seed = query.random_seed
     concordance = Concordance.query.filter_by(query_id=query.id, sort_by=sort_by, sort_offset=sort_offset, random_seed=random_seed).first()
+
     if not concordance:
         concordance = Concordance(query_id=query.id, sort_by=sort_by, sort_offset=sort_offset, random_seed=random_seed)
         db.session.add(concordance)
@@ -87,51 +86,6 @@ def sort_matches(query, sort_by, sort_offset=0):
         concordance_lines.to_sql('concordance_lines', con=db.engine, if_exists='append', index=False)
 
     return concordance
-
-
-def get_or_create_cotext(query, window, context_break):
-
-    from .query import ccc_query
-
-    cotext = Cotext.query.filter_by(query_id=query.id, context=window, context_break=context_break).first()
-
-    if not cotext:
-        cotext = Cotext(query_id=query.id, context=window, context_break=context_break)
-        db.session.add(cotext)
-        db.session.commit()
-
-        matches_df = ccc_query(query)
-
-        corpus = Corpus(corpus_name=query.corpus.cwb_id,
-                        lib_dir=None,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
-
-        subcorpus_context = corpus.subcorpus(
-            subcorpus_name=None,
-            df_dump=matches_df,
-            overwrite=False
-        ).set_context(
-            window,
-            context_break,
-            overwrite=False
-        )
-
-        current_app.logger.debug("get_or_create_cotext :: dump2cooc")
-        df_cooc = dump2cooc(subcorpus_context.df, rm_nodes=False)
-        df_cooc = df_cooc.rename({'match': 'match_pos'}, axis=1).reset_index(drop=True)
-        df_cooc['cotext_id'] = cotext.id
-
-        current_app.logger.debug(f"get_or_create_cotext :: saving {len(df_cooc)} lines to database")
-        df_cooc.to_sql("cotext_lines", con=db.engine, if_exists='append', index=False)
-        db.session.commit()
-        current_app.logger.debug("get_or_create_cotext :: saved to database")
-
-        df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
-        df_cooc = df_cooc[['cotext_id', 'match_pos', 'cpos', 'offset']]
-
-    return cotext
 
 
 def ccc_concordance(focus_query,
@@ -196,6 +150,8 @@ def ccc_concordance(focus_query,
         # filtering
         if len(filter_queries) > 0:
 
+            from .query import get_or_create_cotext
+
             # TODO learn proper SQLalchemy
             matches_tmp = matches.all()
             match_pos = set([m.match for m in matches_tmp])
@@ -203,7 +159,8 @@ def ccc_concordance(focus_query,
             # get relevant cotext lines
             cotext = get_or_create_cotext(focus_query, window, context_break)
             cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
-                                                    CotextLines.offset <= window)
+                                                    CotextLines.offset <= window,
+                                                    CotextLines.offset >= -window)
             for fq in filter_queries:
 
                 current_app.logger.debug("ccc_concordance :: filtering cotext lines by joining matches")

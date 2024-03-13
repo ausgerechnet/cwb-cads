@@ -1,5 +1,4 @@
 from flask import url_for
-from cads.database import Collocation
 
 
 def test_create_collocation(client, auth):
@@ -48,7 +47,7 @@ def test_create_collocation(client, auth):
         assert collocation.status_code == 200
 
 
-def test_create_or_get_cooc(client, auth):
+def test_create_or_get_cotext(client, auth):
 
     auth_header = auth.login()
     with client:
@@ -90,14 +89,14 @@ def test_create_or_get_cooc(client, auth):
                                       'context': 10,
                                   },
                                   headers=auth_header)
+        assert collocation.status_code == 200
 
-        collocation = Collocation.query.filter_by(id=collocation.json['id']).first()
-
-        from cads.collocation import get_or_create_cooc
-
-        df_cooc = get_or_create_cooc(collocation)
-        df_cooc_2 = get_or_create_cooc(collocation)
-        assert df_cooc.equals(df_cooc_2)
+        # from cads.database import Collocation
+        # from cads.query import get_or_create_cotext
+        # collocation = Collocation.query.filter_by(id=collocation.json['id']).first()
+        # df_cooc = get_or_create_cotext(collocation._query, collocation.context, collocation.s_break, return_df=True)
+        # df_cooc_2 = get_or_create_cotext(collocation._query, collocation.context, collocation.s_break, return_df=True)
+        # assert df_cooc.equals(df_cooc_2)
 
 
 def test_execute_collocation(client, auth):

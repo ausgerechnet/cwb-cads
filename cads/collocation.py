@@ -5,14 +5,12 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, Nested, String
 from association_measures import measures
 from ccc import Corpus
-from ccc.collocates import dump2cooc
 from flask import current_app
 from pandas import DataFrame, concat, read_sql
 
 from . import db
-from .database import (Collocation, CollocationItems, Cotext, CotextLines,
-                       Discourseme)
-from .query import QueryOut, ccc_query, get_or_create_query
+from .database import Collocation, CollocationItems, CotextLines, Discourseme
+from .query import QueryOut, ccc_query, get_or_create_query, get_or_create_cotext
 from .semantic_map import (CoordinatesOut, SemanticMapIn, SemanticMapOut,
                            ccc_semmap, ccc_semmap_discoursemes,
                            ccc_semmap_update)
@@ -74,63 +72,6 @@ def score_counts(counts, cut_off=200, min_freq=3, show_negative=False, rename=Tr
     return df
 
 
-def get_or_create_cooc(collocation, window=None):
-    """create Cotext, CotextLines of matches and save it to database (if it does not exist)
-
-    """
-
-    query_id = collocation._query.id
-    context = collocation.context
-    context_break = collocation.s_break
-    cwb_id = collocation._query.corpus.cwb_id
-
-    window = context if window is None else window
-
-    cotext = Cotext.query.filter_by(query_id=query_id, context=context, context_break=context_break).first()
-
-    if cotext is None:
-
-        current_app.logger.debug("get_or_create_cooc :: creating cooc-table from scratch")
-        cotext = Cotext(query_id=query_id, context=context, context_break=context_break)
-        db.session.add(cotext)
-        db.session.commit()
-
-        matches_df = ccc_query(collocation._query)
-
-        corpus = Corpus(corpus_name=cwb_id,
-                        lib_dir=None,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
-
-        subcorpus_context = corpus.subcorpus(
-            subcorpus_name=None, df_dump=matches_df, overwrite=False
-        ).set_context(
-            context, context_break, overwrite=False
-        )
-
-        current_app.logger.debug("get_or_create_cooc :: dump2cooc")
-        df_cooc = dump2cooc(subcorpus_context.df, rm_nodes=False)
-        df_cooc = df_cooc.rename({'match': 'match_pos'}, axis=1).reset_index(drop=True)
-        df_cooc['cotext_id'] = cotext.id
-
-        current_app.logger.debug(f"get_or_create_cooc :: saving {len(df_cooc)} lines to database")
-        df_cooc.to_sql("cotext_lines", con=db.engine, if_exists='append', index=False)
-        db.session.commit()
-        current_app.logger.debug("get_or_create_cooc :: saved to database")
-
-        df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
-        df_cooc = df_cooc[['cotext_id', 'match_pos', 'cpos', 'offset']]
-
-    else:
-        current_app.logger.debug("get_or_create_cooc :: getting cooc-table from database")
-        sql_query = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
-        df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
-        current_app.logger.debug(f"get_or_create_cooc :: got {len(df_cooc)} lines from database")
-
-    return df_cooc
-
-
 def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
     """get CollocationItems for collocation analysis and given window
 
@@ -161,7 +102,12 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
     ###########
     # CONTEXT #
     ###########
-    df_cooc = get_or_create_cooc(collocation, window)
+    cotext = get_or_create_cotext(collocation._query, window, collocation.s_break, return_df=True)
+    sql_query = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
+                                         CotextLines.offset <= window,
+                                         CotextLines.offset >= -window)
+    df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
+    df_cooc = df_cooc.drop_duplicates(subset='cpos')
     discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # filter can only match in context
 
     ############################################

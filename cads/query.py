@@ -8,6 +8,7 @@ from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus
 from ccc.utils import format_cqp_query
+from ccc.collocates import dump2cooc
 from flask import current_app
 from pandas import DataFrame
 
@@ -15,7 +16,7 @@ from . import db
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import CorpusOut
-from .database import Discourseme, Query
+from .database import Discourseme, Query, Cotext
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -161,6 +162,69 @@ def ccc_query(query, return_df=True, p_breakdown=None):
     #         if not matches:
 
     return matches_df
+
+
+def get_or_create_cotext(query, window, context_break, return_df=False):
+
+    # TODO: dump2cooc() drops duplicates, but these are needed for accurately filtering concordance lines!
+
+    matches_df = ccc_query(query)
+    cotext = Cotext.query.filter(
+        Cotext.query_id == query.id,
+        Cotext.context >= window,
+        Cotext.context_break == context_break
+    ).first()
+
+    if not cotext:
+
+        current_app.logger.debug("get_or_create_cotext :: creating from scratch")
+        cotext = Cotext(query_id=query.id, context=window, context_break=context_break)
+        db.session.add(cotext)
+        db.session.commit()
+
+        corpus = Corpus(corpus_name=query.corpus.cwb_id,
+                        lib_dir=None,
+                        cqp_bin=current_app.config['CCC_CQP_BIN'],
+                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                        data_dir=current_app.config['CCC_DATA_DIR'])
+
+        subcorpus_context = corpus.subcorpus(
+            subcorpus_name=None,
+            df_dump=matches_df,
+            overwrite=False
+        ).set_context(
+            window,
+            context_break,
+            overwrite=False
+        )
+
+        current_app.logger.debug("get_or_create_cotext :: .. dump2cooc")
+        df_cooc = dump2cooc(subcorpus_context.df, rm_nodes=False, drop_duplicates=False)
+        df_cooc = df_cooc.rename({'match': 'match_pos'}, axis=1).reset_index(drop=True)
+        df_cooc['cotext_id'] = cotext.id
+
+        current_app.logger.debug(f"get_or_create_cotext :: .. saving {len(df_cooc)} lines to database")
+        df_cooc.to_sql("cotext_lines", con=db.engine, if_exists='append', index=False)
+        db.session.commit()
+        current_app.logger.debug("get_or_create_cotext :: .. saved to database")
+
+        # if return_df:
+        #     df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
+        #     df_cooc = df_cooc[['cotext_id', 'match_pos', 'cpos', 'offset']]
+        #     return df_cooc
+
+    else:
+        current_app.logger.debug("get_or_create_cotext :: cotext already exists")
+        # if return_df:
+        #     current_app.logger.debug("get_or_create_cotext :: getting cooc-table from database")
+        #     sql_query = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
+        #                                          CotextLines.offset <= window,
+        #                                          CotextLines.offset >= -window)
+        #     df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
+        #     current_app.logger.debug(f"get_or_create_cotext :: got {len(df_cooc)} lines from database")
+        #     return df_cooc
+
+    return cotext
 
 
 ################
