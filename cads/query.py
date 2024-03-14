@@ -7,8 +7,8 @@ from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus
-from ccc.utils import format_cqp_query
 from ccc.collocates import dump2cooc
+from ccc.utils import format_cqp_query
 from flask import current_app
 from pandas import DataFrame
 
@@ -16,7 +16,7 @@ from . import db
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import CorpusOut
-from .database import Discourseme, Query, Cotext
+from .database import Cotext, Discourseme, Matches, Query
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -35,29 +35,42 @@ def get_or_create_query(corpus, discourseme, context_break=None, p_query=None, m
     query = Query.query.filter_by(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query,
                                   subcorpus_id=subcorpus_id, match_strategy=match_strategy).order_by(Query.id.desc()).first()
 
-    if query.subcorpus:
-        current_app.logger.debug(f"get_or_create_query :: subcorpus {query.subcorpus.name}")
-
     if not query:
         query = Query(discourseme_id=discourseme.id, corpus_id=corpus.id, cqp_query=cqp_query, subcorpus_id=subcorpus_id, match_strategy=match_strategy)
         db.session.add(query)
         db.session.commit()
 
+    if query.subcorpus:
+        current_app.logger.debug(f"get_or_create_query :: subcorpus {query.subcorpus.name}")
+
     return query
 
 
-def query_item(item, p, s, corpus):
+def query_item(item, p, s, corpus, escape=True):
 
     # TODO run only on subcorpus
-    cqp_query = format_cqp_query([item], p_query=p, escape=True)
-    query = Query(
+    current_app.logger.debug(f'query_item :: querying corpus "{corpus.cwb_id}" for item "{item}"')
+    cqp_query = format_cqp_query([item], p_query=p, escape=escape)
+
+    # try to retrieve
+    query = Query.query.filter_by(
         corpus_id=corpus.id,
         cqp_query=cqp_query,
         s=s
-    )
-    db.session.add(query)
-    db.session.commit()
-    ccc_query(query)
+    ).first()
+
+    if not query:
+        query = Query(
+            corpus_id=corpus.id,
+            cqp_query=cqp_query,
+            s=s
+        )
+        db.session.add(query)
+        db.session.commit()
+
+    # make sure there's matches
+    ccc_query(query, return_df=False)
+
     return query
 
 
@@ -107,9 +120,9 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 
     """
 
-    matches = query.matches
+    matches = Matches.query.filter_by(query_id=query.id)
 
-    if len(matches) == 0:
+    if not matches.first():
 
         current_app.logger.debug(f'ccc_query :: querying corpus {query.corpus.cwb_id}')
         if query.subcorpus:
@@ -137,20 +150,20 @@ def ccc_query(query, return_df=True, p_breakdown=None):
         df_matches['contextid'] = df_matches['contextid'].astype(int)
         df_matches['query_id'] = query.id
 
-        current_app.logger.debug(f"get_or_create_matches :: saving {len(df_matches)} lines to database")
+        current_app.logger.debug(f"ccc_query :: saving {len(df_matches)} lines to database")
         df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
         db.session.commit()
-        current_app.logger.debug("get_or_create_matches :: saved to database")
+        current_app.logger.debug("ccc_query :: saved to database")
 
         matches_df = df_matches.drop('query_id', axis=1).set_index(['match', 'matchend'])
 
     elif return_df:
-        current_app.logger.debug("get_or_create_matches :: getting matches from database")
+        current_app.logger.debug("ccc_query :: getting matches from database")
         matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
-        current_app.logger.debug(f"get_or_create_matches :: got {len(matches_df)} matches from database")
+        current_app.logger.debug(f"ccc_query :: got {len(matches_df)} matches from database")
 
     else:
-        current_app.logger.debug("get_or_create_matches :: matches already exist in database")
+        current_app.logger.debug("ccc_query :: matches already exist in database")
         matches_df = None
 
     # if matches_df and p_breakdown:

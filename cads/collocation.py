@@ -10,7 +10,8 @@ from pandas import DataFrame, concat, read_sql
 
 from . import db
 from .database import Collocation, CollocationItems, CotextLines, Discourseme
-from .query import QueryOut, ccc_query, get_or_create_query, get_or_create_cotext
+from .query import (QueryOut, ccc_query, get_or_create_cotext,
+                    get_or_create_query)
 from .semantic_map import (CoordinatesOut, SemanticMapIn, SemanticMapOut,
                            ccc_semmap, ccc_semmap_discoursemes,
                            ccc_semmap_update)
