@@ -117,15 +117,15 @@ def get_breakdown_items(id):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(BreakdownOut)
 @bp.auth_required(auth)
-def create(query_id, data, data_query):
+def create(query_id, json_data, query_data):
     """Create new breakdown for query.
 
     """
-    breakdown = Breakdown(query_id=query_id, **data)
+    breakdown = Breakdown(query_id=query_id, **json_data)
     db.session.add(breakdown)
     db.session.commit()
 
-    if data_query['execute']:
+    if query_data['execute']:
         ccc_breakdown(breakdown)
 
     return BreakdownOut().dump(breakdown), 200

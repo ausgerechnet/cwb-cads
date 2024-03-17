@@ -295,16 +295,16 @@ class QueryOut(Schema):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def create(data, data_query):
+def create(json_data, query_data):
     """Create new query.
 
     """
 
-    query = Query(**data)
+    query = Query(**json_data)
     db.session.add(query)
     db.session.commit()
 
-    if data_query['execute']:
+    if query_data['execute']:
         ret = ccc_query(query)
         if isinstance(ret, str):  # CQP error
             return abort(400, ret)
@@ -317,16 +317,16 @@ def create(data, data_query):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def create_assisted(data, data_query):
+def create_assisted(json_data, query_data):
     """Create new query in assisted mode.
 
     """
 
-    items = data.pop('items')
-    p = data.pop('p')
-    escape = data.pop('escape', data.get('escape'))
-    ignore_diacritics = data.pop('ignore_diacritics', data.get('ignore_diacritics'))
-    ignore_case = data.pop('ignore_case', data.get('ignore_case'))
+    items = json_data.pop('items')
+    p = json_data.pop('p')
+    escape = json_data.pop('escape', json_data.get('escape'))
+    ignore_diacritics = json_data.pop('ignore_diacritics', json_data.get('ignore_diacritics'))
+    ignore_case = json_data.pop('ignore_case', json_data.get('ignore_case'))
     flags = ''
     if ignore_case or ignore_diacritics:
         flags = '%'
@@ -335,13 +335,13 @@ def create_assisted(data, data_query):
         if ignore_diacritics:
             flags += 'd'
 
-    data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=data['s'], flags=flags, escape=escape)
+    json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
 
-    query = Query(**data)
+    query = Query(**json_data)
     db.session.add(query)
     db.session.commit()
 
-    if data_query['execute']:
+    if query_data['execute']:
         ret = ccc_query(query)
         if isinstance(ret, str):  # CQP error
             return abort(409, ret)
@@ -431,7 +431,7 @@ def execute(id):
 @bp.input(ConcordanceIn, location='query')
 @bp.output(ConcordanceOut)
 @bp.auth_required(auth)
-def concordance_lines(query_id, data):
+def concordance_lines(query_id, query_data):
     """Get concordance lines.
 
     """
@@ -440,28 +440,28 @@ def concordance_lines(query_id, data):
     corpus = query.corpus
 
     # display options
-    window = data.get('window')
-    primary = data.get('primary')
-    secondary = data.get('secondary')
-    extended_window = data.get('extended_window')
+    window = query_data.get('window')
+    primary = query_data.get('primary')
+    secondary = query_data.get('secondary')
+    extended_window = query_data.get('extended_window')
 
     # pagination
-    page_size = data.get('page_size')
-    page_number = data.get('page_number')
+    page_size = query_data.get('page_size')
+    page_number = query_data.get('page_number')
 
     # sorting
-    sort_order = data.get('sort_order')
-    sort_by = data.get('sort_by_p_att')
-    sort_by_s_att = data.get('sort_by_s_att')
-    sort_offset = data.get('sort_by_offset')
+    sort_order = query_data.get('sort_order')
+    sort_by = query_data.get('sort_by_p_att')
+    sort_by_s_att = query_data.get('sort_by_s_att')
+    sort_offset = query_data.get('sort_by_offset')
 
     # filtering
-    filter_item = data.get('filter_item')
-    filter_item_p_att = data.get('filter_item_p_att')
-    filter_discourseme_ids = data.get('filter_discourseme_ids')
+    filter_item = query_data.get('filter_item')
+    filter_item_p_att = query_data.get('filter_item_p_att')
+    filter_discourseme_ids = query_data.get('filter_discourseme_ids')
 
     # highlighting
-    highlight_discourseme_ids = data.get('highlight_discourseme_ids')
+    highlight_discourseme_ids = query_data.get('highlight_discourseme_ids')
 
     # prepare filter queries
     filter_queries = set()
@@ -511,7 +511,7 @@ def concordance_shuffle(query_id):
 @bp.input(ConcordanceLineIn, location='query')
 @bp.output(ConcordanceLineOut)
 @bp.auth_required(auth)
-def concordance_line(query_id, match_id, data):
+def concordance_line(query_id, match_id, query_data):
     """Get (additional context of) one concordance line.
 
     """
@@ -519,11 +519,11 @@ def concordance_line(query_id, match_id, data):
     query = db.get_or_404(Query, query_id)
 
     # display options
-    extended_context_break = data.get('extended_context_break')
-    extended_window = data.get('extended_window')
-    window = data.get('window')
-    primary = data.get('primary')
-    secondary = data.get('secondary')
+    extended_context_break = query_data.get('extended_context_break')
+    extended_window = query_data.get('extended_window')
+    window = query_data.get('window')
+    primary = query_data.get('primary')
+    secondary = query_data.get('secondary')
 
     concordance = ccc_concordance(query,
                                   primary, secondary,

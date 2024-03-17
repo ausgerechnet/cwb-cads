@@ -109,11 +109,6 @@ def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
     db.session.commit()
 
 
-class SemanticMapIn(Schema):
-
-    collocation_id = Integer()
-
-
 class SemanticMapOut(Schema):
 
     id = Integer()

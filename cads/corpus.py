@@ -301,14 +301,15 @@ def get_subcorpora(id):
 
 @bp.put('/<id>/subcorpus/')
 @bp.auth_required(auth)
-def create_subcorpus(id, data):
-
-    data['corpus_id'],
-    data['subcorpus_name']
-    data['segmentation_key']
-    data['segmentation_annotation']
+def create_subcorpus(id, json_data):
 
     pass
+
+    # json_data['corpus_id'],
+    # json_data['subcorpus_name']
+    # json_data['segmentation_key']
+    # json_data['segmentation_annotation']
+
     # Discourseme(
     #     name,
     #     description

@@ -12,9 +12,8 @@ from . import db
 from .database import Collocation, CollocationItems, CotextLines, Discourseme
 from .query import (QueryOut, ccc_query, get_or_create_cotext,
                     get_or_create_query)
-from .semantic_map import (CoordinatesOut, SemanticMapIn, SemanticMapOut,
-                           ccc_semmap, ccc_semmap_discoursemes,
-                           ccc_semmap_update)
+from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
+                           ccc_semmap_discoursemes, ccc_semmap_update)
 from .users import auth
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
@@ -375,15 +374,14 @@ def get_collocation_items(id):
 
 
 @bp.post('/<id>/semantic_map/')
-@bp.input(SemanticMapIn)
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
-def create_semantic_map(collocation_id, data):
+def create_semantic_map(id):
     """Create new semantic map for collocation items.
 
     """
 
-    collocation = db.get_or_404(Collocation, collocation_id)
+    collocation = db.get_or_404(Collocation, id)
     embeddings = collocation._query.corpus.embeddings
 
     coordinates = ccc_semmap(collocation, embeddings)
@@ -394,23 +392,23 @@ def create_semantic_map(collocation_id, data):
 @bp.get('/<id>/semantic_map/')
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
-def get_semantic_map(collocation_id):
+def get_semantic_map(id):
     """Get semantic map of collocation analysis.
 
     TODO: allow many-to-many relationship
 
     """
 
-    collocation = db.get_or_404(Collocation, collocation_id)
+    collocation = db.get_or_404(Collocation, id)
     return SemanticMapOut().dump(collocation.semantic_map), 200
 
 
 @bp.put('/<id>/auto-associate')
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def associate_discoursemes(collocation_id):
+def associate_discoursemes(id):
 
-    collocation = db.get_or_404(Collocation, collocation_id)
+    collocation = db.get_or_404(Collocation, id)
     collocation_items = [item.item for item in collocation.items]
     discoursemes = Discourseme.query.all()
     for discourseme in discoursemes:
@@ -435,12 +433,12 @@ def associate_discoursemes(collocation_id):
            'semantic_map_id': Integer(load_default=None)}, location='query')
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def create(query_id, data, query_data):
+def create(query_id, json_data, query_data):
     """Create new collocation analysis.
 
     """
 
-    collocation = Collocation(query_id=query_id, user_id=auth.current_user.id, **data, semantic_map_id=query_data['semantic_map_id'])
+    collocation = Collocation(query_id=query_id, user_id=auth.current_user.id, **json_data, semantic_map_id=query_data['semantic_map_id'])
     db.session.add(collocation)
     db.session.commit()
 

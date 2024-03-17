@@ -114,16 +114,16 @@ class DiscoursemeOut(Schema):
 @bp.input(DiscoursemeIn)
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
-def create(data):
+def create(json_data):
     """Create new discourseme.
 
     """
 
-    items = data.pop('items')
+    items = json_data.pop('items')
     discourseme = Discourseme(
         user_id=auth.current_user.id,
-        name=data.get('name'),
-        description=data.get('description')
+        name=json_data.get('name'),
+        description=json_data.get('description')
     )
     db.session.add(discourseme)
     db.session.commit()

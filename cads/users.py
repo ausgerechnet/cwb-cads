@@ -70,12 +70,12 @@ def verify_token(token):
 @bp.post('/login')
 @bp.input(UserIn, location='form')
 @bp.output(HTTPTokenOut)
-def login(data):
+def login(form_data):
     """Login with name and password to get JWT token
 
     """
-    username = data['username']
-    password = data['password']
+    username = form_data['username']
+    password = form_data['password']
 
     user = User.query.filter_by(username=username).first()
 
@@ -95,7 +95,7 @@ def login(data):
 @bp.post('/refresh')
 @bp.input(HTTPRefreshTokenIn)
 @bp.output(HTTPTokenOut)
-def refresh(data):
+def refresh(json_data):
     """Return a new token if the user has a refresh token
 
     """
@@ -126,23 +126,23 @@ def identify():
 @bp.input(UserRegister)
 @bp.output(UserOut)
 @bp.auth_required(auth)
-def create_user(data):
+def create_user(json_data):
     """Register new user.
 
     """
 
     # does user already exist?
-    user = User.query.filter_by(username=data['username']).first()
+    user = User.query.filter_by(username=json_data['username']).first()
     if user:
-        current_app.logger.debug('Username %s already taken', data['username'])
+        current_app.logger.debug('Username %s already taken', json_data['username'])
         return 'Username already taken', 409
 
     user = User(
-        username=data['username'],
-        email=data['email'],
-        first_name=data['first_name'],
-        last_name=data['last_name'],
-        password_hash=generate_password_hash(data['password'])
+        username=json_data['username'],
+        email=json_data['email'],
+        first_name=json_data['first_name'],
+        last_name=json_data['last_name'],
+        password_hash=generate_password_hash(json_data['password'])
     )
     db.session.add(user)
     db.session.commit()
@@ -180,13 +180,13 @@ def get_users():
 @bp.input(UserUpdate)
 @bp.output(UserOut)
 @bp.auth_required(auth)
-def update_user(id, data):
+def update_user(id, json_data):
     """Update details of a user.
 
     """
 
     user = auth.current_user
-    user.password_hash = generate_password_hash(data['new_password'])
+    user.password_hash = generate_password_hash(json_data['new_password'])
     db.session.commit()
 
     return UserOut().dump(user), 200
