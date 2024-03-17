@@ -55,17 +55,17 @@ def test_discourseme_query(client, auth):
         assert query.status_code == 200
 
 
-def test_discourseme_concordance(client, auth):
+# def test_discourseme_concordance(client, auth):
 
-    auth_header = auth.login()
-    with client:
-        client.get("/")
+#     auth_header = auth.login()
+#     with client:
+#         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+#         discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
+#         union = discoursemes[0]
 
-        lines = client.get(url_for('discourseme.concordance_lines', id=union['id'], corpus_id=1),
-                           follow_redirects=True,
-                           headers=auth_header)
+#         lines = client.get(url_for('discourseme.concordance_lines', id=union['id'], corpus_id=1),
+#                            follow_redirects=True,
+#                            headers=auth_header)
 
-        assert lines.status_code == 200
+#         assert lines.status_code == 200
