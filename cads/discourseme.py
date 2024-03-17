@@ -21,6 +21,9 @@ from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 
+# TODO: accept template items
+# TODO: example discourseme on server (Schwurpus)
+
 
 def read_ldjson(path_ldjson):
 
@@ -183,20 +186,20 @@ def get_query(id, corpus_id):
     return QueryOut().dump(query), 200
 
 
-@bp.get("/<id>/corpus/<corpus_id>/concordance")
-@bp.input(ConcordanceIn, location='query')
-@bp.output(ConcordanceOut)
-@bp.auth_required(auth)
-def concordance_lines(id, corpus_id, data):
-    """Get concordance lines of discourseme in corpus. Redirects to query endpoint.
+# @bp.get("/<id>/corpus/<corpus_id>/concordance")
+# @bp.input(ConcordanceIn, location='query')
+# @bp.output(ConcordanceOut)
+# @bp.auth_required(auth)
+# def concordance_lines(id, corpus_id, data):
+#     """Get concordance lines of discourseme in corpus. Redirects to query endpoint.
 
-    """
+#     """
 
-    discourseme = db.get_or_404(Discourseme, id)
-    corpus = db.get_or_404(Corpus, corpus_id)
-    query_id = query_discourseme(discourseme, corpus).id
+#     discourseme = db.get_or_404(Discourseme, id)
+#     corpus = db.get_or_404(Corpus, corpus_id)
+#     query_id = query_discourseme(discourseme, corpus).id
 
-    return redirect(url_for('query.concordance_lines', query_id=query_id, **data))
+#     return redirect(url_for('query.concordance_lines', query_id=query_id, **data))
 
 
 ################
