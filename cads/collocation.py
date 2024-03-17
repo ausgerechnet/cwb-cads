@@ -76,9 +76,9 @@ def score_counts(counts, cut_off=200, min_freq=3, show_negative=False, rename=Tr
 def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
     """get CollocationItems for collocation analysis and given window
 
-    (1) get or create context of collocation._query
+    (1) get context of collocation._query
 
-    (2) get or create matches of collocation.constellation.highlight_discoursemes in collocation._query.corpus
+    (2) get matches of collocation.constellation.highlight_discoursemes in collocation._query.corpus
 
     (3) count items and discoursemes separately
 
@@ -100,30 +100,33 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
 
-    ###########
-    # CONTEXT #
-    ###########
-    cotext = get_or_create_cotext(collocation._query, window, collocation.s_break, return_df=True)
-    sql_query = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
-                                         CotextLines.offset <= window,
-                                         CotextLines.offset >= -window)
-    df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
+    ###############
+    # GET CONTEXT #
+    ###############
+    current_app.logger.debug(f'ccc_collocates :: getting context of query {filter_query.id}')
+    cotext = get_or_create_cotext(filter_query, window, collocation.s_break, return_df=True)
+    cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
+                                            CotextLines.offset <= window,
+                                            CotextLines.offset >= -window)
+    df_cooc = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True)
     df_cooc = df_cooc.drop_duplicates(subset='cpos')
-    discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # filter can only match in context
 
-    ############################################
-    # GET MATCHES OF HIGHLIGHTING_DISCOURSEMES #
-    ############################################
-    # for each discourseme (including filter_discourseme):
+    #################################
+    # GET HIGHLIGHTING_DISCOURSEMES #
+    #################################
+    # for each discourseme (including filter):
+    # - get cpos consumed within and outside context
     # - get frequency breakdown within and outside context
-    # - collect cpos consumed within and outside context
+    current_app.logger.debug('ccc_collocates :: getting highlighting discoursemes')
+
+    discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # filter can only match in context
 
     # get or create subcorpus of context
     highlight_breakdowns = list()
     for discourseme in highlight_discoursemes:
 
         # TODO: auto-execute breakdown when querying, then retrieve
-        current_app.logger.debug(f'ccc_collocates :: checking discourseme {discourseme.name}')
+        current_app.logger.debug(f'ccc_collocates :: .. checking discourseme {discourseme.name}')
         corpus_query = get_or_create_query(
             filter_query.corpus, discourseme, collocation.s_break, collocation.p, match_strategy
         )
@@ -138,14 +141,14 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
         subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
 
         # create breakdown
-        current_app.logger.debug('ccc_collocates :: creating breakdowns')
+        current_app.logger.debug('ccc_collocates :: .. creating breakdowns')
         corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
         subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
         corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f2'}, axis=1)
         subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f'}, axis=1)
 
         # create combined breakdown
-        current_app.logger.debug('ccc_collocates :: creating combined breakdowns')
+        current_app.logger.debug('ccc_collocates ::..  creating combined breakdowns')
         df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
         if 'f' not in df.columns:
             df['f'] = 0         # empty queries
@@ -216,7 +219,6 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
     # SAVE TO DATABASE #
     ####################
     current_app.logger.debug(f'ccc_collocates :: saving {len(counts)} items to database')
-
     counts['collocation_id'] = collocation.id
     counts['window'] = window
     collocation_items = counts.reset_index()

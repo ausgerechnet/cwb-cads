@@ -15,6 +15,9 @@ from .users import auth
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
 
+# constellations have exactly one filter-discourseme
+
+
 ################
 # API schemata #
 ################

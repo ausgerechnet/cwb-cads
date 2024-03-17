@@ -120,6 +120,8 @@ def ccc_query(query, return_df=True, p_breakdown=None):
 
     """
 
+    current_app.logger.debug(f'ccc_query :: query {query.id} in corpus {query.corpus.cwb_id}')
+
     matches = Matches.query.filter_by(query_id=query.id)
 
     if not matches.first():
