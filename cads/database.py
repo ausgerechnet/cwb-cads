@@ -3,7 +3,6 @@
 
 from datetime import datetime
 
-# from sqlalchemy_utils import IntRangeType
 from ccc.utils import cqp_escape
 from flask import Blueprint, current_app
 from flask_login import UserMixin
@@ -28,6 +27,28 @@ def get_or_create(model, **kwargs):
         db.session.commit()
 
     return instance
+
+
+def init_db():
+    """clear the existing data and create new tables"""
+
+    db.drop_all()
+    db.create_all()
+
+    # roles
+    admin_role = Role(name='admin', description='admin stuff')
+    db.session.add(admin_role)
+    db.session.commit()
+
+    # users
+    admin = User(username='admin',
+                 password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']),
+                 first_name='Admin',
+                 last_name='Istrinator',
+                 email='admin@istrination.com')
+    admin.roles.append(admin_role)
+    db.session.add(admin)
+    db.session.commit()
 
 
 users_roles = db.Table(
@@ -76,25 +97,6 @@ class User(db.Model, UserMixin):
     constellations = db.relationship('Constellation', backref='user')
     collocations = db.relationship('Collocation', backref='user')
     # keyword_analyses = db.relationship('Keyword', backref='user', lazy=True)
-
-    @property
-    def serialize(self):
-        """Return object data in easily serializeable format
-
-        :return: Dictionary containing the user values
-        :rtype: dict
-
-        """
-
-        return {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'email_confirmed_at': self.email,
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'active': self.active,
-        }
 
 
 class Role(db.Model):
@@ -254,24 +256,6 @@ class Discourseme(db.Model):
         items = sorted(list(items))
         raise NotImplementedError("insert items in db")
 
-    @property
-    def serialize(self):
-        """Return object data in easily serializeable format
-
-        :return: Dictionary containing the discourseme values
-        :rtype: dict
-
-        """
-
-        return {
-            'id': self.id,
-            'name': self.name,
-            'is_topic': False,
-            'user_id': self.user_id,
-            'items': self.get_items(),
-            'collocation_analyses': []
-        }
-
 
 class DiscoursemeTemplateItems(db.Model):
     """Constellation
@@ -307,23 +291,6 @@ class Constellation(db.Model):
 
     collocation_analyses = db.relationship('Collocation', backref='constellation', cascade='all, delete')
     keyword_analyses = db.relationship('Keyword', backref='constellation', cascade='all, delete')
-
-    @property
-    def serialize(self):
-        """Return object data in easily serializeable format
-
-        :return: Dictionary containing the constellation values
-        :rtype: dict
-
-        """
-        discoursemes = self.filter_discoursemes + self.highlight_discoursemes
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'name': self.name,
-            'discoursemes': [discourseme.id for discourseme in discoursemes],
-            'discoursemes_names': [discourseme.name for discourseme in discoursemes]
-        }
 
 
 class Query(db.Model):
@@ -425,37 +392,6 @@ class ConcordanceLines(db.Model):
     contextid = db.Column(db.Integer)
 
 
-# class Concordance(db.Model):
-#     """Concordance
-
-#     """
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     created = db.Column(db.DateTime, default=datetime.utcnow)
-
-#     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
-
-#     p = db.Column(db.Unicode, nullable=False)
-#     context = db.Column(db.Integer)
-#     s_break = db.Column(db.Unicode)
-
-#     lines = db.relationship('ConcordanceLine', backref='concordance', lazy=True)
-
-
-# class ConcordanceLines(db.Model):
-#     """Concordance Lines
-
-#     """
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     modified = db.Column(db.DateTime, default=datetime.utcnow)
-
-#     breakdown_id = db.Column(db.Integer, db.ForeignKey('breakdown.id', ondelete='CASCADE'))
-
-#     item = db.Column(db.Unicode)
-#     freq = db.Column(db.Integer)
-
-
 class Cotext(db.Model):
     """Cotext
 
@@ -538,42 +474,6 @@ class Collocation(db.Model):
 
     items = db.relationship('CollocationItems', backref='collocation', passive_deletes=True)
 
-    @property
-    def serialize(self):
-        """Return object data in easily serializeable format
-
-        :return: Dictionary containing the collocation analysis values
-        :rtype: dict
-
-        """
-
-        # is this on a subcorpus?
-        nqr_cqp = self._query.nqr_cqp
-        if nqr_cqp:
-            if nqr_cqp.startswith("SOC-"):
-                subcorpus = "SOC"
-            else:
-                subcorpus = SubCorpus.query.filter_by(nqr_cqp=nqr_cqp).first().name
-        else:
-            subcorpus = None
-
-        return {
-            'id': self.id,
-            'corpus': self._query.corpus.cwb_id,
-            'subcorpus': subcorpus,
-            'user_id': self.user_id,
-            'topic_id': self._query.discourseme.id,
-            'constellation_id': self.constellation_id,
-            'p_query': 'lemma',
-            'flags_query': '',
-            'escape_query': False,
-            'p_collocation': self.p,
-            's_break': self.s_break,
-            'context': self.context,
-            'items': self._query.discourseme.get_items(),
-            'topic_discourseme': self._query.discourseme.serialize
-        }
-
 
 class CollocationItems(db.Model):
     """
@@ -614,25 +514,6 @@ class Keyword(db.Model):
 
     items = db.relationship('KeywordItems', backref='keyword')
 
-    @property
-    def serialize(self):
-        """Return object data in easily serializeable format
-
-        :return: Dictionary containing the analysis values
-        :rtype: dict
-
-        """
-        corpus = Corpus.query.filter_by(id=self.corpus_id).first()
-        corpus_reference = Corpus.query.filter_by(id=self.corpus_id_reference).first()
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'corpus': corpus.cwb_id,
-            'corpus_reference': corpus_reference.cwb_id,
-            'p': self.p,
-            'p_reference': self.p_reference
-        }
-
 
 class KeywordItems(db.Model):
     """
@@ -649,28 +530,6 @@ class KeywordItems(db.Model):
     N1 = db.Column(db.Integer)
     f2 = db.Column(db.Integer)
     N2 = db.Column(db.Integer)
-
-
-def init_db():
-    """clear the existing data and create new tables"""
-
-    db.drop_all()
-    db.create_all()
-
-    # roles
-    admin_role = Role(name='admin', description='admin stuff')
-    db.session.add(admin_role)
-    db.session.commit()
-
-    # users
-    admin = User(username='admin',
-                 password_hash=generate_password_hash(current_app.config['ADMIN_PASSWORD']),
-                 first_name='Admin',
-                 last_name='Istrinator',
-                 email='admin@istrination.com')
-    admin.roles.append(admin_role)
-    db.session.add(admin)
-    db.session.commit()
 
 
 @bp.cli.command('init')

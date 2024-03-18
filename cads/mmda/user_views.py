@@ -11,6 +11,7 @@ from werkzeug.security import generate_password_hash
 
 from .. import db
 from ..database import User
+from .database import serialize_user
 from .login_views import user_required
 
 user_blueprint = APIBlueprint('user', __name__, url_prefix='/user/<username>')
@@ -30,7 +31,7 @@ def get_user(username):
         log.debug('No such user %s', username)
         return jsonify({'msg': 'No such user'}), 404
 
-    return jsonify(user.serialize), 200
+    return jsonify(serialize_user(user)), 200
 
 
 @user_blueprint.route('/password/', methods=['PUT'])

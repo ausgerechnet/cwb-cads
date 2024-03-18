@@ -23,6 +23,7 @@ from ..semantic_map import (CoordinatesOut, ccc_semmap,
                             ccc_semmap_discoursemes, ccc_semmap_update)
 from .concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut
 from .concordance import ccc_concordance
+from .database import serialize_collocation, serialize_discourseme
 from .login_views import user_required
 
 collocation_blueprint = APIBlueprint('collocation', __name__, url_prefix='/user/<username>/collocation')
@@ -169,7 +170,7 @@ def get_all_collocation(username):
 
     user = User.query.filter_by(username=username).first()
     collocation_analyses = Collocation.query.filter_by(user_id=user.id).all()
-    collocation_list = [collocation.serialize for collocation in collocation_analyses if collocation.serialize['subcorpus'] != 'SOC']
+    collocation_list = [serialize_collocation(collocation) for collocation in collocation_analyses if serialize_collocation(collocation)['subcorpus'] != 'SOC']
 
     return jsonify(collocation_list), 200
 
@@ -198,7 +199,7 @@ def get_collocation(username, collocation):
     if not collocation:
         return jsonify({'msg': 'no such collocation analysis'}), 404
 
-    return jsonify(collocation.serialize), 200
+    return jsonify(serialize_collocation(collocation)), 200
 
 
 @collocation_blueprint.route('/<collocation>/', methods=['DELETE'])
@@ -258,7 +259,7 @@ def get_discoursemes_for_collocation(username, collocation):
         return jsonify({'msg': 'no such analysis'}), 404
 
     collocation_discoursemes = [
-        discourseme.serialize for discourseme in collocation.constellation.highlight_discoursemes
+        serialize_discourseme(discourseme) for discourseme in collocation.constellation.highlight_discoursemes
     ]
 
     return jsonify(collocation_discoursemes), 200

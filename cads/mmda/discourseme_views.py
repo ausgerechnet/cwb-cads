@@ -7,6 +7,7 @@ from flask import jsonify, request
 
 from .. import db
 from ..database import Discourseme, User
+from .database import serialize_discourseme
 from .login_views import user_required
 
 discourseme_blueprint = APIBlueprint('discourseme', __name__, url_prefix='/user/<username>/discourseme')
@@ -39,7 +40,7 @@ def get_discoursemes(username):
     """
 
     user = User.query.filter_by(username=username).first()
-    discoursemes = [discourseme.serialize for discourseme in Discourseme.query.filter_by(user_id=user.id).all()]
+    discoursemes = [serialize_discourseme(discourseme) for discourseme in Discourseme.query.filter_by(user_id=user.id).all()]
 
     return jsonify(discoursemes), 200
 
@@ -54,7 +55,7 @@ def get_discourseme(username, discourseme):
     user = User.query.filter_by(username=username).first()
     discourseme = Discourseme.query.filter_by(id=discourseme, user_id=user.id).first()
 
-    return jsonify(discourseme.serialize), 200
+    return jsonify(serialize_discourseme(discourseme)), 200
 
 
 @discourseme_blueprint.route('/<discourseme>/', methods=['PUT'])

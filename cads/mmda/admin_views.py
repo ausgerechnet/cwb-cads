@@ -10,6 +10,8 @@ from werkzeug.security import generate_password_hash
 from .. import db
 from ..database import (Collocation, Constellation, Discourseme, Keyword, Role,
                         User)
+from .database import (serialize_collocation, serialize_constellation,
+                       serialize_discourseme, serialize_keyword)
 from .login_views import admin_required
 
 admin_blueprint = APIBlueprint('admin', __name__, template_folder='templates', url_prefix='/admin')
@@ -157,7 +159,7 @@ def get_collocation():
     """
 
     items = Collocation.query.all()
-    items_serial = [item.serialize for item in items]
+    items_serial = [serialize_collocation(collocation) for collocation in items]
 
     return jsonify(items_serial), 200
 
@@ -170,7 +172,7 @@ def get_keyword():
     """
 
     items = Keyword.query.all()
-    items_serial = [item.serialize for item in items]
+    items_serial = [serialize_keyword(keyword) for keyword in items]
 
     return jsonify(items_serial), 200
 
@@ -183,7 +185,7 @@ def get_discourseme():
     """
 
     items = Discourseme.query.all()
-    items_serial = [item.serialize for item in items]
+    items_serial = [serialize_discourseme(discourseme) for discourseme in items]
 
     return jsonify(items_serial), 200
 
@@ -196,7 +198,7 @@ def get_constellation():
     """
 
     items = Constellation.query.all()
-    items_serial = [item.serialize for item in items]
+    items_serial = [serialize_constellation(constellation) for constellation in items]
 
     return jsonify(items_serial), 200
 

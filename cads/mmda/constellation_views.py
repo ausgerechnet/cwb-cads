@@ -19,6 +19,7 @@ from ..corpus import ccc_corpus_attributes
 from ..database import Constellation, Corpus, Discourseme, User
 from ..query import ccc_query, get_or_create_query
 from .concordance import ccc_concordance
+from .database import serialize_constellation, serialize_discourseme
 from .login_views import user_required
 
 constellation_blueprint = APIBlueprint('constellation', __name__, url_prefix='/user/<username>/constellation')
@@ -86,7 +87,7 @@ def get_constellation(username, constellation):
     if not constellation:
         return jsonify({'msg': 'No such constellation'}), 404
 
-    return jsonify(constellation.serialize), 200
+    return jsonify(serialize_constellation(constellation)), 200
 
 
 @constellation_blueprint.route('/', methods=['GET'])
@@ -99,7 +100,7 @@ def get_constellations(username):
     # Get User
     user = User.query.filter_by(username=username).first()
     constellations = Constellation.query.filter_by(user_id=user.id).all()
-    constellations_list = [constellation.serialize for constellation in constellations]
+    constellations_list = [serialize_constellation(constellation) for constellation in constellations]
 
     return jsonify(constellations_list), 200
 
@@ -165,7 +166,7 @@ def get_discoursemes_for_constellation(username, constellation):
         return jsonify({'msg': 'No such constellation'}), 404
 
     # Get Discoursemes list from DB
-    constellation_discoursemes = [discourseme.serialize for discourseme in constellation.filter_discoursemes + constellation.highlight_discoursemes]
+    constellation_discoursemes = [serialize_discourseme(discourseme) for discourseme in constellation.filter_discoursemes + constellation.highlight_discoursemes]
 
     return jsonify(constellation_discoursemes), 200
 

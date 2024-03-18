@@ -17,6 +17,7 @@ from ..keyword import ccc_keywords
 from ..semantic_map import CoordinatesOut, ccc_semmap
 from .collocation_views import score_counts
 from .concordance import ccc_concordance
+from .database import serialize_discourseme, serialize_keyword
 from .login_views import user_required
 
 keyword_blueprint = APIBlueprint('keyword', __name__, url_prefix='/user/<username>/keyword')
@@ -122,7 +123,7 @@ def get_all_keyword(username):
 
     user = User.query.filter_by(username=username).first()
     keyword_analyses = Keyword.query.filter_by(user_id=user.id).all()
-    keyword_list = [kw.serialize for kw in keyword_analyses]
+    keyword_list = [serialize_keyword(kw) for kw in keyword_analyses]
 
     return jsonify(keyword_list), 200
 
@@ -152,7 +153,7 @@ def get_keyword(username, keyword):
     if not keyword:
         return jsonify({'msg': 'no such keyword analysis'}), 404
 
-    return jsonify(keyword.serialize), 200
+    return jsonify(serialize_keyword(keyword)), 200
 
 
 @keyword_blueprint.route('/<keyword>/', methods=['DELETE'])
@@ -217,7 +218,7 @@ def get_discoursemes_for_keyword(username, keyword):
         return jsonify({'msg': 'no such keyword analysis'}), 404
 
     keyword_discoursemes = [
-        discourseme.serialize for discourseme in keyword.constellation.highlight_discoursemes
+        serialize_discourseme(discourseme) for discourseme in keyword.constellation.highlight_discoursemes
     ]
 
     return jsonify(keyword_discoursemes), 200
