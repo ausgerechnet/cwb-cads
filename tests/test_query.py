@@ -197,3 +197,29 @@ def test_query_concordance_filter_sort(client, auth):
             tokens.append(t)
 
         assert list(reversed(sorted(tokens))) == tokens
+
+
+def test_query_breakdown(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
+        union = discoursemes[0]
+
+        # create query matches for union
+        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
+                                 content_type='application/json',
+                                 headers=auth_header)
+
+        assert union_query.status_code == 200
+
+        breakdown = client.get(url_for('query.get_breakdown', query_id=union_query.json['id'], p='lemma',
+                                       # page_size=100, page_number=1, filter_item='Beifall',
+                                       # sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=8
+                                       ),
+                               headers=auth_header)
+
+        assert breakdown.status_code == 200
+        # print(breakdown.json)

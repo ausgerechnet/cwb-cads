@@ -13,11 +13,13 @@ from flask import current_app
 from pandas import DataFrame
 
 from . import db
+from .breakdown import ccc_breakdown, BreakdownIn, BreakdownOut
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import CorpusOut
-from .database import Cotext, Discourseme, Matches, Query
+from .database import Cotext, Discourseme, Matches, Query, get_or_create, Breakdown
 from .users import auth
+
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
 
@@ -427,6 +429,9 @@ def execute(id):
     return QueryOut().dump(query), 200
 
 
+#####################
+# QUERY/CONCORDANCE #
+#####################
 @bp.get("/<query_id>/concordance")
 @bp.input(ConcordanceIn, location='query')
 @bp.output(ConcordanceOut)
@@ -533,14 +538,30 @@ def concordance_line(query_id, match_id, query_data):
     return ConcordanceLineOut().dump(concordance['lines'][0]), 200
 
 
-# @bp.get("/<query_id>/breakdown")
-# def get_breakdowns(query_id):
-#     """Get breakdowns of query. Will create if it doesn't exist.
+###################
+# QUERY/BREAKDOWN #
+###################
 
-#     """
+@bp.get("/<query_id>/breakdown")
+@bp.input(BreakdownIn, location='query')
+@bp.output(BreakdownOut)
+@bp.auth_required(auth)
+def get_breakdown(query_id, query_data):
+    """Get breakdown of query. Will create if it doesn't exist.
 
-#     query = db.get_or_404(Query, query_id)
-#     return [BreakdownOut().dump(breakdown) for breakdown in query.breakdowns], 200
+    TODO: pagination needed?
+    """
+
+    p = query_data.get('p')
+    query = db.get_or_404(Query, query_id)
+    if p not in query.corpus.p_atts:
+        msg = f'p-attribute "{p}" does not exist in corpus "{query.corpus.cwb_id}"'
+        current_app.logger.error(msg)
+        abort(404, msg)
+
+    breakdown = get_or_create(Breakdown, query_id=query_id, p=p)
+    ccc_breakdown(breakdown)
+    return BreakdownOut().dump(breakdown), 200
 
 
 # class CollocationIn(Schema):

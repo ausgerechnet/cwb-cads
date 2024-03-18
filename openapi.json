@@ -1,17 +1,6 @@
 {
   "components": {
     "schemas": {
-      "BreakdownIn": {
-        "properties": {
-          "p": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "p"
-        ],
-        "type": "object"
-      },
       "BreakdownItemsOut": {
         "properties": {
           "breakdown_id": {
@@ -705,364 +694,6 @@
         "summary": "Redirect to API docs.",
         "tags": [
           "Easter Eggs"
-        ]
-      }
-    },
-    "/breakdown/query/{query_id}": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/BreakdownOut"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Get all breakdowns of query.",
-        "tags": [
-          "Breakdown"
-        ]
-      },
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "query_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "execute",
-            "required": false,
-            "schema": {
-              "default": true,
-              "type": "boolean"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BreakdownIn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BreakdownOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Create new breakdown for query.",
-        "tags": [
-          "Breakdown"
-        ]
-      }
-    },
-    "/breakdown/{id}": {
-      "delete": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Delete breakdown.",
-        "tags": [
-          "Breakdown"
-        ]
-      },
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BreakdownOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Get breakdown.",
-        "tags": [
-          "Breakdown"
-        ]
-      }
-    },
-    "/breakdown/{id}/execute": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BreakdownOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Execute breakdown: Calculate frequencies of query matches.",
-        "tags": [
-          "Breakdown"
-        ]
-      }
-    },
-    "/breakdown/{id}/items": {
-      "get": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/BreakdownItemsOut"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Get breakdown items.",
-        "tags": [
-          "Breakdown"
         ]
       }
     },
@@ -5465,6 +5096,80 @@
         ]
       }
     },
+    "/query/{query_id}/breakdown": {
+      "get": {
+        "description": "TODO: pagination needed?",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get breakdown of query. Will create if it doesn't exist.",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
     "/query/{query_id}/concordance": {
       "get": {
         "parameters": [
@@ -6375,9 +6080,6 @@
     },
     {
       "name": "Constellation"
-    },
-    {
-      "name": "Breakdown"
     },
     {
       "name": "Collocation"

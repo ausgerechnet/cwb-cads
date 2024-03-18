@@ -2,20 +2,19 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Integer, Nested, String
+from apiflask.fields import Integer, Nested, String
 from ccc import Corpus
 from flask import current_app
 
 from . import db
-from .database import Breakdown, Query
-from .query import ccc_query
-from .users import auth
+# from .database import Breakdown, Query
+# from .users import auth
 
 bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 
 
 def ccc_breakdown(breakdown):
-
+    from .query import ccc_query
     matches_df = ccc_query(breakdown._query)
     corpus = Corpus(breakdown._query.corpus.cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
@@ -55,89 +54,57 @@ class BreakdownOut(Schema):
     items = Nested(BreakdownItemsOut(many=True))
 
 
-#################
-# API endpoints #
-#################
-@bp.get('/<id>')
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def get_breakdown(id):
-    """Get breakdown.
+# #################
+# # API endpoints #
+# #################
+# @bp.get('/<id>')
+# @bp.output(BreakdownOut)
+# @bp.auth_required(auth)
+# def get_breakdown(id):
+#     """Get breakdown.
 
-    """
+#     """
 
-    breakdown = db.get_or_404(Breakdown, id)
-    return BreakdownOut().dump(breakdown), 200
-
-
-@bp.delete('/<id>')
-@bp.auth_required(auth)
-def delete_breakdown(id):
-    """Delete breakdown.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-    db.session.delete(breakdown)
-    db.session.commit()
-
-    return 'Deletion successful.', 200
+#     breakdown = db.get_or_404(Breakdown, id)
+#     return BreakdownOut().dump(breakdown), 200
 
 
-@bp.post('/<id>/execute')
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def execute(id):
-    """Execute breakdown: Calculate frequencies of query matches.
+# @bp.delete('/<id>')
+# @bp.auth_required(auth)
+# def delete_breakdown(id):
+#     """Delete breakdown.
 
-    """
+#     """
 
-    breakdown = db.get_or_404(Breakdown, id)
-    ccc_breakdown(breakdown)
+#     breakdown = db.get_or_404(Breakdown, id)
+#     db.session.delete(breakdown)
+#     db.session.commit()
 
-    return BreakdownOut().dump(breakdown), 200
-
-
-@bp.get("/<id>/items")
-@bp.output(BreakdownItemsOut(many=True))
-@bp.auth_required(auth)
-def get_breakdown_items(id):
-    """Get breakdown items.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-
-    return [BreakdownItemsOut().dump(item) for item in breakdown.items], 200
+#     return 'Deletion successful.', 200
 
 
-# QUERY
-@bp.post('/query/<query_id>')
-@bp.input(BreakdownIn)
-@bp.input({'execute': Boolean(load_default=True)}, location='query')
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def create(query_id, json_data, query_data):
-    """Create new breakdown for query.
+# @bp.post('/<id>/execute')
+# @bp.output(BreakdownOut)
+# @bp.auth_required(auth)
+# def execute(id):
+#     """Execute breakdown: Calculate frequencies of query matches.
 
-    """
-    breakdown = Breakdown(query_id=query_id, **json_data)
-    db.session.add(breakdown)
-    db.session.commit()
+#     """
 
-    if query_data['execute']:
-        ccc_breakdown(breakdown)
+#     breakdown = db.get_or_404(Breakdown, id)
+#     ccc_breakdown(breakdown)
 
-    return BreakdownOut().dump(breakdown), 200
+#     return BreakdownOut().dump(breakdown), 200
 
 
-@bp.get('/query/<query_id>')
-@bp.output(BreakdownOut(many=True))
-@bp.auth_required(auth)
-def get_breakdowns(query_id):
-    """Get all breakdowns of query.
+# @bp.get("/<id>/items")
+# @bp.output(BreakdownItemsOut(many=True))
+# @bp.auth_required(auth)
+# def get_breakdown_items(id):
+#     """Get breakdown items.
 
-    """
+#     """
 
-    query = db.get_or_404(Query, query_id)
-    return [BreakdownOut().dump(breakdown) for breakdown in query.breakdowns], 200
+#     breakdown = db.get_or_404(Breakdown, id)
+
+#     return [BreakdownItemsOut().dump(item) for item in breakdown.items], 200
