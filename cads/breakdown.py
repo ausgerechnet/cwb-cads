@@ -5,27 +5,50 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, Nested, String
 from ccc import Corpus
 from flask import current_app
+from pandas import DataFrame
 
 from . import db
-# from .database import Breakdown, Query
+from .database import BreakdownItems
+
 # from .users import auth
 
 bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 
 
-def ccc_breakdown(breakdown):
-    from .query import ccc_query
-    matches_df = ccc_query(breakdown._query)
-    corpus = Corpus(breakdown._query.corpus.cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
+def ccc_breakdown(breakdown, return_df=True):
 
-    matches = corpus.subcorpus(df_dump=matches_df, overwrite=False)
-    breakdown_df = matches.breakdown(p_atts=[breakdown.p])
-    breakdown_df['breakdown_id'] = breakdown.id
-    breakdown_df.to_sql("breakdown_items", con=db.engine, if_exists='append')
-    db.session.commit()
+    current_app.logger.debug(f'ccc_breakdown :: breakdown {breakdown._query.id} in corpus {breakdown._query.corpus.cwb_id}')
+
+    breakdown_items = BreakdownItems.query.filter_by(breakdown_id=breakdown.id)
+
+    if not breakdown_items.first():
+
+        # count matches
+        from .query import ccc_query
+        current_app.logger.debug('ccc_breakdown :: counting matches')
+        matches_df = ccc_query(breakdown._query, return_df=True)
+        corpus = Corpus(breakdown._query.corpus.cwb_id,
+                        cqp_bin=current_app.config['CCC_CQP_BIN'],
+                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                        data_dir=current_app.config['CCC_DATA_DIR'])
+        matches = corpus.subcorpus(df_dump=matches_df, overwrite=False)
+
+        # save breakdown
+        breakdown_df = matches.breakdown(p_atts=[breakdown.p])
+        breakdown_df['breakdown_id'] = breakdown.id
+        current_app.logger.debug(f"ccc_breakdown :: saving {len(breakdown_df)} breakdown items to database")
+        breakdown_df.to_sql("breakdown_items", con=db.engine, if_exists='append')
+        db.session.commit()
+        current_app.logger.debug("ccc_breakdown :: saved to database")
+
+    elif return_df:
+        current_app.logger.debug("ccc_breakdown :: getting breakdown items from database")
+        breakdown_df = DataFrame([vars(s) for s in breakdown.items], columns=['match', 'matchend']).set_index(['match', 'matchend'])
+        current_app.logger.debug(f"ccc_breakdown :: got {len(breakdown_df)} matches from database")
+
+    else:
+        current_app.logger.debug("ccc_breakdown :: breakdown already exist in database")
+        breakdown_df = None
 
     return breakdown_df
 

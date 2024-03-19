@@ -2,19 +2,19 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Float, Integer, Nested, String
+from apiflask.fields import Float, Integer, Nested, String
+from apiflask.validators import OneOf
 from association_measures import measures
 from ccc import Corpus
 from flask import current_app
 from pandas import DataFrame, concat, read_sql
 
 from . import db
-from .database import Collocation, CollocationItems, CotextLines, Discourseme
-from .query import (QueryOut, ccc_query, get_or_create_cotext,
-                    get_or_create_query)
-from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
-                           ccc_semmap_discoursemes, ccc_semmap_update)
-from .users import auth
+from .database import CollocationItems, CotextLines, ItemScore
+# from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
+#                            ccc_semmap_discoursemes, ccc_semmap_update)
+# from .users import auth
+from .utils import AMS_DICT
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
 
@@ -29,42 +29,19 @@ def score_counts(counts, cut_off=200, min_freq=3, show_negative=False, rename=Tr
 
     if rename:
 
-        ams_dict = {
-            # preferred: LRC
-            'conservative_log_ratio': 'Conservative LR',
-            # frequencies
-            'O11': 'obs.',
-            'E11': 'exp.',
-            'ipm': 'IPM (obs.)',
-            'ipm_expected': 'IPM (exp.)',
-            # asymptotic hypothesis tests
-            'log_likelihood': 'LLR',
-            'z_score': 'z-score',
-            't_score': 't-score',
-            'simple_ll': 'simple LL',
-            # point estimates of association strength
-            'dice': 'Dice',
-            'log_ratio': 'log-ratio',
-            'min_sensitivity': 'min. sensitivity',
-            'liddell': 'Liddell',
-            # information theory
-            'mutual_information': 'MI',
-            'local_mutual_information': 'local MI',
-        }
-
         # select columns
-        df = df[list(ams_dict.keys())]
+        df = df[list(AMS_DICT.keys())]
 
         # select items (top cut_off of each AM)
         items = set()
-        for am in ams_dict.keys():
+        for am in AMS_DICT.keys():
             if am not in ['O11', 'E11', 'ipm', 'ipm_expected']:
                 df = df.sort_values(by=[am, 'item'], ascending=[False, True])
                 items = items.union(set(df.head(cut_off).index))
         df = df.loc[list(items)]
 
         # rename columns
-        df = df.rename(ams_dict, axis=1)
+        df = df.rename(AMS_DICT, axis=1)
 
     elif cut_off:
         raise NotImplementedError("cannot use cut-off value when not rename=True")
@@ -72,7 +49,7 @@ def score_counts(counts, cut_off=200, min_freq=3, show_negative=False, rename=Tr
     return df
 
 
-def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
+def get_or_create_counts(collocation):
     """get CollocationItems for collocation analysis and given window
 
     (1) get context of collocation._query
@@ -82,16 +59,27 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
     (3) count items and discoursemes separately
 
     """
+    from .query import (ccc_query, get_or_create_cotext,
+                        get_or_create_query_discourseme)
 
-    window = collocation.context if window is None else window
+    current_app.logger.debug("get_or_create_counts :: getting counts")
+    # TODO only create if necessary!
+
+    window = collocation.window
 
     # remove existing collocation items from database
-    CollocationItems.query.filter_by(collocation_id=collocation.id, window=window).delete()
-    db.session.commit()
+    old = CollocationItems.query.filter_by(collocation_id=collocation.id)
+    if old.first():
+        current_app.logger.debug("get_or_create_counts :: counts already exist")
+        return
+        # current_app.logger.debug("deleting old ones")
+        # CollocationItems.query.filter_by(collocation_id=collocation.id).delete()
+        # current_app.logger.debug("deleted")
+        # db.session.commit()
 
     # get relevant objects
     filter_query = collocation._query
-    highlight_discoursemes = collocation.constellation.highlight_discoursemes
+    highlight_discoursemes = collocation.constellation.highlight_discoursemes if collocation.constellation else []
     match_strategy = filter_query.match_strategy
 
     corpus = Corpus(filter_query.corpus.cwb_id,
@@ -99,35 +87,34 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
 
-    ###############
-    # GET CONTEXT #
-    ###############
-    current_app.logger.debug(f'ccc_collocates :: getting context of query {filter_query.id}')
-    cotext = get_or_create_cotext(filter_query, window, collocation.s_break, return_df=True)
+    ###################
+    # (1) GET CONTEXT #
+    ###################
+    current_app.logger.debug(f'get_or_create_counts :: getting context of query {filter_query.id}')
+    cotext = get_or_create_cotext(filter_query, window, collocation._query.s, return_df=True)
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
                                             CotextLines.offset <= window,
                                             CotextLines.offset >= -window)
     df_cooc = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True)
+    discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # filter can only match in context
     df_cooc = df_cooc.drop_duplicates(subset='cpos')
 
-    #################################
-    # GET HIGHLIGHTING_DISCOURSEMES #
-    #################################
+    #####################################
+    # (2) GET HIGHLIGHTING_DISCOURSEMES #
+    #####################################
     # for each discourseme (including filter):
     # - get cpos consumed within and outside context
     # - get frequency breakdown within and outside context
-    current_app.logger.debug('ccc_collocates :: getting highlighting discoursemes')
-
-    discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # filter can only match in context
+    current_app.logger.debug('get_or_create_counts :: getting highlighting discoursemes')
 
     # get or create subcorpus of context
     highlight_breakdowns = list()
     for discourseme in highlight_discoursemes:
 
         # TODO: auto-execute breakdown when querying, then retrieve
-        current_app.logger.debug(f'ccc_collocates :: .. checking discourseme {discourseme.name}')
-        corpus_query = get_or_create_query(
-            filter_query.corpus, discourseme, collocation.s_break, collocation.p, match_strategy
+        current_app.logger.debug(f'get_or_create_counts :: .. checking discourseme {discourseme.name}')
+        corpus_query = get_or_create_query_discourseme(
+            filter_query.corpus, discourseme, collocation.s_break, match_strategy
         )
         corpus_matches_df = ccc_query(corpus_query, p_breakdown=collocation.p).reset_index()
         corpus_matches_df['match_in_context'] = corpus_matches_df['match'].isin(df_cooc['cpos'])
@@ -140,14 +127,14 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
         subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
 
         # create breakdown
-        current_app.logger.debug('ccc_collocates :: .. creating breakdowns')
+        current_app.logger.debug('get_or_create_counts :: .. creating breakdowns')
         corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
         subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
         corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f2'}, axis=1)
         subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f'}, axis=1)
 
         # create combined breakdown
-        current_app.logger.debug('ccc_collocates ::..  creating combined breakdowns')
+        current_app.logger.debug('get_or_create_counts :: ..  creating combined breakdowns')
         df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
         if 'f' not in df.columns:
             df['f'] = 0         # empty queries
@@ -158,9 +145,9 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
         # update set of cpos of highlight_discoursemes
         discourseme_cpos.update(corpus_matches.matches())
 
-    ################################
-    # COUNT ITEMS AND DISCOURSEMES #
-    ################################
+    ####################################
+    # (3) COUNT ITEMS AND DISCOURSEMES #
+    ####################################
     current_app.logger.debug(f'ccc_collocates :: counting items in context for window {window}')
     f1_discoursemes = len(df_cooc)           # for discourseme associations
     df_cooc = df_cooc.loc[~df_cooc['cpos'].isin(discourseme_cpos)]
@@ -188,7 +175,7 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
 
     # we score once here in order to only save relevant items
     current_app.logger.debug(f'ccc_collocates :: scoring {len(counts)} items')
-    scores = score_counts(counts, cut_off=cut_off, min_freq=min_freq)
+    scores = score_counts(counts, cut_off=None, min_freq=0)
     counts = counts.loc[list(scores.index)]
     current_app.logger.debug(f'ccc_collocates :: selected {len(counts)} items')
 
@@ -214,17 +201,51 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
         disc_counts = disc_counts.set_index('item')
         counts = concat([counts, disc_counts])
 
-    ####################
-    # SAVE TO DATABASE #
-    ####################
+    ###############
+    # SAVE COUNTS #
+    ###############
     current_app.logger.debug(f'ccc_collocates :: saving {len(counts)} items to database')
     counts['collocation_id'] = collocation.id
-    counts['window'] = window
     collocation_items = counts.reset_index()
     collocation_items.to_sql('collocation_items', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
-    return counts
+    ###############
+    # SAVE SCORES #
+    ###############
+    counts = DataFrame([vars(s) for s in collocation.items], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
+    scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'collocation_item_id'}, axis=1)
+    scores['collocation_id'] = collocation.id
+    scores.to_sql('item_score', con=db.engine, if_exists='append', index=False)
+
+
+def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number):
+
+    get_or_create_counts(collocation)
+
+    scores = ItemScore.query.filter_by(collocation_id=collocation.id, measure=sort_by)
+    if sort_order == 'ascending':
+        scores = scores.order_by(ItemScore.score)
+    elif sort_order == 'descending':
+        scores = scores.order_by(ItemScore.score.desc())
+    scores = scores.paginate(page=page_number, per_page=page_size)
+    nr_items = scores.total
+    page_count = scores.pages
+
+    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
+    items = [CollocationItemOut().dump(CollocationItems.query.filter_by(id=id).first()) for id in df_scores['collocation_item_id']]
+
+    return {
+        'id': collocation.id,
+        'p': collocation.p,
+        'window': collocation.window,
+        'nr_items': nr_items,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count,
+        'items': items
+    }
 
 
 # def ccc_collocates_conflate(collocation):
@@ -262,187 +283,172 @@ def ccc_collocates(collocation, window=None, cut_off=500, min_freq=3):
 #     db.session.commit()
 
 
+################
+# API schemata #
+################
 class CollocationIn(Schema):
 
-    # query_id = Integer(required=True)
-    constellation_id = Integer()
+    constellation_id = Integer(required=False)
+    sem_map_id = Integer(required=False)
+
     p = String(required=True)
-    s_break = String(required=True)
-    context = Integer(required=True)
+    window = Integer(required=True)
+
+    sort_order = String(load_default='descending', required=False, validate=OneOf(['ascending', 'descending']))
+    sort_by = String(load_default='conservative_log_ratio', required=False, validate=OneOf(AMS_DICT.keys()))
+    page_size = Integer(load_default=10, required=False)
+    page_number = Integer(load_default=1, required=False)
+
+
+class CollocationScoreOut(Schema):
+
+    measure = String()
+    score = Float()
+
+
+class CollocationItemOut(Schema):
+
+    item = String()
+    scores = Nested(CollocationScoreOut(many=True))
 
 
 class CollocationOut(Schema):
 
     id = Integer()
-    _query = Nested(QueryOut)
     p = String()
-    s_break = String()
-    context = Integer()
-    sem_map_id = Integer()
-    constellation_id = Integer()
-
-
-class CollocationItemsOutMMDA(Schema):
-
-    id = Integer()
-    collocation_id = Integer()
-    item = String()
-    ams = None
-
-
-class CollocationItemsOut(Schema):
-
-    collocation_id = Integer()
     window = Integer()
-    discourseme_id = Integer()
-    id = Integer()
-    item = String()
-    ams = String()
-    score = Float()
+
+    nr_items = Integer()
+    page_size = Integer()
+    page_number = Integer()
+    page_count = Integer()
+
+    items = Nested(CollocationItemOut(many=True))
 
 
-@bp.get('/')
-@bp.output(CollocationOut(many=True))
-@bp.auth_required(auth)
-def get_collocations():
-    """Get all collocations.
+# #################
+# # API endpoints #
+# #################
+# @bp.get('/')
+# @bp.output(CollocationOut(many=True))
+# @bp.auth_required(auth)
+# def get_collocations():
+#     """Get all collocations.
 
-    """
+#     """
 
-    collocations = Collocation.query.all()
+#     collocations = Collocation.query.all()
 
-    return [CollocationOut().dump(collocation) for collocation in collocations], 200
-
-
-@bp.get('/<id>')
-@bp.output(CollocationOut)
-@bp.auth_required(auth)
-def get_collocation(id):
-    """Get collocation.
-
-    """
-
-    collocation = db.get_or_404(Collocation, id)
-
-    return CollocationOut().dump(collocation), 200
+#     return [CollocationOut().dump(collocation) for collocation in collocations], 200
 
 
-@bp.delete('/<id>')
-@bp.auth_required(auth)
-def delete_collocation(id):
-    """Delete collocation.
+# @bp.get('/<id>')
+# @bp.output(CollocationOut)
+# @bp.auth_required(auth)
+# def get_collocation(id):
+#     """Get collocation.
 
-    """
+#     """
 
-    collocation = db.get_or_404(Collocation, id)
-    db.session.delete(collocation)
-    db.session.commit()
+#     collocation = db.get_or_404(Collocation, id)
 
-    return 'Deletion successful.', 200
-
-
-@bp.post('/<id>/collocates')
-@bp.output(CollocationOut)
-@bp.auth_required(auth)
-def execute(id):
-    """Execute collocation: Create collocation items.
-
-    """
-
-    collocation = db.get_or_404(Collocation, id)
-    ccc_collocates(collocation, cut_off=None, min_freq=2)
-
-    return CollocationOut().dump(collocation), 200
+#     return CollocationOut().dump(collocation), 200
 
 
-@bp.get("/<id>/collocates")
-# @bp.output(CollocationItemsOut)
-@bp.auth_required(auth)
-def get_collocation_items(id):
-    """Get collocation items.
+# @bp.delete('/<id>')
+# @bp.auth_required(auth)
+# def delete_collocation(id):
+#     """Delete collocation.
 
-    """
+#     """
 
-    collocation = db.get_or_404(Collocation, id)
-    counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'discourseme_id', 'f', 'f1', 'f2', 'N'])
-    df_collocates = score_counts(counts, cut_off=None, min_freq=1, show_negative=False, rename=False)
-    df_collocates = counts[['item', 'window', 'discourseme_id']].join(df_collocates, how='left')
+#     collocation = db.get_or_404(Collocation, id)
+#     db.session.delete(collocation)
+#     db.session.commit()
 
-    # TODO: return long format (CollocationItemsOut)
-
-    return df_collocates.reset_index().to_json(orient='records'), 200
+#     return 'Deletion successful.', 200
 
 
-@bp.post('/<id>/semantic_map/')
-@bp.output(SemanticMapOut)
-@bp.auth_required(auth)
-def create_semantic_map(id):
-    """Create new semantic map for collocation items.
+# @bp.post('/<id>/collocates')
+# @bp.output(CollocationOut)
+# @bp.auth_required(auth)
+# def execute(id):
+#     """Execute collocation: Create collocation items.
 
-    """
+#     """
 
-    collocation = db.get_or_404(Collocation, id)
-    embeddings = collocation._query.corpus.embeddings
+#     collocation = db.get_or_404(Collocation, id)
+#     ccc_collocates(collocation, cut_off=None, min_freq=2)
 
-    coordinates = ccc_semmap(collocation, embeddings)
-
-    return [CoordinatesOut().dump(c) for c in coordinates]
+#     return CollocationOut().dump(collocation), 200
 
 
-@bp.get('/<id>/semantic_map/')
-@bp.output(SemanticMapOut)
-@bp.auth_required(auth)
-def get_semantic_map(id):
-    """Get semantic map of collocation analysis.
+# @bp.get("/<id>/collocates")
+# # @bp.output(CollocationItemsOut)
+# @bp.auth_required(auth)
+# def get_collocation_items(id):
+#     """Get collocation items.
 
-    TODO: allow many-to-many relationship
+#     """
 
-    """
+#     collocation = db.get_or_404(Collocation, id)
+#     counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'discourseme_id', 'f', 'f1', 'f2', 'N'])
+#     df_collocates = score_counts(counts, cut_off=None, min_freq=1, show_negative=False, rename=False)
+#     df_collocates = counts[['item', 'window', 'discourseme_id']].join(df_collocates, how='left')
 
-    collocation = db.get_or_404(Collocation, id)
-    return SemanticMapOut().dump(collocation.semantic_map), 200
+#     # TODO: return long format (CollocationItemsOut)
 
-
-@bp.put('/<id>/auto-associate')
-@bp.output(CollocationOut)
-@bp.auth_required(auth)
-def associate_discoursemes(id):
-
-    collocation = db.get_or_404(Collocation, id)
-    collocation_items = [item.item for item in collocation.items]
-    discoursemes = Discourseme.query.all()
-    for discourseme in discoursemes:
-        if len(set(discourseme.get_items()).intersection(collocation_items)) > 0:
-            if discourseme not in collocation.constellation.highlight_discoursemes and discourseme not in collocation.constellation.filter_discoursemes:
-                collocation.constellation.highlight_discoursemes.append(discourseme)
-    db.session.commit()
-
-    counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
-    for window in set(counts['window']):
-        current_app.logger.info(f'Updating collocation :: window {window}')
-        ccc_collocates(collocation, window)
-
-    ccc_semmap_update(collocation)
-    ccc_semmap_discoursemes(collocation)
+#     return df_collocates.reset_index().to_json(orient='records'), 200
 
 
-# QUERY
-@bp.post('/query/<query_id>')
-@bp.input(CollocationIn)
-@bp.input({'execute': Boolean(load_default=True),
-           'semantic_map_id': Integer(load_default=None)}, location='query')
-@bp.output(CollocationOut)
-@bp.auth_required(auth)
-def create(query_id, json_data, query_data):
-    """Create new collocation analysis.
+# @bp.post('/<id>/semantic_map/')
+# @bp.output(SemanticMapOut)
+# @bp.auth_required(auth)
+# def create_semantic_map(id):
+#     """Create new semantic map for collocation items.
 
-    """
+#     """
 
-    collocation = Collocation(query_id=query_id, user_id=auth.current_user.id, **json_data, semantic_map_id=query_data['semantic_map_id'])
-    db.session.add(collocation)
-    db.session.commit()
+#     collocation = db.get_or_404(Collocation, id)
+#     embeddings = collocation._query.corpus.embeddings
 
-    if query_data['execute']:
-        ccc_collocates(collocation)
+#     coordinates = ccc_semmap(collocation, embeddings)
 
-    return CollocationOut().dump(collocation), 200
+#     return [CoordinatesOut().dump(c) for c in coordinates]
+
+
+# @bp.get('/<id>/semantic_map/')
+# @bp.output(SemanticMapOut)
+# @bp.auth_required(auth)
+# def get_semantic_map(id):
+#     """Get semantic map of collocation analysis.
+
+#     TODO: allow many-to-many relationship
+
+#     """
+
+#     collocation = db.get_or_404(Collocation, id)
+#     return SemanticMapOut().dump(collocation.semantic_map), 200
+
+
+# @bp.put('/<id>/auto-associate')
+# @bp.output(CollocationOut)
+# @bp.auth_required(auth)
+# def associate_discoursemes(id):
+
+#     collocation = db.get_or_404(Collocation, id)
+#     collocation_items = [item.item for item in collocation.items]
+#     discoursemes = Discourseme.query.all()
+#     for discourseme in discoursemes:
+#         if len(set(discourseme.get_items()).intersection(collocation_items)) > 0:
+#             if discourseme not in collocation.constellation.highlight_discoursemes and discourseme not in collocation.constellation.filter_discoursemes:
+#                 collocation.constellation.highlight_discoursemes.append(discourseme)
+#     db.session.commit()
+
+#     counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
+#     for window in set(counts['window']):
+#         current_app.logger.info(f'Updating collocation :: window {window}')
+#         ccc_collocates(collocation, window)
+
+#     ccc_semmap_update(collocation)
+#     ccc_semmap_discoursemes(collocation)

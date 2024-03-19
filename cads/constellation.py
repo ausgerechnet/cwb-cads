@@ -9,7 +9,7 @@ from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
 from .database import Constellation, Corpus, Discourseme
 from .discourseme import DiscoursemeOut
-from .query import query_discourseme
+from .query import get_or_create_query_discourseme
 from .users import auth
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
@@ -146,7 +146,7 @@ def concordance_lines(id, corpus_id, query_data):
     corpus = db.get_or_404(Corpus, corpus_id)
     # TODO: constellations should really only have one filter_discourseme
     filter_discourseme = constellation.filter_discoursemes[0]
-    query_id = query_discourseme(filter_discourseme, corpus).id
+    query_id = get_or_create_query_discourseme(corpus, filter_discourseme).id
 
     # append highlight and discoursemes
     query_data['highlight_discourseme_ids'] = query_data.get('highlight_discourseme_ids') + \

@@ -223,3 +223,31 @@ def test_query_breakdown(client, auth):
 
         assert breakdown.status_code == 200
         # print(breakdown.json)
+
+
+def test_query_collocation(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
+        union = discoursemes[0]
+
+        # create query matches for union
+        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
+                                 content_type='application/json',
+                                 headers=auth_header)
+
+        assert union_query.status_code == 200
+
+        collocation = client.get(url_for('query.get_collocation',
+                                         query_id=union_query.json['id'], p='lemma', window=10,
+                                         page_size=100, page_number=1,
+                                         sort_by='conservative_log_ratio', sort_order='ascending'
+                                         ),
+                                 headers=auth_header)
+
+        assert collocation.status_code == 200
+        from pprint import pprint
+        pprint(collocation.json)

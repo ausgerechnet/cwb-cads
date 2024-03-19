@@ -95,7 +95,7 @@ class User(db.Model, UserMixin):
 
     discoursemes = db.relationship('Discourseme', backref='user')
     constellations = db.relationship('Constellation', backref='user')
-    collocations = db.relationship('Collocation', backref='user')
+    # collocations = db.relationship('Collocation', backref='user')
     # keyword_analyses = db.relationship('Keyword', backref='user', lazy=True)
 
 
@@ -460,12 +460,11 @@ class Collocation(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     p = db.Column(db.Unicode(255), nullable=False)
-    s_break = db.Column(db.Unicode(255), nullable=False)
-    context = db.Column(db.Integer, nullable=True)
+    # s_break = db.Column(db.Unicode(255), nullable=False)
+    window = db.Column(db.Integer, nullable=True)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
@@ -482,16 +481,29 @@ class CollocationItems(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'))
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
 
     item = db.Column(db.Unicode)
-    window = db.Column(db.Integer)
-    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id'))
+    # window = db.Column(db.Integer)
+    # discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id'))
 
     f = db.Column(db.Integer)
     f1 = db.Column(db.Integer)
     f2 = db.Column(db.Integer)
     N = db.Column(db.Integer)
+
+    scores = db.relationship("ItemScore", backref='collocation_items', cascade='all, delete')
+
+
+class ItemScore(db.Model):
+    """
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_items.id', ondelete='CASCADE'))
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
+    measure = db.Column(db.Unicode)
+    score = db.Column(db.Float)
 
 
 class Keyword(db.Model):
@@ -500,7 +512,7 @@ class Keyword(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
+    # user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     corpus_id = db.Column(db.Unicode(255), nullable=False)

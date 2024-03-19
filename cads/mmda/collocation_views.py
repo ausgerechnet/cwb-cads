@@ -18,7 +18,7 @@ from ..corpus import ccc_corpus_attributes
 from ..database import (Breakdown, Collocation, CollocationItems,
                         Constellation, Coordinates, Corpus, Discourseme, Query,
                         SubCorpus, User)
-from ..query import ccc_query, get_or_create_query
+from ..query import ccc_query, get_or_create_query_discourseme
 from ..semantic_map import (CoordinatesOut, ccc_semmap,
                             ccc_semmap_discoursemes, ccc_semmap_update)
 from .concordance import ConcordanceLinesOutMMDA as ConcordanceLinesOut
@@ -445,11 +445,10 @@ def get_collocate_for_collocation(username, collocation):
             db.session.add(subcorpus)
 
         # Query
-        query = get_or_create_query(
+        query = get_or_create_query_discourseme(
             corpus=collocation._query.corpus,
             discourseme=collocation._query.discourseme,
-            subcorpus_name=nqr_name,
-            cqp_query=collocation._query.cqp_query
+            subcorpus_name=nqr_name
         )
         ccc_query(query, return_df=False)
 

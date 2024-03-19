@@ -17,7 +17,7 @@ from pandas import DataFrame
 from .. import db
 from ..corpus import ccc_corpus_attributes
 from ..database import Constellation, Corpus, Discourseme, User
-from ..query import ccc_query, get_or_create_query
+from ..query import ccc_query, get_or_create_query_discourseme
 from .concordance import ccc_concordance
 from .database import serialize_constellation, serialize_discourseme
 from .login_views import user_required
@@ -289,7 +289,7 @@ def get_constellation_associations(username, constellation):
 
     # parameters
     corpus_name = request.args.get('corpus', None)
-    p_query = request.args.get('p_query', 'lemma')
+    # p_query = request.args.get('p_query', 'lemma')
     context_break = request.args.get('s_break', 'text')
     match_strategy = 'longest'
 
@@ -303,7 +303,7 @@ def get_constellation_associations(username, constellation):
     current_app.logger.debug('Get constellation association :: collecting matches')
     context_ids = dict()
     for discourseme in constellation.highlight_discoursemes + constellation.filter_discoursemes:
-        query = get_or_create_query(corpus, discourseme, context_break, p_query, match_strategy)
+        query = get_or_create_query_discourseme(corpus, discourseme, context_break, match_strategy)
         matches_df = ccc_query(query)
         s_att = crps.dump2satt(matches_df, context_break)
         context_ids[f'{discourseme.name} (ID: {discourseme.id})'] = set(s_att[f'{context_break}_cwbid'])

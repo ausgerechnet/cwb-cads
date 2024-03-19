@@ -9,14 +9,12 @@ from glob import glob
 import click
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, Nested, String
-from flask import redirect, url_for
 from pandas import DataFrame, read_csv
 
 from . import db
-from .concordance import ConcordanceIn, ConcordanceOut
 from .database import (Corpus, Discourseme, DiscoursemeTemplateItems, User,
                        get_or_create)
-from .query import QueryOut, query_discourseme
+from .query import QueryOut, get_or_create_query_discourseme
 from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
@@ -181,7 +179,7 @@ def get_query(id, corpus_id):
 
     discourseme = db.get_or_404(Discourseme, id)
     corpus = db.get_or_404(Corpus, id)
-    query = query_discourseme(discourseme, corpus)
+    query = get_or_create_query_discourseme(corpus, discourseme)
 
     return QueryOut().dump(query), 200
 
