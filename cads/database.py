@@ -120,7 +120,7 @@ class Corpus(db.Model):
     language = db.Column(db.Unicode)
     register = db.Column(db.Unicode)
     description = db.Column(db.Unicode)
-    embeddings = db.Column(db.Unicode)  # TODO
+    embeddings = db.Column(db.Unicode)  # TODO → attributes
 
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
     attributes = db.relationship('CorpusAttributes', backref='corpus', passive_deletes=True, cascade='all, delete')
@@ -145,8 +145,9 @@ class CorpusAttributes(db.Model):
     """
     id = db.Column(db.Integer, primary_key=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
-    attribute = db.Column(db.Unicode())  # p or s
-    level = db.Column(db.Unicode())  # text, p, s, ...
+    attribute = db.Column(db.Unicode)  # p or s
+    level = db.Column(db.Unicode)  # text, p, s, ...
+    embeddings = db.Column(db.Integer, db.ForeignKey('embeddings.id'))  # only for p-attributes
 
 
 class SubCorpus(db.Model):
@@ -167,15 +168,16 @@ class SubCorpus(db.Model):
     queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
 
 
-# class Embeddings(db.Model):
-#     """Embeddings
+class Embeddings(db.Model):
+    """Embeddings
 
-#     """
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.Unicode)
-#     language = db.Column(db.Unicode)
-#     register = db.Column(db.Unicode)
-#     p = db.Column(db.Unicode)
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    path = db.Column(db.Unicode)
+    name = db.Column(db.Unicode)
+    description = db.Column(db.Unicode)
+    language = db.Column(db.Unicode)
+    register = db.Column(db.Unicode)
 
 
 class Segmentation(db.Model):
