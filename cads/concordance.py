@@ -118,6 +118,7 @@ def ccc_concordance(focus_query,
 
     """
 
+    current_app.logger.debug("ccc_concordance")
     # sets to list
     filter_queries = list(filter_queries)
     highlight_queries = list(highlight_queries)
@@ -138,6 +139,7 @@ def ccc_concordance(focus_query,
 
     # get specified match
     if match_id:
+        current_app.logger.debug(f"ccc_concordance :: getting match {match_id}")
         matches = Matches.query.filter_by(match=match_id, query_id=focus_query.id).all()
         nr_lines = 1
         page_count = 1
@@ -151,8 +153,8 @@ def ccc_concordance(focus_query,
         if len(filter_queries) > 0:
 
             from .query import get_or_create_cotext
-
-            # TODO learn proper SQLalchemy
+            current_app.logger.debug("ccc_concordance :: filtering: getting matches")
+            # TODO learn proper SQLalchemy (aliased anti-join)
             matches_tmp = matches.all()
             match_pos = set([m.match for m in matches_tmp])
 
