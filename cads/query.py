@@ -92,7 +92,7 @@ def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='lo
     """
 
     # TODO run only on subcorpus
-    current_app.logger.debug(f'query_item :: querying corpus "{corpus.cwb_id}" for item "{item}"')
+    current_app.logger.debug(f'get_or_create_query :: item "{item}" in corpus "{corpus.cwb_id}"')
 
     # try to retrieve
     cqp_query = format_cqp_query([item], p_query=p, escape=escape)
@@ -105,6 +105,7 @@ def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='lo
 
     # create query
     if not query:
+        current_app.logger.debug('get_or_create_query :: querying')
         query = Query(
             corpus_id=corpus.id,
             cqp_query=cqp_query,
@@ -124,7 +125,7 @@ def get_or_create_query_discourseme(corpus, discourseme, s=None, match_strategy=
     """
 
     # TODO run only on subcorpus
-    current_app.logger.debug(f'query_discourseme :: querying corpus "{corpus.cwb_id}" for discourseme "{discourseme.name}"')
+    current_app.logger.debug(f'get_or_create_query :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
 
     # try to retrieve
     q = [q for q in discourseme.queries if q.corpus_id == corpus.id]
@@ -135,7 +136,7 @@ def get_or_create_query_discourseme(corpus, discourseme, s=None, match_strategy=
 
     # create query
     elif len(q) == 0:
-
+        current_app.logger.debug('get_or_create_query :: querying')
         # create template if necessary
         if len(discourseme.template) == 0:
             discourseme.generate_template()
@@ -161,7 +162,6 @@ def get_or_create_query_discourseme(corpus, discourseme, s=None, match_strategy=
 
 def get_or_create_cotext(query, window, context_break, return_df=False):
 
-    matches_df = ccc_query(query)
     cotext = Cotext.query.filter(
         Cotext.query_id == query.id,
         Cotext.context >= window,
@@ -169,6 +169,8 @@ def get_or_create_cotext(query, window, context_break, return_df=False):
     ).first()
 
     if not cotext:
+
+        matches_df = ccc_query(query)
 
         current_app.logger.debug("get_or_create_cotext :: creating from scratch")
         cotext = Cotext(query_id=query.id, context=window, context_break=context_break)
