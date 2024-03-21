@@ -8,7 +8,8 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, Nested, String
+from apiflask.fields import Integer, Nested, String
+from apiflask.validators import OneOf
 from pandas import DataFrame, read_csv
 
 from . import db
@@ -92,9 +93,13 @@ class DiscoursemeIn(Schema):
 
     name = String(required=False)
     description = String(required=False)
-    # TODO @FloMei
-    # template = Nested(DiscoursemeTemplateItem(many=True))
-    items = List(String())
+    template = Nested(DiscoursemeTemplateItem(many=True))
+
+
+class DiscoursemeQueryIn(Schema):
+
+    s = String()
+    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
 
 class DiscoursemeOut(Schema):
@@ -117,7 +122,7 @@ def create(json_data):
 
     """
 
-    items = json_data.pop('items')
+    template = json_data.get('template')
     discourseme = Discourseme(
         user_id=auth.current_user.id,
         name=json_data.get('name'),
@@ -125,10 +130,50 @@ def create(json_data):
     )
     db.session.add(discourseme)
     db.session.commit()
-    for item in items:
-        db.session.add(DiscoursemeTemplateItems(discourseme_id=discourseme.id, surface=item))
-        db.session.commit()
+    for item in template:
+        db.session.add(DiscoursemeTemplateItems(
+            discourseme_id=discourseme.id, surface=item['surface'], p=item['p']
+        ))
+    db.session.commit()
     return DiscoursemeOut().dump(discourseme), 200
+
+
+@bp.patch('/<id>')
+@bp.input(DiscoursemeIn(partial=True))
+@bp.output(DiscoursemeOut)
+@bp.auth_required(auth)
+def patch(json_data):
+    """Patch discourseme.
+
+    """
+    discourseme = db.get_or_404(Discourseme, id)
+    for attr, value in json_data.items():
+        setattr(discourseme, attr, value)  # does this work for items?
+    return DiscoursemeOut().dump(discourseme), 200
+
+
+@bp.patch('/<id>/add-item')
+# @bp.input(DiscoursemeIn(partial=True))
+@bp.output(DiscoursemeOut)
+@bp.auth_required(auth)
+def patch_add(json_data):
+    """Patch discourseme: add discourseme.
+
+    """
+    discourseme = db.get_or_404(Discourseme, id)
+    pass
+
+
+@bp.patch('/<id>/remove-item')
+# @bp.input(DiscoursemeIn(partial=True))
+@bp.output(DiscoursemeOut)
+@bp.auth_required(auth)
+def patch_remove(json_data):
+    """Patch discourseme: add discourseme.
+
+    """
+    discourseme = db.get_or_404(Discourseme, id)
+    pass
 
 
 @bp.get('/<id>')
@@ -153,7 +198,6 @@ def delete_discourseme(id):
     discourseme = db.get_or_404(Discourseme, id)
     db.session.delete(discourseme)
     db.session.commit()
-
     return 'Deletion successful.', 200
 
 
@@ -170,34 +214,18 @@ def get_discoursemes():
 
 
 @bp.get('/<id>/corpus/<corpus_id>/')
+@bp.input(DiscoursemeQueryIn, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def get_query(id, corpus_id):
+def get_query(id, corpus_id, query_data):
     """Get query of discourseme in corpus. Will automatically create one if it doesn't exist.
 
     """
 
     discourseme = db.get_or_404(Discourseme, id)
     corpus = db.get_or_404(Corpus, id)
-    query = get_or_create_query_discourseme(corpus, discourseme)
-
+    query = get_or_create_query_discourseme(corpus, discourseme, s=query_data.get('s'), match_strategy=query_data.get('match_strategy'))
     return QueryOut().dump(query), 200
-
-
-# @bp.get("/<id>/corpus/<corpus_id>/concordance")
-# @bp.input(ConcordanceIn, location='query')
-# @bp.output(ConcordanceOut)
-# @bp.auth_required(auth)
-# def concordance_lines(id, corpus_id, data):
-#     """Get concordance lines of discourseme in corpus. Redirects to query endpoint.
-
-#     """
-
-#     discourseme = db.get_or_404(Discourseme, id)
-#     corpus = db.get_or_404(Corpus, corpus_id)
-#     query_id = query_discourseme(discourseme, corpus).id
-
-#     return redirect(url_for('query.concordance_lines', query_id=query_id, **data))
 
 
 ################

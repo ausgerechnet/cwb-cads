@@ -23,7 +23,10 @@ def test_create_get_discourseme(client, auth):
                                   json={
                                       'name': 'many',
                                       'description': 'this is a test discourseme with many hits',
-                                      'items': ['können', 'müssen'],
+                                      'template': [
+                                          {'surface': 'können', 'p': 'lemma'},
+                                          {'surface': 'müssen', 'p': 'lemma'}
+                                      ],
                                   },
                                   content_type='application/json',
                                   headers=auth_header)
