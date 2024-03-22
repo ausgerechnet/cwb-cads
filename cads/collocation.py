@@ -58,15 +58,13 @@ def get_or_create_counts(collocation):
 
     (3) count items and discoursemes separately
 
+    (4) save counts
+
+    (5) save scores
+
     """
-    from .query import (ccc_query, get_or_create_cotext,
-                        get_or_create_query_discourseme)
 
     current_app.logger.debug("get_or_create_counts :: getting counts")
-    # TODO only create if necessary!
-
-    window = collocation.window
-
     # remove existing collocation items from database
     old = CollocationItems.query.filter_by(collocation_id=collocation.id)
     if old.first():
@@ -77,10 +75,17 @@ def get_or_create_counts(collocation):
         # current_app.logger.debug("deleted")
         # db.session.commit()
 
+    from .query import (ccc_query, get_or_create_cotext,
+                        get_or_create_query_discourseme)
+
     # get relevant objects
     filter_query = collocation._query
     highlight_discoursemes = collocation.constellation.highlight_discoursemes if collocation.constellation else []
     match_strategy = filter_query.match_strategy
+    window = collocation.window
+    s_break = collocation.s_break
+    s_query = filter_query.s
+    p = collocation.p
 
     corpus = Corpus(filter_query.corpus.cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
@@ -91,7 +96,7 @@ def get_or_create_counts(collocation):
     # (1) GET CONTEXT #
     ###################
     current_app.logger.debug(f'get_or_create_counts :: getting context of query {filter_query.id}')
-    cotext = get_or_create_cotext(filter_query, window, collocation._query.s, return_df=True)
+    cotext = get_or_create_cotext(filter_query, window, s_break, return_df=True)
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
                                             CotextLines.offset <= window,
                                             CotextLines.offset >= -window)
@@ -114,9 +119,9 @@ def get_or_create_counts(collocation):
         # TODO: auto-execute breakdown when querying, then retrieve
         current_app.logger.debug(f'get_or_create_counts :: .. checking discourseme {discourseme.name}')
         corpus_query = get_or_create_query_discourseme(
-            filter_query.corpus, discourseme, collocation.s_break, match_strategy
+            filter_query.corpus, discourseme, s_query, match_strategy
         )
-        corpus_matches_df = ccc_query(corpus_query, p_breakdown=collocation.p).reset_index()
+        corpus_matches_df = ccc_query(corpus_query, p_breakdown=p).reset_index()
         corpus_matches_df['match_in_context'] = corpus_matches_df['match'].isin(df_cooc['cpos'])
         corpus_matches_df['matchend_in_context'] = corpus_matches_df['matchend'].isin(df_cooc['cpos'])
         corpus_matches_df['in_context'] = corpus_matches_df['match_in_context'] + \
@@ -130,8 +135,8 @@ def get_or_create_counts(collocation):
         current_app.logger.debug('get_or_create_counts :: .. creating breakdowns')
         corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
         subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
-        corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f2'}, axis=1)
-        subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[collocation.p]).rename({'freq': 'f'}, axis=1)
+        corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[p]).rename({'freq': 'f2'}, axis=1)
+        subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[p]).rename({'freq': 'f'}, axis=1)
 
         # create combined breakdown
         current_app.logger.debug('get_or_create_counts :: ..  creating combined breakdowns')
@@ -153,11 +158,11 @@ def get_or_create_counts(collocation):
     df_cooc = df_cooc.loc[~df_cooc['cpos'].isin(discourseme_cpos)]
 
     # create context counts of items for window, including cpos consumed by discoursemes
-    f = corpus.counts.cpos(df_cooc['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
-    f2 = corpus.marginals(f.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
+    f = corpus.counts.cpos(df_cooc['cpos'], [p])[['freq']].rename(columns={'freq': 'f'})
+    f2 = corpus.marginals(f.index, [p])[['freq']].rename(columns={'freq': 'f2'})
 
     # get frequency of items at cpos consumed by discoursemes (includes filter)
-    node_freq_corpus = corpus.counts.cpos(discourseme_cpos, [collocation.p])[['freq']].rename(
+    node_freq_corpus = corpus.counts.cpos(discourseme_cpos, [p])[['freq']].rename(
         columns={'freq': 'node_freq_corpus'}
     )
 
@@ -201,18 +206,18 @@ def get_or_create_counts(collocation):
         disc_counts = disc_counts.set_index('item')
         counts = concat([counts, disc_counts])
 
-    ###############
-    # SAVE COUNTS #
-    ###############
+    ###################
+    # (4) SAVE COUNTS #
+    ###################
     current_app.logger.debug(f'ccc_collocates :: saving {len(counts)} items to database')
     counts['collocation_id'] = collocation.id
     collocation_items = counts.reset_index()
     collocation_items.to_sql('collocation_items', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
-    ###############
-    # SAVE SCORES #
-    ###############
+    ###################
+    # (5) SAVE SCORES #
+    ###################
     counts = DataFrame([vars(s) for s in collocation.items], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
     scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'collocation_item_id'}, axis=1)

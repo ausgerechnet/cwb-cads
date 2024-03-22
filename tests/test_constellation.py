@@ -141,10 +141,10 @@ def test_constellation_concordance_filter(client, auth):
 
         nr_reaktion_fdp = lines.json['nr_lines']
 
-        # filter two discoursemes
+        # filter two discoursemes + item
         lines = client.get(url_for('constellation.concordance_lines',
                                    id=constellation['id'], corpus_id=corpus['id'],
-                                   filter_item="Zuruf",
+                                   filter_item="und",
                                    filter_discourseme_ids=[reaktion_id, fdp_id],
                                    window=10),
                            follow_redirects=True,
@@ -153,11 +153,11 @@ def test_constellation_concordance_filter(client, auth):
 
         for line in lines.json['lines']:
             row = [t['secondary'] for t in line['tokens'] if not t['out_of_window']]
-            assert 'Zuruf' in row
+            assert 'und' in row
             assert reaktion_id in [r['discourseme_id'] for r in line['discourseme_ranges']]
             assert fdp_id in [r['discourseme_id'] for r in line['discourseme_ranges']]
 
         nr_reaktion_fdp_zuruf = lines.json['nr_lines']
 
-        assert nr_reaktion_fdp < nr_reaktion
-        assert nr_reaktion_fdp_zuruf <= nr_zuruf
+        assert nr_reaktion_fdp <= nr_reaktion
+        assert nr_reaktion_fdp_zuruf < nr_zuruf

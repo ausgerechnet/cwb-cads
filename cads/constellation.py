@@ -153,3 +153,8 @@ def concordance_lines(id, corpus_id, query_data):
         [d.id for d in constellation.highlight_discoursemes]
 
     return redirect(url_for('query.concordance_lines', query_id=query_id, **query_data))
+
+
+@bp.get("/<id>/corpus/<corpus_id>/concordance/")
+def collocation():
+    pass

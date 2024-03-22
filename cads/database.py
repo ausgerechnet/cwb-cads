@@ -465,7 +465,7 @@ class Collocation(db.Model):
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     p = db.Column(db.Unicode(255), nullable=False)
-    # s_break = db.Column(db.Unicode(255), nullable=False)
+    s_break = db.Column(db.Unicode(255), nullable=True)
     window = db.Column(db.Integer, nullable=True)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))

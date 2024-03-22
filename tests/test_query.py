@@ -243,11 +243,9 @@ def test_query_collocation(client, auth):
 
         collocation = client.get(url_for('query.get_collocation',
                                          query_id=union_query.json['id'], p='lemma', window=10,
-                                         page_size=100, page_number=1,
-                                         sort_by='conservative_log_ratio', sort_order='ascending'
-                                         ),
+                                         page_size=10, page_number=1,
+                                         sort_by='conservative_log_ratio'),
                                  headers=auth_header)
 
         assert collocation.status_code == 200
-        from pprint import pprint
-        pprint(collocation.json)
+        assert collocation.json['items'][0]['item'] == 'F.'
