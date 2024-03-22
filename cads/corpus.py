@@ -137,7 +137,12 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime'
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
 
 
-def subcorpora_from_tsv(cwb_id, path, cqp_bin, registry_dir, data_dir, lib_dir=None, column='subcorpus', create_nqr=False):
+def subcorpora_from_tsv(cwb_id, path, column='subcorpus', create_nqr=False):
+
+    cqp_bin = current_app.config['CCC_CQP_BIN']
+    registry_dir = current_app.config['CCC_REGISTRY_DIR']
+    data_dir = current_app.config['CCC_DATA_DIR']
+    lib_dir = None
 
     df = read_csv(path, sep='\t')
     corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
@@ -242,6 +247,9 @@ def read_corpora(path=None, keep_old=True, reread_attributes=False):
     db.session.commit()
 
 
+################
+# API schemata #
+################
 class CorpusOut(Schema):
 
     id = Integer()
@@ -263,6 +271,9 @@ class SubCorpusOut(Schema):
     nqr_cqp = String()
 
 
+#################
+# API endpoints #
+#################
 @bp.get('/')
 @bp.output(CorpusOut(many=True))
 @bp.auth_required(auth)
@@ -299,76 +310,76 @@ def get_subcorpora(id):
     return [SubCorpusOut().dump(subcorpus) for subcorpus in subcorpora], 200
 
 
-@bp.put('/<id>/subcorpus/')
-@bp.auth_required(auth)
-def create_subcorpus(id, json_data):
+# @bp.put('/<id>/subcorpus/')
+# @bp.auth_required(auth)
+# def create_subcorpus(id, json_data):
 
-    pass
+#     pass
 
-    # json_data['corpus_id'],
-    # json_data['subcorpus_name']
-    # json_data['segmentation_key']
-    # json_data['segmentation_annotation']
+#     # json_data['corpus_id'],
+#     # json_data['subcorpus_name']
+#     # json_data['segmentation_key']
+#     # json_data['segmentation_annotation']
 
-    # Discourseme(
-    #     name,
-    #     description
-    # )
+#     # Discourseme(
+#     #     name,
+#     #     description
+#     # )
 
-    # Query(
-    #     discourseme_id,
-    #     corpus_id,
-    #     # nqr_cqp,
-    #     cqp_query,
-    #     match_strategy
-    # )
-
-
-@bp.get('/<id>/meta')
-@bp.output(CorpusOut)
-@bp.auth_required(auth)
-def get_meta(id):
-    """Get meta data of corpus.
-
-    """
-
-    pass
-    # corpus = db.get_or_404(Corpus, id)
-    # attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
-    # current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
-    # corpus = CorpusOut().dump(corpus)
-    # corpus = {**corpus, **attributes}
-
-    # return corpus, 200
-    # datetime/numeric: min, maximum
-    # boolean: yes/no
-    # unicode: searchable endpoint: einzelne Auswahl
-    # array of filter_object:
+#     # Query(
+#     #     discourseme_id,
+#     #     corpus_id,
+#     #     # nqr_cqp,
+#     #     cqp_query,
+#     #     match_strategy
+#     # )
 
 
-@bp.put('/<id>/meta')
-@bp.output(CorpusOut)
-@bp.auth_required(auth)
-def set_meta(id):
-    """Set meta data of corpus.
+# @bp.get('/<id>/meta')
+# @bp.auth_required(auth)
+# def get_meta(id):
+#     """Get meta data of corpus.
 
-    - from within XML
-    - from TSV
+#     """
 
-    """
+#     pass
+#     # corpus = db.get_or_404(Corpus, id)
+#     # attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
+#     # current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
+#     # corpus = CorpusOut().dump(corpus)
+#     # corpus = {**corpus, **attributes}
 
-    pass
+#     # return corpus, 200
+#     # datetime/numeric: min, maximum
+#     # boolean: yes/no
+#     # unicode: searchable endpoint: einzelne Auswahl
+#     # array of filter_object:
 
 
+# @bp.put('/<id>/meta')
+# @bp.auth_required(auth)
+# def set_meta(id):
+#     """Set meta data of corpus.
+
+#     - from within XML
+#     - from TSV
+
+#     """
+
+#     pass
+
+
+################
+# CLI commands #
+################
 @bp.cli.command('read-meta')
 @click.argument('cwb_id')
 @click.argument('path')
 def read_meta(cwb_id, path):
-    """Set meta data of corpus.
+    """Read meta data of corpus from TSV table.
 
-    - from within XML
     - from TSV
-
+    - from within XML
     """
     meta_from_tsv(cwb_id, path)
 
@@ -385,10 +396,7 @@ def subcorpora(cwb_id, glob_in):
     """
     paths = glob(glob_in)
     for path in paths:
-        subcorpora_from_tsv(cwb_id, path,
-                            cqp_bin=current_app.config['CCC_CQP_BIN'],
-                            registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                            data_dir=current_app.config['CCC_DATA_DIR'])
+        subcorpora_from_tsv(cwb_id, path)
 
 
 @bp.cli.command('import')
