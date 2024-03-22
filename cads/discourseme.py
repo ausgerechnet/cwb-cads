@@ -20,9 +20,6 @@ from .users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 
-# TODO: accept template items
-# TODO: example discourseme on server (Schwurpus)
-
 
 def read_ldjson(path_ldjson):
 
@@ -35,34 +32,28 @@ def read_ldjson(path_ldjson):
     return discoursemes
 
 
-def read_tsv(path_in, col_name='name', col_query='query'):
-
-    df = read_csv(path_in, sep="\t")
-    discoursemes = defaultdict(list)
-    for row in df.iterrows():
-        discoursemes[row[1][col_name]].append(row[1][col_query])
-
-    return discoursemes
-
-
-def import_discoursemes(glob_in, username='admin'):
+def import_discoursemes(glob_in, p='lemma', col_surface='query', col_name='name', username='admin'):
     """import discoursemes from TSV file
 
     """
+
     user = User.query.filter_by(username=username).first()
+
     for path in glob(glob_in):
         click.echo(f'path: {path}')
-        discoursemes = read_tsv(path)
-        for name, item_list in discoursemes.items():
-            # TODO append items if discourseme already exists
-            click.echo(f'importing discourseme "{name}" with {len(item_list)} items')
+        df = read_csv(path, sep="\t")
+        df = df.rename({col_surface: 'surface'}, axis=1)
+        for name, items in df.groupby(col_name):
+
             discourseme = get_or_create(Discourseme, user_id=user.id, name=name)
             db.session.add(discourseme)
             db.session.commit()
-            # TODO: bulk insert
-            for item in item_list:
-                db.session.add(DiscoursemeTemplateItems(discourseme_id=discourseme.id, surface=item, p='lemma'))
-                db.session.commit()
+
+            items = items[['surface']]
+            items['discourseme_id'] = discourseme.id
+            items['p'] = p
+            items.to_sql("discourseme_template_items", con=db.engine, if_exists='append', index=False)
+
     db.session.commit()
 
 
@@ -100,6 +91,7 @@ class DiscoursemeQueryIn(Schema):
 
     s = String()
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    items = Nested(DiscoursemeTemplateItem(many=True))
 
 
 class DiscoursemeOut(Schema):
