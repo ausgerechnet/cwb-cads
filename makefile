@@ -54,6 +54,12 @@ init_prod:
 	flask --app cads database init && \
 	flask --app cads corpus import
 
+examples_prod:
+	. venv/bin/activate && \
+	flask --app cads database init && \
+	flask --app cads corpus import && \
+	flask --app cads discourseme import --path_in "tests/discoursemes/*.tsv"
+
 
 ########
 # TEST #
