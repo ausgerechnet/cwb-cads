@@ -134,38 +134,57 @@ def create(json_data):
 @bp.input(DiscoursemeIn(partial=True))
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
-def patch(json_data):
+def patch(id, json_data):
     """Patch discourseme.
 
     """
     discourseme = db.get_or_404(Discourseme, id)
+    template = json_data.pop('template', None)
+    if template:
+        for item in discourseme.template:
+            db.session.delete(item)
+            db.session.commit()
+        for item in template:
+            db.session.add(DiscoursemeTemplateItems(
+                discourseme_id=discourseme.id, surface=item['surface'], p=item['p']
+            ))
     for attr, value in json_data.items():
-        setattr(discourseme, attr, value)  # does this work for items?
+        setattr(discourseme, attr, value)
     return DiscoursemeOut().dump(discourseme), 200
 
 
 @bp.patch('/<id>/add-item')
-# @bp.input(DiscoursemeIn(partial=True))
+@bp.input(DiscoursemeTemplateItem)
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
-def patch_add(json_data):
-    """Patch discourseme: add discourseme.
+def patch_add(id, json_data):
+    """Patch discourseme: add item.
 
     """
     discourseme = db.get_or_404(Discourseme, id)
-    pass
+    db.session.add(DiscoursemeTemplateItems(
+        discourseme_id=discourseme.id, surface=json_data.get('surface'), p=json_data.get('p')
+    ))
+    db.session.commit()
+    return DiscoursemeOut().dump(discourseme), 200
 
 
 @bp.patch('/<id>/remove-item')
-# @bp.input(DiscoursemeIn(partial=True))
+@bp.input(DiscoursemeTemplateItem)
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
-def patch_remove(json_data):
-    """Patch discourseme: add discourseme.
+def patch_remove(id, json_data):
+    """Patch discourseme: add item.
 
     """
     discourseme = db.get_or_404(Discourseme, id)
-    pass
+    item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id,
+                                                    surface=json_data.get('surface'),
+                                                    p=json_data.get('p')).first()
+    if item:
+        db.session.delete(item)
+        db.session.commit()
+    return DiscoursemeOut().dump(discourseme), 200
 
 
 @bp.get('/<id>')

@@ -1645,6 +1645,15 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeTemplateItem"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -1675,6 +1684,16 @@
               }
             },
             "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
           }
         },
         "security": [
@@ -1682,7 +1701,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch discourseme: add discourseme.",
+        "summary": "Patch discourseme: add item.",
         "tags": [
           "Discourseme"
         ]
@@ -1805,6 +1824,15 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeTemplateItem"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -1835,6 +1863,16 @@
               }
             },
             "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
           }
         },
         "security": [
@@ -1842,7 +1880,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch discourseme: add discourseme.",
+        "summary": "Patch discourseme: add item.",
         "tags": [
           "Discourseme"
         ]
