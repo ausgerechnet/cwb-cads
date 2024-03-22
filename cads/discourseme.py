@@ -174,7 +174,7 @@ def patch_add(id, json_data):
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
 def patch_remove(id, json_data):
-    """Patch discourseme: add item.
+    """Patch discourseme: remove item.
 
     """
     discourseme = db.get_or_404(Discourseme, id)
