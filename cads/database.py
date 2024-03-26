@@ -486,8 +486,6 @@ class CollocationItems(db.Model):
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
 
     item = db.Column(db.Unicode)
-    # window = db.Column(db.Integer)
-    # discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id'))
 
     f = db.Column(db.Integer)
     f1 = db.Column(db.Integer)
