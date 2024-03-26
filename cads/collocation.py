@@ -225,7 +225,13 @@ def get_or_create_counts(collocation):
     scores.to_sql('item_score', con=db.engine, if_exists='append', index=False)
 
 
-def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number):
+def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number, highlight_queries=[]):
+
+    # TODO
+    # get_or_create_counts should only consider actual counts
+    # highlight_queries = filter_queries + highlight_queries
+    # correct counting: get all cpos, unigram frequency breakdown within and outside
+    # subtract
 
     get_or_create_counts(collocation)
 
@@ -298,6 +304,7 @@ class CollocationIn(Schema):
 
     p = String(required=True)
     window = Integer(required=True)
+    s_break = String(required=False)
 
     sort_order = String(load_default='descending', required=False, validate=OneOf(['ascending', 'descending']))
     sort_by = String(load_default='conservative_log_ratio', required=False, validate=OneOf(AMS_DICT.keys()))
