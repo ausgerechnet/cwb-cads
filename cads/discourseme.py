@@ -232,9 +232,8 @@ def get_query(id, corpus_id, query_data):
     """Get query of discourseme in corpus. Will automatically create one if it doesn't exist.
 
     """
-
     discourseme = db.get_or_404(Discourseme, id)
-    corpus = db.get_or_404(Corpus, id)
+    corpus = db.get_or_404(Corpus, corpus_id)
     query = get_or_create_query_discourseme(corpus, discourseme, s=query_data.get('s'), match_strategy=query_data.get('match_strategy'))
     return QueryOut().dump(query), 200
 

@@ -7,10 +7,12 @@ from flask import redirect, url_for
 
 from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
-from .database import Constellation, Corpus, Discourseme
+from .collocation import CollocationIn, CollocationOut, ccc_collocates
+from .database import Constellation, Corpus, Discourseme, Collocation, get_or_create
 from .discourseme import DiscoursemeOut
 from .query import get_or_create_query_discourseme
 from .users import auth
+
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -155,6 +157,35 @@ def concordance_lines(id, corpus_id, query_data):
     return redirect(url_for('query.concordance_lines', query_id=query_id, **query_data))
 
 
-@bp.get("/<id>/corpus/<corpus_id>/concordance/")
-def collocation():
-    pass
+@bp.get("/<id>/corpus/<corpus_id>/collocation/")
+@bp.input(CollocationIn, location='query')
+@bp.output(CollocationOut)
+@bp.auth_required(auth)
+def collocation(id, corpus_id, query_data):
+
+    constellation = db.get_or_404(Constellation, id)
+    corpus = db.get_or_404(Corpus, corpus_id)
+    subcorpus_id = query_data.get('subcorpus_id')
+
+    # TODO: constellations should really only have one filter_discourseme??
+    filter_discourseme = constellation.filter_discoursemes[0]
+    query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus_id).id
+
+    page_size = query_data.pop('page_size')
+    page_number = query_data.pop('page_number')
+    sort_order = query_data.pop('sort_order')
+    sort_by = query_data.pop('sort_by')
+
+    window = query_data.get('window')
+    p = query_data.get('p')
+    s_break = query_data.get('s_break')
+
+    collocation = get_or_create(Collocation, constellation_id=id, query_id=query_id, p=p, s_break=s_break, window=window)
+    semantic_map_id = query_data.get('semantic_map_id')
+    if semantic_map_id:
+        collocation.semantic_map_id = semantic_map_id
+        db.session.commit()
+
+    collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
+
+    return CollocationOut().dump(collocation), 200

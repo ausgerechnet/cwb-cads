@@ -6,7 +6,7 @@ from random import randint
 from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
-from ccc import Corpus
+from ccc import Corpus, SubCorpus
 from ccc.collocates import dump2cooc
 from ccc.utils import format_cqp_query
 from flask import current_app
@@ -17,7 +17,7 @@ from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from .collocation import CollocationIn, CollocationOut, ccc_collocates
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
-from .corpus import CorpusOut
+from .corpus import CorpusOut, sort_s
 from .database import (Breakdown, Collocation, Cotext, Discourseme, Matches,
                        Query, get_or_create)
 from .users import auth
@@ -43,9 +43,23 @@ def ccc_query(query, return_df=True):
 
         if query.subcorpus:
             current_app.logger.debug(f'ccc_query :: subcorpus {query.subcorpus.name}')
+            if query.subcorpus.nqr_cqp is None:
+                current_app.logger.debug('ccc_query :: creating subcorpus')
+                df = DataFrame([vars(s) for s in query.subcorpus.spans], columns=['match', 'matchend'])
+                nqr = SubCorpus(corpus_name=query.corpus.cwb_id,
+                                subcorpus_name=None,
+                                df_dump=df.set_index(['match', 'matchend']),
+                                cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                data_dir=current_app.config['CCC_DATA_DIR'],
+                                lib_dir=None,
+                                overwrite=False)
+                query.subcorpus.nqr_cqp = nqr.subcorpus_name
+                db.session.commit()
             if query.subcorpus.nqr_cqp not in corpus.show_nqr()['subcorpus'].values:
-                raise NotImplementedError('dynamic subcorpus creation not implemented')
-            corpus = corpus.subcorpus(query.subcorpus.cqr_cqps)
+                raise NotImplementedError('dynamic subcorpus creation unsuccessful')
+
+            corpus = corpus.subcorpus(query.subcorpus.nqr_cqp)
 
         # query corpus
         matches = corpus.query(cqp_query=query.cqp_query,
@@ -119,17 +133,19 @@ def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='lo
     return query
 
 
-def get_or_create_query_discourseme(corpus, discourseme, s=None, match_strategy='longest'):
+def get_or_create_query_discourseme(corpus, discourseme, subcorpus_id=None, s=None, match_strategy='longest'):
     """get or create query for discourseme in corpus
 
     """
+
+    s = sort_s(corpus.s_atts)[0] if s is None else s
 
     # TODO run only on subcorpus
     current_app.logger.debug(f'get_or_create_query :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
 
     # try to retrieve
-    q = [q for q in discourseme.queries if q.corpus_id == corpus.id]
-    if len(discourseme.queries) > 1:  # must not happen due to unique constraint
+    q = [q for q in discourseme.queries if q.corpus_id == corpus.id and q.subcorpus_id == subcorpus_id]
+    if len(q) > 1:  # must not happen due to unique constraint
         raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
     if len(q) == 1:
         query = q[0]
@@ -141,14 +157,15 @@ def get_or_create_query_discourseme(corpus, discourseme, s=None, match_strategy=
         if len(discourseme.template) == 0:
             discourseme.generate_template()
 
-        s = corpus.s_atts[0] if s is None else s  # TODO determine better default
-        p = discourseme.template[0].p  # TODO check with p-atts of corpus
         items = [i.surface for i in discourseme.template]
+        p_atts = [i.p for i in discourseme.template]
+        p = p_atts[0]           # TODO
         cqp_query = format_cqp_query(items, p_query=p, s_query=s, escape=False)
 
         query = Query(
             discourseme_id=discourseme.id,
             corpus_id=corpus.id,
+            subcorpus_id=subcorpus_id,
             cqp_query=cqp_query,
             s=s,
             match_strategy=match_strategy
@@ -561,8 +578,20 @@ def get_collocation(query_id, query_data):
 
     window = query_data.get('window')
     p = query_data.get('p')
+    s_break = query_data.get('s_break')
 
-    collocation = get_or_create(Collocation, query_id=query_id, window=window, p=p)
+    # # TODO
+    # corpus = query.corpus
+    # query = db.get_or_404(Query, query_id)
+    # highlight_discourseme_ids = query_data.get('highlight_discourseme_ids')
+    # # prepare highlight queries = queries that consume cpos
+    # highlight_queries = set()
+    # for discourseme_id in highlight_discourseme_ids:
+    #     hd = db.get_or_404(Discourseme, discourseme_id)
+    #     hq = get_or_create_query_discourseme(corpus, hd, s_break)
+    #     highlight_queries.add(hq)
+
+    collocation = get_or_create(Collocation, query_id=query_id, p=p, s_break=s_break, window=window, constellation_id=None)
     collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
 
     return CollocationOut().dump(collocation), 200

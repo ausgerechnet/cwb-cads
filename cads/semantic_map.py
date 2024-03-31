@@ -9,13 +9,13 @@ from pandas import DataFrame
 from semmap import SemanticSpace
 
 from . import db
-from .database import CollocationItems, SemanticMap
+from .database import CollocationItems, SemanticMap, ItemScore
 from .users import auth
 
-bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic_map')
+bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
 
 
-def ccc_semmap(collocation, embeddings):
+def ccc_semmap(collocation, embeddings, sort_by, number, blacklist_items=[]):
 
     # create new semantic map
     semantic_map = SemanticMap(embeddings=embeddings, method='tsne')
@@ -26,7 +26,22 @@ def ccc_semmap(collocation, embeddings):
     db.session.add(collocation)
     db.session.commit()
 
-    items = list(set([item.item for item in collocation.items if not item.item.startswith("DISCOURSEME")]))
+    # get IDs of blacklist
+    blacklist = CollocationItems.query.filter(
+        CollocationItems.collocation_id == collocation.id,
+        CollocationItems.item.in_(blacklist_items)
+    )
+
+    # get some items
+    current_app.logger.debug('ccc_semmap :: selecting items')
+    scores = ItemScore.query.filter(
+        ItemScore.collocation_id == collocation.id,
+        ItemScore.measure == sort_by,
+        ~ ItemScore.collocation_item_id.in_([b.id for b in blacklist])
+    ).order_by(ItemScore.score.desc())
+    scores = scores.paginate(page=1, per_page=number)
+    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
+    items = [CollocationItems.query.filter_by(id=id).first().item for id in df_scores['collocation_item_id']]
 
     current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)
@@ -35,16 +50,16 @@ def ccc_semmap(collocation, embeddings):
     coordinates['semantic_map_id'] = semantic_map.id
     coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
     db.session.commit()
+    current_app.logger.debug('ccc_semmap :: ... done')
 
     return coordinates
 
 
-def ccc_semmap_update(collocation):
+def ccc_semmap_update(semantic_map, items):
     """
     make sure there's coordinates for all items
     """
 
-    semantic_map = collocation.semantic_map
     coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item'])
     coordinates = coordinates.set_index('item')
 
@@ -53,12 +68,7 @@ def ccc_semmap_update(collocation):
     coordinates = coordinates.loc[~coordinates.index.duplicated()]
 
     # items without coordinates
-    new_items = list(set([
-        item.item for item in CollocationItems.query.filter(
-            CollocationItems.collocation_id == collocation.id,
-            ~ CollocationItems.item.in_(coordinates.index)
-        ).all() if not item.item.startswith("DISCOURSEME")
-    ]))
+    new_items = list(set(items) - set(coordinates.index))
     if len(new_items) > 0:
         current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
         semspace = SemanticSpace(semantic_map.embeddings)
@@ -119,7 +129,6 @@ class SemanticMapOut(Schema):
 
 class CoordinatesOut(Schema):
 
-    id = Integer()
     semantic_map_id = Integer()
     item = String()
     x = Float()

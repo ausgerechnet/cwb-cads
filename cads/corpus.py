@@ -149,9 +149,15 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', create_nqr=False):
 
     # 3 min
     level = 'text'
-    for name, df in df.groupby(column):
-        click.echo(f"importing {name}")
+    subcorpora = ["CDU/CSU12", "CDU/CSU18", "SPD12", "SPD18", "PDS12", "DIE LINKE18", "GRUENE12", "GRUENE18", "LP12", "LP18"]
 
+    for name, df in df.groupby(column):
+
+        if name not in subcorpora:
+            click.echo(f'skipping subcorpus "{name}" with {len(df)} regions')
+            continue
+
+        click.echo(f'creating subcorpus "{name}" with {len(df)} regions')
         # create NQR
         df = df.drop(column, axis=1)
         nqr_cqp = None

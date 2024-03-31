@@ -1,12 +1,15 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
 from datetime import datetime
 
 from ccc.utils import cqp_escape
 from flask import Blueprint, current_app
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash
+from pandas import DataFrame
+
 
 from . import db
 
@@ -301,7 +304,7 @@ class Query(db.Model):
     """
 
     __table_args__ = (
-        db.UniqueConstraint('discourseme_id', 'corpus_id', name='_customer_location_uc'),
+        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', name='_discourseme_subcorpus'),
         {'sqlite_autoincrement': True},
     )
 
@@ -474,6 +477,107 @@ class Collocation(db.Model):
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
     items = db.relationship('CollocationItems', backref='collocation', passive_deletes=True)
+    discourseme_items = db.relationship('CollocationDiscoursemeItems', backref='collocation', passive_deletes=True)
+    discourseme_unigram_items = db.relationship('CollocationDiscoursemeUnigramItems', backref='collocation', passive_deletes=True)
+
+    @property
+    def discourseme_scores(self):
+
+        from .collocation import score_counts
+
+        discourseme_f = defaultdict(list)
+        discourseme_f1 = defaultdict(list)
+        discourseme_f2 = defaultdict(list)
+        discourseme_N = defaultdict(list)
+
+        discourseme_item_scores = defaultdict(list)
+        for item in self.discourseme_items:
+            discourseme_item_scores[item.discourseme_id].append(item)
+
+            discourseme_f[item.discourseme_id].append(item.f)
+            discourseme_f1[item.discourseme_id].append(item.f1)
+            discourseme_f2[item.discourseme_id].append(item.f2)
+            discourseme_N[item.discourseme_id].append(item.N)
+
+        discourseme_unigram_item_scores = defaultdict(list)
+        for item in self.discourseme_unigram_items:
+            discourseme_unigram_item_scores[item.discourseme_id].append(item)
+
+        discourseme_scores = []
+        for discourseme_id in discourseme_item_scores.keys():
+            global_counts = DataFrame({'f': [sum(discourseme_f[discourseme_id])],
+                                       'f1': [max(discourseme_f1[discourseme_id])],
+                                       'f2': [sum(discourseme_f2[discourseme_id])],
+                                       'N': [max(discourseme_N[discourseme_id])],
+                                       'item': None}).set_index('item')
+            global_score = score_counts(global_counts, cut_off=None, min_freq=0, rename=False).melt(
+                var_name='measure', value_name='score'
+            ).to_records(index=False)
+            discourseme_scores.append({'discourseme_id': discourseme_id,
+                                       'global_scores': global_score,
+                                       'item_scores': discourseme_item_scores[discourseme_id],
+                                       'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
+        return discourseme_scores
+
+
+class CollocationDiscoursemeUnigramItems(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'), index=True)
+    item = db.Column(db.Unicode)
+
+    f = db.Column(db.Integer)
+    f1 = db.Column(db.Integer)
+    f2 = db.Column(db.Integer)
+    N = db.Column(db.Integer)
+
+    scores = db.relationship("DiscoursemeUnigramItemScore", backref='collocation_discourseme_unigram_items', cascade='all, delete')
+
+
+class DiscoursemeUnigramItemScore(db.Model):
+    """
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_unigram_items.id', ondelete='CASCADE'), index=True)
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
+    measure = db.Column(db.Unicode)
+    score = db.Column(db.Float)
+
+
+class CollocationDiscoursemeItems(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'), index=True)
+    item = db.Column(db.Unicode)
+
+    f = db.Column(db.Integer)
+    f1 = db.Column(db.Integer)
+    f2 = db.Column(db.Integer)
+    N = db.Column(db.Integer)
+
+    scores = db.relationship("DiscoursemeItemScore", backref='collocation_discourseme_items', cascade='all, delete')
+
+
+class DiscoursemeItemScore(db.Model):
+    """
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_items.id', ondelete='CASCADE'), index=True)
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
+    measure = db.Column(db.Unicode)
+    score = db.Column(db.Float)
 
 
 class CollocationItems(db.Model):
