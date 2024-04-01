@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, Nested, String
+from apiflask.fields import Float, Integer, Nested, String
 from ccc import Corpus
 from flask import current_app
 from pandas import DataFrame
@@ -10,14 +10,12 @@ from pandas import DataFrame
 from . import db
 from .database import BreakdownItems
 
-# from .users import auth
-
 bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 
 
 def ccc_breakdown(breakdown, return_df=True):
 
-    current_app.logger.debug(f'ccc_breakdown :: breakdown {breakdown._query.id} in corpus {breakdown._query.corpus.cwb_id}')
+    current_app.logger.debug(f'ccc_breakdown :: breakdown {breakdown.id} in corpus {breakdown._query.corpus.cwb_id}')
 
     breakdown_items = BreakdownItems.query.filter_by(breakdown_id=breakdown.id)
 
@@ -47,7 +45,7 @@ def ccc_breakdown(breakdown, return_df=True):
         current_app.logger.debug(f"ccc_breakdown :: got {len(breakdown_df)} matches from database")
 
     else:
-        current_app.logger.debug("ccc_breakdown :: breakdown already exist in database")
+        current_app.logger.debug("ccc_breakdown :: breakdown already exists in database")
         breakdown_df = None
 
     return breakdown_df
@@ -67,6 +65,7 @@ class BreakdownItemsOut(Schema):
     breakdown_id = Integer()
     item = String()
     freq = Integer()
+    ipm = Float()
 
 
 class BreakdownOut(Schema):

@@ -12,6 +12,9 @@
           "id": {
             "type": "integer"
           },
+          "ipm": {
+            "type": "number"
+          },
           "item": {
             "type": "string"
           }
@@ -2268,6 +2271,14 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subcorpus_id",
+            "required": false,
+            "schema": {
+              "type": "integer"
             }
           },
           {

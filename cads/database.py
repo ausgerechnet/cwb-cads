@@ -7,9 +7,8 @@ from datetime import datetime
 from ccc.utils import cqp_escape
 from flask import Blueprint, current_app
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash
 from pandas import DataFrame
-
+from werkzeug.security import generate_password_hash
 
 from . import db
 
@@ -141,6 +140,15 @@ class Corpus(db.Model):
     def s_annotations(self):
         return [att.level for att in self.attributes if att.attribute == 's_annotations']
 
+    @property
+    def nr_tokens(self):
+        from ccc import Corpus as Crps
+        crps = Crps(corpus_name=self.cwb_id,
+                    cqp_bin=current_app.config['CCC_CQP_BIN'],
+                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                    data_dir=current_app.config['CCC_DATA_DIR'])
+        return crps.corpus_size
+
 
 class CorpusAttributes(db.Model):
     """Corpus Attributes
@@ -169,6 +177,10 @@ class SubCorpus(db.Model):
     spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span,
                             backref=db.backref('sub_corpus'))
     queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
+
+    @property
+    def nr_tokens(self):
+        return sum([s.matchend - s.match + 1 for s in self.spans])
 
 
 class Embeddings(db.Model):
@@ -375,6 +387,14 @@ class BreakdownItems(db.Model):
 
     item = db.Column(db.Unicode)
     freq = db.Column(db.Integer)
+
+    @property
+    def ipm(self):
+        if self.breakdown._query.subcorpus:
+            nr_tokens = self.breakdown._query.subcorpus.nr_tokens
+        else:
+            nr_tokens = self.breakdown._query.corpus.nr_tokens
+        return self.freq / nr_tokens * 10**6
 
 
 class Concordance(db.Model):

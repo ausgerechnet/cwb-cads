@@ -205,6 +205,7 @@ def ccc_concordance(focus_query,
         page_count = matches.pages
 
     # actual concordancing
+    current_app.logger.debug("ccc_concordance :: creating selected concordances")
     df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend', 'contextid']).set_index(['match', 'matchend'])
     lines = SubCorpus(
         subcorpus_name=None,

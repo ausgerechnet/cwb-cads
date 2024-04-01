@@ -9,7 +9,7 @@ from pandas import DataFrame
 from semmap import SemanticSpace
 
 from . import db
-from .database import CollocationItems, SemanticMap, ItemScore
+from .database import CollocationItems, ItemScore, SemanticMap
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')

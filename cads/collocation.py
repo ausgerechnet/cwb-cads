@@ -10,10 +10,11 @@ from flask import current_app
 from pandas import DataFrame, read_sql
 
 from . import db
-from .database import Collocation, CollocationItems, CotextLines, Discourseme, ItemScore
-from .database import CollocationDiscoursemeUnigramItems, CollocationDiscoursemeItems
+from .database import (Collocation, CollocationDiscoursemeItems,
+                       CollocationDiscoursemeUnigramItems, CollocationItems,
+                       CotextLines, Discourseme, ItemScore)
 from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
-                           ccc_semmap_discoursemes, ccc_semmap_update)
+                           ccc_semmap_update)
 from .users import auth
 from .utils import AMS_DICT
 
@@ -53,18 +54,16 @@ def score_counts(counts, cut_off=200, min_freq=3, show_negative=False, rename=Tr
 def get_or_create_counts(collocation, remove_filter_cpos=True):
     """makes sure that CollocationItems exist for collocation analysis = query + context
 
-    this includes cpos consumed by filter discourseme
-
     """
 
     from .query import get_or_create_cotext
 
     current_app.logger.debug("get_or_create_counts :: getting counts")
-    # TODO remove existing collocation items from database??
     old = CollocationItems.query.filter_by(collocation_id=collocation.id)
     if old.first():
         current_app.logger.debug("get_or_create_counts :: counts already exist")
         return
+        # TODO remove existing counts when forcing rerun
         # current_app.logger.debug("deleting old ones")
         # CollocationItems.query.filter_by(collocation_id=collocation.id).delete()
         # current_app.logger.debug("deleted")
@@ -93,54 +92,35 @@ def get_or_create_counts(collocation, remove_filter_cpos=True):
         discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # filter can only match in context
     df_cooc = df_cooc.drop_duplicates(subset='cpos')
 
-    ####################################
-    # (3) COUNT ITEMS AND DISCOURSEMES #
-    ####################################
+    ###################
+    # (2) COUNT ITEMS #
+    ###################
     current_app.logger.debug(f'get_or_create_counts :: counting items in context for window {window}')
-    # f1_discoursemes = len(df_cooc)           # for discourseme associations
     if remove_filter_cpos:
         df_cooc = df_cooc.loc[~df_cooc['cpos'].isin(discourseme_cpos)]
 
-    # create context counts of items for window, including cpos consumed by discoursemes
-    # TODO THESE COUNTS ALREADY EXIST
+    # create context counts of items for window
     f = corpus.counts.cpos(df_cooc['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
     f2 = corpus.marginals(f.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
-
-    # get frequency of items at cpos consumed by discoursemes (includes filter)
-    # node_freq_corpus = corpus.counts.cpos(discourseme_cpos, [p])[['freq']].rename(
-    #     columns={'freq': 'node_freq_corpus'}
-    # )
-
-    # create dataframe
     counts = f.join(f2).fillna(0, downcast='infer')
 
     # add marginals
     counts['f1'] = len(df_cooc)
-    counts['N'] = corpus.corpus_size  # - len(discourseme_cpos)
-
-    # correct counts
-    # counts = counts.join(node_freq_corpus).fillna(0, downcast='infer')
-    counts['f2'] = counts['f2']  # - counts['node_freq_corpus']
-    # counts = counts.drop('node_freq_corpus', axis=1)
-
-    # # we score once here in order to only save relevant items
-    # current_app.logger.debug(f'get_or_create_counts :: scoring {len(counts)} items')
-    # scores = score_counts(counts, cut_off=None, min_freq=1)
-    # counts = counts.loc[list(scores.index)]
-    # current_app.logger.debug(f'get_or_create_counts :: selected {len(counts)} items')
+    counts['N'] = corpus.corpus_size
+    counts['f2'] = counts['f2']
 
     ###################
-    # (4) SAVE COUNTS #
+    # (3) SAVE COUNTS #
     ###################
     current_app.logger.debug(f'get_or_create_counts :: saving {len(counts)} items to database')
     counts['collocation_id'] = collocation.id
-    # collocation_items = counts.reset_index().drop('discourseme_id', axis=1, errors='ignore')
     counts.reset_index().to_sql('collocation_items', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
     ###################
-    # (5) SAVE SCORES #
+    # (4) SAVE SCORES #
     ###################
+    current_app.logger.debug('get_or_create_counts :: adding scores')
     counts = DataFrame([vars(s) for s in collocation.items], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
     scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'collocation_item_id'}, axis=1)
@@ -151,12 +131,15 @@ def get_or_create_counts(collocation, remove_filter_cpos=True):
 
 
 def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_matchend_in_context=False):
+    """get CollocationDiscoursemeUnigramItems and CollocationDiscoursemeItems
 
+    """
     from .query import ccc_query, get_or_create_query_discourseme
-    # do not create if already exists
-    counts_from_sql = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id, discourseme_id=discourseme.id)
-    if counts_from_sql.first():
-        current_app.logger.debug(f'get_discourseme_counts :: cotext counts for discourseme "{discourseme.name}" already exist')
+
+    unigram_counts_from_sql = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id, discourseme_id=discourseme.id)
+    if unigram_counts_from_sql.first():
+        current_app.logger.debug(f'query_discourseme_cotext :: cotext unigram counts for discourseme "{discourseme.name}" already exist')
+        # TODO also check for item counts?
         return
 
     filter_query = collocation._query
@@ -165,42 +148,40 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     s_query = filter_query.s
     p = collocation.p
 
-    # get matches of discourseme in whole corpus
-    current_app.logger.debug(f'get_discourseme_counts :: .. checking discourseme "{discourseme.name}"')
+    # get matches of discourseme in whole corpus and in subcorpus of cotext
+    current_app.logger.debug(f'query_discourseme_cotext :: .. getting matches of discourseme "{discourseme.name}" in whole corpus')
     corpus_query = get_or_create_query_discourseme(corpus, discourseme, s=s_query, match_strategy=match_strategy)
     corpus_matches_df = ccc_query(corpus_query).reset_index()
-
-    # determine matches in context
-    corpus_matches_df['match_in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos'])
-    corpus_matches_df['in_context'] = corpus_matches_df['match_in_context']
+    corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos'])
     if discourseme_matchend_in_context:
-        corpus_matches_df['matchend_in_context'] = corpus_matches_df['matchend'].isin(df_cotext['cpos'])
-        corpus_matches_df['in_context'] = corpus_matches_df['in_context'] + corpus_matches_df['matchend_in_context']
+        corpus_matches_df['in_context'] = corpus_matches_df['in_context'] + corpus_matches_df['matchend'].isin(df_cotext['cpos'])
+
+    current_app.logger.debug(f'query_discourseme_cotext :: .. getting matches of discourseme "{discourseme.name}" in context')
     subcorpus_matches_df = corpus_matches_df.loc[corpus_matches_df['in_context']]
     if len(subcorpus_matches_df) == 0:
-        current_app.logger.debug(f'get_discourseme_counts :: no matches in context for discourseme "{discourseme.name}"')
-        return None
-
-    # create dataframes
-    corpus_matches_df = corpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
-    subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
+        current_app.logger.debug(f'query_discourseme_cotext :: no matches in context for discourseme "{discourseme.name}"')
+        # TODO still save corpus_matches_breakdown!
+        return
 
     # create breakdowns
     corpus = Corpus(corpus.cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
-
-    current_app.logger.debug('get_discourseme_counts :: .. creating breakdowns')
+    current_app.logger.debug('query_discourseme_cotext :: .. creating breakdowns in whole corpus')  # TODO
+    corpus_matches_df = corpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
     corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
     corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[p]).rename({'freq': 'f2'}, axis=1)
     corpus_matches_unigram_breakdown = corpus_matches.breakdown(p_atts=[p], split=True).rename({'freq': 'f2'}, axis=1)
+
+    current_app.logger.debug('query_discourseme_cotext :: .. creating breakdowns in context')
+    subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
     subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
     subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[p]).rename({'freq': 'f'}, axis=1)
     subcorpus_matches_unigram_breakdown = subcorpus_matches.breakdown(p_atts=[p], split=True).rename({'freq': 'f'}, axis=1)
 
     # create and save unigram counts
-    current_app.logger.debug('get_discourseme_counts :: .. combining subcorpus and corpus unigram counts')
+    current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus unigram counts')
     df = corpus_matches_unigram_breakdown.join(subcorpus_matches_unigram_breakdown)
     df['f'] = 0 if 'f' not in df.columns else df['f']  # empty queries
     df['discourseme_id'] = discourseme.id
@@ -208,7 +189,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     df['f1'] = len(df_cotext)
     df['N'] = corpus.corpus_size
 
-    current_app.logger.debug('get_discourseme_counts :: .. saving unigram counts and scoring')
+    current_app.logger.debug('query_discourseme_cotext :: .. saving unigram counts and scoring')
     counts = df.reset_index().fillna(0, downcast='infer')[['collocation_id', 'discourseme_id', 'item', 'f', 'f1', 'f2', 'N']]
     counts.to_sql('collocation_discourseme_unigram_items', con=db.engine, if_exists='append', index=False)
     counts_from_sql = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id, discourseme_id=discourseme.id)
@@ -221,7 +202,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     discourseme_unigram_item_scores.to_sql('discourseme_unigram_item_score', con=db.engine, if_exists='append', index=False)
 
     # create and save item counts
-    current_app.logger.debug('get_discourseme_counts :: .. combining subcorpus and corpus counts')
+    current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus item counts')
     df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
     df['f'] = 0 if 'f' not in df.columns else df['f']  # empty queries
     df['discourseme_id'] = discourseme.id
@@ -229,7 +210,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     df['f1'] = len(df_cotext)
     df['N'] = corpus.corpus_size
 
-    current_app.logger.debug('get_discourseme_counts :: .. saving counts and scoring')
+    current_app.logger.debug('query_discourseme_cotext :: .. saving item counts and scoring')
     counts = df.reset_index().fillna(0, downcast='infer')[['collocation_id', 'discourseme_id', 'item', 'f', 'f1', 'f2', 'N']]
     counts.to_sql('collocation_discourseme_items', con=db.engine, if_exists='append', index=False)
     counts_from_sql = CollocationDiscoursemeItems.query.filter_by(collocation_id=collocation.id, discourseme_id=discourseme.id)
@@ -241,13 +222,16 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     discourseme_item_scores['collocation_id'] = collocation.id
     discourseme_item_scores.to_sql('discourseme_item_score', con=db.engine, if_exists='append', index=False)
 
-    return corpus_matches
+    return
 
 
 def get_discourseme_counts(collocation, discoursemes):
-    # for each discourseme (including filter):
-    # - get cpos consumed within and outside context
-    # - get frequency breakdown within and outside context
+    """get DiscoursemeUnigramCounts
+
+    for each discourseme (including filter):
+    - get cpos consumed within and outside context
+    - get frequency breakdown within and outside context
+    """
 
     from .query import get_or_create_cotext
 
@@ -270,42 +254,76 @@ def get_discourseme_counts(collocation, discoursemes):
             discourseme_cpos.update(discourseme_matches.matches())
 
     # discoursemes_unigram_counts
-    current_app.logger.debug('get_discourseme_counts :: unigram counts for all discoursemes')
-    corpus = Corpus(filter_query.corpus.cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
-    discoursemes_unigram_counts = corpus.counts.cpos(discourseme_cpos, [collocation.p])[['freq']].rename(columns={'freq': 'f'})
-    m = corpus.marginals(discoursemes_unigram_counts.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
-    discoursemes_unigram_counts = discoursemes_unigram_counts.join(m)
-    current_app.logger.debug('get_discourseme_counts :: ... done')
+    if len(discourseme_cpos) > 0:
+        current_app.logger.debug('get_discourseme_counts :: creating unigram counts for all discoursemes')
+        corpus = Corpus(filter_query.corpus.cwb_id,
+                        cqp_bin=current_app.config['CCC_CQP_BIN'],
+                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                        data_dir=current_app.config['CCC_DATA_DIR'])
+        discoursemes_unigram_counts = corpus.counts.cpos(discourseme_cpos, [collocation.p])[['freq']].rename(columns={'freq': 'f'})
+        m = corpus.marginals(discoursemes_unigram_counts.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
+        discoursemes_unigram_counts = discoursemes_unigram_counts.join(m)
+        current_app.logger.debug('get_discourseme_counts :: ... done')
 
-    return discoursemes_unigram_counts
+        return discoursemes_unigram_counts
 
 
 def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number, highlight_queries=[]):
+    """create collocation object as dict
+
+    - items
+    - discourseme_scores if collocation belongs to constellation
+    """
 
     # make sure context counts and scores exist
     if collocation.constellation:
+
+        current_app.logger.debug('ccc_collocates :: constellation mode')
+
         get_or_create_counts(collocation, remove_filter_cpos=False)
-        # select items (exclude filter items)
-        filter_unigram_items = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id,
-                                                                                  discourseme_id=collocation._query.discourseme.id)
+
+        filter_unigram_items = CollocationDiscoursemeUnigramItems.query.filter_by(
+            collocation_id=collocation.id,
+            discourseme_id=collocation._query.discourseme.id
+        )
 
         blacklist = CollocationItems.query.filter(
             CollocationItems.collocation_id == collocation.id,
             CollocationItems.item.in_([f.item for f in filter_unigram_items])
         )
 
-        scores = ItemScore.query.filter(ItemScore.collocation_id == collocation.id,
-                                        ItemScore.measure == sort_by,
-                                        ~ ItemScore.collocation_item_id.in_([b.id for b in blacklist]))
+        scores = ItemScore.query.filter(
+            ItemScore.collocation_id == collocation.id,
+            ItemScore.measure == sort_by,
+            ~ ItemScore.collocation_item_id.in_([b.id for b in blacklist])
+        )
+
+        current_app.logger.debug('ccc_collocates :: .. making sure discourseme scores exist')
+        discoursemes = collocation.constellation.highlight_discoursemes + \
+            collocation.constellation.filter_discoursemes
+        get_discourseme_counts(collocation, discoursemes)
+
+        current_app.logger.debug(f'ccc_collocates :: .. dumping scores for {len(discoursemes)} discoursemes')
+        discourseme_scores = collocation.discourseme_scores
+        for s in discourseme_scores:
+            s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
+            s['unigram_item_scores'] = [CollocationItemOut().dump(sc) for sc in s['unigram_item_scores']]
+        discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+
     else:
+        current_app.logger.debug('ccc_collocates :: query mode')
+
         get_or_create_counts(collocation, remove_filter_cpos=True)
-        scores = ItemScore.query.filter(ItemScore.collocation_id == collocation.id,
-                                        ItemScore.measure == sort_by)
+
+        scores = ItemScore.query.filter(
+            ItemScore.collocation_id == collocation.id,
+            ItemScore.measure == sort_by
+        )
+
+        discourseme_scores = []
 
     # pagination
+    current_app.logger.debug('ccc_collocates :: .. pagination')
     if sort_order == 'ascending':
         scores = scores.order_by(ItemScore.score)
     elif sort_order == 'descending':
@@ -315,29 +333,6 @@ def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number, hig
     page_count = scores.pages
     df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
     items = [CollocationItemOut().dump(CollocationItems.query.filter_by(id=id).first()) for id in df_scores['collocation_item_id']]
-
-    # get discourseme counts and scores
-    if collocation.constellation:
-
-        discoursemes = collocation.constellation.highlight_discoursemes + \
-            collocation.constellation.filter_discoursemes
-        get_discourseme_counts(collocation, discoursemes)
-
-        # get discourseme scores
-        current_app.logger.debug('ccc_collocates :: collecting scores')
-        discourseme_scores = list(collocation.discourseme_scores)
-
-        current_app.logger.debug(f'ccc_collocates :: dumping scores for {len(discourseme_scores)} discoursemes')
-        # TODO this takes forever, but why?
-        for s in discourseme_scores:
-            # print(len(s['item_scores']))
-            s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
-            # print(len(s['unigram_item_scores']))
-            s['unigram_item_scores'] = [CollocationItemOut().dump(sc) for sc in s['unigram_item_scores']]
-        discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-
-    else:
-        discourseme_scores = []
 
     return {
         'id': collocation.id,

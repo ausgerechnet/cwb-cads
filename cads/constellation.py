@@ -6,13 +6,13 @@ from apiflask.fields import Integer, List, Nested, String
 from flask import redirect, url_for
 
 from . import db
-from .concordance import ConcordanceIn, ConcordanceOut
 from .collocation import CollocationIn, CollocationOut, ccc_collocates
-from .database import Constellation, Corpus, Discourseme, Collocation, get_or_create
+from .concordance import ConcordanceIn, ConcordanceOut
+from .database import (Collocation, Constellation, Corpus, Discourseme,
+                       get_or_create)
 from .discourseme import DiscoursemeOut
 from .query import get_or_create_query_discourseme
 from .users import auth
-
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 

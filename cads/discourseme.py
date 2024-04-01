@@ -89,6 +89,7 @@ class DiscoursemeIn(Schema):
 
 class DiscoursemeQueryIn(Schema):
 
+    subcorpus_id = Integer()
     s = String()
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
     items = Nested(DiscoursemeTemplateItem(many=True))
@@ -234,7 +235,9 @@ def get_query(id, corpus_id, query_data):
     """
     discourseme = db.get_or_404(Discourseme, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    query = get_or_create_query_discourseme(corpus, discourseme, s=query_data.get('s'), match_strategy=query_data.get('match_strategy'))
+    query = get_or_create_query_discourseme(corpus, discourseme, subcorpus_id=query_data.get('subcorpus_id'),
+                                            s=query_data.get('s'), match_strategy=query_data.get('match_strategy'))
+
     return QueryOut().dump(query), 200
 
 

@@ -62,6 +62,7 @@ def ccc_query(query, return_df=True):
             corpus = corpus.subcorpus(query.subcorpus.nqr_cqp)
 
         # query corpus
+        current_app.logger.debug('ccc_query :: querying')
         matches = corpus.query(cqp_query=query.cqp_query,
                                context_break=query.s,
                                match_strategy=query.match_strategy,
