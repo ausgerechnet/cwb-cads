@@ -4,8 +4,8 @@
 import pytest
 
 from cads import create_app
-from cads.database import init_db
 from cads.corpus import read_corpora
+from cads.database import init_db
 from cads.discourseme import import_discoursemes
 
 app = create_app('cfg.TestConfig')

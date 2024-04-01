@@ -72,7 +72,7 @@ def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
     return attributes
 
 
-def meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'}):
+def meta_from_tsv(cwb_id, path, level='text', column_mapping={}):
     """corpus meta data is read as a DataFrame indexed by match, matchend
 
     """
@@ -137,7 +137,7 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime'
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
 
 
-def subcorpora_from_tsv(cwb_id, path, column='subcorpus', create_nqr=False):
+def subcorpora_from_tsv(cwb_id, path, column='subcorpus', level='text', create_nqr=False):
 
     cqp_bin = current_app.config['CCC_CQP_BIN']
     registry_dir = current_app.config['CCC_REGISTRY_DIR']
@@ -147,17 +147,9 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', create_nqr=False):
     df = read_csv(path, sep='\t')
     corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
 
-    # 3 min
-    level = 'text'
-    # subcorpora = ["CDU/CSU12", "CDU/CSU18", "SPD12", "SPD18", "PDS12", "DIE LINKE18", "GRUENE12", "GRUENE18", "LP12", "LP18"]
-
     for name, df in df.groupby(column):
 
-        # if name not in subcorpora:
-        #     click.echo(f'skipping subcorpus "{name}" with {len(df)} regions')
-        #     continue
-
-        click.echo(f'creating subcorpus "{name}" with {len(df)} regions')
+        current_app.logger.debug(f'creating subcorpus "{name}" with {len(df)} regions')
         # create NQR
         df = df.drop(column, axis=1)
         nqr_cqp = None
@@ -215,12 +207,12 @@ def read_corpora(path=None, keep_old=True, reread_attributes=False):
     if not keep_old:
         corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
         for cwb_id in corpora_delete_ids:
-            click.echo(f'deleting corpus {cwb_id}')
+            current_app.logger.debug(f'deleting corpus {cwb_id}')
             db.session.delete(corpora_old[cwb_id])
 
     # UPDATE
     for cwb_id in corpora_update_ids:
-        click.echo(f'updating corpus {cwb_id}')
+        current_app.logger.debug(f'updating corpus {cwb_id}')
         corpus = corpora_old[cwb_id]
         if reread_attributes:
             [db.session.delete(att) for att in corpus.attributes]
@@ -237,7 +229,7 @@ def read_corpora(path=None, keep_old=True, reread_attributes=False):
 
     # ADD
     for cwb_id in corpora_add_ids:
-        click.echo(f'adding corpus {cwb_id}')
+        current_app.logger.debug(f'adding corpus {cwb_id}')
         corpus = Corpus(**corpora_new[cwb_id])
         db.session.add(corpus)
         db.session.commit()
@@ -387,7 +379,7 @@ def read_meta(cwb_id, path):
     - from TSV
     - from within XML
     """
-    meta_from_tsv(cwb_id, path)
+    meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'})
 
 
 @bp.cli.command('subcorpora')

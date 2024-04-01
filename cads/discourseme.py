@@ -10,6 +10,7 @@ import click
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, Nested, String
 from apiflask.validators import OneOf
+from flask import current_app
 from pandas import DataFrame, read_csv
 
 from . import db
@@ -40,7 +41,7 @@ def import_discoursemes(glob_in, p='lemma', col_surface='query', col_name='name'
     user = User.query.filter_by(username=username).first()
 
     for path in glob(glob_in):
-        click.echo(f'path: {path}')
+        current_app.logger.debug(f'path: {path}')
         df = read_csv(path, sep="\t")
         df = df.rename({col_surface: 'surface'}, axis=1)
         for name, items in df.groupby(col_name):

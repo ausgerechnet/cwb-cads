@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import os
+import sys
 from logging.config import dictConfig
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
