@@ -25,6 +25,9 @@ def ccc_breakdown(breakdown, return_df=True):
         from .query import ccc_query
         current_app.logger.debug('ccc_breakdown :: counting matches')
         matches_df = ccc_query(breakdown._query, return_df=True)
+        if matches_df is None:
+            current_app.logger.debug('ccc_breakdown :: 0 matches')
+            return
         corpus = Corpus(breakdown._query.corpus.cwb_id,
                         cqp_bin=current_app.config['CCC_CQP_BIN'],
                         registry_dir=current_app.config['CCC_REGISTRY_DIR'],
