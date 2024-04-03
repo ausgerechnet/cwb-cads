@@ -7,7 +7,6 @@ def test_create_query(client, auth):
     with client:
         client.get("/")
 
-        # query
         query = client.post(url_for('query.create'),
                             json={
                                 'corpus_id': 1,

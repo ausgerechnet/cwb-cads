@@ -49,20 +49,10 @@ def sort_matches(query, sort_by, sort_offset=0):
     concordance = Concordance.query.filter_by(query_id=query.id, sort_by=sort_by, sort_offset=sort_offset, random_seed=random_seed).first()
 
     if not concordance:
+
         concordance = Concordance(query_id=query.id, sort_by=sort_by, sort_offset=sort_offset, random_seed=random_seed)
         db.session.add(concordance)
         db.session.commit()
-
-        subcorpus = SubCorpus(
-            subcorpus_name=query.nqr_cqp,
-            df_dump=None,
-            corpus_name=query.corpus.cwb_id,
-            cqp_bin=current_app.config['CCC_CQP_BIN'],
-            registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-            data_dir=current_app.config['CCC_DATA_DIR'],
-            overwrite=False,
-            lib_dir=None
-        )
 
         if not sort_by:
             sort_clause = f"sort {query.nqr_cqp} randomize {random_seed}"
@@ -75,6 +65,16 @@ def sort_matches(query, sort_by, sort_offset=0):
             else:
                 sort_clause = f"sort {query.nqr_cqp} by {sort_by} on match .. matchend"
 
+        subcorpus = SubCorpus(
+            subcorpus_name=query.nqr_cqp,
+            df_dump=None,
+            corpus_name=query.corpus.cwb_id,
+            cqp_bin=current_app.config['CCC_CQP_BIN'],
+            registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+            data_dir=current_app.config['CCC_DATA_DIR'],
+            overwrite=False,
+            lib_dir=None
+        )
         cqp = subcorpus.start_cqp()
         cqp.Exec(sort_clause)
         concordance_lines = cqp.Dump(query.nqr_cqp)

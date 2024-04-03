@@ -14,8 +14,8 @@ from flask import current_app
 from pandas import DataFrame, read_csv
 
 from . import db
-from .database import (Corpus, Discourseme, DiscoursemeTemplateItems, User,
-                       get_or_create)
+from .database import (Corpus, Discourseme, DiscoursemeTemplateItems,
+                       SubCorpus, User, get_or_create)
 from .query import QueryOut, get_or_create_query_discourseme
 from .users import auth
 
@@ -236,7 +236,9 @@ def get_query(id, corpus_id, query_data):
     """
     discourseme = db.get_or_404(Discourseme, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    query = get_or_create_query_discourseme(corpus, discourseme, subcorpus_id=query_data.get('subcorpus_id'),
+    subcorpus_id = query_data.get('subcorpus_id')
+    subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
+    query = get_or_create_query_discourseme(corpus, discourseme, subcorpus=subcorpus,
                                             s=query_data.get('s'), match_strategy=query_data.get('match_strategy'))
 
     return QueryOut().dump(query), 200

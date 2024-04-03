@@ -1,14 +1,17 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from collections import defaultdict
 from random import randint
+from tempfile import NamedTemporaryFile
 
 from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus, SubCorpus
+from ccc.cache import generate_idx
 from ccc.collocates import dump2cooc
-from ccc.utils import format_cqp_query
+from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app
 from pandas import DataFrame
 
@@ -23,6 +26,118 @@ from .database import (Breakdown, Collocation, Cotext, Discourseme, Matches,
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
+
+
+def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strategy='longest'):
+
+    current_app.logger.debug(f'discourseme2matches :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
+
+    # create template if necessary
+    if len(discourseme.template) == 0:
+        discourseme.generate_template()
+
+    queries = list()
+    wordlists = defaultdict(list)
+    for item in discourseme.template:
+        tokens = item.surface.split(" ")
+
+        if len(tokens) > 1 or cqp_escape(item.surface) != item.surface or item.cqp_query:
+            query = ""
+            for token in tokens:
+                query += f'[{item.p}="{token}"]'
+            queries.append(query)
+
+        else:
+            wordlists[item.p].append(item.surface)
+
+    crps = Corpus(corpus.cwb_id,
+                  cqp_bin=current_app.config['CCC_CQP_BIN'],
+                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                  data_dir=current_app.config['CCC_DATA_DIR'])
+
+    # subcorpus?
+    if subcorpus:
+
+        if subcorpus.nqr_cqp is None:
+            current_app.logger.debug('ccc_query :: creating subcorpus')
+            df = DataFrame([vars(s) for s in subcorpus.spans], columns=['match', 'matchend'])
+            crps = crps.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
+            subcorpus.nqr_cqp = crps.subcorpus_name
+            db.session.commit()
+
+        else:
+            crps = crps.subcorpus(subcorpus_name=subcorpus.nqr_cqp)
+
+        if subcorpus.nqr_cqp not in crps.show_nqr()['subcorpus'].values:
+            raise NotImplementedError('dynamic subcorpus creation unsuccessful')
+
+    else:
+        crps = Corpus(corpus.cwb_id,
+                      cqp_bin=current_app.config['CCC_CQP_BIN'],
+                      registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                      data_dir=current_app.config['CCC_DATA_DIR'])
+
+    # we start CQP here and define wordlists
+    cqp = crps.start_cqp()
+    for p, wl_items in wordlists.items():
+        wl_name = generate_idx([discourseme.id, corpus.cwb_id, p] + wl_items, prefix="wl_")
+        queries.append(f"[{p} = ${wl_name}]")
+        with NamedTemporaryFile(mode='wt') as f:
+            f.write("\n".join(wl_items))
+            f.seek(0)
+            f.flush()
+            cqp.Exec(f'define ${wl_name} < "{f.name}";')
+
+    # create query
+    cqp_query = "|".join(queries)
+    cqp_query = f'({cqp_query}) within {s};' if s is not None else query + ";"
+    query = Query(
+        discourseme_id=discourseme.id,
+        corpus_id=corpus.id,
+        subcorpus_id=subcorpus.id if subcorpus else None,
+        cqp_query=cqp_query,
+        s=s,
+        match_strategy=match_strategy
+    )
+    db.session.add(query)
+    db.session.commit()
+
+    name = generate_idx([discourseme.id, corpus.cwb_id, subcorpus.nqr_cqp if subcorpus else None, cqp_query, s, match_strategy], prefix="Query_")
+
+    # query CQP and exit
+    cqp.Exec(f'set MatchingStrategy "{match_strategy}";')
+    matches_df = cqp.nqr_from_query(query.cqp_query,
+                                    name=name,
+                                    match_strategy=match_strategy,
+                                    return_dump=True,
+                                    propagate_error=True)
+    cqp.nqr_save(corpus.cwb_id, name=name)
+    cqp.__del__()
+
+    if isinstance(matches_df, str):  # ERROR
+        current_app.logger.error(f"{matches_df}")
+        db.session.delete(query)
+        db.session.commit()
+        return matches_df
+
+    if len(matches_df) == 0:  # no matches
+        current_app.logger.debug("0 matches")
+        return None
+
+    # update name
+    query.nqr_cqp = name
+    db.session.commit()
+
+    # save matches
+    matches_df = matches_df.reset_index()[['match', 'matchend']]
+    matches_df['contextid'] = matches_df['match'].apply(lambda cpos: crps.cpos2sid(cpos, s)).astype(int)
+    matches_df['query_id'] = query.id
+    current_app.logger.debug(f"ccc_query :: saving {len(matches_df)} lines to database")
+    matches_df.to_sql('matches', con=db.engine, if_exists='append', index=False)
+    db.session.commit()
+    current_app.logger.debug("ccc_query :: saved to database")
+
+    return query
 
 
 def ccc_query(query, return_df=True):
@@ -134,17 +249,17 @@ def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='lo
     return query
 
 
-def get_or_create_query_discourseme(corpus, discourseme, subcorpus_id=None, s=None, match_strategy='longest'):
+def get_or_create_query_discourseme(corpus, discourseme, subcorpus=None, s=None, match_strategy='longest'):
     """get or create query for discourseme in corpus
 
     """
 
-    s = sort_s(corpus.s_atts)[0] if s is None else s
+    s = sort_s(corpus.s_atts)[0] if s is None else s  # TODO improve
 
-    # TODO run only on subcorpus
     current_app.logger.debug(f'get_or_create_query :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
 
     # try to retrieve
+    subcorpus_id = subcorpus.id if subcorpus else None
     q = [q for q in discourseme.queries if q.corpus_id == corpus.id and q.subcorpus_id == subcorpus_id]
     if len(q) > 1:  # must not happen due to unique constraint
         raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
@@ -153,27 +268,7 @@ def get_or_create_query_discourseme(corpus, discourseme, subcorpus_id=None, s=No
 
     # create query
     elif len(q) == 0:
-        current_app.logger.debug('get_or_create_query :: querying')
-        # create template if necessary
-        if len(discourseme.template) == 0:
-            discourseme.generate_template()
-
-        items = [i.surface for i in discourseme.template]
-        p_atts = [i.p for i in discourseme.template]
-        p = p_atts[0]           # TODO
-        cqp_query = format_cqp_query(items, p_query=p, s_query=s, escape=False)
-
-        query = Query(
-            discourseme_id=discourseme.id,
-            corpus_id=corpus.id,
-            subcorpus_id=subcorpus_id,
-            cqp_query=cqp_query,
-            s=s,
-            match_strategy=match_strategy
-        )
-        db.session.add(query)
-        db.session.commit()
-        ccc_query(query, return_df=False)
+        query = ccc_discourseme_matches(corpus, discourseme, s=s, subcorpus=subcorpus, match_strategy=match_strategy)
 
     return query
 
@@ -468,11 +563,13 @@ def concordance_lines(query_id, query_data):
     filter_queries = set()
 
     for discourseme_id in filter_discourseme_ids:
+        # always run on whole corpus
         fd = db.get_or_404(Discourseme, discourseme_id)
         fq = get_or_create_query_discourseme(corpus, fd)
         filter_queries.add(fq)
 
     if filter_item:
+        # TODO: run only on subcorpus → temporary
         fq = get_or_create_query_item(corpus, filter_item, filter_item_p_att, query.s)
         filter_queries.add(fq)
 
