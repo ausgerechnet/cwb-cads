@@ -169,7 +169,7 @@ def collocation(id, corpus_id, query_data):
 
     # TODO: constellations should really only have one filter_discourseme??
     filter_discourseme = constellation.filter_discoursemes[0]
-    query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus.id).id
+    query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus).id
 
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
