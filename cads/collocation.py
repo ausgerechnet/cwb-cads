@@ -178,6 +178,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
     subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
     subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[p]).rename({'freq': 'f'}, axis=1)
+    # TODO just split the items of the full_breakdown and combine
     subcorpus_matches_unigram_breakdown = subcorpus_matches.breakdown(p_atts=[p], split=True).rename({'freq': 'f'}, axis=1)
 
     # create and save unigram counts

@@ -8,7 +8,7 @@ from flask import redirect, url_for
 from . import db
 from .collocation import CollocationIn, CollocationOut, ccc_collocates
 from .concordance import ConcordanceIn, ConcordanceOut
-from .database import (Collocation, Constellation, Corpus, Discourseme,
+from .database import (Collocation, Constellation, Corpus, SubCorpus, Discourseme,
                        get_or_create)
 from .discourseme import DiscoursemeOut
 from .query import get_or_create_query_discourseme
@@ -165,11 +165,11 @@ def collocation(id, corpus_id, query_data):
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    subcorpus_id = query_data.get('subcorpus_id')
+    subcorpus = db.get_or_404(SubCorpus, query_data.get('subcorpus_id'))
 
     # TODO: constellations should really only have one filter_discourseme??
     filter_discourseme = constellation.filter_discoursemes[0]
-    query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus_id).id
+    query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus.id).id
 
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
