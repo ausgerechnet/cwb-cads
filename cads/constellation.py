@@ -165,7 +165,8 @@ def collocation(id, corpus_id, query_data):
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    subcorpus = db.get_or_404(SubCorpus, query_data.get('subcorpus_id'))
+    subcorpus_id = query_data.get('subcorpus_id')
+    subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
 
     # TODO: constellations should really only have one filter_discourseme??
     filter_discourseme = constellation.filter_discoursemes[0]
