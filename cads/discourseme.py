@@ -92,7 +92,7 @@ class DiscoursemeQueryIn(Schema):
 
     subcorpus_id = Integer()
     s = String()
-    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
     items = Nested(DiscoursemeTemplateItem(many=True))
 
 
