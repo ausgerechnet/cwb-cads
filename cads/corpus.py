@@ -72,15 +72,15 @@ def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
     return attributes
 
 
-def meta_from_tsv(cwb_id, path, level='text', column_mapping={}):
+def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
     """corpus meta data is read as a DataFrame indexed by match, matchend
 
     """
 
     corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
 
-    current_app.logger.debug("reading meta data")
-    d = read_csv(path, sep="\t")
+    current_app.logger.debug(f'reading meta data for level "{level}" of corpus "{cwb_id}"')
+    meta = read_csv(path, sep=sep)
 
     # segmentation
     segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
@@ -88,40 +88,36 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={}):
         current_app.logger.debug("segmentation already exists")
     else:
         current_app.logger.debug("storing segmentation")
-        segmentation = Segmentation(
-            corpus_id=corpus.id,
-            level=level
-        )
+        segmentation = Segmentation(corpus_id=corpus.id, level=level)
         db.session.add(segmentation)
         db.session.commit()
-        # segmentation spans
-        current_app.logger.debug("storing segmentation spans")
-        d['segmentation_id'] = segmentation.id
-        d[['segmentation_id', 'match', 'matchend']].to_sql("segmentation_span", con=db.engine, if_exists='append', index=False)
+        meta['segmentation_id'] = segmentation.id
+        meta[['segmentation_id', 'match', 'matchend']].to_sql(
+            "segmentation_span", con=db.engine, if_exists='append', index=False
+        )
         db.session.commit()
-        d = d.drop('segmentation_id', axis=1)
+        meta = meta.drop('segmentation_id', axis=1)
 
     # segmentation spans
     current_app.logger.debug("retrieving stored segmentation spans")
-    segmentation_spans = DataFrame([vars(s) for s in segmentation.spans]).rename({'id': 'segmentation_span_id'}, axis=1)
-
+    segmentation_spans = DataFrame([vars(s) for s in segmentation.spans]).rename(
+        {'id': 'segmentation_span_id'}, axis=1
+    )
     current_app.logger.debug("merging with new information")
-    d = segmentation_spans.merge(d, on=['match', 'matchend'])
-
+    meta = segmentation_spans.merge(meta, on=['match', 'matchend'])
     for col, value_type in column_mapping.items():
-
         current_app.logger.debug(f'key: "{col}", value_type: "{value_type}"')
-
-        if col not in d.columns:
-            current_app.logger.error(f'column "{col}" not found')
+        if col not in meta.columns:
+            current_app.logger.error(f'.. column "{col}" not found, skipping')
             continue
 
         # segmentation annotation
-        segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=col).first()
+        segmentation_annotation = SegmentationAnnotation.query.filter_by(
+            segmentation_id=segmentation.id, key=col
+        ).first()
         if segmentation_annotation is not None:
-            current_app.logger.debug("segmentation annotation already exists")
+            current_app.logger.debug(".. segmentation annotation already exists")
         else:
-            current_app.logger.debug("storing segmentation annotation")
             segmentation_annotation = SegmentationAnnotation(
                 segmentation_id=segmentation.id,
                 key=col,
@@ -129,9 +125,7 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={}):
             )
             db.session.add(segmentation_annotation)
             db.session.commit()
-            # segmentation span annotation
-            current_app.logger.debug("storing segmentation span annotations")
-            df = d[['segmentation_span_id', col]].copy()
+            df = meta[['segmentation_span_id', col]].copy()
             df = df.rename({col: f'value_{value_type}'}, axis=1)
             df['segmentation_annotation_id'] = segmentation_annotation.id
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
@@ -144,14 +138,14 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', level='text', create_n
     data_dir = current_app.config['CCC_DATA_DIR']
     lib_dir = None
 
-    df = read_csv(path, sep='\t')
+    subcorpora = read_csv(path, sep='\t')
     corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
 
-    for name, df in df.groupby(column):
+    for name, subcorpus in subcorpora.groupby(column):
 
-        current_app.logger.debug(f'creating subcorpus "{name}" with {len(df)} regions')
+        current_app.logger.debug(f'creating subcorpus "{name}" with {len(subcorpus)} regions')
         # create NQR
-        df = df.drop(column, axis=1)
+        df = subcorpus.drop(column, axis=1)
         nqr_cqp = None
         if create_nqr:
             nqr = CCCSubCorpus(corpus_name=cwb_id,
@@ -164,7 +158,9 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', level='text', create_n
                                overwrite=False)
             nqr_cqp = nqr.subcorpus_name
 
-        segmentation = Segmentation.query.filter(Segmentation.corpus_id == corpus.id, Segmentation.level == level)
+        segmentation = Segmentation.query.filter(
+            Segmentation.corpus_id == corpus.id, Segmentation.level == level
+        )
 
         # is there one and only one segmentation?
         if len(segmentation.all()) > 1:
@@ -178,8 +174,13 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', level='text', create_n
         nr_arrays = int(len(df) / 100000) + 1
         dfs = array_split(df, nr_arrays)
         spans = list()
-        for df in dfs:
-            spans.extend(SegmentationSpan.query.filter(SegmentationSpan.segmentation_id == segmentation.id, SegmentationSpan.match.in_(df['match'])).all())
+        for i, df in enumerate(dfs):
+            current_app.logger.debug(f'.. batch {i+1} of {len(dfs)}')
+            spans.extend(SegmentationSpan.query.filter(
+                SegmentationSpan.segmentation_id == segmentation.id, SegmentationSpan.match.in_(df['match'])
+            ).all())
+        nr_tokens = sum([s.matchend - s.match + 1 for s in spans])
+        current_app.logger.debug(f'.. {nr_tokens} tokens')
 
         # expose as SubCorpus
         subcorpus = SubCorpus(corpus_id=corpus.id,
@@ -187,12 +188,13 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', level='text', create_n
                               name=name,
                               description='imported subcorpus',
                               nqr_cqp=nqr_cqp,
+                              nr_tokens=nr_tokens,
                               spans=spans)
         db.session.add(subcorpus)
         db.session.commit()
 
 
-def read_corpora(path=None, keep_old=True, reread_attributes=False):
+def read_corpora(path=None, delete_old=False, reread_attributes=False):
 
     path = current_app.config['CORPORA'] if path is None else path
 
@@ -204,7 +206,7 @@ def read_corpora(path=None, keep_old=True, reread_attributes=False):
     corpora_add_ids = [cwb_id for cwb_id in corpora_new.keys() if cwb_id not in corpora_old.keys()]
 
     # DELETE
-    if not keep_old:
+    if delete_old:
         corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
         for cwb_id in corpora_delete_ids:
             current_app.logger.debug(f'deleting corpus {cwb_id}')
@@ -241,7 +243,6 @@ def read_corpora(path=None, keep_old=True, reread_attributes=False):
             for level in levels:
                 db.session.add(CorpusAttributes(corpus_id=corpus.id, level=level, attribute=attribute))
 
-    # add new corpora
     db.session.commit()
 
 
@@ -373,13 +374,14 @@ def get_subcorpora(id):
 @bp.cli.command('read-meta')
 @click.argument('cwb_id')
 @click.argument('path')
-def read_meta(cwb_id, path):
+@click.option('--level', default='text')
+def read_meta(cwb_id, path, level):
     """Read meta data of corpus from TSV table.
 
     - from TSV
     - from within XML
     """
-    meta_from_tsv(cwb_id, path, level='text', column_mapping={'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'})
+    meta_from_tsv(cwb_id, path, level=level, column_mapping={'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'})
 
 
 @bp.cli.command('subcorpora')
@@ -399,15 +401,15 @@ def subcorpora(cwb_id, glob_in):
 
 @bp.cli.command('import')
 @click.option('--path', default=None)
-@click.option('--keep_old', default=True, is_flag=True)
+@click.option('--delete_old', default=False, is_flag=True)
 @click.option('--reread_attributes', default=False, is_flag=True)
-def update_corpora(path, keep_old, reread_attributes):
+def update_corpora(path, delete_old, reread_attributes):
     """update corpora according to JSON file
     - by default, this uses the CORPORA path defined in config
     - corpora are identified via CWBID
-    - existing corpora included in file are updated but keep the same ID (if not deleted via keep_old=False)
+    - existing corpora included in file are updated but keep the same ID (if not deleted via delete_old=True)
     - new corpora are added
     - attributes will be (re-)read from CWB only for new corpora (if not forced via reread_attributes=True)
     """
 
-    read_corpora(path, keep_old, reread_attributes)
+    read_corpora(path, delete_old, reread_attributes)
