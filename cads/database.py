@@ -85,20 +85,24 @@ class User(db.Model, UserMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow)
+
+    first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
+    last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     username = db.Column(db.Unicode(255), nullable=False, server_default=u'', unique=True)
     email = db.Column(db.Unicode(255), nullable=False, server_default=u'', unique=True)
     email_confirmed_at = db.Column(db.DateTime)
+
     password_hash = db.Column(db.Unicode(255), nullable=False, server_default='')
     reset_password_token = db.Column(db.Unicode(255), nullable=False, server_default=u'')
+
     active = db.Column('is_active', db.Boolean(), nullable=False, server_default='0')
-    first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
-    last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     roles = db.relationship('Role', secondary=users_roles)
 
     discoursemes = db.relationship('Discourseme', backref='user')
     constellations = db.relationship('Constellation', backref='user')
     # collocations = db.relationship('Collocation', backref='user')
-    # keyword_analyses = db.relationship('Keyword', backref='user', lazy=True)
+    # keywords = db.relationship('Keyword', backref='user')
 
 
 class Role(db.Model):
@@ -117,16 +121,18 @@ class Corpus(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    cwb_id = db.Column(db.Unicode)
+
     name = db.Column(db.Unicode)
     language = db.Column(db.Unicode)
     register = db.Column(db.Unicode)
     description = db.Column(db.Unicode)
+
+    cwb_id = db.Column(db.Unicode)
     embeddings = db.Column(db.Unicode)  # TODO → attributes
 
-    queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
     attributes = db.relationship('CorpusAttributes', backref='corpus', passive_deletes=True, cascade='all, delete')
     subcorpora = db.relationship('SubCorpus', backref='corpus', passive_deletes=True, cascade='all, delete')
+    queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
 
     @property
     def p_atts(self):
@@ -174,13 +180,10 @@ class SubCorpus(db.Model):
     description = db.Column(db.Unicode)
 
     nqr_cqp = db.Column(db.Unicode)
-    spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span,
-                            backref=db.backref('sub_corpus'))
-    queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
+    nr_tokens = db.Column(db.Integer)
 
-    @property
-    def nr_tokens(self):
-        return sum([s.matchend - s.match + 1 for s in self.spans])
+    spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span, backref=db.backref('sub_corpus'))
+    queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
 
 
 class Embeddings(db.Model):
@@ -366,9 +369,9 @@ class Breakdown(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
     p = db.Column(db.Unicode, nullable=False)
 
@@ -381,9 +384,8 @@ class BreakdownItems(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-    breakdown_id = db.Column(db.Integer, db.ForeignKey('breakdown.id', ondelete='CASCADE'))
+    breakdown_id = db.Column(db.Integer, db.ForeignKey('breakdown.id', ondelete='CASCADE'), index=True)
 
     item = db.Column(db.Unicode)
     freq = db.Column(db.Integer)
@@ -402,6 +404,7 @@ class Concordance(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
+
     sort_by = db.Column(db.String)
     sort_offset = db.Column(db.Integer)
     random_seed = db.Column(db.Integer)
@@ -412,7 +415,9 @@ class Concordance(db.Model):
 class ConcordanceLines(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
-    concordance_id = db.Column(db.Integer, db.ForeignKey('concordance.id', ondelete='CASCADE'))
+
+    concordance_id = db.Column(db.Integer, db.ForeignKey('concordance.id', ondelete='CASCADE'), index=True)
+
     match = db.Column(db.Integer)  # , db.ForeignKey('matches.id', ondelete='CASCADE'))
     contextid = db.Column(db.Integer)
 
@@ -423,9 +428,9 @@ class Cotext(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
     context = db.Column(db.Integer)
     context_break = db.Column(db.String)
