@@ -146,7 +146,7 @@ def concordance_lines(id, corpus_id, query_data):
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    # TODO: constellations should really only have one filter_discourseme
+    # TODO: constellations should really only have one filter_discourseme??
     filter_discourseme = constellation.filter_discoursemes[0]
     query_id = get_or_create_query_discourseme(corpus, filter_discourseme).id
 

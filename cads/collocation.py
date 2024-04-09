@@ -160,7 +160,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     subcorpus_matches_df = corpus_matches_df.loc[corpus_matches_df['in_context']]
     if len(subcorpus_matches_df) == 0:
         current_app.logger.debug(f'query_discourseme_cotext :: no matches in context for discourseme "{discourseme.name}"')
-        # TODO still save corpus_matches_breakdown!
+        # TODO return corpus_matches_cpos
         return
 
     # create breakdowns
@@ -223,6 +223,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     discourseme_item_scores['collocation_id'] = collocation.id
     discourseme_item_scores.to_sql('discourseme_item_score', con=db.engine, if_exists='append', index=False)
 
+    # TODO return corpus_matches_cpos
     return
 
 
@@ -300,8 +301,7 @@ def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number, hig
         )
 
         current_app.logger.debug('ccc_collocates :: .. making sure discourseme scores exist')
-        discoursemes = collocation.constellation.highlight_discoursemes + \
-            collocation.constellation.filter_discoursemes
+        discoursemes = collocation.constellation.highlight_discoursemes + collocation.constellation.filter_discoursemes
         get_discourseme_counts(collocation, discoursemes)
 
         current_app.logger.debug(f'ccc_collocates :: .. dumping scores for {len(discoursemes)} discoursemes')
