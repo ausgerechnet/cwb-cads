@@ -178,6 +178,49 @@ export const queryConcordancesQueryOptions = (
     staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
+export const queryConcordanceContextQueryOptions = (
+  queryId: string,
+  concordanceLineId: string,
+  {
+    window,
+    extendedWindow: extended_window,
+    extendedContextBreak: extended_context_break,
+    primary,
+    secondary,
+  }: {
+    window?: number
+    extendedWindow?: number
+    extendedContextBreak?: string
+    primary?: string
+    secondary?: string
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'query-concordance-context',
+      queryId,
+      concordanceLineId,
+      window,
+      extended_window,
+      extended_context_break,
+      primary,
+      secondary,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getQueryQuery_idconcordanceId({
+        params: { query_id: queryId, id: concordanceLineId },
+        queries: {
+          window,
+          extended_window,
+          extended_context_break,
+          primary,
+          secondary,
+        },
+        signal,
+      }),
+    staleTime: 1_000 * 60 * 5, // 5 minutes
+  })
+
 export const queryConcordancesShuffleMutationOptions: MutationOptions<
   { query_id?: number },
   Error,
