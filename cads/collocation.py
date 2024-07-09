@@ -195,7 +195,8 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     counts.to_sql('collocation_discourseme_unigram_items', con=db.engine, if_exists='append', index=False)
     counts_from_sql = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id, discourseme_id=discourseme.id)
     counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
-    discourseme_unigram_item_scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    vocab_size = len(counts)
+    discourseme_unigram_item_scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=vocab_size).reset_index()
     discourseme_unigram_item_scores = discourseme_unigram_item_scores.melt(
         id_vars=['id'], var_name='measure', value_name='score'
     ).rename({'id': 'collocation_item_id'}, axis=1)
@@ -216,7 +217,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
     counts.to_sql('collocation_discourseme_items', con=db.engine, if_exists='append', index=False)
     counts_from_sql = CollocationDiscoursemeItems.query.filter_by(collocation_id=collocation.id, discourseme_id=discourseme.id)
     counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
-    discourseme_item_scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    discourseme_item_scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=vocab_size).reset_index()
     discourseme_item_scores = discourseme_item_scores.melt(
         id_vars=['id'], var_name='measure', value_name='score'
     ).rename({'id': 'collocation_item_id'}, axis=1)
@@ -305,7 +306,7 @@ def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number, hig
         get_discourseme_counts(collocation, discoursemes)
 
         current_app.logger.debug(f'ccc_collocates :: .. dumping scores for {len(discoursemes)} discoursemes')
-        discourseme_scores = collocation.discourseme_scores
+        discourseme_scores = [s for s in collocation.discourseme_scores if s['discourseme_id'] != collocation._query.discourseme.id]
         for s in discourseme_scores:
             s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
             s['unigram_item_scores'] = [CollocationItemOut().dump(sc) for sc in s['unigram_item_scores']]
@@ -474,12 +475,21 @@ def get_collocation_items(id, query_data):
 
     return_coordinates = True
     if return_coordinates:
-        requested_items = [item['item'] for item in collocation['items']]
         if semantic_map:
+            requested_items = [item['item'] for item in collocation['items']]
             ccc_semmap_update(semantic_map, requested_items)
             collocation['coordinates'] = [
                 CoordinatesOut().dump(coordinates) for coordinates in semantic_map.coordinates if coordinates.item in requested_items
             ]
+            requested_discourseme_items = list()
+            for discourseme_score in collocation['discourseme_scores']:
+                requested_discourseme_items.extend([d['item'] for d in discourseme_score['item_scores']])
+            if len(requested_discourseme_items) > 0:
+                ccc_semmap_update(semantic_map, requested_discourseme_items)
+                collocation['coordinates'].extend([
+                    CoordinatesOut().dump(coordinates) for coordinates in semantic_map.coordinates if
+                    (coordinates.item in requested_discourseme_items) and (coordinates.item not in requested_items)
+                ])
         else:
             current_app.logger.error(f"no semantic map for collocation analysis {id}")
 
