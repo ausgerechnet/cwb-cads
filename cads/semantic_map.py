@@ -62,10 +62,7 @@ def ccc_semmap_update(semantic_map, items):
 
     coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item'])
     coordinates = coordinates.set_index('item')
-
-    # sometimes there's duplicates, but why?
-    # print(coordinates.loc[coordinates.index.duplicated()])
-    coordinates = coordinates.loc[~coordinates.index.duplicated()]
+    coordinates = coordinates.loc[~coordinates.index.duplicated()]  # remove duplicates if necessary
 
     # items without coordinates
     new_items = list(set(items) - set(coordinates.index))
