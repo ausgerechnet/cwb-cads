@@ -301,7 +301,7 @@ def get_corpus(id):
 @bp.output(SubCorpusOut(many=True))
 @bp.auth_required(auth)
 def get_subcorpora(id):
-    """Get all corpora.
+    """Get all subcorpora of a corpus.
 
     """
     subcorpora = SubCorpus.query.filter_by(corpus_id=id).all()
