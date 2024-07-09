@@ -100,7 +100,7 @@ def refresh(json_data):
 
     """
 
-    refresh_token = data['refresh_token']
+    refresh_token = json_data['refresh_token']
     data = decode_token(refresh_token)
     user = db.get_or_404(User, data['sub']['id'])
 
