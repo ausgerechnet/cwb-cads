@@ -12,7 +12,7 @@ from pandas import DataFrame, read_sql
 from . import db
 from .database import (Collocation, CollocationDiscoursemeItems,
                        CollocationDiscoursemeUnigramItems, CollocationItems,
-                       CotextLines, Discourseme, ItemScore)
+                       CotextLines, Discourseme, ItemScore, SemanticMap)
 from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
                            ccc_semmap_update)
 from .users import auth
@@ -454,6 +454,7 @@ class CollocationOut(Schema):
 
 #     return [CollocationOut().dump(collocation) for collocation in collocations], 200
 
+
 @bp.get("/<id>")
 @bp.input(CollocationIn(partial=True), location='query')
 @bp.output(CollocationOut)
@@ -511,24 +512,41 @@ def delete_collocation(id):
 
 
 @bp.post('/<id>/semantic-map/')
+@bp.input({'semantic_map_id': Integer(load_default=None)}, location='query')
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
-def create_semantic_map(id):
-    """Create new semantic map for collocation items.
+def create_semantic_map(id, query_data):
+    """Create new semantic map for collocation items or make sure there are coordinates for all items on an existing map.
 
     """
 
     collocation = db.get_or_404(Collocation, id)
-    embeddings = collocation._query.corpus.embeddings
-    if collocation.constellation:
-        get_or_create_counts(collocation, remove_filter_cpos=False)
-        filter_unigram = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id,
-                                                                            discourseme_id=collocation._query.discourseme.id)
-        filter_items = [f.item for f in filter_unigram]
-    else:
-        filter_items = []
 
-    ccc_semmap(collocation, embeddings, sort_by="conservative_log_ratio", number=500, blacklist_items=filter_items)
+    if query_data['semantic_map_id']:
+
+        collocation.semantic_map = db.get_or_404(SemanticMap, query_data['semantic_map_id'])
+        db.session.commit()
+        scores = ItemScore.query.filter(
+            ItemScore.collocation_id == collocation.id,
+            ItemScore.measure == 'conservative_log_ratio'
+        ).order_by(ItemScore.score.desc()).paginate(page=1, per_page=500)
+        df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
+        new_items = [CollocationItems.query.filter_by(id=id).first() for id in df_scores['collocation_item_id']]
+        print([item.item for item in new_items])
+        ccc_semmap_update(collocation.semantic_map, [item.item for item in new_items])
+
+    else:
+
+        embeddings = collocation._query.corpus.embeddings
+        if collocation.constellation:
+            get_or_create_counts(collocation, remove_filter_cpos=False)
+            filter_unigram = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id,
+                                                                                discourseme_id=collocation._query.discourseme.id)
+            filter_items = [f.item for f in filter_unigram]
+        else:
+            filter_items = []
+
+        ccc_semmap(collocation, embeddings, sort_by="conservative_log_ratio", number=500, blacklist_items=filter_items)
 
     return SemanticMapOut().dump(collocation.semantic_map), 200
 
