@@ -6,7 +6,7 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, Nested, String
+from apiflask.fields import Boolean, Integer, List, Nested, String, Float
 from apiflask.validators import OneOf
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
@@ -112,6 +112,7 @@ def meta_from_df(corpus, df_meta, level, column_mapping):
         if segmentation_annotation is not None:
             current_app.logger.debug(".. segmentation annotation already exists")
         else:
+            current_app.logger.debug(".. storing segmentation annotation")
             df = df_meta[['segmentation_span_id', col]].copy()
 
             # TODO improve conversion
@@ -142,6 +143,60 @@ def meta_from_df(corpus, df_meta, level, column_mapping):
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
 
 
+def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin, registry_dir, data_dir):
+
+    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
+
+    nqr_cqp = None
+    if create_nqr:
+        nqr = CCCSubCorpus(corpus_name=cwb_id,
+                           subcorpus_name=None,
+                           df_dump=df.set_index(['match', 'matchend']),
+                           cqp_bin=cqp_bin,
+                           registry_dir=registry_dir,
+                           data_dir=data_dir,
+                           lib_dir=None,
+                           overwrite=False)
+        nqr_cqp = nqr.subcorpus_name
+
+    segmentation = Segmentation.query.filter(
+        Segmentation.corpus_id == corpus.id, Segmentation.level == level
+    )
+
+    # is there one and only one segmentation?
+    if len(segmentation.all()) > 1:
+        raise NotImplementedError('several corresponding segmentation founds')
+    segmentation = segmentation.first()
+    if not segmentation:
+        raise NotImplementedError('no corresponding segmentation found')
+
+    # get segmentation spans
+    # we need to batch here for select clause (hard limit: 500,000 for `column.in_()`)
+    nr_arrays = int(len(df) / 100000) + 1
+    dfs = array_split(df, nr_arrays)
+    spans = list()
+    for i, df in enumerate(dfs):
+        current_app.logger.debug(f'.. batch {i+1} of {len(dfs)}')
+        spans.extend(SegmentationSpan.query.filter(
+            SegmentationSpan.segmentation_id == segmentation.id, SegmentationSpan.match.in_(df['match'])
+        ).all())
+    nr_tokens = sum([s.matchend - s.match + 1 for s in spans])
+    current_app.logger.debug(f'.. {nr_tokens} tokens')
+
+    # expose as SubCorpus
+    subcorpus = SubCorpus(corpus_id=corpus.id,
+                          segmentation_id=segmentation.id,
+                          name=name,
+                          description=description,
+                          nqr_cqp=nqr_cqp,
+                          nr_tokens=nr_tokens,
+                          spans=spans)
+    db.session.add(subcorpus)
+    db.session.commit()
+
+    return subcorpus
+
+
 def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
     """corpus meta data is read as a DataFrame indexed by match, matchend
 
@@ -151,71 +206,22 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
 
     current_app.logger.debug(f'reading meta data for level "{level}" of corpus "{cwb_id}"')
     df_meta = read_csv(path, sep=sep)
-
     meta_from_df(corpus, df_meta, level, column_mapping)
 
 
-def subcorpora_from_tsv(cwb_id, path, column='subcorpus', level='text', create_nqr=False):
+def subcorpora_from_tsv(cwb_id, path, column='subcorpus', description='imported subcorpus', level='text', create_nqr=False):
+    """create subcorpora from TSV file
 
-    cqp_bin = current_app.config['CCC_CQP_BIN']
-    registry_dir = current_app.config['CCC_REGISTRY_DIR']
-    data_dir = current_app.config['CCC_DATA_DIR']
-    lib_dir = None
-
+    """
     subcorpora = read_csv(path, sep='\t')
-    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
 
     for name, subcorpus in subcorpora.groupby(column):
-
         current_app.logger.debug(f'creating subcorpus "{name}" with {len(subcorpus)} regions')
-        # create NQR
         df = subcorpus.drop(column, axis=1)
-        nqr_cqp = None
-        if create_nqr:
-            nqr = CCCSubCorpus(corpus_name=cwb_id,
-                               subcorpus_name=None,
-                               df_dump=df.set_index(['match', 'matchend']),
-                               cqp_bin=cqp_bin,
-                               registry_dir=registry_dir,
-                               data_dir=data_dir,
-                               lib_dir=lib_dir,
-                               overwrite=False)
-            nqr_cqp = nqr.subcorpus_name
-
-        segmentation = Segmentation.query.filter(
-            Segmentation.corpus_id == corpus.id, Segmentation.level == level
-        )
-
-        # is there one and only one segmentation?
-        if len(segmentation.all()) > 1:
-            raise NotImplementedError('several corresponding segmentation founds')
-        segmentation = segmentation.first()
-        if not segmentation:
-            raise NotImplementedError('no corresponding segmentation found')
-
-        # get segmentation spans
-        # we need to batch here for select clause (hard limit: 500,000 for `df.in_()`)
-        nr_arrays = int(len(df) / 100000) + 1
-        dfs = array_split(df, nr_arrays)
-        spans = list()
-        for i, df in enumerate(dfs):
-            current_app.logger.debug(f'.. batch {i+1} of {len(dfs)}')
-            spans.extend(SegmentationSpan.query.filter(
-                SegmentationSpan.segmentation_id == segmentation.id, SegmentationSpan.match.in_(df['match'])
-            ).all())
-        nr_tokens = sum([s.matchend - s.match + 1 for s in spans])
-        current_app.logger.debug(f'.. {nr_tokens} tokens')
-
-        # expose as SubCorpus
-        subcorpus = SubCorpus(corpus_id=corpus.id,
-                              segmentation_id=segmentation.id,
-                              name=name,
-                              description='imported subcorpus',
-                              nqr_cqp=nqr_cqp,
-                              nr_tokens=nr_tokens,
-                              spans=spans)
-        db.session.add(subcorpus)
-        db.session.commit()
+        subcorpus_from_df(cwb_id, df, name, description, level, create_nqr,
+                          cqp_bin=current_app.config['CCC_CQP_BIN'],
+                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                          data_dir=current_app.config['CCC_DATA_DIR'])
 
 
 def read_corpora(path=None, delete_old=False, reread_attributes=False):
@@ -295,6 +301,18 @@ class SubCorpusOut(Schema):
     nqr_cqp = String()
 
 
+class SubCorpusIn(Schema):
+
+    level = String()
+    key = String()
+    name = String()
+    description = String(metadata={'nullable': True}, required=False)
+    values_numeric = List(Float, metadata={'nullable': True}, required=False)
+    values_unicode = List(String, metadata={'nullable': True}, required=False)
+    value_boolean = Boolean(metadata={'nullable': True}, required=False)
+    create_nqr = Boolean(load_default=True)
+
+
 class AnnotationsOut(Schema):
 
     key = String()
@@ -359,29 +377,48 @@ def get_subcorpora(id):
     return [SubCorpusOut().dump(subcorpus) for subcorpus in subcorpora], 200
 
 
-# @bp.put('/<id>/subcorpus/')
-# @bp.auth_required(auth)
-# def create_subcorpus(id, json_data):
+@bp.put('/<id>/subcorpus/')
+@bp.input(SubCorpusIn)
+@bp.output(SubCorpusOut)
+@bp.auth_required(auth)
+def create_subcorpus(id, json_data):
+    """Create subcorpus from stored meta data.
 
-#     pass
+    """
 
-#     # json_data['corpus_id'],
-#     # json_data['subcorpus_name']
-#     # json_data['segmentation_key']
-#     # json_data['segmentation_annotation']
+    corpus = db.get_or_404(Corpus, id)
 
-#     # Discourseme(
-#     #     name,
-#     #     description
-#     # )
+    name = json_data['name']
+    description = json_data.get('description')
+    level = json_data['level']
+    key = json_data['key']
+    values_numeric = json_data.get('values_numeric')
+    values_unicode = json_data.get('values_unicode')
+    value_boolean = json_data.get('value_boolean')
+    create_nqr = json_data['create_nqr']
 
-#     # Query(
-#     #     discourseme_id,
-#     #     corpus_id,
-#     #     # nqr_cqp,
-#     #     cqp_query,
-#     #     match_strategy
-#     # )
+    values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else value_boolean
+    if values is None:
+        abort(400, 'Bad Request: You have to provide exactly one set of values')
+
+    segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
+    segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=key).first()
+
+    span_ids = SegmentationSpanAnnotation.query.filter(
+        SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
+        SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type].in_(values)
+    )
+
+    spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_([s.segmentation_span_id for s in span_ids]))
+    df = DataFrame([vars(s) for s in spans])
+    df = df[['match', 'matchend']]
+
+    subcorpus = subcorpus_from_df(corpus.cwb_id, name, description, df, level, create_nqr,
+                                  cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                  data_dir=current_app.config['CCC_DATA_DIR'])
+
+    return SubCorpusOut().dump(subcorpus), 200
 
 
 @bp.get('/<id>/meta/<level>/<key>/frequencies')
@@ -419,13 +456,18 @@ def get_frequencies(id, level, key):
     return [MetaFrequenciesOut().dump({'value': r[0], 'frequency': r[1]}) for r in records], 200
 
 
-@bp.get('/<id>/meta')
+@bp.get('/<id>/meta/')
 @bp.output(MetaOut(many=True))
 @bp.auth_required(auth)
 def get_meta(id):
     """Get meta data of corpus.
 
     """
+    # TODO
+    # datetime/numeric: min, maximum
+    # boolean: yes/no
+    # unicode: searchable endpoint: einzelne Auswahl
+    # array of filter_object:
 
     corpus = db.get_or_404(Corpus, id)
     outs = list()
@@ -437,12 +479,6 @@ def get_meta(id):
         outs.append(out)
 
     return [MetaOut().dump(out) for out in outs], 200
-
-
-# datetime/numeric: min, maximum
-# boolean: yes/no
-# unicode: searchable endpoint: einzelne Auswahl
-# array of filter_object:
 
 
 @bp.put('/<id>/meta/')
