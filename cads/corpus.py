@@ -13,7 +13,7 @@ from ccc import SubCorpus as CCCSubCorpus
 from flask import abort, current_app
 from sqlalchemy import func
 from numpy import array_split
-from pandas import DataFrame, read_csv
+from pandas import DataFrame, read_csv, to_datetime
 
 from . import db
 from .database import (Corpus, CorpusAttributes, Segmentation,
@@ -74,15 +74,7 @@ def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
     return attributes
 
 
-def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
-    """corpus meta data is read as a DataFrame indexed by match, matchend
-
-    """
-
-    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
-
-    current_app.logger.debug(f'reading meta data for level "{level}" of corpus "{cwb_id}"')
-    meta = read_csv(path, sep=sep)
+def meta_from_df(corpus, df_meta, level, column_mapping):
 
     # segmentation
     segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
@@ -93,12 +85,12 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
         segmentation = Segmentation(corpus_id=corpus.id, level=level)
         db.session.add(segmentation)
         db.session.commit()
-        meta['segmentation_id'] = segmentation.id
-        meta[['segmentation_id', 'match', 'matchend']].to_sql(
+        df_meta['segmentation_id'] = segmentation.id
+        df_meta[['segmentation_id', 'match', 'matchend']].to_sql(
             "segmentation_span", con=db.engine, if_exists='append', index=False
         )
         db.session.commit()
-        meta = meta.drop('segmentation_id', axis=1)
+        df_meta = df_meta.drop('segmentation_id', axis=1)
 
     # segmentation spans
     current_app.logger.debug("retrieving stored segmentation spans")
@@ -106,10 +98,10 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
         {'id': 'segmentation_span_id'}, axis=1
     )
     current_app.logger.debug("merging with new information")
-    meta = segmentation_spans.merge(meta, on=['match', 'matchend'])
+    df_meta = segmentation_spans.merge(df_meta, on=['match', 'matchend'])
     for col, value_type in column_mapping.items():
         current_app.logger.debug(f'key: "{col}", value_type: "{value_type}"')
-        if col not in meta.columns:
+        if col not in df_meta.columns:
             current_app.logger.error(f'.. column "{col}" not found, skipping')
             continue
 
@@ -120,6 +112,25 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
         if segmentation_annotation is not None:
             current_app.logger.debug(".. segmentation annotation already exists")
         else:
+            df = df_meta[['segmentation_span_id', col]].copy()
+
+            # TODO improve conversion
+            if value_type != "unicode":
+                try:
+                    print(df[col].dtype)
+                    if df[col].dtype != value_type:
+                        if value_type == "datetime":
+                            df[col] = to_datetime(df[col])
+                        elif value_type == "boolean":
+                            df[col] = (df[col].str.startswith('T'))
+                        elif value_type == "numeric":
+                            df[col] = df[col].astype(float)
+                except ValueError:
+                    current_app.logger.error("data type conversion unsuccessful, using unicode instead")
+                    df[col] = df[col].astype(str)
+                    value_type = "unicode"
+            df = df.rename({col: f'value_{value_type}'}, axis=1)
+
             segmentation_annotation = SegmentationAnnotation(
                 segmentation_id=segmentation.id,
                 key=col,
@@ -127,10 +138,21 @@ def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
             )
             db.session.add(segmentation_annotation)
             db.session.commit()
-            df = meta[['segmentation_span_id', col]].copy()
-            df = df.rename({col: f'value_{value_type}'}, axis=1)
             df['segmentation_annotation_id'] = segmentation_annotation.id
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
+
+
+def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
+    """corpus meta data is read as a DataFrame indexed by match, matchend
+
+    """
+
+    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
+
+    current_app.logger.debug(f'reading meta data for level "{level}" of corpus "{cwb_id}"')
+    df_meta = read_csv(path, sep=sep)
+
+    meta_from_df(corpus, df_meta, level, column_mapping)
 
 
 def subcorpora_from_tsv(cwb_id, path, column='subcorpus', level='text', create_nqr=False):
@@ -261,6 +283,7 @@ class CorpusOut(Schema):
     description = String()
     s_atts = List(String)
     p_atts = List(String)
+    s_annotations = List(String)
 
 
 class SubCorpusOut(Schema):
@@ -274,6 +297,13 @@ class SubCorpusOut(Schema):
 
 class AnnotationsOut(Schema):
 
+    key = String()
+    value_type = String(validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
+
+
+class MetaIn(Schema):
+
+    level = String()
     key = String()
     value_type = String(validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
 
@@ -415,17 +445,39 @@ def get_meta(id):
 # array of filter_object:
 
 
-# @bp.put('/<id>/meta')
-# @bp.auth_required(auth)
-# def set_meta(id):
-#     """Set meta data of corpus.
+@bp.put('/<id>/meta/')
+@bp.input(MetaIn, location='query')
+@bp.auth_required(auth)
+@bp.output(AnnotationsOut)
+def set_meta(id, query_data):
+    """Set meta data of corpus from encoded s-attribute.
 
-#     - from within XML
-#     - from TSV
+    """
 
-#     """
+    corpus = db.get_or_404(Corpus, id)
 
-#     pass
+    cqp_bin = current_app.config['CCC_CQP_BIN']
+    registry_dir = current_app.config['CCC_REGISTRY_DIR']
+    data_dir = current_app.config['CCC_DATA_DIR']
+
+    level = query_data['level']
+    key = query_data['key']
+    value_type = query_data['value_type']
+
+    if level not in corpus.s_atts:
+        abort(404, 'attribute level not found')
+
+    if f'{level}_{key}' not in corpus.s_annotations:
+        abort(404, 'annotation level not found')
+
+    df_meta = CCCorpus(corpus.cwb_id,
+                       cqp_bin=cqp_bin,
+                       registry_dir=registry_dir,
+                       data_dir=data_dir).query(s_query=f'{level}_{key}').df.reset_index().rename(columns={f'{level}_{key}': key})
+
+    meta_from_df(corpus, df_meta, level, {key: value_type})
+
+    return AnnotationsOut().dump({'key': key, 'value_type': value_type}), 200
 
 
 ################
