@@ -131,6 +131,7 @@ class Corpus(db.Model):
     embeddings = db.Column(db.Unicode)  # TODO → attributes
 
     attributes = db.relationship('CorpusAttributes', backref='corpus', passive_deletes=True, cascade='all, delete')
+    segmentations = db.relationship('Segmentation', backref='corpus', passive_deletes=True, cascade='all, delete')
     subcorpora = db.relationship('SubCorpus', backref='corpus', passive_deletes=True, cascade='all, delete')
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
 

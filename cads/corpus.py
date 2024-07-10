@@ -7,15 +7,17 @@ from glob import glob
 import click
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, Nested, String
+from apiflask.validators import OneOf
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
-from flask import current_app
+from flask import abort, current_app
+from sqlalchemy import func
 from numpy import array_split
 from pandas import DataFrame, read_csv
 
 from . import db
 from .database import (Corpus, CorpusAttributes, Segmentation,
-                       SegmentationAnnotation, SegmentationSpan, SubCorpus)
+                       SegmentationAnnotation, SegmentationSpan, SegmentationSpanAnnotation, SubCorpus)
 from .users import auth
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
@@ -270,6 +272,24 @@ class SubCorpusOut(Schema):
     nqr_cqp = String()
 
 
+class AnnotationsOut(Schema):
+
+    key = String()
+    value_type = String(validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
+
+
+class MetaOut(Schema):
+
+    level = String()
+    annotations = Nested(AnnotationsOut(many=True))
+
+
+class MetaFrequenciesOut(Schema):
+
+    value = String()
+    frequency = Integer()
+
+
 #################
 # API endpoints #
 #################
@@ -334,25 +354,65 @@ def get_subcorpora(id):
 #     # )
 
 
-# @bp.get('/<id>/meta')
-# @bp.auth_required(auth)
-# def get_meta(id):
-#     """Get meta data of corpus.
+@bp.get('/<id>/meta/<level>/<key>/frequencies')
+@bp.output(MetaFrequenciesOut(many=True))
+@bp.auth_required(auth)
+def get_frequencies(id, level, key):
+    """Get frequencies of segmentation span annotations.
 
-#     """
+    """
 
-#     pass
-#     # corpus = db.get_or_404(Corpus, id)
-#     # attributes = ccc_corpus_attributes(corpus.cwb_id, current_app.config['CCC_CQP_BIN'],
-#     # current_app.config['CCC_REGISTRY_DIR'], current_app.config['CCC_DATA_DIR'])
-#     # corpus = CorpusOut().dump(corpus)
-#     # corpus = {**corpus, **attributes}
+    corpus = db.get_or_404(Corpus, id)
 
-#     # return corpus, 200
-#     # datetime/numeric: min, maximum
-#     # boolean: yes/no
-#     # unicode: searchable endpoint: einzelne Auswahl
-#     # array of filter_object:
+    # get attribute
+    att = None
+    for s in corpus.segmentations:
+        if s.level == level:
+            for ann in s.annotations:
+                if ann.key == key:
+                    att = ann
+                    value_type = ann.value_type
+                    segmentation_annotation_id = ann.id
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    # create count data
+    records = db.session.query(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
+        func.count(SegmentationSpanAnnotation.__table__.c['value_' + value_type])
+    ).filter_by(
+        segmentation_annotation_id=segmentation_annotation_id
+    ).group_by(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
+    ).all()
+
+    return [MetaFrequenciesOut().dump({'value': r[0], 'frequency': r[1]}) for r in records], 200
+
+
+@bp.get('/<id>/meta')
+@bp.output(MetaOut(many=True))
+@bp.auth_required(auth)
+def get_meta(id):
+    """Get meta data of corpus.
+
+    """
+
+    corpus = db.get_or_404(Corpus, id)
+    outs = list()
+    for s in corpus.segmentations:
+        out = {'level': s.level}
+        out['annotations'] = list()
+        for ann in s.annotations:
+            out['annotations'].append({'key': ann.key, 'value_type': ann.value_type})
+        outs.append(out)
+
+    return [MetaOut().dump(out) for out in outs], 200
+
+
+# datetime/numeric: min, maximum
+# boolean: yes/no
+# unicode: searchable endpoint: einzelne Auswahl
+# array of filter_object:
 
 
 # @bp.put('/<id>/meta')
