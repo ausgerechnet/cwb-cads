@@ -532,12 +532,10 @@ def create_semantic_map(id, query_data):
         ).order_by(ItemScore.score.desc()).paginate(page=1, per_page=500)
         df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
         new_items = [CollocationItems.query.filter_by(id=id).first() for id in df_scores['collocation_item_id']]
-        print([item.item for item in new_items])
         ccc_semmap_update(collocation.semantic_map, [item.item for item in new_items])
 
     else:
 
-        embeddings = collocation._query.corpus.embeddings
         if collocation.constellation:
             get_or_create_counts(collocation, remove_filter_cpos=False)
             filter_unigram = CollocationDiscoursemeUnigramItems.query.filter_by(collocation_id=collocation.id,
@@ -546,7 +544,7 @@ def create_semantic_map(id, query_data):
         else:
             filter_items = []
 
-        ccc_semmap(collocation, embeddings, sort_by="conservative_log_ratio", number=500, blacklist_items=filter_items)
+        ccc_semmap([collocation.id], sort_by="conservative_log_ratio", number=500, blacklist_items=filter_items)
 
     return SemanticMapOut().dump(collocation.semantic_map), 200
 

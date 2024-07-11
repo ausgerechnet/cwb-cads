@@ -2,46 +2,58 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, String
+from apiflask.fields import Float, Integer, String, List
 from flask import current_app
 from numpy.random import normal
-from pandas import DataFrame
+from pandas import DataFrame, concat
 from semmap import SemanticSpace
 
 from . import db
-from .database import CollocationItems, ItemScore, SemanticMap
+from .database import CollocationItems, ItemScore, SemanticMap, Collocation
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
 
 
-def ccc_semmap(collocation, embeddings, sort_by, number, blacklist_items=[]):
+def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[]):
 
-    # create new semantic map
-    semantic_map = SemanticMap(embeddings=embeddings, method='tsne')
-    db.session.add(semantic_map)
-    db.session.commit()
-    # and set as semantic map of the collocation analysis
-    collocation.semantic_map_id = semantic_map.id
-    db.session.add(collocation)
-    db.session.commit()
+    semantic_map = None
+    dfs = list()
+    embeddings_set = set()
 
-    # get IDs of blacklist
-    blacklist = CollocationItems.query.filter(
-        CollocationItems.collocation_id == collocation.id,
-        CollocationItems.item.in_(blacklist_items)
-    )
+    for collocation_id in collocation_ids:
 
-    # get some items
-    current_app.logger.debug('ccc_semmap :: selecting items')
-    scores = ItemScore.query.filter(
-        ItemScore.collocation_id == collocation.id,
-        ItemScore.measure == sort_by,
-        ~ ItemScore.collocation_item_id.in_([b.id for b in blacklist])
-    ).order_by(ItemScore.score.desc())
-    scores = scores.paginate(page=1, per_page=number)
-    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
-    items = [CollocationItems.query.filter_by(id=id).first().item for id in df_scores['collocation_item_id']]
+        collocation = db.get_or_404(Collocation, collocation_id)
+        embeddings = collocation._query.corpus.embeddings
+        embeddings_set.add(embeddings)
+
+        # create new semantic map
+        if semantic_map is None:
+            semantic_map = SemanticMap(embeddings=embeddings, method='tsne')
+            db.session.add(semantic_map)
+            db.session.commit()
+        # and set as semantic map of the collocation analysis
+        collocation.semantic_map_id = semantic_map.id
+        db.session.add(collocation)
+        db.session.commit()
+
+        # get IDs of blacklist
+        blacklist = CollocationItems.query.filter(
+            CollocationItems.collocation_id == collocation.id,
+            CollocationItems.item.in_(blacklist_items)
+        )
+
+        # get some items
+        current_app.logger.debug('ccc_semmap :: selecting items')
+        scores = ItemScore.query.filter(
+            ItemScore.collocation_id == collocation.id,
+            ItemScore.measure == sort_by,
+            ~ ItemScore.collocation_item_id.in_([b.id for b in blacklist])
+        ).order_by(ItemScore.score.desc()).paginate(page=1, per_page=number)
+        dfs.append(DataFrame([vars(s) for s in scores], columns=['collocation_item_id']))
+
+    df_scores = concat(dfs)
+    items = list(set([CollocationItems.query.filter_by(id=id).first().item for id in df_scores['collocation_item_id']]))
 
     current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)
@@ -52,7 +64,7 @@ def ccc_semmap(collocation, embeddings, sort_by, number, blacklist_items=[]):
     db.session.commit()
     current_app.logger.debug('ccc_semmap :: ... done')
 
-    return coordinates
+    return semantic_map
 
 
 def ccc_semmap_update(semantic_map, items):
@@ -143,6 +155,20 @@ def get_semantic_map(id):
     """
 
     semantic_map = db.get_or_404(SemanticMap, id)
+    return SemanticMapOut().dump(semantic_map), 200
+
+
+@bp.put('/')
+@bp.input({'collocation_ids': List(Integer)})
+@bp.output(SemanticMapOut)
+@bp.auth_required(auth)
+def create_semantic_map(json_data):
+    """Create semantic map for items in the provided collocation analyses.
+
+    """
+
+    semantic_map = ccc_semmap(json_data['collocation_ids'], sort_by='conservative_log_ratio', number=500)
+
     return SemanticMapOut().dump(semantic_map), 200
 
 
