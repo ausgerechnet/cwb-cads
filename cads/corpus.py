@@ -6,18 +6,19 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Integer, List, Nested, String, Float
+from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
 from flask import abort, current_app
-from sqlalchemy import func
 from numpy import array_split
 from pandas import DataFrame, read_csv, to_datetime
+from sqlalchemy import func
 
 from . import db
 from .database import (Corpus, CorpusAttributes, Segmentation,
-                       SegmentationAnnotation, SegmentationSpan, SegmentationSpanAnnotation, SubCorpus)
+                       SegmentationAnnotation, SegmentationSpan,
+                       SegmentationSpanAnnotation, SubCorpus)
 from .users import auth
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
@@ -118,7 +119,6 @@ def meta_from_df(corpus, df_meta, level, column_mapping):
             # TODO improve conversion
             if value_type != "unicode":
                 try:
-                    print(df[col].dtype)
                     if df[col].dtype != value_type:
                         if value_type == "datetime":
                             df[col] = to_datetime(df[col])

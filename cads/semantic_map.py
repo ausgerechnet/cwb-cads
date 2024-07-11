@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, String, List
+from apiflask.fields import Float, Integer, List, String
 from flask import current_app
 from numpy.random import normal
 from pandas import DataFrame, concat
 from semmap import SemanticSpace
 
 from . import db
-from .database import CollocationItems, ItemScore, SemanticMap, Collocation
+from .database import Collocation, CollocationItems, ItemScore, SemanticMap
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
