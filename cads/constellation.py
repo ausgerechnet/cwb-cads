@@ -137,9 +137,10 @@ def get_constellations():
 
 @bp.get("/<id>/corpus/<corpus_id>/concordance/")
 @bp.input(ConcordanceIn, location='query')
+@bp.input({'subcorpus_id': Integer()}, location='query', arg_name='query_subcorpus')
 @bp.output(ConcordanceOut)
 @bp.auth_required(auth)
-def concordance_lines(id, corpus_id, query_data):
+def concordance_lines(id, corpus_id, query_data, query_subcorpus):
     """Get concordance lines of constellation in corpus. Redirects to query endpoint.
 
     """
@@ -148,7 +149,8 @@ def concordance_lines(id, corpus_id, query_data):
     corpus = db.get_or_404(Corpus, corpus_id)
     # TODO: constellations should really only have one filter_discourseme??
     filter_discourseme = constellation.filter_discoursemes[0]
-    query_id = get_or_create_query_discourseme(corpus, filter_discourseme).id
+    subcorpus = db.get_or_404(SubCorpus, query_subcorpus['subcorpus_id']) if query_subcorpus['subcorpus_id'] else None
+    query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus).id
 
     # append highlight and discoursemes
     query_data['highlight_discourseme_ids'] = query_data.get('highlight_discourseme_ids') + \
@@ -162,6 +164,9 @@ def concordance_lines(id, corpus_id, query_data):
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def collocation(id, corpus_id, query_data):
+    """Get collocation analysis of constellation in corpus.
+
+    """
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
