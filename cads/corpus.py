@@ -283,10 +283,10 @@ class CorpusOut(Schema):
 
     id = Integer()
     cwb_id = String()
-    name = String()
-    language = String()
-    register = String()
-    description = String()
+    name = String(metadata={'nullable': True})
+    language = String(metadata={'nullable': True})
+    register = String(metadata={'nullable': True})
+    description = String(metadata={'nullable': True})
     s_atts = List(String)
     p_atts = List(String)
     s_annotations = List(String)
@@ -296,9 +296,9 @@ class SubCorpusOut(Schema):
 
     id = Integer()
     corpus = Nested(CorpusOut)
-    name = String()
-    description = String()
-    nqr_cqp = String()
+    name = String(metadata={'nullable': True})
+    description = String(metadata={'nullable': True})
+    nqr_cqp = String(metadata={'nullable': True})
 
 
 class SubCorpusIn(Schema):

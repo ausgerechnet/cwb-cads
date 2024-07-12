@@ -6,7 +6,7 @@ from random import randint
 from tempfile import NamedTemporaryFile
 
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Boolean, Integer, List, Nested, String
+from apiflask.fields import Boolean, Integer, List, String
 from apiflask.validators import OneOf
 from ccc import Corpus, SubCorpus
 from ccc.cache import generate_idx
@@ -20,7 +20,7 @@ from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from .collocation import CollocationIn, CollocationOut, ccc_collocates
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
-from .corpus import CorpusOut, sort_s
+from .corpus import sort_s
 from .database import (Breakdown, Collocation, Cotext, Discourseme, Matches,
                        Query, get_or_create)
 from .users import auth
@@ -372,12 +372,14 @@ class QueryOut(Schema):
 
     id = Integer()
     discourseme_id = Integer(metadata={'nullable': True})
-    corpus = Nested(CorpusOut)
-    subcorpus_id = Integer(required=False)
+    discourseme_name = String(metadata={'nullable': True})
+    corpus_id = Integer()
+    corpus_name = String()
+    subcorpus_id = Integer(metadata={'nullable': True})
+    subcorpus_name = String(metadata={'nullable': True})
     match_strategy = String()
     cqp_query = String()
     nqr_cqp = String()
-    subcorpus = String(metadata={'nullable': True})
 
 
 #################
@@ -468,6 +470,7 @@ def get_query(id):
     return QueryOut().dump(query), 200
 
 
+# TODO!
 # @bp.patch('/<id>')
 # @bp.input(QueryIn(partial=True))
 # @bp.output(QueryOut)

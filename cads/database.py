@@ -21,9 +21,7 @@ def get_or_create(model, **kwargs):
 
     instance = model.query.filter_by(**kwargs).first()
 
-    if instance:
-        return instance
-    else:
+    if not instance:
         instance = model(**kwargs)
         db.session.add(instance)
         db.session.commit()
@@ -266,7 +264,7 @@ class Discourseme(db.Model):
     description = db.Column(db.Unicode, nullable=True)
 
     queries = db.relationship("Query", backref="discourseme", lazy=True)
-    template = db.RelationshipProperty("DiscoursemeTemplateItems", backref="discourseme")
+    template = db.RelationshipProperty("DiscoursemeTemplateItems", backref="discourseme", cascade='all, delete')
 
     def generate_template(self, p='word'):
         items = set(self.template_items)
@@ -348,6 +346,14 @@ class Query(db.Model):
     @property
     def number_matches(self):
         return len(self.matches)
+
+    @property
+    def discourseme_name(self):
+        return self.discourseme.name if self.discourseme else None
+
+    @property
+    def corpus_name(self):
+        return self.corpus.name
 
 
 class Matches(db.Model):
