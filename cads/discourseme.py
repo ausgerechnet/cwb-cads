@@ -10,12 +10,14 @@ import click
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, Nested, String
 from apiflask.validators import OneOf
-from flask import current_app
+from flask import abort, current_app
 from pandas import DataFrame, read_csv
 
 from . import db
 from .database import (Corpus, Discourseme, DiscoursemeTemplateItems,
-                       SubCorpus, User, get_or_create)
+                       SubCorpus, User, get_or_create, Query,
+                       CollocationDiscoursemeItems,
+                       CollocationDiscoursemeUnigramItems)
 from .query import QueryOut, get_or_create_query_discourseme
 from .users import auth
 
@@ -163,11 +165,25 @@ def patch_add(id, json_data):
     """Patch discourseme: add item.
 
     """
+
     discourseme = db.get_or_404(Discourseme, id)
-    db.session.add(DiscoursemeTemplateItems(
-        discourseme_id=discourseme.id, surface=json_data.get('surface'), p=json_data.get('p')
-    ))
-    db.session.commit()
+    before = len(discourseme.template)
+    get_or_create(DiscoursemeTemplateItems, discourseme_id=discourseme.id, surface=json_data.get('surface'), p=json_data.get('p'))
+    after = len(discourseme.template)
+
+    if before != after:
+
+        # was there a modification?
+        queries = Query.query.filter_by(discourseme_id=discourseme.id).all()
+        current_app.logger.debug(f"deleting {len(queries)} queries belonging to this discourseme")
+        [db.session.delete(query) for query in queries]
+
+        discourseme_items = CollocationDiscoursemeItems.query.filter_by(discourseme_id=discourseme.id).all()
+        discourseme_unigram_items = CollocationDiscoursemeUnigramItems.query.filter_by(discourseme_id=discourseme.id).all()
+        [db.session.delete(i) for i in discourseme_items]
+        [db.session.delete(i) for i in discourseme_unigram_items]
+        db.session.commit()
+
     return DiscoursemeOut().dump(discourseme), 200
 
 
@@ -186,7 +202,22 @@ def patch_remove(id, json_data):
     if item:
         db.session.delete(item)
         db.session.commit()
-    return DiscoursemeOut().dump(discourseme), 200
+
+        # was there a modification?
+        queries = Query.query.filter_by(discourseme_id=discourseme.id).all()
+        current_app.logger.debug(f"deleting {len(queries)} queries belonging to this discourseme")
+        [db.session.delete(query) for query in queries]
+
+        discourseme_items = CollocationDiscoursemeItems.query.filter_by(discourseme_id=discourseme.id).all()
+        discourseme_unigram_items = CollocationDiscoursemeUnigramItems.query.filter_by(discourseme_id=discourseme.id).all()
+        [db.session.delete(i) for i in discourseme_items]
+        [db.session.delete(i) for i in discourseme_unigram_items]
+        db.session.commit()
+
+        return DiscoursemeOut().dump(discourseme), 200
+
+    else:
+        return abort(404, 'no such item')
 
 
 @bp.get('/<id>')
