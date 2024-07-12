@@ -218,7 +218,7 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', description='imported 
     for name, subcorpus in subcorpora.groupby(column):
         current_app.logger.debug(f'creating subcorpus "{name}" with {len(subcorpus)} regions')
         df = subcorpus.drop(column, axis=1)
-        subcorpus_from_df(cwb_id, df, name, description, level, create_nqr,
+        subcorpus_from_df(cwb_id, name, description, df, level, create_nqr,
                           cqp_bin=current_app.config['CCC_CQP_BIN'],
                           registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                           data_dir=current_app.config['CCC_DATA_DIR'])
