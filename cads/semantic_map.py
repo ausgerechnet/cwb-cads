@@ -159,7 +159,7 @@ def get_semantic_map(id):
 
 
 @bp.put('/')
-@bp.input({'collocation_ids': List(Integer)})
+@bp.input({'collocation_ids': List(Integer)}, schema_name='CollocationIdsIn')
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
 def create_semantic_map(json_data):

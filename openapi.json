@@ -1,6 +1,31 @@
 {
   "components": {
     "schemas": {
+      "AddDiscoursemeIdIn": {
+        "properties": {
+          "discourseme_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AnnotationsOut": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value_type": {
+            "enum": [
+              "datetime",
+              "numeric",
+              "boolean",
+              "unicode"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "BreakdownItemsOut": {
         "properties": {
           "breakdown_id": {
@@ -37,6 +62,17 @@
           },
           "query_id": {
             "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "CollocationIdsIn": {
+        "properties": {
+          "collocation_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -212,6 +248,7 @@
       "ConstellationOut": {
         "properties": {
           "description": {
+            "nullable": true,
             "type": "string"
           },
           "filter_discoursemes": {
@@ -230,6 +267,7 @@
             "type": "integer"
           },
           "name": {
+            "nullable": true,
             "type": "string"
           }
         },
@@ -264,15 +302,18 @@
             "type": "string"
           },
           "description": {
+            "nullable": true,
             "type": "string"
           },
           "id": {
             "type": "integer"
           },
           "language": {
+            "nullable": true,
             "type": "string"
           },
           "name": {
+            "nullable": true,
             "type": "string"
           },
           "p_atts": {
@@ -282,7 +323,14 @@
             "type": "array"
           },
           "register": {
+            "nullable": true,
             "type": "string"
+          },
+          "s_annotations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "s_atts": {
             "items": {
@@ -444,6 +492,31 @@
         },
         "type": "object"
       },
+      "MetaFrequenciesOut": {
+        "properties": {
+          "frequency": {
+            "type": "integer"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MetaOut": {
+        "properties": {
+          "annotations": {
+            "items": {
+              "$ref": "#/components/schemas/AnnotationsOut"
+            },
+            "type": "array"
+          },
+          "level": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "QueryAssistedIn": {
         "properties": {
           "corpus_id": {
@@ -530,8 +603,11 @@
       },
       "QueryOut": {
         "properties": {
-          "corpus": {
-            "$ref": "#/components/schemas/CorpusOut"
+          "corpus_id": {
+            "type": "integer"
+          },
+          "corpus_name": {
+            "type": "string"
           },
           "cqp_query": {
             "type": "string"
@@ -539,6 +615,10 @@
           "discourseme_id": {
             "nullable": true,
             "type": "integer"
+          },
+          "discourseme_name": {
+            "nullable": true,
+            "type": "string"
           },
           "id": {
             "type": "integer"
@@ -549,11 +629,20 @@
           "nqr_cqp": {
             "type": "string"
           },
-          "subcorpus": {
+          "subcorpus_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "subcorpus_name": {
             "nullable": true,
             "type": "string"
-          },
-          "subcorpus_id": {
+          }
+        },
+        "type": "object"
+      },
+      "RemoveDiscoursemeIdIn": {
+        "properties": {
+          "discourseme_id": {
             "type": "integer"
           }
         },
@@ -576,21 +665,64 @@
         },
         "type": "object"
       },
+      "SubCorpusIn": {
+        "properties": {
+          "create_nqr": {
+            "default": true,
+            "type": "boolean"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "value_boolean": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "values_numeric": {
+            "items": {
+              "type": "number"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "values_unicode": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "SubCorpusOut": {
         "properties": {
           "corpus": {
             "$ref": "#/components/schemas/CorpusOut"
           },
           "description": {
+            "nullable": true,
             "type": "string"
           },
           "id": {
             "type": "integer"
           },
           "name": {
+            "nullable": true,
             "type": "string"
           },
           "nqr_cqp": {
+            "nullable": true,
             "type": "string"
           }
         },
@@ -1047,6 +1179,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "semantic_map_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -1079,6 +1221,16 @@
               }
             },
             "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
           }
         },
         "security": [
@@ -1086,7 +1238,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create new semantic map for collocation items.",
+        "summary": "Create new semantic map for collocation items or make sure there are coordinates for all items on an existing map.",
         "tags": [
           "Collocation"
         ]
@@ -1362,6 +1514,80 @@
         ]
       }
     },
+    "/constellation/{id}/add-discourseme": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddDiscoursemeIdIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch constellation: add discourseme.",
+        "tags": [
+          "Constellation"
+        ]
+      }
+    },
     "/constellation/{id}/corpus/{corpus_id}/collocation/": {
       "get": {
         "parameters": [
@@ -1534,7 +1760,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Collocation",
+        "summary": "Get collocation analysis of constellation in corpus.",
         "tags": [
           "Constellation"
         ]
@@ -1557,6 +1783,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subcorpus_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
             }
           },
           {
@@ -1758,6 +1994,80 @@
         ]
       }
     },
+    "/constellation/{id}/remove-discourseme": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveDiscoursemeIdIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch constellation: add discourseme.",
+        "tags": [
+          "Constellation"
+        ]
+      }
+    },
     "/corpus/": {
       "get": {
         "parameters": [],
@@ -1852,6 +2162,231 @@
         ]
       }
     },
+    "/corpus/{id}/meta/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MetaOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get meta data of corpus.",
+        "tags": [
+          "Corpus"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "value_type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "datetime",
+                "numeric",
+                "boolean",
+                "unicode"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnotationsOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Set meta data of corpus from encoded s-attribute.",
+        "tags": [
+          "Corpus"
+        ]
+      }
+    },
+    "/corpus/{id}/meta/{level}/{key}/frequencies": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "level",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MetaFrequenciesOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get frequencies of segmentation span annotations.",
+        "tags": [
+          "Corpus"
+        ]
+      }
+    },
     "/corpus/{id}/subcorpus/": {
       "get": {
         "parameters": [
@@ -1904,7 +2439,79 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get all corpora.",
+        "summary": "Get all subcorpora of a corpus.",
+        "tags": [
+          "Corpus"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubCorpusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubCorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create subcorpus from stored meta data.",
         "tags": [
           "Corpus"
         ]
@@ -2294,6 +2901,7 @@
             "name": "match_strategy",
             "required": false,
             "schema": {
+              "default": "longest",
               "enum": [
                 "longest",
                 "shortest",
@@ -5895,6 +6503,61 @@
         "summary": "Get (additional context of) one concordance line.",
         "tags": [
           "Query"
+        ]
+      }
+    },
+    "/semantic-map/": {
+      "put": {
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollocationIdsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticMapOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create semantic map for items in the provided collocation analyses.",
+        "tags": [
+          "Semantic_Map"
         ]
       }
     },

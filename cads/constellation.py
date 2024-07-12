@@ -123,7 +123,7 @@ def patch_constellation(json_data):
 
 
 @bp.patch('/<id>/add-discourseme')
-@bp.input({'discourseme_id': Integer()})
+@bp.input({'discourseme_id': Integer()}, schema_name='AddDiscoursemeIdIn')
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_add_highlight(id, json_data):
@@ -140,7 +140,7 @@ def patch_add_highlight(id, json_data):
 
 
 @bp.patch('/<id>/remove-discourseme')
-@bp.input({'discourseme_id': Integer()})
+@bp.input({'discourseme_id': Integer()}, schema_name='RemoveDiscoursemeIdIn')
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_remove_highlight(id, json_data):
