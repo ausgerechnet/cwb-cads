@@ -18,11 +18,12 @@ import { Route as AppConstellationsRouteImport } from './routes/_app/constellati
 import { Route as AppCollocationAnalysisRouteImport } from './routes/_app/collocation-analysis/route'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
-import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_/$queryId'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
 import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
 import { Route as AppCollocationAnalysisNewImport } from './routes/_app/collocation-analysis_/new'
+import { Route as AppQueriesQueryIdRouteImport } from './routes/_app/queries_/$queryId/route'
+import { Route as AppQueriesQueryIdCollocationAnalysisImport } from './routes/_app/queries_/$queryId_/collocation-analysis'
 
 // Create Virtual Routes
 
@@ -142,13 +143,6 @@ const AppQueriesNewRoute = AppQueriesNewImport.update({
   import('./routes/_app/queries_/new.lazy').then((d) => d.Route),
 )
 
-const AppQueriesQueryIdRoute = AppQueriesQueryIdImport.update({
-  path: '/queries/$queryId',
-  getParentRoute: () => AppRoute,
-} as any).lazy(() =>
-  import('./routes/_app/queries_/$queryId.lazy').then((d) => d.Route),
-)
-
 const AppDiscoursemesDiscoursemeIdRoute =
   AppDiscoursemesDiscoursemeIdImport.update({
     path: '/discoursemes/$discoursemeId',
@@ -182,6 +176,19 @@ const AppCollocationAnalysisNewRoute = AppCollocationAnalysisNewImport.update({
 } as any).lazy(() =>
   import('./routes/_app/collocation-analysis_/new.lazy').then((d) => d.Route),
 )
+
+const AppQueriesQueryIdRouteRoute = AppQueriesQueryIdRouteImport.update({
+  path: '/queries/$queryId',
+  getParentRoute: () => AppRoute,
+} as any).lazy(() =>
+  import('./routes/_app/queries_/$queryId/route.lazy').then((d) => d.Route),
+)
+
+const AppQueriesQueryIdCollocationAnalysisRoute =
+  AppQueriesQueryIdCollocationAnalysisImport.update({
+    path: '/queries/$queryId/collocation-analysis',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -239,6 +246,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKeywordAnalysisLazyImport
       parentRoute: typeof AppImport
     }
+    '/_app/queries/$queryId': {
+      preLoaderRoute: typeof AppQueriesQueryIdRouteImport
+      parentRoute: typeof AppImport
+    }
     '/_app/collocation-analysis/new': {
       preLoaderRoute: typeof AppCollocationAnalysisNewImport
       parentRoute: typeof AppImport
@@ -253,10 +264,6 @@ declare module '@tanstack/react-router' {
     }
     '/_app/discoursemes/$discoursemeId': {
       preLoaderRoute: typeof AppDiscoursemesDiscoursemeIdImport
-      parentRoute: typeof AppImport
-    }
-    '/_app/queries/$queryId': {
-      preLoaderRoute: typeof AppQueriesQueryIdImport
       parentRoute: typeof AppImport
     }
     '/_app/queries/new': {
@@ -275,6 +282,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoursemesNewLazyImport
       parentRoute: typeof AppImport
     }
+    '/_app/queries/$queryId/collocation-analysis': {
+      preLoaderRoute: typeof AppQueriesQueryIdCollocationAnalysisImport
+      parentRoute: typeof AppImport
+    }
   }
 }
 
@@ -291,15 +302,16 @@ export const routeTree = rootRoute.addChildren([
     AppSubcorporaRouteRoute,
     AppAdminRoute,
     AppKeywordAnalysisLazyRoute,
+    AppQueriesQueryIdRouteRoute,
     AppCollocationAnalysisNewRoute,
     AppConstellationsConstellationIdRoute,
     AppConstellationsNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
-    AppQueriesQueryIdRoute,
     AppQueriesNewRoute,
     AppSubcorporaNewRoute,
     AppCollocationAnalysisCollocationIdLazyRoute,
     AppDiscoursemesNewLazyRoute,
+    AppQueriesQueryIdCollocationAnalysisRoute,
   ]),
   LoginRoute,
   VignetteRoute,
