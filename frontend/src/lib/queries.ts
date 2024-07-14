@@ -91,21 +91,11 @@ export const deleteQueryMutationOptions: MutationOptions<
 export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
   queryOptions({
     queryKey: ['query-breakdown', queryId, p],
-    queryFn: async () => {
-      // const allBreakdowns = z
-      //   .array(schemas.BreakdownOut)
-      //   .parse(queryClient.getQueryData(['query-breakdowns', queryId]) ?? [])
-      // const breakdown = allBreakdowns.find((b) => b.p === p)
-      // if (breakdown) return breakdown
-      console.log({ queryId, p })
-      const newBreakdown = await apiClient.getQueryQuery_idbreakdown({
+    queryFn: async () =>
+      apiClient.getQueryQuery_idbreakdown({
         queries: { p },
         params: { query_id: queryId },
-      })
-      // allBreakdowns.push(newBreakdown)
-      // queryClient.setQueryData(['query-breakdowns', queryId], allBreakdowns)
-      return newBreakdown
-    },
+      }),
   })
 
 export const queryConcordancesQueryOptions = (

@@ -1,13 +1,11 @@
+import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
-import {
-  discoursemesQueryOptions,
-  queryBreakdownsQueryOptions,
-  queryQueryOptions,
-} from '@/lib/queries'
-import { z } from 'zod'
+import { queryQueryOptions } from '@/lib/queries'
 
-export const Route = createFileRoute('/_app/queries/$queryId')({
+export const Route = createFileRoute(
+  '/_app/queries/$queryId/collocation-analysis',
+)({
   validateSearch: z.object({
     pAtt: z.string().optional(),
     contextBreak: z.string().optional().catch(undefined),
@@ -25,10 +23,12 @@ export const Route = createFileRoute('/_app/queries/$queryId')({
     filterItemPAtt: z.string().optional().catch(undefined),
   }),
   loader: ({ context: { queryClient }, params: { queryId } }) =>
-    Promise.all([
-      queryClient.ensureQueryData(queryQueryOptions(queryId)),
-      queryClient.ensureQueryData(queryBreakdownsQueryOptions(queryId)),
-      queryClient.ensureQueryData(discoursemesQueryOptions),
-    ]),
+    queryClient.ensureQueryData(queryQueryOptions(queryId)),
   pendingComponent: DefaultPendingComponent,
+  component: CollocationAnalysis,
 })
+
+function CollocationAnalysis() {
+  const { queryId } = Route.useParams()
+  return <>{queryId}</>
+}
