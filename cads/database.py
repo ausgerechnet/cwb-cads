@@ -337,11 +337,11 @@ class Query(db.Model):
     nqr_cqp = db.Column(db.Unicode)  # resulting NQR in CWB
     random_seed = db.Column(db.Integer, default=42)  # for concordancing
 
-    matches = db.relationship('Matches', backref='_query', passive_deletes=True)
-    breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True)
-    collocations = db.relationship('Collocation', backref='_query', passive_deletes=True)
-    concordances = db.relationship('Concordance', backref='_query', passive_deletes=True)
-    cotexts = db.relationship('Cotext', backref='_query', passive_deletes=True)
+    matches = db.relationship('Matches', backref='_query', passive_deletes=True, cascade='all, delete')
+    breakdowns = db.relationship('Breakdown', backref='_query', passive_deletes=True, cascade='all, delete')
+    collocations = db.relationship('Collocation', backref='_query', passive_deletes=True, cascade='all, delete')
+    concordances = db.relationship('Concordance', backref='_query', passive_deletes=True, cascade='all, delete')
+    cotexts = db.relationship('Cotext', backref='_query', passive_deletes=True, cascade='all, delete')
 
     @property
     def number_matches(self):
@@ -382,7 +382,7 @@ class Breakdown(db.Model):
 
     p = db.Column(db.Unicode, nullable=False)
 
-    items = db.relationship('BreakdownItems', backref='breakdown')
+    items = db.relationship('BreakdownItems', backref='breakdown', passive_deletes=True, cascade='all, delete')
 
 
 class BreakdownItems(db.Model):
@@ -416,7 +416,7 @@ class Concordance(db.Model):
     sort_offset = db.Column(db.Integer)
     random_seed = db.Column(db.Integer)
 
-    lines = db.relationship('ConcordanceLines', backref='concordance')
+    lines = db.relationship('ConcordanceLines', backref='concordance', passive_deletes=True, cascade='all, delete')
 
 
 class ConcordanceLines(db.Model):
@@ -442,7 +442,7 @@ class Cotext(db.Model):
     context = db.Column(db.Integer)
     context_break = db.Column(db.String)
 
-    lines = db.relationship('CotextLines', backref='cotext')
+    lines = db.relationship('CotextLines', backref='cotext', passive_deletes=True, cascade='all, delete')
 
 
 class CotextLines(db.Model):
@@ -469,9 +469,9 @@ class SemanticMap(db.Model):
     name = db.Column(db.Unicode)
     embeddings = db.Column(db.Unicode)
     method = db.Column(db.Unicode)
-    coordinates = db.relationship('Coordinates', backref='semantic_map')
-    collocations = db.relationship('Collocation', backref='semantic_map')
-    keywords = db.relationship('Keyword', backref='semantic_map')
+    coordinates = db.relationship('Coordinates', backref='semantic_map', passive_deletes=True, cascade='all, delete')
+    collocations = db.relationship('Collocation', backref='semantic_map', passive_deletes=True, cascade='all, delete')
+    keywords = db.relationship('Keyword', backref='semantic_map', passive_deletes=True, cascade='all, delete')
 
 
 class Coordinates(db.Model):
@@ -508,9 +508,9 @@ class Collocation(db.Model):
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
-    items = db.relationship('CollocationItems', backref='collocation', passive_deletes=True)
-    discourseme_items = db.relationship('CollocationDiscoursemeItems', backref='collocation', passive_deletes=True)
-    discourseme_unigram_items = db.relationship('CollocationDiscoursemeUnigramItems', backref='collocation', passive_deletes=True)
+    items = db.relationship('CollocationItems', backref='collocation', passive_deletes=True, cascade='all, delete')
+    discourseme_items = db.relationship('CollocationDiscoursemeItems', backref='collocation', passive_deletes=True, cascade='all, delete')
+    discourseme_unigram_items = db.relationship('CollocationDiscoursemeUnigramItems', backref='collocation', passive_deletes=True, cascade='all, delete')
 
     @property
     def discourseme_scores(self):
@@ -660,7 +660,7 @@ class Keyword(db.Model):
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
-    items = db.relationship('KeywordItems', backref='keyword')
+    items = db.relationship('KeywordItems', backref='keyword', passive_deletes=True, cascade='all, delete')
 
 
 class KeywordItems(db.Model):
