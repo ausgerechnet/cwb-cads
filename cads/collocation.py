@@ -336,6 +336,8 @@ def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number, hig
     df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
     items = [CollocationItemOut().dump(CollocationItems.query.filter_by(id=id).first()) for id in df_scores['collocation_item_id']]
 
+    current_app.logger.debug('ccc_collocates :: .. done')
+
     return {
         'id': collocation.id,
         'p': collocation.p,
@@ -391,7 +393,7 @@ class CollocationIn(Schema):
 
     constellation_id = Integer(required=False)
     semantic_map_id = Integer(required=False)
-    subcorpus_id = Integer(required=False)
+    subcorpus_id = Integer(required=False, load_default=None)
 
     p = String(required=True)
     window = Integer(required=True)

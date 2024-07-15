@@ -31,7 +31,6 @@ bp = APIBlueprint('query', __name__, url_prefix='/query')
 def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strategy='longest'):
 
     current_app.logger.debug(f'discourseme2matches :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
-
     # create template if necessary
     if len(discourseme.template) == 0:
         discourseme.generate_template()
@@ -681,18 +680,15 @@ def get_collocation(query_id, query_data):
     p = query_data.get('p')
     s_break = query_data.get('s_break')
 
-    # # TODO
-    # corpus = query.corpus
-    # query = db.get_or_404(Query, query_id)
-    # highlight_discourseme_ids = query_data.get('highlight_discourseme_ids')
-    # # prepare highlight queries = queries that consume cpos
-    # highlight_queries = set()
-    # for discourseme_id in highlight_discourseme_ids:
-    #     hd = db.get_or_404(Discourseme, discourseme_id)
-    #     hq = get_or_create_query_discourseme(corpus, hd, s_break)
-    #     highlight_queries.add(hq)
+    constellation_id = query_data.get('constellation_id', None)
+    semantic_map_id = query_data.get('semantic_map_id', None)
 
-    collocation = get_or_create(Collocation, query_id=query_id, p=p, s_break=s_break, window=window, constellation_id=None)
+    collocation = get_or_create(Collocation, query_id=query_id, p=p, s_break=s_break, window=window, constellation_id=constellation_id)
+
     collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
+
+    if semantic_map_id:
+        collocation.semantic_map_id = semantic_map_id
+        db.session.commit()
 
     return CollocationOut().dump(collocation), 200

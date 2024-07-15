@@ -181,12 +181,11 @@ def concordance_lines(id, corpus_id, query_data, query_subcorpus):
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    # TODO: constellations should really only have one filter_discourseme??
     filter_discourseme = constellation.filter_discoursemes[0]
     subcorpus = db.get_or_404(SubCorpus, query_subcorpus['subcorpus_id']) if query_subcorpus['subcorpus_id'] else None
     query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus).id
 
-    # append highlight and discoursemes
+    # append highlight discoursemes
     query_data['highlight_discourseme_ids'] = query_data.get('highlight_discourseme_ids') + \
         [d.id for d in constellation.highlight_discoursemes]
 
@@ -198,34 +197,15 @@ def concordance_lines(id, corpus_id, query_data, query_subcorpus):
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def collocation(id, corpus_id, query_data):
-    """Get collocation analysis of constellation in corpus.
+    """Get collocation analysis of constellation in corpus. Redirects to query endpoint.
 
     """
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    subcorpus_id = query_data.get('subcorpus_id')
-    subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
-
-    # TODO: constellations should really only have one filter_discourseme??
     filter_discourseme = constellation.filter_discoursemes[0]
+    subcorpus = db.get_or_404(SubCorpus, query_data['subcorpus_id']) if query_data['subcorpus_id'] else None
     query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus).id
+    query_data['constellation_id'] = constellation.id
 
-    page_size = query_data.pop('page_size')
-    page_number = query_data.pop('page_number')
-    sort_order = query_data.pop('sort_order')
-    sort_by = query_data.pop('sort_by')
-
-    window = query_data.get('window')
-    p = query_data.get('p')
-    s_break = query_data.get('s_break')
-
-    collocation = get_or_create(Collocation, constellation_id=id, query_id=query_id, p=p, s_break=s_break, window=window)
-    semantic_map_id = query_data.get('semantic_map_id')
-    if semantic_map_id:
-        collocation.semantic_map_id = semantic_map_id
-        db.session.commit()
-
-    collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
-
-    return CollocationOut().dump(collocation), 200
+    return redirect(url_for('query.get_collocation', query_id=query_id, **query_data))
