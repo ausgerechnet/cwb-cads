@@ -1,9 +1,13 @@
+import { useState } from 'react'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { createLazyFileRoute } from '@tanstack/react-router'
+
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@/components/ui/card'
 import { Headline3, Muted } from '@/components/ui/typography'
-import { constellationQueryOptions } from '@/lib/queries'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { createLazyFileRoute } from '@tanstack/react-router'
+import { CorpusSelect } from '@/components/select-corpus'
+import { constellationQueryOptions, corporaQueryOptions } from '@/lib/queries'
+import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations/$constellationId',
@@ -14,6 +18,8 @@ export const Route = createLazyFileRoute(
 function ConstellationDetail() {
   const { constellationId } = Route.useParams()
   const { data } = useSuspenseQuery(constellationQueryOptions(constellationId))
+  const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
+  const [corpusId, setCorpusId] = useState<number | undefined>(undefined)
   const {
     description,
     name,
@@ -48,9 +54,20 @@ function ConstellationDetail() {
           </ul>
         </div>
       </Card>
-      <div className="whitespace-pre rounded-md bg-muted p-4 font-mono text-sm leading-tight text-muted-foreground">
-        {JSON.stringify(data, null, '  ')}
-      </div>
+      <>
+        <CorpusSelect
+          className="mt-4"
+          corpora={corpora}
+          onChange={setCorpusId}
+          corpusId={corpusId}
+        />
+        {corpusId !== undefined && (
+          <ConstellationConcordanceLines
+            corpusId={corpusId}
+            constellationId={constellationId}
+          />
+        )}
+      </>
     </AppPageFrame>
   )
 }

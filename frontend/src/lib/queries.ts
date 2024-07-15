@@ -443,6 +443,69 @@ export const deleteConstellationMutationOptions: MutationOptions<
   },
 }
 
+export const queryConcordancesConstellationOptions = (
+  constellationId: string | number,
+  corpusId: string | number,
+  {
+    window,
+    primary,
+    secondary,
+    filterItem: filter_item,
+    filterItemPAtt: filter_item_p_att,
+    filterDiscoursemeIds: filter_discourseme_ids,
+    pageSize: page_size,
+    pageNumber: page_number,
+    sortOrder: sort_order,
+    sortByOffset: sort_by_offset,
+  }: {
+    window?: number
+    primary?: string
+    secondary?: string
+    filterItem?: string
+    filterItemPAtt?: string
+    filterDiscoursemeIds?: number[]
+    pageSize?: number
+    pageNumber?: number
+    sortOrder?: 'ascending' | 'descending' | 'random'
+    sortByOffset?: number
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'query-concordances',
+      String(constellationId),
+      String(corpusId),
+      window,
+      primary,
+      secondary,
+      filter_item,
+      filter_item_p_att,
+      filter_discourseme_ids,
+      page_size,
+      page_number,
+      sort_order,
+      sort_by_offset,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getConstellationIdcorpusCorpus_idconcordance({
+        params: { id: String(constellationId), corpus_id: String(corpusId) },
+        queries: {
+          window,
+          primary,
+          secondary,
+          filter_item,
+          filter_item_p_att,
+          filter_discourseme_ids,
+          page_size,
+          page_number,
+          sort_order,
+          sort_by_offset,
+        },
+        signal,
+      }),
+    staleTime: 1_000 * 60 * 5, // 5 minutes
+  })
+
 // ==================== COLLOCATIONS ====================
 
 /**

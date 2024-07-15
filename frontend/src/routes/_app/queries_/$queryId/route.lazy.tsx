@@ -29,7 +29,7 @@ import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { ErrorMessage } from '@/components/error-message'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Card } from '@/components/ui/card'
-import { ConcordanceLines } from '../-concordance-lines'
+import { ConcordanceLines } from '../-query-concordance-lines'
 import { QueryFrequencyBreakdown } from '../-query-frequency-breakdown'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
