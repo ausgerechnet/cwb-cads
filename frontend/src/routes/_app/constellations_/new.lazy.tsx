@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Filter, Highlighter, Loader2, X } from 'lucide-react'
+import { Filter, Highlighter, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -23,15 +23,27 @@ import {
 import { ErrorMessage } from '@/components/error-message'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { Card } from '@/components/ui/card'
-import { Small } from '@/components/ui/typography'
+import { DiscoursemeListSelect } from '@/components/discourseme-list-select'
 
 export const Route = createLazyFileRoute('/_app/constellations/new')({
   component: NewConstellation,
 })
 
-type ConstellationIn = z.infer<typeof schemas.ConstellationIn>
+// We use a custom zod schema here because the API has too few constraints
+const ConstellationFormInput = z
+  .object({
+    description: z.string().optional(),
+    filter_discourseme_ids: z
+      .array(z.number())
+      .min(1, { message: 'Select at least one discourseme' }),
+    highlight_discourseme_ids: z
+      .array(z.number())
+      .min(1, { message: 'Select at least one discourseme' }),
+    name: z.string().min(3),
+  })
+  .passthrough()
+type ConstellationFormInput = z.infer<typeof ConstellationFormInput>
 
 function NewConstellation() {
   return (
@@ -46,12 +58,12 @@ function NewConstellation() {
 function NewConstellationForm() {
   const navigate = useNavigate()
 
-  const form = useForm<ConstellationIn>({
-    resolver: zodResolver(schemas.ConstellationIn),
+  const form = useForm<ConstellationFormInput>({
+    resolver: zodResolver(ConstellationFormInput),
     defaultValues: {
       name: '',
       description: '',
-      filter_discourseme_ids: [41, 42],
+      filter_discourseme_ids: [],
       highlight_discourseme_ids: [],
     },
   })
@@ -174,62 +186,5 @@ function NewConstellationForm() {
       </form>
       <ErrorMessage error={error} className="mt-4" />
     </Form>
-  )
-}
-
-function DiscoursemeListSelect({
-  discoursemeIds = [],
-  onChange,
-  selectableDiscoursemes,
-}: {
-  discoursemeIds?: number[]
-  selectableDiscoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
-  onChange: (ids: number[]) => void
-}) {
-  const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)
-  const selectedDiscoursemes = discoursemes.filter(
-    ({ id }) => id !== undefined && discoursemeIds.includes(id),
-  )
-
-  const handleDelete = (id: number) => {
-    onChange(discoursemeIds.filter((i) => i !== id))
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      {selectedDiscoursemes.map((discourseme) => (
-        <div
-          key={discourseme.id}
-          className="flex gap-x-4 rounded-md border border-input py-2 pl-4 pr-1 ring-ring ring-offset-2 focus-within:ring-2"
-        >
-          <Small className="mx-0 my-auto flex-grow">
-            {discourseme.name}
-            <span className="mt-1 block text-muted-foreground">
-              {discourseme.description}
-            </span>
-          </Small>
-          <Button
-            onClick={() => handleDelete(discourseme.id!)}
-            variant="ghost"
-            type="button"
-            size="icon"
-            className="min-h-min min-w-min flex-shrink-0 self-center p-2 focus:ring-0 focus-visible:ring-0 focus-visible:ring-transparent"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-      <DiscoursemeSelect
-        className="flex-grow"
-        discoursemes={selectableDiscoursemes}
-        discoursemeId={undefined}
-        undefinedName="Select a discourseme to add…"
-        onChange={(selectedId) => {
-          if (selectedId !== undefined) {
-            onChange([...discoursemeIds, selectedId])
-          }
-        }}
-      />
-    </div>
   )
 }

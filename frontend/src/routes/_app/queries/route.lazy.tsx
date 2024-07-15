@@ -111,7 +111,12 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
       })
       if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />
       return (
-        <>{data?._items?.join(', ') || <span className="italic">empty</span>}</>
+        <>
+          {(data?.template ?? [])
+            .map((item) => item.surface)
+            .filter((surface) => Boolean(surface))
+            ?.join(', ') || <span className="italic">empty</span>}
+        </>
       )
     },
   },

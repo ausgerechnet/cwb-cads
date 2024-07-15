@@ -47,7 +47,9 @@ export function DiscoursemeForm({
       postDiscoursemeMutationOptions.onSuccess?.(data, ...rest)
       toast.success('Discourseme created')
       const discoursemeId = data.id
-      discoursemeId !== undefined && onSuccess?.(discoursemeId)
+      if (discoursemeId !== undefined) {
+        onSuccess?.(discoursemeId)
+      }
     },
   })
   const form = useForm<Discourseme>({

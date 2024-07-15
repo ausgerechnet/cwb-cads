@@ -7,6 +7,7 @@ import { ChevronsDownUp, ChevronsUpDown, Loader2, Shuffle } from 'lucide-react'
 import { schemas } from '@/rest-client'
 import { cn } from '@/lib/utils'
 import {
+  corpusQueryOptions,
   queryConcordancesQueryOptions,
   queryConcordancesShuffleMutationOptions,
   queryQueryOptions,
@@ -52,13 +53,17 @@ export function ConcordanceLines({
   className?: string
 }) {
   const { data: query } = useSuspenseQuery(queryQueryOptions(queryId))
+  const { data: corpus } = useQuery({
+    ...corpusQueryOptions(query.corpus_id as number),
+    enabled: query?.corpus_id !== undefined,
+  })
   const navigate = useNavigate()
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
   const searchParams = useSearch({ from: '/_app/queries/$queryId' })
-  const contextBreakList = query.corpus?.s_atts ?? emptyArray
-  const pAttributes = query.corpus?.p_atts ?? emptyArray
+  const contextBreakList = corpus?.s_atts ?? emptyArray
+  const pAttributes = corpus?.p_atts ?? emptyArray
   const primary =
     searchParams.primary ??
     // It seems sensible to default to 'word'
