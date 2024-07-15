@@ -152,6 +152,7 @@ def patch(id, json_data):
             db.session.add(DiscoursemeTemplateItems(
                 discourseme_id=discourseme.id, surface=item['surface'], p=item['p']
             ))
+            db.session.commit()
     for attr, value in json_data.items():
         setattr(discourseme, attr, value)
     return DiscoursemeOut().dump(discourseme), 200
@@ -172,16 +173,13 @@ def patch_add(id, json_data):
     after = len(discourseme.template)
 
     if before != after:
-
         # was there a modification?
-        queries = Query.query.filter_by(discourseme_id=discourseme.id).all()
-        current_app.logger.debug(f"deleting {len(queries)} queries belonging to this discourseme")
-        [db.session.delete(query) for query in queries]
-
-        discourseme_items = CollocationDiscoursemeItems.query.filter_by(discourseme_id=discourseme.id).all()
-        discourseme_unigram_items = CollocationDiscoursemeUnigramItems.query.filter_by(discourseme_id=discourseme.id).all()
-        [db.session.delete(i) for i in discourseme_items]
-        [db.session.delete(i) for i in discourseme_unigram_items]
+        current_app.logger.debug("deleting queries belonging to this discourseme")
+        Query.query.filter_by(discourseme_id=discourseme.id).delete()
+        current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this discourseme")
+        CollocationDiscoursemeItems.query.filter_by(discourseme_id=discourseme.id).delete()
+        current_app.logger.debug("deleting CollocationDiscoursemeUnigramItems belonging to this discourseme")
+        CollocationDiscoursemeUnigramItems.query.filter_by(discourseme_id=discourseme.id).delete()
         db.session.commit()
 
     return DiscoursemeOut().dump(discourseme), 200
@@ -204,14 +202,12 @@ def patch_remove(id, json_data):
         db.session.commit()
 
         # was there a modification?
-        queries = Query.query.filter_by(discourseme_id=discourseme.id).all()
-        current_app.logger.debug(f"deleting {len(queries)} queries belonging to this discourseme")
-        [db.session.delete(query) for query in queries]
-
-        discourseme_items = CollocationDiscoursemeItems.query.filter_by(discourseme_id=discourseme.id).all()
-        discourseme_unigram_items = CollocationDiscoursemeUnigramItems.query.filter_by(discourseme_id=discourseme.id).all()
-        [db.session.delete(i) for i in discourseme_items]
-        [db.session.delete(i) for i in discourseme_unigram_items]
+        current_app.logger.debug("deleting queries belonging to this discourseme")
+        Query.query.filter_by(discourseme_id=discourseme.id).delete()
+        current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this discourseme")
+        CollocationDiscoursemeItems.query.filter_by(discourseme_id=discourseme.id).delete()
+        current_app.logger.debug("deleting CollocationDiscoursemeUnigramItems belonging to this discourseme")
+        CollocationDiscoursemeUnigramItems.query.filter_by(discourseme_id=discourseme.id).delete()
         db.session.commit()
 
         return DiscoursemeOut().dump(discourseme), 200
