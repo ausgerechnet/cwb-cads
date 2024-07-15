@@ -31,7 +31,9 @@ export function DiscoursemeSelect({
           id: discourseme.id as number,
           name: discourseme.name ?? '',
           searchValue: `${discourseme.id} ${discourseme.name} ${
-            discourseme._items?.join(' ') ?? ''
+            (discourseme.template ?? [])
+              .map((item) => item.surface)
+              .join(' ') ?? ''
           }`
             .toLowerCase()
             .replace(/\s+/g, '_'),

@@ -6,18 +6,19 @@ import {
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, PlusIcon } from 'lucide-react'
 
 import { clamp } from '@/lib/clamp'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
-  postCollocationQueryMutationOptions,
+  corpusQueryOptions,
+  // postCollocationQueryMutationOptions,
   queriesQueryOptions,
 } from '@/lib/queries'
 import { required_error } from '@/lib/strings'
-import { schemas } from '@/rest-client'
+// import { schemas } from '@/rest-client'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -47,7 +48,17 @@ export const Route = createLazyFileRoute('/_app/collocation-analysis/new')({
   component: NewCollocationAnalysis,
 })
 
-const CollocationInWithQueryId = schemas.CollocationIn.extend({
+// const CollocationInWithQueryId = schemas.CollocationIn.extend({
+//   constellation_id: z.number().int().min(0, required_error).optional(),
+//   context: z.number({ required_error }).int().min(2).max(25),
+//   p: z.string({ required_error }).min(0, required_error),
+//   query_id: z.number({ required_error }).min(0, required_error),
+//   s_break: z.string({ required_error }).min(0, required_error),
+// })
+
+// type CollocationInWithQueryId = z.infer<typeof CollocationInWithQueryId>
+
+const CollocationInWithQueryId = z.object({
   constellation_id: z.number().int().min(0, required_error).optional(),
   context: z.number({ required_error }).int().min(2).max(25),
   p: z.string({ required_error }).min(0, required_error),
@@ -62,10 +73,16 @@ function NewCollocationAnalysis() {
   const { queryId } = Route.useSearch()
   const navigate = useNavigate()
   const router = useRouter()
-  const { mutate, isPending, error } = useMutation({
-    ...postCollocationQueryMutationOptions,
-    onSuccess: (data, ...rest) => {
-      postCollocationQueryMutationOptions.onSuccess?.(data, ...rest)
+  const {
+    // mutate,
+    isPending,
+    error,
+  } = useMutation({
+    // ...postCollocationQueryMutationOptions,
+    // TODO: Fix this
+    mutationFn: () => Promise.resolve({ id: 1 }),
+    onSuccess: (data) => {
+      // postCollocationQueryMutationOptions.onSuccess?.(data, ...rest)
       const collocationId = data.id?.toString()
       if (!collocationId) return
       navigate({
@@ -94,17 +111,23 @@ function NewCollocationAnalysis() {
   }, [navigate, watchedQueryId])
 
   // selected query
-  const selectedQuery = queries.find((query) => query.id === watchedQueryId)
+  const { data: selectedQueryCorpus } = useQuery(
+    corpusQueryOptions(watchedQueryId),
+  )
 
-  useFormFieldDependency(form, 'p', selectedQuery?.corpus?.p_atts ?? [])
-  useFormFieldDependency(form, 's_break', selectedQuery?.corpus?.s_atts ?? [])
+  useFormFieldDependency(form, 'p', selectedQueryCorpus?.p_atts ?? [])
+  useFormFieldDependency(form, 's_break', selectedQueryCorpus?.s_atts ?? [])
 
-  function onSubmit(data: z.infer<typeof CollocationInWithQueryId>) {
-    mutate(data)
+  function onSubmit() {
+    // function onSubmit(data: z.infer<typeof CollocationInWithQueryId>) {
+    // mutate(data)
   }
 
   return (
     <AppPageFrame title="New Collocation Analysis">
+      <span className="my-4 font-bold">
+        TODO: Talk about correct user entry point for this
+      </span>
       <Card className="max-w-xl p-4 @container">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -197,7 +220,7 @@ function NewCollocationAnalysis() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {(selectedQuery?.corpus?.p_atts ?? []).map(
+                              {(selectedQueryCorpus?.p_atts ?? []).map(
                                 (layer) => (
                                   <SelectItem key={layer} value={layer}>
                                     {layer}
@@ -229,7 +252,7 @@ function NewCollocationAnalysis() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {(selectedQuery?.corpus?.s_atts ?? []).map(
+                              {(selectedQueryCorpus?.s_atts ?? []).map(
                                 (layer) => (
                                   <SelectItem key={layer} value={layer}>
                                     {layer}

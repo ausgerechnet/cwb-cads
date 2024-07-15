@@ -367,7 +367,7 @@ const QueryOut = z
     discourseme_name: z.string().nullable(),
     id: z.number().int(),
     match_strategy: z.string(),
-    nqr_cqp: z.string().nullable(),
+    nqr_cqp: z.string(),
     subcorpus_id: z.number().int().nullable(),
     subcorpus_name: z.string().nullable(),
   })

@@ -27,11 +27,11 @@ export function QuerySelect({
         .filter(({ id }) => id !== undefined)
         .map((query) => ({
           id: query.id!,
-          name: `${query.id}_${query.corpus?.cwb_id}_${query.subcorpus_id}`
+          name: `${query.id}_${query.corpus_id}_${query.corpus_name}_${query.subcorpus_name}_${query.subcorpus_id}`
             .toLowerCase()
             .replace(/\s+/g, '_'),
           searchValue:
-            `${query.id}_${query.corpus?.cwb_id}_${query.subcorpus_id}`
+            `${query.id}_${query.corpus_id}_${query.corpus_name}_${query.subcorpus_name}_${query.subcorpus_id}`
               .toLowerCase()
               .replace(/\s+/g, '_'),
         })),
