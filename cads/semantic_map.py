@@ -21,6 +21,7 @@ def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[]):
     dfs = list()
     embeddings_set = set()
 
+    current_app.logger.debug('ccc_semmap :: selecting items')
     for collocation_id in collocation_ids:
 
         collocation = db.get_or_404(Collocation, collocation_id)
@@ -32,6 +33,7 @@ def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[]):
             semantic_map = SemanticMap(embeddings=embeddings, method='tsne')
             db.session.add(semantic_map)
             db.session.commit()
+
         # and set as semantic map of the collocation analysis
         collocation.semantic_map_id = semantic_map.id
         db.session.add(collocation)
@@ -44,7 +46,6 @@ def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[]):
         )
 
         # get some items
-        current_app.logger.debug('ccc_semmap :: selecting items')
         scores = ItemScore.query.filter(
             ItemScore.collocation_id == collocation.id,
             ItemScore.measure == sort_by,
