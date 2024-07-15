@@ -978,6 +978,8 @@
             "name": "subcorpus_id",
             "required": false,
             "schema": {
+              "default": null,
+              "nullable": true,
               "type": "integer"
             }
           },
@@ -1628,6 +1630,8 @@
             "name": "subcorpus_id",
             "required": false,
             "schema": {
+              "default": null,
+              "nullable": true,
               "type": "integer"
             }
           },
@@ -1760,7 +1764,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get collocation analysis of constellation in corpus.",
+        "summary": "Get collocation analysis of constellation in corpus. Redirects to query endpoint.",
         "tags": [
           "Constellation"
         ]
@@ -5985,6 +5989,8 @@
             "name": "subcorpus_id",
             "required": false,
             "schema": {
+              "default": null,
+              "nullable": true,
               "type": "integer"
             }
           },
