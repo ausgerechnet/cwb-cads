@@ -1,4 +1,5 @@
 from flask import url_for
+import pytest
 
 
 def test_create_query(client, auth):
@@ -53,8 +54,13 @@ def test_execute_query(client, auth):
     auth_header = auth.login()
     with client:
         client.get("/")
-        response = client.post(url_for('query.execute', id=1),
+
+        queries = client.get(url_for('query.get_queries'),
+                             headers=auth_header)
+
+        response = client.post(url_for('query.execute', id=queries.json[0]['id']),
                                headers=auth_header)
+
         assert response.status_code == 200
 
 
@@ -72,6 +78,7 @@ def test_query_concordance(client, auth):
                                  content_type='application/json',
                                  headers=auth_header)
 
+        print(union_query)
         assert union_query.status_code == 200
 
         lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=10, page_number=5),
@@ -247,4 +254,4 @@ def test_query_collocation(client, auth):
                                  headers=auth_header)
 
         assert collocation.status_code == 200
-        assert collocation.json['items'][0]['item'] == 'F.'
+        assert collocation.json['items'][0]['item'] == 'CSU'

@@ -75,7 +75,6 @@ def test_discourseme_query(client, auth):
 #         assert lines.status_code == 200
 
 
-@pytest.mark.now
 def test_discourseme_query_template(client, auth):
 
     auth_header = auth.login()
@@ -114,14 +113,14 @@ def test_discourseme_patch(client, auth):
         union = client.patch(url_for('discourseme.patch', id=union['id']),
                              json={
                                  'template': [
-                                     {'surface': 'können', 'p': 'lemma'}
+                                     {'surface': 'CDU', 'p': 'lemma'}
                                  ],
                              },
                              content_type='application/json',
                              headers=auth_header).json
 
         assert len(union['template'])
-        assert 'können' in [item['surface'] for item in union['template']]
+        assert 'CDU' in [item['surface'] for item in union['template']]
 
 
 def test_discourseme_patch_add_remove(client, auth):

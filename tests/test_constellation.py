@@ -164,7 +164,6 @@ def test_constellation_concordance_filter(client, auth):
         assert nr_reaktion_fdp_zuruf < nr_zuruf
 
 
-@pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
