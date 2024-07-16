@@ -6,7 +6,14 @@ import {
   useQuery,
 } from '@tanstack/react-query'
 import { createLazyFileRoute } from '@tanstack/react-router'
-import { Loader2, Pencil, PencilOff, X } from 'lucide-react'
+import {
+  Filter,
+  Highlighter,
+  Loader2,
+  Pencil,
+  PencilOff,
+  X,
+} from 'lucide-react'
 import { z } from 'zod'
 
 import { AppPageFrame } from '@/components/app-page-frame'
@@ -14,6 +21,8 @@ import { Card } from '@/components/ui/card'
 import { Headline3, Muted, Small } from '@/components/ui/typography'
 import { CorpusSelect } from '@/components/select-corpus'
 import { Button } from '@/components/ui/button'
+import { ErrorMessage } from '@/components/error-message'
+import { DiscoursemeSelect } from '@/components/select-discourseme'
 import {
   addConstellationDiscoursemeMutationOptions,
   constellationQueryOptions,
@@ -21,11 +30,9 @@ import {
   deleteConstellationDiscoursemeMutationOptions,
   discoursemesQueryOptions,
 } from '@/lib/queries'
-import { ErrorMessage } from '@/components/error-message'
+import { cn } from '@/lib/utils'
 import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
-import { cn } from '@/lib/utils'
-import { DiscoursemeSelect } from '@/components/select-discourseme'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations/$constellationId',
@@ -66,7 +73,10 @@ function ConstellationDetail() {
       {description && <Muted>{description}</Muted>}
       <Card className="mt-4 grid max-w-2xl grid-cols-2 gap-x-4 gap-y-0 p-4">
         <div>
-          <div className="mb-2 font-bold">Filter Discoursemes</div>
+          <div className="mb-2 flex place-items-center font-bold">
+            <Filter className="mr-2 h-4 w-4" />
+            Filter Discoursemes
+          </div>
           <ul className="flex flex-col gap-1">
             {filterDiscoursemes.map((discourseme) => (
               <DiscoursemeItem
@@ -79,14 +89,15 @@ function ConstellationDetail() {
           </ul>
         </div>
         <div>
-          <div className="mb-2 flex justify-between font-bold">
-            Highlight Discoursemes
+          <div className="mb-2 flex place-items-center font-bold">
+            <Highlighter className="mr-2 h-4 w-4" /> Highlight Discoursemes
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() => setIsEditMode(!isEditMode)}
-              className="m-0 h-6 w-6 p-0"
+              className="m-0 ml-auto flex h-6 gap-1 p-0 pl-1 pr-2"
             >
               {!isEditMode ? <Pencil size={16} /> : <PencilOff size={16} />}
+              Edit
             </Button>
           </div>
           <ul className="flex flex-col gap-1">
