@@ -506,6 +506,67 @@ export const queryConcordancesConstellationOptions = (
     staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
+export const deleteConstellationDiscoursemeMutationOptions: MutationOptions<
+  z.infer<typeof schemas.ConstellationOut>,
+  Error,
+  { constellationId: number; discoursemeId: number }
+> = {
+  mutationFn: async ({
+    constellationId,
+    discoursemeId,
+  }: {
+    constellationId: number
+    discoursemeId: number
+  }) =>
+    apiClient.patchConstellationIdremoveDiscourseme(
+      { discourseme_id: discoursemeId },
+      {
+        params: { id: constellationId.toString() },
+      },
+    ),
+  mutationKey: ['delete-constellation-discourseme'],
+  onSuccess: (constellation) => {
+    const constellationId = constellation.id
+    if (constellationId === undefined) return
+    queryClient.invalidateQueries(
+      constellationQueryOptions(String(constellationId)),
+    )
+    queryClient.invalidateQueries({
+      queryKey: ['query-concordances', String(constellationId)],
+    })
+  },
+}
+
+export const addConstellationDiscoursemeMutationOptions: MutationOptions<
+  z.infer<typeof schemas.ConstellationOut>,
+  Error,
+  { constellationId: number; discoursemeId: number }
+> = {
+  mutationFn: async ({
+    constellationId,
+    discoursemeId,
+  }: {
+    constellationId: number
+    discoursemeId: number
+  }) =>
+    apiClient.patchConstellationIdaddDiscourseme(
+      { discourseme_id: discoursemeId },
+      {
+        params: { id: constellationId.toString() },
+      },
+    ),
+  mutationKey: ['add-constellation-discourseme'],
+  onSuccess: (constellation) => {
+    const constellationId = constellation.id
+    if (constellationId === undefined) return
+    queryClient.invalidateQueries(
+      constellationQueryOptions(String(constellationId)),
+    )
+    queryClient.invalidateQueries({
+      queryKey: ['query-concordances', String(constellationId)],
+    })
+  },
+}
 // ==================== COLLOCATIONS ====================
 
 /**

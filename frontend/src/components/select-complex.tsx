@@ -28,6 +28,7 @@ export function ComplexSelect({
   items,
   itemId,
   onChange,
+  disabled,
   selectMessage = 'Select an item',
   placeholder = 'Search…',
   emptyMessage = 'No items found.',
@@ -39,6 +40,7 @@ export function ComplexSelect({
   emptyMessage?: string
   itemId?: number
   onChange?: (itemId: number | undefined) => void
+  disabled?: boolean
   className?: string
 }) {
   const [open, setOpen] = useState(false)
@@ -52,6 +54,7 @@ export function ComplexSelect({
           aria-expanded={open}
           className={cn('flex justify-between', className)}
           value={itemId?.toString()}
+          disabled={disabled}
         >
           {items.find(({ id }) => id === itemId)?.name ?? selectMessage}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

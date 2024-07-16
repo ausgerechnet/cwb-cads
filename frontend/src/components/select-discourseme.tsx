@@ -9,9 +9,11 @@ export function DiscoursemeSelect({
   discoursemeId,
   onChange,
   className,
+  disabled,
   undefinedName = 'No Discourseme Selected',
 }: {
   discoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
+  disabled?: boolean
   discoursemeId?: number
   onChange?: (discoursemeId: number | undefined) => void
   className?: string
@@ -48,6 +50,7 @@ export function DiscoursemeSelect({
       selectMessage="Select a discourseme"
       placeholder="Search for a discourseme..."
       emptyMessage="No discourseme found."
+      disabled={disabled}
       items={searchableItems}
       itemId={discoursemeId}
       onChange={onChange}
