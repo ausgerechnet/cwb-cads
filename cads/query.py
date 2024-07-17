@@ -21,8 +21,8 @@ from .collocation import CollocationIn, CollocationOut, ccc_collocates
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import sort_s
-from .database import (Breakdown, Collocation, Cotext, Discourseme, Matches,
-                       Query, get_or_create, CotextLines)
+from .database import (Breakdown, Collocation, Cotext, CotextLines,
+                       Discourseme, Matches, Query, get_or_create)
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')

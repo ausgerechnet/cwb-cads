@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, Nested, String, List
+from apiflask.fields import Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from ccc import Corpus
@@ -273,6 +273,7 @@ def get_discourseme_counts(collocation, discoursemes):
     """
 
     from .query import get_or_create_cotext
+
     # subcorpus = collocation._query.subcorpus
 
     filter_query = collocation._query

@@ -14,10 +14,10 @@ from flask import abort, current_app
 from pandas import DataFrame, read_csv
 
 from . import db
-from .database import (Corpus, Discourseme, DiscoursemeTemplateItems,
-                       SubCorpus, User, get_or_create, Query,
-                       CollocationDiscoursemeItems,
-                       CollocationDiscoursemeUnigramItems)
+from .database import (CollocationDiscoursemeItems,
+                       CollocationDiscoursemeUnigramItems, Corpus, Discourseme,
+                       DiscoursemeTemplateItems, Query, SubCorpus, User,
+                       get_or_create)
 from .query import QueryOut, get_or_create_query_discourseme
 from .users import auth
 
