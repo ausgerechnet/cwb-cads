@@ -18,7 +18,7 @@
 export CWB_CADS_CONFIG=cfg.DevConfig
 ```
 
-### CLI commands
+## CLI commands
 
 - database init
   ```
@@ -27,7 +27,7 @@ export CWB_CADS_CONFIG=cfg.DevConfig
 
 - corpus management
   ```
-  flask --app cads corpus import
+  flask --app cads corpus update
   flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
   flask --app cads corpus read-meta GERMAPARL-1949-2021 ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz
   ```
@@ -38,8 +38,9 @@ export CWB_CADS_CONFIG=cfg.DevConfig
   flask --app cads discourseme export --path_out "discoursemes.tsv"
   ```
 
-## Features
+### TODO
 
+- [ ]  more than one filter discourseme → second-order collocation
 - [x] query
 - [x] breakdown
 - [x] concordance
@@ -61,3 +62,4 @@ export CWB_CADS_CONFIG=cfg.DevConfig
 - [ ] anchored queries
 - [ ] meta distribution
 - [ ] topographic maps
+

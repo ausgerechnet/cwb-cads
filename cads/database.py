@@ -318,7 +318,7 @@ class Query(db.Model):
     """
 
     __table_args__ = (
-        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', name='_discourseme_subcorpus'),
+        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', 'soc_sequence', name='_discourseme_subcorpus'),
         {'sqlite_autoincrement': True},
     )
 
@@ -327,6 +327,7 @@ class Query(db.Model):
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
+    soc_sequence = db.Column(db.Unicode)
 
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
 
@@ -502,6 +503,7 @@ class Collocation(db.Model):
     p = db.Column(db.Unicode(255), nullable=False)
     s_break = db.Column(db.Unicode(255), nullable=True)
     window = db.Column(db.Integer, nullable=True)
+    marginals = db.Column(db.Unicode, nullable=False)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
@@ -542,7 +544,7 @@ class Collocation(db.Model):
                                        'f2': [sum(discourseme_f2[discourseme_id])],
                                        'N': [max(discourseme_N[discourseme_id])],
                                        'item': None}).set_index('item')
-            global_score = score_counts(global_counts, cut_off=None, min_freq=0, rename=False).melt(
+            global_score = score_counts(global_counts, cut_off=None, min_freq=0, rename=False, show_negative=True).melt(
                 var_name='measure', value_name='score'
             ).to_records(index=False)
             discourseme_scores.append({'discourseme_id': discourseme_id,
