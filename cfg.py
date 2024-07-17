@@ -54,7 +54,7 @@ class ProdConfig(Config):
     DB_NAME = "mmda.sqlite"  # relative to instance folder
     ADMIN_PASSWORD = "mmda-admin"  # only user (name = 'admin')
 
-    CORPORA = '/data/Philipp/mmda-corpora.json'
+    CORPORA = '/data/Philipp/cwb-cads-dev-corpora.json'
     CCC_REGISTRY_DIR = '/data/corpora/cqpweb/registry/'
 
     CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/cwb-cads-ccc/'))
