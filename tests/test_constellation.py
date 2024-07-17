@@ -164,6 +164,7 @@ def test_constellation_concordance_filter(client, auth):
         assert nr_reaktion_fdp_zuruf < nr_zuruf
 
 
+@pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -191,13 +192,336 @@ def test_constellation_collocation(client, auth):
                                     },
                                     headers=auth_header).json
 
-        # collocation
+        ##############
+        # ITEM SCORES
+        ##############
+
+        # sizes:
+        # - 149800 tokens in corpus
+        # - 35980  tokens in subcorpus
+        # - 14989  tokens in context of discourseme in corpus
+        # - 3448   tokens in context of discourseme in subcorpus
+
+        # item 'die' (most frequent word in context) appears:
+        # - 13765 times in corpus
+        # - 3642  times in subcorpus
+        # - 1481  times in context of discourseme in corpus
+        # - 310   times in context of discourseme in subcorpus
+
+        # collocation in whole corpus
         coll = client.get(url_for('constellation.collocation',
                                   id=constellation['id'], corpus_id=corpus['id'],
                                   page_size=10, page_number=1,
-                                  p='lemma', window=10),
+                                  p='lemma', window=10,
+                                  sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        assert int(coll_conv['N']) == 149800
+        assert int(coll_conv['R1']) == 14989
+        assert int(coll_conv['C1']) == 13765
+        assert int(coll_conv['O11']) == 1481
 
-        # from pprint import pprint
-        # pprint(coll.json['discourseme_scores'])
+        # collocation in subcorpus with global marginals
+        coll_glob = client.get(url_for('constellation.collocation',
+                                       subcorpus_id=1,
+                                       id=constellation['id'], corpus_id=corpus['id'],
+                                       page_size=10, page_number=1,
+                                       p='lemma', window=10,
+                                       sort_by='O11'),
+                               follow_redirects=True,
+                               headers=auth_header)
+        coll_conv = {c['measure']: c['score'] for c in coll_glob.json['items'][0]['scores']}
+        assert int(coll_conv['N']) == 149800
+        assert int(coll_conv['R1']) == 3448
+        assert int(coll_conv['C1']) == 13765
+        assert int(coll_conv['O11']) == 310
+
+        # collocation in subcorpus with local marginals
+        coll_loc = client.get(url_for('constellation.collocation',
+                                      subcorpus_id=1,
+                                      id=constellation['id'], corpus_id=corpus['id'],
+                                      page_size=10, page_number=1,
+                                      p='lemma', window=10,
+                                      marginals='local',
+                                      sort_by='O11'),
+                              follow_redirects=True,
+                              headers=auth_header)
+        coll_conv = {c['measure']: c['score'] for c in coll_loc.json['items'][0]['scores']}
+        assert int(coll_conv['N']) == 35980
+        assert int(coll_conv['R1']) == 3448
+        assert int(coll_conv['C1']) == 3642
+        assert int(coll_conv['O11']) == 310
+
+        #####################
+        # DISCOURSEME SCORES
+        #####################
+
+        # sizes as above
+
+        # discourseme "FDP" (id: 2) has three surface realisations:
+        # - "F. D. P."
+        # - "[ F. D. P. ]"
+        # - "[ F. D. P. ]:"
+        # which translates to six unigram realisations:
+        # - "F."
+        # - "D."
+        # - "P."
+        # - "["
+        # - "]"
+        # - "]:"
+
+        # global counts
+        # - 501 times in corpus (1711 tokens)
+        # - 87  times in subcorpus (353 tokens)
+        # - 290 times in context of discourseme in corpus (878 tokens)
+        # - 17  times in context of discourseme in subcorpus (51 tokens)
+
+        # item counts "F. D. P."
+        # - 397 times in corpus
+        # - 41  times in subcorpus
+        # - 286 times in context of discourseme in corpus
+        # - 17  times in context of discourseme in subcorpus
+
+        # item counts "[ F. D. P. ]"
+        # - 14 times in corpus
+        # - 4  times in subcorpus
+        # - 3  times in context of discourseme in corpus
+        # - 0  times in context of discourseme in subcorpus
+
+        # item counts "[ F. D. P. ]:"
+        # - 90 times in corpus
+        # - 42 times in subcorpus
+        # - 1  times in context of discourseme in corpus
+        # - 0  times in context of discourseme in subcorpus
+
+        # unigram item counts "F."
+        # - 501 times in corpus
+        # - 87  times in subcorpus
+        # - 290 times in context of discourseme in corpus
+        # - 17  times in context of discourseme in subcorpus
+
+        # unigram item counts "D."
+        # - 501 times in corpus
+        # - 87  times in subcorpus
+        # - 290 times in context of discourseme in corpus
+        # - 17  times in context of discourseme in subcorpus
+
+        # unigram item counts "P."
+        # - 501 times in corpus
+        # - 87  times in subcorpus
+        # - 290 times in context of discourseme in corpus
+        # - 17  times in context of discourseme in subcorpus
+
+        # unigram item counts "["
+        # - 104 times in corpus
+        # - 46  times in subcorpus
+        # - 4   times in context of discourseme in corpus
+        # - 0   times in context of discourseme in subcorpus
+
+        # unigram item counts "]"
+        # - 14 times in corpus
+        # - 4  times in subcorpus
+        # - 3  times in context of discourseme in corpus
+        # - 0  times in context of discourseme in subcorpus
+
+        # unigram item counts "]:"
+        # - 90 times in corpus
+        # - 42 times in subcorpus
+        # - 1  times in context of discourseme in corpus
+        # - 0  times in context of discourseme in subcorpus
+
+        assert coll.json['discourseme_scores'][0]['discourseme_id'] == 2
+        assert coll_glob.json['discourseme_scores'][0]['discourseme_id'] == 2
+        assert coll_loc.json['discourseme_scores'][0]['discourseme_id'] == 2
+
+        from pandas import DataFrame, concat
+        ##########
+        # GLOBAL
+        ##########
+        coll_conv = {c['measure']: c['score'] for c in coll.json['discourseme_scores'][0]['global_scores']}
+        assert int(coll_conv['N']) == 149800
+        assert int(coll_conv['R1']) == 14989
+        assert int(coll_conv['C1']) == 501
+        assert int(coll_conv['O11']) == 290
+
+        dfs = list()
+        for i in range(len(coll.json['discourseme_scores'][0]['item_scores'])):
+            item = coll.json['discourseme_scores'][0]['item_scores'][i]['item']
+            df = DataFrame(coll.json['discourseme_scores'][0]['item_scores'][i]['scores'])
+            df['item'] = item
+            df = df.pivot(index='item', columns='measure', values='score')
+            dfs.append(df)
+        df = concat(dfs)
+        assert int(df.loc['F. D. P.', 'N']) == 149800
+        assert int(df.loc['F. D. P.', 'R1']) == 14989
+        assert int(df.loc['F. D. P.', 'C1']) == 397
+        assert int(df.loc['F. D. P.', 'O11']) == 286
+        assert int(df.loc['[ F. D. P. ]', 'N']) == 149800
+        assert int(df.loc['[ F. D. P. ]', 'R1']) == 14989
+        assert int(df.loc['[ F. D. P. ]', 'C1']) == 14
+        assert int(df.loc['[ F. D. P. ]', 'O11']) == 3
+        assert int(df.loc['[ F. D. P. ]:', 'N']) == 149800
+        assert int(df.loc['[ F. D. P. ]:', 'R1']) == 14989
+        assert int(df.loc['[ F. D. P. ]:', 'C1']) == 90
+        assert int(df.loc['[ F. D. P. ]:', 'O11']) == 1
+
+        dfs = list()
+        for i in range(len(coll.json['discourseme_scores'][0]['unigram_item_scores'])):
+            item = coll.json['discourseme_scores'][0]['unigram_item_scores'][i]['item']
+            df = DataFrame(coll.json['discourseme_scores'][0]['unigram_item_scores'][i]['scores'])
+            df['item'] = item
+            df = df.pivot(index='item', columns='measure', values='score')
+            dfs.append(df)
+        df = concat(dfs)
+        assert int(df.loc['F.', 'N']) == 149800
+        assert int(df.loc['F.', 'R1']) == 14989
+        assert int(df.loc['F.', 'C1']) == 501
+        assert int(df.loc['F.', 'O11']) == 290
+        assert int(df.loc['D.', 'N']) == 149800
+        assert int(df.loc['D.', 'R1']) == 14989
+        assert int(df.loc['D.', 'C1']) == 501
+        assert int(df.loc['D.', 'O11']) == 290
+        assert int(df.loc['P.', 'N']) == 149800
+        assert int(df.loc['P.', 'R1']) == 14989
+        assert int(df.loc['P.', 'C1']) == 501
+        assert int(df.loc['P.', 'O11']) == 290
+        assert int(df.loc['[', 'N']) == 149800
+        assert int(df.loc['[', 'R1']) == 14989
+        assert int(df.loc['[', 'C1']) == 104
+        assert int(df.loc['[', 'O11']) == 4
+        assert int(df.loc[']', 'N']) == 149800
+        assert int(df.loc[']', 'R1']) == 14989
+        assert int(df.loc[']', 'C1']) == 14
+        assert int(df.loc[']', 'O11']) == 3
+        assert int(df.loc[']:', 'N']) == 149800
+        assert int(df.loc[']:', 'R1']) == 14989
+        assert int(df.loc[']:', 'C1']) == 90
+        assert int(df.loc[']:', 'O11']) == 1
+
+        ##################################
+        # SUBCORPUS WITH GLOBAL MARGINALS
+        ##################################
+        coll_conv = {c['measure']: c['score'] for c in coll_glob.json['discourseme_scores'][0]['global_scores']}
+        assert int(coll_conv['N']) == 149800
+        assert int(coll_conv['R1']) == 3448
+        assert int(coll_conv['C1']) == 501
+        assert int(coll_conv['O11']) == 17
+
+        dfs = list()
+        for i in range(len(coll_glob.json['discourseme_scores'][0]['item_scores'])):
+            item = coll_glob.json['discourseme_scores'][0]['item_scores'][i]['item']
+            df = DataFrame(coll_glob.json['discourseme_scores'][0]['item_scores'][i]['scores'])
+            df['item'] = item
+            df = df.pivot(index='item', columns='measure', values='score')
+            dfs.append(df)
+        df = concat(dfs)
+
+        assert int(df.loc['F. D. P.', 'N']) == 149800
+        assert int(df.loc['F. D. P.', 'R1']) == 3448
+        assert int(df.loc['F. D. P.', 'C1']) == 397
+        assert int(df.loc['F. D. P.', 'O11']) == 17
+        assert int(df.loc['[ F. D. P. ]', 'N']) == 149800
+        assert int(df.loc['[ F. D. P. ]', 'R1']) == 3448
+        assert int(df.loc['[ F. D. P. ]', 'C1']) == 14
+        assert int(df.loc['[ F. D. P. ]', 'O11']) == 0
+        assert int(df.loc['[ F. D. P. ]:', 'N']) == 149800
+        assert int(df.loc['[ F. D. P. ]:', 'R1']) == 3448
+        assert int(df.loc['[ F. D. P. ]:', 'C1']) == 90
+        assert int(df.loc['[ F. D. P. ]:', 'O11']) == 0
+
+        dfs = list()
+        for i in range(len(coll_glob.json['discourseme_scores'][0]['unigram_item_scores'])):
+            item = coll_glob.json['discourseme_scores'][0]['unigram_item_scores'][i]['item']
+            df = DataFrame(coll_glob.json['discourseme_scores'][0]['unigram_item_scores'][i]['scores'])
+            df['item'] = item
+            df = df.pivot(index='item', columns='measure', values='score')
+            dfs.append(df)
+        df = concat(dfs)
+        assert int(df.loc['F.', 'N']) == 149800
+        assert int(df.loc['F.', 'R1']) == 3448
+        assert int(df.loc['F.', 'C1']) == 501
+        assert int(df.loc['F.', 'O11']) == 17
+        assert int(df.loc['D.', 'N']) == 149800
+        assert int(df.loc['D.', 'R1']) == 3448
+        assert int(df.loc['D.', 'C1']) == 501
+        assert int(df.loc['D.', 'O11']) == 17
+        assert int(df.loc['P.', 'N']) == 149800
+        assert int(df.loc['P.', 'R1']) == 3448
+        assert int(df.loc['P.', 'C1']) == 501
+        assert int(df.loc['P.', 'O11']) == 17
+        assert int(df.loc['[', 'N']) == 149800
+        assert int(df.loc['[', 'R1']) == 3448
+        assert int(df.loc['[', 'C1']) == 104
+        assert int(df.loc['[', 'O11']) == 0
+        assert int(df.loc[']', 'N']) == 149800
+        assert int(df.loc[']', 'R1']) == 3448
+        assert int(df.loc[']', 'C1']) == 14
+        assert int(df.loc[']', 'O11']) == 0
+        assert int(df.loc[']:', 'N']) == 149800
+        assert int(df.loc[']:', 'R1']) == 3448
+        assert int(df.loc[']:', 'C1']) == 90
+        assert int(df.loc[']:', 'O11']) == 0
+
+        #################################
+        # SUBCORPUS WITH LOCAL MARGINALS
+        #################################
+        coll_conv = {c['measure']: c['score'] for c in coll_loc.json['discourseme_scores'][0]['global_scores']}
+        assert int(coll_conv['N']) == 35980
+        assert int(coll_conv['R1']) == 3448
+        assert int(coll_conv['C1']) == 87
+        assert int(coll_conv['O11']) == 17
+
+        dfs = list()
+        for i in range(len(coll_loc.json['discourseme_scores'][0]['item_scores'])):
+            item = coll_loc.json['discourseme_scores'][0]['item_scores'][i]['item']
+            df = DataFrame(coll_loc.json['discourseme_scores'][0]['item_scores'][i]['scores'])
+            df['item'] = item
+            df = df.pivot(index='item', columns='measure', values='score')
+            dfs.append(df)
+        df = concat(dfs)
+        assert int(df.loc['F. D. P.', 'N']) == 35980
+        assert int(df.loc['F. D. P.', 'R1']) == 3448
+        assert int(df.loc['F. D. P.', 'C1']) == 41
+        assert int(df.loc['F. D. P.', 'O11']) == 17
+        assert int(df.loc['[ F. D. P. ]', 'N']) == 35980
+        assert int(df.loc['[ F. D. P. ]', 'R1']) == 3448
+        assert int(df.loc['[ F. D. P. ]', 'C1']) == 4
+        assert int(df.loc['[ F. D. P. ]', 'O11']) == 0
+        assert int(df.loc['[ F. D. P. ]:', 'N']) == 35980
+        assert int(df.loc['[ F. D. P. ]:', 'R1']) == 3448
+        assert int(df.loc['[ F. D. P. ]:', 'C1']) == 42
+        assert int(df.loc['[ F. D. P. ]:', 'O11']) == 0
+
+        dfs = list()
+        for i in range(len(coll_loc.json['discourseme_scores'][0]['unigram_item_scores'])):
+            item = coll_loc.json['discourseme_scores'][0]['unigram_item_scores'][i]['item']
+            df = DataFrame(coll_loc.json['discourseme_scores'][0]['unigram_item_scores'][i]['scores'])
+            df['item'] = item
+            df = df.pivot(index='item', columns='measure', values='score')
+            dfs.append(df)
+        df = concat(dfs)
+        assert int(df.loc['F.', 'N']) == 35980
+        assert int(df.loc['F.', 'R1']) == 3448
+        assert int(df.loc['F.', 'C1']) == 87
+        assert int(df.loc['F.', 'O11']) == 17
+        assert int(df.loc['D.', 'N']) == 35980
+        assert int(df.loc['D.', 'R1']) == 3448
+        assert int(df.loc['D.', 'C1']) == 87
+        assert int(df.loc['D.', 'O11']) == 17
+        assert int(df.loc['P.', 'N']) == 35980
+        assert int(df.loc['P.', 'R1']) == 3448
+        assert int(df.loc['P.', 'C1']) == 87
+        assert int(df.loc['P.', 'O11']) == 17
+        assert int(df.loc['[', 'N']) == 35980
+        assert int(df.loc['[', 'R1']) == 3448
+        assert int(df.loc['[', 'C1']) == 46
+        assert int(df.loc['[', 'O11']) == 0
+        assert int(df.loc[']', 'N']) == 35980
+        assert int(df.loc[']', 'R1']) == 3448
+        assert int(df.loc[']', 'C1']) == 4
+        assert int(df.loc[']', 'O11']) == 0
+        assert int(df.loc[']:', 'N']) == 35980
+        assert int(df.loc[']:', 'R1']) == 3448
+        assert int(df.loc[']:', 'C1']) == 42
+        assert int(df.loc[']:', 'O11']) == 0

@@ -75,6 +75,22 @@ def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
     return attributes
 
 
+def meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir):
+
+    if level not in corpus.s_atts:
+        abort(404, 'attribute level not found')
+
+    if f'{level}_{key}' not in corpus.s_annotations:
+        abort(404, 'annotation level not found')
+
+    df_meta = CCCorpus(corpus.cwb_id,
+                       cqp_bin=cqp_bin,
+                       registry_dir=registry_dir,
+                       data_dir=data_dir).query(s_query=f'{level}_{key}').df.reset_index().rename(columns={f'{level}_{key}': key})
+
+    meta_from_df(corpus, df_meta, level, {key: value_type})
+
+
 def meta_from_df(corpus, df_meta, level, column_mapping):
 
     # segmentation
@@ -159,16 +175,25 @@ def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin,
                            overwrite=False)
         nqr_cqp = nqr.subcorpus_name
 
-    segmentation = Segmentation.query.filter(
-        Segmentation.corpus_id == corpus.id, Segmentation.level == level
-    )
+    segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level)
 
     # is there one and only one segmentation?
     if len(segmentation.all()) > 1:
         raise NotImplementedError('several corresponding segmentation founds')
+
     segmentation = segmentation.first()
     if not segmentation:
-        raise NotImplementedError('no corresponding segmentation found')
+        current_app.logger.debug("storing segmentation")
+        segmentation = Segmentation(corpus_id=corpus.id, level=level)
+        db.session.add(segmentation)
+        db.session.commit()
+
+        df['segmentation_id'] = segmentation.id
+        df[['segmentation_id', 'match', 'matchend']].to_sql(
+            "segmentation_span", con=db.engine, if_exists='append', index=False
+        )
+        db.session.commit()
+        df = df.drop('segmentation_id', axis=1)
 
     # get segmentation spans
     # we need to batch here for select clause (hard limit: 500,000 for `column.in_()`)
@@ -500,18 +525,7 @@ def set_meta(id, query_data):
     key = query_data['key']
     value_type = query_data['value_type']
 
-    if level not in corpus.s_atts:
-        abort(404, 'attribute level not found')
-
-    if f'{level}_{key}' not in corpus.s_annotations:
-        abort(404, 'annotation level not found')
-
-    df_meta = CCCorpus(corpus.cwb_id,
-                       cqp_bin=cqp_bin,
-                       registry_dir=registry_dir,
-                       data_dir=data_dir).query(s_query=f'{level}_{key}').df.reset_index().rename(columns={f'{level}_{key}': key})
-
-    meta_from_df(corpus, df_meta, level, {key: value_type})
+    meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir)
 
     return AnnotationsOut().dump({'key': key, 'value_type': value_type}), 200
 

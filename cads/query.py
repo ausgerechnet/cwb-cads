@@ -30,7 +30,7 @@ bp = APIBlueprint('query', __name__, url_prefix='/query')
 
 def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strategy='longest'):
 
-    current_app.logger.debug(f'discourseme2matches :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
+    current_app.logger.debug(f'ccc_discourseme_matches :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
     # create template if necessary
     if len(discourseme.template) == 0:
         discourseme.generate_template()
@@ -58,8 +58,8 @@ def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strate
     if subcorpus:
 
         if subcorpus.nqr_cqp is None:
-            current_app.logger.debug('ccc_query :: creating subcorpus')
-            df = DataFrame([vars(s) for s in subcorpus.spans], columns=['match', 'matchend'])
+            current_app.logger.debug('ccc_discourseme_matches :: creating subcorpus')
+            df = DataFrame([vars(s) for s in subcorpus.spans], columns=['match', 'matchend']).sort_values(by='match')
             crps = crps.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
             subcorpus.nqr_cqp = crps.subcorpus_name
             db.session.commit()
@@ -114,13 +114,13 @@ def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strate
     cqp.__del__()
 
     if isinstance(matches_df, str):  # ERROR
-        current_app.logger.error(f"{matches_df}")
+        current_app.logger.error(f"ccc_discourseme_matches :: {matches_df}")
         db.session.delete(query)
         db.session.commit()
         return matches_df
 
     if len(matches_df) == 0:  # no matches
-        current_app.logger.debug("0 matches")
+        current_app.logger.debug("ccc_discourseme_matches :: 0 matches")
         return None
 
     # update name
@@ -131,10 +131,10 @@ def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strate
     matches_df = matches_df.reset_index()[['match', 'matchend']]
     matches_df['contextid'] = matches_df['match'].apply(lambda cpos: crps.cpos2sid(cpos, s)).astype(int)
     matches_df['query_id'] = query.id
-    current_app.logger.debug(f"ccc_query :: saving {len(matches_df)} lines to database")
+    current_app.logger.debug(f"ccc_discourseme_matches :: saving {len(matches_df)} lines to database")
     matches_df.to_sql('matches', con=db.engine, if_exists='append', index=False)
     db.session.commit()
-    current_app.logger.debug("ccc_query :: saved to database")
+    current_app.logger.debug("ccc_discourseme_matches :: saved to database")
 
     return query
 
@@ -683,8 +683,9 @@ def get_collocation(query_id, query_data):
     constellation_id = query_data.get('constellation_id', None)
     semantic_map_id = query_data.get('semantic_map_id', None)
 
-    collocation = get_or_create(Collocation, query_id=query_id, p=p, s_break=s_break, window=window, constellation_id=constellation_id)
+    marginals = query_data.get('marginals', 'global')
 
+    collocation = get_or_create(Collocation, query_id=query_id, p=p, s_break=s_break, window=window, constellation_id=constellation_id, marginals=marginals)
     collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
 
     if semantic_map_id:
