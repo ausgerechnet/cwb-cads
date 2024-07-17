@@ -8,6 +8,10 @@ apispec:
 	. venv/bin/activate && \
 	flask --app cads spec > openapi.json
 
+lint:
+	. venv/bin/activate && \
+	pylint --rcfile=.pylintrc cads/*.py
+
 
 ###############
 # DEVELOPMENT #
