@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, Nested, String
+from apiflask.fields import Float, Integer, Nested, String, List
 from apiflask.validators import OneOf
 from association_measures import measures
 from ccc import Corpus
@@ -447,7 +447,7 @@ class CollocationIn(Schema):
     constellation_id = Integer(required=False)
     semantic_map_id = Integer(required=False)
     subcorpus_id = Integer(required=False, load_default=None)
-    marginals = String(required=False, load_default='global', validate=OneOf(['local', 'global']))
+    marginals = String(required=False, load_default='local', validate=OneOf(['local', 'global']))
 
     p = String(required=True)
     window = Integer(required=True)
@@ -457,6 +457,11 @@ class CollocationIn(Schema):
     sort_by = String(load_default='conservative_log_ratio', required=False, validate=OneOf(AMS_DICT.keys()))
     page_size = Integer(load_default=10, required=False)
     page_number = Integer(load_default=1, required=False)
+
+    filter_item = String(metadata={'nullable': True}, required=False)
+    filter_item_p_att = String(load_default='lemma', required=False)
+
+    filter_discourseme_ids = List(Integer, load_default=[], required=False)
 
 
 class CollocationScoreOut(Schema):

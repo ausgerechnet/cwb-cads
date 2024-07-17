@@ -318,7 +318,7 @@ class Query(db.Model):
     """
 
     __table_args__ = (
-        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', name='_discourseme_subcorpus'),
+        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', 'soc_sequence', name='_discourseme_subcorpus'),
         {'sqlite_autoincrement': True},
     )
 
@@ -327,6 +327,7 @@ class Query(db.Model):
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
+    soc_sequence = db.Column(db.Unicode)
 
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
 

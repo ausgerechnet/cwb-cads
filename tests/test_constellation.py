@@ -164,7 +164,6 @@ def test_constellation_concordance_filter(client, auth):
         assert nr_reaktion_fdp_zuruf < nr_zuruf
 
 
-@pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -228,6 +227,7 @@ def test_constellation_collocation(client, auth):
                                        id=constellation['id'], corpus_id=corpus['id'],
                                        page_size=10, page_number=1,
                                        p='lemma', window=10,
+                                       marginals='global',
                                        sort_by='O11'),
                                follow_redirects=True,
                                headers=auth_header)
@@ -243,7 +243,6 @@ def test_constellation_collocation(client, auth):
                                       id=constellation['id'], corpus_id=corpus['id'],
                                       page_size=10, page_number=1,
                                       p='lemma', window=10,
-                                      marginals='local',
                                       sort_by='O11'),
                               follow_redirects=True,
                               headers=auth_header)
@@ -525,3 +524,75 @@ def test_constellation_collocation(client, auth):
         assert int(df.loc[']:', 'R1']) == 3448
         assert int(df.loc[']:', 'C1']) == 42
         assert int(df.loc[']:', 'O11']) == 0
+
+
+@pytest.mark.now
+def test_constellation_2nd_order_collocation(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get some discoursemes
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+                                  headers=auth_header).json
+
+        union_id = discoursemes[0]['id']
+
+        # corpora
+        corpora = client.get(url_for('corpus.get_corpora'),
+                             headers=auth_header).json
+        corpus = corpora[0]
+
+        # create constellation
+        constellation = client.post(url_for('constellation.create'),
+                                    json={
+                                        'name': 'CDU',
+                                        'description': 'Test Constellation HD',
+                                        'filter_discourseme_ids': [union_id],
+                                        'highlight_discourseme_ids': [disc['id'] for disc in discoursemes[1:len(discoursemes)]]
+                                    },
+                                    headers=auth_header).json
+
+        from pprint import pprint
+
+        # collocation in whole corpus
+        coll = client.get(url_for('constellation.collocation',
+                                  id=constellation['id'], corpus_id=corpus['id'],
+                                  page_size=10, page_number=1,
+                                  p='lemma', window=10,
+                                  sort_by='O11'),
+                          follow_redirects=True,
+                          headers=auth_header)
+        pprint(coll.json)
+
+        coll = client.get(url_for('constellation.collocation',
+                                  id=constellation['id'], corpus_id=corpus['id'],
+                                  page_size=10, page_number=1,
+                                  p='lemma', window=10,
+                                  filter_item='Zuruf',
+                                  sort_by='O11'),
+                          follow_redirects=True,
+                          headers=auth_header)
+        pprint(coll.json)
+
+        coll = client.get(url_for('constellation.collocation',
+                                  id=constellation['id'], corpus_id=corpus['id'],
+                                  page_size=10, page_number=1,
+                                  p='lemma', window=10,
+                                  filter_discourseme_ids=[2],
+                                  sort_by='O11'),
+                          follow_redirects=True,
+                          headers=auth_header)
+        pprint(coll.json)
+
+        coll = client.get(url_for('constellation.collocation',
+                                  id=constellation['id'], corpus_id=corpus['id'],
+                                  page_size=10, page_number=1,
+                                  p='lemma', window=10,
+                                  filter_discourseme_ids=[2],
+                                  filter_item='Zuruf',
+                                  sort_by='O11'),
+                          follow_redirects=True,
+                          headers=auth_header)
+        pprint(coll.json)

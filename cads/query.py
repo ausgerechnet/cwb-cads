@@ -22,7 +22,7 @@ from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import sort_s
 from .database import (Breakdown, Collocation, Cotext, Discourseme, Matches,
-                       Query, get_or_create)
+                       Query, get_or_create, CotextLines)
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -259,7 +259,7 @@ def get_or_create_query_discourseme(corpus, discourseme, subcorpus=None, s=None,
 
     # try to retrieve
     subcorpus_id = subcorpus.id if subcorpus else None
-    q = [q for q in discourseme.queries if q.corpus_id == corpus.id and q.subcorpus_id == subcorpus_id]
+    q = [q for q in discourseme.queries if q.corpus_id == corpus.id and q.subcorpus_id == subcorpus_id and not q.soc_sequence]
     if len(q) > 1:  # must not happen due to unique constraint
         raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
     if len(q) == 1:
@@ -671,21 +671,108 @@ def get_collocation(query_id, query_data):
 
     """
 
+    query = db.get_or_404(Query, query_id)
+
+    # pagination
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
+
+    # sorting
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
+    # context
     window = query_data.get('window')
-    p = query_data.get('p')
     s_break = query_data.get('s_break')
 
+    # collocation settings
+    p = query_data.get('p')
+    marginals = query_data.get('marginals', 'global')
+
+    # constellation and semantic map
     constellation_id = query_data.get('constellation_id', None)
     semantic_map_id = query_data.get('semantic_map_id', None)
 
-    marginals = query_data.get('marginals', 'global')
+    # filtering for second-order collocation
+    filter_item = query_data.pop('filter_item', None)
+    filter_item_p_att = query_data.pop('filter_item_p_att', None)
+    filter_discourseme_ids = query_data.pop('filter_discourseme_ids', None)
 
-    collocation = get_or_create(Collocation, query_id=query_id, p=p, s_break=s_break, window=window, constellation_id=constellation_id, marginals=marginals)
+    # prepare filter queries
+    filter_queries = set()
+
+    for discourseme_id in filter_discourseme_ids:
+        # always run on whole corpus
+        fd = db.get_or_404(Discourseme, discourseme_id)
+        fq = get_or_create_query_discourseme(query.corpus, fd)
+        filter_queries.add(fq)
+
+    if filter_item:
+        # TODO: run only on subcorpus → temporary
+        fq = get_or_create_query_item(query.corpus, filter_item, filter_item_p_att, query.s)
+        filter_queries.add(fq)
+
+    if len(filter_queries) > 0:
+
+        # note that the database scheme does not allow to have several filter queries
+        # we thus name the actual query result here to be able to retrieve it
+        nqr_name = "SOC" + "_" + "_q".join(["q" + str(query.id)] + [str(fq.id) for fq in filter_queries])
+        # TODO retrieve if necessary
+
+        current_app.logger.debug("get_collocation :: second-order mode")
+        matches = Matches.query.filter_by(query_id=query.id)
+        current_app.logger.debug("get_collocation :: filtering: getting matches")
+        # TODO learn proper SQLalchemy (aliased anti-join)
+        matches_tmp = matches.all()
+        match_pos = set([m.match for m in matches_tmp])
+
+        # get relevant cotext lines
+        cotext = get_or_create_cotext(query, window, s_break)
+        cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
+                                                CotextLines.offset <= window,
+                                                CotextLines.offset >= -window)
+
+        for fq in filter_queries:
+
+            current_app.logger.debug("get_collocation :: filtering cotext lines by joining matches")
+            cotext_lines_tmp = cotext_lines.join(
+                Matches,
+                (Matches.query_id == fq.id) &
+                (Matches.match == CotextLines.cpos)
+            )
+            match_pos = match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
+
+            current_app.logger.debug("get_collocation :: filtering matches")
+
+            matches = Matches.query.filter(
+                Matches.query_id == query.id,
+                Matches.match.in_(match_pos)
+            )
+
+            if len(matches.all()) == 0:
+                current_app.logger.error(f"no lines left after filtering for query {fq.cqp_query}")
+                abort(404, 'no collocates')
+
+        # create query
+        query = Query(
+            corpus_id=query.corpus.id,
+            subcorpus_id=query.subcorpus.id if query.subcorpus else None,
+            soc_sequence=nqr_name,
+            discourseme_id=query.discourseme.id,
+            match_strategy=query.match_strategy,
+            s=query.s
+        )
+        db.session.add(query)
+        db.session.commit()
+
+        # matches to database
+        from pandas import read_sql
+        df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
+        df_matches['query_id'] = query.id
+        df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
+
+    collocation = get_or_create(Collocation, query_id=query.id, p=p, s_break=s_break, window=window,
+                                constellation_id=constellation_id, marginals=marginals)
     collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
 
     if semantic_map_id:
