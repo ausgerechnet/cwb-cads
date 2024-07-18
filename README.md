@@ -8,15 +8,13 @@
   + CWB must be installed and corpora must be encoded via cwb-encode
   + meta data can be stored separately or be parsed from s-attributes
 
-- MMDA backend available via [cwb-cads/mmda/](https://corpora.linguistik.uni-erlangen.de/cwb-cads/mmda/)
-  + dedicated to old vue.js frontend
-
 ## Development
 
-```
-. venv/bin/activate
-export CWB_CADS_CONFIG=cfg.DevConfig
-```
+- environment
+  ```
+  . venv/bin/activate
+  export CWB_CADS_CONFIG=cfg.DevConfig
+  ```
 
 ## CLI commands
 
@@ -38,28 +36,65 @@ export CWB_CADS_CONFIG=cfg.DevConfig
   flask --app cads discourseme export --path_out "discoursemes.tsv"
   ```
 
-### TODO
-
-- [ ]  more than one filter discourseme → second-order collocation
+## Features
 - [x] query
 - [x] breakdown
 - [x] concordance
 - [x] collocation analysis
-- [x] keyword analysis
+- [ ] keyword analysis
+- [ ] meta data management
 - [x] subcorpus creation
-- [x] show subcorpus in collocation analysis
-- [x] execute queries and breakdowns automatically
-- [x] export discoursemes
-- [x] repair constellations
-- [x] speed up concordance highlighting
-- [x] coordiantes of elements within discoursemes
-- [x] subcorpus is corpus with matches
-- [x] discourseme → query → breakdown → items
-- [x] meta management
-- [ ] speed up supcorpus queries
-- [ ] subcorpus keyword analyses
-- [ ] directed collocation analyses
+- [x] discoursemes & constellations
+- [x] semantic maps
+- [x] second-order collocation analysis
 - [ ] anchored queries
 - [ ] meta distribution
 - [ ] topographic maps
+- [ ] pairwise associations of discoursemes (triangular matrix)
+
+## Review 2024-07-17
+- [ ] constellation: enforce min of one filter discourseme
+- [ ] constellation: if no name → name of filter discourseme
+- [ ] mark all required fields as required in API spec
+- [ ] several queries for one discourseme?
+  + duplicate queries: write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
+
+## TODO
+- [ ] speed up deleting queries
+- [ ] make sure PUT runs idempotently
+- [ ] consistencise trailing slashes
+- [ ] extend tests
+- [ ] more than one filter discourseme → second-order collocation
+- [ ] speed up supcorpus queries
+- [ ] directed collocation analyses
+- [ ] position discoursemes on semantic map
+- [ ] constellation/collocation: return one object with items categorised to discoursemes
+- [ ] click.echo instead of logging for CLI commands
+- [ ] meta from s-att
+- [ ] race conditions gdbm (spheroscophe)
+- [ ] corpora settings
+- [ ] stop words (language specific / user-defined) / POS filtering
+- [ ] semmap: function for adding items to the topic discourseme
+  + if one realises one of the collocates should actually be part of the topic discourseme,
+    there should be a way to directly update the topic discourseme from within the semantic cloud
+- [ ] projects
+- [ ] quantitative analyses
+  + how many items have been categorized
+  + how many concordance lines contain at least one of them
+- [ ] UFA / steamgraph
+- [ ] topic-item suggestion in analysis definition
+  + existing items in the corpus should be shown to the user (by frequency) = pre-check
+  + to limit memory usage
+    - the list should only contain items with a frequency above X (e.g. 3 ocurrences)
+    - and maybe a word-length of above Y (e.g. words longer than 3 letters)
+- [ ] KWIC
+  + collocation analysis: node
+  + MMDA constellations: select one discourseme
+  + spheroscope: select one slot (left adjusted)
+    - alternatively: complete sentence / tweet
+
+## nice to have
+- Concordance: primary / secondary vs. give all → separate branch
+- DiscoursemeTemplate: p + surface vs. cqp_query | two lists
+- DiscoursemeTemplatePreview
 

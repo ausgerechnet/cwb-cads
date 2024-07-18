@@ -110,8 +110,4 @@ def create_app(config=CONFIG):
     app.register_blueprint(collocation.bp)
     app.register_blueprint(semantic_map.bp)
 
-    # API for old frontend
-    from .mmda import mmda_blueprint
-    app.register_blueprint(mmda_blueprint)
-
     return app
