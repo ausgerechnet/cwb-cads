@@ -126,7 +126,7 @@ def patch_constellation(json_data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_add_highlight(id, json_data):
-    """Patch constellation: add discourseme.
+    """Patch constellation: add a highlight discourseme.
 
     """
 
@@ -143,7 +143,7 @@ def patch_add_highlight(id, json_data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_remove_highlight(id, json_data):
-    """Patch constellation: add discourseme.
+    """Patch constellation: remove a highlight discourseme.
 
     """
     constellation = db.get_or_404(Constellation, id)
