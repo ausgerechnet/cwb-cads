@@ -492,6 +492,137 @@
         },
         "type": "object"
       },
+      "KeywordIn": {
+        "properties": {
+          "constellation_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "corpus_id_reference": {
+            "type": "integer"
+          },
+          "min_freq": {
+            "default": 3,
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          },
+          "p_reference": {
+            "type": "string"
+          },
+          "semantic_map_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          },
+          "sub_vs_rest": {
+            "default": true,
+            "type": "boolean"
+          },
+          "subcorpus_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          },
+          "subcorpus_id_reference": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "corpus_id",
+          "corpus_id_reference",
+          "p",
+          "p_reference"
+        ],
+        "type": "object"
+      },
+      "KeywordItemOut": {
+        "properties": {
+          "item": {
+            "type": "string"
+          },
+          "scores": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordScoreOut"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "KeywordOut": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordItemOut"
+            },
+            "type": "array"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "KeywordOverviewOut": {
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "corpus_id_reference": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          },
+          "p_reference": {
+            "type": "string"
+          },
+          "subcorpus_id": {
+            "type": "integer"
+          },
+          "subcorpus_id_reference": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "KeywordScoreOut": {
+        "properties": {
+          "measure": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "MetaFrequenciesOut": {
         "properties": {
           "frequency": {
@@ -872,7 +1003,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev0"
+    "version": "0.3.0.dev1"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3162,6 +3293,275 @@
         ]
       }
     },
+    "/keyword/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/KeywordOverviewOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all keyword analyses.",
+        "tags": [
+          "Keyword"
+        ]
+      },
+      "post": {
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeywordIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordOverviewOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create keyword analysis.",
+        "tags": [
+          "Keyword"
+        ]
+      }
+    },
+    "/keyword/{id}/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordOverviewOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get one keyword analysis.",
+        "tags": [
+          "Keyword"
+        ]
+      }
+    },
+    "/keyword/{id}/items": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "descending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "conservative_log_ratio",
+              "enum": [
+                "conservative_log_ratio",
+                "O11",
+                "E11",
+                "ipm",
+                "ipm_expected",
+                "log_likelihood",
+                "z_score",
+                "t_score",
+                "simple_ll",
+                "dice",
+                "log_ratio",
+                "min_sensitivity",
+                "liddell",
+                "mutual_information",
+                "local_mutual_information"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get scored items of a keyword analysis.",
+        "tags": [
+          "Keyword"
+        ]
+      }
+    },
     "/query/": {
       "get": {
         "parameters": [],
@@ -4752,6 +5152,9 @@
     },
     {
       "name": "Semantic_Map"
+    },
+    {
+      "name": "Keyword"
     }
   ]
 }

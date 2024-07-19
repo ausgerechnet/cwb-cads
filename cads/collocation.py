@@ -281,7 +281,7 @@ def get_discourseme_counts(collocation, discoursemes):
         return discoursemes_unigram_counts
 
 
-def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number, highlight_queries=[]):
+def ccc_collocates(collocation, sort_by, sort_order, page_size, page_number):
     """create collocation object as dict
 
     - items

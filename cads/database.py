@@ -192,7 +192,7 @@ class SubCorpus(db.Model):
     def ccc(self):
         crps = self.corpus.ccc()
         if self.nqr_cqp is None:
-            current_app.logger.debug('database :: creating subcorpus')
+            current_app.logger.debug('subcorpus :: creating NQR')
             df = DataFrame([vars(s) for s in self.spans], columns=['match', 'matchend']).sort_values(by='match')
             subcrps = crps.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
             self.nqr_cqp = subcrps.subcorpus_name
@@ -685,6 +685,9 @@ class Keyword(db.Model):
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
+
+    sub_vs_rest = db.Column(db.Boolean())
+    min_freq = db.Column(db.Integer())
 
     items = db.relationship('KeywordItems', backref='keyword', passive_deletes=True, cascade='all, delete')
 
