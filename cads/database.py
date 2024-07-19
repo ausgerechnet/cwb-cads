@@ -4,6 +4,7 @@
 from collections import defaultdict
 from datetime import datetime
 
+from ccc import Corpus as Crps
 from ccc.utils import cqp_escape
 from flask import Blueprint, current_app
 from flask_login import UserMixin
@@ -147,12 +148,13 @@ class Corpus(db.Model):
 
     @property
     def nr_tokens(self):
-        from ccc import Corpus as Crps
-        crps = Crps(corpus_name=self.cwb_id,
+        return self.ccc().size()
+
+    def ccc(self):
+        return Crps(corpus_name=self.cwb_id,
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
-        return crps.corpus_size
 
 
 class CorpusAttributes(db.Model):
@@ -179,10 +181,25 @@ class SubCorpus(db.Model):
     description = db.Column(db.Unicode)
 
     nqr_cqp = db.Column(db.Unicode)
-    nr_tokens = db.Column(db.Integer)
 
     spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span, backref=db.backref('sub_corpus'))
     queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
+
+    @property
+    def nr_tokens(self):
+        return self.ccc().size()
+
+    def ccc(self):
+        crps = self.corpus.ccc()
+        if self.nqr_cqp is None:
+            current_app.logger.debug('database :: creating subcorpus')
+            df = DataFrame([vars(s) for s in self.spans], columns=['match', 'matchend']).sort_values(by='match')
+            subcrps = crps.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
+            self.nqr_cqp = subcrps.subcorpus_name
+            db.session.commit()
+        else:
+            subcrps = crps.subcorpus(subcorpus_name=self.nqr_cqp)
+        return subcrps
 
 
 class Embeddings(db.Model):
@@ -282,6 +299,7 @@ class DiscoursemeTemplateItems(db.Model):
     """
 
     __table_args__ = {'sqlite_autoincrement': True}
+
     id = db.Column(db.Integer(), primary_key=True)
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
     surface = db.Column(db.String(), nullable=True)
@@ -318,7 +336,7 @@ class Query(db.Model):
     """
 
     __table_args__ = (
-        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', 'soc_sequence', name='_discourseme_subcorpus'),
+        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', 'soc_sequence', name='_discourseme_subcorpus_soc'),
         {'sqlite_autoincrement': True},
     )
 
@@ -515,6 +533,10 @@ class Collocation(db.Model):
     discourseme_unigram_items = db.relationship('CollocationDiscoursemeUnigramItems', backref='collocation', passive_deletes=True, cascade='all, delete')
 
     @property
+    def nr_items(self):
+        return len(self.items)
+
+    @property
     def discourseme_scores(self):
 
         from .collocation import score_counts
@@ -650,19 +672,25 @@ class Keyword(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-    # user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
-    corpus_id = db.Column(db.Unicode(255), nullable=False)
-    corpus_id_reference = db.Column(db.Unicode(255), nullable=False)
+    corpus_id = db.Column(db.Integer(), db.ForeignKey('corpus.id', ondelete='CASCADE'), nullable=False)
+    subcorpus_id = db.Column(db.Integer(), db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), nullable=True)
+    p = db.Column(db.Unicode(255), nullable=False)  # TODO
 
-    p = db.Column(db.Unicode(255), nullable=False)
-    p_reference = db.Column(db.Unicode(255), nullable=False)
+    corpus_id_reference = db.Column(db.Integer(), db.ForeignKey('corpus.id', ondelete='CASCADE'), nullable=False)
+    subcorpus_id_reference = db.Column(db.Integer(), db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), nullable=True)
+    p_reference = db.Column(db.Unicode(255), nullable=False)  # TODO
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
     items = db.relationship('KeywordItems', backref='keyword', passive_deletes=True, cascade='all, delete')
+
+    @property
+    def nr_items(self):
+        return len(self.items)
 
 
 class KeywordItems(db.Model):
@@ -680,6 +708,19 @@ class KeywordItems(db.Model):
     N1 = db.Column(db.Integer)
     f2 = db.Column(db.Integer)
     N2 = db.Column(db.Integer)
+
+    scores = db.relationship("KeywordItemScore", backref='keyword_items', cascade='all, delete')
+
+
+class KeywordItemScore(db.Model):
+    """
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+    keyword_item_id = db.Column(db.Integer, db.ForeignKey('keyword_items.id', ondelete='CASCADE'))
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
+    measure = db.Column(db.Unicode)
+    score = db.Column(db.Float)
 
 
 @bp.cli.command('init')

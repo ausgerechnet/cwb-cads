@@ -5,7 +5,6 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
-from ccc import Corpus
 from flask import current_app
 from pandas import DataFrame, read_sql
 
@@ -57,7 +56,7 @@ def get_or_create_counts(collocation, remove_filter_cpos=True):
     """
 
     from .query import get_or_create_cotext
-    subcorpus = collocation._query.subcorpus
+
     current_app.logger.debug("get_or_create_counts :: getting counts")
     old = CollocationItems.query.filter_by(collocation_id=collocation.id)
     if old.first():
@@ -74,23 +73,11 @@ def get_or_create_counts(collocation, remove_filter_cpos=True):
     window = collocation.window
     s_break = collocation.s_break
 
-    corpus = Corpus(filter_query.corpus.cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
-
+    # corpus / subcorpus
     if collocation._query.subcorpus and collocation.marginals == 'local':
-
-        if subcorpus.nqr_cqp is None:
-            current_app.logger.debug('get_or_create_counts :: creating subcorpus')
-            df = DataFrame([vars(s) for s in subcorpus.spans], columns=['match', 'matchend']).sort_values(by='match')
-            corpus = corpus.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
-            subcorpus.nqr_cqp = corpus.subcorpus_name
-            db.session.commit()
-
-        else:
-            current_app.logger.debug('get_or_create_counts :: subcorpus already exists')
-            corpus = corpus.subcorpus(subcorpus_name=subcorpus.nqr_cqp)
+        corpus = collocation._query.subcorpus.ccc()
+    else:
+        corpus = collocation._query.corpus.ccc()
 
     ###################
     # (1) GET CONTEXT #
@@ -139,6 +126,7 @@ def get_or_create_counts(collocation, remove_filter_cpos=True):
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'collocation_item_id'}, axis=1)
     scores['collocation_id'] = collocation.id
     scores.to_sql('item_score', con=db.engine, if_exists='append', index=False)
+    db.session.commit()
 
     return scores
 
@@ -181,24 +169,12 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme, discourseme_ma
         return
 
     # create breakdowns
-    corpus = Corpus(corpus.cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
-    subcorpus = collocation._query.subcorpus
 
-    if subcorpus and collocation.marginals == 'local':
-
-        if subcorpus.nqr_cqp is None:
-            current_app.logger.debug('get_or_create_counts :: creating subcorpus')
-            df = DataFrame([vars(s) for s in subcorpus.spans], columns=['match', 'matchend']).sort_values(by='match')
-            corpus = corpus.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
-            subcorpus.nqr_cqp = corpus.subcorpus_name
-            db.session.commit()
-
-        else:
-            current_app.logger.debug('get_or_create_counts :: subcorpus already exists')
-            corpus = corpus.subcorpus(subcorpus_name=subcorpus.nqr_cqp)
+    # corpus / subcorpus
+    if collocation._query.subcorpus and collocation.marginals == 'local':
+        corpus = collocation._query.subcorpus.ccc()
+    else:
+        corpus = collocation._query.corpus.ccc()
 
     # if collocation.marginals == 'global':
     current_app.logger.debug('query_discourseme_cotext :: .. creating breakdowns in whole corpus')
@@ -274,8 +250,6 @@ def get_discourseme_counts(collocation, discoursemes):
 
     from .query import get_or_create_cotext
 
-    # subcorpus = collocation._query.subcorpus
-
     filter_query = collocation._query
     window = collocation.window
     s_break = collocation.s_break
@@ -297,25 +271,7 @@ def get_discourseme_counts(collocation, discoursemes):
     # discoursemes_unigram_counts
     if len(discourseme_cpos) > 0:
 
-        corpus = Corpus(filter_query.corpus.cwb_id,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
-
-        # if collocation._query.subcorpus and collocation.marginals == 'local':
-
-        #     if subcorpus.nqr_cqp is None:
-        #         current_app.logger.debug('get_discourseme_counts :: creating subcorpus')
-        #         df = DataFrame([vars(s) for s in subcorpus.spans], columns=['match', 'matchend']).sort_values(by='match')
-        #         corpus = corpus.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
-        #         subcorpus.nqr_cqp = corpus.subcorpus_name
-        #         db.session.commit()
-
-        #     else:
-        #         current_app.logger.debug('get_discourseme_counts :: subcorpus already exists')
-        #         corpus = corpus.subcorpus(subcorpus_name=subcorpus.nqr_cqp)
-
-        # current_app.logger.debug('get_discourseme_counts :: creating unigram counts for all discoursemes')
+        corpus = filter_query.corpus.ccc()
 
         discoursemes_unigram_counts = corpus.counts.cpos(discourseme_cpos, [collocation.p])[['freq']].rename(columns={'freq': 'f'})
         m = corpus.marginals(discoursemes_unigram_counts.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})

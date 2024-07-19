@@ -1,5 +1,4 @@
 from flask import url_for
-import pytest
 
 
 def test_create_query(client, auth):

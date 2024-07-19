@@ -8,7 +8,6 @@ from tempfile import NamedTemporaryFile
 from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Integer, List, String
 from apiflask.validators import OneOf
-from ccc import Corpus, SubCorpus
 from ccc.cache import generate_idx
 from ccc.collocates import dump2cooc
 from ccc.utils import cqp_escape, format_cqp_query
@@ -49,32 +48,10 @@ def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strate
         else:
             wordlists[item.p].append(item.surface)
 
-    crps = Corpus(corpus.cwb_id,
-                  cqp_bin=current_app.config['CCC_CQP_BIN'],
-                  registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                  data_dir=current_app.config['CCC_DATA_DIR'])
-
-    # subcorpus?
     if subcorpus:
-
-        if subcorpus.nqr_cqp is None:
-            current_app.logger.debug('ccc_discourseme_matches :: creating subcorpus')
-            df = DataFrame([vars(s) for s in subcorpus.spans], columns=['match', 'matchend']).sort_values(by='match')
-            crps = crps.subcorpus(subcorpus_name=None, df_dump=df, overwrite=True)
-            subcorpus.nqr_cqp = crps.subcorpus_name
-            db.session.commit()
-
-        else:
-            crps = crps.subcorpus(subcorpus_name=subcorpus.nqr_cqp)
-
-        if subcorpus.nqr_cqp not in crps.show_nqr()['subcorpus'].values:
-            raise NotImplementedError('dynamic subcorpus creation unsuccessful')
-
+        crps = subcorpus.ccc()
     else:
-        crps = Corpus(corpus.cwb_id,
-                      cqp_bin=current_app.config['CCC_CQP_BIN'],
-                      registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                      data_dir=current_app.config['CCC_DATA_DIR'])
+        crps = corpus.ccc()
 
     # we start CQP here and define wordlists
     cqp = crps.start_cqp()
@@ -150,30 +127,10 @@ def ccc_query(query, return_df=True):
 
     if not matches.first():
 
-        corpus = Corpus(query.corpus.cwb_id,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
-
         if query.subcorpus:
-            current_app.logger.debug(f'ccc_query :: subcorpus {query.subcorpus.name}')
-            if query.subcorpus.nqr_cqp is None:
-                current_app.logger.debug('ccc_query :: creating subcorpus')
-                df = DataFrame([vars(s) for s in query.subcorpus.spans], columns=['match', 'matchend'])
-                nqr = SubCorpus(corpus_name=query.corpus.cwb_id,
-                                subcorpus_name=None,
-                                df_dump=df.set_index(['match', 'matchend']),
-                                cqp_bin=current_app.config['CCC_CQP_BIN'],
-                                registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                                data_dir=current_app.config['CCC_DATA_DIR'],
-                                lib_dir=None,
-                                overwrite=False)
-                query.subcorpus.nqr_cqp = nqr.subcorpus_name
-                db.session.commit()
-            if query.subcorpus.nqr_cqp not in corpus.show_nqr()['subcorpus'].values:
-                raise NotImplementedError('dynamic subcorpus creation unsuccessful')
-
-            corpus = corpus.subcorpus(query.subcorpus.nqr_cqp)
+            corpus = query.subcorpus.ccc()
+        else:
+            corpus = query.corpus.ccc()
 
         # query corpus
         current_app.logger.debug('ccc_query :: querying')
@@ -289,11 +246,7 @@ def get_or_create_cotext(query, window, context_break, return_df=False):
         db.session.add(cotext)
         db.session.commit()
 
-        corpus = Corpus(corpus_name=query.corpus.cwb_id,
-                        lib_dir=None,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
+        corpus = query.corpus.ccc()
 
         subcorpus_context = corpus.subcorpus(
             subcorpus_name=None,
@@ -773,10 +726,10 @@ def get_collocation(query_id, query_data):
 
     collocation = get_or_create(Collocation, query_id=query.id, p=p, s_break=s_break, window=window,
                                 constellation_id=constellation_id, marginals=marginals)
-    collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
-
     if semantic_map_id:
         collocation.semantic_map_id = semantic_map_id
         db.session.commit()
+
+    collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
 
     return CollocationOut().dump(collocation), 200

@@ -3,7 +3,6 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, Nested, String
-from ccc import Corpus
 from flask import current_app
 from pandas import DataFrame
 
@@ -28,10 +27,7 @@ def ccc_breakdown(breakdown, return_df=True):
         if matches_df is None:
             current_app.logger.debug('ccc_breakdown :: 0 matches')
             return
-        corpus = Corpus(breakdown._query.corpus.cwb_id,
-                        cqp_bin=current_app.config['CCC_CQP_BIN'],
-                        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                        data_dir=current_app.config['CCC_DATA_DIR'])
+        corpus = breakdown._query.corpus.ccc()
         matches = corpus.subcorpus(df_dump=matches_df, overwrite=False)
 
         # save breakdown

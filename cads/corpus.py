@@ -83,10 +83,7 @@ def meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_
     if f'{level}_{key}' not in corpus.s_annotations:
         abort(404, 'annotation level not found')
 
-    df_meta = CCCorpus(corpus.cwb_id,
-                       cqp_bin=cqp_bin,
-                       registry_dir=registry_dir,
-                       data_dir=data_dir).query(s_query=f'{level}_{key}').df.reset_index().rename(columns={f'{level}_{key}': key})
+    df_meta = corpus.ccc().query(s_query=f'{level}_{key}').df.reset_index().rename(columns={f'{level}_{key}': key})
 
     meta_from_df(corpus, df_meta, level, {key: value_type})
 
@@ -214,7 +211,6 @@ def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin,
                           name=name,
                           description=description,
                           nqr_cqp=nqr_cqp,
-                          nr_tokens=nr_tokens,
                           spans=spans)
     db.session.add(subcorpus)
     db.session.commit()
