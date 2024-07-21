@@ -1,4 +1,4 @@
-import { Eye, Loader2, MoreVertical, Plus, TextSelect } from 'lucide-react'
+import { Eye, Loader2, MoreVertical, Plus } from 'lucide-react'
 import {
   Link,
   createLazyFileRoute,
@@ -179,17 +179,6 @@ function QuickActions({ queryId }: { queryId: string }) {
         >
           <Eye className="mr-2 h-4 w-4" />
           View Query
-        </Link>
-        <Link
-          to="/collocation-analysis/new"
-          search={{ queryId: parseInt(queryId) }}
-          className={cn(
-            buttonVariants({ variant: 'outline', size: 'sm' }),
-            'w-full',
-          )}
-        >
-          <TextSelect className="mr-2 h-4 w-4" />
-          Create Collocation Analysis
         </Link>
         <ButtonAlert
           disabled={isPending || isSuccess}
