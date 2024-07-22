@@ -26,7 +26,7 @@ class ConstellationIn(Schema):
 
     name = String(required=False)
     description = String(required=False)
-    filter_discourseme_ids = List(Integer, required=True)
+    filter_discourseme_ids = List(Integer, required=False, load_default=[])
     highlight_discourseme_ids = List(Integer, required=False, load_default=[])
 
 
