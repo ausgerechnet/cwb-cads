@@ -15,23 +15,19 @@ import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/rout
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
 import { Route as AppConstellationsRouteImport } from './routes/_app/constellations/route'
-import { Route as AppCollocationAnalysisRouteImport } from './routes/_app/collocation-analysis/route'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
-import { Route as AppQueriesQueryIdImport } from './routes/_app/queries_/$queryId'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
 import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
-import { Route as AppCollocationAnalysisNewImport } from './routes/_app/collocation-analysis_/new'
+import { Route as AppQueriesQueryIdRouteImport } from './routes/_app/queries_/$queryId/route'
+import { Route as AppQueriesQueryIdCollocationAnalysisImport } from './routes/_app/queries_/$queryId_/collocation-analysis'
 
 // Create Virtual Routes
 
 const LogoutLazyImport = createFileRoute('/logout')()
 const AppKeywordAnalysisLazyImport = createFileRoute('/_app/keyword-analysis')()
 const AppDiscoursemesNewLazyImport = createFileRoute('/_app/discoursemes/new')()
-const AppCollocationAnalysisCollocationIdLazyImport = createFileRoute(
-  '/_app/collocation-analysis/$collocationId',
-)()
 
 // Create/Update Routes
 
@@ -105,28 +101,12 @@ const AppConstellationsRouteRoute = AppConstellationsRouteImport.update({
   import('./routes/_app/constellations/route.lazy').then((d) => d.Route),
 )
 
-const AppCollocationAnalysisRouteRoute =
-  AppCollocationAnalysisRouteImport.update({
-    path: '/collocation-analysis',
-    getParentRoute: () => AppRoute,
-  } as any)
-
 const AppDiscoursemesNewLazyRoute = AppDiscoursemesNewLazyImport.update({
   path: '/discoursemes/new',
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
   import('./routes/_app/discoursemes_/new.lazy').then((d) => d.Route),
 )
-
-const AppCollocationAnalysisCollocationIdLazyRoute =
-  AppCollocationAnalysisCollocationIdLazyImport.update({
-    path: '/collocation-analysis/$collocationId',
-    getParentRoute: () => AppRoute,
-  } as any).lazy(() =>
-    import('./routes/_app/collocation-analysis_/$collocationId.lazy').then(
-      (d) => d.Route,
-    ),
-  )
 
 const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
   path: '/subcorpora/new',
@@ -140,13 +120,6 @@ const AppQueriesNewRoute = AppQueriesNewImport.update({
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
   import('./routes/_app/queries_/new.lazy').then((d) => d.Route),
-)
-
-const AppQueriesQueryIdRoute = AppQueriesQueryIdImport.update({
-  path: '/queries/$queryId',
-  getParentRoute: () => AppRoute,
-} as any).lazy(() =>
-  import('./routes/_app/queries_/$queryId.lazy').then((d) => d.Route),
 )
 
 const AppDiscoursemesDiscoursemeIdRoute =
@@ -176,12 +149,18 @@ const AppConstellationsConstellationIdRoute =
     ),
   )
 
-const AppCollocationAnalysisNewRoute = AppCollocationAnalysisNewImport.update({
-  path: '/collocation-analysis/new',
+const AppQueriesQueryIdRouteRoute = AppQueriesQueryIdRouteImport.update({
+  path: '/queries/$queryId',
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
-  import('./routes/_app/collocation-analysis_/new.lazy').then((d) => d.Route),
+  import('./routes/_app/queries_/$queryId/route.lazy').then((d) => d.Route),
 )
+
+const AppQueriesQueryIdCollocationAnalysisRoute =
+  AppQueriesQueryIdCollocationAnalysisImport.update({
+    path: '/queries/$queryId/collocation-analysis',
+    getParentRoute: () => AppRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -211,10 +190,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogoutLazyImport
       parentRoute: typeof rootRoute
     }
-    '/_app/collocation-analysis': {
-      preLoaderRoute: typeof AppCollocationAnalysisRouteImport
-      parentRoute: typeof AppImport
-    }
     '/_app/constellations': {
       preLoaderRoute: typeof AppConstellationsRouteImport
       parentRoute: typeof AppImport
@@ -239,8 +214,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKeywordAnalysisLazyImport
       parentRoute: typeof AppImport
     }
-    '/_app/collocation-analysis/new': {
-      preLoaderRoute: typeof AppCollocationAnalysisNewImport
+    '/_app/queries/$queryId': {
+      preLoaderRoute: typeof AppQueriesQueryIdRouteImport
       parentRoute: typeof AppImport
     }
     '/_app/constellations/$constellationId': {
@@ -255,10 +230,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoursemesDiscoursemeIdImport
       parentRoute: typeof AppImport
     }
-    '/_app/queries/$queryId': {
-      preLoaderRoute: typeof AppQueriesQueryIdImport
-      parentRoute: typeof AppImport
-    }
     '/_app/queries/new': {
       preLoaderRoute: typeof AppQueriesNewImport
       parentRoute: typeof AppImport
@@ -267,12 +238,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubcorporaNewImport
       parentRoute: typeof AppImport
     }
-    '/_app/collocation-analysis/$collocationId': {
-      preLoaderRoute: typeof AppCollocationAnalysisCollocationIdLazyImport
-      parentRoute: typeof AppImport
-    }
     '/_app/discoursemes/new': {
       preLoaderRoute: typeof AppDiscoursemesNewLazyImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/queries/$queryId/collocation-analysis': {
+      preLoaderRoute: typeof AppQueriesQueryIdCollocationAnalysisImport
       parentRoute: typeof AppImport
     }
   }
@@ -284,22 +255,20 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute,
   Route,
   AppRoute.addChildren([
-    AppCollocationAnalysisRouteRoute,
     AppConstellationsRouteRoute,
     AppDiscoursemesRouteRoute,
     AppQueriesRouteRoute,
     AppSubcorporaRouteRoute,
     AppAdminRoute,
     AppKeywordAnalysisLazyRoute,
-    AppCollocationAnalysisNewRoute,
+    AppQueriesQueryIdRouteRoute,
     AppConstellationsConstellationIdRoute,
     AppConstellationsNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
-    AppQueriesQueryIdRoute,
     AppQueriesNewRoute,
     AppSubcorporaNewRoute,
-    AppCollocationAnalysisCollocationIdLazyRoute,
     AppDiscoursemesNewLazyRoute,
+    AppQueriesQueryIdCollocationAnalysisRoute,
   ]),
   LoginRoute,
   VignetteRoute,

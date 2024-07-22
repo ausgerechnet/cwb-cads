@@ -88,33 +88,14 @@ export const deleteQueryMutationOptions: MutationOptions<
   },
 }
 
-export const queryBreakdownsQueryOptions = (queryId: string) =>
-  queryOptions({
-    queryKey: ['query-breakdowns', queryId],
-    queryFn: ({ signal }) =>
-      apiClient.getBreakdownqueryQuery_id({
-        params: { query_id: queryId },
-        signal,
-      }),
-  })
-
 export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
   queryOptions({
     queryKey: ['query-breakdown', queryId, p],
-    queryFn: async () => {
-      const allBreakdowns = z
-        .array(schemas.BreakdownOut)
-        .parse(queryClient.getQueryData(['query-breakdowns', queryId]) ?? [])
-      const breakdown = allBreakdowns.find((b) => b.p === p)
-      if (breakdown) return breakdown
-      const newBreakdown = await apiClient.postBreakdownqueryQuery_id(
-        { p },
-        { params: { query_id: queryId } },
-      )
-      allBreakdowns.push(newBreakdown)
-      queryClient.setQueryData(['query-breakdowns', queryId], allBreakdowns)
-      return newBreakdown
-    },
+    queryFn: async () =>
+      apiClient.getQueryQuery_idbreakdown({
+        queries: { p },
+        params: { query_id: queryId },
+      }),
   })
 
 export const queryConcordancesQueryOptions = (
@@ -178,6 +159,49 @@ export const queryConcordancesQueryOptions = (
     staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
+// export const queryConcordanceContextQueryOptions = (
+//   queryId: string,
+//   concordanceLineId: string,
+//   {
+//     window,
+//     extendedWindow: extended_window,
+//     extendedContextBreak: extended_context_break,
+//     primary,
+//     secondary,
+//   }: {
+//     window?: number
+//     extendedWindow?: number
+//     extendedContextBreak?: string
+//     primary?: string
+//     secondary?: string
+//   } = {},
+// ) =>
+//   queryOptions({
+//     queryKey: [
+//       'query-concordance-context',
+//       queryId,
+//       concordanceLineId,
+//       window,
+//       extended_window,
+//       extended_context_break,
+//       primary,
+//       secondary,
+//     ],
+//     queryFn: ({ signal }) =>
+//       apiClient.getQueryQuery_idconcordanceId({
+//         params: { query_id: queryId, id: concordanceLineId },
+//         queries: {
+//           window,
+//           extended_window,
+//           extended_context_break,
+//           primary,
+//           secondary,
+//         },
+//         signal,
+//       }),
+//     staleTime: 1_000 * 60 * 5, // 5 minutes
+//   })
+
 export const queryConcordancesShuffleMutationOptions: MutationOptions<
   { query_id?: number },
   Error,
@@ -195,7 +219,87 @@ export const queryConcordancesShuffleMutationOptions: MutationOptions<
   },
 }
 
+export const queryCollocation = (
+  queryId: string,
+  p: string,
+  window: number,
+  {
+    constellation_id,
+    semantic_map_id,
+    subcorpus_id,
+    s_break,
+    sort_order,
+    sort_by,
+    page_size,
+    page_number,
+  }: {
+    constellation_id?: number | undefined
+    semantic_map_id?: number | undefined
+    subcorpus_id?: number | undefined
+    s_break?: string | undefined
+    sort_order?: 'ascending' | 'descending'
+    sort_by?:
+      | 'conservative_log_ratio'
+      | 'O11'
+      | 'E11'
+      | 'ipm'
+      | 'ipm_expected'
+      | 'log_likelihood'
+      | 'z_score'
+      | 't_score'
+      | 'simple_ll'
+      | 'dice'
+      | 'log_ratio'
+      | 'min_sensitivity'
+      | 'liddell'
+      | 'mutual_information'
+      | 'local_mutual_information'
+    page_size?: number | undefined
+    page_number?: number | undefined
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'query-collocation',
+      queryId,
+      p,
+      window,
+      constellation_id,
+      semantic_map_id,
+      subcorpus_id,
+      s_break,
+      sort_order,
+      sort_by,
+      page_size,
+      page_number,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getQueryQuery_idcollocation({
+        params: { query_id: queryId },
+        queries: {
+          p,
+          window,
+          constellation_id,
+          semantic_map_id,
+          subcorpus_id,
+          s_break,
+          sort_order,
+          sort_by,
+          page_size,
+          page_number,
+        },
+        signal,
+      }),
+  })
+
 // ==================== CORPORA ====================
+
+export const corpusQueryOptions = (corpusId: number) =>
+  queryOptions({
+    queryKey: ['corpus', corpusId],
+    queryFn: ({ signal }) =>
+      apiClient.getCorpusId({ params: { id: String(corpusId) }, signal }),
+  })
 
 export const corporaQueryOptions = queryOptions({
   queryKey: ['corpora'],
@@ -214,8 +318,9 @@ export const putSubcorpusMutationOptions: MutationOptions<
   Error,
   string
 > = {
-  mutationFn: async (id: string) =>
-    apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
+  // TODO: implement correct API call
+  mutationFn: async (id: string) => '42 ' + id,
+  //   apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
   onSuccess: () => {
     queryClient.invalidateQueries(corporaQueryOptions)
   },
@@ -338,20 +443,147 @@ export const deleteConstellationMutationOptions: MutationOptions<
   },
 }
 
+export const queryConcordancesConstellationOptions = (
+  constellationId: string | number,
+  corpusId: string | number,
+  {
+    window,
+    primary,
+    secondary,
+    filterItem: filter_item,
+    filterItemPAtt: filter_item_p_att,
+    filterDiscoursemeIds: filter_discourseme_ids,
+    pageSize: page_size,
+    pageNumber: page_number,
+    sortOrder: sort_order,
+    sortByOffset: sort_by_offset,
+  }: {
+    window?: number
+    primary?: string
+    secondary?: string
+    filterItem?: string
+    filterItemPAtt?: string
+    filterDiscoursemeIds?: number[]
+    pageSize?: number
+    pageNumber?: number
+    sortOrder?: 'ascending' | 'descending' | 'random'
+    sortByOffset?: number
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'query-concordances',
+      String(constellationId),
+      String(corpusId),
+      window,
+      primary,
+      secondary,
+      filter_item,
+      filter_item_p_att,
+      filter_discourseme_ids,
+      page_size,
+      page_number,
+      sort_order,
+      sort_by_offset,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getConstellationIdcorpusCorpus_idconcordance({
+        params: { id: String(constellationId), corpus_id: String(corpusId) },
+        queries: {
+          window,
+          primary,
+          secondary,
+          filter_item,
+          filter_item_p_att,
+          filter_discourseme_ids,
+          page_size,
+          page_number,
+          sort_order,
+          sort_by_offset,
+        },
+        signal,
+      }),
+    staleTime: 1_000 * 60 * 5, // 5 minutes
+  })
+
+export const deleteConstellationDiscoursemeMutationOptions: MutationOptions<
+  z.infer<typeof schemas.ConstellationOut>,
+  Error,
+  { constellationId: number; discoursemeId: number }
+> = {
+  mutationFn: async ({
+    constellationId,
+    discoursemeId,
+  }: {
+    constellationId: number
+    discoursemeId: number
+  }) =>
+    apiClient.patchConstellationIdremoveDiscourseme(
+      { discourseme_id: discoursemeId },
+      {
+        params: { id: constellationId.toString() },
+      },
+    ),
+  mutationKey: ['delete-constellation-discourseme'],
+  onSuccess: (constellation) => {
+    const constellationId = constellation.id
+    if (constellationId === undefined) return
+    queryClient.invalidateQueries(
+      constellationQueryOptions(String(constellationId)),
+    )
+    queryClient.invalidateQueries({
+      queryKey: ['query-concordances', String(constellationId)],
+    })
+  },
+}
+
+export const addConstellationDiscoursemeMutationOptions: MutationOptions<
+  z.infer<typeof schemas.ConstellationOut>,
+  Error,
+  { constellationId: number; discoursemeId: number }
+> = {
+  mutationFn: async ({
+    constellationId,
+    discoursemeId,
+  }: {
+    constellationId: number
+    discoursemeId: number
+  }) =>
+    apiClient.patchConstellationIdaddDiscourseme(
+      { discourseme_id: discoursemeId },
+      {
+        params: { id: constellationId.toString() },
+      },
+    ),
+  mutationKey: ['add-constellation-discourseme'],
+  onSuccess: (constellation) => {
+    const constellationId = constellation.id
+    if (constellationId === undefined) return
+    queryClient.invalidateQueries(
+      constellationQueryOptions(String(constellationId)),
+    )
+    queryClient.invalidateQueries({
+      queryKey: ['query-concordances', String(constellationId)],
+    })
+  },
+}
 // ==================== COLLOCATIONS ====================
 
+/**
+ * @deprecated
+ */
 export const collocationsQueryOptions = queryOptions({
   queryKey: ['collocations'],
-  queryFn: ({ signal }) => apiClient.getCollocation({ signal }),
+  queryFn: async () => null, // apiClient.getCollocationId({ signal }),
 })
 
+/**
+ * @deprecated
+ */
 export const postCollocationQueryMutationOptions: MutationOptions<
-  z.infer<typeof schemas.CollocationOut>,
+  null,
   Error,
-  z.infer<typeof schemas.CollocationIn>
+  null
 > = {
-  mutationFn: (collocationIn) =>
-    apiClient.postCollocationqueryQuery_id(collocationIn, {
-      params: { query_id: collocationIn.query_id?.toString() ?? '' },
-    }),
+  mutationFn: async () => null,
 }

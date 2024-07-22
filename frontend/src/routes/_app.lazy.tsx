@@ -11,7 +11,6 @@ import {
   Crown,
   FormInput,
   MessagesSquare,
-  TextSelection,
   WholeWord,
   MessageSquare,
   ArrowLeftToLine,
@@ -76,9 +75,6 @@ function App() {
           <nav className="flex h-full min-h-[calc(100svh-3.75rem)] flex-col gap-0.5 p-2 ">
             <AppMenuLink to="/queries" icon={FormInput}>
               Queries
-            </AppMenuLink>
-            <AppMenuLink to="/collocation-analysis" icon={TextSelection}>
-              Collocation Analysis
             </AppMenuLink>
             <AppMenuLink to="/keyword-analysis" icon={WholeWord}>
               Keyword Analysis

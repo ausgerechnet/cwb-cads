@@ -1,11 +1,12 @@
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import {
   createLazyFileRoute,
+  Link,
   useNavigate,
   useRouter,
 } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
-import { MoreVertical } from 'lucide-react'
+import { Eye, MoreVertical } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -85,14 +86,18 @@ const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
     enableSorting: true,
     meta: { className: 'w-0' },
     cell: ({ row }) => (
-      <QuickActions queryId={row.original.id} key={row.original.id} />
+      <QuickActions constellationId={row.original.id} key={row.original.id} />
     ),
   },
 ]
 
 // TODO: queryId should never be undefined and in practice it is not.
 // The API spec should be updated to reflect this.
-function QuickActions({ queryId }: { queryId: number | undefined }) {
+function QuickActions({
+  constellationId,
+}: {
+  constellationId: number | undefined
+}) {
   const router = useRouter()
   const { mutate, isPending, isSuccess } = useMutation({
     ...deleteConstellationMutationOptions,
@@ -121,10 +126,21 @@ function QuickActions({ queryId }: { queryId: number | undefined }) {
         className="flex flex-col gap-2 "
         onClick={(event) => event.stopPropagation()}
       >
+        <Link
+          to="/constellations/$constellationId"
+          params={{ constellationId: String(constellationId) }}
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'w-full',
+          )}
+        >
+          <Eye className="mr-2 h-4 w-4" />
+          View Constellation
+        </Link>
         <ButtonAlert
           disabled={isPending || isSuccess}
           labelDescription="This will permanently delete the constellation."
-          onClick={() => mutate(String(queryId))}
+          onClick={() => mutate(String(constellationId))}
         >
           Delete Constellation
         </ButtonAlert>

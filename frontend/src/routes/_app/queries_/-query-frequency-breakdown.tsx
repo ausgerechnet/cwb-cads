@@ -5,6 +5,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
 
 import {
+  corpusQueryOptions,
   queryBreakdownForPQueryOptions,
   queryQueryOptions,
 } from '@/lib/queries'
@@ -22,25 +23,26 @@ import { DataTable, SortButton } from '@/components/data-table'
 import { ErrorMessage } from '@/components/error-message'
 import { Headline3 } from '@/components/ui/typography'
 
-const emptyArray = [] as const
-
-export function QueryBreakdown({ queryId }: { queryId: string }) {
+export function QueryFrequencyBreakdown({ queryId }: { queryId: string }) {
   const { pAtt } = useSearch({ from: '/_app/queries/$queryId' })
   const { data: query, error: errorQuery } = useQuery(
     queryQueryOptions(queryId),
   )
+  const { data: { p_atts: pAtts = [] } = {}, error: errorCorpus } = useQuery({
+    ...corpusQueryOptions(query?.corpus_id ?? -1),
+    enabled: query?.corpus_id !== undefined,
+  })
   const parsePAtt = useCallback(
     (pAtt: string | undefined) => {
-      const availablePAtts = query?.corpus?.p_atts ?? []
-      if (pAtt === undefined && availablePAtts.length > 0) {
-        return availablePAtts[0]
+      if (pAtt === undefined && pAtts.length > 0) {
+        return pAtts[0]
       }
-      if (pAtt !== undefined && availablePAtts.includes(pAtt)) {
+      if (pAtt !== undefined && pAtts.includes(pAtt)) {
         return pAtt
       }
       return undefined
     },
-    [query?.corpus?.p_atts],
+    [pAtts],
   )
   const navigate = useNavigate()
   const validatedPAtt = parsePAtt(pAtt)
@@ -61,8 +63,6 @@ export function QueryBreakdown({ queryId }: { queryId: string }) {
       search: (s) => ({ ...s, pAtt: parsePAtt(pAtt) }),
     })
   }
-
-  const pAtts = query?.corpus?.p_atts ?? emptyArray
 
   return (
     <>
@@ -89,6 +89,7 @@ export function QueryBreakdown({ queryId }: { queryId: string }) {
       {!breakdown && isLoading && !isPaused && (
         <Skeleton className="h-80 w-full rounded-md" />
       )}
+      <ErrorMessage className="mt-4" error={errorCorpus} />
       <ErrorMessage className="mt-4" error={errorQuery} />
       <ErrorMessage className="mt-4" error={errorBreakdown} />
     </>

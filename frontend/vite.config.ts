@@ -11,6 +11,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   test: {
     environment: 'jsdom',
     globals: true,
@@ -22,6 +24,7 @@ export default defineConfig({
         target: 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        followRedirects: true,
       },
     },
   },

@@ -1,4 +1,4 @@
-import { Eye, Loader2, MoreVertical, Plus, TextSelect } from 'lucide-react'
+import { Eye, Loader2, MoreVertical, Plus } from 'lucide-react'
 import {
   Link,
   createLazyFileRoute,
@@ -111,7 +111,12 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
       })
       if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />
       return (
-        <>{data?._items?.join(', ') || <span className="italic">empty</span>}</>
+        <>
+          {(data?.template ?? [])
+            .map((item) => item.surface)
+            .filter((surface) => Boolean(surface))
+            ?.join(', ') || <span className="italic">empty</span>}
+        </>
       )
     },
   },
@@ -174,17 +179,6 @@ function QuickActions({ queryId }: { queryId: string }) {
         >
           <Eye className="mr-2 h-4 w-4" />
           View Query
-        </Link>
-        <Link
-          to="/collocation-analysis/new"
-          search={{ queryId: parseInt(queryId) }}
-          className={cn(
-            buttonVariants({ variant: 'outline', size: 'sm' }),
-            'w-full',
-          )}
-        >
-          <TextSelect className="mr-2 h-4 w-4" />
-          Create Collocation Analysis
         </Link>
         <ButtonAlert
           disabled={isPending || isSuccess}

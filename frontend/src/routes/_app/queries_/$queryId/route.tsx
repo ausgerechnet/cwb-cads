@@ -1,8 +1,13 @@
-import { constellationQueryOptions, corporaQueryOptions } from '@/lib/queries'
 import { createFileRoute } from '@tanstack/react-router'
+import { DefaultPendingComponent } from '@/components/default-pending-component'
+import {
+  discoursemesQueryOptions,
+  // queryBreakdownsQueryOptions,
+  queryQueryOptions,
+} from '@/lib/queries'
 import { z } from 'zod'
 
-export const Route = createFileRoute('/_app/constellations/$constellationId')({
+export const Route = createFileRoute('/_app/queries/$queryId')({
   validateSearch: z.object({
     pAtt: z.string().optional(),
     contextBreak: z.string().optional().catch(undefined),
@@ -19,9 +24,11 @@ export const Route = createFileRoute('/_app/constellations/$constellationId')({
     filterItem: z.string().optional().catch(undefined),
     filterItemPAtt: z.string().optional().catch(undefined),
   }),
-  loader: ({ context: { queryClient }, params: { constellationId } }) =>
+  loader: ({ context: { queryClient }, params: { queryId } }) =>
     Promise.all([
-      queryClient.ensureQueryData(constellationQueryOptions(constellationId)),
-      queryClient.ensureQueryData(corporaQueryOptions),
+      queryClient.ensureQueryData(queryQueryOptions(queryId)),
+      // queryClient.ensureQueryData(queryBreakdownsQueryOptions(queryId)),
+      queryClient.ensureQueryData(discoursemesQueryOptions),
     ]),
+  pendingComponent: DefaultPendingComponent,
 })

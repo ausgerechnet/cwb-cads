@@ -1,15 +1,14 @@
 import { Fragment, useMemo, useRef } from 'react'
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ChevronsDownUp, ChevronsUpDown, Loader2, Shuffle } from 'lucide-react'
+import { ChevronsDownUp, ChevronsUpDown, Shuffle } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
 import { cn } from '@/lib/utils'
 import {
-  queryConcordancesQueryOptions,
-  queryConcordancesShuffleMutationOptions,
-  queryQueryOptions,
+  corpusQueryOptions,
+  queryConcordancesConstellationOptions,
 } from '@/lib/queries'
 import { formatNumber } from '@/lib/format-number'
 import {
@@ -44,21 +43,25 @@ import { Button } from '@/components/ui/button'
 
 const emptyArray = [] as const
 
-export function ConcordanceLines({
-  queryId,
+export function ConstellationConcordanceLines({
+  constellationId,
+  corpusId,
   className,
 }: {
-  queryId: string
+  constellationId: string
+  corpusId: number
   className?: string
 }) {
-  const { data: query } = useSuspenseQuery(queryQueryOptions(queryId))
+  const { data: corpus } = useQuery(corpusQueryOptions(corpusId as number))
   const navigate = useNavigate()
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
-  const searchParams = useSearch({ from: '/_app/queries/$queryId' })
-  const contextBreakList = query.corpus?.s_atts ?? emptyArray
-  const pAttributes = query.corpus?.p_atts ?? emptyArray
+  const searchParams = useSearch({
+    from: '/_app/constellations/$constellationId',
+  })
+  const contextBreakList = corpus?.s_atts ?? emptyArray
+  const pAttributes = corpus?.p_atts ?? emptyArray
   const primary =
     searchParams.primary ??
     // It seems sensible to default to 'word'
@@ -84,9 +87,9 @@ export function ConcordanceLines({
     data: concordanceLines,
     isLoading,
     error,
-    refetch: refetchConcordanceLines,
+    // refetch: refetchConcordanceLines,
   } = useQuery(
-    queryConcordancesQueryOptions(queryId, {
+    queryConcordancesConstellationOptions(constellationId, corpusId, {
       primary,
       secondary,
       window: windowSize,
@@ -98,10 +101,10 @@ export function ConcordanceLines({
       sortByOffset: clSortByOffset,
     }),
   )
-  const { mutate: shuffle, isPending: isShuffling } = useMutation({
-    ...queryConcordancesShuffleMutationOptions,
-    onSettled: () => refetchConcordanceLines(),
-  })
+  //   const { mutate: shuffle, isPending: isShuffling } = useMutation({
+  //     ...queryConcordancesShuffleMutationOptions,
+  //     onSettled: () => refetchConcordanceLines(),
+  //   })
 
   pageCountRef.current =
     concordanceLines?.page_count ?? pageCountRef.current ?? 0
@@ -261,17 +264,11 @@ export function ConcordanceLines({
 
         <Button
           className="mt-auto"
-          onClick={() => {
-            shuffle(queryId)
-          }}
-          disabled={isShuffling}
+          disabled
+          title="endpoint is currently not implemented"
         >
-          {isShuffling ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Shuffle className="mr-2 h-4 w-4" />
-          )}
-          Shuffle
+          <Shuffle className="mr-2 h-4 w-4" />
+          TODO: Shuffle
         </Button>
       </div>
 

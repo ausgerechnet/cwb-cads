@@ -18,10 +18,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ItemsInput } from './ui/items-input'
 
 const Discourseme = z.object({
   name: z.string({ required_error }),
   description: z.string({ required_error }),
+  surfaces: z.array(z.string({ required_error }), { required_error }),
 })
 
 type Discourseme = z.infer<typeof Discourseme>
@@ -45,7 +47,9 @@ export function DiscoursemeForm({
       postDiscoursemeMutationOptions.onSuccess?.(data, ...rest)
       toast.success('Discourseme created')
       const discoursemeId = data.id
-      discoursemeId !== undefined && onSuccess?.(discoursemeId)
+      if (discoursemeId !== undefined) {
+        onSuccess?.(discoursemeId)
+      }
     },
   })
   const form = useForm<Discourseme>({
@@ -59,6 +63,11 @@ export function DiscoursemeForm({
           postNewDiscourseme({
             name: discourseme.name,
             description: discourseme.description,
+            template: discourseme.surfaces.map((surface) => ({
+              surface,
+              cqp_query: '',
+              p: '',
+            })),
           }),
         )}
       >
@@ -84,6 +93,19 @@ export function DiscoursemeForm({
                 <FormLabel>Description</FormLabel>
                 <FormControl>
                   <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="surfaces"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <FormLabel>Items</FormLabel>
+                <FormControl>
+                  <ItemsInput onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

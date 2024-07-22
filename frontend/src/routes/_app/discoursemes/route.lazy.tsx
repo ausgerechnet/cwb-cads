@@ -26,6 +26,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { ButtonAlert } from '@/components/button-alert'
+import { ReactNode } from 'react'
 
 export const Route = createLazyFileRoute('/_app/discoursemes')({
   component: Discoursemes,
@@ -50,7 +51,13 @@ const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeOut>>[] = [
   {
     accessorKey: '_items',
     header: 'Items',
-    cell: ({ row }) => row.original._items?.join(', '),
+    cell: ({ row }) =>
+      shortenArray(
+        (row.original.template ?? [])
+          .map((item) => item.surface)
+          .filter((surface) => Boolean(surface)),
+        15,
+      ),
   },
   {
     id: 'actions',
@@ -64,6 +71,20 @@ const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeOut>>[] = [
     meta: { className: 'w-0' },
   },
 ]
+
+function shortenArray<T>(array: T[], length: number): ReactNode {
+  if (array.length <= length) {
+    return array.join(', ')
+  }
+  return (
+    <>
+      {array.slice(0, length).join(', ')},{' '}
+      <span className="rounded text-muted-foreground">
+        {array.length - length} more...
+      </span>
+    </>
+  )
+}
 
 function Discoursemes() {
   const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)

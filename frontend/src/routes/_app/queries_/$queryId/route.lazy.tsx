@@ -29,8 +29,8 @@ import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { ErrorMessage } from '@/components/error-message'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Card } from '@/components/ui/card'
-import { ConcordanceLines } from './-concordance-lines'
-import { QueryBreakdown } from './-query-breakdown'
+import { ConcordanceLines } from '../-query-concordance-lines'
+import { QueryFrequencyBreakdown } from '../-query-frequency-breakdown'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -49,6 +49,7 @@ function SingleQuery() {
     },
   })
   const hasDiscourseme = Boolean(queryDiscourseme)
+  const corpusName = query.data?.corpus_name
 
   return (
     <AppPageFrame
@@ -67,7 +68,10 @@ function SingleQuery() {
     >
       <div className="grid grid-cols-3 grid-rows-[max-content_1fr_auto] gap-8">
         <Card className="mb-auto p-4 font-mono">
-          <Headline3 className="mb-2 text-lg leading-normal">Query</Headline3>
+          <Headline3 className="mb-2 text-lg leading-normal">
+            Query {corpusName && `on ${corpusName}`}
+          </Headline3>
+
           <div className="whitespace-pre-line rounded-md bg-muted p-2 text-muted-foreground">
             {query.data?.cqp_query}
           </div>
@@ -80,7 +84,7 @@ function SingleQuery() {
           )}
         </Card>
         <Card className="col-span-2 row-span-2 p-4">
-          <QueryBreakdown queryId={queryId} />
+          <QueryFrequencyBreakdown queryId={queryId} />
         </Card>
 
         <ConcordanceLines queryId={queryId} className="col-span-full" />
@@ -108,9 +112,9 @@ function Discourseme({
         )}
         <span className="mt-2 font-bold">Items</span>
         <p>
-          {discourseme._items?.join(', ') ?? (
-            <span className="italic">empty</span>
-          )}
+          {(discourseme.template ?? [])
+            .map((template) => template.surface)
+            .join(', ') ?? <span className="italic">empty</span>}
         </p>
       </div>
     </>
