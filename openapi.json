@@ -200,6 +200,7 @@
             "type": "string"
           },
           "filter_discourseme_ids": {
+            "default": [],
             "items": {
               "type": "integer"
             },
@@ -216,9 +217,6 @@
             "type": "string"
           }
         },
-        "required": [
-          "filter_discourseme_ids"
-        ],
         "type": "object"
       },
       "ConstellationInUpdate": {
@@ -227,6 +225,7 @@
             "type": "string"
           },
           "filter_discourseme_ids": {
+            "default": [],
             "items": {
               "type": "integer"
             },
@@ -557,8 +556,22 @@
         },
         "type": "object"
       },
-      "KeywordOut": {
+      "KeywordItemsOut": {
         "properties": {
+          "coordinates": {
+            "items": {
+              "$ref": "#/components/schemas/CoordinatesOut"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "discourseme_scores": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoursemeScoresOut"
+            },
+            "nullable": true,
+            "type": "array"
+          },
           "id": {
             "type": "integer"
           },
@@ -583,8 +596,12 @@
         },
         "type": "object"
       },
-      "KeywordOverviewOut": {
+      "KeywordOut": {
         "properties": {
+          "constellation_id": {
+            "nullable": true,
+            "type": "integer"
+          },
           "corpus_id": {
             "type": "integer"
           },
@@ -592,6 +609,9 @@
             "type": "integer"
           },
           "id": {
+            "type": "integer"
+          },
+          "min_freq": {
             "type": "integer"
           },
           "nr_items": {
@@ -603,10 +623,32 @@
           "p_reference": {
             "type": "string"
           },
+          "semantic_map_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "sub_vs_rest": {
+            "type": "boolean"
+          },
           "subcorpus_id": {
             "type": "integer"
           },
           "subcorpus_id_reference": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "KeywordPatchIn": {
+        "properties": {
+          "constellation_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          },
+          "semantic_map_id": {
+            "default": null,
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -3302,7 +3344,7 @@
               "application/json": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/KeywordOverviewOut"
+                    "$ref": "#/components/schemas/KeywordOut"
                   },
                   "type": "array"
                 }
@@ -3347,7 +3389,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KeywordOverviewOut"
+                  "$ref": "#/components/schemas/KeywordOut"
                 }
               }
             },
@@ -3386,7 +3428,7 @@
       }
     },
     "/keyword/{id}/": {
-      "get": {
+      "delete": {
         "parameters": [
           {
             "in": "path",
@@ -3402,7 +3444,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KeywordOverviewOut"
+                  "$ref": "#/components/schemas/KeywordOut"
                 }
               }
             },
@@ -3435,6 +3477,131 @@
           }
         ],
         "summary": "Get one keyword analysis.",
+        "tags": [
+          "Keyword"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get one keyword analysis.",
+        "tags": [
+          "Keyword"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeywordPatchIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch a keyword analysis. Use for updating semantic map and/or constellation.",
         "tags": [
           "Keyword"
         ]
@@ -3514,7 +3681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/KeywordOut"
+                  "$ref": "#/components/schemas/KeywordItemsOut"
                 }
               }
             },
@@ -3557,6 +3724,81 @@
           }
         ],
         "summary": "Get scored items of a keyword analysis.",
+        "tags": [
+          "Keyword"
+        ]
+      }
+    },
+    "/keyword/{id}/semantic-map/": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "semantic_map_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create new semantic map for keyword items or associate with existing semantic map.",
         "tags": [
           "Keyword"
         ]
