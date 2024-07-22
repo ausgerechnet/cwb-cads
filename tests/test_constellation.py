@@ -1,4 +1,3 @@
-import pytest
 from flask import url_for
 
 
@@ -330,6 +329,9 @@ def test_constellation_collocation(client, auth):
         # - 1  times in context of discourseme in corpus
         # - 0  times in context of discourseme in subcorpus
 
+        from pprint import pprint
+        pprint(coll.json['discourseme_scores'])
+
         assert coll.json['discourseme_scores'][0]['discourseme_id'] == 2
         assert coll_glob.json['discourseme_scores'][0]['discourseme_id'] == 2
         assert coll_loc.json['discourseme_scores'][0]['discourseme_id'] == 2
@@ -526,7 +528,6 @@ def test_constellation_collocation(client, auth):
         assert int(df.loc[']:', 'O11']) == 0
 
 
-@pytest.mark.now
 def test_constellation_2nd_order_collocation(client, auth):
 
     auth_header = auth.login()
@@ -554,8 +555,6 @@ def test_constellation_2nd_order_collocation(client, auth):
                                     },
                                     headers=auth_header).json
 
-        from pprint import pprint
-
         # collocation in whole corpus
         coll = client.get(url_for('constellation.collocation',
                                   id=constellation['id'], corpus_id=corpus['id'],
@@ -564,7 +563,8 @@ def test_constellation_2nd_order_collocation(client, auth):
                                   sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
-        pprint(coll.json)
+        assert coll.status_code == 200
+        assert len(coll.json['items']) == 10
 
         coll = client.get(url_for('constellation.collocation',
                                   id=constellation['id'], corpus_id=corpus['id'],
@@ -574,7 +574,8 @@ def test_constellation_2nd_order_collocation(client, auth):
                                   sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
-        pprint(coll.json)
+        assert coll.status_code == 200
+        assert len(coll.json['items']) == 10
 
         coll = client.get(url_for('constellation.collocation',
                                   id=constellation['id'], corpus_id=corpus['id'],
@@ -584,7 +585,8 @@ def test_constellation_2nd_order_collocation(client, auth):
                                   sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
-        pprint(coll.json)
+        assert coll.status_code == 200
+        assert len(coll.json['items']) == 10
 
         coll = client.get(url_for('constellation.collocation',
                                   id=constellation['id'], corpus_id=corpus['id'],
@@ -595,4 +597,47 @@ def test_constellation_2nd_order_collocation(client, auth):
                                   sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
-        pprint(coll.json)
+        assert coll.status_code == 200
+        assert len(coll.json['items']) == 10
+
+
+def test_constellation_keyword(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get some discoursemes
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+                                  headers=auth_header).json
+
+        # create constellation
+        constellation = client.post(url_for('constellation.create'),
+                                    json={
+                                        'name': 'CDU',
+                                        'description': 'Test Constellation Keywords',
+                                        'highlight_discourseme_ids': [disc['id'] for disc in discoursemes]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+        assert isinstance(constellation.json['id'], int)
+
+        keyword = client.post(url_for('keyword.create_keyword'),
+                              json={
+                                  'constellation_id': constellation.json['id'],
+                                  'corpus_id': 1,
+                                  'corpus_id_reference': 1,
+                                  'subcorpus_id_reference': 1,
+                                  'p': 'lemma',
+                                  'p_reference': 'lemma'
+                              },
+                              headers=auth_header)
+
+        assert keyword.status_code == 200
+        assert keyword.json['constellation_id'] == constellation.json['id']
+
+        keyword = client.get(url_for('keyword.get_keyword_items', id=keyword.json['id']),
+                             headers=auth_header)
+
+        assert keyword.status_code == 200
+        assert len(keyword.json['discourseme_scores']) == len(discoursemes)

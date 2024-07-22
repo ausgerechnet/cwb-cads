@@ -9,7 +9,8 @@ from pandas import DataFrame, concat
 from semmap import SemanticSpace
 
 from . import db
-from .database import Collocation, CollocationItems, ItemScore, SemanticMap
+from .database import (Collocation, CollocationItem, CollocationItemScore,
+                       SemanticMap)
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
@@ -40,21 +41,21 @@ def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[]):
         db.session.commit()
 
         # get IDs of blacklist
-        blacklist = CollocationItems.query.filter(
-            CollocationItems.collocation_id == collocation.id,
-            CollocationItems.item.in_(blacklist_items)
+        blacklist = CollocationItem.query.filter(
+            CollocationItem.collocation_id == collocation.id,
+            CollocationItem.item.in_(blacklist_items)
         )
 
         # get some items
-        scores = ItemScore.query.filter(
-            ItemScore.collocation_id == collocation.id,
-            ItemScore.measure == sort_by,
-            ~ ItemScore.collocation_item_id.in_([b.id for b in blacklist])
-        ).order_by(ItemScore.score.desc()).paginate(page=1, per_page=number)
+        scores = CollocationItemScore.query.filter(
+            CollocationItemScore.collocation_id == collocation.id,
+            CollocationItemScore.measure == sort_by,
+            ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
+        ).order_by(CollocationItemScore.score.desc()).paginate(page=1, per_page=number)
         dfs.append(DataFrame([vars(s) for s in scores], columns=['collocation_item_id']))
 
     df_scores = concat(dfs)
-    items = list(set([CollocationItems.query.filter_by(id=id).first().item for id in df_scores['collocation_item_id']]))
+    items = list(set([CollocationItem.query.filter_by(id=id).first().item for id in df_scores['collocation_item_id']]))
 
     current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)

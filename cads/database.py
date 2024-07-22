@@ -4,6 +4,7 @@
 from collections import defaultdict
 from datetime import datetime
 
+from association_measures import measures
 from ccc import Corpus as Crps
 from ccc.utils import cqp_escape
 from flask import Blueprint, current_app
@@ -77,10 +78,14 @@ subcorpus_segmentation_span = db.Table(
 )
 
 
+# USERS #
+#########
 class User(db.Model, UserMixin):
     """User
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
@@ -114,10 +119,14 @@ class Role(db.Model):
     description = db.Column(db.Unicode(255), server_default=u'')
 
 
+# CORPORA #
+###########
 class Corpus(db.Model):
     """Corpus
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -172,6 +181,8 @@ class SubCorpus(db.Model):
     """SubCorpus
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
@@ -265,6 +276,8 @@ class SegmentationSpanAnnotation(db.Model):
     value_numeric = db.Column(db.Numeric)
 
 
+# DISCOURSEMES #
+################
 class Discourseme(db.Model):
     """Discourseme
 
@@ -330,6 +343,8 @@ class Constellation(db.Model):
     keyword_analyses = db.relationship('Keyword', backref='constellation', cascade='all, delete')
 
 
+# QUERIES #
+###########
 class Query(db.Model):
     """Query: executed in CQP and dumped to disk
 
@@ -389,10 +404,14 @@ class Matches(db.Model):
     matchend = db.Column(db.Integer, nullable=False)
 
 
+# BREAKDOWN #
+#############
 class Breakdown(db.Model):
     """Breakdown
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
@@ -425,7 +444,14 @@ class BreakdownItems(db.Model):
         return self.freq / nr_tokens * 10**6
 
 
+# CONCORDANCE #
+###############
 class Concordance(db.Model):
+    """Concordance
+
+    """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -439,6 +465,9 @@ class Concordance(db.Model):
 
 
 class ConcordanceLines(db.Model):
+    """Concordance Lines
+
+    """
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -448,10 +477,14 @@ class ConcordanceLines(db.Model):
     contextid = db.Column(db.Integer)
 
 
+# COTEXT #
+##########
 class Cotext(db.Model):
     """Cotext
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
@@ -478,10 +511,14 @@ class CotextLines(db.Model):
     offset = db.Column(db.Integer)
 
 
+# SEMANTIC MAPS #
+#################
 class SemanticMap(db.Model):
     """Semantic Map
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
@@ -510,10 +547,14 @@ class Coordinates(db.Model):
     y_user = db.Column(db.Float)
 
 
+# COLLOCATION #
+###############
 class Collocation(db.Model):
     """Collocation Analysis
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
@@ -528,9 +569,9 @@ class Collocation(db.Model):
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
-    items = db.relationship('CollocationItems', backref='collocation', passive_deletes=True, cascade='all, delete')
-    discourseme_items = db.relationship('CollocationDiscoursemeItems', backref='collocation', passive_deletes=True, cascade='all, delete')
-    discourseme_unigram_items = db.relationship('CollocationDiscoursemeUnigramItems', backref='collocation', passive_deletes=True, cascade='all, delete')
+    items = db.relationship('CollocationItem', backref='collocation', passive_deletes=True, cascade='all, delete')
+    discourseme_items = db.relationship('CollocationDiscoursemeItem', backref='collocation', passive_deletes=True, cascade='all, delete')
+    discourseme_unigram_items = db.relationship('CollocationDiscoursemeUnigramItem', backref='collocation', passive_deletes=True, cascade='all, delete')
 
     @property
     def nr_items(self):
@@ -538,9 +579,7 @@ class Collocation(db.Model):
 
     @property
     def discourseme_scores(self):
-
-        from .collocation import score_counts
-
+        print(self.discourseme_items)
         discourseme_f = defaultdict(list)
         discourseme_f1 = defaultdict(list)
         discourseme_f2 = defaultdict(list)
@@ -566,17 +605,47 @@ class Collocation(db.Model):
                                        'f2': [sum(discourseme_f2[discourseme_id])],
                                        'N': [max(discourseme_N[discourseme_id])],
                                        'item': None}).set_index('item')
-            global_score = score_counts(global_counts, cut_off=None, min_freq=0, rename=False, show_negative=True).melt(
-                var_name='measure', value_name='score'
-            ).to_records(index=False)
+            global_scores = measures.score(global_counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(global_counts)).reset_index()
             discourseme_scores.append({'discourseme_id': discourseme_id,
-                                       'global_scores': global_score,
+                                       'global_scores': global_scores.melt(var_name='measure', value_name='score').to_records(index=False),
                                        'item_scores': discourseme_item_scores[discourseme_id],
                                        'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
         return discourseme_scores
 
 
-class CollocationDiscoursemeUnigramItems(db.Model):
+class CollocationItem(db.Model):
+    """Per-item frequency counts for collocation analyses.
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
+
+    item = db.Column(db.Unicode)
+
+    f = db.Column(db.Integer)
+    f1 = db.Column(db.Integer)
+    f2 = db.Column(db.Integer)
+    N = db.Column(db.Integer)
+
+    scores = db.relationship("CollocationItemScore", backref='collocation_item', passive_deletes=True, cascade='all, delete')
+
+
+class CollocationItemScore(db.Model):
+    """Per-item and per-measure scores for collocation analyses.
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+
+    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
+    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_item.id', ondelete='CASCADE'), index=True)
+
+    measure = db.Column(db.Unicode)
+    score = db.Column(db.Float)
+
+
+class CollocationDiscoursemeUnigramItem(db.Model):
     """
 
     """
@@ -592,21 +661,21 @@ class CollocationDiscoursemeUnigramItems(db.Model):
     f2 = db.Column(db.Integer)
     N = db.Column(db.Integer)
 
-    scores = db.relationship("DiscoursemeUnigramItemScore", backref='collocation_discourseme_unigram_items', cascade='all, delete')
+    scores = db.relationship("CollocationDiscoursemeUnigramItemScore", backref='collocation_discourseme_unigram_item', cascade='all, delete')
 
 
-class DiscoursemeUnigramItemScore(db.Model):
+class CollocationDiscoursemeUnigramItemScore(db.Model):
     """
 
     """
     id = db.Column(db.Integer, primary_key=True)
-    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_unigram_items.id', ondelete='CASCADE'), index=True)
+    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_unigram_item.id', ondelete='CASCADE'), index=True)
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
     measure = db.Column(db.Unicode)
     score = db.Column(db.Float)
 
 
-class CollocationDiscoursemeItems(db.Model):
+class CollocationDiscoursemeItem(db.Model):
     """
 
     """
@@ -622,54 +691,28 @@ class CollocationDiscoursemeItems(db.Model):
     f2 = db.Column(db.Integer)
     N = db.Column(db.Integer)
 
-    scores = db.relationship("DiscoursemeItemScore", backref='collocation_discourseme_items', cascade='all, delete')
+    scores = db.relationship("CollocationDiscoursemeItemScore", backref='collocation_discourseme_item', cascade='all, delete')
 
 
-class DiscoursemeItemScore(db.Model):
+class CollocationDiscoursemeItemScore(db.Model):
     """
 
     """
     id = db.Column(db.Integer, primary_key=True)
-    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_items.id', ondelete='CASCADE'), index=True)
+    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_item.id', ondelete='CASCADE'), index=True)
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
     measure = db.Column(db.Unicode)
     score = db.Column(db.Float)
 
 
-class CollocationItems(db.Model):
-    """
-
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
-
-    item = db.Column(db.Unicode)
-
-    f = db.Column(db.Integer)
-    f1 = db.Column(db.Integer)
-    f2 = db.Column(db.Integer)
-    N = db.Column(db.Integer)
-
-    scores = db.relationship("ItemScore", backref='collocation_items', cascade='all, delete')
-
-
-class ItemScore(db.Model):
-    """
-
-    """
-    id = db.Column(db.Integer, primary_key=True)
-    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_items.id', ondelete='CASCADE'))
-    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
-    measure = db.Column(db.Unicode)
-    score = db.Column(db.Float)
-
-
+# KEYWORD #
+###########
 class Keyword(db.Model):
     """Keyword Analysis
 
     """
+
+    __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
@@ -683,27 +726,101 @@ class Keyword(db.Model):
     subcorpus_id_reference = db.Column(db.Integer(), db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), nullable=True)
     p_reference = db.Column(db.Unicode(255), nullable=False)  # TODO
 
-    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
-    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id'))
+    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id'))
 
-    sub_vs_rest = db.Column(db.Boolean())
-    min_freq = db.Column(db.Integer())
+    sub_vs_rest = db.Column(db.Boolean)
+    min_freq = db.Column(db.Integer)
 
-    items = db.relationship('KeywordItems', backref='keyword', passive_deletes=True, cascade='all, delete')
+    items = db.relationship('KeywordItem', backref='keyword', passive_deletes=True, cascade='all, delete')
+    discourseme_items = db.relationship('KeywordDiscoursemeItem', backref='keyword', passive_deletes=True, cascade='all, delete')
+    discourseme_unigram_items = db.relationship('KeywordDiscoursemeUnigramItem', backref='keyword', passive_deletes=True, cascade='all, delete')
 
     @property
     def nr_items(self):
         return len(self.items)
 
+    @property
+    def corpus(self):
+        return db.get_or_404(Corpus, self.corpus_id)
 
-class KeywordItems(db.Model):
-    """
+    @property
+    def subcorpus(self):
+        return db.get_or_404(SubCorpus, self.subcorpus_id) if self.subcorpus_id else None
+
+    @property
+    def corpus_reference(self):
+        return db.get_or_404(Corpus, self.corpus_id_reference)
+
+    @property
+    def N1(self):
+        return self.items[0].N1
+
+    @property
+    def N2(self):
+        return self.items[0].N2
+
+    @property
+    def subcorpus_reference(self):
+        return db.get_or_404(SubCorpus, self.subcorpus_id_reference) if self.subcorpus_id_reference else None
+
+    def top_items(self, per_am=200):
+        """Return top items of keyword analysis.
+
+        """
+        from .utils import AMS_DICT
+        keyword_item_ids = set()
+        for am in AMS_DICT.keys():
+            scores = KeywordItemScore.query.filter(
+                KeywordItemScore.keyword_id == self.id,
+                KeywordItemScore.measure == am
+            ).order_by(KeywordItemScore.score.desc()).paginate(page=1, per_page=per_am)
+            keyword_item_ids.update({s.keyword_item_id for s in scores})
+        keyword_items = KeywordItem.query.filter(KeywordItem.id.in_(keyword_item_ids))
+        return [item.item for item in keyword_items if ((item.f1 / item.N1) > (item.f2/item.N2))]
+
+    @property
+    def discourseme_scores(self):
+
+        discourseme_f1 = defaultdict(list)
+        discourseme_f2 = defaultdict(list)
+        discourseme_item_scores = defaultdict(list)
+
+        # discourseme items
+        for item in self.discourseme_items:
+            discourseme_item_scores[item.discourseme_id].append(item)
+            discourseme_f1[item.discourseme_id].append(item.f1)
+            discourseme_f2[item.discourseme_id].append(item.f2)
+
+        # discourseme unigram items
+        discourseme_unigram_item_scores = defaultdict(list)
+        for item in self.discourseme_unigram_items:
+            discourseme_unigram_item_scores[item.discourseme_id].append(item)
+
+        # global discourseme scores
+        discourseme_scores = []
+        for discourseme_id in discourseme_item_scores.keys():
+            global_counts = DataFrame({'f1': [sum(discourseme_f1[discourseme_id])],
+                                       'f2': [sum(discourseme_f2[discourseme_id])]})
+
+            global_scores = measures.score(
+                global_counts, N1=self.N1, N2=self.N2, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(global_counts)
+            ).melt(var_name='measure', value_name='score').to_records(index=False)
+            discourseme_scores.append({'discourseme_id': discourseme_id,
+                                       'global_scores': global_scores,
+                                       'item_scores': discourseme_item_scores[discourseme_id],
+                                       'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
+        return discourseme_scores
+
+
+class KeywordItem(db.Model):
+    """Per-item frequency counts for keyword analyses.
 
     """
 
     id = db.Column(db.Integer, primary_key=True)
 
-    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'))
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
 
     item = db.Column(db.Unicode)
 
@@ -712,20 +829,90 @@ class KeywordItems(db.Model):
     f2 = db.Column(db.Integer)
     N2 = db.Column(db.Integer)
 
-    scores = db.relationship("KeywordItemScore", backref='keyword_items', cascade='all, delete')
+    scores = db.relationship("KeywordItemScore", backref='keyword_item', passive_deletes=True, cascade='all, delete')
 
 
 class KeywordItemScore(db.Model):
-    """
+    """Per-item and per-measure scores for keyword analyses.
 
     """
     id = db.Column(db.Integer, primary_key=True)
-    keyword_item_id = db.Column(db.Integer, db.ForeignKey('keyword_items.id', ondelete='CASCADE'))
+
     keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
+    keyword_item_id = db.Column(db.Integer, db.ForeignKey('keyword_item.id', ondelete='CASCADE'), index=True)
+
     measure = db.Column(db.Unicode)
     score = db.Column(db.Float)
 
 
+class KeywordDiscoursemeUnigramItem(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'), index=True)
+
+    item = db.Column(db.Unicode)
+
+    f1 = db.Column(db.Integer)
+    N1 = db.Column(db.Integer)
+    f2 = db.Column(db.Integer)
+    N2 = db.Column(db.Integer)
+
+    scores = db.relationship("KeywordDiscoursemeUnigramItemScore", backref='keyword_discourseme_unigram_item', cascade='all, delete')
+
+
+class KeywordDiscoursemeUnigramItemScore(db.Model):
+    """
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
+    keyword_item_id = db.Column(db.Integer, db.ForeignKey('keyword_discourseme_unigram_item.id', ondelete='CASCADE'), index=True)
+
+    measure = db.Column(db.Unicode)
+    score = db.Column(db.Float)
+
+
+class KeywordDiscoursemeItem(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'), index=True)
+
+    item = db.Column(db.Unicode)
+
+    f1 = db.Column(db.Integer)
+    N1 = db.Column(db.Integer)
+    f2 = db.Column(db.Integer)
+    N2 = db.Column(db.Integer)
+
+    scores = db.relationship("KeywordDiscoursemeItemScore", backref='keyword_discourseme_item', cascade='all, delete')
+
+
+class KeywordDiscoursemeItemScore(db.Model):
+    """
+
+    """
+    id = db.Column(db.Integer, primary_key=True)
+
+    keyword_item_id = db.Column(db.Integer, db.ForeignKey('keyword_discourseme_item.id', ondelete='CASCADE'), index=True)
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
+
+    measure = db.Column(db.Unicode)
+    score = db.Column(db.Float)
+
+
+# CLI #
+#######
 @bp.cli.command('init')
 def init_db_cmd():
 

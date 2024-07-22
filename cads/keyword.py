@@ -6,20 +6,23 @@ from apiflask.fields import Boolean, Float, Integer, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
-from pandas import DataFrame
+from numpy import array_split
+from pandas import DataFrame, concat
+from semmap import SemanticSpace
 
 from . import db
-# from .collocation import DiscoursemeScoresOut
-from .database import (Corpus, Keyword, KeywordItems, KeywordItemScore,
-                       SubCorpus, get_or_create)
-# from .semantic_map import CoordinatesOut
+from .collocation import DiscoursemeScoresOut
+from .database import (Corpus, Keyword, KeywordDiscoursemeItem,
+                       KeywordDiscoursemeUnigramItem, KeywordItem,
+                       KeywordItemScore, SemanticMap, SubCorpus)
+from .semantic_map import CoordinatesOut, ccc_semmap_update
 from .users import auth
 from .utils import AMS_DICT
 
 bp = APIBlueprint('keyword', __name__, url_prefix='/keyword')
 
 
-def ccc_keywords(keyword, min_freq=0, sub_vs_rest=True):
+def ccc_keywords(keyword):
     """perform keyword analysis using cwb-ccc
 
     """
@@ -27,7 +30,7 @@ def ccc_keywords(keyword, min_freq=0, sub_vs_rest=True):
     current_app.logger.debug('ccc_keywords :: enter')
 
     # delete old ones
-    KeywordItems.query.filter_by(keyword_id=keyword.id).delete()
+    KeywordItem.query.filter_by(keyword_id=keyword.id).delete()
     db.session.commit()
 
     # get corpora
@@ -46,8 +49,8 @@ def ccc_keywords(keyword, min_freq=0, sub_vs_rest=True):
         reference_is_subcorpus = False
 
     # check if one corpus is a subcorpus of the other
-    if sub_vs_rest and (target_is_subcorpus ^ reference_is_subcorpus):  # xor
-        sub_vs_rest = False
+    sub_vs_rest = False
+    if keyword.sub_vs_rest and (target_is_subcorpus ^ reference_is_subcorpus):  # xor
         if target_is_subcorpus:
             if corpus.corpus.id == corpus_reference.id:
                 sub_vs_rest = True
@@ -60,12 +63,12 @@ def ccc_keywords(keyword, min_freq=0, sub_vs_rest=True):
     corpus = corpus.ccc()
     corpus_reference = corpus_reference.ccc()
     target = corpus.marginals(p_atts=[keyword.p])[['freq']].rename(columns={'freq': 'f1'})
-    target = target.loc[target['f1'] > min_freq]
     reference = corpus_reference.marginals(p_atts=[keyword.p_reference])[['freq']].rename(columns={'freq': 'f2'})
 
     # combine frequency lists
     current_app.logger.debug('ccc_keywords :: combining frequency lists')
     counts = target.join(reference, how='outer')
+    counts = counts.loc[counts['f1'] > keyword.min_freq]
     counts['N1'] = corpus.size()
     counts['N2'] = corpus_reference.size()
     counts = counts.fillna(0, downcast='infer')
@@ -83,7 +86,7 @@ def ccc_keywords(keyword, min_freq=0, sub_vs_rest=True):
     # save counts
     current_app.logger.debug(f'ccc_keywords :: saving {len(counts)} items to database')
     counts['keyword_id'] = keyword.id
-    counts.reset_index().to_sql('keyword_items', con=db.engine, if_exists='append', index=False)
+    counts.reset_index().to_sql('keyword_item', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
     # calculate scores
@@ -94,11 +97,132 @@ def ccc_keywords(keyword, min_freq=0, sub_vs_rest=True):
     scores['keyword_id'] = keyword.id
 
     # save scores
-    current_app.logger.debug('ccc_keywords :: saving scores')
-    scores.to_sql('keyword_item_score', con=db.engine, if_exists='append', index=False)
+    current_app.logger.debug(f'ccc_keywords :: saving {len(scores)} scores')
+    nr_arrays = int(len(scores) / 10000000) + 1
+    dfs = array_split(scores, nr_arrays)
+    for i, df in enumerate(dfs):
+        current_app.logger.debug(f'.. batch {i+1} of {len(dfs)}')
+        df.to_sql('keyword_item_score', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
     current_app.logger.debug('ccc_keywords :: exit')
+
+
+def keyword_semmap(keyword, semantic_map_id=None):
+    """create new semantic map for keyword analysis or make sure there are coordinates for top items on an existing map.
+
+    """
+
+    items = keyword.top_items()
+
+    if semantic_map_id:
+        # associate keyword analysis with existing semantic map
+        semantic_map = db.get_or_404(SemanticMap, semantic_map_id)
+        keyword.semantic_map = semantic_map
+        db.session.commit()
+
+    if keyword.semantic_map:
+        # make sure there are coordinates for top items
+        ccc_semmap_update(keyword.semantic_map, items)
+
+    else:
+        # create new semantic map
+        semantic_map = SemanticMap(embeddings=keyword.corpus.embeddings, method='tsne')
+        db.session.add(semantic_map)
+        db.session.commit()
+
+        keyword.semantic_map_id = semantic_map.id
+        db.session.commit()
+
+        semspace = SemanticSpace(semantic_map.embeddings)
+        coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
+        coordinates.index.name = 'item'
+        coordinates['semantic_map_id'] = semantic_map.id
+        coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
+        db.session.commit()
+
+
+def ccc_discourseme_counts(keyword, discoursemes):
+    """get KeywordDiscoursemeCounts and KeywordDiscoursemeUnigramCounts
+
+    for each discourseme:
+    - get cpos consumed in target and reference corpora
+    - get respective frequency breakdowns
+    """
+
+    from .query import ccc_query, get_or_create_query_discourseme
+
+    current_app.logger.debug('get_discourseme_unigram_counts :: getting cpos that are consumed by discoursemes')
+    discourseme_counts_target = list()
+    discourseme_unigram_counts_target = list()
+    discourseme_counts_reference = list()
+    discourseme_unigram_counts_reference = list()
+
+    for discourseme in discoursemes:
+
+        # target
+        discourseme_query = get_or_create_query_discourseme(keyword.corpus, discourseme, keyword.subcorpus)
+        discourseme_matches_df = ccc_query(discourseme_query)
+        discourseme_matches = keyword.corpus.ccc().subcorpus(df_dump=discourseme_matches_df, overwrite=False)
+
+        discourseme_unigram_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p], split=True)
+        discourseme_unigram_breakdown['discourseme_id'] = discourseme.id
+        discourseme_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p])
+        discourseme_breakdown['discourseme_id'] = discourseme.id
+
+        discourseme_counts_target.append(discourseme_breakdown)
+        discourseme_unigram_counts_target.append(discourseme_unigram_breakdown)
+
+        # reference
+        discourseme_query = get_or_create_query_discourseme(keyword.corpus_reference, discourseme, keyword.subcorpus_reference)
+        discourseme_matches_df = ccc_query(discourseme_query)
+        discourseme_matches = keyword.corpus_reference.ccc().subcorpus(df_dump=discourseme_matches_df, overwrite=False)
+
+        discourseme_unigram_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p], split=True)
+        discourseme_unigram_breakdown['discourseme_id'] = discourseme.id
+        discourseme_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p_reference])
+        discourseme_breakdown['discourseme_id'] = discourseme.id
+
+        discourseme_counts_reference.append(discourseme_breakdown)
+        discourseme_unigram_counts_reference.append(discourseme_unigram_breakdown)
+
+    discourseme_counts_target = concat(discourseme_counts_target).reset_index().set_index(['item', 'discourseme_id']).rename(columns={'freq': 'f1'})
+    discourseme_counts_reference = concat(discourseme_counts_reference).reset_index().set_index(['item', 'discourseme_id']).rename(columns={'freq': 'f2'})
+    discourseme_counts = discourseme_counts_target.join(discourseme_counts_reference).fillna(0, downcast='infer')
+    discourseme_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
+    discourseme_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
+    discourseme_counts['keyword_id'] = keyword.id
+
+    discourseme_unigram_counts_target = concat(discourseme_unigram_counts_target).reset_index().set_index(['item', 'discourseme_id']).rename(
+        columns={'freq': 'f1'})
+    discourseme_unigram_counts_reference = concat(discourseme_unigram_counts_reference).reset_index().set_index(['item', 'discourseme_id']).rename(
+        columns={'freq': 'f2'})
+    discourseme_unigram_counts = discourseme_unigram_counts_target.join(discourseme_unigram_counts_reference).fillna(0, downcast='infer')
+    discourseme_unigram_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
+    discourseme_unigram_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
+    discourseme_unigram_counts['keyword_id'] = keyword.id
+    # TODO sub_vs_rest correction
+
+    discourseme_counts.to_sql('keyword_discourseme_item', con=db.engine, if_exists='append')
+    discourseme_unigram_counts.to_sql('keyword_discourseme_unigram_item', con=db.engine, if_exists='append')
+
+    # KeywordDiscoursemeItem
+    counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id)
+    counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f1', 'N1', 'f2', 'N2']).set_index('id')
+    scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename(columns={'id': 'keyword_item_id'})
+    scores['keyword_id'] = keyword.id
+    scores.to_sql('keyword_discourseme_item_score', con=db.engine, if_exists='append', index=False)
+
+    # KeywordDiscoursemeUnigramItem
+    counts_from_sql = KeywordDiscoursemeUnigramItem.query.filter_by(keyword_id=keyword.id)
+    counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f1', 'N1', 'f2', 'N2']).set_index('id')
+    scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename(columns={'id': 'keyword_item_id'})
+    scores['keyword_id'] = keyword.id
+    scores.to_sql('keyword_discourseme_unigram_item_score', con=db.engine, if_exists='append', index=False)
+
+    return discourseme_unigram_counts
 
 
 ################
@@ -121,17 +245,12 @@ class KeywordIn(Schema):
     min_freq = Integer(required=False, load_default=3)
 
 
-class KeywordItemsIn(Schema):
-
-    sort_order = String(required=False, load_default='descending', validate=OneOf(['ascending', 'descending']))
-    sort_by = String(required=False, load_default='conservative_log_ratio', validate=OneOf(AMS_DICT.keys()))
-    page_size = Integer(required=False, load_default=10)
-    page_number = Integer(required=False, load_default=1)
-
-
-class KeywordOverviewOut(Schema):
+class KeywordOut(Schema):
 
     id = Integer()
+
+    semantic_map_id = Integer(metadata={'nullable': True})
+    constellation_id = Integer(metadata={'nullable': True})
 
     corpus_id = Integer()
     subcorpus_id = Integer()
@@ -141,7 +260,24 @@ class KeywordOverviewOut(Schema):
     subcorpus_id_reference = Integer()
     p_reference = String()
 
+    sub_vs_rest = Boolean()
+    min_freq = Integer()
+
     nr_items = Integer()
+
+
+class KeywordPatchIn(Schema):
+
+    constellation_id = Integer(required=False, load_default=None)
+    semantic_map_id = Integer(required=False, load_default=None)
+
+
+class KeywordItemsIn(Schema):
+
+    sort_order = String(required=False, load_default='descending', validate=OneOf(['ascending', 'descending']))
+    sort_by = String(required=False, load_default='conservative_log_ratio', validate=OneOf(AMS_DICT.keys()))
+    page_size = Integer(required=False, load_default=10)
+    page_number = Integer(required=False, load_default=1)
 
 
 class KeywordScoreOut(Schema):
@@ -156,7 +292,7 @@ class KeywordItemOut(Schema):
     scores = Nested(KeywordScoreOut(many=True))
 
 
-class KeywordOut(Schema):
+class KeywordItemsOut(Schema):
 
     id = Integer()
 
@@ -166,15 +302,15 @@ class KeywordOut(Schema):
     page_count = Integer()
 
     items = Nested(KeywordItemOut(many=True), required=False)
-    # discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
-    # coordinates = Nested(CoordinatesOut(many=True), required=False, metadata={'nullable': True})
+    coordinates = Nested(CoordinatesOut(many=True), required=False, metadata={'nullable': True})
+    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
 
 
 #################
 # API endpoints #
 #################
 @bp.get('/')
-@bp.output(KeywordOverviewOut(many=True))
+@bp.output(KeywordOut(many=True))
 @bp.auth_required(auth)
 def get_all_keyword():
     """Get all keyword analyses.
@@ -183,11 +319,11 @@ def get_all_keyword():
 
     keywords = Keyword.query.all()
 
-    return [KeywordOverviewOut().dump(keyword) for keyword in keywords], 200
+    return [KeywordOut().dump(keyword) for keyword in keywords], 200
 
 
 @bp.get('/<id>/')
-@bp.output(KeywordOverviewOut)
+@bp.output(KeywordOut)
 @bp.auth_required(auth)
 def get_keyword(id):
     """Get one keyword analysis.
@@ -196,12 +332,45 @@ def get_keyword(id):
 
     keyword = db.get_or_404(Keyword, id)
 
-    return KeywordOverviewOut().dump(keyword), 200
+    return KeywordOut().dump(keyword), 200
+
+
+@bp.delete('/<id>/')
+@bp.output(KeywordOut)
+@bp.auth_required(auth)
+def delete_keyword(id):
+    """Get one keyword analysis.
+
+    """
+
+    keyword = db.get_or_404(Keyword, id)
+    db.session.delete(keyword)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
+
+
+@bp.patch('/<id>/')
+@bp.input(KeywordPatchIn)
+@bp.output(KeywordOut)
+@bp.auth_required(auth)
+def patch_keyword(id, json_data):
+    """Patch a keyword analysis. Use for updating semantic map and/or constellation.
+
+    """
+
+    keyword = db.get_or_404(Keyword, id)
+
+    for attr, value in json_data.items():
+        setattr(keyword, attr, value)
+    db.session.commit()
+
+    return KeywordOut().dump(keyword), 200
 
 
 @bp.get('/<id>/items')
 @bp.input(KeywordItemsIn, location='query')
-@bp.output(KeywordOut)
+@bp.output(KeywordItemsOut)
 @bp.auth_required(auth)
 def get_keyword_items(id, query_data):
     """Get scored items of a keyword analysis.
@@ -210,46 +379,66 @@ def get_keyword_items(id, query_data):
 
     keyword = db.get_or_404(Keyword, id)
 
-    # pagination and sorting
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
-    # get scores from database
+    # filter
     scores = KeywordItemScore.query.filter(
-        KeywordItemScore.keyword_id == Keyword.id,
+        KeywordItemScore.keyword_id == keyword.id,
         KeywordItemScore.measure == sort_by
     )
 
-    # paginate
-    current_app.logger.debug('keywords :: .. pagination')
+    # order
     if sort_order == 'ascending':
         scores = scores.order_by(KeywordItemScore.score)
     elif sort_order == 'descending':
         scores = scores.order_by(KeywordItemScore.score.desc())
+
+    # paginate
     scores = scores.paginate(page=page_number, per_page=page_size)
     nr_items = scores.total
     page_count = scores.pages
-    df_scores = DataFrame([vars(s) for s in scores], columns=['keyword_item_id'])
-    items = [KeywordItemOut().dump(KeywordItems.query.filter_by(id=id).first()) for id in df_scores['keyword_item_id']]
 
-    keyword = {
+    # format
+    df_scores = DataFrame([vars(s) for s in scores], columns=['keyword_item_id'])
+    items = [KeywordItemOut().dump(KeywordItem.query.filter_by(id=id).first()) for id in df_scores['keyword_item_id']]
+
+    # coordinates
+    coordinates = list()
+    if keyword.semantic_map:
+        requested_items = [item['item'] for item in items]
+        ccc_semmap_update(keyword.semantic_map, requested_items)
+        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
+
+    # discourseme scores
+    discourseme_scores = list()
+    if keyword.constellation:
+        ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
+        discourseme_scores = keyword.discourseme_scores
+        for s in discourseme_scores:
+            s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
+            s['unigram_item_scores'] = [KeywordItemOut().dump(sc) for sc in s['unigram_item_scores']]
+        discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+
+    keyword_items = {
         'id': keyword.id,
         'nr_items': nr_items,
         'page_size': page_size,
         'page_number': page_number,
         'page_count': page_count,
         'items': items,
-        # 'discourseme_scores': discourseme_scores
+        'coordinates': coordinates,
+        'discourseme_scores': discourseme_scores
     }
 
-    return KeywordOut().dump(keyword), 200
+    return KeywordItemsOut().dump(keyword_items), 200
 
 
 @bp.post('/')
 @bp.input(KeywordIn)
-@bp.output(KeywordOverviewOut)
+@bp.output(KeywordOut)
 @bp.auth_required(auth)
 def create_keyword(json_data):
     """Create keyword analysis.
@@ -274,22 +463,43 @@ def create_keyword(json_data):
     sub_vs_rest = json_data.get('sub_vs_rest')
     min_freq = json_data.get('min_freq')
 
-    # TODO: only create if not exists?
-    keyword = get_or_create(Keyword,
-                            constellation_id=constellation_id,
-                            corpus_id=corpus_id,
-                            subcorpus_id=subcorpus_id,
-                            p=p,
-                            corpus_id_reference=corpus_id_reference,
-                            subcorpus_id_reference=subcorpus_id_reference,
-                            p_reference=p_reference,
-                            min_freq=min_freq,
-                            sub_vs_rest=sub_vs_rest)
+    keyword = Keyword(
+        constellation_id=constellation_id,
+        corpus_id=corpus_id,
+        subcorpus_id=subcorpus_id,
+        p=p,
+        corpus_id_reference=corpus_id_reference,
+        subcorpus_id_reference=subcorpus_id_reference,
+        p_reference=p_reference,
+        min_freq=min_freq,
+        sub_vs_rest=sub_vs_rest,
+        semantic_map_id=semantic_map_id
+    )
+    db.session.add(keyword)
+    db.session.commit()
 
-    if semantic_map_id:
-        keyword.semantic_map_id = semantic_map_id
-        db.session.commit()
+    ccc_keywords(keyword)
+    keyword_semmap(keyword, semantic_map_id)
+    if keyword.constellation:
+        ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
 
-    ccc_keywords(keyword, min_freq, sub_vs_rest)
+    return KeywordOut().dump(keyword), 200
 
-    return KeywordOverviewOut().dump(keyword), 200
+
+@bp.post('/<id>/semantic-map/')
+@bp.input({'semantic_map_id': Integer(load_default=None)}, location='query')
+@bp.output(KeywordOut)
+@bp.auth_required(auth)
+def create_semantic_map(id, query_data):
+    """Create new semantic map for keyword items or associate with existing semantic map.
+
+    """
+
+    keyword = db.get_or_404(Keyword, id)
+    keyword.semantic_map_id = None
+    db.session.commit()
+
+    semantic_map_id = query_data['semantic_map_id']
+    keyword_semmap(keyword, semantic_map_id)
+
+    return KeywordOut().dump(keyword), 200
