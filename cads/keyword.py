@@ -234,11 +234,11 @@ class KeywordIn(Schema):
 
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False, load_default=None)
-    p = String(required=True)
+    p = String(required=False, load_default='lemma')
 
     corpus_id_reference = Integer(required=True)
     subcorpus_id_reference = Integer(required=False, load_default=None)
-    p_reference = String(required=True)
+    p_reference = String(required=False, load_default='lemma')
 
     sub_vs_rest = Boolean(required=False, load_default=True)
     min_freq = Integer(required=False, load_default=3)
@@ -295,6 +295,7 @@ class KeywordItemsOut(Schema):
 
     id = Integer()
 
+    sort_by = String()
     nr_items = Integer()
     page_size = Integer()
     page_number = Integer()
@@ -421,8 +422,10 @@ def get_keyword_items(id, query_data):
             s['unigram_item_scores'] = [KeywordItemOut().dump(sc) for sc in s['unigram_item_scores']]
         discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
+    # TODO: also return ranks (to ease frontend pagination)?
     keyword_items = {
         'id': keyword.id,
+        'sort_by': sort_by,
         'nr_items': nr_items,
         'page_size': page_size,
         'page_number': page_number,
