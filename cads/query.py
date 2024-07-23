@@ -339,10 +339,12 @@ class QueryMetaIn(Schema):
 
     level = String()
     key = String()
+    p = String(required=False, load_default='word')
 
 
 class QueryMetaOut(Schema):
 
+    item = String()
     value = String()
     frequency = Integer()
     nr_tokens = Integer()
@@ -643,11 +645,12 @@ def get_meta(query_id, query_data):
     query = db.get_or_404(Query, query_id)
     level = query_data.get('level')
     key = query_data.get('key')
+    p = query_data.get('p', 'word')
 
     matches_df = ccc_query(query, return_df=True)
     crps = query.corpus.ccc().subcorpus(df_dump=matches_df, overwrite=False)
-    df_meta = crps.concordance(p_show=[], s_show=[f'{level}_{key}'])[f'{level}_{key}'].value_counts().reset_index()
-    df_meta.columns = ['value', 'frequency']
+    df_meta = crps.concordance(p_show=[p], s_show=[f'{level}_{key}'], cut_off=None)[[p, f'{level}_{key}']].value_counts().reset_index()
+    df_meta.columns = ['item', 'value', 'frequency']
 
     df_freq = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key))
     df_freq.columns = ['value', 'nr_texts']
