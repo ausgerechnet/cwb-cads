@@ -10,7 +10,7 @@ from semmap import SemanticSpace
 
 from . import db
 from .database import (Collocation, CollocationItem, CollocationItemScore,
-                       SemanticMap)
+                       SemanticMap, Coordinates)
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
@@ -140,6 +140,13 @@ class SemanticMapOut(Schema):
     p = String()
 
 
+class CoordinatesIn(Schema):
+
+    item = String(required=True)
+    x_user = Float(required=False, load_default=None)
+    y_user = Float(required=False, load_default=None)
+
+
 class CoordinatesOut(Schema):
 
     semantic_map_id = Integer()
@@ -150,6 +157,9 @@ class CoordinatesOut(Schema):
     y_user = Float()
 
 
+#################
+# API endpoints #
+#################
 @bp.get('/<id>')
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
@@ -199,5 +209,27 @@ def get_coordinates(id):
     """
 
     semantic_map = db.get_or_404(SemanticMap, id)
+
+    return [CoordinatesOut().dump(coordinates) for coordinates in semantic_map.coordinates], 200
+
+
+@bp.put("/<id>/coordinates/")
+@bp.input(CoordinatesIn)
+@bp.output(CoordinatesOut(many=True))
+@bp.auth_required(auth)
+def set_coordinates(id, json_data):
+    """Set coordinates of an item.
+
+    """
+
+    semantic_map = db.get_or_404(SemanticMap, id)
+    item = json_data.get('item')
+    x_user = json_data.get('x_user')
+    y_user = json_data.get('y_user')
+
+    item_coordinates = Coordinates.query.filter(Coordinates.item == item, Coordinates.semantic_map_id == semantic_map.id).first()
+    item_coordinates.x_user = x_user
+    item_coordinates.y_user = y_user
+    db.session.commit()
 
     return [CoordinatesOut().dump(coordinates) for coordinates in semantic_map.coordinates], 200
