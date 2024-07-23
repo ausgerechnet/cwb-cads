@@ -579,7 +579,7 @@ class Collocation(db.Model):
 
     @property
     def discourseme_scores(self):
-        print(self.discourseme_items)
+
         discourseme_f = defaultdict(list)
         discourseme_f1 = defaultdict(list)
         discourseme_f2 = defaultdict(list)
@@ -753,16 +753,16 @@ class Keyword(db.Model):
         return db.get_or_404(Corpus, self.corpus_id_reference)
 
     @property
+    def subcorpus_reference(self):
+        return db.get_or_404(SubCorpus, self.subcorpus_id_reference) if self.subcorpus_id_reference else None
+
+    @property
     def N1(self):
         return self.items[0].N1
 
     @property
     def N2(self):
         return self.items[0].N2
-
-    @property
-    def subcorpus_reference(self):
-        return db.get_or_404(SubCorpus, self.subcorpus_id_reference) if self.subcorpus_id_reference else None
 
     def top_items(self, per_am=200):
         """Return top items of keyword analysis.
@@ -811,6 +811,43 @@ class Keyword(db.Model):
                                        'item_scores': discourseme_item_scores[discourseme_id],
                                        'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
         return discourseme_scores
+
+    def sub_vs_rest_strategy(self):
+        """check if target is subcorpus of reference (or vice versa), and whether to apply sub-vs-rest correction
+
+        """
+
+        sub_vs_rest = False
+
+        if self.subcorpus_id:
+            corpus = self.subcorpus
+            target_is_subcorpus = True
+        else:
+            corpus = self.corpus
+            target_is_subcorpus = False
+
+        if self.subcorpus_id_reference:
+            corpus_reference = self.subcorpus_reference
+            reference_is_subcorpus = True
+        else:
+            corpus_reference = self.corpus_reference
+            reference_is_subcorpus = False
+
+        if self.sub_vs_rest and (target_is_subcorpus ^ reference_is_subcorpus):  # xor
+            if target_is_subcorpus:
+                if corpus.corpus.id == corpus_reference.id:
+                    sub_vs_rest = True
+            if reference_is_subcorpus:
+                if corpus_reference.corpus.id == corpus.id:
+                    sub_vs_rest = True
+
+        return {
+            'sub_vs_rest': sub_vs_rest,
+            'target': corpus,
+            'target_is_subcorpus': target_is_subcorpus,
+            'reference': corpus_reference,
+            'reference_is_subcorpus': reference_is_subcorpus
+        }
 
 
 class KeywordItem(db.Model):

@@ -14,7 +14,7 @@ from flask import abort, current_app
 from pandas import DataFrame, read_csv
 
 from . import db
-from .database import (CollocationDiscoursemeItem,
+from .database import (CollocationDiscoursemeItem, KeywordDiscoursemeItem, KeywordDiscoursemeUnigramItem,
                        CollocationDiscoursemeUnigramItem, Corpus, Discourseme,
                        DiscoursemeTemplateItems, Query, SubCorpus, User,
                        get_or_create)
@@ -173,13 +173,20 @@ def patch_add(id, json_data):
     after = len(discourseme.template)
 
     if before != after:
-        # was there a modification?
+
         current_app.logger.debug("detaching queries belonging to this discourseme")
         Query.query.filter_by(discourseme_id=discourseme.id).update({Query.discourseme_id: None})
+
         current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this discourseme")
         CollocationDiscoursemeItem.query.filter_by(discourseme_id=discourseme.id).delete()
         current_app.logger.debug("deleting CollocationDiscoursemeUnigramItems belonging to this discourseme")
         CollocationDiscoursemeUnigramItem.query.filter_by(discourseme_id=discourseme.id).delete()
+
+        current_app.logger.debug("deleting KeywordDiscoursemeItems belonging to this discourseme")
+        KeywordDiscoursemeItem.query.filter_by(discourseme_id=discourseme.id).delete()
+        current_app.logger.debug("deleting KeywordDiscoursemeUnigramItems belonging to this discourseme")
+        KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_id=discourseme.id).delete()
+
         db.session.commit()
 
     return DiscoursemeOut().dump(discourseme), 200
@@ -202,12 +209,19 @@ def patch_remove(id, json_data):
         db.session.commit()
 
         # was there a modification?
-        current_app.logger.debug("deleting queries belonging to this discourseme")
+        current_app.logger.debug("detaching queries belonging to this discourseme")
         Query.query.filter_by(discourseme_id=discourseme.id).update({Query.discourseme_id: None})
+
         current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this discourseme")
         CollocationDiscoursemeItem.query.filter_by(discourseme_id=discourseme.id).delete()
         current_app.logger.debug("deleting CollocationDiscoursemeUnigramItems belonging to this discourseme")
         CollocationDiscoursemeUnigramItem.query.filter_by(discourseme_id=discourseme.id).delete()
+
+        current_app.logger.debug("deleting KeywordDiscoursemeItems belonging to this discourseme")
+        KeywordDiscoursemeItem.query.filter_by(discourseme_id=discourseme.id).delete()
+        current_app.logger.debug("deleting KeywordDiscoursemeUnigramItems belonging to this discourseme")
+        KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_id=discourseme.id).delete()
+
         db.session.commit()
 
         return DiscoursemeOut().dump(discourseme), 200

@@ -89,6 +89,8 @@ def ccc_semmap_update(semantic_map, items):
         new_coordinates['semantic_map_id'] = semantic_map.id
         new_coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
         db.session.commit()
+    else:
+        current_app.logger.debug('ccc_semmap_update :: all requested items already have coordinates')
 
 
 def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):

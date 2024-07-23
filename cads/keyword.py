@@ -12,9 +12,9 @@ from semmap import SemanticSpace
 
 from . import db
 from .collocation import DiscoursemeScoresOut
-from .database import (Corpus, Keyword, KeywordDiscoursemeItem,
+from .database import (Keyword, KeywordDiscoursemeItem,
                        KeywordDiscoursemeUnigramItem, KeywordItem,
-                       KeywordItemScore, SemanticMap, SubCorpus)
+                       KeywordItemScore, SemanticMap)
 from .semantic_map import CoordinatesOut, ccc_semmap_update
 from .users import auth
 from .utils import AMS_DICT
@@ -23,7 +23,7 @@ bp = APIBlueprint('keyword', __name__, url_prefix='/keyword')
 
 
 def ccc_keywords(keyword):
-    """perform keyword analysis using cwb-ccc
+    """perform keyword analysis using cwb-ccc.
 
     """
 
@@ -33,35 +33,13 @@ def ccc_keywords(keyword):
     KeywordItem.query.filter_by(keyword_id=keyword.id).delete()
     db.session.commit()
 
-    # get corpora
-    if keyword.subcorpus_id:
-        corpus = SubCorpus.query.filter_by(id=keyword.subcorpus_id).first()
-        target_is_subcorpus = True
-    else:
-        corpus = Corpus.query.filter_by(id=keyword.corpus_id).first()
-        target_is_subcorpus = False
-
-    if keyword.subcorpus_id_reference:
-        corpus_reference = SubCorpus.query.filter_by(id=keyword.subcorpus_id_reference).first()
-        reference_is_subcorpus = True
-    else:
-        corpus_reference = Corpus.query.filter_by(id=keyword.corpus_id_reference).first()
-        reference_is_subcorpus = False
-
-    # check if one corpus is a subcorpus of the other
-    sub_vs_rest = False
-    if keyword.sub_vs_rest and (target_is_subcorpus ^ reference_is_subcorpus):  # xor
-        if target_is_subcorpus:
-            if corpus.corpus.id == corpus_reference.id:
-                sub_vs_rest = True
-        if reference_is_subcorpus:
-            if corpus_reference.corpus.id == corpus.id:
-                sub_vs_rest = True
+    # get target and reference corpora
+    sub_vs_rest = keyword.sub_vs_rest_strategy()
+    corpus = sub_vs_rest['target'].ccc()
+    corpus_reference = sub_vs_rest['reference'].ccc()
 
     # get and merge both dataframes of counts
     current_app.logger.debug('ccc_keywords :: getting marginals')
-    corpus = corpus.ccc()
-    corpus_reference = corpus_reference.ccc()
     target = corpus.marginals(p_atts=[keyword.p])[['freq']].rename(columns={'freq': 'f1'})
     reference = corpus_reference.marginals(p_atts=[keyword.p_reference])[['freq']].rename(columns={'freq': 'f2'})
 
@@ -74,14 +52,14 @@ def ccc_keywords(keyword):
     counts = counts.fillna(0, downcast='infer')
 
     # sub vs rest correction
-    if sub_vs_rest:
+    if sub_vs_rest['sub_vs_rest']:
         current_app.logger.debug('ccc_keywords :: subcorpus vs. rest correction')
-        if target_is_subcorpus:
+        if sub_vs_rest['target_is_subcorpus']:
             counts['f2'] = counts['f2'] - counts['f1']
-            counts['N1'] = counts['N2'] - counts['N1']
-        if reference_is_subcorpus:
+            counts['N2'] = counts['N2'] - counts['N1']
+        elif sub_vs_rest['reference_is_subcorpus']:
             counts['f1'] = counts['f1'] - counts['f2']
-            counts['N2'] = counts['N1'] - counts['N2']
+            counts['N1'] = counts['N1'] - counts['N2']
 
     # save counts
     current_app.logger.debug(f'ccc_keywords :: saving {len(counts)} items to database')
@@ -143,16 +121,13 @@ def keyword_semmap(keyword, semantic_map_id=None):
 
 
 def ccc_discourseme_counts(keyword, discoursemes):
-    """get KeywordDiscoursemeCounts and KeywordDiscoursemeUnigramCounts
+    """get KeywordDiscoursemeItem(Score) and KeywordDiscoursemeUnigramItem(Score)
 
-    for each discourseme:
-    - get cpos consumed in target and reference corpora
-    - get respective frequency breakdowns
     """
 
     from .query import ccc_query, get_or_create_query_discourseme
 
-    current_app.logger.debug('get_discourseme_unigram_counts :: getting cpos that are consumed by discoursemes')
+    current_app.logger.debug('get_discourseme_counts :: enter')
     discourseme_counts_target = list()
     discourseme_unigram_counts_target = list()
     discourseme_counts_reference = list()
@@ -160,6 +135,14 @@ def ccc_discourseme_counts(keyword, discoursemes):
 
     for discourseme in discoursemes:
 
+        # only if scores don't exist
+        kw_discourseme_items = KeywordDiscoursemeItem.query.filter_by(discourseme_id=discourseme.id)
+        # kw_discourseme_unigram_items = KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_id=discourseme.id)
+        if kw_discourseme_items.first():
+            current_app.logger.debug(f'get_discourseme_counts :: counts for discourseme {discourseme.id} already exist')
+            continue
+
+        current_app.logger.debug(f'get_discourseme_counts :: creating counts for discourseme {discourseme.id}')
         # target
         discourseme_query = get_or_create_query_discourseme(keyword.corpus, discourseme, keyword.subcorpus)
         discourseme_matches_df = ccc_query(discourseme_query)
@@ -186,6 +169,9 @@ def ccc_discourseme_counts(keyword, discoursemes):
         discourseme_counts_reference.append(discourseme_breakdown)
         discourseme_unigram_counts_reference.append(discourseme_unigram_breakdown)
 
+    if len(discourseme_counts_target) == 0:
+        return
+
     discourseme_counts_target = concat(discourseme_counts_target).reset_index().set_index(['item', 'discourseme_id']).rename(columns={'freq': 'f1'})
     discourseme_counts_reference = concat(discourseme_counts_reference).reset_index().set_index(['item', 'discourseme_id']).rename(columns={'freq': 'f2'})
     discourseme_counts = discourseme_counts_target.join(discourseme_counts_reference).fillna(0, downcast='infer')
@@ -201,8 +187,23 @@ def ccc_discourseme_counts(keyword, discoursemes):
     discourseme_unigram_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
     discourseme_unigram_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
     discourseme_unigram_counts['keyword_id'] = keyword.id
-    # TODO sub_vs_rest correction
 
+    # sub_vs_rest correction
+    sub_vs_rest = keyword.sub_vs_rest_strategy()
+    if sub_vs_rest['sub_vs_rest']:
+        current_app.logger.debug('ccc_discourseme_counts :: subcorpus vs. rest correction')
+        if sub_vs_rest['target_is_subcorpus']:
+            discourseme_counts['f2'] = discourseme_counts['f2'] - discourseme_counts['f1']
+            discourseme_counts['N2'] = discourseme_counts['N2'] - discourseme_counts['N1']
+            discourseme_unigram_counts['f2'] = discourseme_unigram_counts['f2'] - discourseme_unigram_counts['f1']
+            discourseme_unigram_counts['N2'] = discourseme_unigram_counts['N2'] - discourseme_unigram_counts['N1']
+        elif sub_vs_rest['reference_is_subcorpus']:
+            discourseme_counts['f1'] = discourseme_counts['f1'] - discourseme_counts['f2']
+            discourseme_counts['N1'] = discourseme_counts['N1'] - discourseme_counts['N2']
+            discourseme_unigram_counts['f1'] = discourseme_unigram_counts['f1'] - discourseme_unigram_counts['f2']
+            discourseme_unigram_counts['N1'] = discourseme_unigram_counts['N1'] - discourseme_unigram_counts['N2']
+
+    # save to database
     discourseme_counts.to_sql('keyword_discourseme_item', con=db.engine, if_exists='append')
     discourseme_unigram_counts.to_sql('keyword_discourseme_unigram_item', con=db.engine, if_exists='append')
 
@@ -221,8 +222,6 @@ def ccc_discourseme_counts(keyword, discoursemes):
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename(columns={'id': 'keyword_item_id'})
     scores['keyword_id'] = keyword.id
     scores.to_sql('keyword_discourseme_unigram_item_score', con=db.engine, if_exists='append', index=False)
-
-    return discourseme_unigram_counts
 
 
 ################

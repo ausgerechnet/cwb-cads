@@ -77,7 +77,6 @@ def test_query_concordance(client, auth):
                                  content_type='application/json',
                                  headers=auth_header)
 
-        print(union_query)
         assert union_query.status_code == 200
 
         lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=10, page_number=5),
@@ -227,7 +226,6 @@ def test_query_breakdown(client, auth):
                                headers=auth_header)
 
         assert breakdown.status_code == 200
-        # print(breakdown.json)
 
 
 def test_query_collocation(client, auth):
