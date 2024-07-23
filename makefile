@@ -70,7 +70,7 @@ examples_prod:
 	flask --app cads database init && \
 	flask --app cads corpus import && \
 	flask --app cads discourseme import --path_in "../*-discoursemes.tsv" && \
-	flask --app cads corpus read-meta "GERMAPARL_1949_2021" "../germaparl-speaker-nodes.tsv.gz" && \
+	flask --app cads corpus read-meta "GERMAPARL_1949_2021" --path "../germaparl-speaker-nodes.tsv.gz" && \
 	flask --app cads corpus subcorpora "GERMAPARL_1949_2021" "../subcorpora-*.tsv"
 
 
@@ -84,7 +84,8 @@ init_test:
 	flask --app cads database init && \
 	flask --app cads corpus import && \
 	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv" && \
-	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv"
+	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
+	flask --app cads corpus read-meta "GERMAPARL1386"
 
 run_test:
 	. venv/bin/activate && \

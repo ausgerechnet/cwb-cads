@@ -6,7 +6,7 @@ from random import randint
 from tempfile import NamedTemporaryFile
 
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Boolean, Integer, List, String
+from apiflask.fields import Boolean, Float, Integer, List, String
 from apiflask.validators import OneOf
 from ccc.cache import generate_idx
 from ccc.collocates import dump2cooc
@@ -19,7 +19,7 @@ from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from .collocation import CollocationIn, CollocationOut, ccc_collocates
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
-from .corpus import sort_s
+from .corpus import get_meta_frequencies, get_meta_number_tokens, sort_s
 from .database import (Breakdown, Collocation, Cotext, CotextLines,
                        Discourseme, Matches, Query, get_or_create)
 from .users import auth
@@ -332,6 +332,22 @@ class QueryOut(Schema):
     match_strategy = String()
     cqp_query = String()
     nqr_cqp = String()
+    random_seed = Integer()
+
+
+class QueryMetaIn(Schema):
+
+    level = String()
+    key = String()
+
+
+class QueryMetaOut(Schema):
+
+    value = String()
+    frequency = Integer()
+    nr_tokens = Integer()
+    nr_texts = Integer()
+    ipm = Float()
 
 
 #################
@@ -548,7 +564,7 @@ def concordance_lines(query_id, query_data):
 
 @bp.post("/<query_id>/concordance/shuffle")
 @bp.auth_required(auth)
-@bp.output({'query_id': Integer()})
+@bp.output(QueryOut)
 def concordance_shuffle(query_id):
     """Shuffle concordance lines.
 
@@ -557,7 +573,7 @@ def concordance_shuffle(query_id):
     query.random_seed = randint(1, 10000)
     db.session.commit()
 
-    return {'query.id': query_id}, 200
+    return QueryOut().dump(query), 200
 
 
 @bp.get("/<query_id>/concordance/<match_id>")
@@ -610,6 +626,45 @@ def get_breakdown(query_id, query_data):
     ccc_breakdown(breakdown, return_df=False)
 
     return BreakdownOut().dump(breakdown), 200
+
+
+##############
+# QUERY/META #
+##############
+@bp.get("/<query_id>/meta")
+@bp.input(QueryMetaIn, location='query')
+@bp.output(QueryMetaOut(many=True))
+@bp.auth_required(auth)
+def get_meta(query_id, query_data):
+    """Get meta distribution of query.
+
+    """
+
+    query = db.get_or_404(Query, query_id)
+    level = query_data.get('level')
+    key = query_data.get('key')
+
+    matches_df = ccc_query(query, return_df=True)
+    crps = query.corpus.ccc().subcorpus(df_dump=matches_df, overwrite=False)
+    df_meta = crps.concordance(p_show=[], s_show=[f'{level}_{key}'])[f'{level}_{key}'].value_counts().reset_index()
+    df_meta.columns = ['value', 'frequency']
+
+    df_freq = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key))
+    df_freq.columns = ['value', 'nr_texts']
+
+    df_tokens = DataFrame.from_records(get_meta_number_tokens(query.corpus, level, key))
+    df_tokens.columns = ['value', 'nr_tokens']
+
+    df_meta = df_meta.set_index('value').\
+        join(df_freq.set_index('value'), how='outer').\
+        join(df_tokens.set_index('value'), how='outer').\
+        fillna(0, downcast='infer').sort_values(by='frequency', ascending=False)
+
+    df_meta['ipm'] = round(df_meta['frequency'] / df_meta['nr_tokens'] * 10 ** 6, 6)
+
+    meta = df_meta.reset_index().to_dict(orient='records')
+
+    return [QueryMetaOut().dump(m) for m in meta], 200
 
 
 #####################

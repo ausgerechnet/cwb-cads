@@ -4,7 +4,7 @@
 import pytest
 
 from cads import create_app
-from cads.corpus import read_corpora, subcorpora_from_tsv
+from cads.corpus import read_corpora, subcorpora_from_tsv, meta_from_within_xml
 from cads.database import init_db
 from cads.discourseme import import_discoursemes
 
@@ -18,6 +18,8 @@ with app.app_context():
     read_corpora()
 
     import_discoursemes("tests/discoursemes/germaparl.tsv")
+
+    meta_from_within_xml("GERMAPARL1386")
 
     subcorpora_from_tsv("GERMAPARL1386", "tests/corpora/subcorpora-germaparl.tsv")
 

@@ -1,4 +1,5 @@
 from flask import url_for
+import pytest
 
 
 def test_create_query(client, auth):
@@ -226,6 +227,32 @@ def test_query_breakdown(client, auth):
                                headers=auth_header)
 
         assert breakdown.status_code == 200
+
+
+def test_query_meta(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
+        union = discoursemes[0]
+
+        # create query matches for union
+        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
+                                 content_type='application/json',
+                                 headers=auth_header)
+
+        assert union_query.status_code == 200
+
+        meta = client.get(url_for('query.get_meta', query_id=union_query.json['id'], level='text', key='parliamentary_group'),
+                          headers=auth_header)
+
+        assert meta.status_code == 200
+
+        assert meta.json[0]['frequency'] == 37
+        assert meta.json[0]['value'] == 'NA'
+        assert meta.json[0]['ipm'] == 698.666868
 
 
 def test_query_collocation(client, auth):

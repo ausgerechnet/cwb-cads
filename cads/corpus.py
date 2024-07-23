@@ -218,6 +218,21 @@ def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin,
     return subcorpus
 
 
+def meta_from_within_xml(cwb_id, level="text", column_mapping={}):
+
+    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
+    cqp_bin = current_app.config['CCC_CQP_BIN']
+    registry_dir = current_app.config['CCC_REGISTRY_DIR']
+    data_dir = current_app.config['CCC_DATA_DIR']
+
+    attributes = [a for a in corpus.s_annotations if a.startswith(f'{level}_')]
+    for a in attributes:
+        level = a.split("_")[0]
+        key = a.split(f"{level}_")[1]
+        value_type = column_mapping.get(key, 'unicode')
+        meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir)
+
+
 def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
     """corpus meta data is read as a DataFrame indexed by match, matchend
 
@@ -442,15 +457,7 @@ def create_subcorpus(id, json_data):
     return SubCorpusOut().dump(subcorpus), 200
 
 
-@bp.get('/<id>/meta/<level>/<key>/frequencies')
-@bp.output(MetaFrequenciesOut(many=True))
-@bp.auth_required(auth)
-def get_frequencies(id, level, key):
-    """Get frequencies of segmentation span annotations.
-
-    """
-
-    corpus = db.get_or_404(Corpus, id)
+def get_meta_frequencies(corpus, level, key):
 
     # get attribute
     att = None
@@ -473,6 +480,49 @@ def get_frequencies(id, level, key):
     ).group_by(
         SegmentationSpanAnnotation.__table__.c['value_' + value_type]
     ).all()
+
+    return records
+
+
+def get_meta_number_tokens(corpus, level, key):
+
+    # get attribute
+    att = None
+    for s in corpus.segmentations:
+        if s.level == level:
+            for ann in s.annotations:
+                if ann.key == key:
+                    att = ann
+                    value_type = ann.value_type
+                    segmentation_annotation_id = ann.id
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    # number of tokens
+    records = db.session.query(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
+        func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('total_span')
+    ).filter_by(
+        segmentation_annotation_id=segmentation_annotation_id
+    ).join(
+        SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
+    ).group_by(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
+    ).all()
+
+    return records
+
+
+@bp.get('/<id>/meta/<level>/<key>/frequencies')
+@bp.output(MetaFrequenciesOut(many=True))
+@bp.auth_required(auth)
+def get_frequencies(id, level, key):
+    """Get frequencies of segmentation span annotations.
+
+    """
+
+    corpus = db.get_or_404(Corpus, id)
+    records = get_meta_frequencies(corpus, level, key)
 
     return [MetaFrequenciesOut().dump({'value': r[0], 'frequency': r[1]}) for r in records], 200
 
@@ -531,7 +581,7 @@ def set_meta(id, query_data):
 ################
 @bp.cli.command('read-meta')
 @click.argument('cwb_id')
-@click.argument('path')
+@click.option('--path')
 @click.option('--level', default='text')
 def read_meta(cwb_id, path, level):
     """Read meta data of corpus from TSV table.
@@ -539,7 +589,13 @@ def read_meta(cwb_id, path, level):
     - from TSV
     - from within XML
     """
-    meta_from_tsv(cwb_id, path, level=level, column_mapping={'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'})
+
+    column_mapping = {'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'}
+
+    if not path:
+        meta_from_within_xml(cwb_id, level, column_mapping)
+    else:
+        meta_from_tsv(cwb_id, path, level, column_mapping)
 
 
 @bp.cli.command('subcorpora')
@@ -547,9 +603,6 @@ def read_meta(cwb_id, path, level):
 @click.argument('glob_in')
 def subcorpora(cwb_id, glob_in):
     """Set meta data of corpus.
-
-    - from within XML
-    - from TSV
 
     """
     paths = glob(glob_in)
