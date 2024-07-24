@@ -64,6 +64,7 @@ class BreakdownItemsOut(Schema):
     breakdown_id = Integer()
     item = String()
     freq = Integer()
+    nr_tokens = Integer()
     ipm = Float()
 
 
