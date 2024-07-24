@@ -235,24 +235,24 @@ def test_query_meta(client, auth):
     with client:
         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="oder"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
 
-        # create query matches for union
-        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                                 content_type='application/json',
-                                 headers=auth_header)
+        assert query.status_code == 200
 
-        assert union_query.status_code == 200
-
-        meta = client.get(url_for('query.get_meta', query_id=union_query.json['id'], level='text', key='parliamentary_group'),
+        meta = client.get(url_for('query.get_meta', query_id=query.json['id'], level='text', key='parliamentary_group'),
                           headers=auth_header)
 
         assert meta.status_code == 200
 
-        assert meta.json[0]['frequency'] == 37
-        assert meta.json[0]['value'] == 'NA'
-        assert meta.json[0]['ipm'] == 698.666868
+        assert meta.json[0]['frequency'] == 50
+        assert meta.json[0]['value'] == 'CDU/CSU'
+        assert meta.json[0]['ipm'] == 1829.022936
 
 
 def test_query_collocation(client, auth):
@@ -261,18 +261,20 @@ def test_query_collocation(client, auth):
     with client:
         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '"CDU" "/" "CSU" | "CDU" | "CSU" | "CDU" "/" "CSU-Fraktion"',
+                                's': 's'
+                            },
+                            headers=auth_header)
 
-        # create query matches for union
-        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                                 content_type='application/json',
-                                 headers=auth_header)
+        assert query.status_code == 200
 
-        assert union_query.status_code == 200
+        assert query.status_code == 200
 
         collocation = client.get(url_for('query.get_collocation',
-                                         query_id=union_query.json['id'],
+                                         query_id=query.json['id'],
                                          p='word',
                                          window=10,
                                          page_size=10, page_number=1,
@@ -280,4 +282,4 @@ def test_query_collocation(client, auth):
                                  headers=auth_header)
 
         assert collocation.status_code == 200
-        assert collocation.json['items'][0]['item'] == 'CSU'
+        assert collocation.json['items'][0]['item'] == 'Hornung'
