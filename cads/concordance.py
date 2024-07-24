@@ -260,10 +260,13 @@ def ccc_concordance(focus_query,
     }
 
 
+################
+# API schemata #
+################
 class ConcordanceIn(Schema):
 
     window = Integer(load_default=10, required=False)
-    extended_window = Integer(load_default=None, required=False)
+    extended_window = Integer(load_default=50, required=False)
 
     primary = String(load_default='word', required=False)
     secondary = String(load_default='lemma', required=False)
