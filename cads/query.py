@@ -652,14 +652,14 @@ def get_meta(query_id, query_data):
     df_meta = crps.concordance(p_show=[p], s_show=[f'{level}_{key}'], cut_off=None)[[p, f'{level}_{key}']].value_counts().reset_index()
     df_meta.columns = ['item', 'value', 'frequency']
 
-    df_freq = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key))
-    df_freq.columns = ['value', 'nr_texts']
+    df_texts = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key))
+    df_texts.columns = ['value', 'nr_texts']
 
     df_tokens = DataFrame.from_records(get_meta_number_tokens(query.corpus, level, key))
     df_tokens.columns = ['value', 'nr_tokens']
 
     df_meta = df_meta.set_index('value').\
-        join(df_freq.set_index('value'), how='outer').\
+        join(df_texts.set_index('value'), how='outer').\
         join(df_tokens.set_index('value'), how='outer').\
         fillna(0, downcast='infer').sort_values(by='frequency', ascending=False)
 
