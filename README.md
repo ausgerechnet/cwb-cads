@@ -41,36 +41,37 @@
 - [x] breakdown
 - [x] concordance
 - [x] collocation analysis
-- [ ] keyword analysis
-- [ ] meta data management
+- [x] keyword analysis
+- [x] meta data management
 - [x] subcorpus creation
 - [x] discoursemes & constellations
 - [x] semantic maps
 - [x] second-order collocation analysis
-- [ ] anchored queries
-- [ ] meta distribution
-- [ ] topographic maps
+- [x] meta distribution
 - [ ] pairwise associations of discoursemes (triangular matrix)
+- [ ] usage fluctuation analysis
+- [ ] anchored queries
+- [ ] topographic maps
 
 ## Review 2024-07-17
-- [ ] constellation: enforce min of one filter discourseme
+- [ ] constellation: enforce min of one filter discourseme?
 - [ ] constellation: if no name → name of filter discourseme
 - [ ] mark all required fields as required in API spec
 - [ ] several queries for one discourseme?
   + duplicate queries: write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
 
 ## TODO
-- [ ] speed up deleting queries
+- [x] speed up deleting queries
 - [ ] make sure PUT runs idempotently
 - [ ] consistencise trailing slashes
-- [ ] extend tests
+- [x] extend tests
 - [ ] more than one filter discourseme → second-order collocation
 - [ ] speed up supcorpus queries
 - [ ] directed collocation analyses
 - [ ] position discoursemes on semantic map
 - [ ] constellation/collocation: return one object with items categorised to discoursemes
 - [ ] click.echo instead of logging for CLI commands
-- [ ] meta from s-att
+- [x] meta from s-att
 - [ ] race conditions gdbm (spheroscophe)
 - [ ] corpora settings
 - [ ] stop words (language specific / user-defined) / POS filtering
@@ -97,4 +98,3 @@
 - Concordance: primary / secondary vs. give all → separate branch
 - DiscoursemeTemplate: p + surface vs. cqp_query | two lists
 - DiscoursemeTemplatePreview
-

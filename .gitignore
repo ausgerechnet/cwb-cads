@@ -133,3 +133,5 @@ ENV/
 .\#*
 *~
 
+.Rproj.user
+*.Rproj
