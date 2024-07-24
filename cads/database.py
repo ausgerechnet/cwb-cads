@@ -616,6 +616,25 @@ class Collocation(db.Model):
         return len(self.items)
 
     @property
+    def corpus(self):
+        return self._query.corpus
+
+    def top_items(self, per_am=200):
+        """Return top items of collocation analysis.
+
+        """
+        from .utils import AMS_DICT
+        collocation_item_ids = set()
+        for am in AMS_DICT.keys():
+            scores = CollocationItemScore.query.filter(
+                CollocationItemScore.collocation_id == self.id,
+                CollocationItemScore.measure == am
+            ).order_by(CollocationItemScore.score.desc()).paginate(page=1, per_page=per_am)
+            collocation_item_ids.update({s.collocation_item_id for s in scores})
+        collocation_items = CollocationItem.query.filter(CollocationItem.id.in_(collocation_item_ids))
+        return [item.item for item in collocation_items if ((item.f / item.f1) > ((item.f2 - item.f) / (item.N - item.f1)))]
+
+    @property
     def discourseme_scores(self):
 
         discourseme_f = defaultdict(list)

@@ -93,6 +93,45 @@ def ccc_semmap_update(semantic_map, items):
         current_app.logger.debug('ccc_semmap_update :: all requested items already have coordinates')
 
 
+def ccc_init_semmap(analysis, semantic_map_id=None):
+    """create new semantic map for analysis or make sure there are coordinates for top items on an existing map.
+
+    analysis = keyword / collocation analysis (database model) with following methods / properties:
+    - .top_items()
+    - .corpus
+    - .semantic_map(_id)
+
+    """
+
+    items = analysis.top_items()
+
+    if semantic_map_id:
+        # associate keyword analysis with existing semantic map
+        semantic_map = db.get_or_404(SemanticMap, semantic_map_id)
+        analysis.semantic_map = semantic_map
+        db.session.commit()
+
+    if analysis.semantic_map:
+        # make sure there are coordinates for top items
+        ccc_semmap_update(analysis.semantic_map, items)
+
+    else:
+        # create new semantic map
+        semantic_map = SemanticMap(embeddings=analysis.corpus.embeddings, method='tsne')
+        db.session.add(semantic_map)
+        db.session.commit()
+
+        analysis.semantic_map_id = semantic_map.id
+        db.session.commit()
+
+        semspace = SemanticSpace(semantic_map.embeddings)
+        coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
+        coordinates.index.name = 'item'
+        coordinates['semantic_map_id'] = semantic_map.id
+        coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
+        db.session.commit()
+
+
 def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
     """
     update coordinates of items belonging to a discourseme

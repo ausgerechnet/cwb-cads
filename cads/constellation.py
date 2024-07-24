@@ -168,6 +168,9 @@ def get_constellations():
     return [ConstellationOut().dump(constellation) for constellation in constellations], 200
 
 
+#############################
+# CONSTELLATION/CONCORDANCE #
+#############################
 @bp.get("/<id>/corpus/<corpus_id>/concordance/")
 @bp.input(ConcordanceIn, location='query')
 @bp.input({'subcorpus_id': Integer(load_default=None, required=False)}, location='query', arg_name='query_subcorpus')
@@ -180,8 +183,10 @@ def concordance_lines(id, corpus_id, query_data, query_subcorpus):
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
-    filter_discourseme = constellation.filter_discoursemes[0]  # TODO
     subcorpus = db.get_or_404(SubCorpus, query_subcorpus['subcorpus_id']) if query_subcorpus['subcorpus_id'] else None
+
+    filter_discourseme = constellation.filter_discoursemes[0]  # TODO
+
     query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus).id
 
     # append highlight discoursemes
@@ -191,19 +196,25 @@ def concordance_lines(id, corpus_id, query_data, query_subcorpus):
     return redirect(url_for('query.concordance_lines', query_id=query_id, **query_data))
 
 
+#############################
+# CONSTELLATION/COLLOCATION #
+#############################
 @bp.get("/<id>/corpus/<corpus_id>/collocation/")
 @bp.input(CollocationIn, location='query')
+@bp.input({'subcorpus_id': Integer(load_default=None, required=False)}, location='query', arg_name='query_subcorpus')
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def collocation(id, corpus_id, query_data):
+def collocation(id, corpus_id, query_data, query_subcorpus):
     """Get collocation analysis of constellation in corpus. Redirects to query endpoint.
 
     """
 
     constellation = db.get_or_404(Constellation, id)
     corpus = db.get_or_404(Corpus, corpus_id)
+    subcorpus = db.get_or_404(SubCorpus, query_subcorpus['subcorpus_id']) if query_subcorpus['subcorpus_id'] else None
+
     filter_discourseme = constellation.filter_discoursemes[0]  # TODO
-    subcorpus = db.get_or_404(SubCorpus, query_data['subcorpus_id']) if query_data['subcorpus_id'] else None
+
     query_id = get_or_create_query_discourseme(corpus, filter_discourseme, subcorpus).id
     query_data['constellation_id'] = constellation.id
 

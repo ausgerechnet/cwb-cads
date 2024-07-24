@@ -8,14 +8,13 @@ from association_measures import measures
 from flask import current_app
 from numpy import array_split
 from pandas import DataFrame, concat
-from semmap import SemanticSpace
 
 from . import db
 from .collocation import DiscoursemeScoresOut
 from .database import (Keyword, KeywordDiscoursemeItem,
                        KeywordDiscoursemeUnigramItem, KeywordItem,
-                       KeywordItemScore, SemanticMap)
-from .semantic_map import CoordinatesOut, ccc_semmap_update
+                       KeywordItemScore)
+from .semantic_map import CoordinatesOut, ccc_semmap_update, ccc_init_semmap
 from .users import auth
 from .utils import AMS_DICT
 
@@ -84,40 +83,6 @@ def ccc_keywords(keyword):
     db.session.commit()
 
     current_app.logger.debug('ccc_keywords :: exit')
-
-
-def keyword_semmap(keyword, semantic_map_id=None):
-    """create new semantic map for keyword analysis or make sure there are coordinates for top items on an existing map.
-
-    """
-
-    items = keyword.top_items()
-
-    if semantic_map_id:
-        # associate keyword analysis with existing semantic map
-        semantic_map = db.get_or_404(SemanticMap, semantic_map_id)
-        keyword.semantic_map = semantic_map
-        db.session.commit()
-
-    if keyword.semantic_map:
-        # make sure there are coordinates for top items
-        ccc_semmap_update(keyword.semantic_map, items)
-
-    else:
-        # create new semantic map
-        semantic_map = SemanticMap(embeddings=keyword.corpus.embeddings, method='tsne')
-        db.session.add(semantic_map)
-        db.session.commit()
-
-        keyword.semantic_map_id = semantic_map.id
-        db.session.commit()
-
-        semspace = SemanticSpace(semantic_map.embeddings)
-        coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
-        coordinates.index.name = 'item'
-        coordinates['semantic_map_id'] = semantic_map.id
-        coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
-        db.session.commit()
 
 
 def ccc_discourseme_counts(keyword, discoursemes):
@@ -384,7 +349,7 @@ def get_keyword_items(id, query_data):
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
-    # filter
+    # get scores
     scores = KeywordItemScore.query.filter(
         KeywordItemScore.keyword_id == keyword.id,
         KeywordItemScore.measure == sort_by
@@ -467,6 +432,7 @@ def create_keyword(json_data):
 
     keyword = Keyword(
         constellation_id=constellation_id,
+        semantic_map_id=semantic_map_id,
         corpus_id=corpus_id,
         subcorpus_id=subcorpus_id,
         p=p,
@@ -474,14 +440,13 @@ def create_keyword(json_data):
         subcorpus_id_reference=subcorpus_id_reference,
         p_reference=p_reference,
         min_freq=min_freq,
-        sub_vs_rest=sub_vs_rest,
-        semantic_map_id=semantic_map_id
+        sub_vs_rest=sub_vs_rest
     )
     db.session.add(keyword)
     db.session.commit()
 
     ccc_keywords(keyword)
-    keyword_semmap(keyword, semantic_map_id)
+    ccc_init_semmap(keyword, semantic_map_id)
     if keyword.constellation:
         ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
 
@@ -502,6 +467,6 @@ def create_semantic_map(id, query_data):
     db.session.commit()
 
     semantic_map_id = query_data['semantic_map_id']
-    keyword_semmap(keyword, semantic_map_id)
+    ccc_init_semmap(keyword, semantic_map_id)
 
     return KeywordOut().dump(keyword), 200

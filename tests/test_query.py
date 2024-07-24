@@ -255,6 +255,7 @@ def test_query_meta(client, auth):
         assert meta.json[0]['ipm'] == 1829.022936
 
 
+@pytest.mark.now
 def test_query_collocation(client, auth):
 
     auth_header = auth.login()
@@ -271,8 +272,6 @@ def test_query_collocation(client, auth):
 
         assert query.status_code == 200
 
-        assert query.status_code == 200
-
         collocation = client.get(url_for('query.get_collocation',
                                          query_id=query.json['id'],
                                          p='word',
@@ -282,4 +281,10 @@ def test_query_collocation(client, auth):
                                  headers=auth_header)
 
         assert collocation.status_code == 200
-        assert collocation.json['items'][0]['item'] == 'Hornung'
+
+        collocation_items = client.get(url_for('collocation.get_collocation_items', id=collocation.json['id']),
+                                       headers=auth_header)
+
+        assert collocation_items.status_code == 200
+
+        assert collocation_items.json['items'][0]['item'] == 'Hornung'

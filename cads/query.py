@@ -16,12 +16,13 @@ from pandas import DataFrame
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
-from .collocation import CollocationIn, CollocationOut, ccc_collocates
+from .collocation import CollocationIn, CollocationOut, ccc_collocates, ccc_discourseme_counts
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import get_meta_frequencies, get_meta_number_tokens, sort_s
 from .database import (Breakdown, Corpus, Collocation, Cotext, CotextLines,
                        Discourseme, Matches, Query, get_or_create)
+from .semantic_map import ccc_init_semmap
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -690,20 +691,9 @@ def get_collocation(query_id, query_data):
 
     query = db.get_or_404(Query, query_id)
 
-    # pagination
-    page_size = query_data.pop('page_size')
-    page_number = query_data.pop('page_number')
-
-    # sorting
-    sort_order = query_data.pop('sort_order')
-    sort_by = query_data.pop('sort_by')
-
-    # context
+    p = query_data.get('p')
     window = query_data.get('window')
     s_break = query_data.get('s_break')
-
-    # collocation settings
-    p = query_data.get('p')
     marginals = query_data.get('marginals', 'global')
 
     # constellation and semantic map
@@ -788,12 +778,23 @@ def get_collocation(query_id, query_data):
         df_matches['query_id'] = query.id
         df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
 
-    collocation = get_or_create(Collocation, query_id=query.id, p=p, s_break=s_break, window=window,
-                                constellation_id=constellation_id, marginals=marginals)
-    if semantic_map_id:
-        collocation.semantic_map_id = semantic_map_id
-        db.session.commit()
+    collocation = Collocation(
+        constellation_id=constellation_id,
+        semantic_map_id=semantic_map_id,
+        query_id=query.id,
+        p=p,
+        s_break=s_break,
+        window=window,
+        marginals=marginals
+    )
+    db.session.add(collocation)
+    db.session.commit()
 
-    collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
+    ccc_collocates(collocation)
+    ccc_init_semmap(collocation, semantic_map_id)
+
+    if collocation.constellation:
+        discoursemes = collocation.constellation.highlight_discoursemes + collocation.constellation.filter_discoursemes
+        ccc_discourseme_counts(collocation, discoursemes)
 
     return CollocationOut().dump(collocation), 200

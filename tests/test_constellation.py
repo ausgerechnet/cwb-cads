@@ -172,14 +172,16 @@ def test_constellation_collocation(client, auth):
 
         # get some discoursemes
         discoursemes = client.get(url_for('discourseme.get_discoursemes'),
-                                  headers=auth_header).json
+                                  headers=auth_header)
 
-        union_id = discoursemes[0]['id']
+        assert discoursemes.status_code == 200
+        union_id = discoursemes.json[0]['id']
 
         # corpora
         corpora = client.get(url_for('corpus.get_corpora'),
-                             headers=auth_header).json
-        corpus = corpora[0]
+                             headers=auth_header)
+        assert corpora.status_code == 200
+        corpus = corpora.json[0]
 
         # create constellation
         constellation = client.post(url_for('constellation.create'),
@@ -187,9 +189,53 @@ def test_constellation_collocation(client, auth):
                                         'name': 'CDU',
                                         'description': 'Test Constellation HD',
                                         'filter_discourseme_ids': [union_id],
-                                        'highlight_discourseme_ids': [disc['id'] for disc in discoursemes[1:len(discoursemes)]]
+                                        'highlight_discourseme_ids': [disc['id'] for disc in discoursemes.json[1:len(discoursemes.json)]]
                                     },
-                                    headers=auth_header).json
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        # collocation in whole corpus
+        collocation = client.get(url_for('constellation.collocation',
+                                         id=constellation.json['id'], corpus_id=corpus['id'],
+                                         p='lemma', window=10),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+
+        coll = client.get(url_for('collocation.get_collocation_items',
+                                  id=collocation.json['id'],
+                                  page_size=10, sort_by='O11'),
+                          follow_redirects=True,
+                          headers=auth_header)
+        assert coll.status_code == 200
+
+        # collocation in subcorpus with global marginals
+        collocation = client.get(url_for('constellation.collocation',
+                                         id=constellation.json['id'], corpus_id=corpus['id'], subcorpus_id=1,
+                                         p='lemma', window=10, marginals='global'),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+
+        coll_glob = client.get(url_for('collocation.get_collocation_items',
+                                       id=collocation.json['id'],
+                                       page_size=10, sort_by='O11'),
+                               follow_redirects=True,
+                               headers=auth_header)
+
+        # collocation in subcorpus with local marginals
+        collocation = client.get(url_for('constellation.collocation',
+                                         id=constellation.json['id'], corpus_id=corpus['id'], subcorpus_id=1,
+                                         p='lemma', window=10),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+
+        coll_loc = client.get(url_for('collocation.get_collocation_items',
+                                      id=collocation.json['id'],
+                                      page_size=10, sort_by='O11'),
+                              follow_redirects=True,
+                              headers=auth_header)
 
         ##############
         # ITEM SCORES
@@ -208,13 +254,6 @@ def test_constellation_collocation(client, auth):
         # - 310   times in context of discourseme in subcorpus
 
         # collocation in whole corpus
-        coll = client.get(url_for('constellation.collocation',
-                                  id=constellation['id'], corpus_id=corpus['id'],
-                                  page_size=10, page_number=1,
-                                  p='lemma', window=10,
-                                  sort_by='O11'),
-                          follow_redirects=True,
-                          headers=auth_header)
         coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
         assert int(coll_conv['N']) == 149800
         assert int(coll_conv['R1']) == 14989
@@ -222,15 +261,6 @@ def test_constellation_collocation(client, auth):
         assert int(coll_conv['O11']) == 1481
 
         # collocation in subcorpus with global marginals
-        coll_glob = client.get(url_for('constellation.collocation',
-                                       subcorpus_id=1,
-                                       id=constellation['id'], corpus_id=corpus['id'],
-                                       page_size=10, page_number=1,
-                                       p='lemma', window=10,
-                                       marginals='global',
-                                       sort_by='O11'),
-                               follow_redirects=True,
-                               headers=auth_header)
         coll_conv = {c['measure']: c['score'] for c in coll_glob.json['items'][0]['scores']}
         assert int(coll_conv['N']) == 149800
         assert int(coll_conv['R1']) == 3448
@@ -238,14 +268,6 @@ def test_constellation_collocation(client, auth):
         assert int(coll_conv['O11']) == 310
 
         # collocation in subcorpus with local marginals
-        coll_loc = client.get(url_for('constellation.collocation',
-                                      subcorpus_id=1,
-                                      id=constellation['id'], corpus_id=corpus['id'],
-                                      page_size=10, page_number=1,
-                                      p='lemma', window=10,
-                                      sort_by='O11'),
-                              follow_redirects=True,
-                              headers=auth_header)
         coll_conv = {c['measure']: c['score'] for c in coll_loc.json['items'][0]['scores']}
         assert int(coll_conv['N']) == 35980
         assert int(coll_conv['R1']) == 3448
@@ -534,14 +556,16 @@ def test_constellation_2nd_order_collocation(client, auth):
 
         # get some discoursemes
         discoursemes = client.get(url_for('discourseme.get_discoursemes'),
-                                  headers=auth_header).json
+                                  headers=auth_header)
 
-        union_id = discoursemes[0]['id']
+        assert discoursemes.status_code == 200
+        union_id = discoursemes.json[0]['id']
 
         # corpora
         corpora = client.get(url_for('corpus.get_corpora'),
-                             headers=auth_header).json
-        corpus = corpora[0]
+                             headers=auth_header)
+        assert corpora.status_code == 200
+        corpus = corpora.json[0]
 
         # create constellation
         constellation = client.post(url_for('constellation.create'),
@@ -549,54 +573,104 @@ def test_constellation_2nd_order_collocation(client, auth):
                                         'name': 'CDU',
                                         'description': 'Test Constellation HD',
                                         'filter_discourseme_ids': [union_id],
-                                        'highlight_discourseme_ids': [disc['id'] for disc in discoursemes[1:len(discoursemes)]]
+                                        'highlight_discourseme_ids': [disc['id'] for disc in discoursemes.json[1:len(discoursemes.json)]]
                                     },
-                                    headers=auth_header).json
+                                    headers=auth_header)
+        assert constellation.status_code == 200
 
-        # collocation in whole corpus
-        coll = client.get(url_for('constellation.collocation',
-                                  id=constellation['id'], corpus_id=corpus['id'],
-                                  page_size=10, page_number=1,
-                                  p='lemma', window=10,
-                                  sort_by='O11'),
+        # collocates in whole corpus
+        collocation = client.get(url_for('constellation.collocation',
+                                         id=constellation.json['id'], corpus_id=corpus['id'],
+                                         p='lemma', window=10),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+
+        coll = client.get(url_for('collocation.get_collocation_items',
+                                  id=collocation.json['id'],
+                                  page_size=10, sort_by='O11'),
+                          follow_redirects=True,
+                          headers=auth_header)
+
+        assert coll.status_code == 200
+        assert len(coll.json['items']) == 10
+        # most frequent collocate: "die"
+        # number of tokens in window: R1 = 14989
+        # number 1: "die" with O11 = 1481 co-occurrences
+        assert coll.json['items'][0]['item'] == 'die'
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        assert int(coll_conv["R1"]) == 14989
+        assert int(coll_conv["O11"]) == 1481
+
+        # 2nd order collocates with "Zuruf"
+        collocation = client.get(url_for('constellation.collocation',
+                                         id=constellation.json['id'], corpus_id=corpus['id'],
+                                         p='lemma', window=10,
+                                         filter_item='Zuruf'),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+        coll = client.get(url_for('collocation.get_collocation_items',
+                                  id=collocation.json['id'],
+                                  page_size=10, sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
         assert coll.status_code == 200
         assert len(coll.json['items']) == 10
+        # most frequent collocate: "die"
+        # number of tokens in window: R1 = 1790
+        # number 1: "die" with O11 = 181 co-occurrences
+        assert coll.json['items'][0]['item'] == 'die'
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        assert int(coll_conv["R1"]) == 1790
+        assert int(coll_conv["O11"]) == 181
 
-        coll = client.get(url_for('constellation.collocation',
-                                  id=constellation['id'], corpus_id=corpus['id'],
-                                  page_size=10, page_number=1,
-                                  p='lemma', window=10,
-                                  filter_item='Zuruf',
-                                  sort_by='O11'),
+        # 2nd order collocates with discourseme 2 ("FDP")
+        collocation = client.get(url_for('constellation.collocation',
+                                         id=constellation.json['id'], corpus_id=corpus['id'],
+                                         p='lemma',
+                                         filter_discourseme_ids=[2]),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+        coll = client.get(url_for('collocation.get_collocation_items',
+                                  id=collocation.json['id'],
+                                  page_size=10, sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
         assert coll.status_code == 200
         assert len(coll.json['items']) == 10
+        # most frequent collocate: "die"
+        # number of tokens in window: R1 = 6790
+        # number 1: "die" with O11 = 856 co-occurrences
+        assert coll.json['items'][0]['item'] == 'die'
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        assert int(coll_conv["R1"]) == 6790
+        assert int(coll_conv["O11"]) == 856
 
-        coll = client.get(url_for('constellation.collocation',
-                                  id=constellation['id'], corpus_id=corpus['id'],
-                                  page_size=10, page_number=1,
-                                  p='lemma', window=10,
-                                  filter_discourseme_ids=[2],
-                                  sort_by='O11'),
+        # 2nd order collocates with "Zuruf" and discourseme "FDP"
+        collocation = client.get(url_for('constellation.collocation',
+                                         id=constellation.json['id'], corpus_id=corpus['id'],
+                                         p='lemma', window=10,
+                                         filter_discourseme_ids=[2],
+                                         filter_item='Zuruf'),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+        coll = client.get(url_for('collocation.get_collocation_items',
+                                  id=collocation.json['id'],
+                                  page_size=10, sort_by='O11'),
                           follow_redirects=True,
                           headers=auth_header)
         assert coll.status_code == 200
         assert len(coll.json['items']) == 10
-
-        coll = client.get(url_for('constellation.collocation',
-                                  id=constellation['id'], corpus_id=corpus['id'],
-                                  page_size=10, page_number=1,
-                                  p='lemma', window=10,
-                                  filter_discourseme_ids=[2],
-                                  filter_item='Zuruf',
-                                  sort_by='O11'),
-                          follow_redirects=True,
-                          headers=auth_header)
-        assert coll.status_code == 200
-        assert len(coll.json['items']) == 10
+        # most frequent collocate: "die"
+        # number of tokens in window: R1 = 173
+        # number 1: "die" with O11 = 19 co-occurrences
+        assert coll.json['items'][0]['item'] == 'die'
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        assert int(coll_conv["R1"]) == 173
+        assert int(coll_conv["O11"]) == 19
 
 
 def test_constellation_keyword(client, auth):
