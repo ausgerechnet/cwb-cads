@@ -144,6 +144,12 @@ class Corpus(db.Model):
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
 
     @property
+    def s_default(self):
+        """default s-attribute to link matches to contexts"""
+        from .corpus import sort_s
+        return sort_s(self.s_atts)[0]
+
+    @property
     def p_atts(self):
         return [att.level for att in self.attributes if att.attribute == 'p_atts']
 

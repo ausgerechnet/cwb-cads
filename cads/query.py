@@ -20,7 +20,7 @@ from .collocation import CollocationIn, CollocationOut, ccc_collocates
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import get_meta_frequencies, get_meta_number_tokens, sort_s
-from .database import (Breakdown, Collocation, Cotext, CotextLines,
+from .database import (Breakdown, Corpus, Collocation, Cotext, CotextLines,
                        Discourseme, Matches, Query, get_or_create)
 from .users import auth
 
@@ -300,7 +300,7 @@ class QueryIn(Schema):
 
     cqp_query = String(required=True)
 
-    s = String(required=True)
+    s = String(required=False)
 
 
 class QueryAssistedIn(Schema):
@@ -317,7 +317,7 @@ class QueryAssistedIn(Schema):
     ignore_diacritics = Boolean(dump_default=True, required=False)
     escape = Boolean(dump_default=True, required=False)
 
-    s = String(required=True)
+    s = String(required=False)
 
 
 class QueryOut(Schema):
@@ -365,6 +365,9 @@ def create(json_data, query_data):
 
     """
 
+    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    json_data['s'] = json_data.get('s', corpus.s_default)
+
     query = Query(**json_data)
     db.session.add(query)
     db.session.commit()
@@ -386,6 +389,9 @@ def create_assisted(json_data, query_data):
     """Create new query in assisted mode.
 
     """
+
+    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    json_data['s'] = json_data.get('s', corpus.s_default)
 
     items = json_data.pop('items')
     p = json_data.pop('p')
