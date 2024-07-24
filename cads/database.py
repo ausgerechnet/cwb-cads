@@ -306,8 +306,39 @@ class Discourseme(db.Model):
         raise NotImplementedError("insert items in db")
 
 
-class DiscoursemeTemplateItems(db.Model):
+class DiscoursemeDescription(db.Model):
+    """
+
+    """
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    modified = db.Column(db.DateTime, default=datetime.utcnow)  # (→ query needs update)
+
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id'))  # default semantic map
+
+    p = db.Column(db.String(), nullable=True)  # analysis layer
+
+    queries = db.relationship("Query", backref="discourseme_description", lazy=True)  # should be single query
+    items = db.RelationshipProperty("DiscoursemeDescriptionItems", backref="discourseme_description", cascade='all, delete')
+
+
+class DiscoursemeDescriptionItems(db.Model):
     """Constellation
+
+    """
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer(), primary_key=True)
+    discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'))
+    item = db.Column(db.String(), nullable=True)
+
+
+class DiscoursemeTemplateItems(db.Model):
+    """Discourseme Template Items
 
     """
 
@@ -360,9 +391,10 @@ class Query(db.Model):
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
-    soc_sequence = db.Column(db.Unicode)
 
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+    discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'))
+    soc_sequence = db.Column(db.Unicode)
 
     match_strategy = db.Column(db.Unicode, default='longest')
     cqp_query = db.Column(db.Unicode)
@@ -436,12 +468,12 @@ class BreakdownItems(db.Model):
     freq = db.Column(db.Integer)
 
     @property
+    def nr_tokens(self):
+        return self.breakdown._query.subcorpus.nr_tokens if self.breakdown._query.subcorpus else self.breakdown._query.corpus.nr_tokens
+
+    @property
     def ipm(self):
-        if self.breakdown._query.subcorpus:
-            nr_tokens = self.breakdown._query.subcorpus.nr_tokens
-        else:
-            nr_tokens = self.breakdown._query.corpus.nr_tokens
-        return self.freq / nr_tokens * 10**6
+        return self.freq / self.nr_tokens * 10**6
 
 
 # CONCORDANCE #
@@ -491,8 +523,8 @@ class Cotext(db.Model):
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
-    context = db.Column(db.Integer)
-    context_break = db.Column(db.String)
+    context = db.Column(db.Integer)  # max. offset / window
+    context_break = db.Column(db.String)  # s-attribute
 
     lines = db.relationship('CotextLines', backref='cotext', passive_deletes=True, cascade='all, delete')
 
@@ -506,7 +538,7 @@ class CotextLines(db.Model):
 
     cotext_id = db.Column(db.Integer, db.ForeignKey('cotext.id', ondelete='CASCADE'), index=True)
 
-    match_pos = db.Column(db.Integer, index=True)
+    match_pos = db.Column(db.Integer, index=True)  # should link to matches
     cpos = db.Column(db.Integer, index=True)
     offset = db.Column(db.Integer)
 
