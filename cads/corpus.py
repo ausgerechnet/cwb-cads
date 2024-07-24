@@ -156,6 +156,141 @@ def meta_from_df(corpus, df_meta, level, column_mapping):
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
 
 
+def meta_from_within_xml(cwb_id, level="text", column_mapping={}):
+
+    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
+    cqp_bin = current_app.config['CCC_CQP_BIN']
+    registry_dir = current_app.config['CCC_REGISTRY_DIR']
+    data_dir = current_app.config['CCC_DATA_DIR']
+
+    attributes = [a for a in corpus.s_annotations if a.startswith(f'{level}_')]
+    for a in attributes:
+        level = a.split("_")[0]
+        key = a.split(f"{level}_")[1]
+        value_type = column_mapping.get(key, 'unicode')
+        meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir)
+
+
+def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
+    """corpus meta data is read as a DataFrame indexed by match, matchend
+
+    """
+
+    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
+
+    current_app.logger.debug(f'reading meta data for level "{level}" of corpus "{cwb_id}"')
+    df_meta = read_csv(path, sep=sep)
+    meta_from_df(corpus, df_meta, level, column_mapping)
+
+
+def get_meta_frequencies(corpus, level, key):
+
+    # get attribute
+    att = None
+    for s in corpus.segmentations:
+        if s.level == level:
+            for ann in s.annotations:
+                if ann.key == key:
+                    att = ann
+                    value_type = ann.value_type
+                    segmentation_annotation_id = ann.id
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    # create count data
+    records = db.session.query(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
+        func.count(SegmentationSpanAnnotation.__table__.c['value_' + value_type])
+    ).filter_by(
+        segmentation_annotation_id=segmentation_annotation_id
+    ).group_by(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
+    ).all()
+
+    return records
+
+
+def get_meta_number_tokens(corpus, level, key):
+
+    # get attribute
+    att = None
+    for s in corpus.segmentations:
+        if s.level == level:
+            for ann in s.annotations:
+                if ann.key == key:
+                    att = ann
+                    value_type = ann.value_type
+                    segmentation_annotation_id = ann.id
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    # number of tokens
+    records = db.session.query(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
+        func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('total_span')
+    ).filter_by(
+        segmentation_annotation_id=segmentation_annotation_id
+    ).join(
+        SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
+    ).group_by(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
+    ).all()
+
+    return records
+
+
+def read_corpora(path=None, delete_old=False, reread_attributes=False):
+
+    path = current_app.config['CORPORA'] if path is None else path
+
+    # get dictionaries for both sets of corpora
+    corpora_old = {corpus.cwb_id: corpus for corpus in Corpus.query.all()}
+    corpora_new = {corpus['cwb_id']: corpus for corpus in json.load(open(path, 'rt'))}
+
+    corpora_update_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id in corpora_new.keys()]
+    corpora_add_ids = [cwb_id for cwb_id in corpora_new.keys() if cwb_id not in corpora_old.keys()]
+
+    # DELETE
+    if delete_old:
+        corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
+        for cwb_id in corpora_delete_ids:
+            current_app.logger.debug(f'deleting corpus {cwb_id}')
+            db.session.delete(corpora_old[cwb_id])
+
+    # UPDATE
+    for cwb_id in corpora_update_ids:
+        current_app.logger.debug(f'updating corpus {cwb_id}')
+        corpus = corpora_old[cwb_id]
+        if reread_attributes:
+            [db.session.delete(att) for att in corpus.attributes]
+            attributes = ccc_corpus_attributes(cwb_id,
+                                               cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                               registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                               data_dir=current_app.config['CCC_DATA_DIR'])
+            for attribute, levels in attributes.items():
+                for level in levels:
+                    db.session.add(CorpusAttributes(corpus_id=corpus.id, level=level, attribute=attribute))
+
+        for key, value in corpora_new[cwb_id].items():
+            setattr(corpus, key, value)
+
+    # ADD
+    for cwb_id in corpora_add_ids:
+        current_app.logger.debug(f'adding corpus {cwb_id}')
+        corpus = Corpus(**corpora_new[cwb_id])
+        db.session.add(corpus)
+        db.session.commit()
+        attributes = ccc_corpus_attributes(cwb_id,
+                                           cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                           registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                           data_dir=current_app.config['CCC_DATA_DIR'])
+        for attribute, levels in attributes.items():
+            for level in levels:
+                db.session.add(CorpusAttributes(corpus_id=corpus.id, level=level, attribute=attribute))
+
+    db.session.commit()
+
+
 def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin, registry_dir, data_dir):
 
     corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
@@ -218,33 +353,6 @@ def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin,
     return subcorpus
 
 
-def meta_from_within_xml(cwb_id, level="text", column_mapping={}):
-
-    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
-    cqp_bin = current_app.config['CCC_CQP_BIN']
-    registry_dir = current_app.config['CCC_REGISTRY_DIR']
-    data_dir = current_app.config['CCC_DATA_DIR']
-
-    attributes = [a for a in corpus.s_annotations if a.startswith(f'{level}_')]
-    for a in attributes:
-        level = a.split("_")[0]
-        key = a.split(f"{level}_")[1]
-        value_type = column_mapping.get(key, 'unicode')
-        meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir)
-
-
-def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
-    """corpus meta data is read as a DataFrame indexed by match, matchend
-
-    """
-
-    corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
-
-    current_app.logger.debug(f'reading meta data for level "{level}" of corpus "{cwb_id}"')
-    df_meta = read_csv(path, sep=sep)
-    meta_from_df(corpus, df_meta, level, column_mapping)
-
-
 def subcorpora_from_tsv(cwb_id, path, column='subcorpus', description='imported subcorpus', level='text', create_nqr=False):
     """create subcorpora from TSV file
 
@@ -258,58 +366,6 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', description='imported 
                           cqp_bin=current_app.config['CCC_CQP_BIN'],
                           registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                           data_dir=current_app.config['CCC_DATA_DIR'])
-
-
-def read_corpora(path=None, delete_old=False, reread_attributes=False):
-
-    path = current_app.config['CORPORA'] if path is None else path
-
-    # get dictionaries for both sets of corpora
-    corpora_old = {corpus.cwb_id: corpus for corpus in Corpus.query.all()}
-    corpora_new = {corpus['cwb_id']: corpus for corpus in json.load(open(path, 'rt'))}
-
-    corpora_update_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id in corpora_new.keys()]
-    corpora_add_ids = [cwb_id for cwb_id in corpora_new.keys() if cwb_id not in corpora_old.keys()]
-
-    # DELETE
-    if delete_old:
-        corpora_delete_ids = [cwb_id for cwb_id in corpora_old.keys() if cwb_id not in corpora_new.keys()]
-        for cwb_id in corpora_delete_ids:
-            current_app.logger.debug(f'deleting corpus {cwb_id}')
-            db.session.delete(corpora_old[cwb_id])
-
-    # UPDATE
-    for cwb_id in corpora_update_ids:
-        current_app.logger.debug(f'updating corpus {cwb_id}')
-        corpus = corpora_old[cwb_id]
-        if reread_attributes:
-            [db.session.delete(att) for att in corpus.attributes]
-            attributes = ccc_corpus_attributes(cwb_id,
-                                               cqp_bin=current_app.config['CCC_CQP_BIN'],
-                                               registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                                               data_dir=current_app.config['CCC_DATA_DIR'])
-            for attribute, levels in attributes.items():
-                for level in levels:
-                    db.session.add(CorpusAttributes(corpus_id=corpus.id, level=level, attribute=attribute))
-
-        for key, value in corpora_new[cwb_id].items():
-            setattr(corpus, key, value)
-
-    # ADD
-    for cwb_id in corpora_add_ids:
-        current_app.logger.debug(f'adding corpus {cwb_id}')
-        corpus = Corpus(**corpora_new[cwb_id])
-        db.session.add(corpus)
-        db.session.commit()
-        attributes = ccc_corpus_attributes(cwb_id,
-                                           cqp_bin=current_app.config['CCC_CQP_BIN'],
-                                           registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                                           data_dir=current_app.config['CCC_DATA_DIR'])
-        for attribute, levels in attributes.items():
-            for level in levels:
-                db.session.add(CorpusAttributes(corpus_id=corpus.id, level=level, attribute=attribute))
-
-    db.session.commit()
 
 
 ################
@@ -368,10 +424,17 @@ class MetaOut(Schema):
     annotations = Nested(AnnotationsOut(many=True))
 
 
+class MetaFrequenciesIn(Schema):
+
+    level = String()
+    key = String()
+
+
 class MetaFrequenciesOut(Schema):
 
     value = String()
-    frequency = Integer()
+    nr_spans = Integer()
+    nr_tokens = Integer()
 
 
 #################
@@ -457,76 +520,6 @@ def create_subcorpus(id, json_data):
     return SubCorpusOut().dump(subcorpus), 200
 
 
-def get_meta_frequencies(corpus, level, key):
-
-    # get attribute
-    att = None
-    for s in corpus.segmentations:
-        if s.level == level:
-            for ann in s.annotations:
-                if ann.key == key:
-                    att = ann
-                    value_type = ann.value_type
-                    segmentation_annotation_id = ann.id
-    if att is None:
-        abort(404, 'annotation layer not found')
-
-    # create count data
-    records = db.session.query(
-        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
-        func.count(SegmentationSpanAnnotation.__table__.c['value_' + value_type])
-    ).filter_by(
-        segmentation_annotation_id=segmentation_annotation_id
-    ).group_by(
-        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
-    ).all()
-
-    return records
-
-
-def get_meta_number_tokens(corpus, level, key):
-
-    # get attribute
-    att = None
-    for s in corpus.segmentations:
-        if s.level == level:
-            for ann in s.annotations:
-                if ann.key == key:
-                    att = ann
-                    value_type = ann.value_type
-                    segmentation_annotation_id = ann.id
-    if att is None:
-        abort(404, 'annotation layer not found')
-
-    # number of tokens
-    records = db.session.query(
-        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
-        func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('total_span')
-    ).filter_by(
-        segmentation_annotation_id=segmentation_annotation_id
-    ).join(
-        SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
-    ).group_by(
-        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
-    ).all()
-
-    return records
-
-
-@bp.get('/<id>/meta/<level>/<key>/frequencies')
-@bp.output(MetaFrequenciesOut(many=True))
-@bp.auth_required(auth)
-def get_frequencies(id, level, key):
-    """Get frequencies of segmentation span annotations.
-
-    """
-
-    corpus = db.get_or_404(Corpus, id)
-    records = get_meta_frequencies(corpus, level, key)
-
-    return [MetaFrequenciesOut().dump({'value': r[0], 'frequency': r[1]}) for r in records], 200
-
-
 @bp.get('/<id>/meta/')
 @bp.output(MetaOut(many=True))
 @bp.auth_required(auth)
@@ -553,10 +546,10 @@ def get_meta(id):
 
 
 @bp.put('/<id>/meta/')
-@bp.input(MetaIn, location='query')
+@bp.input(MetaIn)
 @bp.auth_required(auth)
 @bp.output(AnnotationsOut)
-def set_meta(id, query_data):
+def set_meta(id, json_data):
     """Set meta data of corpus from encoded s-attribute.
 
     """
@@ -567,13 +560,37 @@ def set_meta(id, query_data):
     registry_dir = current_app.config['CCC_REGISTRY_DIR']
     data_dir = current_app.config['CCC_DATA_DIR']
 
-    level = query_data['level']
-    key = query_data['key']
-    value_type = query_data['value_type']
+    level = json_data['level']
+    key = json_data['key']
+    value_type = json_data['value_type']
 
     meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir)
 
     return AnnotationsOut().dump({'key': key, 'value_type': value_type}), 200
+
+
+@bp.get('/<id>/meta/frequencies')
+@bp.input(MetaFrequenciesIn, location='query')
+@bp.output(MetaFrequenciesOut(many=True))
+@bp.auth_required(auth)
+def get_frequencies(id, query_data):
+    """Get frequencies of segmentation span annotations.
+
+    """
+
+    corpus = db.get_or_404(Corpus, id)
+    level = query_data.get('level')
+    key = query_data.get('key')
+
+    df_spans = DataFrame.from_records(get_meta_frequencies(corpus, level, key))
+    df_spans.columns = ['value', 'nr_spans']
+    df_tokens = DataFrame.from_records(get_meta_number_tokens(corpus, level, key))
+    df_tokens.columns = ['value', 'nr_tokens']
+
+    df_freq = df_spans.set_index('value').join(df_tokens.set_index('value'), how='outer').sort_values(by='nr_tokens', ascending=False)
+    freq = df_freq.reset_index().to_dict(orient='records')
+
+    return [MetaFrequenciesOut().dump(f) for f in freq], 200
 
 
 ################
