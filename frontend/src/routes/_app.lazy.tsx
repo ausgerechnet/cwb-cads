@@ -130,7 +130,7 @@ function App() {
         </ScrollArea>
       </div>
 
-      <div className="flex-grow p-2">
+      <div className="flex flex-grow flex-col">
         <Outlet />
       </div>
     </main>

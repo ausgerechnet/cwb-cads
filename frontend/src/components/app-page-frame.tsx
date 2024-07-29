@@ -9,6 +9,8 @@ export function AppPageFrame({
   title,
   cta,
   children,
+  classNameContainer,
+  classNameContent,
 }: {
   title: string
   cta?: {
@@ -16,9 +18,11 @@ export function AppPageFrame({
     label: ReactNode
   }
   children?: ReactNode
+  classNameContainer?: string
+  classNameContent?: string
 }) {
   return (
-    <div className="p-2">
+    <div className={cn('flex flex-col p-2', classNameContainer)}>
       <div className="mb-8 flex gap-4">
         <Headline1 className="flex-grow overflow-hidden">{title}</Headline1>
         {cta && (
@@ -31,7 +35,14 @@ export function AppPageFrame({
           </Link>
         )}
       </div>
-      <div className="col-span-full">{children}</div>
+      <div
+        className={cn(
+          'col-span-full flex flex-grow flex-col',
+          classNameContent,
+        )}
+      >
+        {children}
+      </div>
     </div>
   )
 }
