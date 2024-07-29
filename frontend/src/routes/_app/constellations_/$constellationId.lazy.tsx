@@ -5,7 +5,7 @@ import {
   useIsMutating,
   useQuery,
 } from '@tanstack/react-query'
-import { createLazyFileRoute } from '@tanstack/react-router'
+import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   Filter,
   Highlighter,
@@ -41,7 +41,16 @@ export const Route = createLazyFileRoute(
 })
 
 function ConstellationDetail() {
+  const navigate = useNavigate()
   const { constellationId } = Route.useParams()
+  const { corpusId } = Route.useSearch()
+  const setCorpusId = (corpusId: number | undefined) =>
+    navigate({
+      to: '/constellations/$constellationId',
+      params: { constellationId },
+      search: { corpusId },
+      replace: true,
+    })
   const {
     data: {
       description,
@@ -55,7 +64,6 @@ function ConstellationDetail() {
   )
   const { data: discoursemes = [] } = useQuery(discoursemesQueryOptions)
   const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
-  const [corpusId, setCorpusId] = useState<number | undefined>(undefined)
   const [isEditMode, setIsEditMode] = useState(false)
   const nonSelectedDiscoursemes = useMemo(
     () =>
