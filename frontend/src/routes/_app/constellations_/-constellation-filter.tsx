@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { Shuffle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
@@ -12,9 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import { Button } from '@/components/ui/button'
 import { corpusQueryOptions } from '@/lib/queries'
 import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 
 const emptyArray = [] as const
 
@@ -45,6 +44,7 @@ export function ConstellationFilter({
     clSortByOffset = 0,
     clSortOrder = 'random',
     filterItemPAtt,
+    filterItem,
   } = searchParams
 
   // TODO: Make it type safe
@@ -196,14 +196,16 @@ export function ConstellationFilter({
         </Select>
       </div>
 
-      <Button
-        className="mt-auto"
-        disabled
-        title="endpoint is currently not implemented"
-      >
-        <Shuffle className="mr-2 h-4 w-4" />
-        TODO: Shuffle
-      </Button>
+      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
+        <span>Filter Item</span>
+        <Input
+          defaultValue={filterItem}
+          key={filterItem}
+          onChange={(event) =>
+            setSearch('filterItem', event.target.value ?? '')
+          }
+        />
+      </div>
     </div>
   )
 }

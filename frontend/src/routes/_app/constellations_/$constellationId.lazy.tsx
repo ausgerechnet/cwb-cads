@@ -164,10 +164,10 @@ function ConstellationDetail() {
                 navigate({
                   to: '/constellations/$constellationId',
                   params: { constellationId },
-                  search: {
-                    corpusId,
+                  search: (s) => ({
+                    ...s,
                     isConcordanceVisible: !isConcordanceVisible,
-                  },
+                  }),
                   replace: true,
                 })
               }}

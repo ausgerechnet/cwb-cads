@@ -96,7 +96,10 @@ export function ConstellationConcordanceLines({
 
       <div className="relative col-span-full flex flex-col gap-4">
         <div className="max-w-full rounded-md border">
-          <Table className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden">
+          <Table
+            className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden"
+            isNarrow
+          >
             <TableHeader className="col-span-full grid grid-cols-subgrid">
               <TableRow className="col-span-full grid grid-cols-subgrid">
                 <TableHead className="flex items-center">ID</TableHead>
@@ -232,9 +235,9 @@ function ConcordanceLineRender({
       <TableCell className="flex w-max items-center py-0">
         <ButtonTooltip
           tooltip={isExpanded ? 'Collapse' : 'Expand'}
-          size="sm"
+          size="icon"
           variant="ghost"
-          className="-mx-3"
+          className="-mx-3 h-4"
         >
           {isExpanded ? (
             <ChevronsDownUp className="h-4 w-4" />
