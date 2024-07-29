@@ -47,12 +47,12 @@ export const Route = createLazyFileRoute(
 function ConstellationDetail() {
   const navigate = useNavigate()
   const { constellationId } = Route.useParams()
-  const { corpusId, isConcordanceVisible } = Route.useSearch()
+  const { corpusId, isConcordanceVisible = true } = Route.useSearch()
   const setCorpusId = (corpusId: number | undefined) =>
     navigate({
       to: '/constellations/$constellationId',
       params: { constellationId },
-      search: { corpusId, isConcordanceVisible },
+      search: (s) => ({ ...s, corpusId }),
       replace: true,
     })
   const {
