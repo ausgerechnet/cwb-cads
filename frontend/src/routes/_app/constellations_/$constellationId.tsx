@@ -18,8 +18,8 @@ export const Route = createFileRoute('/_app/constellations/$constellationId')({
     clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
     filterItem: z.string().optional().catch(undefined),
     filterItemPAtt: z.string().optional().catch(undefined),
-    corpusId: z.number().optional(),
-    isConcordanceVisible: z.boolean().optional().default(true),
+    corpusId: z.number().optional().catch(undefined),
+    isConcordanceVisible: z.boolean().optional().catch(true),
   }),
   loader: ({ context: { queryClient }, params: { constellationId } }) =>
     Promise.all([
