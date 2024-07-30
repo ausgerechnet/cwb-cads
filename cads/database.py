@@ -59,17 +59,17 @@ users_roles = db.Table(
     db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
 )
 
-constellation_filter_discoursemes = db.Table(
-    'ConstellationFilterDiscoursemes',
+constellation_discoursemes = db.Table(
+    'ConstellationDiscoursemes',
     db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),
     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
 )
 
-constellation_highlight_discoursemes = db.Table(
-    'ConstellationHighlightDiscoursemes',
-    db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),
-    db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
-)
+# constellation_highlight_discoursemes = db.Table(
+#     'ConstellationHighlightDiscoursemes',
+#     db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),
+#     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
+# )
 
 subcorpus_segmentation_span = db.Table(
     'SubCorpusSegmentation',
@@ -381,9 +381,9 @@ class Constellation(db.Model):
     name = db.Column(db.Unicode(255), nullable=True)
     description = db.Column(db.Unicode, nullable=True)
 
-    filter_discoursemes = db.relationship("Discourseme", secondary=constellation_filter_discoursemes)
+    # filter_discoursemes = db.relationship("Discourseme", secondary=constellation_filter_discoursemes)
     # backref=db.backref('constellations_filtered'))
-    highlight_discoursemes = db.relationship("Discourseme", secondary=constellation_highlight_discoursemes)
+    discoursemes = db.relationship("Discourseme", secondary=constellation_discoursemes)
     # backref=db.backref('constellation_highlighted'))
 
     collocation_analyses = db.relationship('Collocation', backref='constellation', cascade='all, delete')
