@@ -9,7 +9,7 @@ def test_create_get_constellation(client, auth):
         client.get("/")
 
         # get discoursemes
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
                                   content_type='application/json',
                                   headers=auth_header).json
 
@@ -40,7 +40,7 @@ def test_constellation_concordance(client, auth):
         client.get("/")
 
         # get some discoursemes
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
                                   headers=auth_header).json
 
         # corpora
@@ -76,7 +76,7 @@ def test_constellation_concordance_filter(client, auth):
         client.get("/")
 
         # get some discoursemes
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
                                   headers=auth_header).json
 
         union_id = discoursemes[0]['id']
@@ -171,7 +171,7 @@ def test_constellation_collocation(client, auth):
         client.get("/")
 
         # get some discoursemes
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
                                   headers=auth_header)
 
         assert discoursemes.status_code == 200
@@ -555,7 +555,7 @@ def test_constellation_2nd_order_collocation(client, auth):
         client.get("/")
 
         # get some discoursemes
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
                                   headers=auth_header)
 
         assert discoursemes.status_code == 200
@@ -680,7 +680,7 @@ def test_constellation_keyword(client, auth):
         client.get("/")
 
         # get some discoursemes
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'),
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
                                   headers=auth_header).json
 
         # create constellation

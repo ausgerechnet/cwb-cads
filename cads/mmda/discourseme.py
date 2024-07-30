@@ -16,15 +16,15 @@ from ccc.utils import cqp_escape
 from flask import abort, current_app
 from pandas import DataFrame, read_csv
 
-from . import db
-from .breakdown import ccc_breakdown
-from .database import (Breakdown, CollocationDiscoursemeItem,
-                       CollocationDiscoursemeUnigramItem, Corpus, Discourseme,
-                       DiscoursemeDescription, DiscoursemeDescriptionItems,
-                       DiscoursemeTemplateItems, KeywordDiscoursemeItem,
-                       KeywordDiscoursemeUnigramItem, Query, SubCorpus, User,
-                       get_or_create)
-from .users import auth
+from .. import db
+from ..breakdown import ccc_breakdown
+from ..database import (Breakdown, CollocationDiscoursemeItem,
+                        CollocationDiscoursemeUnigramItem, Corpus, Discourseme,
+                        DiscoursemeDescription, DiscoursemeDescriptionItems,
+                        DiscoursemeTemplateItems, KeywordDiscoursemeItem,
+                        KeywordDiscoursemeUnigramItem, Query, SubCorpus, User,
+                        get_or_create)
+from ..users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 

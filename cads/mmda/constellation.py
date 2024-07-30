@@ -5,13 +5,13 @@ from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Integer, List, Nested, String
 from flask import redirect, url_for
 
-from . import db
-from .collocation import CollocationIn, CollocationOut
-from .concordance import ConcordanceIn, ConcordanceOut
-from .database import Constellation, Corpus, Discourseme, SubCorpus
+from .. import db
+from ..collocation import CollocationIn, CollocationOut
+from ..concordance import ConcordanceIn, ConcordanceOut
+from ..database import Constellation, Corpus, Discourseme, SubCorpus
 from .discourseme import DiscoursemeOut
-from .query import get_or_create_query_discourseme
-from .users import auth
+from ..query import get_or_create_query_discourseme
+from ..users import auth
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 

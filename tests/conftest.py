@@ -6,7 +6,7 @@ import pytest
 from cads import create_app
 from cads.corpus import read_corpora, subcorpora_from_tsv, meta_from_within_xml
 from cads.database import init_db
-from cads.discourseme import import_discoursemes
+from cads.mmda.discourseme import import_discoursemes
 
 app = create_app('cfg.TestConfig')
 
