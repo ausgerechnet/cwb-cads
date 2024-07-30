@@ -8,7 +8,8 @@ from flask import redirect, url_for, current_app
 from .. import db
 from ..collocation import CollocationIn, CollocationOut
 from ..concordance import ConcordanceIn, ConcordanceOut
-from ..database import Constellation, Corpus, Discourseme, SubCorpus
+from ..database import Corpus, SubCorpus
+from .database import Constellation, Discourseme
 from .discourseme import DiscoursemeOut
 from ..query import get_or_create_query_discourseme
 from ..users import auth

@@ -11,9 +11,8 @@ from pandas import DataFrame, concat
 
 from . import db
 from .collocation import DiscoursemeScoresOut
-from .database import (Keyword, KeywordDiscoursemeItem,
-                       KeywordDiscoursemeUnigramItem, KeywordItem,
-                       KeywordItemScore)
+from .database import Keyword, KeywordItem, KeywordItemScore
+from .mmda.database import KeywordDiscoursemeItem, KeywordDiscoursemeUnigramItem
 from .semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
 from .users import auth
 from .utils import AMS_DICT

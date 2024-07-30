@@ -18,12 +18,12 @@ from pandas import DataFrame, read_csv
 
 from .. import db
 from ..breakdown import ccc_breakdown
-from ..database import (Breakdown, CollocationDiscoursemeItem,
-                        CollocationDiscoursemeUnigramItem, Corpus, Discourseme,
-                        DiscoursemeDescription, DiscoursemeDescriptionItems,
-                        DiscoursemeTemplateItems, KeywordDiscoursemeItem,
-                        KeywordDiscoursemeUnigramItem, Query, SubCorpus, User,
-                        get_or_create)
+from ..database import Breakdown, Corpus, Query, SubCorpus, User, get_or_create
+from .database import (CollocationDiscoursemeItem,
+                       CollocationDiscoursemeUnigramItem, Discourseme,
+                       DiscoursemeDescription, DiscoursemeDescriptionItems,
+                       DiscoursemeTemplateItems, KeywordDiscoursemeItem,
+                       KeywordDiscoursemeUnigramItem)
 from ..users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')

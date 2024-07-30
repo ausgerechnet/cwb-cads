@@ -21,9 +21,10 @@ from .collocation import (CollocationIn, CollocationOut, ccc_collocates,
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import get_meta_frequencies, get_meta_number_tokens
-from .database import (Breakdown, Collocation, Constellation, Corpus,
-                       Cotext, CotextLines, Discourseme, Matches,
+from .database import (Breakdown, Collocation, Corpus,
+                       Cotext, CotextLines, Matches,
                        Query, get_or_create)
+from .mmda.database import Discourseme, Constellation
 from .semantic_map import ccc_init_semmap
 from .users import auth
 

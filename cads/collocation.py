@@ -9,10 +9,10 @@ from flask import current_app
 from pandas import DataFrame, read_sql
 
 from . import db
-from .database import (Collocation, CollocationDiscoursemeItem,
-                       CollocationDiscoursemeUnigramItem, CollocationItem,
-                       CollocationItemScore, CotextLines, Discourseme,
-                       SemanticMap)
+from .database import (Collocation, CollocationItem,
+                       CollocationItemScore, CotextLines, SemanticMap)
+
+from .mmda.database import CollocationDiscoursemeItem, CollocationDiscoursemeUnigramItem, Discourseme
 from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
                            ccc_semmap_update)
 from .users import auth
