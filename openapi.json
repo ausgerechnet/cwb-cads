@@ -42,6 +42,9 @@
           },
           "item": {
             "type": "string"
+          },
+          "nr_tokens": {
+            "type": "integer"
           }
         },
         "type": "object"
@@ -91,7 +94,7 @@
         },
         "type": "object"
       },
-      "CollocationOut": {
+      "CollocationItemsOut": {
         "properties": {
           "coordinates": {
             "items": {
@@ -119,9 +122,6 @@
           "nr_items": {
             "type": "integer"
           },
-          "p": {
-            "type": "string"
-          },
           "page_count": {
             "type": "integer"
           },
@@ -131,7 +131,54 @@
           "page_size": {
             "type": "integer"
           },
-          "window": {
+          "sort_by": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "CollocationOut": {
+        "properties": {
+          "constellation_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "marginals": {
+            "enum": [
+              "local",
+              "global"
+            ],
+            "type": "string"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          },
+          "s_break": {
+            "type": "string"
+          },
+          "semantic_map_id": {
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "CollocationPatchIn": {
+        "properties": {
+          "constellation_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          },
+          "semantic_map_id": {
+            "default": null,
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -272,6 +319,27 @@
         },
         "type": "object"
       },
+      "CoordinatesIn": {
+        "properties": {
+          "item": {
+            "type": "string"
+          },
+          "x_user": {
+            "default": null,
+            "nullable": true,
+            "type": "number"
+          },
+          "y_user": {
+            "default": null,
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
+      },
       "CoordinatesOut": {
         "properties": {
           "item": {
@@ -340,9 +408,90 @@
         },
         "type": "object"
       },
+      "DiscoursemeDescriptionIn": {
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "match_strategy": {
+            "default": "longest",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ],
+            "type": "string"
+          },
+          "p": {
+            "type": "string"
+          },
+          "s": {
+            "type": "string"
+          },
+          "subcorpus_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "corpus_id"
+        ],
+        "type": "object"
+      },
+      "DiscoursemeDescriptionItem": {
+        "properties": {
+          "item": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DiscoursemeDescriptionOut": {
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoursemeDescriptionItem"
+            },
+            "type": "array"
+          },
+          "match_strategy": {
+            "type": "string"
+          },
+          "p": {
+            "type": "string"
+          },
+          "query_id": {
+            "type": "integer"
+          },
+          "s": {
+            "type": "string"
+          },
+          "semantic_map_id": {
+            "type": "integer"
+          },
+          "subcorpus_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "DiscoursemeIn": {
         "properties": {
-          "description": {
+          "comment": {
             "type": "string"
           },
           "name": {
@@ -359,7 +508,7 @@
       },
       "DiscoursemeInUpdate": {
         "properties": {
-          "description": {
+          "comment": {
             "type": "string"
           },
           "name": {
@@ -376,7 +525,7 @@
       },
       "DiscoursemeOut": {
         "properties": {
-          "description": {
+          "comment": {
             "nullable": true,
             "type": "string"
           },
@@ -453,14 +602,6 @@
         },
         "type": "object"
       },
-      "Generated": {
-        "properties": {
-          "query_id": {
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
       "HTTPError": {
         "properties": {
           "detail": {
@@ -509,9 +650,11 @@
             "type": "integer"
           },
           "p": {
+            "default": "lemma",
             "type": "string"
           },
           "p_reference": {
+            "default": "lemma",
             "type": "string"
           },
           "semantic_map_id": {
@@ -536,9 +679,7 @@
         },
         "required": [
           "corpus_id",
-          "corpus_id_reference",
-          "p",
-          "p_reference"
+          "corpus_id_reference"
         ],
         "type": "object"
       },
@@ -592,6 +733,9 @@
           },
           "page_size": {
             "type": "integer"
+          },
+          "sort_by": {
+            "type": "string"
           }
         },
         "type": "object"
@@ -667,10 +811,33 @@
       },
       "MetaFrequenciesOut": {
         "properties": {
-          "frequency": {
+          "nr_spans": {
+            "type": "integer"
+          },
+          "nr_tokens": {
             "type": "integer"
           },
           "value": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MetaIn": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "value_type": {
+            "enum": [
+              "datetime",
+              "numeric",
+              "boolean",
+              "unicode"
+            ],
             "type": "string"
           }
         },
@@ -735,8 +902,7 @@
         "required": [
           "corpus_id",
           "items",
-          "p",
-          "s"
+          "p"
         ],
         "type": "object"
       },
@@ -769,9 +935,31 @@
         },
         "required": [
           "corpus_id",
-          "cqp_query",
-          "s"
+          "cqp_query"
         ],
+        "type": "object"
+      },
+      "QueryMetaOut": {
+        "properties": {
+          "frequency": {
+            "type": "integer"
+          },
+          "ipm": {
+            "type": "number"
+          },
+          "item": {
+            "type": "string"
+          },
+          "nr_texts": {
+            "type": "integer"
+          },
+          "nr_tokens": {
+            "type": "integer"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "QueryOut": {
@@ -801,6 +989,9 @@
           },
           "nqr_cqp": {
             "type": "string"
+          },
+          "random_seed": {
+            "type": "integer"
           },
           "subcorpus_id": {
             "nullable": true,
@@ -1068,7 +1259,46 @@
         ]
       }
     },
-    "/collocation/{id}": {
+    "/collocation/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CollocationOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all collocations.",
+        "tags": [
+          "Collocation"
+        ]
+      }
+    },
+    "/collocation/{id}/": {
       "delete": {
         "parameters": [
           {
@@ -1129,66 +1359,183 @@
             "schema": {
               "type": "string"
             }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
           },
-          {
-            "in": "query",
-            "name": "constellation_id",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
           {
-            "in": "query",
-            "name": "semantic_map_id",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
-          },
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get one collocation analysis.",
+        "tags": [
+          "Collocation"
+        ]
+      },
+      "patch": {
+        "parameters": [
           {
-            "in": "query",
-            "name": "subcorpus_id",
-            "required": false,
+            "in": "path",
+            "name": "id",
+            "required": true,
             "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "marginals",
-            "required": false,
-            "schema": {
-              "default": "local",
-              "enum": [
-                "local",
-                "global"
-              ],
               "type": "string"
             }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollocationPatchIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
           },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
           {
-            "in": "query",
-            "name": "p",
-            "required": false,
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch a collocation analysis. Use for updating semantic map and/or constellation.",
+        "tags": [
+          "Collocation"
+        ]
+      }
+    },
+    "/collocation/{id}/auto-associate": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
             "schema": {
               "type": "string"
             }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
           },
-          {
-            "in": "query",
-            "name": "window",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
           {
-            "in": "query",
-            "name": "s_break",
-            "required": false,
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Associate Discoursemes",
+        "tags": [
+          "Collocation"
+        ]
+      }
+    },
+    "/collocation/{id}/items": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -1249,38 +1596,6 @@
               "default": 1,
               "type": "integer"
             }
-          },
-          {
-            "in": "query",
-            "name": "filter_item",
-            "required": false,
-            "schema": {
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_item_p_att",
-            "required": false,
-            "schema": {
-              "default": "lemma",
-              "type": "string"
-            }
-          },
-          {
-            "explode": true,
-            "in": "query",
-            "name": "filter_discourseme_ids",
-            "required": false,
-            "schema": {
-              "default": [],
-              "items": {
-                "type": "integer"
-              },
-              "type": "array"
-            },
-            "style": "form"
           }
         ],
         "responses": {
@@ -1288,7 +1603,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CollocationOut"
+                  "$ref": "#/components/schemas/CollocationItemsOut"
                 }
               }
             },
@@ -1330,60 +1645,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get collocation items.",
-        "tags": [
-          "Collocation"
-        ]
-      }
-    },
-    "/collocation/{id}/auto-associate": {
-      "put": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Associate Discoursemes",
+        "summary": "Get scored items of collocation analysis.",
         "tags": [
           "Collocation"
         ]
@@ -1829,6 +2091,16 @@
           },
           {
             "in": "query",
+            "name": "subcorpus_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
             "name": "constellation_id",
             "required": false,
             "schema": {
@@ -1845,29 +2117,6 @@
           },
           {
             "in": "query",
-            "name": "subcorpus_id",
-            "required": false,
-            "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "marginals",
-            "required": false,
-            "schema": {
-              "default": "local",
-              "enum": [
-                "local",
-                "global"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "p",
             "required": true,
             "schema": {
@@ -1877,8 +2126,9 @@
           {
             "in": "query",
             "name": "window",
-            "required": true,
+            "required": false,
             "schema": {
+              "default": 10,
               "type": "integer"
             }
           },
@@ -1892,59 +2142,15 @@
           },
           {
             "in": "query",
-            "name": "sort_order",
+            "name": "marginals",
             "required": false,
             "schema": {
-              "default": "descending",
+              "default": "local",
               "enum": [
-                "ascending",
-                "descending"
+                "local",
+                "global"
               ],
               "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by",
-            "required": false,
-            "schema": {
-              "default": "conservative_log_ratio",
-              "enum": [
-                "conservative_log_ratio",
-                "O11",
-                "E11",
-                "ipm",
-                "ipm_expected",
-                "log_likelihood",
-                "z_score",
-                "t_score",
-                "simple_ll",
-                "dice",
-                "log_ratio",
-                "min_sensitivity",
-                "liddell",
-                "mutual_information",
-                "local_mutual_information"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 10,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_number",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "type": "integer"
             }
           },
           {
@@ -2076,8 +2282,7 @@
             "name": "extended_window",
             "required": false,
             "schema": {
-              "default": null,
-              "nullable": true,
+              "default": 50,
               "type": "integer"
             }
           },
@@ -2495,38 +2700,17 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "in": "query",
-            "name": "level",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "key",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "value_type",
-            "required": false,
-            "schema": {
-              "enum": [
-                "datetime",
-                "numeric",
-                "boolean",
-                "unicode"
-              ],
-              "type": "string"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MetaIn"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -2580,7 +2764,7 @@
         ]
       }
     },
-    "/corpus/{id}/meta/{level}/{key}/frequencies": {
+    "/corpus/{id}/meta/frequencies": {
       "get": {
         "parameters": [
           {
@@ -2592,17 +2776,17 @@
             }
           },
           {
-            "in": "path",
+            "in": "query",
             "name": "level",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string"
             }
           },
           {
-            "in": "path",
+            "in": "query",
             "name": "key",
-            "required": true,
+            "required": false,
             "schema": {
               "type": "string"
             }
@@ -2641,6 +2825,16 @@
               }
             },
             "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
           }
         },
         "security": [
@@ -3054,8 +3248,65 @@
         ]
       }
     },
-    "/discourseme/{id}/add-item": {
-      "patch": {
+    "/discourseme/{id}/description/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get All Descriptions",
+        "tags": [
+          "Discourseme"
+        ]
+      },
+      "post": {
+        "description": "Will automatically create query (from template / description) if it doesn't exist.",
         "parameters": [
           {
             "in": "path",
@@ -3070,7 +3321,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DiscoursemeTemplateItem"
+                "$ref": "#/components/schemas/DiscoursemeDescriptionIn"
               }
             }
           }
@@ -3080,7 +3331,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiscoursemeOut"
+                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
                 }
               }
             },
@@ -3122,13 +3373,74 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch discourseme: add item.",
+        "summary": "Create description of discourseme in corpus.",
         "tags": [
           "Discourseme"
         ]
       }
     },
-    "/discourseme/{id}/corpus/{corpus_id}/": {
+    "/discourseme/{id}/description/{description_id}/": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Description",
+        "tags": [
+          "Discourseme"
+        ]
+      },
       "get": {
         "parameters": [
           {
@@ -3141,51 +3453,10 @@
           },
           {
             "in": "path",
-            "name": "corpus_id",
+            "name": "description_id",
             "required": true,
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "subcorpus_id",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "s",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "match_strategy",
-            "required": false,
-            "schema": {
-              "default": "longest",
-              "enum": [
-                "longest",
-                "shortest",
-                "standard"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "items",
-            "required": false,
-            "schema": {
-              "items": {
-                "$ref": "#/components/schemas/DiscoursemeTemplateItem"
-              },
-              "type": "array"
             }
           }
         ],
@@ -3194,7 +3465,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/QueryOut"
+                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
                 }
               }
             },
@@ -3219,16 +3490,6 @@
               }
             },
             "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
           }
         },
         "security": [
@@ -3236,18 +3497,26 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get query of discourseme in corpus. Will automatically create one if it doesn't exist.",
+        "summary": "Get Description",
         "tags": [
           "Discourseme"
         ]
       }
     },
-    "/discourseme/{id}/remove-item": {
+    "/discourseme/{id}/description/{description_id}/add-item": {
       "patch": {
         "parameters": [
           {
             "in": "path",
             "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3258,7 +3527,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DiscoursemeTemplateItem"
+                "$ref": "#/components/schemas/DiscoursemeDescriptionItem"
               }
             }
           }
@@ -3268,7 +3537,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DiscoursemeOut"
+                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
                 }
               }
             },
@@ -3310,7 +3579,89 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch discourseme: remove item.",
+        "summary": "Patch discourseme: add item to description.",
+        "tags": [
+          "Discourseme"
+        ]
+      }
+    },
+    "/discourseme/{id}/description/{description_id}/remove-item": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeDescriptionItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch discourseme: remove item from description.",
         "tags": [
           "Discourseme"
         ]
@@ -4235,29 +4586,6 @@
           },
           {
             "in": "query",
-            "name": "subcorpus_id",
-            "required": false,
-            "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "marginals",
-            "required": false,
-            "schema": {
-              "default": "local",
-              "enum": [
-                "local",
-                "global"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "p",
             "required": true,
             "schema": {
@@ -4267,8 +4595,9 @@
           {
             "in": "query",
             "name": "window",
-            "required": true,
+            "required": false,
             "schema": {
+              "default": 10,
               "type": "integer"
             }
           },
@@ -4282,59 +4611,15 @@
           },
           {
             "in": "query",
-            "name": "sort_order",
+            "name": "marginals",
             "required": false,
             "schema": {
-              "default": "descending",
+              "default": "local",
               "enum": [
-                "ascending",
-                "descending"
+                "local",
+                "global"
               ],
               "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by",
-            "required": false,
-            "schema": {
-              "default": "conservative_log_ratio",
-              "enum": [
-                "conservative_log_ratio",
-                "O11",
-                "E11",
-                "ipm",
-                "ipm_expected",
-                "log_likelihood",
-                "z_score",
-                "t_score",
-                "simple_ll",
-                "dice",
-                "log_ratio",
-                "min_sensitivity",
-                "liddell",
-                "mutual_information",
-                "local_mutual_information"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 10,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_number",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "type": "integer"
             }
           },
           {
@@ -4448,8 +4733,7 @@
             "name": "extended_window",
             "required": false,
             "schema": {
-              "default": null,
-              "nullable": true,
+              "default": 50,
               "type": "integer"
             }
           },
@@ -4650,7 +4934,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Generated"
+                  "$ref": "#/components/schemas/QueryOut"
                 }
               }
             },
@@ -4801,6 +5085,99 @@
           }
         ],
         "summary": "Get (additional context of) one concordance line.",
+        "tags": [
+          "Query"
+        ]
+      }
+    },
+    "/query/{query_id}/meta": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "key",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "p",
+            "required": false,
+            "schema": {
+              "default": "word",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QueryMetaOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get meta distribution of query.",
         "tags": [
           "Query"
         ]
@@ -5020,6 +5397,83 @@
           }
         ],
         "summary": "Get coordinates of semantic map.",
+        "tags": [
+          "Semantic_Map"
+        ]
+      }
+    },
+    "/semantic-map/{id}/coordinates/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CoordinatesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CoordinatesOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Set coordinates of an item.",
         "tags": [
           "Semantic_Map"
         ]
