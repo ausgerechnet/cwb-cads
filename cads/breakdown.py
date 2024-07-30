@@ -12,7 +12,7 @@ from .database import BreakdownItems
 bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 
 
-def ccc_breakdown(breakdown, return_df=True):
+def ccc_breakdown(breakdown):
 
     current_app.logger.debug(f'ccc_breakdown :: breakdown {breakdown.id} in corpus {breakdown._query.corpus.cwb_id}')
 
@@ -38,14 +38,10 @@ def ccc_breakdown(breakdown, return_df=True):
         db.session.commit()
         current_app.logger.debug("ccc_breakdown :: saved to database")
 
-    elif return_df:
-        current_app.logger.debug("ccc_breakdown :: getting breakdown items from database")
-        breakdown_df = DataFrame([vars(s) for s in breakdown.items], columns=['match', 'matchend']).set_index(['match', 'matchend'])
-        current_app.logger.debug(f"ccc_breakdown :: got {len(breakdown_df)} matches from database")
-
     else:
-        current_app.logger.debug("ccc_breakdown :: breakdown already exists in database")
-        breakdown_df = None
+        current_app.logger.debug("ccc_breakdown :: getting breakdown items from database")
+        breakdown_df = DataFrame([vars(s) for s in breakdown.items], columns=['freq', 'breakdown_id', 'item']).set_index(['item'])
+        current_app.logger.debug(f"ccc_breakdown :: got {len(breakdown_df)} breakdown items from database")
 
     return breakdown_df
 
