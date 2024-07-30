@@ -1,5 +1,4 @@
 from flask import url_for
-import pytest
 
 
 def test_create_query(client, auth):
@@ -11,7 +10,7 @@ def test_create_query(client, auth):
         query = client.post(url_for('query.create'),
                             json={
                                 'corpus_id': 1,
-                                'cqp_query': '[word="der"] [lemma="Bundeskanzler"]',
+                                'cqp_query': '[lemma="Wirtschaft"]',
                                 's': 's'
                             },
                             headers=auth_header)
@@ -70,23 +69,23 @@ def test_query_concordance(client, auth):
     with client:
         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="Wirtschaft"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
+        assert query.status_code == 200
 
-        # create query matches for union
-        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                                 content_type='application/json',
-                                 headers=auth_header)
-
-        assert union_query.status_code == 200
-
-        lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=10, page_number=5),
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=10, page_number=2),
                            headers=auth_header)
         assert lines.status_code == 200
 
-        line = client.get(url_for('query.concordance_line', match_id=lines.json['lines'][0]['id'], query_id=union_query.json['id'],
+        line = client.get(url_for('query.concordance_line', match_id=lines.json['lines'][0]['id'], query_id=query.json['id'],
                                   window=50),
                           headers=auth_header)
+
         assert line.status_code == 200
 
 
@@ -96,17 +95,15 @@ def test_query_concordance_filter(client, auth):
     with client:
         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="SPD"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
 
-        # create query matches for union
-        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                                 content_type='application/json',
-                                 headers=auth_header)
-
-        assert union_query.status_code == 200
-
-        lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=10, page_number=5, filter_item='Beifall'),
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=10, page_number=2, filter_item='Beifall'),
                            headers=auth_header)
 
         assert lines.status_code == 200
@@ -122,17 +119,15 @@ def test_query_concordance_sort(client, auth):
     with client:
         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="Wirtschaft"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
 
-        # create query matches for union
-        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                                 content_type='application/json',
-                                 headers=auth_header)
-
-        assert union_query.status_code == 200
-
-        lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=100, page_number=2,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=10, page_number=2,
                                    sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=2),
                            headers=auth_header)
 
@@ -145,7 +140,7 @@ def test_query_concordance_sort(client, auth):
 
         assert list(sorted(tokens)) == tokens
 
-        lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=100, page_number=2,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=50, page_number=2,
                                    sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=2),
                            headers=auth_header)
 
@@ -165,17 +160,15 @@ def test_query_concordance_filter_sort(client, auth):
     with client:
         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="SPD"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
 
-        # create query matches for union
-        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                                 content_type='application/json',
-                                 headers=auth_header)
-
-        assert union_query.status_code == 200
-
-        lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=100, page_number=1, filter_item='Beifall',
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1, filter_item='Beifall',
                                    sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=8),
                            headers=auth_header)
 
@@ -190,7 +183,7 @@ def test_query_concordance_filter_sort(client, auth):
 
         assert list(sorted(tokens)) == tokens
 
-        lines = client.get(url_for('query.concordance_lines', query_id=union_query.json['id'], page_size=100, page_number=1, filter_item='Beifall',
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1, filter_item='Beifall',
                                    sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=8),
                            headers=auth_header)
 
@@ -210,17 +203,15 @@ def test_query_breakdown(client, auth):
     with client:
         client.get("/")
 
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="Wirtschaft"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
 
-        # create query matches for union
-        union_query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                                 content_type='application/json',
-                                 headers=auth_header)
-
-        assert union_query.status_code == 200
-
-        breakdown = client.get(url_for('query.get_breakdown', query_id=union_query.json['id'], p='lemma',
+        breakdown = client.get(url_for('query.get_breakdown', query_id=query.json['id'], p='lemma',
                                        # page_size=100, page_number=1, filter_item='Beifall',
                                        # sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=8
                                        ),
@@ -255,7 +246,6 @@ def test_query_meta(client, auth):
         assert meta.json[0]['ipm'] == 1829.022936
 
 
-@pytest.mark.now
 def test_query_collocation(client, auth):
 
     auth_header = auth.login()

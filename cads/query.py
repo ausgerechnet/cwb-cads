@@ -12,16 +12,18 @@ from ccc.cache import generate_idx
 from ccc.collocates import dump2cooc
 from ccc.utils import cqp_escape, format_cqp_query
 from flask import current_app
-from pandas import DataFrame
+from pandas import DataFrame, read_sql
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
-from .collocation import CollocationIn, CollocationOut, ccc_collocates, ccc_discourseme_counts
+from .collocation import (CollocationIn, CollocationOut, ccc_collocates,
+                          ccc_discourseme_counts)
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
-from .corpus import get_meta_frequencies, get_meta_number_tokens, sort_s
-from .database import (Breakdown, Corpus, Collocation, Cotext, CotextLines,
-                       Discourseme, Matches, Query, get_or_create)
+from .corpus import get_meta_frequencies, get_meta_number_tokens
+from .database import (Breakdown, Collocation, Constellation, Corpus,
+                       Cotext, CotextLines, Discourseme, Matches,
+                       Query, get_or_create)
 from .semantic_map import ccc_init_semmap
 from .users import auth
 
@@ -211,20 +213,23 @@ def get_or_create_query_discourseme(corpus, discourseme, subcorpus=None, s=None,
 
     """
 
-    s = sort_s(corpus.s_atts)[0] if s is None else s  # TODO improve
-
     current_app.logger.debug(f'get_or_create_query :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
 
-    # try to retrieve
+    # preprocess parameters
+    s = corpus.s_default if s is None else s
     subcorpus_id = subcorpus.id if subcorpus else None
+
+    # try to retrieve a suitable query
     q = [q for q in discourseme.queries if q.corpus_id == corpus.id and q.subcorpus_id == subcorpus_id and not q.soc_sequence]
-    if len(q) > 1:  # must not happen due to unique constraint
+
+    if len(q) > 1:
+        # more than one query for this discourseme in this (sub)corpus. must not happen due to unique constraint
         raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
     if len(q) == 1:
+        # there is exactly one query for this discourseme in this corpus
         query = q[0]
-
-    # create query
     elif len(q) == 0:
+        # no query yet: create new query
         query = ccc_discourseme_matches(corpus, discourseme, s=s, subcorpus=subcorpus, match_strategy=match_strategy)
 
     return query
@@ -632,7 +637,7 @@ def get_breakdown(query_id, query_data):
         abort(404, msg)
 
     breakdown = get_or_create(Breakdown, query_id=query_id, p=p)
-    ccc_breakdown(breakdown, return_df=False)
+    ccc_breakdown(breakdown)
 
     return BreakdownOut().dump(breakdown), 200
 
@@ -698,6 +703,8 @@ def get_collocation(query_id, query_data):
 
     # constellation and semantic map
     constellation_id = query_data.get('constellation_id', None)
+    constellation = db.get_or_404(Constellation, constellation_id) if constellation_id else None
+
     semantic_map_id = query_data.get('semantic_map_id', None)
 
     # filtering for second-order collocation
@@ -773,14 +780,13 @@ def get_collocation(query_id, query_data):
         db.session.commit()
 
         # matches to database
-        from pandas import read_sql
         df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
         df_matches['query_id'] = query.id
         df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
 
     collocation = Collocation(
-        constellation_id=constellation_id,
-        semantic_map_id=semantic_map_id,
+        # constellation_id=constellation_id,
+        # semantic_map_id=semantic_map_id,
         query_id=query.id,
         p=p,
         s_break=s_break,
@@ -793,8 +799,8 @@ def get_collocation(query_id, query_data):
     ccc_collocates(collocation)
     ccc_init_semmap(collocation, semantic_map_id)
 
-    if collocation.constellation:
-        discoursemes = collocation.constellation.highlight_discoursemes + collocation.constellation.filter_discoursemes
+    if constellation:
+        discoursemes = constellation.highlight_discoursemes + constellation.filter_discoursemes
         ccc_discourseme_counts(collocation, discoursemes)
 
     return CollocationOut().dump(collocation), 200

@@ -194,7 +194,6 @@ def ccc_concordance(focus_query,
                 (ConcordanceLines.match == Matches.match) &
                 (ConcordanceLines.contextid == Matches.contextid)
             )
-
         if sort_order == 'ascending':
             matches = matches.order_by(ConcordanceLines.id)
         elif sort_order == 'descending':
@@ -237,14 +236,15 @@ def ccc_concordance(focus_query,
         hd_matches = Matches.query.filter(Matches.query_id == query.id,
                                           Matches.contextid.in_(list(df_dump['contextid']))).all()
         for match in hd_matches:
-            if not query.discourseme:
-                filter_item_cpos.add(match.match)
-            else:
-                discourseme_ranges[match.contextid].append({
-                    'discourseme_id': query.discourseme.id,
-                    'start': match.match,
-                    'end': match.matchend
-                })
+            # TODO repair after removing query.discourseme
+            # if not query.discourseme:
+            filter_item_cpos.add(match.match)
+            # else:
+            #     discourseme_ranges[match.contextid].append({
+            #         'discourseme_id': query.discourseme.id,
+            #         'start': match.match,
+            #         'end': match.matchend
+            #     })
     for line in lines:
         line['discourseme_ranges'] = discourseme_ranges.get(line['contextid'], [])
         for token in line['tokens']:

@@ -14,7 +14,7 @@ from .collocation import DiscoursemeScoresOut
 from .database import (Keyword, KeywordDiscoursemeItem,
                        KeywordDiscoursemeUnigramItem, KeywordItem,
                        KeywordItemScore)
-from .semantic_map import CoordinatesOut, ccc_semmap_update, ccc_init_semmap
+from .semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
 from .users import auth
 from .utils import AMS_DICT
 

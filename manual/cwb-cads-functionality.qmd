@@ -13,21 +13,18 @@ format:
     df-print: paged
 ---
 
+# Setup
 
 ```{r, message = FALSE}
 rm(list = ls())
-path.utils <- "/home/ausgerechnet/repositories/cwb-ccc/ccc-utils.R"
-source(path.utils)
+library(tidyverse)
 library(httr2)
 library(jsonlite)
+library(ggrepel)
 url_api <- "http://127.0.0.1:5000"
 ```
 
-# Setup
-
-## API
-
-- get access token via `/user/login`
+- get API access token via `/user/login`
 ```{r, message = FALSE}
 access.token <- str_interp("${url_api}/user/login") |> 
   request() |> 
@@ -167,7 +164,7 @@ subcorpora
 - mode is detected automatically
   + i.e. providing a subcorpus as the target and its original corpus as the reference will automatically switch to subcorpus vs. rest (if not suppressed)
 
-## Example: `"SZ-2018-2022"` vs. `"FAZ-2020-2022"`
+## Example: SZ-2018-2022 vs. FAZ-2020-2022
 
 ```{r}
 corpus.id <- corpora |> filter(cwb_id == "SZ-2018-2022") |> pull(id)

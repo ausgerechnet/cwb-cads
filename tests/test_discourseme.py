@@ -22,8 +22,8 @@ def test_create_get_discourseme(client, auth):
         client.get("/")
         discourseme = client.post(url_for('discourseme.create'),
                                   json={
-                                      'name': 'many',
-                                      'description': 'this is a test discourseme with many hits',
+                                      'name': 'Modalverben',
+                                      'comment': 'Testdiskursem mit vielen Treffern',
                                       'template': [
                                           {'surface': 'können', 'p': 'lemma'},
                                           {'surface': 'müssen', 'p': 'lemma'}
@@ -42,7 +42,7 @@ def test_create_get_discourseme(client, auth):
         assert discoursemes.status_code == 200
 
 
-def test_discourseme_query(client, auth):
+def test_discourseme_create_description(client, auth):
 
     auth_header = auth.login()
 
@@ -51,12 +51,13 @@ def test_discourseme_query(client, auth):
 
         discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
         union = discoursemes[0]
+        description = client.post(url_for('discourseme.create_description', id=union['id']),
+                                  json={'corpus_id': 1},
+                                  content_type='application/json',
+                                  headers=auth_header)
 
-        query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                           content_type='application/json',
-                           headers=auth_header)
-
-        assert query.status_code == 200
+        assert description.status_code == 200
+        assert len(description.json['items']) == 6
 
 
 # def test_discourseme_concordance(client, auth):
@@ -75,18 +76,6 @@ def test_discourseme_query(client, auth):
 #         assert lines.status_code == 200
 
 
-def test_discourseme_query_template(client, auth):
-
-    auth_header = auth.login()
-    with client:
-        client.get("/")
-        discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
-        union = discoursemes[0]
-        query = client.get(url_for('discourseme.get_query', id=union['id'], corpus_id=1),
-                           content_type='application/json',
-                           headers=auth_header)
-
-
 def test_discourseme_patch(client, auth):
 
     auth_header = auth.login()
@@ -97,19 +86,19 @@ def test_discourseme_patch(client, auth):
         discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
         union = discoursemes[0]
         assert union['name'] == 'CDU/CSU'
-        assert union['description'] is None
+        assert union['comment'] is None
         union = client.patch(url_for('discourseme.patch', id=union['id']),
                              json={
                                  'name': 'Union for the winz',
-                                 'description': 'My first description'
+                                 'comment': 'My first description'
                              },
                              content_type='application/json',
                              headers=auth_header).json
 
         assert union['name'] == 'Union for the winz'
-        assert union['description'] == 'My first description'
+        assert union['comment'] == 'My first description'
 
-        # patch items
+        # patch template
         union = client.patch(url_for('discourseme.patch', id=union['id']),
                              json={
                                  'template': [
@@ -132,25 +121,22 @@ def test_discourseme_patch_add_remove(client, auth):
 
         discoursemes = client.get(url_for('discourseme.get_discoursemes'), headers=auth_header).json
         union = discoursemes[0]
+        description = client.post(url_for('discourseme.create_description', id=union['id']),
+                                  content_type='application/json',
+                                  json={'corpus_id': 1},
+                                  headers=auth_header)
+        assert description.status_code == 200
+        assert 'können' not in [item['item'] for item in description.json['items']]
 
-        assert 'können' not in [item['surface'] for item in union['template']]
+        description = client.patch(url_for('discourseme.description_patch_add', id=union['id'], description_id=description.json['id']),
+                                   json={'item': 'können'},
+                                   content_type='application/json',
+                                   headers=auth_header)
+        assert 'können' in [item['item'] for item in description.json['items']]
 
-        union = client.patch(url_for('discourseme.patch_add', id=union['id']),
-                             json={
-                                 'surface': 'können',
-                                 'p': 'lemma'
-                             },
-                             content_type='application/json',
-                             headers=auth_header).json
+        description = client.patch(url_for('discourseme.description_patch_remove', id=union['id'], description_id=description.json['id']),
+                                   json={'item': 'können'},
+                                   content_type='application/json',
+                                   headers=auth_header)
 
-        assert 'können' in [item['surface'] for item in union['template']]
-
-        union = client.patch(url_for('discourseme.patch_remove', id=union['id']),
-                             json={
-                                 'surface': 'können',
-                                 'p': 'lemma'
-                             },
-                             content_type='application/json',
-                             headers=auth_header).json
-
-        assert 'können' not in [item['surface'] for item in union['template']]
+        assert 'können' not in [item['item'] for item in description.json['items']]

@@ -150,6 +150,12 @@ class Corpus(db.Model):
         return sort_s(self.s_atts)[0]
 
     @property
+    def p_default(self):
+        """default p-attribute for discourseme descriptions ("analyses")"""
+        from .corpus import sort_p
+        return sort_p(self.p_atts)[0]
+
+    @property
     def p_atts(self):
         return [att.level for att in self.attributes if att.attribute == 'p_atts']
 
@@ -297,10 +303,11 @@ class Discourseme(db.Model):
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     name = db.Column(db.Unicode(255), nullable=True)
-    description = db.Column(db.Unicode, nullable=True)
+    comment = db.Column(db.Unicode, nullable=True)
 
-    queries = db.relationship("Query", backref="discourseme", lazy=True)
     template = db.RelationshipProperty("DiscoursemeTemplateItems", backref="discourseme", cascade='all, delete')
+
+    descriptions = db.relationship("DiscoursemeDescription", backref="discourseme", lazy=True)
 
     def generate_template(self, p='word'):
         items = set(self.template_items)
@@ -309,7 +316,21 @@ class Discourseme(db.Model):
                 if breakdown.p == p:
                     items = items.union(set([cqp_escape(item.item) for item in breakdown.items]))
         items = sorted(list(items))
-        raise NotImplementedError("insert items in db")
+        raise NotImplementedError("insert template items in db")
+
+
+class DiscoursemeTemplateItems(db.Model):
+    """Discourseme Template Items
+
+    """
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer(), primary_key=True)
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+    p = db.Column(db.String(), nullable=True)
+    surface = db.Column(db.String(), nullable=True)
+    cqp_query = db.Column(db.String(), nullable=True)
 
 
 class DiscoursemeDescription(db.Model):
@@ -321,13 +342,15 @@ class DiscoursemeDescription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)  # (→ query needs update)
 
-    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
-    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id'))  # default semantic map
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
+    subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))
+    p = db.Column(db.String(), nullable=True)  # analysis / description layer
+    s = db.Column(db.String(), nullable=True)  # for max. query context
+    match_strategy = db.Column(db.Unicode, default='longest')
 
-    p = db.Column(db.String(), nullable=True)  # analysis layer
+    query_id = db.Column(db.Integer, db.ForeignKey('query.id'))
 
-    queries = db.relationship("Query", backref="discourseme_description", lazy=True)  # should be single query
     items = db.RelationshipProperty("DiscoursemeDescriptionItems", backref="discourseme_description", cascade='all, delete')
 
 
@@ -340,21 +363,8 @@ class DiscoursemeDescriptionItems(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'))
+
     item = db.Column(db.String(), nullable=True)
-
-
-class DiscoursemeTemplateItems(db.Model):
-    """Discourseme Template Items
-
-    """
-
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    id = db.Column(db.Integer(), primary_key=True)
-    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
-    surface = db.Column(db.String(), nullable=True)
-    p = db.Column(db.String(), nullable=True)
-    cqp_query = db.Column(db.String(), nullable=True)
 
 
 class Constellation(db.Model):
@@ -387,10 +397,7 @@ class Query(db.Model):
 
     """
 
-    __table_args__ = (
-        db.UniqueConstraint('discourseme_id', 'corpus_id', 'subcorpus_id', 'soc_sequence', name='_discourseme_subcorpus_soc'),
-        {'sqlite_autoincrement': True},
-    )
+    __table_args__ = ({'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
@@ -398,8 +405,6 @@ class Query(db.Model):
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
 
-    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
-    discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'))
     soc_sequence = db.Column(db.Unicode)
 
     match_strategy = db.Column(db.Unicode, default='longest')
@@ -418,10 +423,6 @@ class Query(db.Model):
     @property
     def number_matches(self):
         return len(self.matches)
-
-    @property
-    def discourseme_name(self):
-        return self.discourseme.name if self.discourseme else None
 
     @property
     def corpus_name(self):

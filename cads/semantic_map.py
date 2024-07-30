@@ -10,7 +10,7 @@ from semmap import SemanticSpace
 
 from . import db
 from .database import (Collocation, CollocationItem, CollocationItemScore,
-                       SemanticMap, Coordinates)
+                       Coordinates, SemanticMap)
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
