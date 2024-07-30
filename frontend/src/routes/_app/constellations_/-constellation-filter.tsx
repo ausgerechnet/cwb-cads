@@ -17,19 +17,23 @@ import { Input } from '@/components/ui/input'
 
 const emptyArray = [] as const
 
-export function ConstellationFilter({
-  corpusId,
-  className,
-}: {
-  corpusId: number
-  className?: string
-}) {
-  const { data: corpus } = useQuery(corpusQueryOptions(corpusId))
+export function ConstellationFilter({ className }: { className?: string }) {
   const navigate = useNavigate()
 
   const searchParams = useSearch({
     from: '/_app/constellations/$constellationId',
   })
+  const {
+    windowSize = 3,
+    clSortByOffset = 0,
+    clSortOrder = 'random',
+    filterItemPAtt,
+    filterItem,
+    corpusId,
+  } = searchParams
+
+  // This is only rendered if corpusId actually exists
+  const { data: corpus } = useQuery(corpusQueryOptions(corpusId as number))
   const contextBreakList = corpus?.s_atts ?? emptyArray
   const pAttributes = corpus?.p_atts ?? emptyArray
   const primary = searchParams.primary ?? pAttributes[0]
@@ -39,13 +43,6 @@ export function ConstellationFilter({
   // TODO: maybe just remember the last concordanceLines and overlay a spinner?
   const secondary = searchParams.secondary ?? pAttributes[0]
   const contextBreak = searchParams.contextBreak ?? contextBreakList[0]
-  const {
-    windowSize = 3,
-    clSortByOffset = 0,
-    clSortOrder = 'random',
-    filterItemPAtt,
-    filterItem,
-  } = searchParams
 
   // TODO: Make it type safe
   const setSearch = useMemo(() => {
@@ -63,7 +60,7 @@ export function ConstellationFilter({
   }, [navigate])
 
   return (
-    <div className={cn('mb-8 grid grid-cols-8 gap-2', className)}>
+    <div className={cn('z-10 mb-8 grid grid-cols-8 gap-2', className)}>
       <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
         <span>Window Size {windowSize}</span>
         <Slider

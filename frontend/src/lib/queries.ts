@@ -472,7 +472,7 @@ export const queryConcordancesConstellationOptions = (
 ) =>
   queryOptions({
     queryKey: [
-      'query-concordances',
+      'constellation-concordances',
       String(constellationId),
       String(corpusId),
       window,
@@ -504,6 +504,82 @@ export const queryConcordancesConstellationOptions = (
         signal,
       }),
     staleTime: 1_000 * 60 * 5, // 5 minutes
+  })
+
+export const queryConstellationCollocationOptions = (
+  constellationId: number,
+  corpusId: number,
+  {
+    p,
+    window,
+    semanticBreak,
+    semanticMapId,
+    subcorpusId,
+    sortOrder,
+    sortBy,
+    pageSize,
+    pageNumber,
+  }: {
+    p: string
+    window: number
+    semanticMapId?: number
+    subcorpusId?: number
+    semanticBreak?: string
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?:
+      | 'conservative_log_ratio'
+      | 'O11'
+      | 'E11'
+      | 'ipm'
+      | 'ipm_expected'
+      | 'log_likelihood'
+      | 'z_score'
+      | 't_score'
+      | 'simple_ll'
+      | 'dice'
+      | 'log_ratio'
+      | 'min_sensitivity'
+      | 'liddell'
+      | 'mutual_information'
+      | 'local_mutual_information'
+    pageSize?: number
+    pageNumber?: number
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-collocations',
+      String(constellationId),
+      String(corpusId),
+      semanticMapId,
+      subcorpusId,
+      p,
+      window,
+      semanticBreak,
+      sortOrder,
+      sortBy,
+      pageSize,
+      pageNumber,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getConstellationIdcorpusCorpus_idcollocation({
+        params: { id: String(constellationId), corpus_id: String(corpusId) },
+        queries: {
+          p,
+          window,
+          semantic_map_id: semanticMapId,
+          subcorpus_id: subcorpusId,
+          s_break: semanticBreak,
+          sort_order: sortOrder,
+          sort_by: sortBy,
+          page_size: pageSize,
+          page_number: pageNumber,
+        },
+        signal,
+      }),
+    select: (data) => {
+      return data
+    },
   })
 
 export const deleteConstellationDiscoursemeMutationOptions: MutationOptions<

@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils'
 import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationFilter } from './-constellation-filter'
+import { Collocation } from './-constellation-collocation'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations/$constellationId',
@@ -155,7 +156,8 @@ function ConstellationDetail() {
       />
       {corpusId !== undefined && (
         <>
-          <ConstellationFilter corpusId={corpusId} />
+          <ConstellationFilter className="sticky top-14 bg-background" />
+          <Collocation constellationId={parseInt(constellationId)} />
           <div className="sticky bottom-0 right-0 -mx-2 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 border-t-muted bg-background p-4 [box-shadow:0_-5px_10px_-10px_black]">
             <Button
               variant="outline"
