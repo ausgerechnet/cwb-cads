@@ -280,6 +280,24 @@ export const corpusList = queryOptions({
   queryFn: ({ signal }) => apiClient.getCorpus({ signal }),
 })
 
+export const subcorporaList = queryOptions({
+  queryKey: ['subcorpora'],
+  queryFn: async ({ signal }) => {
+    const corpora = await apiClient.getCorpus({ signal })
+    return (
+      await Promise.all(
+        corpora.map(
+          async (corpus) =>
+            apiClient.getCorpusIdsubcorpus({
+              params: { id: corpus.id?.toString() ?? '' },
+            }),
+          signal,
+        ),
+      )
+    ).flat()
+  },
+})
+
 export const subcorpusById = (corpusId: string) =>
   queryOptions({
     queryKey: ['subcorpora', corpusId],
