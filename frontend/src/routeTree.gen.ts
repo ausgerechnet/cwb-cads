@@ -16,6 +16,7 @@ import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
 import { Route as AppConstellationsRouteImport } from './routes/_app/constellations/route'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
+import { Route as AppSubcorporaSubcorpusIdImport } from './routes/_app/subcorpora_/$subcorpusId'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
@@ -113,6 +114,13 @@ const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
   import('./routes/_app/subcorpora_/new.lazy').then((d) => d.Route),
+)
+
+const AppSubcorporaSubcorpusIdRoute = AppSubcorporaSubcorpusIdImport.update({
+  path: '/subcorpora/$subcorpusId',
+  getParentRoute: () => AppRoute,
+} as any).lazy(() =>
+  import('./routes/_app/subcorpora_/$subcorpusId.lazy').then((d) => d.Route),
 )
 
 const AppQueriesNewRoute = AppQueriesNewImport.update({
@@ -234,6 +242,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppQueriesNewImport
       parentRoute: typeof AppImport
     }
+    '/_app/subcorpora/$subcorpusId': {
+      preLoaderRoute: typeof AppSubcorporaSubcorpusIdImport
+      parentRoute: typeof AppImport
+    }
     '/_app/subcorpora/new': {
       preLoaderRoute: typeof AppSubcorporaNewImport
       parentRoute: typeof AppImport
@@ -266,6 +278,7 @@ export const routeTree = rootRoute.addChildren([
     AppConstellationsNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
     AppQueriesNewRoute,
+    AppSubcorporaSubcorpusIdRoute,
     AppSubcorporaNewRoute,
     AppDiscoursemesNewLazyRoute,
     AppQueriesQueryIdCollocationAnalysisRoute,

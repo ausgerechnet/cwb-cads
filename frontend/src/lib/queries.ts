@@ -287,6 +287,17 @@ export const subcorpusById = (corpusId: string) =>
       apiClient.getCorpusIdsubcorpus({ params: { id: corpusId }, signal }),
   })
 
+export const createSubcorpus: MutationOptions<
+  z.infer<typeof schemas.SubCorpusOut>,
+  Error,
+  z.infer<typeof schemas.SubCorpusIn> & { corpus_id: number }
+> = {
+  mutationFn: async ({ corpus_id, ...args }) =>
+    apiClient.putCorpusIdsubcorpus(args, {
+      params: { id: corpus_id.toString() },
+    }),
+}
+
 export const updateSubcorpus: MutationOptions<unknown, Error, string> = {
   // TODO: implement correct API call
   mutationFn: async (id: string) => '42 ' + id,
@@ -295,6 +306,31 @@ export const updateSubcorpus: MutationOptions<unknown, Error, string> = {
     queryClient.invalidateQueries(corpusList)
   },
 }
+
+export const corpusMetaById = (corpusId: number) =>
+  queryOptions({
+    queryKey: ['corpus-meta', corpusId],
+    queryFn: ({ signal }) =>
+      apiClient.getCorpusIdmeta({
+        params: { id: corpusId.toString() },
+        signal,
+      }),
+  })
+
+export const corpusMetaFrequencies = (
+  corpusId: number,
+  level: string,
+  key: string,
+) =>
+  queryOptions({
+    queryKey: ['corpus-meta-frequencies', corpusId, level, key],
+    queryFn: ({ signal }) =>
+      apiClient.getCorpusIdmetafrequencies({
+        params: { id: corpusId.toString() },
+        queries: { level, key },
+        signal,
+      }),
+  })
 
 // ==================== USERS ====================
 
