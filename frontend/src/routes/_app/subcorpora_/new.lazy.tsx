@@ -1,3 +1,4 @@
+import { toast } from 'sonner'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
@@ -109,6 +110,10 @@ function SubcorpusNew() {
         to: '/subcorpora/$subcorpusId',
         params: { subcorpusId: String(data?.id) },
       })
+    },
+    onError: (...args) => {
+      createSubcorpus.onError?.(...args)
+      toast.error('Failed to create subcorpus')
     },
   })
   const isDisabled = isLoadingMeta || isLoadingFrequencies || isPending
