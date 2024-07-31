@@ -62,7 +62,7 @@ export function DiscoursemeForm({
         onSubmit={form.handleSubmit((discourseme) =>
           postNewDiscourseme({
             name: discourseme.name,
-            description: discourseme.description,
+            comment: discourseme.description,
             template: discourseme.surfaces.map((surface) => ({
               surface,
               cqp_query: '',

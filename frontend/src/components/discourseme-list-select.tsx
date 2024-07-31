@@ -36,7 +36,7 @@ export function DiscoursemeListSelect({
           <Small className="mx-0 my-auto flex-grow">
             {discourseme.name}
             <span className="mt-1 block text-muted-foreground">
-              {discourseme.description}
+              {discourseme.comment}
             </span>
           </Small>
           <Button

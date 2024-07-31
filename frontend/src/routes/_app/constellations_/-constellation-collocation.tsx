@@ -2,7 +2,10 @@ import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
-import { queryConstellationCollocationOptions } from '@/lib/queries'
+import {
+  getCollocationItems,
+  queryConstellationCollocationOptions,
+} from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { ErrorMessage } from '@/components/error-message'
 import {
@@ -50,7 +53,11 @@ export function Collocation({ constellationId }: { constellationId: number }) {
     semanticMapId,
     subcorpusId,
   } = searchParams
-  const { data, isLoading, error } = useQuery({
+  const {
+    data,
+    isLoading: isLoadingConstellation,
+    error,
+  } = useQuery({
     ...queryConstellationCollocationOptions(
       constellationId,
       // This component only renders if corpusId exists
@@ -62,16 +69,26 @@ export function Collocation({ constellationId }: { constellationId: number }) {
         semanticMapId,
         subcorpusId,
         semanticBreak,
-        sortOrder: ccSortOrder,
-        sortBy: ccSortBy,
-        pageSize: ccPageSize,
-        pageNumber: ccPageNumber,
       },
     ),
     // keep previous data
     placeholderData: (p) => p,
     enabled: Boolean(filterItemPAtt),
   })
+  const {
+    data: dataItems,
+    isLoading: isLoadingItems,
+    error: errorConstellation,
+  } = useQuery({
+    ...getCollocationItems(data?.constellation_id as number, {
+      sortBy: ccSortBy,
+      sortOrder: ccSortOrder,
+      pageSize: ccPageSize,
+      pageNumber: ccPageNumber,
+    }),
+    enabled: Boolean(data?.constellation_id),
+  })
+  const isLoading = isLoadingItems || isLoadingConstellation
   const navigate = useNavigate()
   const setSearch = useCallback(
     (key: string, value?: string | number | boolean) => {
@@ -88,6 +105,7 @@ export function Collocation({ constellationId }: { constellationId: number }) {
   return (
     <div>
       <ErrorMessage error={error} />
+      <ErrorMessage error={errorConstellation} />
       <Table>
         <TableHeader>
           <TableCell>Item</TableCell>
@@ -105,7 +123,7 @@ export function Collocation({ constellationId }: { constellationId: number }) {
               </TableRow>
             </Repeat>
           )}
-          {(data?.items ?? []).map(({ item, scores = [] }) => (
+          {(dataItems?.items ?? []).map(({ item, scores = [] }) => (
             <TableRow key={item} className={cn(isLoading && 'animate-pulse')}>
               <TableCell>
                 <Button onClick={() => setSearch('filterItem', item)}>
@@ -122,11 +140,11 @@ export function Collocation({ constellationId }: { constellationId: number }) {
         </TableBody>
       </Table>
       <Pagination
-        totalRows={data?.nr_items ?? 0}
+        totalRows={dataItems?.nr_items ?? 0}
         setPageSize={(size) => setSearch('ccPageSize', size)}
         setPageIndex={(index) => setSearch('ccPageNumber', index)}
         pageIndex={ccPageNumber ?? 0}
-        pageCount={data?.page_count ?? 0}
+        pageCount={dataItems?.page_count ?? 0}
         pageSize={ccPageSize}
       />
     </div>

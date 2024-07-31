@@ -105,9 +105,9 @@ function Discourseme({
       <Headline3 className="mb-2 text-lg leading-normal">Discourseme</Headline3>
       <div className="flex flex-col text-sm">
         <span className="font-bold">{discourseme.name}</span>
-        {discourseme.description && (
+        {discourseme.comment && (
           <p className="col-span-full text-muted-foreground">
-            {discourseme.description}
+            {discourseme.comment}
           </p>
         )}
         <span className="mt-2 font-bold">Items</span>

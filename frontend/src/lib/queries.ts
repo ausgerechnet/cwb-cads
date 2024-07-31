@@ -203,7 +203,7 @@ export const queryConcordancesQueryOptions = (
 //   })
 
 export const queryConcordancesShuffleMutationOptions: MutationOptions<
-  { query_id?: number },
+  z.infer<typeof schemas.QueryOut>,
   Error,
   string
 > = {
@@ -213,7 +213,8 @@ export const queryConcordancesShuffleMutationOptions: MutationOptions<
     }),
   onSuccess: (data) => {
     const queryId =
-      data.query_id === undefined ? undefined : data.query_id.toString()
+      // TODO: QueryOut should have more mandatory fields
+      data.query_id === undefined ? undefined : (data.id ?? '').toString()
     if (queryId === undefined) return
     queryClient.invalidateQueries(queryConcordancesQueryOptions(queryId))
   },
@@ -224,38 +225,21 @@ export const queryCollocation = (
   p: string,
   window: number,
   {
-    constellation_id,
-    semantic_map_id,
-    subcorpus_id,
-    s_break,
-    sort_order,
-    sort_by,
-    page_size,
-    page_number,
+    constellationId,
+    semanticMapId,
+    sBreak,
+    marginals,
+    filterItem,
+    filterItemPAtt,
+    filterDiscoursemeIds = [],
   }: {
-    constellation_id?: number | undefined
-    semantic_map_id?: number | undefined
-    subcorpus_id?: number | undefined
-    s_break?: string | undefined
-    sort_order?: 'ascending' | 'descending'
-    sort_by?:
-      | 'conservative_log_ratio'
-      | 'O11'
-      | 'E11'
-      | 'ipm'
-      | 'ipm_expected'
-      | 'log_likelihood'
-      | 'z_score'
-      | 't_score'
-      | 'simple_ll'
-      | 'dice'
-      | 'log_ratio'
-      | 'min_sensitivity'
-      | 'liddell'
-      | 'mutual_information'
-      | 'local_mutual_information'
-    page_size?: number | undefined
-    page_number?: number | undefined
+    constellationId?: number | undefined
+    semanticMapId?: number | undefined
+    sBreak?: string | undefined
+    marginals?: 'local' | 'global' | undefined
+    filterItem?: string
+    filterItemPAtt?: string
+    filterDiscoursemeIds?: number[] | undefined
   } = {},
 ) =>
   queryOptions({
@@ -264,14 +248,13 @@ export const queryCollocation = (
       queryId,
       p,
       window,
-      constellation_id,
-      semantic_map_id,
-      subcorpus_id,
-      s_break,
-      sort_order,
-      sort_by,
-      page_size,
-      page_number,
+      constellationId,
+      semanticMapId,
+      sBreak,
+      marginals,
+      filterItem,
+      filterItemPAtt,
+      filterDiscoursemeIds,
     ],
     queryFn: ({ signal }) =>
       apiClient.getQueryQuery_idcollocation({
@@ -279,14 +262,13 @@ export const queryCollocation = (
         queries: {
           p,
           window,
-          constellation_id,
-          semantic_map_id,
-          subcorpus_id,
-          s_break,
-          sort_order,
-          sort_by,
-          page_size,
-          page_number,
+          constellation_id: constellationId,
+          semantic_map_id: semanticMapId,
+          s_break: sBreak,
+          marginals,
+          filter_item: filterItem,
+          filter_item_p_att: filterItemPAtt,
+          filter_discourseme_ids: filterDiscoursemeIds,
         },
         signal,
       }),
@@ -515,35 +497,20 @@ export const queryConstellationCollocationOptions = (
     semanticBreak,
     semanticMapId,
     subcorpusId,
-    sortOrder,
-    sortBy,
-    pageSize,
-    pageNumber,
+    marginals,
+    filterItem,
+    filterItemPAtt,
+    filterDiscoursemeIds,
   }: {
     p: string
     window: number
     semanticMapId?: number
     subcorpusId?: number
     semanticBreak?: string
-    sortOrder?: 'ascending' | 'descending'
-    sortBy?:
-      | 'conservative_log_ratio'
-      | 'O11'
-      | 'E11'
-      | 'ipm'
-      | 'ipm_expected'
-      | 'log_likelihood'
-      | 'z_score'
-      | 't_score'
-      | 'simple_ll'
-      | 'dice'
-      | 'log_ratio'
-      | 'min_sensitivity'
-      | 'liddell'
-      | 'mutual_information'
-      | 'local_mutual_information'
-    pageSize?: number
-    pageNumber?: number
+    marginals?: 'local' | 'global'
+    filterItem?: string
+    filterItemPAtt?: string
+    filterDiscoursemeIds?: number[]
   },
 ) =>
   queryOptions({
@@ -556,10 +523,10 @@ export const queryConstellationCollocationOptions = (
       p,
       window,
       semanticBreak,
-      sortOrder,
-      sortBy,
-      pageSize,
-      pageNumber,
+      marginals,
+      filterItem,
+      filterItemPAtt,
+      filterDiscoursemeIds,
     ],
     queryFn: ({ signal }) =>
       apiClient.getConstellationIdcorpusCorpus_idcollocation({
@@ -570,10 +537,10 @@ export const queryConstellationCollocationOptions = (
           semantic_map_id: semanticMapId,
           subcorpus_id: subcorpusId,
           s_break: semanticBreak,
-          sort_order: sortOrder,
-          sort_by: sortBy,
-          page_size: pageSize,
-          page_number: pageNumber,
+          marginals,
+          filter_item: filterItem,
+          filter_item_p_att: filterItemPAtt,
+          filter_discourseme_ids: filterDiscoursemeIds,
         },
         signal,
       }),
@@ -645,21 +612,60 @@ export const addConstellationDiscoursemeMutationOptions: MutationOptions<
 }
 // ==================== COLLOCATIONS ====================
 
-/**
- * @deprecated
- */
-export const collocationsQueryOptions = queryOptions({
-  queryKey: ['collocations'],
-  queryFn: async () => null, // apiClient.getCollocationId({ signal }),
-})
+export const getCollocation = (id: number) =>
+  queryOptions({
+    queryKey: ['collocation', id],
+    queryFn: ({ signal }) =>
+      apiClient.getCollocationId({ params: { id: id.toString() }, signal }),
+  })
 
-/**
- * @deprecated
- */
-export const postCollocationQueryMutationOptions: MutationOptions<
-  null,
-  Error,
-  null
-> = {
-  mutationFn: async () => null,
-}
+export const getCollocationItems = (
+  id: number,
+  {
+    sortOrder,
+    sortBy,
+    pageSize,
+    pageNumber,
+  }: {
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?:
+      | 'conservative_log_ratio'
+      | 'O11'
+      | 'E11'
+      | 'ipm'
+      | 'ipm_expected'
+      | 'log_likelihood'
+      | 'z_score'
+      | 't_score'
+      | 'simple_ll'
+      | 'dice'
+      | 'log_ratio'
+      | 'min_sensitivity'
+      | 'liddell'
+      | 'mutual_information'
+      | 'local_mutual_information'
+    pageSize?: number
+    pageNumber?: number
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'collocation-items',
+      id,
+      sortOrder,
+      sortBy,
+      pageSize,
+      pageNumber,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getCollocationIditems({
+        params: { id: id.toString() },
+        queries: {
+          sort_order: sortOrder,
+          sort_by: sortBy,
+          page_size: pageSize,
+          page_number: pageNumber,
+        },
+        signal,
+      }),
+  })
