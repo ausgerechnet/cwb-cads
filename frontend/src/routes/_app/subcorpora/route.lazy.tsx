@@ -4,11 +4,7 @@ import { z } from 'zod'
 import { Loader2, Plus } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
-import {
-  subcorporaQueryOptions,
-  putSubcorpusMutationOptions,
-  corporaQueryOptions,
-} from '@/lib/queries'
+import { subcorpusById, updateSubcorpus, corpusList } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
@@ -20,7 +16,7 @@ export const Route = createLazyFileRoute('/_app/subcorpora')({
 })
 
 function Subcorpora() {
-  const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
+  const { data: corpora } = useSuspenseQuery(corpusList)
 
   return (
     <AppPageFrame
@@ -43,12 +39,12 @@ function Corpus({ corpus }: { corpus: z.infer<typeof schemas.CorpusOut> }) {
     data: subcorpora,
     isLoading,
     error,
-  } = useQuery(subcorporaQueryOptions(corpusId))
+  } = useQuery(subcorpusById(corpusId))
   const {
     mutate: newSubcorpus,
     isPending,
     error: putError,
-  } = useMutation(putSubcorpusMutationOptions)
+  } = useMutation(updateSubcorpus)
   return (
     <div className="my-4">
       {corpus.name}

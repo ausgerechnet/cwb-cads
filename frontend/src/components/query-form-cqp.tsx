@@ -6,11 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
-import {
-  corporaQueryOptions,
-  discoursemesQueryOptions,
-  postQueryMutationOptions,
-} from '@/lib/queries'
+import { corpusList, discoursemesList, createQueryCQP } from '@/lib/queries'
 import {
   Form,
   FormControl,
@@ -52,7 +48,7 @@ export function QueryFormCQP({
   onSuccess?: (queryId: number) => void
 }) {
   const [{ data: corpora }, { data: discoursemes }] = useSuspenseQueries({
-    queries: [corporaQueryOptions, discoursemesQueryOptions],
+    queries: [corpusList, discoursemesList],
   })
 
   const form = useForm<z.infer<typeof InputCQP>>({
@@ -73,15 +69,15 @@ export function QueryFormCQP({
     isSuccess,
     error,
   } = useMutation({
-    ...postQueryMutationOptions,
+    ...createQueryCQP,
     onSuccess: (data, variables, context) => {
-      postQueryMutationOptions.onSuccess?.(data, variables, context)
+      createQueryCQP.onSuccess?.(data, variables, context)
       const queryId = data.id
       toast.success('Query created')
       typeof queryId === 'number' && onSuccess?.(queryId)
     },
     onError: (error, variables, context) => {
-      postQueryMutationOptions.onError?.(error, variables, context)
+      createQueryCQP.onError?.(error, variables, context)
       toast.error('Failed to create query')
     },
   })

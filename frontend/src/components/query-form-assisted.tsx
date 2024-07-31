@@ -7,9 +7,9 @@ import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
 import {
-  corporaQueryOptions,
-  discoursemesQueryOptions,
-  postQueryAssistedMutationOptions,
+  corpusList,
+  discoursemesList,
+  createQueryAssisted,
 } from '@/lib/queries'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
@@ -59,7 +59,7 @@ export function QueryFormAssisted({
   onSuccess?: (queryId: number) => void
 }) {
   const [{ data: corpora }, { data: discoursemes }] = useSuspenseQueries({
-    queries: [corporaQueryOptions, discoursemesQueryOptions],
+    queries: [corpusList, discoursemesList],
   })
 
   const form = useForm<z.infer<typeof InputAssisted>>({
@@ -79,15 +79,15 @@ export function QueryFormAssisted({
     isPending,
     error,
   } = useMutation({
-    ...postQueryAssistedMutationOptions,
+    ...createQueryAssisted,
     onSuccess: (data, variables, context) => {
-      postQueryAssistedMutationOptions.onSuccess?.(data, variables, context)
+      createQueryAssisted.onSuccess?.(data, variables, context)
       const queryId = data.id
       toast.success('Query created')
       typeof queryId === 'number' && onSuccess?.(queryId)
     },
     onError: (...args) => {
-      postQueryAssistedMutationOptions.onError?.(...args)
+      createQueryAssisted.onError?.(...args)
       toast.error('Failed to create query')
     },
   })

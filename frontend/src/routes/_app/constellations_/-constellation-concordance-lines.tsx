@@ -6,10 +6,7 @@ import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
 import { cn } from '@/lib/utils'
-import {
-  corpusQueryOptions,
-  queryConcordancesConstellationOptions,
-} from '@/lib/queries'
+import { corpusById, constellationConcordances } from '@/lib/queries'
 import { formatNumber } from '@/lib/format-number'
 import {
   Table,
@@ -42,7 +39,7 @@ export function ConstellationConcordanceLines({
   corpusId: number
   className?: string
 }) {
-  const { data: corpus } = useQuery(corpusQueryOptions(corpusId as number))
+  const { data: corpus } = useQuery(corpusById(corpusId as number))
   const navigate = useNavigate()
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
@@ -73,7 +70,7 @@ export function ConstellationConcordanceLines({
     error,
     // refetch: refetchConcordanceLines,
   } = useQuery(
-    queryConcordancesConstellationOptions(constellationId, corpusId, {
+    constellationConcordances(constellationId, corpusId, {
       primary,
       secondary,
       window: windowSize,

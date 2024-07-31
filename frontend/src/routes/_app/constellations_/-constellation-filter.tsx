@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
-import { corpusQueryOptions } from '@/lib/queries'
+import { corpusById } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 
@@ -33,7 +33,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
   } = searchParams
 
   // This is only rendered if corpusId actually exists
-  const { data: corpus } = useQuery(corpusQueryOptions(corpusId as number))
+  const { data: corpus } = useQuery(corpusById(corpusId as number))
   const contextBreakList = corpus?.s_atts ?? emptyArray
   const pAttributes = corpus?.p_atts ?? emptyArray
   const primary = searchParams.primary ?? pAttributes[0]

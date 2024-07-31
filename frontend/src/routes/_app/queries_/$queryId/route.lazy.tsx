@@ -15,11 +15,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 
 import { schemas } from '@/rest-client'
-import {
-  discoursemesQueryOptions,
-  patchQueryMutationOptions,
-  queryQueryOptions,
-} from '@/lib/queries'
+import { discoursemesList, patchQuery, queryById } from '@/lib/queries'
 import { errorString } from '@/lib/error-string'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -40,7 +36,7 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 function SingleQuery() {
   const { queryId } = Route.useParams()
   const { query, queryDiscourseme } = useSuspenseQueries({
-    queries: [queryQueryOptions(queryId), discoursemesQueryOptions],
+    queries: [queryById(queryId), discoursemesList],
     combine: ([query, discoursemes]) => {
       const queryDiscourseme = discoursemes.data?.find(
         (discourseme) => discourseme.id === query.data?.discourseme_id,
@@ -123,18 +119,18 @@ function Discourseme({
 
 function AttachDiscourseme() {
   const { queryId } = Route.useParams()
-  const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)
+  const { data: discoursemes } = useSuspenseQuery(discoursemesList)
   const [discoursemeId, setDiscoursemeId] = useState<number | undefined>()
   const router = useRouter()
   const { mutate, isPending, error } = useMutation({
-    ...patchQueryMutationOptions,
+    ...patchQuery,
     onSuccess: (...args) => {
-      patchQueryMutationOptions.onSuccess?.(...args)
+      patchQuery.onSuccess?.(...args)
       router.invalidate()
       toast.success('Discourseme attached')
     },
     onError: (...args) => {
-      patchQueryMutationOptions.onError?.(...args)
+      patchQuery.onError?.(...args)
       toast.error('Failed to attach discourseme')
     },
   })

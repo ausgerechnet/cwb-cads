@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { discoursemeQueryOptions } from '@/lib/queries'
+import { discoursemeById } from '@/lib/queries'
 
 export const Route = createFileRoute('/_app/discoursemes/$discoursemeId')({
   loader: ({ context: { queryClient }, params: { discoursemeId } }) =>
-    queryClient.ensureQueryData(discoursemeQueryOptions(discoursemeId)),
+    queryClient.ensureQueryData(discoursemeById(discoursemeId)),
 })

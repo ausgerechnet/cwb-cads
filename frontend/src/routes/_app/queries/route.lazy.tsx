@@ -12,11 +12,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 
 import { cn } from '@/lib/utils'
-import {
-  deleteQueryMutationOptions,
-  discoursemeQueryOptions,
-  queriesQueryOptions,
-} from '@/lib/queries'
+import { deleteQuery, discoursemeById, queriesList } from '@/lib/queries'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
@@ -36,7 +32,7 @@ export const Route = createLazyFileRoute('/_app/queries')({
 })
 
 function Queries() {
-  const { data: queries } = useSuspenseQuery(queriesQueryOptions)
+  const { data: queries } = useSuspenseQuery(queriesList)
   const navigate = useNavigate()
   return (
     <QueriesLayout>
@@ -106,7 +102,7 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
       const discoursemeId = cell.row.original.discourseme_id ?? null
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const { data, isLoading } = useQuery({
-        ...discoursemeQueryOptions(discoursemeId?.toString() as string),
+        ...discoursemeById(discoursemeId?.toString() as string),
         enabled: discoursemeId !== null,
       })
       if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />
@@ -143,14 +139,14 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
 function QuickActions({ queryId }: { queryId: string }) {
   const router = useRouter()
   const { mutate, isPending, isSuccess } = useMutation({
-    ...deleteQueryMutationOptions,
+    ...deleteQuery,
     onSuccess: (...args) => {
-      deleteQueryMutationOptions.onSuccess?.(...args)
+      deleteQuery.onSuccess?.(...args)
       router.invalidate()
       toast.success('Query deleted')
     },
     onError: (...args) => {
-      deleteQueryMutationOptions.onError?.(...args)
+      deleteQuery.onError?.(...args)
       toast.error('An error occurred while deleting the query')
     },
   })

@@ -11,10 +11,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import {
-  constellationListQueryOptions,
-  deleteConstellationMutationOptions,
-} from '@/lib/queries'
+import { constellationList, deleteConstellation } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { DataTable, SortButton } from '@/components/data-table'
@@ -31,7 +28,7 @@ export const Route = createLazyFileRoute('/_app/constellations')({
 })
 
 function ConstellationOverview() {
-  const { data = [] } = useSuspenseQuery(constellationListQueryOptions)
+  const { data = [] } = useSuspenseQuery(constellationList)
   const navigate = useNavigate()
   return (
     <AppPageFrame
@@ -100,14 +97,14 @@ function QuickActions({
 }) {
   const router = useRouter()
   const { mutate, isPending, isSuccess } = useMutation({
-    ...deleteConstellationMutationOptions,
+    ...deleteConstellation,
     onSuccess: (...args) => {
-      deleteConstellationMutationOptions.onSuccess?.(...args)
+      deleteConstellation.onSuccess?.(...args)
       router.invalidate()
       toast.success('Constellation deleted')
     },
     onError: (...args) => {
-      deleteConstellationMutationOptions.onError?.(...args)
+      deleteConstellation.onError?.(...args)
       toast.error('An error occurred while deleting the constellation')
     },
   })

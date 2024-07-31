@@ -7,10 +7,10 @@ import { ChevronsDownUp, ChevronsUpDown, Loader2, Shuffle } from 'lucide-react'
 import { schemas } from '@/rest-client'
 import { cn } from '@/lib/utils'
 import {
-  corpusQueryOptions,
-  queryConcordancesQueryOptions,
-  queryConcordancesShuffleMutationOptions,
-  queryQueryOptions,
+  corpusById,
+  queryConcordances,
+  shuffleQueryConcordances,
+  queryById,
 } from '@/lib/queries'
 import { formatNumber } from '@/lib/format-number'
 import {
@@ -52,9 +52,9 @@ export function ConcordanceLines({
   queryId: string
   className?: string
 }) {
-  const { data: query } = useSuspenseQuery(queryQueryOptions(queryId))
+  const { data: query } = useSuspenseQuery(queryById(queryId))
   const { data: corpus } = useQuery({
-    ...corpusQueryOptions(query.corpus_id as number),
+    ...corpusById(query.corpus_id as number),
     enabled: query?.corpus_id !== undefined,
   })
   const navigate = useNavigate()
@@ -91,7 +91,7 @@ export function ConcordanceLines({
     error,
     refetch: refetchConcordanceLines,
   } = useQuery(
-    queryConcordancesQueryOptions(queryId, {
+    queryConcordances(queryId, {
       primary,
       secondary,
       window: windowSize,
@@ -104,7 +104,7 @@ export function ConcordanceLines({
     }),
   )
   const { mutate: shuffle, isPending: isShuffling } = useMutation({
-    ...queryConcordancesShuffleMutationOptions,
+    ...shuffleQueryConcordances,
     onSettled: () => refetchConcordanceLines(),
   })
 

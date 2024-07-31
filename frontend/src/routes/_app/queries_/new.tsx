@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { corporaQueryOptions, discoursemesQueryOptions } from '@/lib/queries'
+import { corpusList, discoursemesList } from '@/lib/queries'
 
 const FormMode = z.enum(['cqp', 'assisted']).optional()
 
@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_app/queries/new')({
   }),
   loader: ({ context: { queryClient } }) =>
     Promise.all([
-      queryClient.ensureQueryData(corporaQueryOptions),
-      queryClient.ensureQueryData(discoursemesQueryOptions),
+      queryClient.ensureQueryData(corpusList),
+      queryClient.ensureQueryData(discoursemesList),
     ]),
 })

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { corporaQueryOptions } from '@/lib/queries'
+import { corpusList } from '@/lib/queries'
 
 export const Route = createFileRoute('/_app/subcorpora/new')({
   loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(corporaQueryOptions),
+    queryClient.ensureQueryData(corpusList),
 })

@@ -2,10 +2,7 @@ import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
-import {
-  getCollocationItems,
-  queryConstellationCollocationOptions,
-} from '@/lib/queries'
+import { getCollocationItems, constellationCollocation } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { ErrorMessage } from '@/components/error-message'
 import {
@@ -58,7 +55,7 @@ export function Collocation({ constellationId }: { constellationId: number }) {
     isLoading: isLoadingConstellation,
     error,
   } = useQuery({
-    ...queryConstellationCollocationOptions(
+    ...constellationCollocation(
       constellationId,
       // This component only renders if corpusId exists
       corpusId as number,

@@ -27,11 +27,11 @@ import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
 import {
-  addConstellationDiscoursemeMutationOptions,
-  constellationQueryOptions,
-  corporaQueryOptions,
-  deleteConstellationDiscoursemeMutationOptions,
-  discoursemesQueryOptions,
+  addConstellationDiscourseme,
+  constellationById,
+  corpusList,
+  deleteConstellationDiscourseme,
+  discoursemesList,
 } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { schemas } from '@/rest-client'
@@ -63,12 +63,12 @@ function ConstellationDetail() {
       filter_discoursemes: filterDiscoursemes = [],
       highlight_discoursemes: highlightDiscoursemes = [],
     },
-  } = useSuspenseQuery(constellationQueryOptions(constellationId))
+  } = useSuspenseQuery(constellationById(constellationId))
   const { mutate: addDiscourseme, isPending } = useMutation(
-    addConstellationDiscoursemeMutationOptions,
+    addConstellationDiscourseme,
   )
-  const { data: discoursemes = [] } = useQuery(discoursemesQueryOptions)
-  const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
+  const { data: discoursemes = [] } = useQuery(discoursemesList)
+  const { data: corpora } = useSuspenseQuery(corpusList)
   const [isEditMode, setIsEditMode] = useState(false)
   const nonSelectedDiscoursemes = useMemo(
     () =>
@@ -212,11 +212,8 @@ function DiscoursemeItem({
   isEditable: boolean
 }) {
   const discoursemeId = discourseme.id as number // TODO: Fix this type cast
-  const { mutate, error } = useMutation(
-    deleteConstellationDiscoursemeMutationOptions,
-  )
-  const isMutating =
-    useIsMutating(deleteConstellationDiscoursemeMutationOptions) > 0
+  const { mutate, error } = useMutation(deleteConstellationDiscourseme)
+  const isMutating = useIsMutating(deleteConstellationDiscourseme) > 0
 
   return (
     <li

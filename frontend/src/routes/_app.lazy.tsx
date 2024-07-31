@@ -18,7 +18,7 @@ import {
 import { Outlet, createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 
-import { sessionQueryOptions } from '@/lib/queries'
+import { usersList } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -38,7 +38,7 @@ function App() {
   // TODO: Endpoint does not return user role right now.
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const isAdmin = useQuery(sessionQueryOptions)?.data?.username === 'admin'
+  const isAdmin = useQuery(usersList)?.data?.username === 'admin'
   const [isSmall, setIsSmall] = useState(
     localStorage.getItem('small-menu') === 'true',
   )

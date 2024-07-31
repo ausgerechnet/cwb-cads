@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { corporaQueryOptions, putSubcorpusMutationOptions } from '@/lib/queries'
+import { corpusList, updateSubcorpus } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { CorpusSelect } from '@/components/select-corpus'
 import {
@@ -32,11 +32,11 @@ const SubcorpusPut = z.object({
 type SubcorpusPut = z.infer<typeof SubcorpusPut>
 
 function SubcorpusNew() {
-  const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
+  const { data: corpora } = useSuspenseQuery(corpusList)
   const form = useForm<SubcorpusPut>({
     resolver: zodResolver(SubcorpusPut),
   })
-  const { mutate, isPending, error } = useMutation(putSubcorpusMutationOptions)
+  const { mutate, isPending, error } = useMutation(updateSubcorpus)
 
   return (
     <AppPageFrame title="New Subcorpus">

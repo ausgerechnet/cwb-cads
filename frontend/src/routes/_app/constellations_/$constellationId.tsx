@@ -1,4 +1,4 @@
-import { constellationQueryOptions, corporaQueryOptions } from '@/lib/queries'
+import { constellationById, corpusList } from '@/lib/queries'
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 
@@ -52,7 +52,7 @@ export const Route = createFileRoute('/_app/constellations/$constellationId')({
   }),
   loader: ({ context: { queryClient }, params: { constellationId } }) =>
     Promise.all([
-      queryClient.ensureQueryData(constellationQueryOptions(constellationId)),
-      queryClient.ensureQueryData(corporaQueryOptions),
+      queryClient.ensureQueryData(constellationById(constellationId)),
+      queryClient.ensureQueryData(corpusList),
     ]),
 })
