@@ -314,6 +314,10 @@ export const createSubcorpus: MutationOptions<
     apiClient.putCorpusIdsubcorpus(args, {
       params: { id: corpus_id.toString() },
     }),
+  onSuccess: () => {
+    queryClient.invalidateQueries(corpusList)
+    queryClient.invalidateQueries(subcorporaList)
+  },
 }
 
 export const updateSubcorpus: MutationOptions<unknown, Error, string> = {
@@ -322,6 +326,7 @@ export const updateSubcorpus: MutationOptions<unknown, Error, string> = {
   //   apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
   onSuccess: () => {
     queryClient.invalidateQueries(corpusList)
+    queryClient.invalidateQueries(subcorporaList)
   },
 }
 
