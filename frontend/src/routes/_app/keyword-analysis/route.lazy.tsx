@@ -23,7 +23,7 @@ function KeywordAnalysisList() {
       title="Keyword Analysis"
       cta={{
         nav: { to: '/keyword-analysis/new' },
-        label: 'New Keyword Analysis',
+        label: 'New Keyword Analyses',
       }}
     >
       {!hasKeywordAnalysis && (
@@ -43,8 +43,8 @@ function KeywordAnalysisList() {
         </div>
       )}
       {
-        <div className="white-space-pre rounded-lg bg-muted p-2 font-mono text-muted-foreground">
-          {JSON.stringify(keywordAnalysisList)}
+        <div className="whitespace-pre rounded-lg bg-muted p-2 font-mono text-muted-foreground">
+          {JSON.stringify(keywordAnalysisList, null, 2)}
         </div>
       }
     </AppPageFrame>

@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { apiClient, queryClient, schemas } from '@/rest-client'
 
 // ==================== QUERIES ====================
-// "queries" as in "cqp queries", but "query" as in "react-query"
 export const queriesList = queryOptions({
   queryKey: ['queries'],
   queryFn: ({ signal }) => apiClient.getQuery({ signal }),
@@ -150,49 +149,6 @@ export const queryConcordances = (
       }),
     staleTime: 1_000 * 60 * 5, // 5 minutes
   })
-
-// export const queryConcordanceContextQueryOptions = (
-//   queryId: string,
-//   concordanceLineId: string,
-//   {
-//     window,
-//     extendedWindow: extended_window,
-//     extendedContextBreak: extended_context_break,
-//     primary,
-//     secondary,
-//   }: {
-//     window?: number
-//     extendedWindow?: number
-//     extendedContextBreak?: string
-//     primary?: string
-//     secondary?: string
-//   } = {},
-// ) =>
-//   queryOptions({
-//     queryKey: [
-//       'query-concordance-context',
-//       queryId,
-//       concordanceLineId,
-//       window,
-//       extended_window,
-//       extended_context_break,
-//       primary,
-//       secondary,
-//     ],
-//     queryFn: ({ signal }) =>
-//       apiClient.getQueryQuery_idconcordanceId({
-//         params: { query_id: queryId, id: concordanceLineId },
-//         queries: {
-//           window,
-//           extended_window,
-//           extended_context_break,
-//           primary,
-//           secondary,
-//         },
-//         signal,
-//       }),
-//     staleTime: 1_000 * 60 * 5, // 5 minutes
-//   })
 
 export const shuffleQueryConcordances: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
@@ -715,3 +671,24 @@ export const keywordAnalysesList = queryOptions({
   queryKey: ['keyword-analyses-list'],
   queryFn: ({ signal }) => apiClient.getKeyword({ signal }),
 })
+
+export const keywordAnalysisById = (keywordAnalysisId: number) =>
+  queryOptions({
+    queryKey: ['keyword-analysis', keywordAnalysisId],
+    queryFn: ({ signal }) =>
+      apiClient.getKeywordId({
+        params: { id: keywordAnalysisId.toString() },
+        signal,
+      }),
+  })
+
+export const createKeywordAnalysis: MutationOptions<
+  z.infer<typeof schemas.KeywordOut>,
+  Error,
+  z.infer<typeof schemas.KeywordIn>
+> = {
+  mutationFn: (body) => apiClient.postKeyword(body),
+  onSuccess: () => {
+    queryClient.invalidateQueries(keywordAnalysesList)
+  },
+}

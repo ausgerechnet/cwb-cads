@@ -467,8 +467,8 @@ const KeywordOut = z
     p_reference: z.string(),
     semantic_map_id: z.number().int().nullable(),
     sub_vs_rest: z.boolean(),
-    subcorpus_id: z.number().int(),
-    subcorpus_id_reference: z.number().int(),
+    subcorpus_id: z.number().int().nullable(),
+    subcorpus_id_reference: z.number().int().nullable(),
   })
   .partial()
   .passthrough()
