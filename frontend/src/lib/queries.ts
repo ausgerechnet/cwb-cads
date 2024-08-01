@@ -708,3 +708,10 @@ export const getCollocationItems = (
         signal,
       }),
   })
+
+// ==================== KEYWORD ANALYSIS ====================
+
+export const keywordAnalysesList = queryOptions({
+  queryKey: ['keyword-analyses-list'],
+  queryFn: ({ signal }) => apiClient.getKeyword({ signal }),
+})

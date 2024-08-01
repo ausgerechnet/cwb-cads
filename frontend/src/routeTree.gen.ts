@@ -13,11 +13,13 @@ import { Route as IndexImport } from './routes/index'
 import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
+import { Route as AppKeywordAnalysisRouteImport } from './routes/_app/keyword-analysis/route'
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
 import { Route as AppConstellationsRouteImport } from './routes/_app/constellations/route'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppSubcorporaSubcorpusIdImport } from './routes/_app/subcorpora_/$subcorpusId'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
+import { Route as AppKeywordAnalysisNewImport } from './routes/_app/keyword-analysis_/new'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
 import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
@@ -27,7 +29,6 @@ import { Route as AppQueriesQueryIdCollocationAnalysisImport } from './routes/_a
 // Create Virtual Routes
 
 const LogoutLazyImport = createFileRoute('/logout')()
-const AppKeywordAnalysisLazyImport = createFileRoute('/_app/keyword-analysis')()
 const AppDiscoursemesNewLazyImport = createFileRoute('/_app/discoursemes/new')()
 
 // Create/Update Routes
@@ -62,13 +63,6 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AppKeywordAnalysisLazyRoute = AppKeywordAnalysisLazyImport.update({
-  path: '/keyword-analysis',
-  getParentRoute: () => AppRoute,
-} as any).lazy(() =>
-  import('./routes/_app/keyword-analysis.lazy').then((d) => d.Route),
-)
-
 const AppAdminRoute = AppAdminImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
@@ -86,6 +80,13 @@ const AppQueriesRouteRoute = AppQueriesRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
   import('./routes/_app/queries/route.lazy').then((d) => d.Route),
+)
+
+const AppKeywordAnalysisRouteRoute = AppKeywordAnalysisRouteImport.update({
+  path: '/keyword-analysis',
+  getParentRoute: () => AppRoute,
+} as any).lazy(() =>
+  import('./routes/_app/keyword-analysis/route.lazy').then((d) => d.Route),
 )
 
 const AppDiscoursemesRouteRoute = AppDiscoursemesRouteImport.update({
@@ -128,6 +129,13 @@ const AppQueriesNewRoute = AppQueriesNewImport.update({
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
   import('./routes/_app/queries_/new.lazy').then((d) => d.Route),
+)
+
+const AppKeywordAnalysisNewRoute = AppKeywordAnalysisNewImport.update({
+  path: '/keyword-analysis/new',
+  getParentRoute: () => AppRoute,
+} as any).lazy(() =>
+  import('./routes/_app/keyword-analysis_/new.lazy').then((d) => d.Route),
 )
 
 const AppDiscoursemesDiscoursemeIdRoute =
@@ -206,6 +214,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoursemesRouteImport
       parentRoute: typeof AppImport
     }
+    '/_app/keyword-analysis': {
+      preLoaderRoute: typeof AppKeywordAnalysisRouteImport
+      parentRoute: typeof AppImport
+    }
     '/_app/queries': {
       preLoaderRoute: typeof AppQueriesRouteImport
       parentRoute: typeof AppImport
@@ -216,10 +228,6 @@ declare module '@tanstack/react-router' {
     }
     '/_app/admin': {
       preLoaderRoute: typeof AppAdminImport
-      parentRoute: typeof AppImport
-    }
-    '/_app/keyword-analysis': {
-      preLoaderRoute: typeof AppKeywordAnalysisLazyImport
       parentRoute: typeof AppImport
     }
     '/_app/queries/$queryId': {
@@ -236,6 +244,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/discoursemes/$discoursemeId': {
       preLoaderRoute: typeof AppDiscoursemesDiscoursemeIdImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/keyword-analysis/new': {
+      preLoaderRoute: typeof AppKeywordAnalysisNewImport
       parentRoute: typeof AppImport
     }
     '/_app/queries/new': {
@@ -269,14 +281,15 @@ export const routeTree = rootRoute.addChildren([
   AppRoute.addChildren([
     AppConstellationsRouteRoute,
     AppDiscoursemesRouteRoute,
+    AppKeywordAnalysisRouteRoute,
     AppQueriesRouteRoute,
     AppSubcorporaRouteRoute,
     AppAdminRoute,
-    AppKeywordAnalysisLazyRoute,
     AppQueriesQueryIdRouteRoute,
     AppConstellationsConstellationIdRoute,
     AppConstellationsNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
+    AppKeywordAnalysisNewRoute,
     AppQueriesNewRoute,
     AppSubcorporaSubcorpusIdRoute,
     AppSubcorporaNewRoute,
