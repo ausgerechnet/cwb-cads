@@ -4,11 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
 
-import {
-  corpusQueryOptions,
-  queryBreakdownForPQueryOptions,
-  queryQueryOptions,
-} from '@/lib/queries'
+import { corpusById, queryBreakdownForP, queryById } from '@/lib/queries'
 import { schemas } from '@/rest-client'
 import {
   Select,
@@ -25,11 +21,9 @@ import { Headline3 } from '@/components/ui/typography'
 
 export function QueryFrequencyBreakdown({ queryId }: { queryId: string }) {
   const { pAtt } = useSearch({ from: '/_app/queries/$queryId' })
-  const { data: query, error: errorQuery } = useQuery(
-    queryQueryOptions(queryId),
-  )
+  const { data: query, error: errorQuery } = useQuery(queryById(queryId))
   const { data: { p_atts: pAtts = [] } = {}, error: errorCorpus } = useQuery({
-    ...corpusQueryOptions(query?.corpus_id ?? -1),
+    ...corpusById(query?.corpus_id ?? -1),
     enabled: query?.corpus_id !== undefined,
   })
   const parsePAtt = useCallback(
@@ -52,7 +46,7 @@ export function QueryFrequencyBreakdown({ queryId }: { queryId: string }) {
     isPaused,
     error: errorBreakdown,
   } = useQuery({
-    ...queryBreakdownForPQueryOptions(queryId, validatedPAtt as string),
+    ...queryBreakdownForP(queryId, validatedPAtt as string),
     enabled: validatedPAtt !== undefined,
   })
 

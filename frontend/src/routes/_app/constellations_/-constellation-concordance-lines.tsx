@@ -1,15 +1,12 @@
-import { Fragment, useMemo, useRef } from 'react'
+import { Fragment, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ChevronsDownUp, ChevronsUpDown, Shuffle } from 'lucide-react'
+import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
 import { cn } from '@/lib/utils'
-import {
-  corpusQueryOptions,
-  queryConcordancesConstellationOptions,
-} from '@/lib/queries'
+import { corpusById, constellationConcordances } from '@/lib/queries'
 import { formatNumber } from '@/lib/format-number'
 import {
   Table,
@@ -27,19 +24,9 @@ import {
 } from '@/components/ui/tooltip'
 import { ButtonTooltip } from '@/components/button-tooltip'
 import { ErrorMessage } from '@/components/error-message'
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectValue,
-} from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
 import { Repeat } from '@/components/repeat'
 import { Pagination } from '@/components/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
 
 const emptyArray = [] as const
 
@@ -52,7 +39,7 @@ export function ConstellationConcordanceLines({
   corpusId: number
   className?: string
 }) {
-  const { data: corpus } = useQuery(corpusQueryOptions(corpusId as number))
+  const { data: corpus } = useQuery(corpusById(corpusId as number))
   const navigate = useNavigate()
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
@@ -60,19 +47,13 @@ export function ConstellationConcordanceLines({
   const searchParams = useSearch({
     from: '/_app/constellations/$constellationId',
   })
-  const contextBreakList = corpus?.s_atts ?? emptyArray
   const pAttributes = corpus?.p_atts ?? emptyArray
-  const primary =
-    searchParams.primary ??
-    // It seems sensible to default to 'word'
-    pAttributes.find((p) => p === 'word') ??
-    pAttributes[0]
+  const primary = searchParams.primary ?? pAttributes[0]
 
   // Remember a few values between renders: this helps rendering a proper skeleton
   // thus avoiding flicker
   // TODO: maybe just remember the last concordanceLines and overlay a spinner?
   const secondary = searchParams.secondary ?? pAttributes[0]
-  const contextBreak = searchParams.contextBreak ?? contextBreakList[0]
   const {
     windowSize = 3,
     clPageSize = 10,
@@ -89,7 +70,7 @@ export function ConstellationConcordanceLines({
     error,
     // refetch: refetchConcordanceLines,
   } = useQuery(
-    queryConcordancesConstellationOptions(constellationId, corpusId, {
+    constellationConcordances(constellationId, corpusId, {
       primary,
       secondary,
       window: windowSize,
@@ -101,182 +82,21 @@ export function ConstellationConcordanceLines({
       sortByOffset: clSortByOffset,
     }),
   )
-  //   const { mutate: shuffle, isPending: isShuffling } = useMutation({
-  //     ...queryConcordancesShuffleMutationOptions,
-  //     onSettled: () => refetchConcordanceLines(),
-  //   })
 
   pageCountRef.current =
     concordanceLines?.page_count ?? pageCountRef.current ?? 0
   nrLinesRef.current = concordanceLines?.nr_lines ?? nrLinesRef.current ?? 0
 
-  // TODO: Make it type safe
-  const setSearch = useMemo(() => {
-    const timeoutMap: Record<string, ReturnType<typeof setTimeout>> = {}
-    return (paramName: string, value: string | number) => {
-      clearTimeout(timeoutMap[paramName])
-      timeoutMap[paramName] = setTimeout(() => {
-        navigate({
-          params: (p) => p,
-          search: (s) => ({ ...s, [paramName]: value }),
-          replace: true,
-        })
-      }, 200)
-    }
-  }, [navigate])
-
   return (
     <div className={className}>
-      <div className="mb-8 grid grid-cols-8 gap-2">
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Window Size {windowSize}</span>
-          <Slider
-            defaultValue={[windowSize]}
-            onValueChange={([newValue]) => setSearch('windowSize', newValue)}
-            min={0}
-            max={24}
-            className="my-auto"
-          />
-        </div>
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Sort By Offset {clSortByOffset}</span>
-          <Slider
-            defaultValue={[clSortByOffset]}
-            onValueChange={([newValue]) =>
-              setSearch('clSortByOffset', newValue)
-            }
-            min={-5}
-            max={5}
-            className="my-auto"
-          />
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Sort Order</span>
-          <Select
-            value={clSortOrder}
-            onValueChange={(value) => setSearch('clSortOrder', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sort Order" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {['ascending', 'descending', 'random'].map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Filter Item PAtt</span>
-          <Select
-            value={filterItemPAtt}
-            onValueChange={(value) => setSearch('filterItemPAtt', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Filter Item PAttr" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {pAttributes.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Context Break</span>
-          <Select
-            value={contextBreak}
-            onValueChange={(value) => setSearch('contextBreak', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Context Break" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {contextBreakList.map((contextBreak) => (
-                  <SelectItem key={contextBreak} value={contextBreak}>
-                    {contextBreak}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Primary</span>
-          <Select
-            value={primary}
-            onValueChange={(value) => {
-              navigate({
-                params: (p) => p,
-                search: (s) => ({ ...s, primary: value }),
-                replace: true,
-              })
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Primary" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {pAttributes.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Secondary</span>
-          <Select
-            value={secondary}
-            onValueChange={(value) => setSearch('secondary', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Secondary" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {pAttributes.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button
-          className="mt-auto"
-          disabled
-          title="endpoint is currently not implemented"
-        >
-          <Shuffle className="mr-2 h-4 w-4" />
-          TODO: Shuffle
-        </Button>
-      </div>
-
       <ErrorMessage className="col-span-full" error={error} />
 
       <div className="relative col-span-full flex flex-col gap-4">
         <div className="max-w-full rounded-md border">
-          <Table className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden">
+          <Table
+            className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden"
+            isNarrow
+          >
             <TableHeader className="col-span-full grid grid-cols-subgrid">
               <TableRow className="col-span-full grid grid-cols-subgrid">
                 <TableHead className="flex items-center">ID</TableHead>
@@ -349,18 +169,10 @@ function MetaValue({ value }: { value: unknown }) {
 }
 
 function ConcordanceLineRender({
-  concordanceLine: {
-    id,
-    tokens = [],
-    discourseme_ranges: discoursemeRanges,
-    structural = {},
-  },
+  concordanceLine: { id, tokens = [], structural = {} },
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
-  if (discoursemeRanges?.length) {
-    console.log('discoursemeRanges', discoursemeRanges)
-  }
   const keywordIndex =
     tokens.findIndex(({ offset = NaN }) => offset === 0) ?? emptyArray
   const preTokens =
@@ -412,9 +224,9 @@ function ConcordanceLineRender({
       <TableCell className="flex w-max items-center py-0">
         <ButtonTooltip
           tooltip={isExpanded ? 'Collapse' : 'Expand'}
-          size="sm"
+          size="icon"
           variant="ghost"
-          className="-mx-3"
+          className="-mx-3 h-4"
         >
           {isExpanded ? (
             <ChevronsDownUp className="h-4 w-4" />

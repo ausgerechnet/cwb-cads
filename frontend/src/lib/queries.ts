@@ -4,13 +4,13 @@ import { apiClient, queryClient, schemas } from '@/rest-client'
 
 // ==================== QUERIES ====================
 // "queries" as in "cqp queries", but "query" as in "react-query"
-export const queriesQueryOptions = queryOptions({
+export const queriesList = queryOptions({
   queryKey: ['queries'],
   queryFn: ({ signal }) => apiClient.getQuery({ signal }),
   placeholderData: [],
 })
 
-export const queryQueryOptions = (queryId: string) =>
+export const queryById = (queryId: string) =>
   queryOptions({
     queryKey: ['query', queryId],
     queryFn: ({ signal }) =>
@@ -18,7 +18,7 @@ export const queryQueryOptions = (queryId: string) =>
     placeholderData: {},
   })
 
-export const patchQueryMutationOptions: MutationOptions<
+export const patchQuery: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
   Error,
   { queryId: string; discourseme_id: number | undefined }
@@ -38,57 +38,49 @@ export const patchQueryMutationOptions: MutationOptions<
   onSuccess: (data) => {
     const queryId = data.id
     if (queryId !== undefined) {
-      queryClient.invalidateQueries(queryQueryOptions(queryId.toString()))
+      queryClient.invalidateQueries(queryById(queryId.toString()))
     }
-    queryClient.invalidateQueries(queriesQueryOptions)
+    queryClient.invalidateQueries(queriesList)
   },
 }
 
-export const executeQueryMutationOptions: MutationOptions<
-  unknown,
-  Error,
-  string
-> = {
+export const executeQuery: MutationOptions<unknown, Error, string> = {
   mutationFn: (queryId: string) =>
     apiClient.postQueryIdexecute(undefined, { params: { id: queryId } }),
-  onSuccess: () => queryClient.invalidateQueries(queriesQueryOptions),
+  onSuccess: () => queryClient.invalidateQueries(queriesList),
 }
 
-export const postQueryMutationOptions: MutationOptions<
+export const createQueryCQP: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
   Error,
   z.infer<typeof schemas.QueryIn>
 > = {
   mutationFn: (body) => apiClient.postQuery(body),
   onSuccess: () => {
-    queryClient.invalidateQueries(queriesQueryOptions)
+    queryClient.invalidateQueries(queriesList)
   },
 }
 
-export const postQueryAssistedMutationOptions: MutationOptions<
+export const createQueryAssisted: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
   Error,
   z.infer<typeof schemas.QueryAssistedIn>
 > = {
   mutationFn: (body) => apiClient.postQueryassisted(body),
   onSuccess: () => {
-    queryClient.invalidateQueries(queriesQueryOptions)
+    queryClient.invalidateQueries(queriesList)
   },
 }
 
-export const deleteQueryMutationOptions: MutationOptions<
-  unknown,
-  Error,
-  string
-> = {
+export const deleteQuery: MutationOptions<unknown, Error, string> = {
   mutationFn: (queryId: string) =>
     apiClient.deleteQueryId(undefined, { params: { id: queryId } }),
   onSuccess: () => {
-    queryClient.invalidateQueries(queriesQueryOptions)
+    queryClient.invalidateQueries(queriesList)
   },
 }
 
-export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
+export const queryBreakdownForP = (queryId: string, p: string) =>
   queryOptions({
     queryKey: ['query-breakdown', queryId, p],
     queryFn: async () =>
@@ -98,7 +90,7 @@ export const queryBreakdownForPQueryOptions = (queryId: string, p: string) =>
       }),
   })
 
-export const queryConcordancesQueryOptions = (
+export const queryConcordances = (
   queryId: string,
   {
     window,
@@ -202,8 +194,8 @@ export const queryConcordancesQueryOptions = (
 //     staleTime: 1_000 * 60 * 5, // 5 minutes
 //   })
 
-export const queryConcordancesShuffleMutationOptions: MutationOptions<
-  { query_id?: number },
+export const shuffleQueryConcordances: MutationOptions<
+  z.infer<typeof schemas.QueryOut>,
   Error,
   string
 > = {
@@ -213,9 +205,10 @@ export const queryConcordancesShuffleMutationOptions: MutationOptions<
     }),
   onSuccess: (data) => {
     const queryId =
-      data.query_id === undefined ? undefined : data.query_id.toString()
+      // TODO: QueryOut should have more mandatory fields
+      data.query_id === undefined ? undefined : (data.id ?? '').toString()
     if (queryId === undefined) return
-    queryClient.invalidateQueries(queryConcordancesQueryOptions(queryId))
+    queryClient.invalidateQueries(queryConcordances(queryId))
   },
 }
 
@@ -224,38 +217,21 @@ export const queryCollocation = (
   p: string,
   window: number,
   {
-    constellation_id,
-    semantic_map_id,
-    subcorpus_id,
-    s_break,
-    sort_order,
-    sort_by,
-    page_size,
-    page_number,
+    constellationId,
+    semanticMapId,
+    sBreak,
+    marginals,
+    filterItem,
+    filterItemPAtt,
+    filterDiscoursemeIds = [],
   }: {
-    constellation_id?: number | undefined
-    semantic_map_id?: number | undefined
-    subcorpus_id?: number | undefined
-    s_break?: string | undefined
-    sort_order?: 'ascending' | 'descending'
-    sort_by?:
-      | 'conservative_log_ratio'
-      | 'O11'
-      | 'E11'
-      | 'ipm'
-      | 'ipm_expected'
-      | 'log_likelihood'
-      | 'z_score'
-      | 't_score'
-      | 'simple_ll'
-      | 'dice'
-      | 'log_ratio'
-      | 'min_sensitivity'
-      | 'liddell'
-      | 'mutual_information'
-      | 'local_mutual_information'
-    page_size?: number | undefined
-    page_number?: number | undefined
+    constellationId?: number | undefined
+    semanticMapId?: number | undefined
+    sBreak?: string | undefined
+    marginals?: 'local' | 'global' | undefined
+    filterItem?: string
+    filterItemPAtt?: string
+    filterDiscoursemeIds?: number[] | undefined
   } = {},
 ) =>
   queryOptions({
@@ -264,14 +240,13 @@ export const queryCollocation = (
       queryId,
       p,
       window,
-      constellation_id,
-      semantic_map_id,
-      subcorpus_id,
-      s_break,
-      sort_order,
-      sort_by,
-      page_size,
-      page_number,
+      constellationId,
+      semanticMapId,
+      sBreak,
+      marginals,
+      filterItem,
+      filterItemPAtt,
+      filterDiscoursemeIds,
     ],
     queryFn: ({ signal }) =>
       apiClient.getQueryQuery_idcollocation({
@@ -279,14 +254,13 @@ export const queryCollocation = (
         queries: {
           p,
           window,
-          constellation_id,
-          semantic_map_id,
-          subcorpus_id,
-          s_break,
-          sort_order,
-          sort_by,
-          page_size,
-          page_number,
+          constellation_id: constellationId,
+          semantic_map_id: semanticMapId,
+          s_break: sBreak,
+          marginals,
+          filter_item: filterItem,
+          filter_item_p_att: filterItemPAtt,
+          filter_discourseme_ids: filterDiscoursemeIds,
         },
         signal,
       }),
@@ -294,37 +268,96 @@ export const queryCollocation = (
 
 // ==================== CORPORA ====================
 
-export const corpusQueryOptions = (corpusId: number) =>
+export const corpusById = (corpusId: number) =>
   queryOptions({
     queryKey: ['corpus', corpusId],
     queryFn: ({ signal }) =>
       apiClient.getCorpusId({ params: { id: String(corpusId) }, signal }),
   })
 
-export const corporaQueryOptions = queryOptions({
+export const corpusList = queryOptions({
   queryKey: ['corpora'],
   queryFn: ({ signal }) => apiClient.getCorpus({ signal }),
 })
 
-export const subcorporaQueryOptions = (corpusId: string) =>
+export const subcorporaList = queryOptions({
+  queryKey: ['subcorpora'],
+  queryFn: async ({ signal }) => {
+    const corpora = await apiClient.getCorpus({ signal })
+    return (
+      await Promise.all(
+        corpora.map(
+          async (corpus) =>
+            apiClient.getCorpusIdsubcorpus({
+              params: { id: corpus.id?.toString() ?? '' },
+            }),
+          signal,
+        ),
+      )
+    ).flat()
+  },
+})
+
+export const subcorpusById = (corpusId: number) =>
   queryOptions({
     queryKey: ['subcorpora', corpusId],
     queryFn: ({ signal }) =>
-      apiClient.getCorpusIdsubcorpus({ params: { id: corpusId }, signal }),
+      apiClient.getCorpusIdsubcorpus({
+        params: { id: corpusId.toString() },
+        signal,
+      }),
   })
 
-export const putSubcorpusMutationOptions: MutationOptions<
-  unknown,
+export const createSubcorpus: MutationOptions<
+  z.infer<typeof schemas.SubCorpusOut>,
   Error,
-  string
+  z.infer<typeof schemas.SubCorpusIn> & { corpus_id: number }
 > = {
+  mutationFn: async ({ corpus_id, ...args }) =>
+    apiClient.putCorpusIdsubcorpus(args, {
+      params: { id: corpus_id.toString() },
+    }),
+  onSuccess: (data) => {
+    queryClient.invalidateQueries(corpusList)
+    queryClient.invalidateQueries(subcorporaList)
+    queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))
+  },
+}
+
+export const updateSubcorpus: MutationOptions<unknown, Error, string> = {
   // TODO: implement correct API call
   mutationFn: async (id: string) => '42 ' + id,
   //   apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
   onSuccess: () => {
-    queryClient.invalidateQueries(corporaQueryOptions)
+    queryClient.invalidateQueries(corpusList)
+    queryClient.invalidateQueries(subcorporaList)
   },
 }
+
+export const corpusMetaById = (corpusId: number) =>
+  queryOptions({
+    queryKey: ['corpus-meta', corpusId],
+    queryFn: ({ signal }) =>
+      apiClient.getCorpusIdmeta({
+        params: { id: corpusId.toString() },
+        signal,
+      }),
+  })
+
+export const corpusMetaFrequencies = (
+  corpusId: number,
+  level: string,
+  key: string,
+) =>
+  queryOptions({
+    queryKey: ['corpus-meta-frequencies', corpusId, level, key],
+    queryFn: ({ signal }) =>
+      apiClient.getCorpusIdmetafrequencies({
+        params: { id: corpusId.toString() },
+        queries: { level, key },
+        signal,
+      }),
+  })
 
 // ==================== USERS ====================
 
@@ -334,7 +367,7 @@ export const sessionQueryOptions = queryOptions({
   retry: 1,
 })
 
-export const loginMutationOptions: MutationOptions<
+export const logIn: MutationOptions<
   z.infer<typeof schemas.HTTPTokenOut>,
   Error,
   z.infer<typeof schemas.UserIn>
@@ -351,12 +384,12 @@ export const loginMutationOptions: MutationOptions<
   },
 }
 
-export const getUsersQueryOptions = queryOptions({
+export const usersList = queryOptions({
   queryKey: ['all-users'],
   queryFn: ({ signal }) => apiClient.getUser({ signal }),
 })
 
-export const logoutMutationOptions: MutationOptions = {
+export const logOut: MutationOptions = {
   mutationFn: async () => {
     localStorage.removeItem('access-token')
     localStorage.removeItem('refresh-token')
@@ -369,81 +402,73 @@ export const logoutMutationOptions: MutationOptions = {
 
 // ==================== DISCOURSEMES ====================
 
-export const discoursemesQueryOptions = queryOptions({
+export const discoursemesList = queryOptions({
   queryKey: ['discoursemes'],
   queryFn: ({ signal }) => apiClient.getDiscourseme({ signal }),
 })
 
-export const discoursemeQueryOptions = (discoursemeId: string) =>
+export const discoursemeById = (discoursemeId: string) =>
   queryOptions({
     queryKey: ['discourseme', discoursemeId],
     queryFn: ({ signal }) =>
       apiClient.getDiscoursemeId({ params: { id: discoursemeId }, signal }),
   })
 
-export const postDiscoursemeMutationOptions: MutationOptions<
+export const createDiscourseme: MutationOptions<
   z.infer<typeof schemas.DiscoursemeOut>,
   Error,
   z.infer<typeof schemas.DiscoursemeIn>
 > = {
   mutationFn: (body) => apiClient.postDiscourseme(body),
   onSuccess: () => {
-    queryClient.invalidateQueries(discoursemesQueryOptions)
+    queryClient.invalidateQueries(discoursemesList)
   },
 }
 
-export const deleteDiscoursemeMutationOptions: MutationOptions<
-  unknown,
-  Error,
-  string
-> = {
+export const deleteDiscourseme: MutationOptions<unknown, Error, string> = {
   mutationFn: (discoursemeId: string) =>
     apiClient.deleteDiscoursemeId(undefined, { params: { id: discoursemeId } }),
   onSettled: () => {
-    queryClient.invalidateQueries(discoursemesQueryOptions)
+    queryClient.invalidateQueries(discoursemesList)
   },
 }
 
 // =================== CONSTELLATIONS ====================
 
-export const constellationListQueryOptions = queryOptions({
+export const constellationList = queryOptions({
   queryKey: ['constellation-list'],
   queryFn: ({ signal }) => apiClient.getConstellation({ signal }),
 })
 
-export const constellationQueryOptions = (constellationId: string) =>
+export const constellationById = (constellationId: string) =>
   queryOptions({
     queryKey: ['constellation', constellationId],
     queryFn: ({ signal }) =>
       apiClient.getConstellationId({ params: { id: constellationId }, signal }),
   })
 
-export const postConstellationMutationOptions: MutationOptions<
+export const createConstellation: MutationOptions<
   z.infer<typeof schemas.ConstellationOut>,
   Error,
   z.infer<typeof schemas.ConstellationIn>
 > = {
   mutationFn: (body) => apiClient.postConstellation(body),
   onSuccess: () => {
-    queryClient.invalidateQueries(constellationListQueryOptions)
+    queryClient.invalidateQueries(constellationList)
   },
 }
 
-export const deleteConstellationMutationOptions: MutationOptions<
-  unknown,
-  Error,
-  string
-> = {
+export const deleteConstellation: MutationOptions<unknown, Error, string> = {
   mutationFn: (constellationId: string) =>
     apiClient.deleteConstellationId(undefined, {
       params: { id: constellationId },
     }),
   onSuccess: () => {
-    queryClient.invalidateQueries(constellationListQueryOptions)
+    queryClient.invalidateQueries(constellationList)
   },
 }
 
-export const queryConcordancesConstellationOptions = (
+export const constellationConcordances = (
   constellationId: string | number,
   corpusId: string | number,
   {
@@ -472,7 +497,7 @@ export const queryConcordancesConstellationOptions = (
 ) =>
   queryOptions({
     queryKey: [
-      'query-concordances',
+      'constellation-concordances',
       String(constellationId),
       String(corpusId),
       window,
@@ -506,7 +531,68 @@ export const queryConcordancesConstellationOptions = (
     staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
-export const deleteConstellationDiscoursemeMutationOptions: MutationOptions<
+export const constellationCollocation = (
+  constellationId: number,
+  corpusId: number,
+  {
+    p,
+    window,
+    semanticBreak,
+    semanticMapId,
+    subcorpusId,
+    marginals,
+    filterItem,
+    filterItemPAtt,
+    filterDiscoursemeIds,
+  }: {
+    p: string
+    window: number
+    semanticMapId?: number
+    subcorpusId?: number
+    semanticBreak?: string
+    marginals?: 'local' | 'global'
+    filterItem?: string
+    filterItemPAtt?: string
+    filterDiscoursemeIds?: number[]
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-collocations',
+      String(constellationId),
+      String(corpusId),
+      semanticMapId,
+      subcorpusId,
+      p,
+      window,
+      semanticBreak,
+      marginals,
+      filterItem,
+      filterItemPAtt,
+      filterDiscoursemeIds,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getConstellationIdcorpusCorpus_idcollocation({
+        params: { id: String(constellationId), corpus_id: String(corpusId) },
+        queries: {
+          p,
+          window,
+          semantic_map_id: semanticMapId,
+          subcorpus_id: subcorpusId,
+          s_break: semanticBreak,
+          marginals,
+          filter_item: filterItem,
+          filter_item_p_att: filterItemPAtt,
+          filter_discourseme_ids: filterDiscoursemeIds,
+        },
+        signal,
+      }),
+    select: (data) => {
+      return data
+    },
+  })
+
+export const deleteConstellationDiscourseme: MutationOptions<
   z.infer<typeof schemas.ConstellationOut>,
   Error,
   { constellationId: number; discoursemeId: number }
@@ -528,16 +614,14 @@ export const deleteConstellationDiscoursemeMutationOptions: MutationOptions<
   onSuccess: (constellation) => {
     const constellationId = constellation.id
     if (constellationId === undefined) return
-    queryClient.invalidateQueries(
-      constellationQueryOptions(String(constellationId)),
-    )
+    queryClient.invalidateQueries(constellationById(String(constellationId)))
     queryClient.invalidateQueries({
       queryKey: ['query-concordances', String(constellationId)],
     })
   },
 }
 
-export const addConstellationDiscoursemeMutationOptions: MutationOptions<
+export const addConstellationDiscourseme: MutationOptions<
   z.infer<typeof schemas.ConstellationOut>,
   Error,
   { constellationId: number; discoursemeId: number }
@@ -559,9 +643,7 @@ export const addConstellationDiscoursemeMutationOptions: MutationOptions<
   onSuccess: (constellation) => {
     const constellationId = constellation.id
     if (constellationId === undefined) return
-    queryClient.invalidateQueries(
-      constellationQueryOptions(String(constellationId)),
-    )
+    queryClient.invalidateQueries(constellationById(String(constellationId)))
     queryClient.invalidateQueries({
       queryKey: ['query-concordances', String(constellationId)],
     })
@@ -569,21 +651,67 @@ export const addConstellationDiscoursemeMutationOptions: MutationOptions<
 }
 // ==================== COLLOCATIONS ====================
 
-/**
- * @deprecated
- */
-export const collocationsQueryOptions = queryOptions({
-  queryKey: ['collocations'],
-  queryFn: async () => null, // apiClient.getCollocationId({ signal }),
-})
+export const getCollocation = (id: number) =>
+  queryOptions({
+    queryKey: ['collocation', id],
+    queryFn: ({ signal }) =>
+      apiClient.getCollocationId({ params: { id: id.toString() }, signal }),
+  })
 
-/**
- * @deprecated
- */
-export const postCollocationQueryMutationOptions: MutationOptions<
-  null,
-  Error,
-  null
-> = {
-  mutationFn: async () => null,
-}
+export const getCollocationItems = (
+  id: number,
+  {
+    sortOrder,
+    sortBy,
+    pageSize,
+    pageNumber,
+  }: {
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?:
+      | 'conservative_log_ratio'
+      | 'O11'
+      | 'E11'
+      | 'ipm'
+      | 'ipm_expected'
+      | 'log_likelihood'
+      | 'z_score'
+      | 't_score'
+      | 'simple_ll'
+      | 'dice'
+      | 'log_ratio'
+      | 'min_sensitivity'
+      | 'liddell'
+      | 'mutual_information'
+      | 'local_mutual_information'
+    pageSize?: number
+    pageNumber?: number
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'collocation-items',
+      id,
+      sortOrder,
+      sortBy,
+      pageSize,
+      pageNumber,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getCollocationIditems({
+        params: { id: id.toString() },
+        queries: {
+          sort_order: sortOrder,
+          sort_by: sortBy,
+          page_size: pageSize,
+          page_number: pageNumber,
+        },
+        signal,
+      }),
+  })
+
+// ==================== KEYWORD ANALYSIS ====================
+
+export const keywordAnalysesList = queryOptions({
+  queryKey: ['keyword-analyses-list'],
+  queryFn: ({ signal }) => apiClient.getKeyword({ signal }),
+})

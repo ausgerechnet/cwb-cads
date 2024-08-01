@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 
-import { loginMutationOptions } from '@/lib/queries'
+import { logIn } from '@/lib/queries'
 import { required_error } from '@/lib/strings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,9 +44,9 @@ function Login() {
   })
 
   const { isPending, mutate, error } = useMutation({
-    ...loginMutationOptions,
+    ...logIn,
     onSuccess: (...args) => {
-      loginMutationOptions?.onSuccess?.(...args)
+      logIn?.onSuccess?.(...args)
       navigate({
         to: redirect || '/queries',
       })

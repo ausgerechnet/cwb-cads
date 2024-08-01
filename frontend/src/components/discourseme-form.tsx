@@ -6,7 +6,7 @@ import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 import { required_error } from '@/lib/strings'
-import { postDiscoursemeMutationOptions } from '@/lib/queries'
+import { createDiscourseme } from '@/lib/queries'
 import {
   Form,
   FormField,
@@ -38,13 +38,13 @@ export function DiscoursemeForm({
     isPending,
     error,
   } = useMutation({
-    ...postDiscoursemeMutationOptions,
+    ...createDiscourseme,
     onError: (...args) => {
-      postDiscoursemeMutationOptions.onError?.(...args)
+      createDiscourseme.onError?.(...args)
       toast.error('Failed to create discourseme')
     },
     onSuccess: (data, ...rest) => {
-      postDiscoursemeMutationOptions.onSuccess?.(data, ...rest)
+      createDiscourseme.onSuccess?.(data, ...rest)
       toast.success('Discourseme created')
       const discoursemeId = data.id
       if (discoursemeId !== undefined) {
@@ -62,7 +62,7 @@ export function DiscoursemeForm({
         onSubmit={form.handleSubmit((discourseme) =>
           postNewDiscourseme({
             name: discourseme.name,
-            description: discourseme.description,
+            comment: discourseme.description,
             template: discourseme.surfaces.map((surface) => ({
               surface,
               cqp_query: '',

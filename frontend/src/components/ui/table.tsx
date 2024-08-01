@@ -4,12 +4,16 @@ import { cn } from '@/lib/utils'
 
 const Table = React.forwardRef<
   HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
+  React.HTMLAttributes<HTMLTableElement> & { isNarrow?: boolean }
+>(({ className, isNarrow = false, ...props }, ref) => (
   <div className="relative w-full overflow-auto">
     <table
       ref={ref}
-      className={cn('w-full caption-bottom text-sm', className)}
+      className={cn(
+        'w-full caption-bottom text-sm',
+        isNarrow && 'group',
+        className,
+      )}
       {...props}
     />
   </div>
@@ -73,7 +77,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
+      'h-12 px-4 text-left align-middle font-medium text-muted-foreground group-[.group]:h-8 [&:has([role=checkbox])]:pr-0',
       className,
     )}
     {...props}
@@ -87,7 +91,10 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn('p-4 align-middle [&:has([role=checkbox])]:pr-0', className)}
+    className={cn(
+      'p-4 align-middle group-[.group]:py-1 [&:has([role=checkbox])]:pr-0',
+      className,
+    )}
     {...props}
   />
 ))

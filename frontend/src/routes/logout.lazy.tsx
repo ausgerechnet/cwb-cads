@@ -3,7 +3,7 @@ import { Link, createLazyFileRoute } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
-import { logoutMutationOptions } from '@/lib/queries'
+import { logOut } from '@/lib/queries'
 import { Headline1, Large } from '@/components/ui/typography'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -13,12 +13,7 @@ export const Route = createLazyFileRoute('/logout')({
 })
 
 function Logout() {
-  const {
-    mutate: logout,
-    isSuccess,
-    error,
-    isPending,
-  } = useMutation(logoutMutationOptions)
+  const { mutate: logout, isSuccess, error, isPending } = useMutation(logOut)
   useEffect(() => logout(), [logout])
 
   return (

@@ -3,13 +3,18 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useSuspenseQueries,
+} from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
 import {
-  corporaQueryOptions,
-  discoursemesQueryOptions,
-  postQueryAssistedMutationOptions,
+  corpusList,
+  discoursemesList,
+  createQueryAssisted,
+  subcorpusById,
 } from '@/lib/queries'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
@@ -34,11 +39,11 @@ import { ErrorMessage } from '@/components/error-message'
 import { CorpusSelect } from '@/components/select-corpus'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Large } from '@/components/ui/typography'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 
 const InputAssisted = z.object({
   corpus_id: z.number({ required_error }).int(),
+  subcorpus_id: z.number().int().optional(),
   match_strategy: z.enum(['shortest', 'longest', 'standard'], {
     required_error,
   }),
@@ -53,13 +58,15 @@ const InputAssisted = z.object({
   s: z.string({ required_error }),
 })
 
+const emptyArray: never[] = []
+
 export function QueryFormAssisted({
   onSuccess,
 }: {
   onSuccess?: (queryId: number) => void
 }) {
   const [{ data: corpora }, { data: discoursemes }] = useSuspenseQueries({
-    queries: [corporaQueryOptions, discoursemesQueryOptions],
+    queries: [corpusList, discoursemesList],
   })
 
   const form = useForm<z.infer<typeof InputAssisted>>({
@@ -68,6 +75,14 @@ export function QueryFormAssisted({
   })
 
   const corpusId = form.watch('corpus_id')
+  const {
+    data: subcorpora,
+    isLoading: isLoadingSubcorpora,
+    error: errorSubcorpora,
+  } = useQuery({
+    ...subcorpusById(corpusId),
+    enabled: corpusId !== undefined,
+  })
   const selectedCorpus = corpora.find(({ id }) => id === corpusId)
 
   useFormFieldDependency(form, 's', selectedCorpus?.s_atts)
@@ -79,20 +94,20 @@ export function QueryFormAssisted({
     isPending,
     error,
   } = useMutation({
-    ...postQueryAssistedMutationOptions,
+    ...createQueryAssisted,
     onSuccess: (data, variables, context) => {
-      postQueryAssistedMutationOptions.onSuccess?.(data, variables, context)
+      createQueryAssisted.onSuccess?.(data, variables, context)
       const queryId = data.id
       toast.success('Query created')
       typeof queryId === 'number' && onSuccess?.(queryId)
     },
     onError: (...args) => {
-      postQueryAssistedMutationOptions.onError?.(...args)
+      createQueryAssisted.onError?.(...args)
       toast.error('Failed to create query')
     },
   })
 
-  const isDisabled = isPending || isSuccess
+  const isDisabled = isPending || isSuccess || isLoadingSubcorpora
 
   function onSubmit(data: z.infer<typeof InputAssisted>): void {
     postQueryAssisted(data)
@@ -116,14 +131,35 @@ export function QueryFormAssisted({
                     className="w-full"
                     corpora={corpora}
                     corpusId={field.value}
-                    onChange={field.onChange}
+                    onChange={(...args) => {
+                      field.onChange(...args)
+                      form.setValue('subcorpus_id', undefined)
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Large className="col-span-full">ToDo: Subcorpus selection</Large>
+          <FormField
+            control={form.control}
+            name="subcorpus_id"
+            render={({ field }) => (
+              <FormItem className="col-span-full">
+                <FormLabel>Subcorpus (optional)</FormLabel>
+                <FormControl>
+                  <CorpusSelect
+                    className="w-full"
+                    corpora={subcorpora ?? emptyArray}
+                    corpusId={field.value}
+                    onChange={field.onChange}
+                    disabled={!subcorpora || isLoadingSubcorpora}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="discourseme_id"
@@ -310,6 +346,7 @@ export function QueryFormAssisted({
             Submit
           </Button>
           <ErrorMessage error={error} className="col-span-full" />
+          <ErrorMessage error={errorSubcorpora} className="col-span-full" />
         </fieldset>
       </form>
     </Form>

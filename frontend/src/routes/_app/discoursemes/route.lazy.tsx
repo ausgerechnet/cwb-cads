@@ -12,10 +12,7 @@ import { schemas } from '@/rest-client'
 import { z } from 'zod'
 
 import { cn } from '@/lib/utils'
-import {
-  deleteDiscoursemeMutationOptions,
-  discoursemesQueryOptions,
-} from '@/lib/queries'
+import { deleteDiscourseme, discoursemesList } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Large } from '@/components/ui/typography'
 import { buttonVariants } from '@/components/ui/button'
@@ -87,7 +84,7 @@ function shortenArray<T>(array: T[], length: number): ReactNode {
 }
 
 function Discoursemes() {
-  const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)
+  const { data: discoursemes } = useSuspenseQuery(discoursemesList)
   const navigate = useNavigate()
   return (
     <AppPageFrame
@@ -127,14 +124,14 @@ function Discoursemes() {
 function QuickActions({ discoursemeId }: { discoursemeId: string }) {
   const router = useRouter()
   const { mutate, isPending, isSuccess } = useMutation({
-    ...deleteDiscoursemeMutationOptions,
+    ...deleteDiscourseme,
     onSuccess: (...args) => {
-      deleteDiscoursemeMutationOptions.onSuccess?.(...args)
+      deleteDiscourseme.onSuccess?.(...args)
       router.invalidate()
       toast.success('Discourseme deleted')
     },
     onError: (...args) => {
-      deleteDiscoursemeMutationOptions.onError?.(...args)
+      deleteDiscourseme.onError?.(...args)
       toast.error('Failed to delete discourseme')
     },
   })

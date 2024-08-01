@@ -4,19 +4,19 @@ import { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import { getUsersQueryOptions } from '@/lib/queries'
+import { usersList } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { DataTable, SortButton } from '@/components/data-table'
 
 export const Route = createFileRoute('/_app/admin')({
   component: Admin,
   loader: async ({ context: { queryClient } }) => ({
-    users: await queryClient.ensureQueryData(getUsersQueryOptions),
+    users: await queryClient.ensureQueryData(usersList),
   }),
 })
 
 function Admin() {
-  const { data: users = [] } = useSuspenseQuery(getUsersQueryOptions)
+  const { data: users = [] } = useSuspenseQuery(usersList)
   return (
     <AppPageFrame title="Admin">
       <DataTable<z.infer<typeof schemas.ConstellationOut>>

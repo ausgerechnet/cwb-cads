@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createFileRoute } from '@tanstack/react-router'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
-import { queryQueryOptions } from '@/lib/queries'
+import { queryById } from '@/lib/queries'
 
 export const Route = createFileRoute(
   '/_app/queries/$queryId/collocation-analysis',
@@ -23,7 +23,7 @@ export const Route = createFileRoute(
     filterItemPAtt: z.string().optional().catch(undefined),
   }),
   loader: ({ context: { queryClient }, params: { queryId } }) =>
-    queryClient.ensureQueryData(queryQueryOptions(queryId)),
+    queryClient.ensureQueryData(queryById(queryId)),
   pendingComponent: DefaultPendingComponent,
   component: CollocationAnalysis,
 })

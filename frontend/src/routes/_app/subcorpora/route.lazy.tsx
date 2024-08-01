@@ -1,18 +1,16 @@
-import { createLazyFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { createLazyFileRoute, Link } from '@tanstack/react-router'
+import { ColumnDef } from '@tanstack/react-table'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { Loader2, Plus } from 'lucide-react'
+import { EyeIcon } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
-import {
-  subcorporaQueryOptions,
-  putSubcorpusMutationOptions,
-  corporaQueryOptions,
-} from '@/lib/queries'
+import { subcorporaList } from '@/lib/queries'
+import { cn } from '@/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { ErrorMessage } from '@/components/error-message'
+import { buttonVariants } from '@/components/ui/button'
+import { DataTable, SortButton } from '@/components/data-table'
 
 export const Route = createLazyFileRoute('/_app/subcorpora')({
   component: Subcorpora,
@@ -20,7 +18,7 @@ export const Route = createLazyFileRoute('/_app/subcorpora')({
 })
 
 function Subcorpora() {
-  const { data: corpora } = useSuspenseQuery(corporaQueryOptions)
+  const { data: subcorpora } = useSuspenseQuery(subcorporaList)
 
   return (
     <AppPageFrame
@@ -30,54 +28,47 @@ function Subcorpora() {
         label: 'New Subcorpus',
       }}
     >
-      {corpora.map((corpus) => (
-        <Corpus corpus={corpus} key={corpus.id} />
-      ))}
+      <DataTable columns={columns} rows={subcorpora} />
     </AppPageFrame>
   )
 }
 
-function Corpus({ corpus }: { corpus: z.infer<typeof schemas.CorpusOut> }) {
-  const corpusId = String(corpus.id ?? '')
-  const {
-    data: subcorpora,
-    isLoading,
-    error,
-  } = useQuery(subcorporaQueryOptions(corpusId))
-  const {
-    mutate: newSubcorpus,
-    isPending,
-    error: putError,
-  } = useMutation(putSubcorpusMutationOptions)
-  return (
-    <div className="my-4">
-      {corpus.name}
-      <p>{corpus.description}</p>
-      {isLoading && <Loader2 className="m-2 h-4 w-4 animate-spin" />}
-      {subcorpora?.map((subcorpus) => (
-        <div key={subcorpus.id}>
-          {subcorpus.name}
-          <p>{subcorpus.description}</p>
-        </div>
-      ))}
-      {subcorpora?.length === 0 && (
-        <p className="rounded-md bg-muted px-2 py-1 text-muted-foreground">
-          No subcorpora yet.
-        </p>
-      )}
-      <Button onClick={() => newSubcorpus(corpusId)} disabled={isPending}>
-        {isPending ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <Plus className="mr-2 h-4 w-4" />
+const columns: ColumnDef<z.infer<typeof schemas.SubCorpusOut>>[] = [
+  {
+    accessorKey: 'id',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}>ID</SortButton>,
+    meta: { className: 'w-0' },
+  },
+  {
+    accessorKey: 'name',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}>Name</SortButton>,
+  },
+  {
+    accessorKey: 'corpus.name',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}>Corpus</SortButton>,
+  },
+  {
+    header: 'Actions',
+    meta: { className: 'w-0' },
+    cell: ({ row }) => (
+      <Link
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: 'icon' }),
+          '-my-1',
         )}
-        New Subcorpus
-      </Button>
-      <ErrorMessage error={putError} />
-      <ErrorMessage error={error} />
-    </div>
-  )
-}
+        to="/subcorpora/$subcorpusId"
+        params={{
+          subcorpusId: String(row.id),
+        }}
+      >
+        <EyeIcon className="h-4 w-4" />
+      </Link>
+    ),
+  },
+]
 
 function LoaderSubcorpora() {
   return (

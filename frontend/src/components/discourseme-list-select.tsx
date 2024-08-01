@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { z } from 'zod'
 
-import { discoursemesQueryOptions } from '@/lib/queries'
+import { discoursemesList } from '@/lib/queries'
 import { schemas } from '@/rest-client'
 import { Small } from './ui/typography'
 import { Button } from './ui/button'
@@ -17,7 +17,7 @@ export function DiscoursemeListSelect({
   selectableDiscoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
   onChange: (ids: number[]) => void
 }) {
-  const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)
+  const { data: discoursemes } = useSuspenseQuery(discoursemesList)
   const selectedDiscoursemes = discoursemes.filter(
     ({ id }) => id !== undefined && discoursemeIds.includes(id),
   )
@@ -36,7 +36,7 @@ export function DiscoursemeListSelect({
           <Small className="mx-0 my-auto flex-grow">
             {discourseme.name}
             <span className="mt-1 block text-muted-foreground">
-              {discourseme.description}
+              {discourseme.comment}
             </span>
           </Small>
           <Button

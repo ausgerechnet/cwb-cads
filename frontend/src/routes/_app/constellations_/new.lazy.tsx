@@ -7,10 +7,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import {
-  discoursemesQueryOptions,
-  postConstellationMutationOptions,
-} from '@/lib/queries'
+import { discoursemesList, createConstellation } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import {
   Form,
@@ -69,9 +66,9 @@ function NewConstellationForm() {
   })
 
   const { mutate, isPending, error, isSuccess } = useMutation({
-    ...postConstellationMutationOptions,
+    ...createConstellation,
     onSuccess: (data, ...rest) => {
-      postConstellationMutationOptions.onSuccess?.(data, ...rest)
+      createConstellation.onSuccess?.(data, ...rest)
       toast.success('Constellation created')
       const constellationId = data.id!.toString()
       navigate({
@@ -80,7 +77,7 @@ function NewConstellationForm() {
       })
     },
     onError: (...args) => {
-      postConstellationMutationOptions.onError?.(...args)
+      createConstellation.onError?.(...args)
       toast.error('Failed to create constellation')
     },
   })
@@ -88,7 +85,7 @@ function NewConstellationForm() {
   // Prevent selecting discoursemes that are already selected
   const filterDiscoursemeIds = form.watch('filter_discourseme_ids') ?? []
   const highlightDiscoursemeIds = form.watch('highlight_discourseme_ids') ?? []
-  const { data: discoursemes } = useSuspenseQuery(discoursemesQueryOptions)
+  const { data: discoursemes } = useSuspenseQuery(discoursemesList)
   const selectableDiscoursemes: z.infer<typeof schemas.DiscoursemeOut>[] =
     discoursemes.filter(
       ({ id }) =>
