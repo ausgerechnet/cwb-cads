@@ -298,11 +298,14 @@ export const subcorporaList = queryOptions({
   },
 })
 
-export const subcorpusById = (corpusId: string) =>
+export const subcorpusById = (corpusId: number) =>
   queryOptions({
     queryKey: ['subcorpora', corpusId],
     queryFn: ({ signal }) =>
-      apiClient.getCorpusIdsubcorpus({ params: { id: corpusId }, signal }),
+      apiClient.getCorpusIdsubcorpus({
+        params: { id: corpusId.toString() },
+        signal,
+      }),
   })
 
 export const createSubcorpus: MutationOptions<

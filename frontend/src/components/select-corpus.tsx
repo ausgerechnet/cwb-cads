@@ -9,11 +9,13 @@ export function CorpusSelect({
   corpusId,
   onChange,
   className,
+  disabled,
 }: {
   corpora: z.infer<typeof schemas.CorpusOut>[]
   corpusId?: number
   onChange?: (corpusId: number | undefined) => void
   className?: string
+  disabled?: boolean
 }) {
   const searchableCorpora = useMemo(
     () => [
@@ -24,14 +26,13 @@ export function CorpusSelect({
         renderValue: <span className="italic">No corpus</span>,
       },
       ...corpora
-        .filter(
-          ({ cwb_id, name, id }) =>
-            id !== undefined && cwb_id !== undefined && name !== undefined,
-        )
+        .filter(({ id }) => id !== undefined)
         .map((corpus) => ({
           id: corpus.id as number,
           name: corpus.name ?? '',
-          searchValue: `${corpus.cwb_id} ${corpus.name} ${corpus.description}`
+          searchValue: `${corpus.cwb_id ?? ''} ${corpus.name ?? ''} ${
+            corpus.description ?? ''
+          }`
             .toLowerCase()
             .replace(/\s+/g, '_'),
         })),
@@ -48,6 +49,7 @@ export function CorpusSelect({
       itemId={corpusId}
       onChange={onChange}
       className={className}
+      disabled={disabled}
     />
   )
 }
