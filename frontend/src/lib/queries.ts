@@ -314,9 +314,10 @@ export const createSubcorpus: MutationOptions<
     apiClient.putCorpusIdsubcorpus(args, {
       params: { id: corpus_id.toString() },
     }),
-  onSuccess: () => {
+  onSuccess: (data) => {
     queryClient.invalidateQueries(corpusList)
     queryClient.invalidateQueries(subcorporaList)
+    queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))
   },
 }
 
