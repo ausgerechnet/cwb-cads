@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { createLazyFileRoute } from '@tanstack/react-router'
+import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -44,11 +44,16 @@ export const Route = createLazyFileRoute('/_app/keyword-analysis/new')({
 })
 
 function KeywordAnalysisNew() {
+  const navigate = useNavigate()
   const { mutate, isPending, error } = useMutation({
     ...createKeywordAnalysis,
-    onSuccess: (...args) => {
-      createKeywordAnalysis.onSuccess?.(...args)
+    onSuccess: (data, ...args) => {
+      createKeywordAnalysis.onSuccess?.(data, ...args)
       toast.success('Keyword analysis created')
+      navigate({
+        to: '/keyword-analysis/$analysisId',
+        params: { analysisId: String(data.id) },
+      })
     },
     onError: (...args) => {
       createKeywordAnalysis.onError?.(...args)
