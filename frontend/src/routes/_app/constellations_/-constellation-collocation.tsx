@@ -89,7 +89,6 @@ export function Collocation({ constellationId }: { constellationId: number }) {
   const navigate = useNavigate()
   const setSearch = useCallback(
     (key: string, value?: string | number | boolean) => {
-      console.log(key, value)
       navigate({
         search: (s) => ({ ...s, [key]: value }),
         params: (p) => p,

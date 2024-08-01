@@ -320,7 +320,6 @@ function ValueListSelect({
     (meta) => !value.includes(meta.value as string),
   )
 
-  console.log(metaFrequencies)
   return (
     <div className="flex flex-col gap-2">
       {selectedMetaFrequencies.map((meta) => (

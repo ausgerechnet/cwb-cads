@@ -357,18 +357,10 @@ function MetaValue({ value }: { value: unknown }) {
 }
 
 function ConcordanceLineRender({
-  concordanceLine: {
-    id,
-    tokens = [],
-    discourseme_ranges: discoursemeRanges,
-    structural = {},
-  },
+  concordanceLine: { id, tokens = [], structural = {} },
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
-  if (discoursemeRanges?.length) {
-    console.log('discoursemeRanges', discoursemeRanges)
-  }
   const keywordIndex =
     tokens.findIndex(({ offset = NaN }) => offset === 0) ?? emptyArray
   const preTokens =
