@@ -91,7 +91,7 @@ def sort_matches(query, sort_by, sort_offset=0):
 def ccc_concordance(focus_query,
                     primary, secondary,
                     window, extended_window, context_break=None,
-                    filter_queries=[], highlight_queries=[],
+                    filter_queries=dict(), highlight_queries=dict(),
                     match_id=None, page_number=None, page_size=None,
                     sort_by=None, sort_offset=0, sort_order='ascending', sort_by_s_att=None):
     """Central concordance function.
@@ -104,8 +104,8 @@ def ccc_concordance(focus_query,
     :param int extended_window: maximum number of tokens
     :param str context_break: return context until this s-attribute (or extended_window) (also used for filtering)
 
-    :param list[Query] filter_queries: further queries that must match in context (defined by window and context_break & query.s)
-    :param list[Query] highlight_queries: queries to highlight in (extended) context
+    :param dict[Query] filter_queries: further queries that must match in context (defined by window and context_break & query.s)
+    :param dict[Query] highlight_queries: queries to highlight in (extended) context
 
     :param int match_id: return specific match?
     :param int page_number: pagination page number
@@ -119,9 +119,6 @@ def ccc_concordance(focus_query,
     """
 
     current_app.logger.debug("ccc_concordance")
-    # sets to list
-    filter_queries = list(filter_queries)
-    highlight_queries = list(highlight_queries)
 
     # check parameters
     if sort_order == 'random' and (sort_by or sort_by_s_att):
@@ -134,7 +131,6 @@ def ccc_concordance(focus_query,
         raise NotImplementedError("cannot sort by s-att and p-att")
 
     # get s-attribute settings
-    context_break = context_break if context_break else focus_query.s
     s_show = focus_query.corpus.s_annotations
 
     # get specified match
@@ -163,7 +159,7 @@ def ccc_concordance(focus_query,
             cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
                                                     CotextLines.offset <= window,
                                                     CotextLines.offset >= -window)
-            for fq in filter_queries:
+            for key, fq in filter_queries.items():
 
                 current_app.logger.debug("ccc_concordance :: filtering cotext lines by joining matches")
                 cotext_lines_tmp = cotext_lines.join(
@@ -172,6 +168,9 @@ def ccc_concordance(focus_query,
                     (Matches.match == CotextLines.cpos)
                 )
                 match_pos = match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
+
+                if key not in highlight_queries.keys():
+                    highlight_queries[key] = fq
 
             current_app.logger.debug("ccc_concordance :: filtering matches")
 
@@ -227,26 +226,23 @@ def ccc_concordance(focus_query,
     lines = lines.apply(lambda line: ccc2attributes(line, primary, secondary, s_show, window), axis=1)
 
     # highlighting
-    for fq in filter_queries:
-        if fq not in highlight_queries:
-            highlight_queries.append(fq)
-    discourseme_ranges = defaultdict(list)
+    highlight_ranges = defaultdict(list)
     filter_item_cpos = set()
-    for query in highlight_queries:
-        hd_matches = Matches.query.filter(Matches.query_id == query.id,
+    for key, hq in highlight_queries.items():
+        hd_matches = Matches.query.filter(Matches.query_id == hq.id,
                                           Matches.contextid.in_(list(df_dump['contextid']))).all()
         for match in hd_matches:
-            # TODO repair after removing query.discourseme
-            # if not query.discourseme:
-            filter_item_cpos.add(match.match)
-            # else:
-            #     discourseme_ranges[match.contextid].append({
-            #         'discourseme_id': query.discourseme.id,
-            #         'start': match.match,
-            #         'end': match.matchend
-            #     })
+            if key == '_FILTER':
+                filter_item_cpos.add(match.match)
+            else:
+                highlight_ranges[match.contextid].append({
+                    'discourseme_id': key,
+                    'start': match.match,
+                    'end': match.matchend
+                })
+
     for line in lines:
-        line['discourseme_ranges'] = discourseme_ranges.get(line['contextid'], [])
+        line['discourseme_ranges'] = highlight_ranges.get(line['contextid'], [])
         for token in line['tokens']:
             if token['cpos'] in filter_item_cpos:
                 token['is_filter_item'] = True
@@ -283,8 +279,8 @@ class ConcordanceIn(Schema):
     filter_item = String(metadata={'nullable': True}, required=False)
     filter_item_p_att = String(load_default='lemma', required=False)
 
-    filter_discourseme_ids = List(Integer, load_default=[], required=False)
-    highlight_discourseme_ids = List(Integer, load_default=[], required=False)
+    filter_query_ids = List(Integer, load_default=[], required=False)
+    highlight_query_ids = List(Integer, load_default=[], required=False)
 
 
 class ConcordanceLineIn(Schema):

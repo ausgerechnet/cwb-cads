@@ -17,8 +17,7 @@ from flask import abort, current_app
 from pandas import DataFrame, read_csv
 
 from .. import db
-from ..breakdown import ccc_breakdown
-from ..database import Breakdown, Corpus, Query, SubCorpus, User, get_or_create
+from ..database import Corpus, Query, User, get_or_create
 from .database import (CollocationDiscoursemeItem,
                        CollocationDiscoursemeUnigramItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
@@ -78,7 +77,7 @@ def export_discoursemes(path_out):
     discoursemes.to_csv(path_out, sep="\t", index=False)
 
 
-def delete_description_children(description):
+def delete_description_children(discourseme_description):
     """description update / modification (adding or removing items) implies:
 
     - delete CollocationDiscoursemeItems, CollocationDiscoursemeUnigramItems, CollocationDiscoursemeUnigramScores
@@ -86,23 +85,24 @@ def delete_description_children(description):
 
     """
 
-    # current_app.logger.debug("detaching queries belonging to this discourseme")
-    # Query.query.filter_by(discourseme_id=discourseme.id).update({Query.discourseme_id: None})
+    current_app.logger.debug("detaching Query belonging to this description")
+    # DiscoursemeDescription.query.filter_by(id=description.id).update({DiscoursemeDescription.query_id: None})
+    discourseme_description.update_from_items()
 
-    current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this discourseme")
-    CollocationDiscoursemeItem.query.filter_by(discourseme_id=description.discourseme_id).delete()
+    current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this description")
+    CollocationDiscoursemeItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
     current_app.logger.debug("deleting CollocationDiscoursemeUnigramItems belonging to this discourseme")
-    CollocationDiscoursemeUnigramItem.query.filter_by(discourseme_id=description.discourseme_id).delete()
+    CollocationDiscoursemeUnigramItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
 
-    current_app.logger.debug("deleting KeywordDiscoursemeItems belonging to this discourseme")
-    KeywordDiscoursemeItem.query.filter_by(discourseme_id=description.discourseme_id).delete()
-    current_app.logger.debug("deleting KeywordDiscoursemeUnigramItems belonging to this discourseme")
-    KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_id=description.discourseme_id).delete()
+    current_app.logger.debug("deleting KeywordDiscoursemeItems belonging to this description")
+    KeywordDiscoursemeItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
+    current_app.logger.debug("deleting KeywordDiscoursemeUnigramItems belonging to this description")
+    KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
 
     db.session.commit()
 
 
-def items_to_breakdown(items, p_description, s_query, corpus, subcorpus=None, match_strategy='longest'):
+def description_items_to_query(items, p_description, s_query, corpus, subcorpus=None, match_strategy='longest'):
 
     # create query & wordlist
     queries = list()
@@ -184,14 +184,31 @@ def items_to_breakdown(items, p_description, s_query, corpus, subcorpus=None, ma
     db.session.commit()
     current_app.logger.debug("ccc_discourseme_matches :: saved to database")
 
-    # breakdown
-    current_app.logger.debug('creating breakdown')
-    breakdown = get_or_create(Breakdown,
-                              query_id=query.id,
-                              p=p_description)
-    breakdown_df = ccc_breakdown(breakdown)
+    return query
 
-    return breakdown_df
+
+def create_discourseme_description(discourseme, items, corpus_id, subcorpus_id, p_description, s_query, match_strategy):
+
+    if len(items) == 0:
+        if len(discourseme.template) == 0:
+            discourseme.generate_template()
+        items = [item.surface for item in discourseme.template]
+
+    # description
+    description = DiscoursemeDescription(
+        discourseme_id=discourseme.id,
+        corpus_id=corpus_id,
+        subcorpus_id=subcorpus_id,
+        p=p_description,
+        s=s_query,
+        match_strategy=match_strategy
+    )
+    db.session.add(description)
+    db.session.commit()
+
+    description.update_from_items(items)
+
+    return description
 
 
 ################
@@ -360,9 +377,10 @@ def create_description(id, json_data):
 
     discourseme = db.get_or_404(Discourseme, id)
 
-    corpus = db.get_or_404(Corpus, json_data.get('corpus_id'))
+    corpus_id = json_data.get('corpus_id')
+    corpus = db.get_or_404(Corpus, corpus_id)
     subcorpus_id = json_data.get('subcorpus_id')
-    subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
+    # subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
 
     p_description = json_data.get('p', corpus.p_default)
     s_query = json_data.get('s', corpus.s_default)
@@ -370,30 +388,7 @@ def create_description(id, json_data):
 
     items = json_data.get('items', [])  # will use discourseme template if not given
 
-    description = DiscoursemeDescription(
-        discourseme_id=discourseme.id,
-        corpus_id=corpus.id,
-        subcorpus_id=subcorpus_id,
-        p=p_description,
-        s=s_query,
-        match_strategy=match_strategy
-    )
-    db.session.add(description)
-    db.session.commit()
-
-    # items from template or from provided data
-    if len(items) == 0:
-        if len(discourseme.template) == 0:
-            discourseme.generate_template()
-        items = [item.surface for item in discourseme.template]
-
-    breakdown_df = items_to_breakdown(items, p_description, s_query, corpus, subcorpus, match_strategy)
-
-    # save description items
-    discourseme_description_items = breakdown_df.reset_index()[['item']]
-    discourseme_description_items['discourseme_description_id'] = description.id
-    discourseme_description_items.to_sql("discourseme_description_items", con=db.engine, if_exists='append', index=False)
-    db.session.commit()
+    description = create_discourseme_description(discourseme, items, corpus_id, subcorpus_id, p_description, s_query, match_strategy)
 
     return DiscoursemeDescriptionOut().dump(description), 200
 
@@ -421,7 +416,6 @@ def get_description(id, description_id):
 
 
 @bp.delete('/<id>/description/<description_id>/')
-@bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def delete_description(id, description_id):
 

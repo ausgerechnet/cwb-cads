@@ -87,5 +87,3 @@ def test_create_subcorpus(client, auth):
                                content_type='application/json',
                                headers=auth_header)
         assert subcorpus.status_code == 200
-
-        print(subcorpus.json)

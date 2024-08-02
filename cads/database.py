@@ -290,7 +290,7 @@ class Query(db.Model):
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
 
-    soc_sequence = db.Column(db.Unicode)
+    filter_sequence = db.Column(db.Unicode)
 
     match_strategy = db.Column(db.Unicode, default='longest')
     cqp_query = db.Column(db.Unicode)
@@ -494,8 +494,6 @@ class Collocation(db.Model):
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
 
     items = db.relationship('CollocationItem', backref='collocation', passive_deletes=True, cascade='all, delete')
-    discourseme_items = db.relationship('CollocationDiscoursemeItem', backref='collocation', passive_deletes=True, cascade='all, delete')
-    discourseme_unigram_items = db.relationship('CollocationDiscoursemeUnigramItem', backref='collocation', passive_deletes=True, cascade='all, delete')
 
     @property
     def nr_items(self):
@@ -519,41 +517,6 @@ class Collocation(db.Model):
             collocation_item_ids.update({s.collocation_item_id for s in scores})
         collocation_items = CollocationItem.query.filter(CollocationItem.id.in_(collocation_item_ids))
         return [item.item for item in collocation_items if ((item.f / item.f1) > ((item.f2 - item.f) / (item.N - item.f1)))]
-
-    @property
-    def discourseme_scores(self):
-
-        discourseme_f = defaultdict(list)
-        discourseme_f1 = defaultdict(list)
-        discourseme_f2 = defaultdict(list)
-        discourseme_N = defaultdict(list)
-
-        discourseme_item_scores = defaultdict(list)
-        for item in self.discourseme_items:
-            discourseme_item_scores[item.discourseme_id].append(item)
-
-            discourseme_f[item.discourseme_id].append(item.f)
-            discourseme_f1[item.discourseme_id].append(item.f1)
-            discourseme_f2[item.discourseme_id].append(item.f2)
-            discourseme_N[item.discourseme_id].append(item.N)
-
-        discourseme_unigram_item_scores = defaultdict(list)
-        for item in self.discourseme_unigram_items:
-            discourseme_unigram_item_scores[item.discourseme_id].append(item)
-
-        discourseme_scores = []
-        for discourseme_id in discourseme_item_scores.keys():
-            global_counts = DataFrame({'f': [sum(discourseme_f[discourseme_id])],
-                                       'f1': [max(discourseme_f1[discourseme_id])],
-                                       'f2': [sum(discourseme_f2[discourseme_id])],
-                                       'N': [max(discourseme_N[discourseme_id])],
-                                       'item': None}).set_index('item')
-            global_scores = measures.score(global_counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(global_counts)).reset_index()
-            discourseme_scores.append({'discourseme_id': discourseme_id,
-                                       'global_scores': global_scores.melt(var_name='measure', value_name='score').to_records(index=False),
-                                       'item_scores': discourseme_item_scores[discourseme_id],
-                                       'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
-        return discourseme_scores
 
 
 class CollocationItem(db.Model):

@@ -16,8 +16,7 @@ from pandas import DataFrame, read_sql
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
-from .collocation import (CollocationIn, CollocationOut, ccc_collocates,
-                          ccc_discourseme_counts)
+from .collocation import (CollocationIn, CollocationOut, get_or_create_counts)
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import get_meta_frequencies, get_meta_number_tokens
@@ -540,32 +539,19 @@ def concordance_lines(query_id, query_data):
     # filtering
     filter_item = query_data.get('filter_item')
     filter_item_p_att = query_data.get('filter_item_p_att')
-    filter_discourseme_ids = query_data.get('filter_discourseme_ids')
+    filter_query_ids = query_data.get('filter_query_ids')
 
     # highlighting
-    highlight_discourseme_ids = query_data.get('highlight_discourseme_ids')
+    highlight_query_ids = query_data.get('highlight_query_ids')
 
     # prepare filter queries
-    filter_queries = set()
-
-    for discourseme_id in filter_discourseme_ids:
-        # always run on whole corpus
-        fd = db.get_or_404(Discourseme, discourseme_id)
-        fq = get_or_create_query_discourseme(corpus, fd)
-        filter_queries.add(fq)
-
+    filter_queries = {query_id: db.get_or_404(Query, query_id) for query_id in filter_query_ids}
     if filter_item:
-        # TODO: run only on subcorpus → temporary
         fq = get_or_create_query_item(corpus, filter_item, filter_item_p_att, query.s)
-        filter_queries.add(fq)
+        filter_queries['_FILTER'] = fq
 
     # prepare highlight queries
-    highlight_queries = set()
-
-    for discourseme_id in highlight_discourseme_ids:
-        hd = db.get_or_404(Discourseme, discourseme_id)
-        hq = get_or_create_query_discourseme(corpus, hd)
-        highlight_queries.add(hq)
+    highlight_queries = {query_id: db.get_or_404(Query, query_id) for query_id in highlight_query_ids}
 
     concordance = ccc_concordance(query,
                                   primary, secondary,
@@ -608,6 +594,8 @@ def concordance_line(query_id, match_id, query_data):
     window = query_data.get('window')
     primary = query_data.get('primary')
     secondary = query_data.get('secondary')
+
+    # TODO highlighting for constellations, also shuffle
 
     concordance = ccc_concordance(query,
                                   primary, secondary,
@@ -797,11 +785,11 @@ def get_collocation(query_id, query_data):
     db.session.add(collocation)
     db.session.commit()
 
-    ccc_collocates(collocation)
+    get_or_create_counts(collocation, remove_focus_cpos=True)
     ccc_init_semmap(collocation, semantic_map_id)
 
-    if constellation:
-        discoursemes = constellation.highlight_discoursemes + constellation.filter_discoursemes
-        ccc_discourseme_counts(collocation, discoursemes)
+    # if constellation:
+    #     discoursemes = constellation.highlight_discoursemes + constellation.filter_discoursemes
+    #     ccc_discourseme_counts(collocation, discoursemes)
 
     return CollocationOut().dump(collocation), 200

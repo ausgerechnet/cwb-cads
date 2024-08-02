@@ -100,7 +100,7 @@ def ccc_discourseme_counts(keyword, discoursemes):
     for discourseme in discoursemes:
 
         # only if scores don't exist
-        kw_discourseme_items = KeywordDiscoursemeItem.query.filter_by(discourseme_id=discourseme.id)
+        kw_discourseme_items = KeywordDiscoursemeItem.query.filter_by(discourseme_description_id=discourseme.id)
         # kw_discourseme_unigram_items = KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_id=discourseme.id)
         if kw_discourseme_items.first():
             current_app.logger.debug(f'get_discourseme_counts :: counts for discourseme {discourseme.id} already exist')
