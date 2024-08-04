@@ -92,6 +92,8 @@ class DiscoursemeDescription(db.Model):
     items = db.RelationshipProperty("DiscoursemeDescriptionItems", backref="discourseme_description", cascade='all, delete')
     collocation_items = db.RelationshipProperty("CollocationDiscoursemeItem", backref="discourseme_description", cascade='all, delete')
     collocation_unigram_items = db.RelationshipProperty("CollocationDiscoursemeUnigramItem", backref="discourseme_description", cascade='all, delete')
+    keyword_items = db.RelationshipProperty("KeywordDiscoursemeItem", backref="discourseme_description", cascade='all, delete')
+    keyword_unigram_items = db.RelationshipProperty("KeywordDiscoursemeUnigramItem", backref="discourseme_description", cascade='all, delete')
 
     @property
     def _query(self):
@@ -221,7 +223,9 @@ class CollocationDiscoursemeUnigramItemScore(db.Model):
     """
 
     """
+
     id = db.Column(db.Integer, primary_key=True)
+
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
     collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_unigram_item.id', ondelete='CASCADE'), index=True)
 
@@ -235,6 +239,7 @@ class CollocationDiscoursemeItem(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
+
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
     discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'), index=True)
 
@@ -251,7 +256,9 @@ class CollocationDiscoursemeItemScore(db.Model):
     """
 
     """
+
     id = db.Column(db.Integer, primary_key=True)
+
     collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
     collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_item.id', ondelete='CASCADE'), index=True)
 
@@ -286,6 +293,7 @@ class KeywordDiscoursemeUnigramItemScore(db.Model):
     """
 
     """
+
     id = db.Column(db.Integer, primary_key=True)
 
     keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
@@ -319,6 +327,7 @@ class KeywordDiscoursemeItemScore(db.Model):
     """
 
     """
+
     id = db.Column(db.Integer, primary_key=True)
 
     keyword_item_id = db.Column(db.Integer, db.ForeignKey('keyword_discourseme_item.id', ondelete='CASCADE'), index=True)

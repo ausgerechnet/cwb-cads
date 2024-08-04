@@ -102,6 +102,122 @@ def delete_description_children(discourseme_description):
     db.session.commit()
 
 
+def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strategy='longest'):
+
+    current_app.logger.debug(f'ccc_discourseme_matches :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
+    # create template if necessary
+    if len(discourseme.template) == 0:
+        discourseme.generate_template()
+
+    queries = list()
+    wordlists = defaultdict(list)
+    for item in discourseme.template:
+        tokens = item.surface.split(" ")
+
+        if len(tokens) > 1 or cqp_escape(item.surface) != item.surface or item.cqp_query:
+            query = ""
+            for token in tokens:
+                query += f'[{item.p}="{token}"]'
+            queries.append(query)
+
+        else:
+            wordlists[item.p].append(item.surface)
+
+    if subcorpus:
+        crps = subcorpus.ccc()
+    else:
+        crps = corpus.ccc()
+
+    # we start CQP here and define wordlists
+    cqp = crps.start_cqp()
+    for p, wl_items in wordlists.items():
+        wl_name = generate_idx([discourseme.id, corpus.cwb_id, p] + wl_items, prefix="wl_")
+        queries.append(f"[{p} = ${wl_name}]")
+        with NamedTemporaryFile(mode='wt') as f:
+            f.write("\n".join(wl_items))
+            f.seek(0)
+            f.flush()
+            cqp.Exec(f'define ${wl_name} < "{f.name}";')
+
+    # create query
+    cqp_query = "|".join(queries)
+    cqp_query = f'({cqp_query}) within {s};' if s is not None else query + ";"
+    query = Query(
+        discourseme_id=discourseme.id,
+        corpus_id=corpus.id,
+        subcorpus_id=subcorpus.id if subcorpus else None,
+        cqp_query=cqp_query,
+        s=s,
+        match_strategy=match_strategy
+    )
+    db.session.add(query)
+    db.session.commit()
+
+    name = generate_idx([discourseme.id, corpus.cwb_id, subcorpus.nqr_cqp if subcorpus else None, cqp_query, s, match_strategy], prefix="Query_")
+
+    # query CQP and exit
+    cqp.Exec(f'set MatchingStrategy "{match_strategy}";')
+    matches_df = cqp.nqr_from_query(query.cqp_query,
+                                    name=name,
+                                    match_strategy=match_strategy,
+                                    return_dump=True,
+                                    propagate_error=True)
+    cqp.nqr_save(corpus.cwb_id, name=name)
+    cqp.__del__()
+
+    if isinstance(matches_df, str):  # ERROR
+        current_app.logger.error(f"ccc_discourseme_matches :: {matches_df}")
+        db.session.delete(query)
+        db.session.commit()
+        return matches_df
+
+    if len(matches_df) == 0:  # no matches
+        current_app.logger.debug("ccc_discourseme_matches :: 0 matches")
+        return None
+
+    # update name
+    query.nqr_cqp = name
+    db.session.commit()
+
+    # save matches
+    matches_df = matches_df.reset_index()[['match', 'matchend']]
+    matches_df['contextid'] = matches_df['match'].apply(lambda cpos: crps.cpos2sid(cpos, s)).astype(int)
+    matches_df['query_id'] = query.id
+    current_app.logger.debug(f"ccc_discourseme_matches :: saving {len(matches_df)} lines to database")
+    matches_df.to_sql('matches', con=db.engine, if_exists='append', index=False)
+    db.session.commit()
+    current_app.logger.debug("ccc_discourseme_matches :: saved to database")
+
+    return query
+
+
+# def get_or_create_query_discourseme(corpus, discourseme, subcorpus=None, s=None, match_strategy='longest'):
+#     """get or create query for discourseme in corpus
+
+#     """
+
+#     current_app.logger.debug(f'get_or_create_query :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
+
+#     # preprocess parameters
+#     s = corpus.s_default if s is None else s
+#     subcorpus_id = subcorpus.id if subcorpus else None
+
+#     # try to retrieve a suitable query
+#     q = [q for q in discourseme.queries if q.corpus_id == corpus.id and q.subcorpus_id == subcorpus_id and not q.soc_sequence]
+
+#     if len(q) > 1:
+#         # more than one query for this discourseme in this (sub)corpus. must not happen due to unique constraint
+#         raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
+#     if len(q) == 1:
+#         # there is exactly one query for this discourseme in this corpus
+#         query = q[0]
+#     elif len(q) == 0:
+#         # no query yet: create new query
+#         query = ccc_discourseme_matches(corpus, discourseme, s=s, subcorpus=subcorpus, match_strategy=match_strategy)
+
+#     return query
+
+
 def description_items_to_query(items, p_description, s_query, corpus, subcorpus=None, match_strategy='longest'):
 
     # create query & wordlist

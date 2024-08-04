@@ -7,12 +7,11 @@ from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
 from numpy import array_split
-from pandas import DataFrame, concat
+from pandas import DataFrame
 
 from . import db
 from .collocation import DiscoursemeScoresOut
 from .database import Keyword, KeywordItem, KeywordItemScore
-from .mmda.database import KeywordDiscoursemeItem, KeywordDiscoursemeUnigramItem
 from .semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
 from .users import auth
 from .utils import AMS_DICT
@@ -84,116 +83,12 @@ def ccc_keywords(keyword):
     current_app.logger.debug('ccc_keywords :: exit')
 
 
-def ccc_discourseme_counts(keyword, discoursemes):
-    """get KeywordDiscoursemeItem(Score) and KeywordDiscoursemeUnigramItem(Score)
-
-    """
-
-    from .query import ccc_query, get_or_create_query_discourseme
-
-    current_app.logger.debug('get_discourseme_counts :: enter')
-    discourseme_counts_target = list()
-    discourseme_unigram_counts_target = list()
-    discourseme_counts_reference = list()
-    discourseme_unigram_counts_reference = list()
-
-    for discourseme in discoursemes:
-
-        # only if scores don't exist
-        kw_discourseme_items = KeywordDiscoursemeItem.query.filter_by(discourseme_description_id=discourseme.id)
-        # kw_discourseme_unigram_items = KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_id=discourseme.id)
-        if kw_discourseme_items.first():
-            current_app.logger.debug(f'get_discourseme_counts :: counts for discourseme {discourseme.id} already exist')
-            continue
-
-        current_app.logger.debug(f'get_discourseme_counts :: creating counts for discourseme {discourseme.id}')
-        # target
-        discourseme_query = get_or_create_query_discourseme(keyword.corpus, discourseme, keyword.subcorpus)
-        discourseme_matches_df = ccc_query(discourseme_query)
-        discourseme_matches = keyword.corpus.ccc().subcorpus(df_dump=discourseme_matches_df, overwrite=False)
-
-        discourseme_unigram_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p], split=True)
-        discourseme_unigram_breakdown['discourseme_id'] = discourseme.id
-        discourseme_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p])
-        discourseme_breakdown['discourseme_id'] = discourseme.id
-
-        discourseme_counts_target.append(discourseme_breakdown)
-        discourseme_unigram_counts_target.append(discourseme_unigram_breakdown)
-
-        # reference
-        discourseme_query = get_or_create_query_discourseme(keyword.corpus_reference, discourseme, keyword.subcorpus_reference)
-        discourseme_matches_df = ccc_query(discourseme_query)
-        discourseme_matches = keyword.corpus_reference.ccc().subcorpus(df_dump=discourseme_matches_df, overwrite=False)
-
-        discourseme_unigram_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p], split=True)
-        discourseme_unigram_breakdown['discourseme_id'] = discourseme.id
-        discourseme_breakdown = discourseme_matches.breakdown(p_atts=[keyword.p_reference])
-        discourseme_breakdown['discourseme_id'] = discourseme.id
-
-        discourseme_counts_reference.append(discourseme_breakdown)
-        discourseme_unigram_counts_reference.append(discourseme_unigram_breakdown)
-
-    if len(discourseme_counts_target) == 0:
-        return
-
-    discourseme_counts_target = concat(discourseme_counts_target).reset_index().set_index(['item', 'discourseme_id']).rename(columns={'freq': 'f1'})
-    discourseme_counts_reference = concat(discourseme_counts_reference).reset_index().set_index(['item', 'discourseme_id']).rename(columns={'freq': 'f2'})
-    discourseme_counts = discourseme_counts_target.join(discourseme_counts_reference).fillna(0, downcast='infer')
-    discourseme_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
-    discourseme_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
-    discourseme_counts['keyword_id'] = keyword.id
-
-    discourseme_unigram_counts_target = concat(discourseme_unigram_counts_target).reset_index().set_index(['item', 'discourseme_id']).rename(
-        columns={'freq': 'f1'})
-    discourseme_unigram_counts_reference = concat(discourseme_unigram_counts_reference).reset_index().set_index(['item', 'discourseme_id']).rename(
-        columns={'freq': 'f2'})
-    discourseme_unigram_counts = discourseme_unigram_counts_target.join(discourseme_unigram_counts_reference).fillna(0, downcast='infer')
-    discourseme_unigram_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
-    discourseme_unigram_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
-    discourseme_unigram_counts['keyword_id'] = keyword.id
-
-    # sub_vs_rest correction
-    sub_vs_rest = keyword.sub_vs_rest_strategy()
-    if sub_vs_rest['sub_vs_rest']:
-        current_app.logger.debug('ccc_discourseme_counts :: subcorpus vs. rest correction')
-        if sub_vs_rest['target_is_subcorpus']:
-            discourseme_counts['f2'] = discourseme_counts['f2'] - discourseme_counts['f1']
-            discourseme_counts['N2'] = discourseme_counts['N2'] - discourseme_counts['N1']
-            discourseme_unigram_counts['f2'] = discourseme_unigram_counts['f2'] - discourseme_unigram_counts['f1']
-            discourseme_unigram_counts['N2'] = discourseme_unigram_counts['N2'] - discourseme_unigram_counts['N1']
-        elif sub_vs_rest['reference_is_subcorpus']:
-            discourseme_counts['f1'] = discourseme_counts['f1'] - discourseme_counts['f2']
-            discourseme_counts['N1'] = discourseme_counts['N1'] - discourseme_counts['N2']
-            discourseme_unigram_counts['f1'] = discourseme_unigram_counts['f1'] - discourseme_unigram_counts['f2']
-            discourseme_unigram_counts['N1'] = discourseme_unigram_counts['N1'] - discourseme_unigram_counts['N2']
-
-    # save to database
-    discourseme_counts.to_sql('keyword_discourseme_item', con=db.engine, if_exists='append')
-    discourseme_unigram_counts.to_sql('keyword_discourseme_unigram_item', con=db.engine, if_exists='append')
-
-    # KeywordDiscoursemeItem
-    counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id)
-    counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f1', 'N1', 'f2', 'N2']).set_index('id')
-    scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
-    scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename(columns={'id': 'keyword_item_id'})
-    scores['keyword_id'] = keyword.id
-    scores.to_sql('keyword_discourseme_item_score', con=db.engine, if_exists='append', index=False)
-
-    # KeywordDiscoursemeUnigramItem
-    counts_from_sql = KeywordDiscoursemeUnigramItem.query.filter_by(keyword_id=keyword.id)
-    counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f1', 'N1', 'f2', 'N2']).set_index('id')
-    scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
-    scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename(columns={'id': 'keyword_item_id'})
-    scores['keyword_id'] = keyword.id
-    scores.to_sql('keyword_discourseme_unigram_item_score', con=db.engine, if_exists='append', index=False)
-
-
 ################
 # API schemata #
 ################
 class KeywordIn(Schema):
 
-    constellation_id = Integer(required=False, load_default=None)
+    # constellation_id = Integer(required=False, load_default=None)
     semantic_map_id = Integer(required=False, load_default=None)
 
     corpus_id = Integer(required=True)
@@ -212,8 +107,8 @@ class KeywordOut(Schema):
 
     id = Integer()
 
+    # constellation_id = Integer(metadata={'nullable': True})
     semantic_map_id = Integer(metadata={'nullable': True})
-    constellation_id = Integer(metadata={'nullable': True})
 
     corpus_id = Integer()
     subcorpus_id = Integer()
@@ -378,13 +273,13 @@ def get_keyword_items(id, query_data):
 
     # discourseme scores
     discourseme_scores = list()
-    if keyword.constellation:
-        ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
-        discourseme_scores = keyword.discourseme_scores
-        for s in discourseme_scores:
-            s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
-            s['unigram_item_scores'] = [KeywordItemOut().dump(sc) for sc in s['unigram_item_scores']]
-        discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+    # if keyword.constellation:
+    #     ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
+    #     discourseme_scores = keyword.discourseme_scores
+    #     for s in discourseme_scores:
+    #         s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
+    #         s['unigram_item_scores'] = [KeywordItemOut().dump(sc) for sc in s['unigram_item_scores']]
+    #     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
     # TODO: also return ranks (to ease frontend pagination)?
     keyword_items = {
@@ -412,7 +307,7 @@ def create_keyword(json_data):
     """
 
     # constellation and semantic map
-    constellation_id = json_data.get('constellation_id')
+    # constellation_id = json_data.get('constellation_id')
     semantic_map_id = json_data.get('semantic_map_id')
 
     # corpus
@@ -430,7 +325,7 @@ def create_keyword(json_data):
     min_freq = json_data.get('min_freq')
 
     keyword = Keyword(
-        constellation_id=constellation_id,
+        # constellation_id=constellation_id,
         semantic_map_id=semantic_map_id,
         corpus_id=corpus_id,
         subcorpus_id=subcorpus_id,
@@ -446,8 +341,8 @@ def create_keyword(json_data):
 
     ccc_keywords(keyword)
     ccc_init_semmap(keyword, semantic_map_id)
-    if keyword.constellation:
-        ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
+    # if keyword.constellation:
+    #     ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
 
     return KeywordOut().dump(keyword), 200
 
