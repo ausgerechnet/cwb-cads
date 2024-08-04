@@ -33,6 +33,12 @@ from collections import defaultdict
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
 
+class CollocationIn(CollocationIn):
+
+    focus_discourseme_id = Integer(required=True)
+    filter_discourseme_ids = List(Integer(), load_default=[], required=False)
+
+
 def query_discourseme_cotext(collocation, df_cotext, discourseme_description, discourseme_matchend_in_context=True):
     """get CollocationDiscoursemeItems and CollocationDiscoursemeUnigramItems
 
@@ -588,14 +594,12 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
     return ConcordanceOut().dump(concordance), 200
 
 
-@bp.get("/<id>/description/<description_id>/collocation/")
-@bp.input(CollocationIn, location='query')
-@bp.input({'focus_discourseme_id': Integer(required=True)}, location='query', arg_name='query_focus')
-@bp.input({'filter_discourseme_ids': List(Integer(), load_default=[], required=False)}, location='query', arg_name='query_filter')
+@bp.post("/<id>/description/<description_id>/collocation/")
+@bp.input(CollocationIn)
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def collocation(id, description_id, query_data, query_focus, query_filter):
-    """Get collocation analysis of constellation in corpus. Redirects to query endpoint.
+def create_collocation(id, description_id, json_data):
+    """Create collocation analysis of constellation in corpus.
 
     """
 
@@ -603,24 +607,24 @@ def collocation(id, description_id, query_data, query_focus, query_filter):
     description = db.get_or_404(ConstellationDescription, description_id)
 
     # context options
-    window = query_data.get('window')
+    window = json_data.get('window')
     p = description.p
     s = description.s
 
     # marginals
-    marginals = query_data.get('marginals', 'global')
+    marginals = json_data.get('marginals', 'global')
 
     # semantic map
-    semantic_map_id = query_data.get('semantic_map_id', None)
+    semantic_map_id = json_data.get('semantic_map_id', None)
 
     # filtering
-    filter_discourseme_ids = query_filter.get('filter_discourseme_ids')
-    filter_item = query_data.get('filter_item')
-    filter_item_p_att = query_data.get('filter_item_p_att')
+    filter_discourseme_ids = json_data.get('filter_discourseme_ids')
+    filter_item = json_data.get('filter_item')
+    filter_item_p_att = json_data.get('filter_item_p_att')
 
     # select and categorise queries
     highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions}
-    focus_query = highlight_queries[query_focus['focus_discourseme_id']]
+    focus_query = highlight_queries[json_data['focus_discourseme_id']]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
         filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
@@ -732,3 +736,10 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     }
 
     return CollocationItemsOut().dump(collocation_items), 200
+
+
+# @bp.post("/<id>/description/<description_id>/collocation/")
+# @bp.input(KeywordsIn)
+# @bp.output(KeywordsOut)
+# def create_keywords(id):
+#     pass

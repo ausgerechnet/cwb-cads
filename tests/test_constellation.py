@@ -405,13 +405,15 @@ def test_constellation_collocation(client, auth):
                                   headers=auth_header)
         assert description.status_code == 200
 
-        collocation = client.get(url_for('mmda.constellation.collocation',
-                                         id=constellation.json['id'],
-                                         description_id=description.json['id'],
-                                         focus_discourseme_id=union_id,
-                                         p='lemma',
-                                         window=10),
-                                 headers=auth_header)
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': union_id,
+                                      'p': 'lemma',
+                                      'window': 10
+                                  },
+                                  headers=auth_header)
         assert collocation.status_code == 200
 
         coll = client.get(url_for('mmda.constellation.get_collocation_items',
@@ -432,12 +434,16 @@ def test_constellation_collocation(client, auth):
                                   headers=auth_header)
         assert description.status_code == 200
 
-        collocation = client.get(url_for('mmda.constellation.collocation',
-                                         id=constellation.json['id'],
-                                         description_id=description.json['id'],
-                                         focus_discourseme_id=union_id,
-                                         p='lemma', window=10, marginals='global'),
-                                 headers=auth_header)
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': union_id,
+                                      'p': 'lemma',
+                                      'window': 10,
+                                      'marginals': 'global'
+                                  },
+                                  headers=auth_header)
         assert collocation.status_code == 200
 
         coll_glob = client.get(url_for('mmda.constellation.get_collocation_items',
@@ -448,12 +454,15 @@ def test_constellation_collocation(client, auth):
                                headers=auth_header)
 
         # collocation in subcorpus with local marginals
-        collocation = client.get(url_for('mmda.constellation.collocation',
-                                         id=constellation.json['id'],
-                                         description_id=description.json['id'],
-                                         focus_discourseme_id=union_id,
-                                         p='lemma', window=10),
-                                 headers=auth_header)
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': union_id,
+                                      'p': 'lemma',
+                                      'window': 10
+                                  },
+                                  headers=auth_header)
         assert collocation.status_code == 200
 
         coll_loc = client.get(url_for('mmda.constellation.get_collocation_items',
@@ -805,13 +814,15 @@ def test_constellation_2nd_order_collocation(client, auth):
         assert description.status_code == 200
 
         # collocation in whole corpus
-        collocation = client.get(url_for('mmda.constellation.collocation',
-                                         id=constellation.json['id'],
-                                         description_id=description.json['id'],
-                                         focus_discourseme_id=union_id,
-                                         p='lemma',
-                                         window=10),
-                                 headers=auth_header)
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': union_id,
+                                      'p': 'lemma',
+                                      'window': 10
+                                  },
+                                  headers=auth_header)
         assert collocation.status_code == 200
 
         coll = client.get(url_for('mmda.constellation.get_collocation_items',
@@ -831,14 +842,16 @@ def test_constellation_2nd_order_collocation(client, auth):
         assert int(coll_conv["O11"]) == 1434
 
         # 2nd order collocates with "Zuruf"
-        collocation = client.get(url_for('mmda.constellation.collocation',
-                                         id=constellation.json['id'],
-                                         description_id=description.json['id'],
-                                         focus_discourseme_id=union_id,
-                                         p='lemma',
-                                         window=10,
-                                         filter_item='Zuruf'),
-                                 headers=auth_header)
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': union_id,
+                                      'p': 'lemma',
+                                      'window': 10,
+                                      'filter_item': 'Zuruf'
+                                  },
+                                  headers=auth_header)
         assert collocation.status_code == 200
 
         coll = client.get(url_for('mmda.constellation.get_collocation_items',
@@ -858,14 +871,16 @@ def test_constellation_2nd_order_collocation(client, auth):
         assert int(coll_conv["O11"]) == 180
 
         # 2nd order collocates with discourseme 2 ("FDP")
-        collocation = client.get(url_for('mmda.constellation.collocation',
-                                         id=constellation.json['id'],
-                                         description_id=description.json['id'],
-                                         focus_discourseme_id=union_id,
-                                         p='lemma',
-                                         window=10,
-                                         filter_discourseme_ids=[2]),
-                                 headers=auth_header)
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': union_id,
+                                      'p': 'lemma',
+                                      'window': 10,
+                                      'filter_discourseme_ids': [2]
+                                  },
+                                  headers=auth_header)
         assert collocation.status_code == 200
 
         coll = client.get(url_for('mmda.constellation.get_collocation_items',
@@ -885,15 +900,17 @@ def test_constellation_2nd_order_collocation(client, auth):
         assert int(coll_conv["O11"]) == 817
 
         # 2nd order collocates with "Zuruf" and discourseme "FDP"
-        collocation = client.get(url_for('mmda.constellation.collocation',
-                                         id=constellation.json['id'],
-                                         description_id=description.json['id'],
-                                         focus_discourseme_id=union_id,
-                                         p='lemma',
-                                         window=10,
-                                         filter_discourseme_ids=[2],
-                                         filter_item='Zuruf'),
-                                 headers=auth_header)
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': union_id,
+                                      'p': 'lemma',
+                                      'window': 10,
+                                      'filter_discourseme_ids': [2],
+                                      'filter_item': 'Zuruf'
+                                  },
+                                  headers=auth_header)
         assert collocation.status_code == 200
 
         coll = client.get(url_for('mmda.constellation.get_collocation_items',
@@ -948,7 +965,7 @@ def test_constellation_2nd_order_collocation(client, auth):
 #         assert keyword.status_code == 200
 #         assert keyword.json['constellation_id'] == constellation.json['id']
 
-#         keyword_items = client.get(url_for('keyword.get_keyword_items', id=keyword.json['id']),
+#         KEYWORD_items = client.get(url_for('keyword.get_keyword_items', id=keyword.json['id']),
 #                                    headers=auth_header)
 
 #         assert keyword_items.status_code == 200
