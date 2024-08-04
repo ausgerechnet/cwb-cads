@@ -56,12 +56,16 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
     p_description = collocation.p
 
     # get matches of discourseme in whole corpus and in subcorpus of cotext
+    # three possibilities:
+    # - subcorpus and local marginals
+    # - no subcorpus
+    # - subcorpus and global marginals
     current_app.logger.debug(
         f'query_discourseme_cotext :: .. getting matches of discourseme "{discourseme_description.discourseme.name}" in whole corpus'
     )
     from ccc.utils import cqp_escape
     items = [cqp_escape(item.item) for item in discourseme_description.items]
-    if collocation._query.subcorpus and collocation.marginals == 'local':
+    if not collocation._query.subcorpus or (collocation._query.subcorpus and collocation.marginals == 'local'):
         if not discourseme_description.query_id:
             corpus_query = description_items_to_query(items, p_description, s_query, corpus, collocation._query.subcorpus, match_strategy=match_strategy)
         else:
