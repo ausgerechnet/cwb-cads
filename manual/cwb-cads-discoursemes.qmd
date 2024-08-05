@@ -1,0 +1,872 @@
+---
+title: "cwb-cads discoursemes"
+date: "August 05, 2024"
+author: Philipp Heinrich
+editor: source
+format:
+  html:
+    toc: true
+    toc-float: true
+    collapsed: false
+    smooth-scroll: false
+    number-sections: true
+    df-print: paged
+---
+
+# Setup
+
+```{r, message = FALSE}
+rm(list = ls())
+library(tidyverse)
+library(httr2)
+library(jsonlite)
+library(ggrepel)
+url_api <- "http://127.0.0.1:5000"
+```
+
+- get API access token via `/user/login`
+```{r, message = FALSE}
+access.token <- str_interp("${url_api}/user/login") |> 
+  request() |> 
+  req_method("POST") |> 
+  req_body_form(password = 'mmda-admin', username = 'admin') |> 
+  req_perform() |>
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON() |>
+  magrittr::extract2("access_token")
+```
+
+# Discoursemes
+
+- the canonical corpus linguistic approach to discourse analysis involves the grouping of observed surface types
+  + usually from keyword or collocate tables on an **analysis layer** (typically word or lemma)
+  + multi-word units (MWUs) are usually not featured in such tables, but reasonable units
+    - e.g. NEs "Wladimir Putin", "BUND Naturschutz", or (especially English) noun compounds: "nuclear energy", "conspiracy theory"
+- these groupings try to capture minimal units of lexical meaning in the context of a discourse
+- we call these "building blocks" of discourse analysis **discoursemes**
+- some examples of discoursemes are given
+```{r}
+discoursemes <- str_interp("${url_api}/mmda/discourseme/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON() |> 
+  tibble()
+
+discoursemes
+```
+
+- we focus on the discourseme "Klimawandel"
+```{r}
+discourseme <- discoursemes |> filter(name == "Klimawandel")
+discourseme
+discourseme.id <- discourseme |> pull(id)
+```
+
+## Descriptions
+
+- we refer to the actual groups of surface types in a corpus as **discourseme descriptions**
+  - discourseme descriptions are created on the fly in analyses by grouping observed items
+- analysts have access to two major sources of information
+  - frequency tables (collocates, keywords) calculated on a positional attribute (`p_description="lemma"`)
+  - concordance lines showing the primary (word) layer and the description layer (+ additionaly p-atts / s-atts))
+- unigram items from frequency tables can be directly taken to create (or update) discourseme descriptions
+  - assumption: all identical tokens / token sequences on the analysis layer belong to the same discourseme
+  - MWUs can be described by (multi-token) CQP queries
+  - MWUs are usually found by generalising from concordance lines
+    + default CQP query = surface realisation on analysis layer
+  - in the backend, all descriptions are converted to CQP queries and translated to surface realisations (to deal with overlapping matches)
+
+- the MMDA frontend is designed to allow the user to categorise types on the description layer (`p_description`)
+  - especially based on frequency comparisons of unigram types
+- note that this assumes all identical types on `p_description` belong to the same discourseme
+  + this is obviously an assumption because any categorisation will have FPs and FNs
+    - reading actual concordance lines establishes ultimate ground truth
+    - nonetheless, the aim here is to form reproducible clusters on `p_description`
+  + this is reasonable because
+    (1) a "lightweight" WSD (e.g. POS-based WSD) can be accomplished via choice of `p_description` (→ corpus annotation)
+    (2) we allow disambiguation via constellations (see below)
+    (3) for queries spanning several tokens, this is typically the case anyway (cf. spheroscope: exact same string, but different argument?)
+- alternative: allow to manually categorise initial matches + extend
+  + easiest case: allow removal of types on the `p_description` layer
+  + however, especially when only looking at unigram queries, FPs are still likely, meaning that the same type (such as "BUND") can belong to different discoursemes
+  + easy case: exclusion of MWUs ("BUND Naturschutz")
+  + lots of problems though and not what we want to do here
+
+- describing a discourseme in a corpus = give a list of items on the description layer
+  - we use the SZ-2018-2022 corpus as an example
+```{r}
+corpora <- str_interp("${url_api}/corpus/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON() |> 
+  tibble()
+
+corpus.id <- corpora |> filter(cwb_id == "SZ-2018-2022") |> pull(id)
+```
+
+- description of discourseme "Klimawandel":
+```{r}
+description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/description/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_body_json(list(corpus_id = corpus.id, p = 'lemma', items = c("Klimawandel", "Klimaveränderung", "global Erwärmung"))) |>
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+description
+```
+- note that a description has a canonical s-attribute (here: `s=s`, i.e. sentences) that are used to index query matches
+- reasonable corpus-dependent defaults are implemented in the backend
+- this is essential for a fast look-up of discourseme co-occurrences (see constellations below)
+
+- since each description corresponds to a query, we can use the usual endpoints for accessing concordance lines, breakdowns, collocation analyses, etc.
+```{r}
+description.query.id <- description |> magrittr::extract2("query_id")
+
+request(str_interp("${url_api}/query/${description.query.id}/breakdown")) |> 
+  req_auth_bearer_token(access.token) |>
+  req_url_query(p = "lemma") |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("items") |> 
+  tibble() |> 
+  select(item, ipm, freq, nr_tokens)
+```
+
+- the user now can add items to a description
+```{r}
+description.id <- description |> magrittr::extract2("id")
+
+description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/description/${description.id}/add-item") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |>
+  req_method("patch") |> 
+  req_body_json(list(item = 'Klimakrise')) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+description
+```
+
+- note that the query necessarily changes with every meaningful update (adding the same item twice does not affect the query)
+```{r}
+description.query.id <- description |> magrittr::extract2("query_id")
+
+request(str_interp("${url_api}/query/${description.query.id}/breakdown")) |> 
+  req_auth_bearer_token(access.token) |>
+  req_url_query(p = "lemma") |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("items") |> 
+  tibble() |> 
+  select(item, ipm, freq, nr_tokens)
+```
+
+- removing items works similarly
+```{r}
+description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/description/${description.id}/remove-item") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |>
+  req_method("patch") |> 
+  req_body_json(list(item = 'Klimakrise')) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+description.query.id <- description |> magrittr::extract2("query_id")
+
+request(str_interp("${url_api}/query/${description.query.id}/breakdown")) |> 
+  req_auth_bearer_token(access.token) |>
+  req_url_query(p = "lemma") |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("items") |> 
+  tibble() |> 
+  select(item, ipm, freq, nr_tokens)
+```
+
+- you will receive a `404` if you try to remove items that are not part of the description
+
+## Templates
+
+- discourseme descriptions without concrete corpora are possible via **discourseme templates**
+- each item of a template is a CQP query, e.g.
+  + an expected surface realisation on an expected analysis layer (`'[p_att="item"]'`)
+    - token-level CQP wildcards can be used (`'[p_att="item.*"%cd]'`)
+  + a sequence of surface realisations (`'[p_att="item.*"%cd] [p_att="another_item"]'`)
+  + a full CQP query (which might include s-att restrictions)
+  + an anchored CQP query (with anchor corrections and slots)
+
+- template of discourseme "Klimawandel"
+```{r}
+discourseme |> pull(template)
+```
+
+- templates can be used to create a description in a corpus
+- this works by creating a discourseme description from the query matches of the template
+```{r}
+description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/description/") |> 
+  request() |> 
+  req_body_json(list(corpus_id = corpus.id)) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+description |> magrittr::extract2("items")
+```
+
+
+# Discourseme Constellations
+
+- several discoursemes can be combined to form a **discourseme constellation**
+- constellations are used to highlight a set of discoursemes in analyses (concordancing, collocation tables, etc.)
+- we create a constellation with discoursemes related to climate change
+```{r}
+discoursemes
+```
+
+
+```{r}
+constellation <- str_interp("${url_api}/mmda/constellation/") |> 
+  request() |> 
+  req_body_json(list(discourseme_ids = 1:13)) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+constellation
+```
+
+## Descriptions
+
+- as with discoursemes, the user wants to **describe** constellations in corpora
+- constellation descriptions consist of all the individual discourseme descriptions on one joint p-att for describing (and a joint s-attribute for query indexing)
+- when creating a constellation description, the backend makes sure that all discoursemes belonging to this constellation have an adequate description (using existing descriptions or creating descriptions from templates)
+
+```{r}
+constellation.id <- constellation |> magrittr::extract2("id")
+
+description <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/") |> 
+  request() |> 
+  req_body_json(list(corpus_id = corpus.id)) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+description
+```
+
+- descriptions are the appropriate starting point when working with corpus data (concordancing, analyses)
+
+## Concordancing
+
+- when accessing concordances and analyses via the constellation endpoint, you get information about all discoursemes of the constellation
+- choose a `focus_discourseme_id` to extract concordance lines of a constellation (the discourseme used for initial filtering and centering in KWIC)
+```{r}
+description.id <- description |> magrittr::extract2("id")
+concordance <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/concordance") |> 
+  request() |> 
+  req_url_query(focus_discourseme_id = discourseme.id) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+```{r}
+concordance |> magrittr::extract2("lines") |> 
+  slice(5) |> 
+  pull(discourseme_ranges)
+
+concordance |> magrittr::extract2("lines") |> 
+  slice(5) |> 
+  pull(tokens)
+```
+
+- for filtering, you can give (additional) discourseme ids
+```{r}
+concordance <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/concordance") |> 
+  request() |> 
+  req_url_query(focus_discourseme_id = discourseme.id,
+                filter_discourseme_ids = c(1)) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+```{r}
+concordance |> magrittr::extract2("lines") |> 
+  slice(1) |> 
+  pull(discourseme_ranges)
+
+concordance |> magrittr::extract2("lines") |> 
+  slice(1) |> 
+  pull(tokens)
+```
+
+- filtering works on a variable `window=10` (and the description s-att)
+
+## Collocation Analysis
+
+- focusing on a discourseme in an analysis, you can create a collocation analysis
+```{r}
+collocation <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/")) |> 
+  req_body_json(list(p = 'lemma', window = 10, focus_discourseme_id = discourseme.id)) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+collocation.id <- collocation |> magrittr::extract2("id")
+```
+
+- this takes longer because scores for each discourseme will be calculated
+```{r}
+collocation.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/${collocation.id}/items")) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_url_query(page_size = 50) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+```
+
+- you get collocation items like in a traditional collocation analysis
+- note that the (unigram) breakdown of the focus discourseme is part of the collocation profile
+- this is straightforward because we assume that discoursemes can overlap (the same item can be categorised as belonging to several discourseme)
+  + so it does not make sense to filter out the collocation node
+```{r}
+item.scores <- collocation.items |> 
+  magrittr::extract2("items") |> 
+  magrittr::extract2("scores") |> 
+  bind_rows(.id = "item") |>
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(item = collocation.items |> magrittr::extract2("items") |> magrittr::extract2("item"))
+
+item.scores
+```
+
+- additionally, you get three types of "discourseme" scores
+```{r}
+collocation.items |> magrittr::extract2("discourseme_scores")
+```
+
+- global scores for whole discoursemes
+```{r}
+discourseme.scores <- collocation.items |> 
+  magrittr::extract2("discourseme_scores") |> 
+  pull(global_scores) |> 
+  bind_rows(.id = "discourseme_id") |>
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(discourseme_id = collocation.items |> magrittr::extract2("discourseme_scores") |> magrittr::extract2("discourseme_id"))
+
+discourseme.scores
+```
+
+- scores for each item belonging to a discourseme
+```{r}
+discourseme.items.scores <- collocation.items |>
+  magrittr::extract2("discourseme_scores") |> 
+  pull(item_scores) |> 
+  bind_rows(.id = "discourseme_id") |> 
+  pull(scores) |> 
+  bind_rows(.id = "item") |> 
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(
+    discourseme_id = collocation.items |> magrittr::extract2("discourseme_scores") |> pull(item_scores) |> bind_rows(.id = "discourseme_id") |> pull(discourseme_id),
+    item = collocation.items |> magrittr::extract2("discourseme_scores") |> pull(item_scores) |> bind_rows(.id = "discourseme_id") |> pull(item)
+  )
+
+discourseme.items.scores
+```
+
+- and scores for the unigrams consumed by the discoursemes
+```{r}
+discourseme.unigram.items.scores <- collocation.items |> 
+  magrittr::extract2("discourseme_scores") |> 
+  pull(unigram_item_scores) |> 
+  bind_rows(.id = "discourseme_id") |> 
+  pull(scores) |> 
+  bind_rows(.id = "item") |> 
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(
+    discourseme_id = collocation.items |> magrittr::extract2("discourseme_scores") |> 
+      pull(unigram_item_scores) |> bind_rows(.id = "discourseme_id") |> pull(discourseme_id),
+    item = collocation.items |> magrittr::extract2("discourseme_scores") |> 
+      pull(unigram_item_scores) |> bind_rows(.id = "discourseme_id") |> pull(item)
+  )
+
+discourseme.unigram.items.scores
+```
+
+### Visualisation
+
+- note that you also get coordinates for all discourseme items
+```{r}
+coordinates <- collocation.items |> 
+  magrittr::extract2("coordinates")
+
+coordinates
+```
+
+- in the visualisation, we filter out all items belonging to any discourseme unigram breakdown
+```{r}
+map <- item.scores |> 
+  left_join(coordinates, by = "item") |> 
+  filter(! item %in% (discourseme.unigram.items.scores |> pull(item))) |> 
+  mutate(x = if_else(!is.na(x_user), x_user, x),
+         y = if_else(!is.na(y_user), y_user, y)) |> 
+  mutate(discourseme_id = NA) |> 
+  select(discourseme_id, item, conservative_log_ratio, x, y)
+```
+
+- but include the discourseme breakdown
+```{r}
+map <- rbind(
+  map,
+  discourseme.items.scores |> 
+    left_join(coordinates, by = "item") |> 
+    mutate(x = if_else(!is.na(x_user), x_user, x),
+           y = if_else(!is.na(y_user), y_user, y)) |> 
+    select(item, discourseme_id, conservative_log_ratio, x, y)
+)
+```
+
+
+```{r}
+map |> 
+  # filter(conservative_log_ratio > 0) |>
+  ggplot(aes(x = x, y = y, label = item)) + 
+  geom_label_repel(aes(size = conservative_log_ratio, color = discourseme_id), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") +
+  theme(legend.position = "bottom")
+```
+
+
+### Second-order Collocation
+
+- when filtering concordance lines for a discourseme (or an extra item), we get a selection that can be used as a basis for a new collocation analysis
+- co-occurrence counts are based on the filtered lines, marginal frequencies are taken from the (sub-)corpus
+  - and not, say, from the co-occurrence profile of the original node (TODO: implement different comparisons)
+  - interpretation: collocates of co-occurrence of both nodes, but with a focus on the original discourseme
+  
+```{r}
+collocation <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/") |> 
+  request() |> 
+  req_body_json(list(
+    focus_discourseme_id = discourseme.id,
+    filter_discourseme_ids = list(1),
+    p = 'lemma', window = 10
+  )) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+collocation.id <- collocation |> magrittr::extract2("id")
+```
+
+```{r}
+collocation.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/${collocation.id}/items")) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+```
+
+```{r}
+item.scores <- collocation.items |> 
+  magrittr::extract2("items") |> 
+  magrittr::extract2("scores") |> 
+  bind_rows(.id = "item") |>
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(item = collocation.items |> magrittr::extract2("items") |> magrittr::extract2("item"))
+
+item.scores
+```
+
+## Keyword Analysis
+
+- keyword analyses in the presence of discourseme constellations similarly yields discourseme scores
+```{r}
+corpus.id.reference <- corpora |> filter(cwb_id == "SZ-2009-2014") |> pull(id)
+
+keyword <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/keyword/")) |>
+  req_body_json(list(corpus_id_reference = corpus.id.reference)) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+keyword.id <- keyword |> magrittr::extract2("id")
+```
+
+```{r}
+keyword.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/keyword/${keyword.id}/items")) |> 
+  req_url_query(page_size = 50) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+```
+
+```{r}
+item.scores <- keyword.items |> 
+  magrittr::extract2("items") |> 
+  magrittr::extract2("scores") |> 
+  bind_rows(.id = "item") |>
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(item = keyword.items |> magrittr::extract2("items") |> magrittr::extract2("item"))
+
+item.scores
+```
+
+- again, you get three types of "discourseme" scores
+```{r}
+keyword.items |> magrittr::extract2("discourseme_scores")
+```
+
+- global scores for whole discoursemes
+```{r}
+discourseme.scores <- keyword.items |> 
+  magrittr::extract2("discourseme_scores") |> 
+  pull(global_scores) |> 
+  bind_rows(.id = "discourseme_id") |>
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(discourseme_id = keyword.items |> magrittr::extract2("discourseme_scores") |> magrittr::extract2("discourseme_id"))
+
+discourseme.scores
+```
+
+- scores for each item belonging to a discourseme
+```{r}
+discourseme.items.scores <- keyword.items |>
+  magrittr::extract2("discourseme_scores") |> 
+  pull(item_scores) |> 
+  bind_rows(.id = "discourseme_id") |> 
+  pull(scores) |> 
+  bind_rows(.id = "item") |> 
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(
+    discourseme_id = keyword.items |> magrittr::extract2("discourseme_scores") |> pull(item_scores) |> bind_rows(.id = "discourseme_id") |> pull(discourseme_id),
+    item = keyword.items |> magrittr::extract2("discourseme_scores") |> pull(item_scores) |> bind_rows(.id = "discourseme_id") |> pull(item)
+  )
+
+discourseme.items.scores
+```
+
+- and scores for the unigrams consumed by the discoursemes
+```{r}
+discourseme.unigram.items.scores <- keyword.items |> 
+  magrittr::extract2("discourseme_scores") |> 
+  pull(unigram_item_scores) |> 
+  bind_rows(.id = "discourseme_id") |> 
+  pull(scores) |> 
+  bind_rows(.id = "item") |> 
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(
+    discourseme_id = keyword.items |> magrittr::extract2("discourseme_scores") |> 
+      pull(unigram_item_scores) |> bind_rows(.id = "discourseme_id") |> pull(discourseme_id),
+    item = keyword.items |> magrittr::extract2("discourseme_scores") |> 
+      pull(unigram_item_scores) |> bind_rows(.id = "discourseme_id") |> pull(item)
+  )
+
+discourseme.unigram.items.scores
+```
+
+### Visualisation
+
+- cf. collocation profile visualisation
+```{r}
+coordinates <- keyword.items |> 
+  magrittr::extract2("coordinates")
+
+map <- rbind(
+  item.scores |> mutate(discourseme_id = NA) |> filter(! item %in% (discourseme.unigram.items.scores |> pull(item))),
+  discourseme.items.scores
+) |> 
+  left_join(coordinates, by = "item") |> 
+  mutate(x = if_else(!is.na(x_user), x_user, x),
+         y = if_else(!is.na(y_user), y_user, y)) |> 
+  select(discourseme_id, item, conservative_log_ratio, x, y)
+```
+
+```{r}
+map |> 
+  # filter(conservative_log_ratio > 0) |>
+  ggplot(aes(x = x, y = y, label = item)) + 
+  geom_label_repel(aes(size = conservative_log_ratio, color = discourseme_id), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") +
+  theme(legend.position = "bottom")
+```
+
+
+# Iterative Work
+
+- the user manually categorises types into discoursemes when working in analyses
+- in the above keyword analysis, the user might opt to create a new discourseme from "Trump" and "Bolsonaro"
+- we first need to create such a discourseme
+```{r}
+new.discourseme <- str_interp("${url_api}/mmda/discourseme/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_method("POST") |>
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+new.discourseme.id <- new.discourseme |> magrittr::extract2("id")
+```
+
+- add it to the constellation
+```{r}
+str_interp("${url_api}/mmda/constellation/${constellation.id}/add-discourseme") |> 
+  request() |> 
+  req_body_json(list(discourseme_ids = list(new.discourseme.id))) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_method("PATCH") |>
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+- then create a new discourseme description
+```{r}
+new.discourseme.description <- str_interp("${url_api}/mmda/discourseme/${new.discourseme.id}/description/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_body_json(list(corpus_id = corpus.id, p = 'lemma', items = c("Bolsonaro", "Trump"))) |>
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+- and link it to the constellation description
+```{r}
+str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/add-discourseme") |> 
+  request() |> 
+  req_body_json(list(discourseme_description_ids = list(new.discourseme.description |> magrittr::extract2("id")))) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_method("PATCH") |>
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+- we can now e.g. filter this discourseme in concordance lines
+```{r}
+concordance <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/concordance") |> 
+  request() |> 
+  req_url_query(focus_discourseme_id = new.discourseme.id) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+concordance |> magrittr::extract2("lines") |> 
+  slice(1) |> pull(tokens)
+```
+
+- the discourseme will also be considered in analyses
+```{r}
+keyword.items <- request(str_interp("${url_api}/mmda/constellation/${keyword.id}/description/${description.id}/keyword/${keyword.id}/items")) |>
+  req_auth_bearer_token(access.token) |>
+  req_url_query(page_size = 50) |>
+  req_perform() |>
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+```
+
+```{r}
+keyword.items |>
+  magrittr::extract2("discourseme_scores") |>
+  pull(item_scores) |>
+  bind_rows(.id = "discourseme_id") |>
+  pull(scores) |>
+  bind_rows(.id = "item") |>
+  pivot_wider(names_from = measure, values_from = score) |>
+  mutate(
+    discourseme_id = keyword.items |> magrittr::extract2("discourseme_scores") |> pull(item_scores) |> bind_rows(.id = "discourseme_id") |> pull(discourseme_id),
+    item = keyword.items |> magrittr::extract2("discourseme_scores") |> pull(item_scores) |> bind_rows(.id = "discourseme_id") |> pull(item)
+  )
+```
+
+- similarly, if we want to remove a discourseme, we need to remove it from the constellation and its description
+```{r}
+str_interp("${url_api}/mmda/constellation/${constellation.id}/remove-discourseme") |>
+  request() |>
+  req_body_json(list(discourseme_ids = list(new.discourseme |> magrittr::extract2("id")))) |>
+  req_auth_bearer_token(access.token) |>
+  req_method("PATCH") |>
+  req_perform() |>
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/remove-discourseme") |>
+  request() |>
+  req_body_json(list(discourseme_description_ids = list(new.discourseme.description |> magrittr::extract2("id")))) |>
+  req_auth_bearer_token(access.token) |>
+  req_method("PATCH") |>
+  req_perform() |>
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+<!-- ## Updating Discoursemes -->
+
+<!-- - add item to discourseme -->
+<!-- - remove item from discourseme -->
+
+
+
+<!-- - corpus / cotext counts for all discoursemes exist once we started an analysis -->
+<!-- - if we modify the description, we have to make sure that the updated description is considered, not the one that has initially been created -->
+
+<!-- ```{r} -->
+<!-- request(str_interp("${url_api}/discourseme/${new.discourseme.id}/add-item")) |>  -->
+<!--   req_body_json(list(p = "lemma", surface = "Ressourcenverknappung")) |>  -->
+<!--   req_method('patch') |>  -->
+<!--   req_auth_bearer_token(access.token) |>  -->
+<!--   req_perform() |>  -->
+<!--   magrittr::extract2("body") |> rawToChar() |> fromJSON() |>  -->
+<!--   magrittr::extract2("id") -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- request(str_interp("${url_api}/discourseme/${new.discourseme.id}")) |>  -->
+<!--   req_auth_bearer_token(access.token) |>  -->
+<!--   req_perform() |>  -->
+<!--   magrittr::extract2("body") |> rawToChar() |> fromJSON() -->
+<!-- ``` -->
+
+<!-- ### concordancing -->
+
+<!-- ```{r} -->
+<!-- concordance.lines <- request(str_interp("${url_api}/constellation/${constellation.id}/corpus/${corpus.id}/concordance")) |>  -->
+<!--   req_url_query(subcorpus_id = subcorpus.id) |>  -->
+<!--   req_url_query(filter_discourseme_ids = c(new.discourseme.id)) |>  -->
+<!--   req_auth_bearer_token(access.token) |>  -->
+<!--   req_perform() |>  -->
+<!--   magrittr::extract2("body") |> rawToChar() |> fromJSON() |>  -->
+<!--   magrittr::extract2("lines") -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- concordance.lines |>  -->
+<!--   magrittr::extract2("tokens") |> head(1) |> knitr::kable() -->
+
+<!-- concordance.lines |>  -->
+<!--   magrittr::extract2("discourseme_ranges") |> head(1) -->
+<!-- ``` -->
+
+
+<!-- ### collocates -->
+
+<!-- ```{r} -->
+<!-- tmp.coll <- request(str_interp("${url_api}/constellation/${constellation.id}/corpus/${corpus.id}/collocation")) |>  -->
+<!--   req_url_query(subcorpus_id = subcorpus.id) |>  -->
+<!--   req_url_query(page_number = 1, page_size = 50, sort_by = "conservative_log_ratio", sort_order = "descending") |>  -->
+<!--   req_url_query(p = 'lemma', window = 10) |>  -->
+<!--   req_auth_bearer_token(access.token) |>  -->
+<!--   req_perform() |>  -->
+<!--   magrittr::extract2("body") |> rawToChar() |> fromJSON() -->
+
+<!-- tmp.coll.items <- tmp.coll |> magrittr::extract2("items") -->
+
+<!-- coll <- tmp.coll.items$scores |>  -->
+<!--   bind_rows(.id = "item") |> -->
+<!--   pivot_wider(names_from = measure, values_from = score) |>  -->
+<!--   mutate(item = tmp.coll.items$item) |>  -->
+<!--   mutate(subcorpus = subcorpus.name, -->
+<!--          collocation.id = tmp.coll.id) -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- tmp.coll |> magrittr::extract2("discourseme_scores") |>  -->
+<!--   pull(item_scores) -->
+<!-- ``` -->
+
+
+<!-- # TODO UFA -->
+
+<!-- - we create a couple of collocation analyses in different subcorpora -->
+<!-- ```{r} -->
+<!-- collocates <- tibble() -->
+
+<!-- for (row in 1:nrow(subcorpora)) { -->
+
+<!--   corpus.id <- subcorpora[row, ] |> pull(corpus.id) -->
+<!--   subcorpus.id <- subcorpora[row, ] |> pull(id) -->
+<!--   subcorpus.name <- subcorpora[row, ] |> pull(name) -->
+
+<!--   query.id <- request(str_interp("${url_api}/discourseme/${discourseme.id}/corpus/${corpus.id}/")) |>  -->
+<!--     req_auth_bearer_token(access.token) |> -->
+<!--     req_url_query(subcorpus_id = subcorpus.id) |>  -->
+<!--     req_perform() |>  -->
+<!--     magrittr::extract2("body") |> rawToChar() |> fromJSON() |>  -->
+<!--     magrittr::extract2("id") -->
+
+<!--   tmp.coll.id <- request(str_interp("${url_api}/constellation/${constellation.id}/corpus/${corpus.id}/collocation")) |>  -->
+<!--     req_url_query(subcorpus_id = subcorpus.id) |>  -->
+<!--     req_auth_bearer_token(access.token) |>  -->
+<!--     req_url_query(window = 10, p = "lemma", s_break = "s") |>  -->
+<!--     req_perform() |>  -->
+<!--     magrittr::extract2("body") |> rawToChar() |> fromJSON() |>  -->
+<!--     magrittr::extract2("id") -->
+
+<!--   tmp.coll.items <- request(str_interp("${url_api}/collocation/${tmp.coll.id}")) |> -->
+<!--     req_auth_bearer_token(access.token) |> -->
+<!--     req_url_query(page_number = 1, page_size = 50, sort_by = "conservative_log_ratio", sort_order = "descending") |>  -->
+<!--     req_perform() |>  -->
+<!--     magrittr::extract2("body") |> rawToChar() |> fromJSON() |>  -->
+<!--     magrittr::extract2("items") -->
+
+<!--   tmp.coll.scores <- tmp.coll.items$scores |>  -->
+<!--     bind_rows(.id = "item") |> -->
+<!--     pivot_wider(names_from = measure, values_from = score) |>  -->
+<!--     mutate(item = tmp.coll.items$item) |>  -->
+<!--     mutate(subcorpus = subcorpus.name, -->
+<!--            collocation.id = tmp.coll.id) -->
+
+<!--   collocates <- rbind(collocates, tmp.coll.scores) -->
+<!-- } -->
+<!-- ``` -->
+
+<!-- - we create one semantic map using items from all collocation analyses as a basis -->
+
+<!-- ```{r} -->
+<!-- semantic_map.id <- request(str_interp("${url_api}/semantic-map/")) |>  -->
+<!--   req_auth_bearer_token(access.token) |>  -->
+<!--   req_body_json(list(collocation_ids = collocates |> pull(collocation.id) |> unique())) |>  -->
+<!--   req_method("put") |>  -->
+<!--   req_perform() |>  -->
+<!--   magrittr::extract2("body") |> rawToChar() |> fromJSON() |> magrittr::extract2("id") -->
+<!-- ``` -->
+
+<!-- - coordinates can then be accessed via the corresponding endpoint -->
+<!-- ```{r} -->
+<!-- coordinates <- request(str_interp("${url_api}/semantic-map/${semantic_map.id}/coordinates")) |>  -->
+<!--   req_auth_bearer_token(access.token) |>  -->
+<!--   req_perform() |>  -->
+<!--   magrittr::extract2("body") |> rawToChar() |> fromJSON() |> tibble() -->
+<!-- ``` -->
+
+<!-- - resulting map: -->
+<!-- ```{r, fig.height = 12, fig.width = 18} -->
+<!-- map <- collocates |>  -->
+<!--   left_join(coordinates, by = "item") |>  -->
+<!--   mutate(x = if_else(!is.na(x_user), x_user, x), -->
+<!--          y = if_else(!is.na(y_user), y_user, y)) |>  -->
+<!--   select(item, subcorpus, conservative_log_ratio, log_likelihood, x, y) -->
+
+<!-- map |>  -->
+<!--   filter(conservative_log_ratio > 0) |> -->
+<!--   ggplot(aes(x = x, y = y, label = item)) +  -->
+<!--   geom_label_repel(aes(size = conservative_log_ratio), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) + -->
+<!--   xlab("") + ylab("") + -->
+<!--   theme(legend.position = "bottom") +  -->
+<!--   facet_wrap(~ subcorpus) -->
+<!-- ``` -->

@@ -53,13 +53,6 @@
 - [ ] anchored queries
 - [ ] topographic maps
 
-## Review 2024-07-17
-- [ ] constellation: enforce min of one filter discourseme?
-- [ ] constellation: if no name → name of filter discourseme
-- [ ] mark all required fields as required in API spec
-- [ ] several queries for one discourseme?
-  + duplicate queries: write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
-
 ## TODO
 - [x] speed up deleting queries
 - [ ] make sure PUT runs idempotently
@@ -98,3 +91,27 @@
 - Concordance: primary / secondary vs. give all → separate branch
 - DiscoursemeTemplate: p + surface vs. cqp_query | two lists
 - DiscoursemeTemplatePreview
+
+## Review 2024-07-17
+- [ ] constellation: enforce min of one filter discourseme?
+- [ ] constellation: if no name → name of filter discourseme
+- [ ] mark all required fields as required in API spec
+- [ ] several queries for one discourseme?
+  + duplicate queries: write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
+
+## review 2024-07-30
+- [ ] improve logging
+- [ ] search for item on collocation table
+- [ ] formatted_score: 3 führende Stellen scores
+- [ ] only return items with E11 < O11
+
+## review 2024-08-01
+- [ ] user: discoursemes / constellations
+- [ ] wrongly indexed s-atts in corpora (e.g. ID=1 on dev)
+- [ ] automatic creation of meta data
+
+## review 2024-08-05
+- [x] save wordlists permanently
+- [ ] Subcorpus: number spans / tokens 0 ?? text / faction
+- [ ] get keyword analyses dauert?
+- [ ] keyword details: target / reference (als strings)
