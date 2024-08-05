@@ -18,12 +18,12 @@ from pandas import DataFrame, read_csv
 
 from .. import db
 from ..database import Corpus, Query, User, get_or_create
+from ..users import auth
 from .database import (CollocationDiscoursemeItem,
                        CollocationDiscoursemeUnigramItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem,
                        KeywordDiscoursemeUnigramItem)
-from ..users import auth
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 

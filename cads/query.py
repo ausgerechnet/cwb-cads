@@ -13,13 +13,12 @@ from pandas import DataFrame, read_sql
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
-from .collocation import (CollocationIn, CollocationOut, get_or_create_counts)
+from .collocation import CollocationIn, CollocationOut, get_or_create_counts
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .corpus import get_meta_frequencies, get_meta_number_tokens
-from .database import (Breakdown, Collocation, Corpus,
-                       Cotext, CotextLines, Matches,
-                       Query, get_or_create)
+from .database import (Breakdown, Collocation, Corpus, Cotext, CotextLines,
+                       Matches, Query, get_or_create)
 from .semantic_map import ccc_init_semmap
 from .users import auth
 

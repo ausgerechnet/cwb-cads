@@ -4,8 +4,7 @@
 
 from apiflask import APIBlueprint
 
-from . import discourseme, constellation
-
+from . import constellation, discourseme
 
 bp = APIBlueprint('mmda', __name__, url_prefix='/mmda')
 

@@ -7,10 +7,8 @@ from datetime import datetime
 from flask import Blueprint
 
 from .. import db
-
-from ..database import get_or_create, Breakdown, Corpus, SubCorpus, Query
 from ..breakdown import ccc_breakdown
-
+from ..database import Breakdown, Corpus, Query, SubCorpus, get_or_create
 
 bp = Blueprint('mmda-database', __name__, url_prefix='/mmda-database', cli_group='mmda-database')
 

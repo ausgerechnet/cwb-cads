@@ -9,46 +9,14 @@ from flask import current_app
 from pandas import DataFrame, read_sql
 
 from . import db
-from .database import (Collocation, CollocationItem,
-                       CollocationItemScore, CotextLines, SemanticMap)
-
-from .mmda.database import CollocationDiscoursemeUnigramItem, Discourseme
+from .database import (Collocation, CollocationItem, CollocationItemScore,
+                       CotextLines, SemanticMap)
 from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
                            ccc_semmap_update)
 from .users import auth
 from .utils import AMS_DICT
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
-
-
-# def score_counts(counts, cut_off=200, min_freq=3, show_negative=False, rename=True):
-
-#     df = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts))
-#     df = df.loc[df['O11'] >= min_freq]
-
-#     if not show_negative:
-#         df = df.loc[df['O11'] >= df['E11']]
-
-#     if rename:
-
-#         # select columns
-#         df = df[list(AMS_DICT.keys())]
-
-#         # select items (top cut_off of each AM)
-#         items = set()
-#         for am in AMS_DICT.keys():
-#             if am not in ['O11', 'E11', 'ipm', 'ipm_expected']:
-#                 df = df.sort_values(by=[am, 'item'], ascending=[False, True])
-#                 items = items.union(set(df.head(cut_off).index))
-#         df = df.loc[list(items)]
-
-#         # rename columns
-#         df = df.rename(AMS_DICT, axis=1)
-
-#     elif cut_off:
-#         raise NotImplementedError("cannot use cut-off value when not rename=True")
-
-#     return df
 
 
 def get_or_create_counts(collocation, remove_focus_cpos=True):
@@ -327,28 +295,28 @@ def get_collocation_items(id, query_data):
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
-    # get scores
-    if collocation.constellation:
-        current_app.logger.debug('ccc_collocates :: .. constellation mode (filtering out DiscoursemeUnigramItems)')
-        filter_unigram_items = CollocationDiscoursemeUnigramItem.query.filter_by(
-            collocation_id=collocation.id,
-            discourseme_id=collocation._query.discourseme.id
-        )
-        blacklist = CollocationItem.query.filter(
-            CollocationItem.collocation_id == collocation.id,
-            CollocationItem.item.in_([f.item for f in filter_unigram_items])
-        )
-        scores = CollocationItemScore.query.filter(
-            CollocationItemScore.collocation_id == collocation.id,
-            CollocationItemScore.measure == sort_by,
-            ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
-        )
-    else:
-        current_app.logger.debug('ccc_collocates :: .. query mode')
-        scores = CollocationItemScore.query.filter(
-            CollocationItemScore.collocation_id == collocation.id,
-            CollocationItemScore.measure == sort_by
-        )
+    # # get scores
+    # if collocation.constellation:
+    #     current_app.logger.debug('ccc_collocates :: .. constellation mode (filtering out DiscoursemeUnigramItems)')
+    #     filter_unigram_items = CollocationDiscoursemeUnigramItem.query.filter_by(
+    #         collocation_id=collocation.id,
+    #         discourseme_id=collocation._query.discourseme.id
+    #     )
+    #     blacklist = CollocationItem.query.filter(
+    #         CollocationItem.collocation_id == collocation.id,
+    #         CollocationItem.item.in_([f.item for f in filter_unigram_items])
+    #     )
+    #     scores = CollocationItemScore.query.filter(
+    #         CollocationItemScore.collocation_id == collocation.id,
+    #         CollocationItemScore.measure == sort_by,
+    #         ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
+    #     )
+    # else:
+    current_app.logger.debug('ccc_collocates :: .. query mode')
+    scores = CollocationItemScore.query.filter(
+        CollocationItemScore.collocation_id == collocation.id,
+        CollocationItemScore.measure == sort_by
+    )
 
     # order
     if sort_order == 'ascending':
@@ -429,6 +397,7 @@ def get_collocation_items(id, query_data):
 
 # return CollocationOut().dump(collocation), 200
 
+
 @bp.post('/<id>/semantic-map/')
 @bp.input({'semantic_map_id': Integer(load_default=None)}, location='query')
 @bp.output(SemanticMapOut)
@@ -454,39 +423,14 @@ def create_semantic_map(id, query_data):
 
     else:
 
-        if collocation.constellation:
-            get_or_create_counts(collocation, remove_focus_cpos=False)
-            filter_unigram = CollocationDiscoursemeUnigramItem.query.filter_by(collocation_id=collocation.id,
-                                                                               discourseme_id=collocation._query.discourseme.id)
-            filter_items = [f.item for f in filter_unigram]
-        else:
-            filter_items = []
+        # if collocation.constellation:
+        #     get_or_create_counts(collocation, remove_focus_cpos=False)
+        #     filter_unigram = CollocationDiscoursemeUnigramItem.query.filter_by(collocation_id=collocation.id,
+        #                                                                        discourseme_id=collocation._query.discourseme.id)
+        #     filter_items = [f.item for f in filter_unigram]
+        # else:
+        filter_items = []
 
         ccc_semmap([collocation.id], sort_by="conservative_log_ratio", number=500, blacklist_items=filter_items)
 
     return SemanticMapOut().dump(collocation.semantic_map), 200
-
-
-@bp.put('/<id>/auto-associate')
-@bp.auth_required(auth)
-def associate_discoursemes(id):
-
-    collocation = db.get_or_404(Collocation, id)
-    collocation_items = [item.item for item in collocation.items]
-    discoursemes = Discourseme.query.all()
-    for discourseme in discoursemes:
-        # TODO use unigram breakdown instead!
-        discourseme_items = [item.surface for item in discourseme.template]
-        if len(set(discourseme_items).intersection(collocation_items)) > 0:
-            if discourseme not in collocation.constellation.highlight_discoursemes and discourseme not in collocation.constellation.filter_discoursemes:
-                collocation.constellation.highlight_discoursemes.append(discourseme)
-    db.session.commit()
-
-    # counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
-    # for window in set(counts['window']):
-    #     current_app.logger.info(f'Updating collocation :: window {window}')
-    #     ccc_collocates(collocation, window)
-
-    # ccc_semmap_update(collocation)
-    # ccc_semmap_discoursemes(collocation)
-    return {"id": int(id)}, 200

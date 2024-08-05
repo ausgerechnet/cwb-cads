@@ -1,46 +1,38 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema  # , abort
-from apiflask.fields import Integer, List, Nested, String, Boolean
-from apiflask.validators import OneOf
-
-from ccc.utils import cqp_escape
-from .database import DiscoursemeDescription
-from .discourseme import create_discourseme_description
-from .. import db
-from ..collocation import CollocationIn, CollocationOut
-from ..keyword import KeywordItemsIn, KeywordItemsOut
-from ..keyword import KeywordOut, ccc_keywords
-from ..concordance import ConcordanceIn, ConcordanceOut
-from ..database import Corpus, Keyword, KeywordItemScore
-from ..concordance import ccc_concordance
-from ..query import get_or_create_query_item, iterative_query
-from .database import Constellation, Discourseme, ConstellationDescription, CollocationDiscoursemeItem, CollocationDiscoursemeUnigramItem
-from .discourseme import DiscoursemeOut
-from ..users import auth
-from ..query import ccc_query
-from .discourseme import description_items_to_query
-
-from ..database import CollocationItem, CollocationItemScore, KeywordItem
-from pandas import DataFrame
-from ..collocation import CollocationItemOut, DiscoursemeScoresOut
-from ..semantic_map import CoordinatesOut, ccc_semmap_update
-from ..keyword import KeywordItemOut
-
-
-from association_measures import measures
-
-from ..database import Collocation
-from ..collocation import get_or_create_counts, CollocationItemsIn, CollocationItemsOut
-from ..semantic_map import ccc_init_semmap
-
-from ..query import get_or_create_cotext
-from flask import current_app
-from ..database import CotextLines
-from pandas import read_sql, concat
 from collections import defaultdict
-from .database import KeywordDiscoursemeItem, KeywordDiscoursemeUnigramItem
+
+from apiflask import APIBlueprint, Schema  # , abort
+from apiflask.fields import Boolean, Integer, List, Nested, String
+from apiflask.validators import OneOf
+from association_measures import measures
+from ccc.utils import cqp_escape
+from flask import current_app
+from pandas import DataFrame, concat, read_sql
+
+from .. import db
+from ..collocation import (CollocationIn, CollocationItemOut,
+                           CollocationItemsIn, CollocationItemsOut,
+                           CollocationOut, DiscoursemeScoresOut,
+                           get_or_create_counts)
+from ..concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
+from ..database import (Collocation, CollocationItem, CollocationItemScore,
+                        Corpus, CotextLines, Keyword, KeywordItem,
+                        KeywordItemScore)
+from ..keyword import (KeywordItemOut, KeywordItemsIn, KeywordItemsOut,
+                       KeywordOut, ccc_keywords)
+from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
+                     iterative_query)
+from ..semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
+from ..users import auth
+from .database import (CollocationDiscoursemeItem,
+                       CollocationDiscoursemeUnigramItem, Constellation,
+                       ConstellationDescription, Discourseme,
+                       DiscoursemeDescription, KeywordDiscoursemeItem,
+                       KeywordDiscoursemeUnigramItem)
+from .discourseme import (DiscoursemeOut, create_discourseme_description,
+                          description_items_to_query)
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -58,6 +50,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
         return DataFrame(), DataFrame(), DataFrame(), DataFrame()
 
     corpus = keyword.corpus
+    corpus_reference = keyword.corpus_reference
     corpus_id_reference = keyword.corpus_id_reference
     subcorpus_id_reference = keyword.subcorpus_id_reference
     p_description = keyword.p
@@ -84,7 +77,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
         discourseme_description_reference.update_from_items()
     reference_query = discourseme_description_reference._query
     reference_matches_df = ccc_query(reference_query)
-    reference_matches = corpus.ccc().subcorpus(df_dump=reference_matches_df, overwrite=False)
+    reference_matches = corpus_reference.ccc().subcorpus(df_dump=reference_matches_df, overwrite=False)
     reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
     reference_unigram_breakdown = reference_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f2'}, axis=1)
 
@@ -685,6 +678,7 @@ def delete_description(id, description_id):
     return 'Deletion successful.', 200
 
 
+# CONCORDANCE
 @bp.get("/<id>/description/<description_id>/concordance/")
 @bp.input(ConcordanceIn, location='query')
 @bp.input({'focus_discourseme_id': Integer(required=True)}, location='query', arg_name='query_focus')
@@ -737,6 +731,7 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
     return ConcordanceOut().dump(concordance), 200
 
 
+# COLLOCATION
 @bp.post("/<id>/description/<description_id>/collocation/")
 @bp.input(CollocationIn)
 @bp.output(CollocationOut)
@@ -875,6 +870,38 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     return CollocationItemsOut().dump(collocation_items), 200
 
 
+@bp.put('/<id>/description/<description_id>/collocation/<collocation_id>/auto-associate')
+@bp.auth_required(auth)
+def associate_discoursemes(id, description_id, collocation_id):
+    """automatically associate discoursemes that occur in the top collocational profile with this constellation
+
+    """
+
+    constellation = db.get_or_404(Constellation, id)
+    collocation = db.get_or_404(Collocation, collocation_id)
+    collocation_items = collocation.top_items()
+    discoursemes = Discourseme.query.all()
+
+    for discourseme in discoursemes:
+        discourseme_items = [item.surface for item in discourseme.template]
+        if len(set(discourseme_items).intersection(collocation_items)) > 0:
+            if discourseme not in constellation.discoursemes:
+                constellation.discoursemes.append(discourseme)
+
+    db.session.commit()
+
+    # counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
+    # for window in set(counts['window']):
+    #     current_app.logger.info(f'Updating collocation :: window {window}')
+    #     ccc_collocates(collocation, window)
+
+    # ccc_semmap_update(collocation)
+    # ccc_semmap_discoursemes(collocation)
+
+    return {"id": int(id)}, 200
+
+
+# KEYWORD
 @bp.post("/<id>/description/<description_id>/keyword/")
 @bp.input(KeywordIn)
 @bp.output(KeywordOut)
@@ -988,3 +1015,34 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
     }
 
     return KeywordItemsOut().dump(keyword_items), 200
+
+
+@bp.put('/<id>/description/<description_id>/keyword/<keyword_id>/auto-associate')
+@bp.auth_required(auth)
+def associate_discoursemes_keyword(id, description_id, keyword_id):
+    """automatically associate discoursemes that occur in the top collocational profile with this constellation
+
+    """
+
+    constellation = db.get_or_404(Constellation, id)
+    keyword = db.get_or_404(Keyword, keyword_id)
+    keyword_items = keyword.top_items()
+    discoursemes = Discourseme.query.all()
+
+    for discourseme in discoursemes:
+        discourseme_items = [item.surface for item in discourseme.template]
+        if len(set(discourseme_items).intersection(keyword_items)) > 0:
+            if discourseme not in constellation.discoursemes:
+                constellation.discoursemes.append(discourseme)
+
+    db.session.commit()
+
+    # counts = DataFrame([vars(s) for s in keyword.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
+    # for window in set(counts['window']):
+    #     current_app.logger.info(f'Updating keyword :: window {window}')
+    #     ccc_collocates(keyword, window)
+
+    # ccc_semmap_update(keyword)
+    # ccc_semmap_discoursemes(keyword)
+
+    return {"id": int(id)}, 200

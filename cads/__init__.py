@@ -97,8 +97,7 @@ def create_app(config=CONFIG):
         return redirect(request.base_url + "docs")
 
     # register blueprints
-    from . import (collocation, corpus, keyword,
-                   query, semantic_map, users)
+    from . import collocation, corpus, keyword, query, semantic_map, users
 
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)
