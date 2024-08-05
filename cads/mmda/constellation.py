@@ -40,7 +40,6 @@ def query_discourseme_corpora(keyword, discourseme_description):
     """ensure that KeywordDiscoursemeItem and KeywordDiscoursemeUnigramItem exist
 
     """
-
     # only if scores don't exist
     unigram_counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id,
                                                                      discourseme_description_id=discourseme_description.id)
@@ -53,16 +52,19 @@ def query_discourseme_corpora(keyword, discourseme_description):
     corpus_id_reference = keyword.corpus_id_reference
     subcorpus_id_reference = keyword.subcorpus_id_reference
     p_description = keyword.p
-    match_strategy = 'longest'          # TODO
-    s_query = keyword.corpus.s_default  # TODO
+    match_strategy = discourseme_description.match_strategy
+    s_query = discourseme_description.s
     items = [cqp_escape(item.item) for item in discourseme_description.items]
 
     # target
-    # TODO zero matches
+    # TODO deal with zero matches in both cases
     if not discourseme_description._query:
         discourseme_description.update_from_items()
     target_query = discourseme_description._query
     target_matches_df = ccc_query(target_query)
+    if not isinstance(target_matches_df, DataFrame):
+        target_breakdown = DataFrame()
+        target_unigram_breakdown = DataFrame()
     target_matches = corpus.ccc().subcorpus(df_dump=target_matches_df, overwrite=False)
     target_breakdown = target_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f1'}, axis=1)
     target_unigram_breakdown = target_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f1'}, axis=1)
@@ -113,10 +115,11 @@ def keyword_discourseme_counts(keyword, discourseme_descriptions):
         if len(t_b) > 0:
             t_b['discourseme_description_id'] = discourseme_description.id
             t_u_b['discourseme_description_id'] = discourseme_description.id
-            r_b['discourseme_description_id'] = discourseme_description.id
-            r_u_b['discourseme_description_id'] = discourseme_description.id
             discourseme_counts_target.append(t_b)
             discourseme_unigram_counts_target.append(t_u_b)
+        if len(r_b) > 0:
+            r_b['discourseme_description_id'] = discourseme_description.id
+            r_u_b['discourseme_description_id'] = discourseme_description.id
             discourseme_counts_reference.append(r_b)
             discourseme_unigram_counts_reference.append(r_u_b)
 

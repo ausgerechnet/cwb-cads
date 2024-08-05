@@ -56,7 +56,7 @@ def ccc_query(query, return_df=True):
             query.zero_matches = True
             query.error = True
             # db.session.delete(query)
-            # db.session.commit()
+            db.session.commit()
             return matches
 
         if len(matches.df) == 0:  # no matches

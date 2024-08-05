@@ -120,6 +120,7 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
 
     # define wordlists
     wl_name = generate_idx(wordlist, prefix="W_")
+    os.makedirs(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists'), exist_ok=True)
     wl_path = os.path.abspath(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists', wl_name + '.txt'))
     queries.append(f"[{p_description} = ${wl_name}]")
     with open(wl_path, mode='wt') as f:
@@ -164,13 +165,15 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
     cqp.__del__()
 
     if isinstance(matches_df, str):  # ERROR
-        current_app.logger.error(f"ccc_discourseme_matches :: {matches_df}")
-        db.session.delete(query)
-        db.session.commit()
+        current_app.logger.error(f"description_items_to_query :: {matches_df}")
+        # db.session.delete(query)
+        # db.session.commit()
+        query.error = True
+        query.zero_matches = True
         return matches_df
 
     if len(matches_df) == 0:  # no matches
-        current_app.logger.debug("ccc_discourseme_matches :: 0 matches")
+        current_app.logger.debug("description_items_to_query :: 0 matches")
         return query
 
     # update name
@@ -181,10 +184,10 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
     matches_df = matches_df.reset_index()[['match', 'matchend']]
     matches_df['contextid'] = matches_df['match'].apply(lambda cpos: crps.cpos2sid(cpos, s_query)).astype(int)
     matches_df['query_id'] = query.id
-    current_app.logger.debug(f"ccc_discourseme_matches :: saving {len(matches_df)} lines to database")
+    current_app.logger.debug(f"description_items_to_query :: saving {len(matches_df)} lines to database")
     matches_df.to_sql('matches', con=db.engine, if_exists='append', index=False)
     db.session.commit()
-    current_app.logger.debug("ccc_discourseme_matches :: saved to database")
+    current_app.logger.debug("description_items_to_query :: saved to database")
 
     return query
 
