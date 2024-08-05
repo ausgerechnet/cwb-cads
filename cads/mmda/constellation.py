@@ -58,6 +58,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
     items = [cqp_escape(item.item) for item in discourseme_description.items]
 
     # target
+    # TODO zero matches
     if not discourseme_description._query:
         discourseme_description.update_from_items()
     target_query = discourseme_description._query
@@ -595,14 +596,14 @@ def patch_constellation(id, json_data):
 
     discourseme_ids = json_data.get('discourseme_ids')
     if discourseme_ids:
-        discoursemes = [db.get_or_404(Discourseme, did) for did in discourseme_ids]
+        discoursemes = [db.get_or_404(Discourseme, disc) for disc in discourseme_ids]
 
         # remove old ones
         for disc in constellation.discoursemes:
             constellation.discoursemes.remove(disc)
 
         # add new ones
-        for discourseme in discoursemes:
+        for disc in discoursemes:
             constellation.discoursemes.append(disc)
 
     db.session.commit()

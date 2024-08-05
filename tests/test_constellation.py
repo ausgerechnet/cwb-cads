@@ -1,4 +1,5 @@
 from flask import url_for
+from pprint import pprint
 import pytest
 
 
@@ -112,7 +113,7 @@ def test_patch_constellation_discoursemes(client, auth):
 
         constellation = client.patch(url_for('mmda.constellation.patch_constellation', id=constellation.json['id']),
                                      json={
-                                         'discourseme_ids': [discourseme['id'] for discourseme in discoursemes[1:2]]
+                                         'discourseme_ids': [discourseme['id'] for discourseme in discoursemes[0:2]]
                                      },
                                      headers=auth_header)
         assert constellation.status_code == 200

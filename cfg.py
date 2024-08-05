@@ -40,7 +40,6 @@ class Config:
     }
 
     CCC_CQP_BIN = str(getenv('CQP_BIN', default='cqp'))
-    CCC_LIB_DIR = getenv('CCC_LIB_DIR', None)
 
 
 class ProdConfig(Config):
@@ -56,8 +55,8 @@ class ProdConfig(Config):
 
     CORPORA = '/data/Philipp/cwb-cads-dev-corpora.json'
     CCC_REGISTRY_DIR = '/data/corpora/cqpweb/registry/'
-
-    CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/cwb-cads-ccc/'))
+    CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/cwb-cads-ccc-data/'))
+    CCC_LIB_DIR = str(getenv('CCC_LIB_DIR', default='/tmp/cwb-cads-ccc-lib/'))
 
     JWT_ACCESS_TOKEN_EXPIRES = 60*30
     JWT_REFRESH_TOKEN_EXPIRES = 60*60*12
@@ -72,8 +71,8 @@ class DevConfig(Config):
 
     CORPORA = '/home/ausgerechnet/corpora/cwb/mmda-corpora.json'
     CCC_REGISTRY_DIR = '/home/ausgerechnet/corpora/cwb/registry/'
-
-    CCC_DATA_DIR = '/tmp/cwb-cads-ccc-dev/'
+    CCC_DATA_DIR = '/tmp/cwb-cads-ccc-data-dev/'
+    CCC_LIB_DIR = '/tmp/cwb-cads-ccc-lib-dev/'
 
     JWT_ACCESS_TOKEN_EXPIRES = False
     JWT_REFRESH_TOKEN_EXPIRES = False
@@ -90,8 +89,8 @@ class TestConfig(Config):
 
     CORPORA = 'tests/corpora/corpora.json'
     CCC_REGISTRY_DIR = 'tests/corpora/registry/'
-
-    CCC_DATA_DIR = 'instance/cwb-cads-ccc-test/'
+    CCC_DATA_DIR = 'instance/cwb-cads-ccc-data-test/'
+    CCC_LIB_DIR = 'instance/cwb-cads-ccc-lib-test/'
 
     JWT_ACCESS_TOKEN_EXPIRES = False
     JWT_REFRESH_TOKEN_EXPIRES = False

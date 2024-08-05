@@ -158,6 +158,7 @@ class Corpus(db.Model):
 
     def ccc(self):
         return Crps(corpus_name=self.cwb_id,
+                    # lib_dir=current_app.config['CCC_LIB_DIR'],
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'])
