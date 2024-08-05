@@ -19,6 +19,7 @@ from pandas import DataFrame, read_csv
 from .. import db
 from ..database import Corpus, Query, User, get_or_create
 from ..users import auth
+from ..collocation import CollocationItemOut, CollocationScoreOut
 from .database import (CollocationDiscoursemeItem,
                        CollocationDiscoursemeUnigramItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
@@ -191,33 +192,6 @@ def ccc_discourseme_matches(corpus, discourseme, s, subcorpus=None, match_strate
     return query
 
 
-# def get_or_create_query_discourseme(corpus, discourseme, subcorpus=None, s=None, match_strategy='longest'):
-#     """get or create query for discourseme in corpus
-
-#     """
-
-#     current_app.logger.debug(f'get_or_create_query :: discourseme "{discourseme.name}" in corpus "{corpus.cwb_id}"')
-
-#     # preprocess parameters
-#     s = corpus.s_default if s is None else s
-#     subcorpus_id = subcorpus.id if subcorpus else None
-
-#     # try to retrieve a suitable query
-#     q = [q for q in discourseme.queries if q.corpus_id == corpus.id and q.subcorpus_id == subcorpus_id and not q.soc_sequence]
-
-#     if len(q) > 1:
-#         # more than one query for this discourseme in this (sub)corpus. must not happen due to unique constraint
-#         raise NotImplementedError(f'several queries for discourseme "{discourseme.name}" in corpus "{corpus.name}"')
-#     if len(q) == 1:
-#         # there is exactly one query for this discourseme in this corpus
-#         query = q[0]
-#     elif len(q) == 0:
-#         # no query yet: create new query
-#         query = ccc_discourseme_matches(corpus, discourseme, s=s, subcorpus=subcorpus, match_strategy=match_strategy)
-
-#     return query
-
-
 def description_items_to_query(items, p_description, s_query, corpus, subcorpus=None, match_strategy='longest'):
 
     # create query & wordlist
@@ -285,7 +259,7 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
 
     if len(matches_df) == 0:  # no matches
         current_app.logger.debug("ccc_discourseme_matches :: 0 matches")
-        return None
+        return query
 
     # update name
     query.nqr_cqp = name
@@ -383,6 +357,14 @@ class DiscoursemeDescriptionOut(Schema):
     items = Nested(DiscoursemeDescriptionItem(many=True))
 
 
+class DiscoursemeScoresOut(Schema):
+
+    discourseme_id = Integer()
+    item_scores = Nested(CollocationItemOut(many=True))
+    unigram_item_scores = Nested(CollocationItemOut(many=True))
+    global_scores = Nested(CollocationScoreOut(many=True))
+
+
 #################
 # API endpoints #
 #################
@@ -415,10 +397,11 @@ def create(json_data):
     )
     db.session.add(discourseme)
     db.session.commit()
-    for item in template:
-        db.session.add(DiscoursemeTemplateItems(
-            discourseme_id=discourseme.id, surface=item['surface'], p=item['p']
-        ))
+    if template:
+        for item in template:
+            db.session.add(DiscoursemeTemplateItems(
+                discourseme_id=discourseme.id, surface=item['surface'], p=item['p']
+            ))
     db.session.commit()
 
     return DiscoursemeOut().dump(discourseme), 200

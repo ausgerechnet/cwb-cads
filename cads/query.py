@@ -32,8 +32,11 @@ def ccc_query(query, return_df=True):
 
     current_app.logger.debug(f'ccc_query :: query {query.id} in corpus {query.corpus.cwb_id}')
 
-    matches = Matches.query.filter_by(query_id=query.id)
+    if query.zero_matches:
+        current_app.logger.debug("ccc_query :: query has zero matches")
+        return None
 
+    matches = Matches.query.filter_by(query_id=query.id)
     if not matches.first():
 
         if query.subcorpus:
@@ -50,12 +53,16 @@ def ccc_query(query, return_df=True):
 
         if isinstance(matches, str):  # ERROR
             current_app.logger.error(f"{matches}")
-            db.session.delete(query)
-            db.session.commit()
+            query.zero_matches = True
+            query.error = True
+            # db.session.delete(query)
+            # db.session.commit()
             return matches
 
         if len(matches.df) == 0:  # no matches
             current_app.logger.debug("0 matches")
+            query.zero_matches = True
+            db.session.commit()
             return None
 
         # save matches

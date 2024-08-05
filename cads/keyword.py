@@ -10,7 +10,6 @@ from numpy import array_split
 from pandas import DataFrame
 
 from . import db
-from .collocation import DiscoursemeScoresOut
 from .database import Keyword, KeywordItem, KeywordItemScore
 from .semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
 from .users import auth
@@ -88,7 +87,6 @@ def ccc_keywords(keyword):
 ################
 class KeywordIn(Schema):
 
-    # constellation_id = Integer(required=False, load_default=None)
     semantic_map_id = Integer(required=False, load_default=None)
 
     corpus_id = Integer(required=True)
@@ -107,7 +105,6 @@ class KeywordOut(Schema):
 
     id = Integer()
 
-    # constellation_id = Integer(metadata={'nullable': True})
     semantic_map_id = Integer(metadata={'nullable': True})
 
     corpus_id = Integer()
@@ -162,7 +159,6 @@ class KeywordItemsOut(Schema):
 
     items = Nested(KeywordItemOut(many=True), required=False)
     coordinates = Nested(CoordinatesOut(many=True), required=False, metadata={'nullable': True})
-    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
 
 
 #################
@@ -238,12 +234,13 @@ def get_keyword_items(id, query_data):
 
     keyword = db.get_or_404(Keyword, id)
 
+    # pagination settings
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
-    # get scores
+    # scores
     scores = KeywordItemScore.query.filter(
         KeywordItemScore.keyword_id == keyword.id,
         KeywordItemScore.measure == sort_by
@@ -271,16 +268,6 @@ def get_keyword_items(id, query_data):
         ccc_semmap_update(keyword.semantic_map, requested_items)
         coordinates = [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
 
-    # discourseme scores
-    discourseme_scores = list()
-    # if keyword.constellation:
-    #     ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
-    #     discourseme_scores = keyword.discourseme_scores
-    #     for s in discourseme_scores:
-    #         s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
-    #         s['unigram_item_scores'] = [KeywordItemOut().dump(sc) for sc in s['unigram_item_scores']]
-    #     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-
     # TODO: also return ranks (to ease frontend pagination)?
     keyword_items = {
         'id': keyword.id,
@@ -290,8 +277,7 @@ def get_keyword_items(id, query_data):
         'page_number': page_number,
         'page_count': page_count,
         'items': items,
-        'coordinates': coordinates,
-        'discourseme_scores': discourseme_scores
+        'coordinates': coordinates
     }
 
     return KeywordItemsOut().dump(keyword_items), 200
@@ -306,8 +292,7 @@ def create_keyword(json_data):
 
     """
 
-    # constellation and semantic map
-    # constellation_id = json_data.get('constellation_id')
+    # semantic map
     semantic_map_id = json_data.get('semantic_map_id')
 
     # corpus
@@ -325,7 +310,6 @@ def create_keyword(json_data):
     min_freq = json_data.get('min_freq')
 
     keyword = Keyword(
-        # constellation_id=constellation_id,
         semantic_map_id=semantic_map_id,
         corpus_id=corpus_id,
         subcorpus_id=subcorpus_id,
@@ -341,8 +325,6 @@ def create_keyword(json_data):
 
     ccc_keywords(keyword)
     ccc_init_semmap(keyword, semantic_map_id)
-    # if keyword.constellation:
-    #     ccc_discourseme_counts(keyword, keyword.constellation.highlight_discoursemes)
 
     return KeywordOut().dump(keyword), 200
 

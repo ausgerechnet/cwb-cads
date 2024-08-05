@@ -171,7 +171,6 @@ class CollocationOut(Schema):
 # IDENTICAL TO KEYWORDS ↓
 class CollocationPatchIn(Schema):
 
-    # constellation_id = Integer(required=False, load_default=None)
     semantic_map_id = Integer(required=False, load_default=None)
 
 
@@ -195,14 +194,6 @@ class CollocationItemOut(Schema):
     scores = Nested(CollocationScoreOut(many=True))
 
 
-class DiscoursemeScoresOut(Schema):
-
-    discourseme_id = Integer()
-    item_scores = Nested(CollocationItemOut(many=True))
-    unigram_item_scores = Nested(CollocationItemOut(many=True))
-    global_scores = Nested(CollocationScoreOut(many=True))
-
-
 class CollocationItemsOut(Schema):
 
     id = Integer()
@@ -215,7 +206,6 @@ class CollocationItemsOut(Schema):
 
     items = Nested(CollocationItemOut(many=True), required=False)
     coordinates = Nested(CoordinatesOut(many=True), required=False, metadata={'nullable': True})
-    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
 
 
 #################
@@ -290,29 +280,13 @@ def get_collocation_items(id, query_data):
 
     collocation = db.get_or_404(Collocation, id)
 
+    # pagination settings
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
-    # # get scores
-    # if collocation.constellation:
-    #     current_app.logger.debug('ccc_collocates :: .. constellation mode (filtering out DiscoursemeUnigramItems)')
-    #     filter_unigram_items = CollocationDiscoursemeUnigramItem.query.filter_by(
-    #         collocation_id=collocation.id,
-    #         discourseme_id=collocation._query.discourseme.id
-    #     )
-    #     blacklist = CollocationItem.query.filter(
-    #         CollocationItem.collocation_id == collocation.id,
-    #         CollocationItem.item.in_([f.item for f in filter_unigram_items])
-    #     )
-    #     scores = CollocationItemScore.query.filter(
-    #         CollocationItemScore.collocation_id == collocation.id,
-    #         CollocationItemScore.measure == sort_by,
-    #         ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
-    #     )
-    # else:
-    current_app.logger.debug('ccc_collocates :: .. query mode')
+    # scores
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
         CollocationItemScore.measure == sort_by
@@ -340,18 +314,6 @@ def get_collocation_items(id, query_data):
         ccc_semmap_update(collocation.semantic_map, requested_items)
         coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
 
-    # TODO
-    # discourseme scores
-    discourseme_scores = list()
-    # if collocation.constellation:
-    #     discoursemes = collocation.constellation.highlight_discoursemes + collocation.constellation.filter_discoursemes
-    #     ccc_discourseme_counts(collocation, discoursemes)
-    #     discourseme_scores = [s for s in collocation.discourseme_scores if s['discourseme_id'] != collocation._query.discourseme.id]
-    #     for s in discourseme_scores:
-    #         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
-    #         s['unigram_item_scores'] = [CollocationItemOut().dump(sc) for sc in s['unigram_item_scores']]
-    #     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-
     # TODO: also return ranks (to ease frontend pagination)?
     collocation_items = {
         'id': collocation.id,
@@ -361,41 +323,10 @@ def get_collocation_items(id, query_data):
         'page_number': page_number,
         'page_count': page_count,
         'items': items,
-        'coordinates': coordinates,
-        'discourseme_scores': discourseme_scores
+        'coordinates': coordinates
     }
 
     return CollocationItemsOut().dump(collocation_items), 200
-
-
-# collocation = ccc_collocates(collocation, sort_by, sort_order, page_size, page_number)
-
-# semantic_map = collocation.semantic_map
-# return_coordinates = True
-# if return_coordinates:
-#     if semantic_map:
-
-#         # make sure there's coordinates for all requested items
-#         requested_items = [item['item'] for item in collocation['items']]
-#         ccc_semmap_update(semantic_map, requested_items)
-#         collocation['coordinates'] = [
-#             CoordinatesOut().dump(coordinates) for coordinates in semantic_map.coordinates if coordinates.item in requested_items
-#         ]
-#         requested_discourseme_items = list()
-
-#         # make sure there's coordinates for all requested discourseme items
-#         for discourseme_score in collocation['discourseme_scores']:
-#             requested_discourseme_items.extend([d['item'] for d in discourseme_score['item_scores']])
-#         if len(requested_discourseme_items) > 0:
-#             ccc_semmap_update(semantic_map, requested_discourseme_items)
-#             collocation['coordinates'].extend([
-#                 CoordinatesOut().dump(coordinates) for coordinates in semantic_map.coordinates if
-#                 (coordinates.item in requested_discourseme_items) and (coordinates.item not in requested_items)
-#             ])
-#     else:
-#         current_app.logger.error(f"no semantic map for collocation analysis {id}")
-
-# return CollocationOut().dump(collocation), 200
 
 
 @bp.post('/<id>/semantic-map/')

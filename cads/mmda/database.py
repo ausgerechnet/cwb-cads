@@ -13,14 +13,14 @@ from ..database import Breakdown, Corpus, Query, SubCorpus, get_or_create
 bp = Blueprint('mmda-database', __name__, url_prefix='/mmda-database', cli_group='mmda-database')
 
 
-constellation_discoursemes = db.Table(
-    'constellation_discoursemes',
+constellation_discourseme = db.Table(
+    'constellation_discourseme',
     db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),
     db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
 )
 
-constellation_descriptions = db.Table(
-    'constellation_descriptions',
+constellation_discourseme_description = db.Table(
+    'constellation_discourseme_description',
     db.Column('constellation_description_id', db.Integer, db.ForeignKey('constellation_description.id')),
     db.Column('discourseme_description_id', db.Integer, db.ForeignKey('discourseme_description.id'))
 )
@@ -124,6 +124,9 @@ class DiscoursemeDescription(db.Model):
         )
         self.query_id = query.id
 
+        if query.error or query.zero_matches:
+            return
+
         # breakdown
         breakdown = get_or_create(Breakdown, query_id=query.id, p=self.p)
         breakdown_df = ccc_breakdown(breakdown)
@@ -162,10 +165,7 @@ class Constellation(db.Model):
     name = db.Column(db.Unicode(255), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
 
-    discoursemes = db.relationship("Discourseme", secondary=constellation_discoursemes)
-
-    collocation_analyses = db.relationship('Collocation', backref='constellation', cascade='all, delete')
-    keyword_analyses = db.relationship('Keyword', backref='constellation', cascade='all, delete')
+    discoursemes = db.relationship("Discourseme", secondary=constellation_discourseme)
 
 
 class ConstellationDescription(db.Model):
@@ -184,7 +184,7 @@ class ConstellationDescription(db.Model):
     s = db.Column(db.String(), nullable=True)  # for max. query context
     match_strategy = db.Column(db.Unicode, default='longest')
 
-    discourseme_descriptions = db.relationship("DiscoursemeDescription", secondary=constellation_descriptions)
+    discourseme_descriptions = db.relationship("DiscoursemeDescription", secondary=constellation_discourseme_description)
 
     @property
     def corpus(self):

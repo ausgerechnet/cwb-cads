@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from collections import defaultdict
 from datetime import datetime
 
-from association_measures import measures
 from ccc import Corpus as Crps
 from flask import Blueprint, current_app
 from flask_login import UserMixin
@@ -53,13 +51,13 @@ def init_db():
 
 
 users_roles = db.Table(
-    'UsersRoles',
+    'users_roles',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
 )
 
 subcorpus_segmentation_span = db.Table(
-    'SubCorpusSegmentation',
+    'sub_corpus_segmentation_span',
     db.Column('subcorpus_id', db.Integer, db.ForeignKey('sub_corpus.id')),
     db.Column('segmentation_span_id', db.Integer, db.ForeignKey('segmentation_span.id'))
 )
@@ -289,6 +287,8 @@ class Query(db.Model):
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
+    zero_matches = db.Column(db.Boolean, default=False)
+    error = db.Column(db.Boolean, default=False)
 
     filter_sequence = db.Column(db.Unicode)
 
@@ -491,7 +491,6 @@ class Collocation(db.Model):
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'))
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
-    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))  # TODO
 
     items = db.relationship('CollocationItem', backref='collocation', passive_deletes=True, cascade='all, delete')
 
@@ -573,14 +572,11 @@ class Keyword(db.Model):
     p_reference = db.Column(db.Unicode(255), nullable=False)  # TODO
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id'))
-    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id'))  # TODO
 
     sub_vs_rest = db.Column(db.Boolean)
     min_freq = db.Column(db.Integer)
 
     items = db.relationship('KeywordItem', backref='keyword', passive_deletes=True, cascade='all, delete')
-    # discourseme_items = db.relationship('KeywordDiscoursemeItem', backref='keyword', passive_deletes=True, cascade='all, delete')
-    # discourseme_unigram_items = db.relationship('KeywordDiscoursemeUnigramItem', backref='keyword', passive_deletes=True, cascade='all, delete')
 
     @property
     def nr_items(self):
@@ -624,39 +620,6 @@ class Keyword(db.Model):
             keyword_item_ids.update({s.keyword_item_id for s in scores})
         keyword_items = KeywordItem.query.filter(KeywordItem.id.in_(keyword_item_ids))
         return [item.item for item in keyword_items if ((item.f1 / item.N1) > (item.f2/item.N2))]
-
-    # @property
-    # def discourseme_scores(self):
-
-    #     discourseme_f1 = defaultdict(list)
-    #     discourseme_f2 = defaultdict(list)
-    #     discourseme_item_scores = defaultdict(list)
-
-    #     # discourseme items
-    #     for item in self.discourseme_items:
-    #         discourseme_item_scores[item.discourseme_id].append(item)
-    #         discourseme_f1[item.discourseme_id].append(item.f1)
-    #         discourseme_f2[item.discourseme_id].append(item.f2)
-
-    #     # discourseme unigram items
-    #     discourseme_unigram_item_scores = defaultdict(list)
-    #     for item in self.discourseme_unigram_items:
-    #         discourseme_unigram_item_scores[item.discourseme_id].append(item)
-
-    #     # global discourseme scores
-    #     discourseme_scores = []
-    #     for discourseme_id in discourseme_item_scores.keys():
-    #         global_counts = DataFrame({'f1': [sum(discourseme_f1[discourseme_id])],
-    #                                    'f2': [sum(discourseme_f2[discourseme_id])]})
-
-    #         global_scores = measures.score(
-    #             global_counts, N1=self.N1, N2=self.N2, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(global_counts)
-    #         ).melt(var_name='measure', value_name='score').to_records(index=False)
-    #         discourseme_scores.append({'discourseme_id': discourseme_id,
-    #                                    'global_scores': global_scores,
-    #                                    'item_scores': discourseme_item_scores[discourseme_id],
-    #                                    'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
-    #     return discourseme_scores
 
     def sub_vs_rest_strategy(self):
         """check if target is subcorpus of reference (or vice versa), and whether to apply sub-vs-rest correction

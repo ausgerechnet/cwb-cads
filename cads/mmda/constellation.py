@@ -13,8 +13,7 @@ from pandas import DataFrame, concat, read_sql
 
 from .. import db
 from ..collocation import (CollocationIn, CollocationItemOut,
-                           CollocationItemsIn, CollocationItemsOut,
-                           CollocationOut, DiscoursemeScoresOut,
+                           CollocationItemsIn, CollocationItemsOut, CollocationOut,
                            get_or_create_counts)
 from ..concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
 from ..database import (Collocation, CollocationItem, CollocationItemScore,
@@ -32,7 +31,7 @@ from .database import (CollocationDiscoursemeItem,
                        DiscoursemeDescription, KeywordDiscoursemeItem,
                        KeywordDiscoursemeUnigramItem)
 from .discourseme import (DiscoursemeOut, create_discourseme_description,
-                          description_items_to_query)
+                          description_items_to_query, DiscoursemeScoresOut, DiscoursemeDescriptionOut)
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -46,7 +45,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
     unigram_counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id,
                                                                      discourseme_description_id=discourseme_description.id)
     if unigram_counts_from_sql.first():
-        current_app.logger.debug(f'query_discourseme_corpus :: counts for discourseme "{discourseme_description.discourseme.name}" already exist')
+        current_app.logger.debug(f'query_discourseme_corpora :: counts for discourseme "{discourseme_description.discourseme.name}" already exist')
         return DataFrame(), DataFrame(), DataFrame(), DataFrame()
 
     corpus = keyword.corpus
@@ -68,18 +67,31 @@ def query_discourseme_corpora(keyword, discourseme_description):
     target_unigram_breakdown = target_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f1'}, axis=1)
 
     # reference
-    # TODO: query first
-    discourseme_description_reference = create_discourseme_description(discourseme_description.discourseme,
-                                                                       items,
-                                                                       corpus_id_reference, subcorpus_id_reference,
-                                                                       p_description, s_query, match_strategy)
+    discourseme_description_reference = DiscoursemeDescription.query.filter_by(
+        discourseme_id=discourseme_description.discourseme.id,
+        corpus_id=corpus_id_reference,
+        subcorpus_id=subcorpus_id_reference,
+        p=p_description,
+        s=s_query,
+        match_strategy=match_strategy
+    ).first()
+    if not discourseme_description_reference:
+        discourseme_description_reference = create_discourseme_description(discourseme_description.discourseme,
+                                                                           items,
+                                                                           corpus_id_reference, subcorpus_id_reference,
+                                                                           p_description, s_query, match_strategy)
+
     if not discourseme_description_reference._query:
         discourseme_description_reference.update_from_items()
     reference_query = discourseme_description_reference._query
     reference_matches_df = ccc_query(reference_query)
-    reference_matches = corpus_reference.ccc().subcorpus(df_dump=reference_matches_df, overwrite=False)
-    reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
-    reference_unigram_breakdown = reference_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f2'}, axis=1)
+    if not isinstance(reference_matches_df, DataFrame):
+        reference_breakdown = DataFrame()
+        reference_unigram_breakdown = DataFrame()
+    else:
+        reference_matches = corpus_reference.ccc().subcorpus(df_dump=reference_matches_df, overwrite=False)
+        reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
+        reference_unigram_breakdown = reference_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f2'}, axis=1)
 
     return target_breakdown, target_unigram_breakdown, reference_breakdown, reference_unigram_breakdown
 
@@ -469,6 +481,11 @@ class ConstellationDescriptionIn(Schema):
     match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
 
+class ConstellationDiscoursemeDescriptionIn(Schema):
+
+    discourseme_description_ids = List(Integer())
+
+
 class ConstellationDescriptionOut(Schema):
 
     id = Integer()
@@ -479,6 +496,7 @@ class ConstellationDescriptionOut(Schema):
     s = String()
     match_strategy = String()
     semantic_map_id = Integer()
+    discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True))
 
 
 class CollocationIn(CollocationIn):
@@ -495,6 +513,16 @@ class KeywordIn(Schema):
     p_reference = String(required=False, load_default='lemma')
     sub_vs_rest = Boolean(required=False, load_default=True)
     min_freq = Integer(required=False, load_default=3)
+
+
+class CollocationItemsOut(CollocationItemsOut):
+
+    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
+
+
+class KeywordItemsOut(KeywordItemsOut):
+
+    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
 
 
 #################
@@ -565,10 +593,54 @@ def patch_constellation(id, json_data):
     constellation.name = json_data.get('name') if json_data.get('name') else constellation.name
     constellation.comment = json_data.get('comment') if json_data.get('comment') else constellation.comment
 
+    discourseme_ids = json_data.get('discourseme_ids')
+    if discourseme_ids:
+        discoursemes = [db.get_or_404(Discourseme, did) for did in discourseme_ids]
+
+        # remove old ones
+        for disc in constellation.discoursemes:
+            constellation.discoursemes.remove(disc)
+
+        # add new ones
+        for discourseme in discoursemes:
+            constellation.discoursemes.append(disc)
+
+    db.session.commit()
+
+    return ConstellationOut().dump(constellation), 200
+
+
+@bp.patch('/<id>/add-discourseme')
+@bp.input(ConstellationIn(partial=True))
+@bp.output(ConstellationOut)
+@bp.auth_required(auth)
+def patch_constellation_add(id, json_data):
+    """Patch constellation.
+
+    """
+    constellation = db.get_or_404(Constellation, id)
     discoursemes_ids = json_data.get('discourseme_ids', [])
-    if len(discoursemes_ids) > 0:
-        discoursemes = [db.get_or_404(Discourseme, did) for did in discoursemes_ids]
-        [constellation.discoursemes.append(did) for did in discoursemes]
+    discoursemes = [db.get_or_404(Discourseme, did) for did in discoursemes_ids]
+    for disc in discoursemes:
+        constellation.discoursemes.append(disc)
+    db.session.commit()
+
+    return ConstellationOut().dump(constellation), 200
+
+
+@bp.patch('/<id>/remove-discourseme')
+@bp.input(ConstellationIn(partial=True))
+@bp.output(ConstellationOut)
+@bp.auth_required(auth)
+def patch_constellation_remove(id, json_data):
+    """Patch constellation.
+
+    """
+    constellation = db.get_or_404(Constellation, id)
+    discoursemes_ids = json_data.get('discourseme_ids', [])
+    discoursemes = [db.get_or_404(Discourseme, did) for did in discoursemes_ids]
+    for disc in discoursemes:
+        constellation.discoursemes.remove(disc)
     db.session.commit()
 
     return ConstellationOut().dump(constellation), 200
@@ -676,6 +748,40 @@ def delete_description(id, description_id):
     db.session.commit()
 
     return 'Deletion successful.', 200
+
+
+@bp.patch('/<id>/description/<description_id>/add-discourseme')
+@bp.input(ConstellationDiscoursemeDescriptionIn)
+@bp.output(ConstellationDescriptionOut(partial=True))
+@bp.auth_required(auth)
+def patch_description_add(id, description_id, json_data):
+
+    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
+    description = db.get_or_404(ConstellationDescription, description_id)
+    discourseme_description_ids = json_data.get("discourseme_description_ids")
+    discourseme_descriptions = [db.get_or_404(DiscoursemeDescription, desc_id) for desc_id in discourseme_description_ids]
+    for desc in discourseme_descriptions:
+        description.discourseme_descriptions.append(desc)
+    db.session.commit()
+
+    return ConstellationDescriptionOut().dump(description), 200
+
+
+@bp.patch('/<id>/description/<description_id>/remove-discourseme')
+@bp.input(ConstellationDiscoursemeDescriptionIn)
+@bp.output(ConstellationDescriptionOut(partial=True))
+@bp.auth_required(auth)
+def patch_description_remove(id, description_id, json_data):
+
+    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
+    description = db.get_or_404(ConstellationDescription, description_id)
+    discourseme_description_ids = json_data.get("discourseme_description_ids")
+    discourseme_descriptions = [db.get_or_404(DiscoursemeDescription, desc_id) for desc_id in discourseme_description_ids]
+    for desc in discourseme_descriptions:
+        description.discourseme_descriptions.remove(desc)
+    db.session.commit()
+
+    return ConstellationDescriptionOut().dump(description), 200
 
 
 # CONCORDANCE
@@ -838,13 +944,6 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
     items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
 
-    # coordinates
-    coordinates = list()
-    if collocation.semantic_map:
-        requested_items = [item['item'] for item in items]
-        ccc_semmap_update(collocation.semantic_map, requested_items)
-        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
-
     # discourseme scores
     collocation_discourseme_counts(collocation, description.discourseme_descriptions)
     discourseme_scores = collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
@@ -853,6 +952,16 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
         s['unigram_item_scores'] = [CollocationItemOut().dump(sc) for sc in s['unigram_item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+
+    # coordinates
+    coordinates = list()
+    if collocation.semantic_map:
+        # make sure there's coordinates for all requested items and discourseme items
+        requested_items = [item['item'] for item in items]
+        for discourseme_score in discourseme_scores:
+            requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
+        ccc_semmap_update(collocation.semantic_map, requested_items)
+        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
 
     # TODO: also return ranks (to ease frontend pagination)?
     collocation_items = {
@@ -986,13 +1095,6 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
     df_scores = DataFrame([vars(s) for s in scores], columns=['keyword_item_id'])
     items = [KeywordItemOut().dump(db.get_or_404(KeywordItem, id)) for id in df_scores['keyword_item_id']]
 
-    # coordinates
-    coordinates = list()
-    if keyword.semantic_map:
-        requested_items = [item['item'] for item in items]
-        ccc_semmap_update(keyword.semantic_map, requested_items)
-        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
-
     # discourseme scores
     keyword_discourseme_counts(keyword, description.discourseme_descriptions)
     discourseme_scores = keyword_discourseme_scores(keyword_id, [d.id for d in description.discourseme_descriptions])
@@ -1000,6 +1102,16 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
         s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
         s['unigram_item_scores'] = [KeywordItemOut().dump(sc) for sc in s['unigram_item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+
+    # coordinates
+    coordinates = list()
+    if keyword.semantic_map:
+        # make sure there's coordinates for all requested items and discourseme items
+        requested_items = [item['item'] for item in items]
+        for discourseme_score in discourseme_scores:
+            requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
+        ccc_semmap_update(keyword.semantic_map, requested_items)
+        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
 
     # TODO: also return ranks (to ease frontend pagination)?
     keyword_items = {
