@@ -20,6 +20,7 @@ import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppSubcorporaSubcorpusIdImport } from './routes/_app/subcorpora_/$subcorpusId'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
 import { Route as AppKeywordAnalysisNewImport } from './routes/_app/keyword-analysis_/new'
+import { Route as AppKeywordAnalysisAnalysisIdImport } from './routes/_app/keyword-analysis_/$analysisId'
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
 import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
@@ -138,6 +139,16 @@ const AppKeywordAnalysisNewRoute = AppKeywordAnalysisNewImport.update({
   import('./routes/_app/keyword-analysis_/new.lazy').then((d) => d.Route),
 )
 
+const AppKeywordAnalysisAnalysisIdRoute =
+  AppKeywordAnalysisAnalysisIdImport.update({
+    path: '/keyword-analysis/$analysisId',
+    getParentRoute: () => AppRoute,
+  } as any).lazy(() =>
+    import('./routes/_app/keyword-analysis_/$analysisId.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
 const AppDiscoursemesDiscoursemeIdRoute =
   AppDiscoursemesDiscoursemeIdImport.update({
     path: '/discoursemes/$discoursemeId',
@@ -246,6 +257,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoursemesDiscoursemeIdImport
       parentRoute: typeof AppImport
     }
+    '/_app/keyword-analysis/$analysisId': {
+      preLoaderRoute: typeof AppKeywordAnalysisAnalysisIdImport
+      parentRoute: typeof AppImport
+    }
     '/_app/keyword-analysis/new': {
       preLoaderRoute: typeof AppKeywordAnalysisNewImport
       parentRoute: typeof AppImport
@@ -289,6 +304,7 @@ export const routeTree = rootRoute.addChildren([
     AppConstellationsConstellationIdRoute,
     AppConstellationsNewRoute,
     AppDiscoursemesDiscoursemeIdRoute,
+    AppKeywordAnalysisAnalysisIdRoute,
     AppKeywordAnalysisNewRoute,
     AppQueriesNewRoute,
     AppSubcorporaSubcorpusIdRoute,
