@@ -28,20 +28,16 @@ corpora:
 	flask --app cads corpus import # && \
 #	flask --app cads corpus read-meta GERMAPARL-1949-2021 ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz
 
-subcorpora:
-	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.DevConfig && \
-	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "/home/ausgerechnet/repositories/norm-rechts/outreach/cpss-2024/subcorpora.tsv" && \
-	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
+# subcorpora:
+# 	. venv/bin/activate && \
+# 	export CWB_CADS_CONFIG=cfg.DevConfig && \
+# 	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../norm-rechts/outreach/cpss-2024/subcorpora.tsv" && \
+# 	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
 
 discoursemes:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
-	flask --app cads discourseme import --path_in "/home/ausgerechnet/repositories/thesis/discoursemes/climate-change.tsv"
-#	flask --app cads discourseme import --path_in "/home/ausgerechnet/repositories/norm-rechts/outreach/cpss-2024/*discourseme*.tsv"
-#	flask --app cads discourseme import --path_in "../thesis/ccc-analyses/case-studies/norm-rechts/*-discoursemes.tsv"
-#	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
-#	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv" && \
+	flask --app cads discourseme import --path_in "tests/discoursemes/climate-change.tsv"
 
 examples: init corpora discoursemes
 
