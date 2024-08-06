@@ -1,31 +1,31 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { createLazyFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
+import { ColumnDef } from '@tanstack/react-table'
 import { Link } from '@tanstack/react-router'
-import { PlusIcon } from 'lucide-react'
+import { EyeIcon, PlusIcon } from 'lucide-react'
 
-import { AppPageFrame } from '@/components/app-page-frame'
 import { buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
 import { cn } from '@/lib/utils'
-import { keywordAnalysesList } from '@/lib/queries'
+import { corpusById, keywordAnalysesList, subcorpusById } from '@/lib/queries'
+import { DataTable, SortButton } from '@/components/data-table'
+import { schemas } from '@/rest-client'
+import { Skeleton } from '@/components/ui/skeleton'
+import { formatNumber } from '@/lib/format-number'
+import { KeywordAnalysisLayout } from './-keyword-analysis-layout'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis')({
   component: KeywordAnalysisList,
-  pendingComponent: LoaderKeywordAnalysis,
 })
 
 function KeywordAnalysisList() {
   const { data: keywordAnalysisList } = useSuspenseQuery(keywordAnalysesList)
   const hasKeywordAnalysis = keywordAnalysisList.length > 0
+  const navigate = useNavigate()
 
   return (
-    <AppPageFrame
-      title="Keyword Analysis"
-      cta={{
-        nav: { to: '/keyword-analysis/new' },
-        label: 'New Keyword Analyses',
-      }}
-    >
+    <KeywordAnalysisLayout>
       {!hasKeywordAnalysis && (
         <div className="start flex flex-col gap-4">
           <Large>
@@ -42,25 +42,141 @@ function KeywordAnalysisList() {
           </Link>
         </div>
       )}
-      {
-        <div className="whitespace-pre rounded-lg bg-muted p-2 font-mono text-muted-foreground">
-          {JSON.stringify(keywordAnalysisList, null, 2)}
-        </div>
-      }
-    </AppPageFrame>
+      <DataTable<z.infer<typeof schemas.KeywordOut>>
+        columns={columns}
+        rows={keywordAnalysisList}
+        onRowClick={(row) => {
+          const id = row.id
+          if (id === undefined) return
+          navigate({
+            to: '/keyword-analysis/$analysisId',
+            params: { analysisId: id.toString() },
+          })
+        }}
+      />
+    </KeywordAnalysisLayout>
   )
 }
 
-function LoaderKeywordAnalysis() {
+// TODO: this is whole component is a hacky workaround. The API should return nicely formatted descriptions
+function CorpusCell({
+  corpusId = null,
+  subcorpusId = null,
+}: {
+  corpusId: number | null | undefined
+  subcorpusId: number | null | undefined
+}) {
+  const { data: subcorpus, isLoading: isLoadingSubcorpus } = useQuery({
+    ...subcorpusById(subcorpusId ?? 0),
+    enabled: subcorpusId !== null,
+    select: (data) => data?.find((s) => s.id === subcorpusId),
+  })
+  const { data: corpus, isLoading: isLoadingCorpus } = useQuery({
+    ...corpusById(corpusId ?? 0),
+    enabled: corpusId !== null && subcorpusId === null,
+  })
+  const formattedName =
+    subcorpusId === null
+      ? corpus?.name
+      : `${
+          subcorpus?.name ??
+          subcorpus?.description ??
+          subcorpus?.nqr_cqp ??
+          subcorpusId
+        } of ${corpus?.name ?? corpus?.description ?? corpusId}`
+  const isLoading =
+    subcorpusId === null
+      ? isLoadingCorpus
+      : isLoadingSubcorpus || isLoadingCorpus
   return (
-    <AppPageFrame
-      title="Keyword Analysis"
-      cta={{
-        nav: { to: '/keyword-analysis/new' },
-        label: 'New Keyword Analysis',
-      }}
-    >
-      <h1>Loading...</h1>
-    </AppPageFrame>
+    <div>{isLoading ? <Skeleton className="w-full" /> : formattedName}</div>
   )
 }
+
+const columns: ColumnDef<z.infer<typeof schemas.KeywordOut>>[] = [
+  {
+    accessorKey: 'id',
+    enableSorting: true,
+    meta: { className: 'w-0' },
+    header: ({ column }) => <SortButton column={column}>ID</SortButton>,
+  },
+  {
+    accessorKey: 'sub_vs_rest',
+    enableSorting: true,
+    header: ({ column }) => (
+      <SortButton column={column}>Sub vs. Rest</SortButton>
+    ),
+    cell: ({ row }) => (row.original.sub_vs_rest ? 'Yes' : 'No'),
+  },
+  {
+    id: 'target',
+    header: 'Target',
+    cell: ({ row }) => (
+      <CorpusCell
+        corpusId={row.original.corpus_id}
+        subcorpusId={row.original.subcorpus_id}
+      />
+    ),
+  },
+  {
+    accessorKey: 'p',
+    header: () => <>Target Query Layer</>,
+  },
+  {
+    id: 'reference',
+    header: 'Reference',
+    cell: ({ row }) => (
+      <CorpusCell
+        corpusId={row.original.corpus_id_reference}
+        subcorpusId={row.original.subcorpus_id_reference}
+      />
+    ),
+  },
+  {
+    accessorKey: 'p_reference',
+    enableSorting: true,
+    header: ({ column }) => (
+      <SortButton column={column}>Reference Query Layer</SortButton>
+    ),
+  },
+  {
+    accessorKey: 'nr_items',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}># Items</SortButton>,
+    cell: ({
+      row: {
+        original: { nr_items },
+      },
+    }) => (
+      <div>
+        {nr_items === undefined ? (
+          <Skeleton className="h-4 w-full" />
+        ) : (
+          formatNumber(nr_items)
+        )}
+      </div>
+    ),
+  },
+  {
+    accessorKey: 'min_freq',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}>Min. Freq.</SortButton>,
+  },
+  {
+    id: 'actions',
+    header: () => null,
+    meta: { className: 'w-0' },
+    cell: ({ row }) => (
+      <Link
+        to={`/keyword-analysis/$analysisId`}
+        params={{ analysisId: String(row.original.id) }}
+        className={cn(
+          buttonVariants({ variant: 'outline', size: 'sm' }),
+          'w-full',
+        )}
+      >
+        <EyeIcon className="h-4 w-4" />
+      </Link>
+    ),
+  },
+]
