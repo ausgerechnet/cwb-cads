@@ -8,7 +8,7 @@ import { EyeIcon, PlusIcon } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
 import { cn } from '@/lib/utils'
-import { corpusById, keywordAnalysesList, subcorpusById } from '@/lib/queries'
+import { corpusById, keywordAnalysesList, subcorpusOf } from '@/lib/queries'
 import { DataTable, SortButton } from '@/components/data-table'
 import { schemas } from '@/rest-client'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -67,7 +67,7 @@ function CorpusCell({
   subcorpusId: number | null | undefined
 }) {
   const { data: subcorpus, isLoading: isLoadingSubcorpus } = useQuery({
-    ...subcorpusById(subcorpusId ?? 0),
+    ...subcorpusOf(subcorpusId ?? 0),
     enabled: subcorpusId !== null,
     select: (data) => data?.find((s) => s.id === subcorpusId),
   })

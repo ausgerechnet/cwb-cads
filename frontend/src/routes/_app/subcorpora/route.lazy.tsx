@@ -1,4 +1,4 @@
-import { createLazyFileRoute, Link } from '@tanstack/react-router'
+import { createLazyFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -19,6 +19,7 @@ export const Route = createLazyFileRoute('/_app/subcorpora')({
 
 function Subcorpora() {
   const { data: subcorpora } = useSuspenseQuery(subcorporaList)
+  const navigate = useNavigate()
 
   return (
     <AppPageFrame
@@ -28,7 +29,16 @@ function Subcorpora() {
         label: 'New Subcorpus',
       }}
     >
-      <DataTable columns={columns} rows={subcorpora} />
+      <DataTable
+        columns={columns}
+        rows={subcorpora}
+        onRowClick={(row) =>
+          navigate({
+            to: '/subcorpora/$subcorpusId',
+            params: { subcorpusId: String(row.id) },
+          })
+        }
+      />
     </AppPageFrame>
   )
 }

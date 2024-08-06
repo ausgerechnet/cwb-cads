@@ -250,7 +250,7 @@ export const subcorporaList = queryOptions({
   },
 })
 
-export const subcorpusById = (corpusId: number) =>
+export const subcorpusOf = (corpusId: number) =>
   queryOptions({
     queryKey: ['subcorpora', corpusId],
     queryFn: ({ signal }) =>

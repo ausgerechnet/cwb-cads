@@ -14,7 +14,7 @@ import {
   corpusList,
   discoursemesList,
   createQueryAssisted,
-  subcorpusById,
+  subcorpusOf,
 } from '@/lib/queries'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
@@ -80,7 +80,7 @@ export function QueryFormAssisted({
     isLoading: isLoadingSubcorpora,
     error: errorSubcorpora,
   } = useQuery({
-    ...subcorpusById(corpusId),
+    ...subcorpusOf(corpusId),
     enabled: corpusId !== undefined,
   })
   const selectedCorpus = corpora.find(({ id }) => id === corpusId)

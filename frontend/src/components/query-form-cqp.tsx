@@ -14,7 +14,7 @@ import {
   corpusList,
   discoursemesList,
   createQueryCQP,
-  subcorpusById,
+  subcorpusOf,
 } from '@/lib/queries'
 import {
   Form,
@@ -75,7 +75,7 @@ export function QueryFormCQP({
     isLoading: isLoadingSubcorpora,
     error: errorSubcorpora,
   } = useQuery({
-    ...subcorpusById(corpusId),
+    ...subcorpusOf(corpusId),
     enabled: corpusId !== undefined,
   })
   const selectedCorpus = corpora.find(({ id }) => id === corpusId)
