@@ -97,7 +97,6 @@ export const queryConcordances = (
     secondary,
     filterItem: filter_item,
     filterItemPAtt: filter_item_p_att,
-    filterDiscoursemeIds: filter_discourseme_ids,
     pageSize: page_size,
     pageNumber: page_number,
     sortOrder: sort_order,
@@ -108,7 +107,6 @@ export const queryConcordances = (
     secondary?: string
     filterItem?: string
     filterItemPAtt?: string
-    filterDiscoursemeIds?: number[]
     pageSize?: number
     pageNumber?: number
     sortOrder?: 'ascending' | 'descending' | 'random'
@@ -124,7 +122,6 @@ export const queryConcordances = (
       secondary,
       filter_item,
       filter_item_p_att,
-      filter_discourseme_ids,
       page_size,
       page_number,
       sort_order,
@@ -139,7 +136,6 @@ export const queryConcordances = (
           secondary,
           filter_item,
           filter_item_p_att,
-          filter_discourseme_ids,
           page_size,
           page_number,
           sort_order,
@@ -173,7 +169,7 @@ export const queryCollocation = (
   p: string,
   window: number,
   {
-    constellationId,
+    // constellationId,
     semanticMapId,
     sBreak,
     marginals,
@@ -181,7 +177,7 @@ export const queryCollocation = (
     filterItemPAtt,
     filterDiscoursemeIds = [],
   }: {
-    constellationId?: number | undefined
+    // constellationId?: number | undefined
     semanticMapId?: number | undefined
     sBreak?: string | undefined
     marginals?: 'local' | 'global' | undefined
@@ -196,7 +192,7 @@ export const queryCollocation = (
       queryId,
       p,
       window,
-      constellationId,
+      // constellationId,
       semanticMapId,
       sBreak,
       marginals,
@@ -210,7 +206,7 @@ export const queryCollocation = (
         queries: {
           p,
           window,
-          constellation_id: constellationId,
+          // constellation_id: constellationId,
           semantic_map_id: semanticMapId,
           s_break: sBreak,
           marginals,
@@ -360,14 +356,14 @@ export const logOut: MutationOptions = {
 
 export const discoursemesList = queryOptions({
   queryKey: ['discoursemes'],
-  queryFn: ({ signal }) => apiClient.getDiscourseme({ signal }),
+  queryFn: ({ signal }) => apiClient.getMmdadiscourseme({ signal }),
 })
 
 export const discoursemeById = (discoursemeId: string) =>
   queryOptions({
     queryKey: ['discourseme', discoursemeId],
     queryFn: ({ signal }) =>
-      apiClient.getDiscoursemeId({ params: { id: discoursemeId }, signal }),
+      apiClient.getMmdadiscoursemeId({ params: { id: discoursemeId }, signal }),
   })
 
 export const createDiscourseme: MutationOptions<
@@ -375,7 +371,7 @@ export const createDiscourseme: MutationOptions<
   Error,
   z.infer<typeof schemas.DiscoursemeIn>
 > = {
-  mutationFn: (body) => apiClient.postDiscourseme(body),
+  mutationFn: (body) => apiClient.postMmdadiscourseme(body),
   onSuccess: () => {
     queryClient.invalidateQueries(discoursemesList)
   },
@@ -383,7 +379,7 @@ export const createDiscourseme: MutationOptions<
 
 export const deleteDiscourseme: MutationOptions<unknown, Error, string> = {
   mutationFn: (discoursemeId: string) =>
-    apiClient.deleteDiscoursemeId(undefined, { params: { id: discoursemeId } }),
+    apiClient.deleteMmdadiscoursemeId(undefined, { params: { id: discoursemeId } }),
   onSettled: () => {
     queryClient.invalidateQueries(discoursemesList)
   },
@@ -393,14 +389,14 @@ export const deleteDiscourseme: MutationOptions<unknown, Error, string> = {
 
 export const constellationList = queryOptions({
   queryKey: ['constellation-list'],
-  queryFn: ({ signal }) => apiClient.getConstellation({ signal }),
+  queryFn: ({ signal }) => apiClient.getMmdaconstellation({ signal }),
 })
 
 export const constellationById = (constellationId: string) =>
   queryOptions({
     queryKey: ['constellation', constellationId],
     queryFn: ({ signal }) =>
-      apiClient.getConstellationId({ params: { id: constellationId }, signal }),
+      apiClient.getMmdaconstellationId({ params: { id: constellationId }, signal }),
   })
 
 export const createConstellation: MutationOptions<
@@ -408,7 +404,7 @@ export const createConstellation: MutationOptions<
   Error,
   z.infer<typeof schemas.ConstellationIn>
 > = {
-  mutationFn: (body) => apiClient.postConstellation(body),
+  mutationFn: (body) => apiClient.postMmdaconstellation(body),
   onSuccess: () => {
     queryClient.invalidateQueries(constellationList)
   },
@@ -416,7 +412,7 @@ export const createConstellation: MutationOptions<
 
 export const deleteConstellation: MutationOptions<unknown, Error, string> = {
   mutationFn: (constellationId: string) =>
-    apiClient.deleteConstellationId(undefined, {
+    apiClient.deleteMmdaconstellationId(undefined, {
       params: { id: constellationId },
     }),
   onSuccess: () => {
@@ -426,7 +422,8 @@ export const deleteConstellation: MutationOptions<unknown, Error, string> = {
 
 export const constellationConcordances = (
   constellationId: string | number,
-  corpusId: string | number,
+  descriptionId: string | number,
+  focusDiscoursemeId: number,
   {
     window,
     primary,
@@ -455,7 +452,8 @@ export const constellationConcordances = (
     queryKey: [
       'constellation-concordances',
       String(constellationId),
-      String(corpusId),
+      String(descriptionId),
+      String(focusDiscoursemeId),
       window,
       primary,
       secondary,
@@ -468,9 +466,11 @@ export const constellationConcordances = (
       sort_by_offset,
     ],
     queryFn: ({ signal }) =>
-      apiClient.getConstellationIdcorpusCorpus_idconcordance({
-        params: { id: String(constellationId), corpus_id: String(corpusId) },
+      apiClient.getMmdaconstellationIddescriptionDescription_idconcordance({
+        params: { id: String(constellationId), description_id: String(descriptionId),
+         },
         queries: {
+          focus_discourseme_id: focusDiscoursemeId,
           window,
           primary,
           secondary,
@@ -528,7 +528,7 @@ export const constellationCollocation = (
       filterDiscoursemeIds,
     ],
     queryFn: ({ signal }) =>
-      apiClient.getConstellationIdcorpusCorpus_idcollocation({
+      apiClient.getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems({
         params: { id: String(constellationId), corpus_id: String(corpusId) },
         queries: {
           p,
@@ -560,7 +560,7 @@ export const deleteConstellationDiscourseme: MutationOptions<
     constellationId: number
     discoursemeId: number
   }) =>
-    apiClient.patchConstellationIdremoveDiscourseme(
+    apiClient.patchMmdaconstellationIdremoveDiscourseme(
       { discourseme_id: discoursemeId },
       {
         params: { id: constellationId.toString() },
@@ -589,7 +589,7 @@ export const addConstellationDiscourseme: MutationOptions<
     constellationId: number
     discoursemeId: number
   }) =>
-    apiClient.patchConstellationIdaddDiscourseme(
+    apiClient.patchMmdaconstellationIdaddDiscourseme(
       { discourseme_id: discoursemeId },
       {
         params: { id: constellationId.toString() },

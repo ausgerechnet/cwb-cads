@@ -68,9 +68,9 @@ export function ConstellationConcordanceLines({
     data: concordanceLines,
     isLoading,
     error,
-    // refetch: refetchConcordanceLines,
   } = useQuery(
-    constellationConcordances(constellationId, corpusId, {
+    // TODO: focusDiscoursemeId must be set!
+    constellationConcordances(constellationId, corpusId, 0, {
       primary,
       secondary,
       window: windowSize,

@@ -21,7 +21,7 @@ import { z } from 'zod'
 
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@/components/ui/card'
-import { Headline3, Muted, Small } from '@/components/ui/typography'
+import { Headline3, Large, Muted, Small } from '@/components/ui/typography'
 import { CorpusSelect } from '@/components/select-corpus'
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
@@ -57,12 +57,7 @@ function ConstellationDetail() {
       replace: true,
     })
   const {
-    data: {
-      description,
-      name,
-      filter_discoursemes: filterDiscoursemes = [],
-      highlight_discoursemes: highlightDiscoursemes = [],
-    },
+    data: { comment, name, discoursemes: constellationDiscoursemes = [] },
   } = useSuspenseQuery(constellationById(constellationId))
   const { mutate: addDiscourseme, isPending } = useMutation(
     addConstellationDiscourseme,
@@ -74,10 +69,9 @@ function ConstellationDetail() {
     () =>
       discoursemes.filter(
         (discourseme) =>
-          !filterDiscoursemes.find(({ id }) => id === discourseme.id) &&
-          !highlightDiscoursemes.find(({ id }) => id === discourseme.id),
+          !constellationDiscoursemes?.find(({ id }) => id === discourseme.id),
       ),
-    [discoursemes, filterDiscoursemes, highlightDiscoursemes],
+    [discoursemes, constellationDiscoursemes],
   )
 
   return (
@@ -87,16 +81,20 @@ function ConstellationDetail() {
       classNameContent="pb-0"
     >
       <Headline3 className="border-0">{name}</Headline3>
-      {description && <Muted>{description}</Muted>}
+      <Large>
+        StrongStrong TODO: check if this is still okay, API was changed. only
+        one discourseme array.
+      </Large>
+      {comment && <Muted>{comment}</Muted>}
       <div className="mt-4 grid grid-cols-[3fr_1fr] gap-5">
         <Card className="mx-0 grid w-full grid-cols-2 gap-x-4 gap-y-0 p-4">
           <div>
             <div className="mb-2 flex place-items-center font-bold">
               <Filter className="mr-2 h-4 w-4" />
-              Filter Discoursemes
+              Discoursemes
             </div>
             <ul className="flex flex-col gap-1">
-              {filterDiscoursemes.map((discourseme) => (
+              {constellationDiscoursemes.map((discourseme) => (
                 <DiscoursemeItem
                   key={discourseme.id}
                   discourseme={discourseme}
@@ -118,16 +116,6 @@ function ConstellationDetail() {
                 Edit
               </Button>
             </div>
-            <ul className="flex flex-col gap-1">
-              {highlightDiscoursemes.map((discourseme) => (
-                <DiscoursemeItem
-                  key={discourseme.id}
-                  discourseme={discourseme}
-                  constellationId={parseInt(constellationId)}
-                  isEditable={isEditMode}
-                />
-              ))}
-            </ul>
             {isEditMode && (
               <DiscoursemeSelect
                 className="mt-1"

@@ -25,7 +25,6 @@ type CollocationScoreOut = Partial<{
 }>
 type CollocationItemsOut = Partial<{
   coordinates: Array<CoordinatesOut> | null
-  discourseme_scores: Array<DiscoursemeScoresOut> | null
   id: number
   items: Array<CollocationItemOut>
   nr_items: number
@@ -41,12 +40,6 @@ type CoordinatesOut = Partial<{
   x_user: number
   y: number
   y_user: number
-}>
-type DiscoursemeScoresOut = Partial<{
-  discourseme_id: number
-  global_scores: Array<CollocationScoreOut>
-  item_scores: Array<CollocationItemOut>
-  unigram_item_scores: Array<CollocationItemOut>
 }>
 type ConcordanceLineOut = Partial<{
   discourseme_ranges: Array<DiscoursemeRangeOut>
@@ -74,23 +67,33 @@ type ConcordanceOut = Partial<{
   page_number: number
   page_size: number
 }>
-type ConstellationOut = Partial<{
-  description: string | null
-  filter_discoursemes: Array<DiscoursemeOut>
-  highlight_discoursemes: Array<DiscoursemeOut>
+type ConstellationCollocationItemsOut = Partial<{
+  coordinates: Array<CoordinatesOut> | null
+  discourseme_scores: Array<DiscoursemeScoresOut> | null
   id: number
-  name: string | null
+  items: Array<CollocationItemOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
 }>
-type DiscoursemeOut = Partial<{
-  comment: string | null
+type DiscoursemeScoresOut = Partial<{
+  discourseme_id: number
+  global_scores: Array<CollocationScoreOut>
+  item_scores: Array<CollocationItemOut>
+  unigram_item_scores: Array<CollocationItemOut>
+}>
+type ConstellationDescriptionOut = Partial<{
+  corpus_id: number
+  discourseme_descriptions: Array<DiscoursemeDescriptionOut>
+  discourseme_ids: Array<number>
   id: number
-  name: string | null
-  template: Array<DiscoursemeTemplateItem>
-}>
-type DiscoursemeTemplateItem = Partial<{
-  cqp_query: string | null
-  p: string | null
-  surface: string | null
+  match_strategy: string
+  p: string
+  s: string
+  semantic_map_id: number
+  subcorpus_id: number
 }>
 type DiscoursemeDescriptionOut = Partial<{
   corpus_id: number
@@ -107,6 +110,53 @@ type DiscoursemeDescriptionOut = Partial<{
 type DiscoursemeDescriptionItem = Partial<{
   item: string
 }>
+type ConstellationDescriptionOutUpdate = Partial<{
+  corpus_id: number
+  discourseme_descriptions: Array<DiscoursemeDescriptionOut>
+  discourseme_ids: Array<number>
+  id: number
+  match_strategy: string
+  p: string
+  s: string
+  semantic_map_id: number
+  subcorpus_id: number
+}>
+type ConstellationKeywordItemsOut = Partial<{
+  coordinates: Array<CoordinatesOut> | null
+  discourseme_scores: Array<DiscoursemeScoresOut> | null
+  id: number
+  items: Array<KeywordItemOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
+}>
+type KeywordItemOut = Partial<{
+  item: string
+  scores: Array<KeywordScoreOut>
+}>
+type KeywordScoreOut = Partial<{
+  measure: string
+  score: number
+}>
+type ConstellationOut = Partial<{
+  comment: string | null
+  discoursemes: Array<DiscoursemeOut>
+  id: number
+  name: string | null
+}>
+type DiscoursemeOut = Partial<{
+  comment: string | null
+  id: number
+  name: string | null
+  template: Array<DiscoursemeTemplateItem>
+}>
+type DiscoursemeTemplateItem = Partial<{
+  cqp_query: string | null
+  p: string | null
+  surface: string | null
+}>
 type DiscoursemeIn = Partial<{
   comment: string
   name: string
@@ -117,17 +167,8 @@ type DiscoursemeInUpdate = Partial<{
   name: string
   template: Array<DiscoursemeTemplateItem>
 }>
-type KeywordItemOut = Partial<{
-  item: string
-  scores: Array<KeywordScoreOut>
-}>
-type KeywordScoreOut = Partial<{
-  measure: string
-  score: number
-}>
 type KeywordItemsOut = Partial<{
   coordinates: Array<CoordinatesOut> | null
-  discourseme_scores: Array<DiscoursemeScoresOut> | null
   id: number
   items: Array<KeywordItemOut>
   nr_items: number
@@ -165,7 +206,6 @@ type CorpusOut = Partial<{
 
 const CollocationOut = z
   .object({
-    constellation_id: z.number().int().nullable(),
     id: z.number().int(),
     marginals: z.enum(['local', 'global']),
     nr_items: z.number().int(),
@@ -180,10 +220,7 @@ const HTTPError = z
   .partial()
   .passthrough()
 const CollocationPatchIn = z
-  .object({
-    constellation_id: z.number().int().nullable(),
-    semantic_map_id: z.number().int().nullable(),
-  })
+  .object({ semantic_map_id: z.number().int().nullable() })
   .partial()
   .passthrough()
 const ValidationError = z
@@ -220,19 +257,9 @@ const CollocationItemOut: z.ZodType<CollocationItemOut> = z
   .object({ item: z.string(), scores: z.array(CollocationScoreOut) })
   .partial()
   .passthrough()
-const DiscoursemeScoresOut: z.ZodType<DiscoursemeScoresOut> = z
-  .object({
-    discourseme_id: z.number().int(),
-    global_scores: z.array(CollocationScoreOut),
-    item_scores: z.array(CollocationItemOut),
-    unigram_item_scores: z.array(CollocationItemOut),
-  })
-  .partial()
-  .passthrough()
 const CollocationItemsOut: z.ZodType<CollocationItemsOut> = z
   .object({
     coordinates: z.array(CoordinatesOut).nullable(),
-    discourseme_scores: z.array(DiscoursemeScoresOut).nullable(),
     id: z.number().int(),
     items: z.array(CollocationItemOut),
     nr_items: z.number().int(),
@@ -250,97 +277,6 @@ const SemanticMapOut = z
     keyword_id: z.number().int(),
     p: z.string(),
   })
-  .partial()
-  .passthrough()
-const DiscoursemeTemplateItem: z.ZodType<DiscoursemeTemplateItem> = z
-  .object({
-    cqp_query: z.string().nullable(),
-    p: z.string().nullable(),
-    surface: z.string().nullable(),
-  })
-  .partial()
-  .passthrough()
-const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
-  .object({
-    comment: z.string().nullable(),
-    id: z.number().int(),
-    name: z.string().nullable(),
-    template: z.array(DiscoursemeTemplateItem),
-  })
-  .partial()
-  .passthrough()
-const ConstellationOut: z.ZodType<ConstellationOut> = z
-  .object({
-    description: z.string().nullable(),
-    filter_discoursemes: z.array(DiscoursemeOut),
-    highlight_discoursemes: z.array(DiscoursemeOut),
-    id: z.number().int(),
-    name: z.string().nullable(),
-  })
-  .partial()
-  .passthrough()
-const ConstellationIn = z
-  .object({
-    description: z.string(),
-    filter_discourseme_ids: z.array(z.number()).default([]),
-    highlight_discourseme_ids: z.array(z.number()).default([]),
-    name: z.string(),
-  })
-  .partial()
-  .passthrough()
-const ConstellationInUpdate = z
-  .object({
-    description: z.string(),
-    filter_discourseme_ids: z.array(z.number()).default([]),
-    highlight_discourseme_ids: z.array(z.number()).default([]),
-    name: z.string(),
-  })
-  .partial()
-  .passthrough()
-const AddDiscoursemeIdIn = z
-  .object({ discourseme_id: z.number().int() })
-  .partial()
-  .passthrough()
-const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
-  .object({
-    discourseme_id: z.number().int(),
-    end: z.number().int(),
-    start: z.number().int(),
-  })
-  .partial()
-  .passthrough()
-const TokenOut: z.ZodType<TokenOut> = z
-  .object({
-    cpos: z.number().int(),
-    is_filter_item: z.boolean(),
-    offset: z.number().int(),
-    out_of_window: z.boolean(),
-    primary: z.string(),
-    secondary: z.string(),
-  })
-  .partial()
-  .passthrough()
-const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
-  .object({
-    discourseme_ranges: z.array(DiscoursemeRangeOut),
-    id: z.number().int(),
-    structural: z.object({}).partial().passthrough(),
-    tokens: z.array(TokenOut),
-  })
-  .partial()
-  .passthrough()
-const ConcordanceOut: z.ZodType<ConcordanceOut> = z
-  .object({
-    lines: z.array(ConcordanceLineOut),
-    nr_lines: z.number().int(),
-    page_count: z.number().int(),
-    page_number: z.number().int(),
-    page_size: z.number().int(),
-  })
-  .partial()
-  .passthrough()
-const RemoveDiscoursemeIdIn = z
-  .object({ discourseme_id: z.number().int() })
   .partial()
   .passthrough()
 const CorpusOut: z.ZodType<CorpusOut> = z
@@ -407,57 +343,8 @@ const SubCorpusIn = z
   })
   .partial()
   .passthrough()
-const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
-  .object({
-    comment: z.string(),
-    name: z.string(),
-    template: z.array(DiscoursemeTemplateItem),
-  })
-  .partial()
-  .passthrough()
-const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
-  .object({
-    comment: z.string(),
-    name: z.string(),
-    template: z.array(DiscoursemeTemplateItem),
-  })
-  .partial()
-  .passthrough()
-const DiscoursemeDescriptionItem: z.ZodType<DiscoursemeDescriptionItem> = z
-  .object({ item: z.string() })
-  .partial()
-  .passthrough()
-const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
-  .object({
-    corpus_id: z.number().int(),
-    discourseme_id: z.number().int(),
-    id: z.number().int(),
-    items: z.array(DiscoursemeDescriptionItem),
-    match_strategy: z.string(),
-    p: z.string(),
-    query_id: z.number().int(),
-    s: z.string(),
-    semantic_map_id: z.number().int(),
-    subcorpus_id: z.number().int(),
-  })
-  .partial()
-  .passthrough()
-const DiscoursemeDescriptionIn = z
-  .object({
-    corpus_id: z.number().int(),
-    items: z.array(z.string()).optional(),
-    match_strategy: z
-      .enum(['longest', 'shortest', 'standard'])
-      .optional()
-      .default('longest'),
-    p: z.string().optional(),
-    s: z.string().optional(),
-    subcorpus_id: z.number().int().optional(),
-  })
-  .passthrough()
 const KeywordOut = z
   .object({
-    constellation_id: z.number().int().nullable(),
     corpus_id: z.number().int(),
     corpus_id_reference: z.number().int(),
     id: z.number().int(),
@@ -467,14 +354,13 @@ const KeywordOut = z
     p_reference: z.string(),
     semantic_map_id: z.number().int().nullable(),
     sub_vs_rest: z.boolean(),
-    subcorpus_id: z.number().int().nullable(),
-    subcorpus_id_reference: z.number().int().nullable(),
+    subcorpus_id: z.number().int(),
+    subcorpus_id_reference: z.number().int(),
   })
   .partial()
   .passthrough()
 const KeywordIn = z
   .object({
-    constellation_id: z.number().int().nullish(),
     corpus_id: z.number().int(),
     corpus_id_reference: z.number().int(),
     min_freq: z.number().int().optional().default(3),
@@ -504,6 +390,210 @@ const KeywordItemOut: z.ZodType<KeywordItemOut> = z
 const KeywordItemsOut: z.ZodType<KeywordItemsOut> = z
   .object({
     coordinates: z.array(CoordinatesOut).nullable(),
+    id: z.number().int(),
+    items: z.array(KeywordItemOut),
+    nr_items: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
+    sort_by: z.string(),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeTemplateItem: z.ZodType<DiscoursemeTemplateItem> = z
+  .object({
+    cqp_query: z.string().nullable(),
+    p: z.string().nullable(),
+    surface: z.string().nullable(),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
+  .object({
+    comment: z.string().nullable(),
+    id: z.number().int(),
+    name: z.string().nullable(),
+    template: z.array(DiscoursemeTemplateItem),
+  })
+  .partial()
+  .passthrough()
+const ConstellationOut: z.ZodType<ConstellationOut> = z
+  .object({
+    comment: z.string().nullable(),
+    discoursemes: z.array(DiscoursemeOut),
+    id: z.number().int(),
+    name: z.string().nullable(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationIn = z
+  .object({
+    comment: z.string(),
+    discourseme_ids: z.array(z.number()).default([]),
+    name: z.string(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationInUpdate = z
+  .object({
+    comment: z.string(),
+    discourseme_ids: z.array(z.number()).default([]),
+    name: z.string(),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeDescriptionItem: z.ZodType<DiscoursemeDescriptionItem> = z
+  .object({ item: z.string() })
+  .partial()
+  .passthrough()
+const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
+  .object({
+    corpus_id: z.number().int(),
+    discourseme_id: z.number().int(),
+    id: z.number().int(),
+    items: z.array(DiscoursemeDescriptionItem),
+    match_strategy: z.string(),
+    p: z.string(),
+    query_id: z.number().int(),
+    s: z.string(),
+    semantic_map_id: z.number().int(),
+    subcorpus_id: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
+  .object({
+    corpus_id: z.number().int(),
+    discourseme_descriptions: z.array(DiscoursemeDescriptionOut),
+    discourseme_ids: z.array(z.number()),
+    id: z.number().int(),
+    match_strategy: z.string(),
+    p: z.string(),
+    s: z.string(),
+    semantic_map_id: z.number().int(),
+    subcorpus_id: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationDescriptionIn = z
+  .object({
+    corpus_id: z.number().int(),
+    match_strategy: z
+      .enum(['longest', 'shortest', 'standard'])
+      .optional()
+      .default('longest'),
+    p: z.string().optional(),
+    s: z.string().optional(),
+    subcorpus_id: z.number().int().optional(),
+  })
+  .passthrough()
+const ConstellationDiscoursemeDescriptionIn = z
+  .object({ discourseme_description_ids: z.array(z.number()) })
+  .partial()
+  .passthrough()
+const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUpdate> =
+  z
+    .object({
+      corpus_id: z.number().int(),
+      discourseme_descriptions: z.array(DiscoursemeDescriptionOut),
+      discourseme_ids: z.array(z.number()),
+      id: z.number().int(),
+      match_strategy: z.string(),
+      p: z.string(),
+      s: z.string(),
+      semantic_map_id: z.number().int(),
+      subcorpus_id: z.number().int(),
+    })
+    .partial()
+    .passthrough()
+const ConstellationCollocationIn = z
+  .object({
+    filter_discourseme_ids: z.array(z.number()).optional().default([]),
+    filter_item: z.string().nullish(),
+    filter_item_p_att: z.string().optional().default('lemma'),
+    focus_discourseme_id: z.number().int(),
+    marginals: z.enum(['local', 'global']).optional().default('local'),
+    p: z.string(),
+    s_break: z.string().optional(),
+    semantic_map_id: z.number().int().optional(),
+    window: z.number().int().optional().default(10),
+  })
+  .passthrough()
+const DiscoursemeScoresOut: z.ZodType<DiscoursemeScoresOut> = z
+  .object({
+    discourseme_id: z.number().int(),
+    global_scores: z.array(CollocationScoreOut),
+    item_scores: z.array(CollocationItemOut),
+    unigram_item_scores: z.array(CollocationItemOut),
+  })
+  .partial()
+  .passthrough()
+const ConstellationCollocationItemsOut: z.ZodType<ConstellationCollocationItemsOut> =
+  z
+    .object({
+      coordinates: z.array(CoordinatesOut).nullable(),
+      discourseme_scores: z.array(DiscoursemeScoresOut).nullable(),
+      id: z.number().int(),
+      items: z.array(CollocationItemOut),
+      nr_items: z.number().int(),
+      page_count: z.number().int(),
+      page_number: z.number().int(),
+      page_size: z.number().int(),
+      sort_by: z.string(),
+    })
+    .partial()
+    .passthrough()
+const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
+  .object({
+    discourseme_id: z.number().int(),
+    end: z.number().int(),
+    start: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const TokenOut: z.ZodType<TokenOut> = z
+  .object({
+    cpos: z.number().int(),
+    is_filter_item: z.boolean(),
+    offset: z.number().int(),
+    out_of_window: z.boolean(),
+    primary: z.string(),
+    secondary: z.string(),
+  })
+  .partial()
+  .passthrough()
+const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
+  .object({
+    discourseme_ranges: z.array(DiscoursemeRangeOut),
+    id: z.number().int(),
+    structural: z.object({}).partial().passthrough(),
+    tokens: z.array(TokenOut),
+  })
+  .partial()
+  .passthrough()
+const ConcordanceOut: z.ZodType<ConcordanceOut> = z
+  .object({
+    lines: z.array(ConcordanceLineOut),
+    nr_lines: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationKeywordIn = z
+  .object({
+    corpus_id_reference: z.number().int(),
+    min_freq: z.number().int().optional().default(3),
+    p_reference: z.string().optional().default('lemma'),
+    semantic_map_id: z.number().int().nullish(),
+    sub_vs_rest: z.boolean().optional().default(true),
+    subcorpus_id_reference: z.number().int().nullish(),
+  })
+  .passthrough()
+const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
+  .object({
+    coordinates: z.array(CoordinatesOut).nullable(),
     discourseme_scores: z.array(DiscoursemeScoresOut).nullable(),
     id: z.number().int(),
     items: z.array(KeywordItemOut),
@@ -514,6 +604,35 @@ const KeywordItemsOut: z.ZodType<KeywordItemsOut> = z
     sort_by: z.string(),
   })
   .partial()
+  .passthrough()
+const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
+  .object({
+    comment: z.string(),
+    name: z.string(),
+    template: z.array(DiscoursemeTemplateItem),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
+  .object({
+    comment: z.string(),
+    name: z.string(),
+    template: z.array(DiscoursemeTemplateItem),
+  })
+  .partial()
+  .passthrough()
+const DiscoursemeDescriptionIn = z
+  .object({
+    corpus_id: z.number().int(),
+    items: z.array(z.string()).optional(),
+    match_strategy: z
+      .enum(['longest', 'shortest', 'standard'])
+      .optional()
+      .default('longest'),
+    p: z.string().optional(),
+    s: z.string().optional(),
+    subcorpus_id: z.number().int().optional(),
+  })
   .passthrough()
 const QueryOut = z
   .object({
@@ -637,20 +756,8 @@ export const schemas = {
   CoordinatesOut,
   CollocationScoreOut,
   CollocationItemOut,
-  DiscoursemeScoresOut,
   CollocationItemsOut,
   SemanticMapOut,
-  DiscoursemeTemplateItem,
-  DiscoursemeOut,
-  ConstellationOut,
-  ConstellationIn,
-  ConstellationInUpdate,
-  AddDiscoursemeIdIn,
-  DiscoursemeRangeOut,
-  TokenOut,
-  ConcordanceLineOut,
-  ConcordanceOut,
-  RemoveDiscoursemeIdIn,
   CorpusOut,
   AnnotationsOut,
   MetaOut,
@@ -658,17 +765,35 @@ export const schemas = {
   MetaFrequenciesOut,
   SubCorpusOut,
   SubCorpusIn,
-  DiscoursemeIn,
-  DiscoursemeInUpdate,
-  DiscoursemeDescriptionItem,
-  DiscoursemeDescriptionOut,
-  DiscoursemeDescriptionIn,
   KeywordOut,
   KeywordIn,
   KeywordPatchIn,
   KeywordScoreOut,
   KeywordItemOut,
   KeywordItemsOut,
+  DiscoursemeTemplateItem,
+  DiscoursemeOut,
+  ConstellationOut,
+  ConstellationIn,
+  ConstellationInUpdate,
+  DiscoursemeDescriptionItem,
+  DiscoursemeDescriptionOut,
+  ConstellationDescriptionOut,
+  ConstellationDescriptionIn,
+  ConstellationDiscoursemeDescriptionIn,
+  ConstellationDescriptionOutUpdate,
+  ConstellationCollocationIn,
+  DiscoursemeScoresOut,
+  ConstellationCollocationItemsOut,
+  DiscoursemeRangeOut,
+  TokenOut,
+  ConcordanceLineOut,
+  ConcordanceOut,
+  ConstellationKeywordIn,
+  ConstellationKeywordItemsOut,
+  DiscoursemeIn,
+  DiscoursemeInUpdate,
+  DiscoursemeDescriptionIn,
   QueryOut,
   QueryIn,
   QueryAssistedIn,
@@ -768,7 +893,10 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: CollocationPatchIn,
+        schema: z
+          .object({ semantic_map_id: z.number().int().nullable() })
+          .partial()
+          .passthrough(),
       },
       {
         name: 'id',
@@ -792,32 +920,6 @@ const endpoints = makeApi([
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/collocation/:id/auto-associate',
-    alias: 'putCollocationIdautoAssociate',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
       },
     ],
   },
@@ -912,412 +1014,6 @@ const endpoints = makeApi([
       },
     ],
     response: SemanticMapOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/constellation/',
-    alias: 'getConstellation',
-    requestFormat: 'json',
-    response: z.array(ConstellationOut),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/constellation/',
-    alias: 'postConstellation',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: ConstellationIn,
-      },
-    ],
-    response: ConstellationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/constellation/:id',
-    alias: 'deleteConstellationId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/constellation/:id',
-    alias: 'getConstellationId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: ConstellationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/constellation/:id',
-    alias: 'patchConstellationId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: ConstellationInUpdate,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: ConstellationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/constellation/:id/add-discourseme',
-    alias: 'patchConstellationIdaddDiscourseme',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z
-          .object({ discourseme_id: z.number().int() })
-          .partial()
-          .passthrough(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: ConstellationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/constellation/:id/corpus/:corpus_id/collocation/',
-    alias: 'getConstellationIdcorpusCorpus_idcollocation',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'corpus_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'subcorpus_id',
-        type: 'Query',
-        schema: z.number().int().nullish(),
-      },
-      {
-        name: 'constellation_id',
-        type: 'Query',
-        schema: z.number().int().optional(),
-      },
-      {
-        name: 'semantic_map_id',
-        type: 'Query',
-        schema: z.number().int().optional(),
-      },
-      {
-        name: 'p',
-        type: 'Query',
-        schema: z.string(),
-      },
-      {
-        name: 'window',
-        type: 'Query',
-        schema: z.number().int().optional().default(10),
-      },
-      {
-        name: 's_break',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'marginals',
-        type: 'Query',
-        schema: z.enum(['local', 'global']).optional().default('local'),
-      },
-      {
-        name: 'filter_item',
-        type: 'Query',
-        schema: z.string().nullish(),
-      },
-      {
-        name: 'filter_item_p_att',
-        type: 'Query',
-        schema: z.string().optional().default('lemma'),
-      },
-      {
-        name: 'filter_discourseme_ids',
-        type: 'Query',
-        schema: z.array(z.number()).optional().default([]),
-      },
-    ],
-    response: CollocationOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/constellation/:id/corpus/:corpus_id/concordance/',
-    alias: 'getConstellationIdcorpusCorpus_idconcordance',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'corpus_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'subcorpus_id',
-        type: 'Query',
-        schema: z.number().int().nullish(),
-      },
-      {
-        name: 'window',
-        type: 'Query',
-        schema: z.number().int().optional().default(10),
-      },
-      {
-        name: 'extended_window',
-        type: 'Query',
-        schema: z.number().int().optional().default(50),
-      },
-      {
-        name: 'primary',
-        type: 'Query',
-        schema: z.string().optional().default('word'),
-      },
-      {
-        name: 'secondary',
-        type: 'Query',
-        schema: z.string().optional().default('lemma'),
-      },
-      {
-        name: 'page_size',
-        type: 'Query',
-        schema: z.number().int().optional().default(10),
-      },
-      {
-        name: 'page_number',
-        type: 'Query',
-        schema: z.number().int().optional().default(1),
-      },
-      {
-        name: 'sort_order',
-        type: 'Query',
-        schema: z
-          .enum(['first', 'random', 'ascending', 'descending'])
-          .optional()
-          .default('random'),
-      },
-      {
-        name: 'sort_by_offset',
-        type: 'Query',
-        schema: z.number().int().optional(),
-      },
-      {
-        name: 'sort_by_p_att',
-        type: 'Query',
-        schema: z.string().nullish(),
-      },
-      {
-        name: 'sort_by_s_att',
-        type: 'Query',
-        schema: z.string().nullish(),
-      },
-      {
-        name: 'filter_item',
-        type: 'Query',
-        schema: z.string().nullish(),
-      },
-      {
-        name: 'filter_item_p_att',
-        type: 'Query',
-        schema: z.string().optional().default('lemma'),
-      },
-      {
-        name: 'filter_discourseme_ids',
-        type: 'Query',
-        schema: z.array(z.number()).optional().default([]),
-      },
-      {
-        name: 'highlight_discourseme_ids',
-        type: 'Query',
-        schema: z.array(z.number()).optional().default([]),
-      },
-    ],
-    response: ConcordanceOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/constellation/:id/remove-discourseme',
-    alias: 'patchConstellationIdremoveDiscourseme',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z
-          .object({ discourseme_id: z.number().int() })
-          .partial()
-          .passthrough(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: ConstellationOut,
     errors: [
       {
         status: 401,
@@ -1523,341 +1219,6 @@ const endpoints = makeApi([
       },
     ],
     response: SubCorpusOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/discourseme/',
-    alias: 'getDiscourseme',
-    requestFormat: 'json',
-    response: z.array(DiscoursemeOut),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/discourseme/',
-    alias: 'postDiscourseme',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: DiscoursemeIn,
-      },
-    ],
-    response: DiscoursemeOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/discourseme/:id',
-    alias: 'deleteDiscoursemeId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.unknown(),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/discourseme/:id',
-    alias: 'getDiscoursemeId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/discourseme/:id',
-    alias: 'patchDiscoursemeId',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: DiscoursemeInUpdate,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/discourseme/:id/description/',
-    alias: 'getDiscoursemeIddescription',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: z.array(DiscoursemeDescriptionOut),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/discourseme/:id/description/',
-    alias: 'postDiscoursemeIddescription',
-    description: `Will automatically create query (from template / description) if it doesn&#x27;t exist.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: DiscoursemeDescriptionIn,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeDescriptionOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/discourseme/:id/description/:description_id/',
-    alias: 'deleteDiscoursemeIddescriptionDescription_id',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'description_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeDescriptionOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/discourseme/:id/description/:description_id/',
-    alias: 'getDiscoursemeIddescriptionDescription_id',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'description_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeDescriptionOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/discourseme/:id/description/:description_id/add-item',
-    alias: 'patchDiscoursemeIddescriptionDescription_idaddItem',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({ item: z.string() }).partial().passthrough(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'description_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeDescriptionOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/discourseme/:id/description/:description_id/remove-item',
-    alias: 'patchDiscoursemeIddescriptionDescription_idremoveItem',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({ item: z.string() }).partial().passthrough(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'description_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeDescriptionOut,
     errors: [
       {
         status: 401,
@@ -2122,6 +1483,1185 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
+    path: '/mmda/constellation/',
+    alias: 'getMmdaconstellation',
+    requestFormat: 'json',
+    response: z.array(ConstellationOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/constellation/',
+    alias: 'postMmdaconstellation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationIn,
+      },
+    ],
+    response: ConstellationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/constellation/:id',
+    alias: 'deleteMmdaconstellationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:id',
+    alias: 'getMmdaconstellationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:id',
+    alias: 'patchMmdaconstellationId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationInUpdate,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:id/add-discourseme',
+    alias: 'patchMmdaconstellationIdaddDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationInUpdate,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/',
+    alias: 'getMmdaconstellationIddescription',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(ConstellationDescriptionOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/constellation/:id/description/',
+    alias: 'postMmdaconstellationIddescription',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationDescriptionIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/constellation/:id/description/:description_id/',
+    alias: 'deleteMmdaconstellationIddescriptionDescription_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/',
+    alias: 'getMmdaconstellationIddescriptionDescription_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:id/description/:description_id/add-discourseme',
+    alias: 'patchMmdaconstellationIddescriptionDescription_idaddDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationDiscoursemeDescriptionIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionOutUpdate,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/',
+    alias: 'postMmdaconstellationIddescriptionDescription_idcollocation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationCollocationIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/auto-associate',
+    alias:
+      'putMmdaconstellationIddescriptionDescription_idcollocationCollocation_idautoAssociate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/items',
+    alias:
+      'getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum([
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
+          ])
+          .optional()
+          .default('conservative_log_ratio'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+    ],
+    response: ConstellationCollocationItemsOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/concordance/',
+    alias: 'getMmdaconstellationIddescriptionDescription_idconcordance',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'filter_discourseme_ids',
+        type: 'Query',
+        schema: z.array(z.number()).optional().default([]),
+      },
+      {
+        name: 'focus_discourseme_id',
+        type: 'Query',
+        schema: z.number().int(),
+      },
+      {
+        name: 'window',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'extended_window',
+        type: 'Query',
+        schema: z.number().int().optional().default(50),
+      },
+      {
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
+      },
+      {
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['first', 'random', 'ascending', 'descending'])
+          .optional()
+          .default('random'),
+      },
+      {
+        name: 'sort_by_offset',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'sort_by_p_att',
+        type: 'Query',
+        schema: z.string().nullish(),
+      },
+      {
+        name: 'sort_by_s_att',
+        type: 'Query',
+        schema: z.string().nullish(),
+      },
+      {
+        name: 'filter_item',
+        type: 'Query',
+        schema: z.string().nullish(),
+      },
+      {
+        name: 'filter_item_p_att',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'filter_query_ids',
+        type: 'Query',
+        schema: z.array(z.number()).optional().default([]),
+      },
+      {
+        name: 'highlight_query_ids',
+        type: 'Query',
+        schema: z.array(z.number()).optional().default([]),
+      },
+    ],
+    response: ConcordanceOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/',
+    alias: 'postMmdaconstellationIddescriptionDescription_idkeyword',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationKeywordIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: KeywordOut,
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/auto-associate',
+    alias:
+      'putMmdaconstellationIddescriptionDescription_idkeywordKeyword_idautoAssociate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/items',
+    alias:
+      'getMmdaconstellationIddescriptionDescription_idkeywordKeyword_iditems',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum([
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
+          ])
+          .optional()
+          .default('conservative_log_ratio'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+    ],
+    response: ConstellationKeywordItemsOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:id/description/:description_id/remove-discourseme',
+    alias: 'patchMmdaconstellationIddescriptionDescription_idremoveDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationDiscoursemeDescriptionIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionOutUpdate,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:id/remove-discourseme',
+    alias: 'patchMmdaconstellationIdremoveDiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationInUpdate,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/discourseme/',
+    alias: 'getMmdadiscourseme',
+    requestFormat: 'json',
+    response: z.array(DiscoursemeOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/discourseme/',
+    alias: 'postMmdadiscourseme',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIn,
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/discourseme/:id',
+    alias: 'deleteMmdadiscoursemeId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/discourseme/:id',
+    alias: 'getMmdadiscoursemeId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/discourseme/:id',
+    alias: 'patchMmdadiscoursemeId',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeInUpdate,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/discourseme/:id/description/',
+    alias: 'getMmdadiscoursemeIddescription',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(DiscoursemeDescriptionOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/discourseme/:id/description/',
+    alias: 'postMmdadiscoursemeIddescription',
+    description: `Will automatically create query (from template / description) if it doesn&#x27;t exist.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeDescriptionIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/discourseme/:id/description/:description_id/',
+    alias: 'deleteMmdadiscoursemeIddescriptionDescription_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/discourseme/:id/description/:description_id/',
+    alias: 'getMmdadiscoursemeIddescriptionDescription_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/discourseme/:id/description/:description_id/add-item',
+    alias: 'patchMmdadiscoursemeIddescriptionDescription_idaddItem',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ item: z.string() }).partial().passthrough(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/discourseme/:id/description/:description_id/remove-item',
+    alias: 'patchMmdadiscoursemeIddescriptionDescription_idremoveItem',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ item: z.string() }).partial().passthrough(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/query/',
     alias: 'getQuery',
     requestFormat: 'json',
@@ -2292,11 +2832,6 @@ const endpoints = makeApi([
         schema: z.string(),
       },
       {
-        name: 'constellation_id',
-        type: 'Query',
-        schema: z.number().int().optional(),
-      },
-      {
         name: 'semantic_map_id',
         type: 'Query',
         schema: z.number().int().optional(),
@@ -2431,12 +2966,12 @@ const endpoints = makeApi([
         schema: z.string().optional().default('lemma'),
       },
       {
-        name: 'filter_discourseme_ids',
+        name: 'filter_query_ids',
         type: 'Query',
         schema: z.array(z.number()).optional().default([]),
       },
       {
-        name: 'highlight_discourseme_ids',
+        name: 'highlight_query_ids',
         type: 'Query',
         schema: z.array(z.number()).optional().default([]),
       },
