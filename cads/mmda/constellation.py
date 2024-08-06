@@ -503,13 +503,13 @@ class ConstellationDescriptionOut(Schema):
     discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True))
 
 
-class CollocationIn(CollocationIn):
+class ConstellationCollocationIn(CollocationIn):
 
     focus_discourseme_id = Integer(required=True)
     filter_discourseme_ids = List(Integer(), load_default=[], required=False)
 
 
-class KeywordIn(Schema):
+class ConstellationKeywordIn(Schema):
 
     semantic_map_id = Integer(required=False, load_default=None)
     corpus_id_reference = Integer(required=True)
@@ -519,12 +519,12 @@ class KeywordIn(Schema):
     min_freq = Integer(required=False, load_default=3)
 
 
-class CollocationItemsOut(CollocationItemsOut):
+class ConstellationCollocationItemsOut(CollocationItemsOut):
 
     discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
 
 
-class KeywordItemsOut(KeywordItemsOut):
+class ConstellationKeywordItemsOut(KeywordItemsOut):
 
     discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
 
@@ -843,7 +843,7 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
 
 # COLLOCATION
 @bp.post("/<id>/description/<description_id>/collocation/")
-@bp.input(CollocationIn)
+@bp.input(ConstellationCollocationIn)
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def create_collocation(id, description_id, json_data):
@@ -902,7 +902,7 @@ def create_collocation(id, description_id, json_data):
 
 @bp.get("/<id>/description/<description_id>/collocation/<collocation_id>/items")
 @bp.input(CollocationItemsIn, location='query')
-@bp.output(CollocationItemsOut)
+@bp.output(ConstellationCollocationItemsOut)
 @bp.auth_required(auth)
 def get_collocation_items(id, description_id, collocation_id, query_data):
     """Get scored items of collocation analysis.
@@ -980,7 +980,7 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
         'discourseme_scores': discourseme_scores
     }
 
-    return CollocationItemsOut().dump(collocation_items), 200
+    return ConstellationCollocationItemsOut().dump(collocation_items), 200
 
 
 @bp.put('/<id>/description/<description_id>/collocation/<collocation_id>/auto-associate')
@@ -1016,7 +1016,7 @@ def associate_discoursemes(id, description_id, collocation_id):
 
 # KEYWORD
 @bp.post("/<id>/description/<description_id>/keyword/")
-@bp.input(KeywordIn)
+@bp.input(ConstellationKeywordIn)
 @bp.output(KeywordOut)
 def create_keyword(id, description_id, json_data):
 
@@ -1064,7 +1064,7 @@ def create_keyword(id, description_id, json_data):
 
 @bp.get("/<id>/description/<description_id>/keyword/<keyword_id>/items")
 @bp.input(KeywordItemsIn, location='query')
-@bp.output(KeywordItemsOut)
+@bp.output(ConstellationKeywordItemsOut)
 @bp.auth_required(auth)
 def get_keyword_items(id, description_id, keyword_id, query_data):
     """Get scored items of collocation analysis.
@@ -1130,7 +1130,7 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
         'discourseme_scores': discourseme_scores
     }
 
-    return KeywordItemsOut().dump(keyword_items), 200
+    return ConstellationKeywordItemsOut().dump(keyword_items), 200
 
 
 @bp.put('/<id>/description/<description_id>/keyword/<keyword_id>/auto-associate')
