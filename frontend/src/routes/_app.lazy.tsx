@@ -7,13 +7,14 @@ import {
   useCallback,
 } from 'react'
 import {
-  BookCopy,
-  Crown,
-  FormInput,
-  MessagesSquare,
-  WholeWord,
-  MessageSquare,
-  ArrowLeftToLine,
+  CrownIcon,
+  ArrowLeftToLineIcon,
+  BookIcon,
+  BookCopyIcon,
+  FormInputIcon,
+  WholeWordIcon,
+  MessageSquareIcon,
+  MessagesSquareIcon,
 } from 'lucide-react'
 import { Outlet, createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
@@ -73,23 +74,26 @@ function App() {
       <div className="border-r-1 sticky top-14 z-10 h-[calc(100svh-3.5rem)] border-r border-r-muted">
         <ScrollArea className="h-full">
           <nav className="flex h-full min-h-[calc(100svh-3.75rem)] flex-col gap-0.5 p-2 ">
-            <AppMenuLink to="/queries" icon={FormInput}>
-              Queries
+            <AppMenuLink to="/corpora" icon={BookIcon}>
+              Corpora
             </AppMenuLink>
-            <AppMenuLink to="/keyword-analysis" icon={WholeWord}>
-              Keyword Analysis
-            </AppMenuLink>
-            <AppMenuLink to="/discoursemes" icon={MessageSquare}>
-              Discoursemes
-            </AppMenuLink>
-            <AppMenuLink to="/constellations" icon={MessagesSquare}>
-              Constellations
-            </AppMenuLink>
-            <AppMenuLink to="/subcorpora" icon={BookCopy}>
+            <AppMenuLink to="/subcorpora" icon={BookCopyIcon}>
               Subcorpora
             </AppMenuLink>
+            <AppMenuLink to="/queries" icon={FormInputIcon}>
+              Queries
+            </AppMenuLink>
+            <AppMenuLink to="/keyword-analysis" icon={WholeWordIcon}>
+              Keyword Analysis
+            </AppMenuLink>
+            <AppMenuLink to="/discoursemes" icon={MessageSquareIcon}>
+              Discoursemes
+            </AppMenuLink>
+            <AppMenuLink to="/constellations" icon={MessagesSquareIcon}>
+              Constellations
+            </AppMenuLink>
             {isAdmin && (
-              <AppMenuLink to="/admin" icon={Crown}>
+              <AppMenuLink to="/admin" icon={CrownIcon}>
                 Admin
               </AppMenuLink>
             )}
@@ -105,7 +109,7 @@ function App() {
                     variant="ghost"
                     onClick={toggleSmall}
                   >
-                    <ArrowLeftToLine
+                    <ArrowLeftToLineIcon
                       className={cn('h-4 w-4', isSmall ? 'rotate-180' : 'mr-2')}
                     />
                     {!isSmall && (
