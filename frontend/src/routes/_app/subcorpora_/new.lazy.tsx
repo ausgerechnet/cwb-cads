@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { toast } from 'sonner'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -34,11 +35,9 @@ import {
   SelectValue,
   SelectContent,
 } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import { schemas } from '@/rest-client'
 import { Small } from '@/components/ui/typography'
-import { useMemo } from 'react'
 import { Card } from '@/components/ui/card'
 import { formatNumber } from '@/lib/format-number'
 
@@ -50,7 +49,7 @@ export const Route = createLazyFileRoute('/_app/subcorpora/new')({
 const SubcorpusPut = z.object({
   corpus_id: z.number(),
   description: z.string().optional(),
-  create_nqr: z.boolean().default(false),
+  create_nqr: z.boolean().optional().default(true),
   key: z.string(),
   level: z.string(),
   name: z.string(),
@@ -76,21 +75,27 @@ function SubcorpusNew() {
   } = useQuery({ ...corpusMetaById(corpusId), enabled: corpusId !== undefined })
 
   // levels
-  const availableLevels =
-    corpusMetaData
-      ?.map(({ level }) => level)
-      .filter((level): level is string => Boolean(level)) ?? []
+  const availableLevels = useMemo(
+    () =>
+      corpusMetaData
+        ?.map(({ level }) => level)
+        .filter((level): level is string => Boolean(level)) ?? [],
+    [corpusMetaData, level],
+  )
   useFormFieldDependency(form, 'level', availableLevels)
 
   // keys
-  const availableKeys =
-    corpusMetaData
-      ?.filter((meta) => meta.level === level)
-      .map(({ annotations }) => annotations)
-      .flat()
-      .filter((annotation) => annotation?.value_type === 'unicode')
-      .map((annotation) => annotation?.key)
-      .filter((key): key is string => key !== undefined) ?? []
+  const availableKeys = useMemo(
+    () =>
+      corpusMetaData
+        ?.filter((meta) => meta.level === level)
+        .map(({ annotations }) => annotations)
+        .flat()
+        .filter((annotation) => annotation?.value_type === 'unicode')
+        .map((annotation) => annotation?.key)
+        .filter((key): key is string => key !== undefined) ?? [],
+    [corpusMetaData, level],
+  )
   useFormFieldDependency(form, 'key', availableKeys)
 
   const {
@@ -171,25 +176,6 @@ function SubcorpusNew() {
                         placeholder="Description"
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="create_nqr"
-                render={({ field }) => (
-                  <FormItem className="col-span-full">
-                    <div className="flex items-center">
-                      <FormControl>
-                        <Checkbox
-                          className="mr-2"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormLabel>Create NQR</FormLabel>
-                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
