@@ -243,7 +243,7 @@ def iterative_query(focus_query, filter_queries, window):
 ################
 class QueryIn(Schema):
 
-    discourseme_id = Integer(required=False, metadata={'nullable': True})
+    # discourseme_id = Integer(required=False, metadata={'nullable': True})
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False)
 
@@ -256,7 +256,7 @@ class QueryIn(Schema):
 
 class QueryAssistedIn(Schema):
 
-    discourseme_id = Integer(required=False, metadata={'nullable': True})
+    # discourseme_id = Integer(required=False, metadata={'nullable': True})
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False)
 
@@ -274,15 +274,15 @@ class QueryAssistedIn(Schema):
 class QueryOut(Schema):
 
     id = Integer()
-    discourseme_id = Integer(metadata={'nullable': True})
-    discourseme_name = String(metadata={'nullable': True})
+    # discourseme_id = Integer(metadata={'nullable': True})
+    # discourseme_name = String(metadata={'nullable': True})
     corpus_id = Integer()
     corpus_name = String()
     subcorpus_id = Integer(metadata={'nullable': True})
     subcorpus_name = String(metadata={'nullable': True})
     match_strategy = String()
     cqp_query = String()
-    nqr_cqp = String()
+    # nqr_cqp = String()
     random_seed = Integer()
 
 
@@ -706,7 +706,7 @@ def get_collocation(query_id, query_data):
             corpus_id=query.corpus.id,
             subcorpus_id=query.subcorpus.id if query.subcorpus else None,
             soc_sequence=nqr_name,
-            discourseme_id=query.discourseme.id,
+            # discourseme_id=query.discourseme.id,
             match_strategy=query.match_strategy,
             s=query.s
         )

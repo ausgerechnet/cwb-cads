@@ -1085,10 +1085,6 @@
           "corpus_id": {
             "type": "integer"
           },
-          "discourseme_id": {
-            "nullable": true,
-            "type": "integer"
-          },
           "escape": {
             "type": "boolean"
           },
@@ -1136,10 +1132,6 @@
           },
           "cqp_query": {
             "type": "string"
-          },
-          "discourseme_id": {
-            "nullable": true,
-            "type": "integer"
           },
           "match_strategy": {
             "enum": [
@@ -1196,21 +1188,10 @@
           "cqp_query": {
             "type": "string"
           },
-          "discourseme_id": {
-            "nullable": true,
-            "type": "integer"
-          },
-          "discourseme_name": {
-            "nullable": true,
-            "type": "string"
-          },
           "id": {
             "type": "integer"
           },
           "match_strategy": {
-            "type": "string"
-          },
-          "nqr_cqp": {
             "type": "string"
           },
           "random_seed": {
@@ -1229,13 +1210,7 @@
       },
       "SemanticMapOut": {
         "properties": {
-          "collocation_id": {
-            "type": "integer"
-          },
           "id": {
-            "type": "integer"
-          },
-          "keyword_id": {
             "type": "integer"
           },
           "p": {
@@ -2326,6 +2301,69 @@
         ]
       }
     },
+    "/corpus/{id}/subcorpus/{subcorpus_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "subcorpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubCorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all details of subcorpus.",
+        "tags": [
+          "Corpus"
+        ]
+      }
+    },
     "/hello": {
       "get": {
         "parameters": [],
@@ -2486,7 +2524,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get one keyword analysis.",
+        "summary": "Delete keyword analysis.",
         "tags": [
           "Keyword"
         ]
@@ -2611,7 +2649,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch a keyword analysis. Use for updating semantic map and/or constellation.",
+        "summary": "Patch a keyword analysis. Use for updating semantic map.",
         "tags": [
           "Keyword"
         ]
@@ -3576,6 +3614,7 @@
     },
     "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/auto-associate": {
       "put": {
+        "description": "Output: DiscoursemeDescription(many=True)",
         "parameters": [
           {
             "in": "path",

@@ -113,12 +113,12 @@
 ## review 2024-08-05
 - [x] save wordlists permanently
 - [ ] subcorpus: number spans / tokens 0 ?? text / faction
-- [ ] get keyword analyses loading time: replace `len(items)`
+- [x] get keyword analyses loading time: replace `len(items)`
 - [ ] keyword details: target / reference (as strings)
 - [ ] meta data: auto-init / show which is possible + if initialised?
 - [x] /corpus/{id}/subcorpus/{id}
-- [ ] /query/ without discourseme / discourseme\_id / nqr\_cqp
-- [ ] rm query / discourseme ranges
+- [x] /query/ without discourseme / discourseme\_id / nqr\_cqp
+- [ ] rm query / concordance / discourseme ranges
 - [ ] all outputs (required = True)?
 - [ ] remove /query/execute
 - [ ] breakdown rm TODO: pagination needed?
@@ -133,5 +133,3 @@
 - [ ] keyword / auto-associate
 - [ ] example meta data creation
 - [ ] example subcorpus creation
-
-- Vertrag verlängern
