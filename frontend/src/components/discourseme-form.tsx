@@ -30,8 +30,10 @@ type Discourseme = z.infer<typeof Discourseme>
 
 export function DiscoursemeForm({
   onSuccess,
+  defaultItems = [],
 }: {
   onSuccess?: (discoursemeId: number) => void
+  defaultItems?: string[]
 }) {
   const {
     mutate: postNewDiscourseme,
@@ -55,6 +57,11 @@ export function DiscoursemeForm({
   const form = useForm<Discourseme>({
     resolver: zodResolver(Discourseme),
     disabled: isPending,
+    defaultValues: {
+      name: '',
+      description: '',
+      surfaces: defaultItems,
+    },
   })
   return (
     <Form {...form}>
@@ -105,7 +112,10 @@ export function DiscoursemeForm({
               <FormItem className="col-span-full">
                 <FormLabel>Items</FormLabel>
                 <FormControl>
-                  <ItemsInput onChange={field.onChange} />
+                  <ItemsInput
+                    onChange={field.onChange}
+                    defaultValue={field.value}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

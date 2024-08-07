@@ -359,11 +359,14 @@ export const discoursemesList = queryOptions({
   queryFn: ({ signal }) => apiClient.getMmdadiscourseme({ signal }),
 })
 
-export const discoursemeById = (discoursemeId: string) =>
+export const discoursemeById = (discoursemeId: number) =>
   queryOptions({
     queryKey: ['discourseme', discoursemeId],
     queryFn: ({ signal }) =>
-      apiClient.getMmdadiscoursemeId({ params: { id: discoursemeId }, signal }),
+      apiClient.getMmdadiscoursemeId({
+        params: { id: String(discoursemeId) },
+        signal,
+      }),
   })
 
 export const createDiscourseme: MutationOptions<
@@ -384,6 +387,32 @@ export const deleteDiscourseme: MutationOptions<unknown, Error, string> = {
     }),
   onSettled: () => {
     queryClient.invalidateQueries(discoursemesList)
+  },
+}
+
+export const discoursemeDescriptionsById = (discoursemeId: number) =>
+  queryOptions({
+    queryKey: ['discourseme-descriptions', discoursemeId],
+    queryFn: ({ signal }) =>
+      apiClient.getMmdadiscoursemeIddescription({
+        params: { id: discoursemeId.toString() },
+        signal,
+      }),
+  })
+
+export const addDiscoursemeDescription: MutationOptions<
+  z.infer<typeof schemas.DiscoursemeDescriptionOut>,
+  Error,
+  z.infer<typeof schemas.DiscoursemeDescriptionIn> & { discourseme_id: number }
+> = {
+  mutationFn: ({ discourseme_id, ...body }) =>
+    apiClient.postMmdadiscoursemeIddescription(body, {
+      params: { id: discourseme_id.toString() },
+    }),
+  onSettled: (data) => {
+    const discoursemeId = data?.discourseme_id
+    if (discoursemeId === undefined) return
+    queryClient.invalidateQueries(discoursemeById(discoursemeId))
   },
 }
 

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
 import {
+  corpusById,
   discoursemesList,
   // queryBreakdownsQueryOptions,
   queryById,
@@ -25,11 +26,13 @@ export const Route = createFileRoute('/_app/queries/$queryId')({
     filterItemPAtt: z.string().optional().catch(undefined),
     isConcordanceVisible: z.boolean().optional().catch(true),
   }),
-  loader: ({ context: { queryClient }, params: { queryId } }) =>
-    Promise.all([
+  loader: async ({ context: { queryClient }, params: { queryId } }) => {
+    const [query] = await Promise.all([
       queryClient.ensureQueryData(queryById(parseInt(queryId))),
       // queryClient.ensureQueryData(queryBreakdownsQueryOptions(queryId)),
       queryClient.ensureQueryData(discoursemesList),
-    ]),
+    ])
+    await queryClient.ensureQueryData(corpusById(query.corpus_id!))
+  },
   pendingComponent: DefaultPendingComponent,
 })
