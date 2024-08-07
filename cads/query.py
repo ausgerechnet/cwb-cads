@@ -211,6 +211,7 @@ def iterative_query(focus_query, filter_queries, window):
         matches = Matches.query.filter(
             Matches.query_id == focus_query.id,
             Matches.match.in_(match_pos)
+            # Matches.matchend.in_(match_pos)
         )
 
         # if len(matches.all()) == 0:

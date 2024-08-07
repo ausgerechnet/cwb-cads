@@ -174,8 +174,8 @@ def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
 class SemanticMapOut(Schema):
 
     id = Integer()
-    collocation_id = Integer()
-    keyword_id = Integer()
+    # collocation_id = Integer()
+    # keyword_id = Integer()
     p = String()
 
 

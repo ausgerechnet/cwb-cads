@@ -194,7 +194,7 @@ def get_keyword(id):
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
 def delete_keyword(id):
-    """Get one keyword analysis.
+    """Delete keyword analysis.
 
     """
 
@@ -210,7 +210,7 @@ def delete_keyword(id):
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
 def patch_keyword(id, json_data):
-    """Patch a keyword analysis. Use for updating semantic map and/or constellation.
+    """Patch a keyword analysis. Use for updating semantic map.
 
     """
 

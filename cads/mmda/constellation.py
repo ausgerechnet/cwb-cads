@@ -988,6 +988,7 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
 def associate_discoursemes(id, description_id, collocation_id):
     """automatically associate discoursemes that occur in the top collocational profile with this constellation
 
+    Output: DiscoursemeDescription(many=True)
     """
 
     constellation = db.get_or_404(Constellation, id)

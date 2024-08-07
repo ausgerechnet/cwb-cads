@@ -4,7 +4,6 @@ Klimawandel	global Erwärmung
 Ursachen	Treibhausgas(emission)?
 Atomkraft	(Kern|Atom|Nuklear)(kraft|energie)(werk)?
 Kampf	Kampf|Bekämpfung|aufhalten
-Ressourcen	Armut|Hunger|Dürre|Ressourcenknappheit
 Wetter	Sturm|(Extrem)?[Ww]etter(ereignis)|Naturkatastrophe|Wetterextrem
 Anpassung	[Bb]ewältig(en|ung)|(Anpassungs?)?([Mm]aßnahme)?
 Ausbau	Ausbau|ausbauen|Förderung
@@ -17,7 +16,6 @@ Erneuerbare Energien	(Wind|Sonnen)energie
 (fossile) Rohstoffe	Erd(gas|öl)
 (fossile) Rohstoffe	Mineralöl
 (fossile) Rohstoffe	Gas|Öl
-Kampf	Bekämpfung|Kampf|aufhalten
 Mangel	Armut|Hunger|Dürre|Ressourcenknappheit
 Verursacher	menschengemacht
 Verursacher	Mitverursacher

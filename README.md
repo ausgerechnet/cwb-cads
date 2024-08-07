@@ -25,15 +25,15 @@
 
 - corpus management
   ```
-  flask --app cads corpus update
+  flask --app cads corpus import
   flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
   flask --app cads corpus read-meta GERMAPARL-1949-2021 ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz
   ```
   
 - discourseme management
   ```
-  flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv"
-  flask --app cads discourseme export --path_out "discoursemes.tsv"
+  flask --app cads discourseme import --path_in "tests/discoursemes/climate-change.tsv"
+  flask --app cads discourseme export --path_out "exported-discoursemes.tsv"
   ```
 
 ## Features
@@ -93,11 +93,11 @@
 - DiscoursemeTemplatePreview
 
 ## Review 2024-07-17
-- [ ] constellation: enforce min of one filter discourseme?
-- [ ] constellation: if no name → name of filter discourseme
+- [x] constellation: enforce min of one filter discourseme?
+- [x] constellation: if no name → name of filter discourseme
 - [ ] mark all required fields as required in API spec
 - [ ] several queries for one discourseme?
-  + duplicate queries: write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
+  + duplicate queries write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
 
 ## review 2024-07-30
 - [ ] improve logging
@@ -107,11 +107,31 @@
 
 ## review 2024-08-01
 - [ ] user: discoursemes / constellations
-- [ ] wrongly indexed s-atts in corpora (e.g. ID=1 on dev)
+- [ ] wrongly indexed s-atts in corpora (e.g. GERMAPARL\_1949\_2021 on obelix)
 - [ ] automatic creation of meta data
 
 ## review 2024-08-05
 - [x] save wordlists permanently
-- [ ] Subcorpus: number spans / tokens 0 ?? text / faction
-- [ ] get keyword analyses dauert?
-- [ ] keyword details: target / reference (als strings)
+- [ ] subcorpus: number spans / tokens 0 ?? text / faction
+- [ ] get keyword analyses loading time: replace `len(items)`
+- [ ] keyword details: target / reference (as strings)
+- [ ] meta data: auto-init / show which is possible + if initialised?
+- [x] /corpus/{id}/subcorpus/{id}
+- [ ] /query/ without discourseme / discourseme\_id / nqr\_cqp
+- [ ] rm query / discourseme ranges
+- [ ] all outputs (required = True)?
+- [ ] remove /query/execute
+- [ ] breakdown rm TODO: pagination needed?
+- [ ] concordance / lines / id → match\_id
+- [ ] collocation → get query\_id + filter\_sequence
+- [ ] post collocation semantic-map mit json
+- [ ] txt: translate names of AMs
+- [ ] only return queries with NQR for now, do not return nqr\_cqp
+- [ ] semantic-map/{id}/discourseme/coordinates (not for individual items needed)
+- [ ] empty discourseme descriptions possible → constellations with empty discoursemes
+- [ ] create discourseme in constellation description
+- [ ] keyword / auto-associate
+- [ ] example meta data creation
+- [ ] example subcorpus creation
+
+- Vertrag verlängern
