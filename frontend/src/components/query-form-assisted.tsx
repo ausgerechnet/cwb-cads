@@ -3,19 +3,10 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  useMutation,
-  useQuery,
-  useSuspenseQueries,
-} from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
-import {
-  corpusList,
-  discoursemesList,
-  createQueryAssisted,
-  subcorpusOf,
-} from '@/lib/queries'
+import { corpusList, createQueryAssisted, subcorpusOf } from '@/lib/queries'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import {
   Form,
@@ -37,9 +28,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { CorpusSelect } from '@/components/select-corpus'
-import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { Checkbox } from '@/components/ui/checkbox'
-import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 
 const InputAssisted = z.object({
   corpus_id: z.number({ required_error }).int(),
@@ -47,7 +36,6 @@ const InputAssisted = z.object({
   match_strategy: z.enum(['shortest', 'longest', 'standard'], {
     required_error,
   }),
-  discourseme_id: z.number().int().nonnegative().optional(),
   items: z
     .array(z.string(), { required_error })
     .min(1, { message: required_error }),
@@ -65,9 +53,7 @@ export function QueryFormAssisted({
 }: {
   onSuccess?: (queryId: number) => void
 }) {
-  const [{ data: corpora }, { data: discoursemes }] = useSuspenseQueries({
-    queries: [corpusList, discoursemesList],
-  })
+  const { data: corpora } = useSuspenseQuery(corpusList)
 
   const form = useForm<z.infer<typeof InputAssisted>>({
     resolver: zodResolver(InputAssisted),
@@ -156,27 +142,6 @@ export function QueryFormAssisted({
                     disabled={!subcorpora || isLoadingSubcorpora}
                   />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="discourseme_id"
-            render={({ field }) => (
-              <FormItem className="col-span-full">
-                <FormLabel>Discourseme</FormLabel>
-                <div className="col-span-full flex gap-4">
-                  <FormControl>
-                    <DiscoursemeSelect
-                      className="w-full"
-                      discoursemes={discoursemes}
-                      discoursemeId={field.value}
-                      onChange={field.onChange}
-                    />
-                  </FormControl>
-                  <QuickCreateDiscourseme onSuccess={field.onChange} />
-                </div>
                 <FormMessage />
               </FormItem>
             )}
