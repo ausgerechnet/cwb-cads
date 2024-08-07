@@ -46,6 +46,14 @@ run:
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
 	flask --app cads --debug run
 
+run-frontend:
+	cd frontend && \
+	. ~/.nvm/nvm.sh && \
+	nvm install && \
+	nvm use && \
+	npm install && \
+	npm run dev
+
 export:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
