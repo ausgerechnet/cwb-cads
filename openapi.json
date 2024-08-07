@@ -179,7 +179,7 @@
             },
             "type": "array"
           },
-          "id": {
+          "match_id": {
             "type": "integer"
           },
           "structural": {
@@ -5451,7 +5451,6 @@
     },
     "/query/{query_id}/breakdown": {
       "get": {
-        "description": "TODO: pagination needed?",
         "parameters": [
           {
             "in": "path",

@@ -242,6 +242,7 @@ def ccc_concordance(focus_query,
                 })
 
     for line in lines:
+        line['match_id'] = line.pop('id')
         line['discourseme_ranges'] = highlight_ranges.get(line['contextid'], [])
         for token in line['tokens']:
             if token['cpos'] in filter_item_cpos:
@@ -312,7 +313,7 @@ class TokenOut(Schema):
 
 class ConcordanceLineOut(Schema):
 
-    id = Integer()
+    match_id = Integer()
     tokens = Nested(TokenOut(many=True))
     structural = Dict()
     discourseme_ranges = Nested(DiscoursemeRangeOut(many=True))

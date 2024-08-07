@@ -560,7 +560,6 @@ def concordance_line(query_id, match_id, query_data):
 def get_breakdown(query_id, query_data):
     """Get breakdown of query. Will create if it doesn't exist.
 
-    TODO: pagination needed?
     """
 
     query = db.get_or_404(Query, query_id)

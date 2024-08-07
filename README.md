@@ -118,15 +118,15 @@
 - [ ] meta data: auto-init / show which is possible + if initialised?
 - [x] /corpus/{id}/subcorpus/{id}
 - [x] /query/ without discourseme / discourseme\_id / nqr\_cqp
-- [ ] rm query / concordance / discourseme ranges
+- [ ] rm or rename query / concordance / discourseme ranges
 - [ ] all outputs (required = True)?
-- [ ] remove /query/execute
-- [ ] breakdown rm TODO: pagination needed?
-- [ ] concordance / lines / id → match\_id
+- [x] remove /query/execute
+- [x] breakdown rm TODO: pagination needed?
+- [x] concordance / lines / id → match\_id
 - [ ] collocation → get query\_id + filter\_sequence
 - [ ] post collocation semantic-map mit json
 - [ ] txt: translate names of AMs
-- [ ] only return queries with NQR for now, do not return nqr\_cqp
+- [x] only return queries with NQR for now, do not return nqr\_cqp
 - [ ] semantic-map/{id}/discourseme/coordinates (not for individual items needed)
 - [ ] empty discourseme descriptions possible → constellations with empty discoursemes
 - [ ] create discourseme in constellation description
