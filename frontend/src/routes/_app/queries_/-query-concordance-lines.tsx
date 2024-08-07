@@ -1,17 +1,12 @@
-import { Fragment, useMemo, useRef } from 'react'
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { Fragment, useRef } from 'react'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
-import { ChevronsDownUp, ChevronsUpDown, Loader2, Shuffle } from 'lucide-react'
+import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
 import { cn } from '@/lib/utils'
-import {
-  corpusById,
-  queryConcordances,
-  shuffleQueryConcordances,
-  queryById,
-} from '@/lib/queries'
+import { corpusById, queryConcordances, queryById } from '@/lib/queries'
 import { formatNumber } from '@/lib/format-number'
 import {
   Table,
@@ -29,19 +24,9 @@ import {
 } from '@/components/ui/tooltip'
 import { ButtonTooltip } from '@/components/button-tooltip'
 import { ErrorMessage } from '@/components/error-message'
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectValue,
-} from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
 import { Repeat } from '@/components/repeat'
 import { Pagination } from '@/components/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
 
 const emptyArray = [] as const
 
@@ -49,7 +34,7 @@ export function ConcordanceLines({
   queryId,
   className,
 }: {
-  queryId: string
+  queryId: number
   className?: string
 }) {
   const { data: query } = useSuspenseQuery(queryById(queryId))
@@ -62,7 +47,6 @@ export function ConcordanceLines({
   const pageCountRef = useRef<number>(0)
 
   const searchParams = useSearch({ from: '/_app/queries/$queryId' })
-  const contextBreakList = corpus?.s_atts ?? emptyArray
   const pAttributes = corpus?.p_atts ?? emptyArray
   const primary =
     searchParams.primary ??
@@ -74,7 +58,6 @@ export function ConcordanceLines({
   // thus avoiding flicker
   // TODO: maybe just remember the last concordanceLines and overlay a spinner?
   const secondary = searchParams.secondary ?? pAttributes[0]
-  const contextBreak = searchParams.contextBreak ?? contextBreakList[0]
   const {
     windowSize = 3,
     clPageSize = 10,
@@ -89,7 +72,6 @@ export function ConcordanceLines({
     data: concordanceLines,
     isLoading,
     error,
-    refetch: refetchConcordanceLines,
   } = useQuery(
     queryConcordances(queryId, {
       primary,
@@ -103,188 +85,21 @@ export function ConcordanceLines({
       sortByOffset: clSortByOffset,
     }),
   )
-  const { mutate: shuffle, isPending: isShuffling } = useMutation({
-    ...shuffleQueryConcordances,
-    onSettled: () => refetchConcordanceLines(),
-  })
 
   pageCountRef.current =
     concordanceLines?.page_count ?? pageCountRef.current ?? 0
   nrLinesRef.current = concordanceLines?.nr_lines ?? nrLinesRef.current ?? 0
 
-  // TODO: Make it type safe
-  const setSearch = useMemo(() => {
-    const timeoutMap: Record<string, ReturnType<typeof setTimeout>> = {}
-    return (paramName: string, value: string | number) => {
-      clearTimeout(timeoutMap[paramName])
-      timeoutMap[paramName] = setTimeout(() => {
-        navigate({
-          params: (p) => p,
-          search: (s) => ({ ...s, [paramName]: value }),
-          replace: true,
-        })
-      }, 200)
-    }
-  }, [navigate])
-
   return (
     <div className={className}>
-      <div className="mb-8 grid grid-cols-8 gap-2">
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Window Size {windowSize}</span>
-          <Slider
-            defaultValue={[windowSize]}
-            onValueChange={([newValue]) => setSearch('windowSize', newValue)}
-            min={0}
-            max={24}
-            className="my-auto"
-          />
-        </div>
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Sort By Offset {clSortByOffset}</span>
-          <Slider
-            defaultValue={[clSortByOffset]}
-            onValueChange={([newValue]) =>
-              setSearch('clSortByOffset', newValue)
-            }
-            min={-5}
-            max={5}
-            className="my-auto"
-          />
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Sort Order</span>
-          <Select
-            value={clSortOrder}
-            onValueChange={(value) => setSearch('clSortOrder', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sort Order" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {['ascending', 'descending', 'random'].map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Filter Item PAtt</span>
-          <Select
-            value={filterItemPAtt}
-            onValueChange={(value) => setSearch('filterItemPAtt', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Filter Item PAttr" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {pAttributes.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Context Break</span>
-          <Select
-            value={contextBreak}
-            onValueChange={(value) => setSearch('contextBreak', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Context Break" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {contextBreakList.map((contextBreak) => (
-                  <SelectItem key={contextBreak} value={contextBreak}>
-                    {contextBreak}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Primary</span>
-          <Select
-            value={primary}
-            onValueChange={(value) => {
-              navigate({
-                params: (p) => p,
-                search: (s) => ({ ...s, primary: value }),
-                replace: true,
-              })
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Primary" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {pAttributes.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <span>Secondary</span>
-          <Select
-            value={secondary}
-            onValueChange={(value) => setSearch('secondary', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Secondary" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {pAttributes.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    {p}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button
-          className="mt-auto"
-          onClick={() => {
-            shuffle(queryId)
-          }}
-          disabled={isShuffling}
-        >
-          {isShuffling ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Shuffle className="mr-2 h-4 w-4" />
-          )}
-          Shuffle
-        </Button>
-      </div>
-
       <ErrorMessage className="col-span-full" error={error} />
 
       <div className="relative col-span-full flex flex-col gap-4">
         <div className="max-w-full rounded-md border">
-          <Table className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden">
+          <Table
+            isNarrow
+            className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden"
+          >
             <TableHeader className="col-span-full grid grid-cols-subgrid">
               <TableRow className="col-span-full grid grid-cols-subgrid">
                 <TableHead className="flex items-center">ID</TableHead>
@@ -414,7 +229,7 @@ function ConcordanceLineRender({
           tooltip={isExpanded ? 'Collapse' : 'Expand'}
           size="sm"
           variant="ghost"
-          className="-mx-3"
+          className="-mx-3 h-4"
         >
           {isExpanded ? (
             <ChevronsDownUp className="h-4 w-4" />

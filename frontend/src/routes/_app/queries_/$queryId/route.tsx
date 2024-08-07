@@ -23,10 +23,11 @@ export const Route = createFileRoute('/_app/queries/$queryId')({
     clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
     filterItem: z.string().optional().catch(undefined),
     filterItemPAtt: z.string().optional().catch(undefined),
+    isConcordanceVisible: z.boolean().optional().catch(true),
   }),
   loader: ({ context: { queryClient }, params: { queryId } }) =>
     Promise.all([
-      queryClient.ensureQueryData(queryById(queryId)),
+      queryClient.ensureQueryData(queryById(parseInt(queryId))),
       // queryClient.ensureQueryData(queryBreakdownsQueryOptions(queryId)),
       queryClient.ensureQueryData(discoursemesList),
     ]),

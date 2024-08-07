@@ -9,11 +9,11 @@ export const queriesList = queryOptions({
   placeholderData: [],
 })
 
-export const queryById = (queryId: string) =>
+export const queryById = (queryId: number) =>
   queryOptions({
     queryKey: ['query', queryId],
     queryFn: ({ signal }) =>
-      apiClient.getQueryId({ params: { id: queryId }, signal }),
+      apiClient.getQueryId({ params: { id: String(queryId) }, signal }),
     placeholderData: {},
   })
 
@@ -37,7 +37,7 @@ export const patchQuery: MutationOptions<
   onSuccess: (data) => {
     const queryId = data.id
     if (queryId !== undefined) {
-      queryClient.invalidateQueries(queryById(queryId.toString()))
+      queryClient.invalidateQueries(queryById(queryId))
     }
     queryClient.invalidateQueries(queriesList)
   },
@@ -79,18 +79,18 @@ export const deleteQuery: MutationOptions<unknown, Error, string> = {
   },
 }
 
-export const queryBreakdownForP = (queryId: string, p: string) =>
+export const queryBreakdownForP = (queryId: number, p: string) =>
   queryOptions({
     queryKey: ['query-breakdown', queryId, p],
     queryFn: async () =>
       apiClient.getQueryQuery_idbreakdown({
         queries: { p },
-        params: { query_id: queryId },
+        params: { query_id: String(queryId) },
       }),
   })
 
 export const queryConcordances = (
-  queryId: string,
+  queryId: number,
   {
     window,
     primary,
@@ -129,7 +129,7 @@ export const queryConcordances = (
     ],
     queryFn: ({ signal }) =>
       apiClient.getQueryQuery_idconcordance({
-        params: { query_id: queryId },
+        params: { query_id: String(queryId) },
         queries: {
           window,
           primary,
@@ -149,16 +149,16 @@ export const queryConcordances = (
 export const shuffleQueryConcordances: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
   Error,
-  string
+  number
 > = {
   mutationFn: (queryId) =>
     apiClient.postQueryQuery_idconcordanceshuffle(undefined, {
-      params: { query_id: queryId },
+      params: { query_id: String(queryId) },
     }),
   onSuccess: (data) => {
     const queryId =
       // TODO: QueryOut should have more mandatory fields
-      data.query_id === undefined ? undefined : (data.id ?? '').toString()
+      data.query_id === undefined ? undefined : data.id
     if (queryId === undefined) return
     queryClient.invalidateQueries(queryConcordances(queryId))
   },
@@ -379,7 +379,9 @@ export const createDiscourseme: MutationOptions<
 
 export const deleteDiscourseme: MutationOptions<unknown, Error, string> = {
   mutationFn: (discoursemeId: string) =>
-    apiClient.deleteMmdadiscoursemeId(undefined, { params: { id: discoursemeId } }),
+    apiClient.deleteMmdadiscoursemeId(undefined, {
+      params: { id: discoursemeId },
+    }),
   onSettled: () => {
     queryClient.invalidateQueries(discoursemesList)
   },
@@ -396,7 +398,10 @@ export const constellationById = (constellationId: string) =>
   queryOptions({
     queryKey: ['constellation', constellationId],
     queryFn: ({ signal }) =>
-      apiClient.getMmdaconstellationId({ params: { id: constellationId }, signal }),
+      apiClient.getMmdaconstellationId({
+        params: { id: constellationId },
+        signal,
+      }),
   })
 
 export const createConstellation: MutationOptions<
@@ -467,8 +472,10 @@ export const constellationConcordances = (
     ],
     queryFn: ({ signal }) =>
       apiClient.getMmdaconstellationIddescriptionDescription_idconcordance({
-        params: { id: String(constellationId), description_id: String(descriptionId),
-         },
+        params: {
+          id: String(constellationId),
+          description_id: String(descriptionId),
+        },
         queries: {
           focus_discourseme_id: focusDiscoursemeId,
           window,
@@ -528,21 +535,23 @@ export const constellationCollocation = (
       filterDiscoursemeIds,
     ],
     queryFn: ({ signal }) =>
-      apiClient.getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems({
-        params: { id: String(constellationId), corpus_id: String(corpusId) },
-        queries: {
-          p,
-          window,
-          semantic_map_id: semanticMapId,
-          subcorpus_id: subcorpusId,
-          s_break: semanticBreak,
-          marginals,
-          filter_item: filterItem,
-          filter_item_p_att: filterItemPAtt,
-          filter_discourseme_ids: filterDiscoursemeIds,
+      apiClient.getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems(
+        {
+          params: { id: String(constellationId), corpus_id: String(corpusId) },
+          queries: {
+            p,
+            window,
+            semantic_map_id: semanticMapId,
+            subcorpus_id: subcorpusId,
+            s_break: semanticBreak,
+            marginals,
+            filter_item: filterItem,
+            filter_item_p_att: filterItemPAtt,
+            filter_discourseme_ids: filterDiscoursemeIds,
+          },
+          signal,
         },
-        signal,
-      }),
+      ),
     select: (data) => {
       return data
     },

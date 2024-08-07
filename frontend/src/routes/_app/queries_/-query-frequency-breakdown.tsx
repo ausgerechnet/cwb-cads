@@ -19,7 +19,7 @@ import { DataTable, SortButton } from '@/components/data-table'
 import { ErrorMessage } from '@/components/error-message'
 import { Headline3 } from '@/components/ui/typography'
 
-export function QueryFrequencyBreakdown({ queryId }: { queryId: string }) {
+export function QueryFrequencyBreakdown({ queryId }: { queryId: number }) {
   const { pAtt } = useSearch({ from: '/_app/queries/$queryId' })
   const { data: query, error: errorQuery } = useQuery(queryById(queryId))
   const { data: { p_atts: pAtts = [] } = {}, error: errorCorpus } = useQuery({

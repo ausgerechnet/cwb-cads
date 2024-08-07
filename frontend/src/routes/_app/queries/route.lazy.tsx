@@ -57,10 +57,11 @@ function Queries() {
           columns={columns}
           rows={queries}
           onRowClick={(row) => {
-            const queryId = (row.id ?? '').toString()
+            // TODO: this property SHOULD be mandatory at some point
+            const queryId = row.id!
             navigate({
               to: '/queries/$queryId',
-              params: { queryId },
+              params: { queryId: String(queryId) },
             })
           }}
         />

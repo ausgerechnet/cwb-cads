@@ -23,7 +23,7 @@ export const Route = createFileRoute(
     filterItemPAtt: z.string().optional().catch(undefined),
   }),
   loader: ({ context: { queryClient }, params: { queryId } }) =>
-    queryClient.ensureQueryData(queryById(queryId)),
+    queryClient.ensureQueryData(queryById(parseInt(queryId))),
   pendingComponent: DefaultPendingComponent,
   component: CollocationAnalysis,
 })

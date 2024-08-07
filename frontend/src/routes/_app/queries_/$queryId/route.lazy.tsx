@@ -3,6 +3,7 @@ import {
   ErrorComponentProps,
   Link,
   createLazyFileRoute,
+  useNavigate,
   useRouter,
 } from '@tanstack/react-router'
 import {
@@ -25,8 +26,10 @@ import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { ErrorMessage } from '@/components/error-message'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Card } from '@/components/ui/card'
+import { Drawer } from '@/components/drawer'
 import { ConcordanceLines } from '../-query-concordance-lines'
 import { QueryFrequencyBreakdown } from '../-query-frequency-breakdown'
+import { QueryFilter } from './-query-filter'
 
 export const Route = createLazyFileRoute('/_app/queries/$queryId')({
   component: SingleQuery,
@@ -34,7 +37,8 @@ export const Route = createLazyFileRoute('/_app/queries/$queryId')({
 })
 
 function SingleQuery() {
-  const { queryId } = Route.useParams()
+  const queryId = parseInt(Route.useParams().queryId)
+  const { isConcordanceVisible = true } = Route.useSearch()
   const { query, queryDiscourseme } = useSuspenseQueries({
     queries: [queryById(queryId), discoursemesList],
     combine: ([query, discoursemes]) => {
@@ -44,6 +48,12 @@ function SingleQuery() {
       return { query, queryDiscourseme }
     },
   })
+  const navigate = useNavigate()
+  const setSearch = (key: string, value: string | number | boolean) =>
+    navigate({
+      params: (p) => p,
+      search: (s) => ({ ...s, [key]: value }),
+    })
   const hasDiscourseme = Boolean(queryDiscourseme)
   const corpusName = query.data?.corpus_name
 
@@ -56,11 +66,13 @@ function SingleQuery() {
               label: 'New Collocation Analysis',
               nav: {
                 to: '/collocation-analysis/new',
-                search: { queryId: parseInt(queryId) },
+                search: { queryId: queryId },
               },
             }
           : undefined
       }
+      classNameContainer="pb-0 flex-grow"
+      classNameContent="pb-0"
     >
       <div className="grid grid-cols-3 grid-rows-[max-content_1fr_auto] gap-8">
         <Card className="mb-auto p-4 font-mono">
@@ -82,9 +94,22 @@ function SingleQuery() {
         <Card className="col-span-2 row-span-2 p-4">
           <QueryFrequencyBreakdown queryId={queryId} />
         </Card>
-
-        <ConcordanceLines queryId={queryId} className="col-span-full" />
       </div>
+      <QueryFilter
+        queryId={queryId}
+        corpusId={query.data.corpus_id!}
+        className="sticky top-14 bg-background"
+      />
+      <div className="min-h-[150svh] rounded-xl bg-muted p-4 text-muted-foreground">
+        Placeholder: Collocation
+      </div>
+      <Drawer
+        isVisible={Boolean(isConcordanceVisible)}
+        onToggle={(isVisible) => setSearch('isConcordanceVisible', isVisible)}
+        className="col-span-full"
+      >
+        <ConcordanceLines queryId={queryId} className="col-span-full" />
+      </Drawer>
     </AppPageFrame>
   )
 }
