@@ -54,14 +54,26 @@ const columns: ColumnDef<z.infer<typeof schemas.SubCorpusOut>>[] = [
     accessorKey: 'name',
     enableSorting: true,
     header: ({ column }) => <SortButton column={column}>Name</SortButton>,
+    meta: { className: 'w-0 whitespace-pre' },
   },
   {
     accessorKey: 'corpus.name',
     enableSorting: true,
-    header: ({ column }) => <SortButton column={column}>Corpus</SortButton>,
+    header: ({ column }) => (
+      <SortButton column={column}>Parent Corpus</SortButton>
+    ),
+    meta: { className: 'w-0 whitespace-pre' },
   },
   {
-    header: 'Actions',
+    accessorKey: 'description',
+    enableSorting: true,
+    header: ({ column }) => (
+      <SortButton column={column}>Description</SortButton>
+    ),
+  },
+  {
+    id: 'actions',
+    header: '',
     meta: { className: 'w-0' },
     cell: ({ row }) => (
       <Link
