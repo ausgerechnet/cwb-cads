@@ -3,19 +3,10 @@ import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  useMutation,
-  useQuery,
-  useSuspenseQueries,
-} from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
 import { required_error } from '@/lib/strings'
-import {
-  corpusList,
-  discoursemesList,
-  createQueryCQP,
-  subcorpusOf,
-} from '@/lib/queries'
+import { corpusList, createQueryCQP, subcorpusOf } from '@/lib/queries'
 import {
   Form,
   FormControl,
@@ -36,14 +27,11 @@ import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { Textarea } from '@/components/ui/textarea'
 import { CorpusSelect } from '@/components/select-corpus'
-import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
-import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 
 const InputCQP = z.object({
   corpus_id: z.number({ required_error }).int(),
   subcorpus_id: z.number().int().optional(),
-  discourseme_id: z.number().int().optional(),
   cqp_query: z.string({ required_error }),
   match_strategy: z.enum(['shortest', 'longest', 'standard'], {
     required_error,
@@ -58,9 +46,7 @@ export function QueryFormCQP({
 }: {
   onSuccess?: (queryId: number) => void
 }) {
-  const [{ data: corpora }, { data: discoursemes }] = useSuspenseQueries({
-    queries: [corpusList, discoursemesList],
-  })
+  const { data: corpora } = useSuspenseQuery(corpusList)
 
   const form = useForm<z.infer<typeof InputCQP>>({
     resolver: zodResolver(InputCQP),
@@ -152,27 +138,6 @@ export function QueryFormCQP({
                       disabled={!subcorpora || isLoadingSubcorpora}
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="discourseme_id"
-              render={({ field }) => (
-                <FormItem className="col-span-full">
-                  <FormLabel>Discourseme</FormLabel>
-                  <div className="col-span-full flex gap-4">
-                    <FormControl>
-                      <DiscoursemeSelect
-                        className="w-full"
-                        discoursemes={discoursemes}
-                        discoursemeId={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <QuickCreateDiscourseme />
-                  </div>
                   <FormMessage />
                 </FormItem>
               )}

@@ -71,7 +71,8 @@ const columns: ColumnDef<z.infer<typeof schemas.CorpusOut>>[] = [
     cell: ({ row }) => row.original.p_atts?.join(', ') ?? '',
   },
   {
-    header: 'Actions',
+    id: 'actions',
+    header: '',
     meta: { className: 'w-0' },
     cell: ({ row }) => (
       <Link

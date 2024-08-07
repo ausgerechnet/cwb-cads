@@ -46,6 +46,14 @@ run:
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
 	flask --app cads --debug run
 
+run_frontend:
+	cd frontend && \
+	. ~/.nvm/nvm.sh && \
+	nvm install && \
+	nvm use && \
+	npm install && \
+	npm run dev
+
 export:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
@@ -69,6 +77,13 @@ examples_prod:
 	flask --app cads corpus read-meta "GERMAPARL_1949_2021" --path "../germaparl-speaker-nodes.tsv.gz" && \
 	flask --app cads corpus subcorpora "GERMAPARL_1949_2021" "../subcorpora-*.tsv"
 
+frontend_prod:
+	cd frontend && \
+	. ~/.nvm/nvm.sh && \
+	nvm install && \
+	nvm use && \
+	npm install && \
+	npm run build
 
 ########
 # TEST #

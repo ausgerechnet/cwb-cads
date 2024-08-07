@@ -7,8 +7,6 @@ import {
 } from '@tanstack/react-query'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import {
-  ChevronDownIcon,
-  ChevronUpIcon,
   Filter,
   Highlighter,
   Loader2,
@@ -26,6 +24,7 @@ import { CorpusSelect } from '@/components/select-corpus'
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
+import { Drawer } from '@/components/drawer'
 import {
   addConstellationDiscourseme,
   constellationById,
@@ -146,44 +145,24 @@ function ConstellationDetail() {
         <>
           <ConstellationFilter className="sticky top-14 bg-background" />
           <Collocation constellationId={parseInt(constellationId)} />
-          <div className="sticky bottom-0 right-0 -mx-2 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 border-t-muted bg-background p-4 [box-shadow:0_-5px_10px_-10px_black]">
-            <Button
-              variant="outline"
-              className="absolute -top-3 left-1/2 h-auto -translate-x-1/2 rounded-full p-1"
-              onClick={() => {
-                navigate({
-                  to: '/constellations/$constellationId',
-                  params: { constellationId },
-                  search: (s) => ({
-                    ...s,
-                    isConcordanceVisible: !isConcordanceVisible,
-                  }),
-                  replace: true,
-                })
-              }}
-            >
-              {isConcordanceVisible ? (
-                <ChevronDownIcon className="h-4 w-4" />
-              ) : (
-                <ChevronUpIcon className="h-4 w-4" />
-              )}
-            </Button>
-            <div
-              className={cn(
-                'grid transition-all',
-                isConcordanceVisible
-                  ? 'grid-rows-[1fr]'
-                  : 'grid-rows-[0fr] opacity-20',
-              )}
-            >
-              <div className="overflow-hidden">
-                <ConstellationConcordanceLines
-                  corpusId={corpusId}
-                  constellationId={constellationId}
-                />
-              </div>
-            </div>
-          </div>
+          <Drawer
+            isVisible={isConcordanceVisible}
+            onToggle={(isVisible) =>
+              navigate({
+                params: (p) => p,
+                search: (s) => ({
+                  ...s,
+                  isConcordanceVisible: isVisible,
+                }),
+                replace: true,
+              })
+            }
+          >
+            <ConstellationConcordanceLines
+              corpusId={corpusId}
+              constellationId={constellationId}
+            />
+          </Drawer>
         </>
       )}
     </AppPageFrame>

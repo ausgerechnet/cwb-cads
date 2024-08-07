@@ -1,43 +1,54 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2Icon, ShuffleIcon } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
+import { corpusById, shuffleQueryConcordances } from '@/lib/queries'
+import { Slider } from '@/components/ui/slider'
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectGroup,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
-import { corpusById } from '@/lib/queries'
-import { cn } from '@/lib/utils'
-import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 const emptyArray = [] as const
 
-// TODO: Unify this with -query-filter.tsx
-export function ConstellationFilter({ className }: { className?: string }) {
+// TODO: Unify this with -constellation-filter.tsx
+export function QueryFilter({
+  corpusId,
+  queryId,
+  className,
+}: {
+  corpusId: number
+  queryId: number
+  className?: string
+}) {
   const navigate = useNavigate()
 
   const searchParams = useSearch({
-    from: '/_app/constellations/$constellationId',
+    from: '/_app/queries/$queryId',
   })
   const {
     windowSize = 3,
     clSortByOffset = 0,
     clSortOrder = 'random',
     filterItemPAtt,
-    filterItem,
-    corpusId,
   } = searchParams
 
   // This is only rendered if corpusId actually exists
-  const { data: corpus } = useQuery(corpusById(corpusId as number))
+  const { data: corpus } = useQuery(corpusById(corpusId))
   const contextBreakList = corpus?.s_atts ?? emptyArray
   const pAttributes = corpus?.p_atts ?? emptyArray
   const primary = searchParams.primary ?? pAttributes[0]
+
+  const { mutate: shuffle, isPending: isShuffling } = useMutation(
+    shuffleQueryConcordances,
+  )
 
   // Remember a few values between renders: this helps rendering a proper skeleton
   // thus avoiding flicker
@@ -45,7 +56,6 @@ export function ConstellationFilter({ className }: { className?: string }) {
   const secondary = searchParams.secondary ?? pAttributes[0]
   const contextBreak = searchParams.contextBreak ?? contextBreakList[0]
 
-  // TODO: Make it type safe
   const setSearch = useMemo(() => {
     const timeoutMap: Record<string, ReturnType<typeof setTimeout>> = {}
     return (paramName: string, value: string | number) => {
@@ -61,7 +71,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
   }, [navigate])
 
   return (
-    <div className={cn('z-10 mb-8 grid grid-cols-8 gap-2', className)}>
+    <div className={cn('mb-8 grid grid-cols-8 gap-2', className)}>
       <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
         <span>Window Size {windowSize}</span>
         <Slider
@@ -194,16 +204,20 @@ export function ConstellationFilter({ className }: { className?: string }) {
         </Select>
       </div>
 
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Filter Item</span>
-        <Input
-          defaultValue={filterItem}
-          key={filterItem}
-          onChange={(event) =>
-            setSearch('filterItem', event.target.value ?? '')
-          }
-        />
-      </div>
+      <Button
+        className="mt-auto"
+        onClick={() => {
+          shuffle(queryId)
+        }}
+        disabled={isShuffling}
+      >
+        {isShuffling ? (
+          <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <ShuffleIcon className="mr-2 h-4 w-4" />
+        )}
+        Shuffle
+      </Button>
     </div>
   )
 }
