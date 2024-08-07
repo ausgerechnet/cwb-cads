@@ -476,6 +476,18 @@ def get_subcorpora(id):
     return [SubCorpusOut().dump(subcorpus) for subcorpus in subcorpora], 200
 
 
+@bp.get('/<id>/subcorpus/<subcorpus_id>')
+@bp.output(SubCorpusOut)
+@bp.auth_required(auth)
+def get_subcorpus(id, subcorpus_id):
+    """Get all details of subcorpus.
+
+    """
+    subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
+
+    return SubCorpusOut().dump(subcorpus), 200
+
+
 @bp.put('/<id>/subcorpus/')
 @bp.input(SubCorpusIn)
 @bp.output(SubCorpusOut)
@@ -498,7 +510,7 @@ def create_subcorpus(id, json_data):
 
     values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else value_boolean
     if values is None:
-        abort(400, 'Bad Request: You have to provide exactly one set of values')
+        abort(400, 'Bad Request: You have to provide exactly one type of values')
 
     segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
     segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=key).first()
@@ -619,7 +631,7 @@ def read_meta(cwb_id, path, level):
 @click.argument('cwb_id')
 @click.argument('glob_in')
 def subcorpora(cwb_id, glob_in):
-    """Set meta data of corpus.
+    """Create meta data from corpus.
 
     """
     paths = glob(glob_in)
@@ -631,7 +643,7 @@ def subcorpora(cwb_id, glob_in):
 @click.option('--path', default=None)
 @click.option('--delete_old', default=False, is_flag=True)
 @click.option('--reread_attributes', default=False, is_flag=True)
-def update_corpora(path, delete_old, reread_attributes):
+def import_corpora(path, delete_old, reread_attributes):
     """update corpora according to JSON file
     - by default, this uses the CORPORA path defined in config
     - corpora are identified via CWBID
