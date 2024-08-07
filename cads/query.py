@@ -436,18 +436,18 @@ def delete_query(id):
     return 'Deletion successful.', 200
 
 
-@bp.post('/<id>/execute')
-@bp.output(QueryOut)
-@bp.auth_required(auth)
-def execute(id):
-    """Execute query: create matches.
+# @bp.post('/<id>/execute')
+# @bp.output(QueryOut)
+# @bp.auth_required(auth)
+# def execute(id):
+#     """Execute query: create matches.
 
-    """
+#     """
 
-    query = db.get_or_404(Query, id)
-    ccc_query(query)
+#     query = db.get_or_404(Query, id)
+#     ccc_query(query)
 
-    return QueryOut().dump(query), 200
+#     return QueryOut().dump(query), 200
 
 
 #####################
