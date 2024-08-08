@@ -4,7 +4,7 @@
 from collections import defaultdict
 
 from apiflask import APIBlueprint, Schema  # , abort
-from apiflask.fields import Boolean, Integer, List, Nested, String
+from apiflask.fields import Boolean, Integer, List, Nested, String, Float
 from apiflask.validators import OneOf
 from association_measures import measures
 from ccc.utils import cqp_escape
@@ -18,7 +18,7 @@ from ..collocation import (CollocationIn, CollocationItemOut,
 from ..concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
 from ..database import (Collocation, CollocationItem, CollocationItemScore,
                         Corpus, CotextLines, Keyword, KeywordItem,
-                        KeywordItemScore)
+                        KeywordItemScore, SemanticMap)
 from ..keyword import (KeywordItemOut, KeywordItemsIn, KeywordItemsOut,
                        KeywordOut, ccc_keywords)
 from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
@@ -29,11 +29,44 @@ from .database import (CollocationDiscoursemeItem,
                        CollocationDiscoursemeUnigramItem, Constellation,
                        ConstellationDescription, Discourseme,
                        DiscoursemeDescription, KeywordDiscoursemeItem,
-                       KeywordDiscoursemeUnigramItem)
+                       KeywordDiscoursemeUnigramItem, DiscoursemeCoordinates)
 from .discourseme import (DiscoursemeOut, create_discourseme_description,
                           description_items_to_query, DiscoursemeScoresOut, DiscoursemeDescriptionOut)
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
+
+
+def get_discourseme_coordinates(semantic_map, discourseme_descriptions):
+    """
+
+    """
+
+    output = list()
+    for desc in discourseme_descriptions:
+
+        discourseme_coordinates = DiscoursemeCoordinates.query.filter_by(semantic_map_id=semantic_map.id,
+                                                                         discourseme_id=desc.discourseme.id).first()
+
+        if not discourseme_coordinates:
+
+            # item coordinates
+            items = [item.item for item in desc.items]
+            coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item']).set_index('item')
+            item_coordinates = coordinates.loc[items]
+            item_coordinates.loc[~ item_coordinates['x_user'].isna(), 'x'] = item_coordinates['x_user']
+            item_coordinates.loc[~ item_coordinates['y_user'].isna(), 'y'] = item_coordinates['y_user']
+
+            # discourseme coordinates
+            mean = item_coordinates[['x', 'y']].mean(axis=0)
+            discourseme_coordinates = DiscoursemeCoordinates(discourseme_id=desc.discourseme.id,
+                                                             semantic_map_id=semantic_map.id,
+                                                             x=mean['x'], y=mean['y'])
+            db.session.add(discourseme_coordinates)
+            db.session.commit()
+
+        output.append(discourseme_coordinates)
+
+    return output
 
 
 def query_discourseme_corpora(keyword, discourseme_description):
@@ -519,14 +552,33 @@ class ConstellationKeywordIn(Schema):
     min_freq = Integer(required=False, load_default=3)
 
 
+class DiscoursemeCoordinatesOut(Schema):
+
+    semantic_map_id = Integer()
+    discourseme_id = Integer()
+    x = Float()
+    y = Float()
+    x_user = Float()
+    y_user = Float()
+
+
+class DiscoursemeCoordinatesIn(Schema):
+
+    discourseme_id = Integer(required=True)
+    x_user = Float()
+    y_user = Float()
+
+
 class ConstellationCollocationItemsOut(CollocationItemsOut):
 
     discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
+    discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=False, metadata={'nullable': True})
 
 
 class ConstellationKeywordItemsOut(KeywordItemsOut):
 
     discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
+    discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=False, metadata={'nullable': True})
 
 
 #################
@@ -967,6 +1019,9 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
         ccc_semmap_update(collocation.semantic_map, requested_items)
         coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
 
+    # discourseme coordinates
+    discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions)
+
     # TODO: also return ranks (to ease frontend pagination)?
     collocation_items = {
         'id': collocation.id,
@@ -977,7 +1032,8 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
         'page_count': page_count,
         'items': items,
         'coordinates': coordinates,
-        'discourseme_scores': discourseme_scores
+        'discourseme_scores': discourseme_scores,
+        'discourseme_coordinates': discourseme_coordinates
     }
 
     return ConstellationCollocationItemsOut().dump(collocation_items), 200
@@ -1110,6 +1166,7 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
 
     # coordinates
     coordinates = list()
+    discourseme_coordinates = list()
     if keyword.semantic_map:
         # make sure there's coordinates for all requested items and discourseme items
         requested_items = [item['item'] for item in items]
@@ -1117,6 +1174,10 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
             requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
         ccc_semmap_update(keyword.semantic_map, requested_items)
         coordinates = [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
+
+        # discourseme coordinates
+        discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions)
+        discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
 
     # TODO: also return ranks (to ease frontend pagination)?
     keyword_items = {
@@ -1128,7 +1189,8 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
         'page_count': page_count,
         'items': items,
         'coordinates': coordinates,
-        'discourseme_scores': discourseme_scores
+        'discourseme_scores': discourseme_scores,
+        'discourseme_coordinates': discourseme_coordinates
     }
 
     return ConstellationKeywordItemsOut().dump(keyword_items), 200
@@ -1163,3 +1225,45 @@ def associate_discoursemes_keyword(id, description_id, keyword_id):
     # ccc_semmap_discoursemes(keyword)
 
     return {"id": int(id)}, 200
+
+
+# SEMANTIC MAP
+@bp.get("/<id>/description/<description_id>/semantic_map/<semantic_map_id>/coordinates/")
+@bp.output(DiscoursemeCoordinatesOut(many=True))
+@bp.auth_required(auth)
+def get_coordinates(id, description_id, semantic_map_id):
+    """Get discourseme coordinates.
+
+    """
+
+    description = db.get_or_404(ConstellationDescription, description_id)
+    semantic_map = db.get_or_404(SemanticMap, semantic_map_id)
+    discourseme_coordinates = get_discourseme_coordinates(semantic_map, description.discourseme_descriptions)
+
+    return [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates], 200
+
+
+@bp.put("/<id>/description/<description_id>/semantic_map/<semantic_map_id>/coordinates/")
+@bp.input(DiscoursemeCoordinatesIn)
+@bp.output(DiscoursemeCoordinatesOut(many=True))
+@bp.auth_required(auth)
+def set_coordinates(id, description_id, semantic_map_id, json_data):
+    """Set coordinates of a discourseme.
+
+    """
+
+    semantic_map = db.get_or_404(SemanticMap, semantic_map_id)
+    description = db.get_or_404(ConstellationDescription, description_id)
+    discourseme_id = json_data.get('discourseme_id')
+    x_user = json_data.get('x_user')
+    y_user = json_data.get('y_user')
+
+    discourseme_coordinates = DiscoursemeCoordinates.query.filter(DiscoursemeCoordinates.discourseme_id == discourseme_id,
+                                                                  DiscoursemeCoordinates.semantic_map_id == semantic_map.id).first()
+    discourseme_coordinates.x_user = x_user
+    discourseme_coordinates.y_user = y_user
+    db.session.commit()
+
+    discourseme_coordinates = get_discourseme_coordinates(semantic_map, description.discourseme_descriptions)
+
+    return [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates], 200

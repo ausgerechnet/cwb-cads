@@ -333,3 +333,22 @@ class KeywordDiscoursemeItemScore(db.Model):
 
     measure = db.Column(db.Unicode)
     score = db.Column(db.Float)
+
+
+################
+# SEMANTIC MAP #
+################
+class DiscoursemeCoordinates(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
+    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+
+    x = db.Column(db.Float, nullable=False)
+    y = db.Column(db.Float, nullable=False)
+    x_user = db.Column(db.Float)
+    y_user = db.Column(db.Float)

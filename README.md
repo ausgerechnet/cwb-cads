@@ -55,16 +55,15 @@
 
 ## TODO
 - [x] speed up deleting queries
+- [x] extend tests
+- [x] meta from s-att
+- [x] more than one filter discourseme → second-order collocation
 - [ ] make sure PUT runs idempotently
 - [ ] consistencise trailing slashes
-- [x] extend tests
-- [ ] more than one filter discourseme → second-order collocation
 - [ ] speed up supcorpus queries
 - [ ] directed collocation analyses
-- [ ] position discoursemes on semantic map
 - [ ] constellation/collocation: return one object with items categorised to discoursemes
 - [ ] click.echo instead of logging for CLI commands
-- [x] meta from s-att
 - [ ] race conditions gdbm (spheroscophe)
 - [ ] corpora settings
 - [ ] stop words (language specific / user-defined) / POS filtering
@@ -95,7 +94,6 @@
 ## Review 2024-07-17
 - [x] constellation: enforce min of one filter discourseme?
 - [x] constellation: if no name → name of filter discourseme
-- [ ] mark all required fields as required in API spec
 - [ ] several queries for one discourseme?
   + duplicate queries write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
 
@@ -105,31 +103,28 @@
 - [ ] formatted_score: 3 führende Stellen scores
 - [ ] only return items with E11 < O11
 
-## review 2024-08-01
-- [ ] user: discoursemes / constellations
-- [ ] wrongly indexed s-atts in corpora (e.g. GERMAPARL\_1949\_2021 on obelix)
-- [ ] automatic creation of meta data
-
 ## review 2024-08-05
+- [x] wrongly indexed s-atts in corpora (e.g. GERMAPARL\_1949\_2021 on obelix)
 - [x] save wordlists permanently
-- [ ] subcorpus: number spans / tokens 0 ?? text / faction
 - [x] get keyword analyses loading time: replace `len(items)`
 - [x] keyword details: target / reference (as strings)
-- [ ] meta data: auto-init / show which is possible + if initialised?
 - [x] /corpus/{id}/subcorpus/{id}
 - [x] /query/ without discourseme / discourseme\_id / nqr\_cqp
-- [ ] rm or rename query / concordance / discourseme ranges
-- [ ] all outputs (required = True)?
 - [x] remove /query/execute
 - [x] breakdown rm TODO: pagination needed?
 - [x] concordance / lines / id → match\_id
-- [ ] collocation → get query\_id + filter\_sequence
-- [ ] post collocation semantic-map mit json
-- [ ] txt: translate names of AMs
 - [x] only return queries with NQR for now, do not return nqr\_cqp
-- [ ] semantic-map/{id}/discourseme/coordinates (not for individual items needed)
+- [x] position discoursemes on semantic map
+- [ ] meta data: auto-init / show which is possible + if initialised?
+- [ ] auto-associate
 - [ ] empty discourseme descriptions possible → constellations with empty discoursemes
 - [ ] create discourseme in constellation description
-- [ ] keyword / auto-associate
 - [ ] example meta data creation
 - [ ] example subcorpus creation
+- [ ] user: discoursemes / constellations
+- [ ] txt: translate names of AMs
+- [ ] post collocation semantic-map mit json
+- [ ] all outputs (required = True)?
+- [ ] collocation → get query\_id + filter\_sequence
+- [ ] subcorpus: number spans / tokens 0 ?? text / faction
+- [ ] rm or rename query / concordance / discourseme ranges

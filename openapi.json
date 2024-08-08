@@ -274,6 +274,13 @@
             "nullable": true,
             "type": "array"
           },
+          "discourseme_coordinates": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoursemeCoordinatesOut"
+            },
+            "nullable": true,
+            "type": "array"
+          },
           "discourseme_scores": {
             "items": {
               "$ref": "#/components/schemas/DiscoursemeScoresOut"
@@ -502,6 +509,13 @@
             "nullable": true,
             "type": "array"
           },
+          "discourseme_coordinates": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoursemeCoordinatesOut"
+            },
+            "nullable": true,
+            "type": "array"
+          },
           "discourseme_scores": {
             "items": {
               "$ref": "#/components/schemas/DiscoursemeScoresOut"
@@ -643,6 +657,46 @@
               "type": "string"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "DiscoursemeCoordinatesIn": {
+        "properties": {
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "x_user": {
+            "type": "number"
+          },
+          "y_user": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "discourseme_id"
+        ],
+        "type": "object"
+      },
+      "DiscoursemeCoordinatesOut": {
+        "properties": {
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "semantic_map_id": {
+            "type": "integer"
+          },
+          "x": {
+            "type": "number"
+          },
+          "x_user": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "y_user": {
+            "type": "number"
           }
         },
         "type": "object"
@@ -4422,6 +4476,171 @@
           }
         ],
         "summary": "Patch Description Remove",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      }
+    },
+    "/mmda/constellation/{id}/description/{description_id}/semantic_map/{semantic_map_id}/coordinates/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "semantic_map_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoursemeCoordinatesOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get discourseme coordinates.",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "semantic_map_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeCoordinatesIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoursemeCoordinatesOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Set coordinates of a discourseme.",
         "tags": [
           "Mmda.Constellation"
         ]

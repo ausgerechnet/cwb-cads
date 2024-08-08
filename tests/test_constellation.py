@@ -952,7 +952,7 @@ def test_constellation_keyword(client, auth):
                                     headers=auth_header)
         assert constellation.status_code == 200
 
-        # collocation in whole corpus
+        # create description
         description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
                                   json={
                                       'corpus_id': 1,
@@ -1003,3 +1003,106 @@ def test_constellation_keyword(client, auth):
         assert int(scores['R1']) == 35980
         assert int(scores['O21']) == 414
         assert int(scores['R2']) == 113820
+
+
+@pytest.mark.now
+def test_constellation_coordinates(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  headers=auth_header)
+        assert discoursemes.status_code == 200
+        # union_id = discoursemes.json[0]['id']
+
+        # create constellation
+        constellation = client.post(url_for('mmda.constellation.create'),
+                                    json={
+                                        'name': 'CDU',
+                                        'comment': 'Test Constellation HD',
+                                        'discourseme_ids': [disc['id'] for disc in discoursemes.json]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        # create description
+        description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1,
+                                      'subcorpus_id': 1,
+                                      's': 'text'
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        # create keyword
+        keyword = client.post(url_for('mmda.constellation.create_keyword',
+                                      id=constellation.json['id'],
+                                      description_id=description.json['id']),
+                              json={
+                                  'corpus_id_reference': 1,
+                                  'p_reference': 'lemma'
+                              },
+                              headers=auth_header)
+        assert keyword.status_code == 200
+
+        keyword_items = client.get(url_for('mmda.constellation.get_keyword_items',
+                                           id=constellation.json['id'],
+                                           description_id=description.json['id'],
+                                           keyword_id=keyword.json['id']),
+                                   headers=auth_header)
+        assert keyword_items.status_code == 200
+
+        assert len(keyword_items.json['discourseme_coordinates']) == len(discoursemes.json)
+
+        semantic_map_id = keyword_items.json['discourseme_coordinates'][0]['semantic_map_id']
+        coordinates = client.put(url_for('mmda.constellation.set_coordinates',
+                                         id=constellation.json['id'],
+                                         description_id=description.json['id'],
+                                         semantic_map_id=semantic_map_id),
+                                 json={
+                                     'discourseme_id': 1,
+                                     'x_user': 12,
+                                     'y_user': 15
+                                 },
+                                 headers=auth_header)
+        assert coordinates.status_code == 200
+        assert len(coordinates.json) == len(discoursemes.json)
+        disc1_coordinates = [d for d in coordinates.json if d['discourseme_id'] == 1][0]
+        assert int(disc1_coordinates['x_user']) == 12
+        assert int(disc1_coordinates['y_user']) == 15
+
+        coordinates = client.get(url_for('mmda.constellation.get_coordinates',
+                                         id=constellation.json['id'],
+                                         description_id=description.json['id'],
+                                         semantic_map_id=semantic_map_id),
+                                 headers=auth_header)
+        assert coordinates.status_code == 200
+        disc1_coordinates = [d for d in coordinates.json if d['discourseme_id'] == 1][0]
+        assert int(disc1_coordinates['x_user']) == 12
+        assert int(disc1_coordinates['y_user']) == 15
+
+        # collocation in whole corpus
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': discoursemes.json[0]['id'],
+                                      'p': 'lemma',
+                                      'window': 10
+                                  },
+                                  headers=auth_header)
+        assert collocation.status_code == 200
+
+        collocation_items = client.get(url_for('mmda.constellation.get_collocation_items',
+                                               id=constellation.json['id'],
+                                               description_id=description.json['id'],
+                                               collocation_id=collocation.json['id'],
+                                               page_size=10, sort_by='O11'),
+                                       headers=auth_header)
+        assert collocation_items.status_code == 200
+
+        assert len(collocation_items.json['discourseme_coordinates']) == len(discoursemes.json)

@@ -179,7 +179,7 @@ def ccc_concordance(focus_query,
                 Matches.match.in_(match_pos)
             )
 
-            if len(matches.all()) == 0:
+            if matches.count() == 0:
                 current_app.logger.error(f"no concordance lines left after filtering for query {fq.cqp_query}")
                 return
 
