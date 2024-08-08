@@ -103,7 +103,7 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
       const discoursemeId = cell.row.original.discourseme_id ?? null
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const { data, isLoading } = useQuery({
-        ...discoursemeById(discoursemeId?.toString() as string),
+        ...discoursemeById(discoursemeId!),
         enabled: discoursemeId !== null,
       })
       if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />

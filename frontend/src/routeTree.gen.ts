@@ -27,6 +27,7 @@ import { Route as AppCorporaCorpusIdImport } from './routes/_app/corpora_/$corpu
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
 import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
 import { Route as AppQueriesQueryIdRouteImport } from './routes/_app/queries_/$queryId/route'
+import { Route as AppDiscoursemesDiscoursemeIdNewDescriptionImport } from './routes/_app/discoursemes_/$discoursemeId_/new-description'
 
 // Create Virtual Routes
 
@@ -198,6 +199,16 @@ const AppQueriesQueryIdRouteRoute = AppQueriesQueryIdRouteImport.update({
   import('./routes/_app/queries_/$queryId/route.lazy').then((d) => d.Route),
 )
 
+const AppDiscoursemesDiscoursemeIdNewDescriptionRoute =
+  AppDiscoursemesDiscoursemeIdNewDescriptionImport.update({
+    path: '/discoursemes/$discoursemeId/new-description',
+    getParentRoute: () => AppRoute,
+  } as any).lazy(() =>
+    import(
+      './routes/_app/discoursemes_/$discoursemeId_/new-description.lazy'
+    ).then((d) => d.Route),
+  )
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -298,6 +309,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoursemesNewLazyImport
       parentRoute: typeof AppImport
     }
+    '/_app/discoursemes/$discoursemeId/new-description': {
+      preLoaderRoute: typeof AppDiscoursemesDiscoursemeIdNewDescriptionImport
+      parentRoute: typeof AppImport
+    }
   }
 }
 
@@ -325,6 +340,7 @@ export const routeTree = rootRoute.addChildren([
     AppSubcorporaSubcorpusIdRoute,
     AppSubcorporaNewRoute,
     AppDiscoursemesNewLazyRoute,
+    AppDiscoursemesDiscoursemeIdNewDescriptionRoute,
   ]),
   LoginRoute,
   VignetteRoute,

@@ -416,6 +416,23 @@ export const addDiscoursemeDescription: MutationOptions<
   },
 }
 
+export const deleteDiscoursemeDescription: MutationOptions<
+  unknown,
+  Error,
+  { discoursemeId: number; descriptionId: number }
+> = {
+  mutationFn: ({ discoursemeId, descriptionId }) =>
+    apiClient.deleteMmdadiscoursemeIddescriptionDescription_id(undefined, {
+      params: {
+        id: discoursemeId.toString(),
+        description_id: descriptionId.toString(),
+      },
+    }),
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ['discourseme-descriptions'] })
+  },
+}
+
 // =================== CONSTELLATIONS ====================
 
 export const constellationList = queryOptions({
