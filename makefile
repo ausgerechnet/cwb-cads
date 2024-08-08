@@ -73,9 +73,9 @@ examples_prod:
 	. venv/bin/activate && \
 	flask --app cads database init && \
 	flask --app cads corpus import && \
-	flask --app cads discourseme import --path_in "../*-discoursemes.tsv" && \
-	flask --app cads corpus read-meta "GERMAPARL_1949_2021" --path "../germaparl-speaker-nodes.tsv.gz" && \
-	flask --app cads corpus subcorpora "GERMAPARL_1949_2021" "../subcorpora-*.tsv"
+	flask --app cads discourseme import --path_in "../*-discoursemes.tsv" # && \
+#	flask --app cads corpus read-meta "GERMAPARL_1949_2021" --path "../germaparl-speaker-nodes.tsv.gz" && \
+#	flask --app cads corpus subcorpora "GERMAPARL_1949_2021" "../subcorpora-*.tsv"
 
 frontend_prod:
 	cd frontend && \
