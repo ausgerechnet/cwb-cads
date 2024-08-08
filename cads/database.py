@@ -589,16 +589,32 @@ class Keyword(db.Model):
         return db.get_or_404(Corpus, self.corpus_id)
 
     @property
+    def corpus_name(self):
+        return self.corpus.name
+
+    @property
     def subcorpus(self):
         return db.get_or_404(SubCorpus, self.subcorpus_id) if self.subcorpus_id else None
+
+    @property
+    def subcorpus_name(self):
+        return self.subcorpus.name if self.subcorpus else None
 
     @property
     def corpus_reference(self):
         return db.get_or_404(Corpus, self.corpus_id_reference)
 
     @property
+    def corpus_name_reference(self):
+        return self.corpus_reference.name
+
+    @property
     def subcorpus_reference(self):
         return db.get_or_404(SubCorpus, self.subcorpus_id_reference) if self.subcorpus_id_reference else None
+
+    @property
+    def subcorpus_name_reference(self):
+        return self.subcorpus_reference.name if self.subcorpus_reference else None
 
     @property
     def N1(self):

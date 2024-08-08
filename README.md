@@ -114,7 +114,7 @@
 - [x] save wordlists permanently
 - [ ] subcorpus: number spans / tokens 0 ?? text / faction
 - [x] get keyword analyses loading time: replace `len(items)`
-- [ ] keyword details: target / reference (as strings)
+- [x] keyword details: target / reference (as strings)
 - [ ] meta data: auto-init / show which is possible + if initialised?
 - [x] /corpus/{id}/subcorpus/{id}
 - [x] /query/ without discourseme / discourseme\_id / nqr\_cqp

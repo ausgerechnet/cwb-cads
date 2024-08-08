@@ -975,6 +975,12 @@
           "corpus_id_reference": {
             "type": "integer"
           },
+          "corpus_name": {
+            "type": "string"
+          },
+          "corpus_name_reference": {
+            "type": "string"
+          },
           "id": {
             "type": "integer"
           },
@@ -1002,6 +1008,12 @@
           },
           "subcorpus_id_reference": {
             "type": "integer"
+          },
+          "subcorpus_name": {
+            "type": "string"
+          },
+          "subcorpus_name_reference": {
+            "type": "string"
           }
         },
         "type": "object"

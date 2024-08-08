@@ -108,11 +108,15 @@ class KeywordOut(Schema):
     semantic_map_id = Integer(metadata={'nullable': True})
 
     corpus_id = Integer()
+    corpus_name = String()
     subcorpus_id = Integer()
+    subcorpus_name = String()
     p = String()
 
     corpus_id_reference = Integer()
+    corpus_name_reference = String()
     subcorpus_id_reference = Integer()
+    subcorpus_name_reference = String()
     p_reference = String()
 
     sub_vs_rest = Boolean()
