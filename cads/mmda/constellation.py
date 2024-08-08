@@ -51,6 +51,7 @@ def get_discourseme_coordinates(semantic_map, discourseme_descriptions):
 
             # item coordinates
             items = [item.item for item in desc.items]
+            ccc_semmap_update(semantic_map, items)  # just to be sure
             coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item']).set_index('item')
             item_coordinates = coordinates.loc[items]
             item_coordinates.loc[~ item_coordinates['x_user'].isna(), 'x'] = item_coordinates['x_user']
@@ -935,7 +936,7 @@ def create_collocation(id, description_id, json_data):
     # create collocation object
     collocation = Collocation(
         # constellation_id=constellation_id,
-        # semantic_map_id=semantic_map_id,
+        semantic_map_id=semantic_map_id,
         query_id=focus_query.id,
         p=p,
         s_break=s,
@@ -1019,8 +1020,9 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
         ccc_semmap_update(collocation.semantic_map, requested_items)
         coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
 
-    # discourseme coordinates
-    discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions)
+        # discourseme coordinates
+        discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions)
+        discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
 
     # TODO: also return ranks (to ease frontend pagination)?
     collocation_items = {

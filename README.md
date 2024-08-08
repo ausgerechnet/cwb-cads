@@ -115,12 +115,11 @@
 - [x] concordance / lines / id → match\_id
 - [x] only return queries with NQR for now, do not return nqr\_cqp
 - [x] position discoursemes on semantic map
+- [ ] deal with empty queries
 - [ ] meta data: auto-init / show which is possible + if initialised?
-- [ ] auto-associate
+- [ ] auto-associate discoursemes
 - [ ] empty discourseme descriptions possible → constellations with empty discoursemes
 - [ ] create discourseme in constellation description
-- [ ] example meta data creation
-- [ ] example subcorpus creation
 - [ ] user: discoursemes / constellations
 - [ ] txt: translate names of AMs
 - [ ] post collocation semantic-map mit json
@@ -128,3 +127,5 @@
 - [ ] collocation → get query\_id + filter\_sequence
 - [ ] subcorpus: number spans / tokens 0 ?? text / faction
 - [ ] rm or rename query / concordance / discourseme ranges
+- [ ] example meta data creation
+- [ ] example subcorpus creation

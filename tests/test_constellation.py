@@ -782,6 +782,7 @@ def test_constellation_collocation(client, auth):
         assert int(df.loc[']:', 'O11']) == 0
 
 
+@pytest.mark.now
 def test_constellation_2nd_order_collocation(client, auth):
 
     auth_header = auth.login()
@@ -1005,7 +1006,6 @@ def test_constellation_keyword(client, auth):
         assert int(scores['R2']) == 113820
 
 
-@pytest.mark.now
 def test_constellation_coordinates(client, auth):
 
     auth_header = auth.login()
