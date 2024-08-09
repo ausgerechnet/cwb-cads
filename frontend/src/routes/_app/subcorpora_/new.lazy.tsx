@@ -8,8 +8,8 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
+  corpusById,
   corpusList,
-  corpusMetaById,
   corpusMetaFrequencies,
   createSubcorpus,
 } from '@/lib/queries'
@@ -68,33 +68,36 @@ function SubcorpusNew() {
   const corpusId = form.watch('corpus_id')
   const level = form.watch('level')
   const key = form.watch('key')
-  const {
-    data: corpusMetaData,
-    isLoading: isLoadingMeta,
-    error: errorMeta,
-  } = useQuery({ ...corpusMetaById(corpusId), enabled: corpusId !== undefined })
 
-  // levels
-  const availableLevels = useMemo(
-    () =>
-      corpusMetaData
-        ?.map(({ level }) => level)
-        .filter((level): level is string => Boolean(level)) ?? [],
-    [corpusMetaData, level],
-  )
+  const { data: corpus } = useQuery({
+    ...corpusById(corpusId),
+    enabled: corpusId !== undefined,
+  })
+
+  const levelKeyMap = useMemo(() => {
+    const levelKeyPairs = (corpus?.s_annotations ?? []).map((annotation) => {
+      const [level, key] = annotation.split('_')
+      return { level, key }
+    })
+    return levelKeyPairs.reduce(
+      (acc, { level, key }) => {
+        if (acc[level] === undefined) {
+          acc[level] = []
+        }
+        if (!acc[level].includes(key)) {
+          acc[level].push(key)
+        }
+        return acc
+      },
+      {} as Record<string, string[]>,
+    )
+  }, [corpus?.s_annotations])
+
+  const availableLevels = useMemo(() => Object.keys(levelKeyMap), [levelKeyMap])
   useFormFieldDependency(form, 'level', availableLevels)
-
-  // keys
   const availableKeys = useMemo(
-    () =>
-      corpusMetaData
-        ?.filter((meta) => meta.level === level)
-        .map(({ annotations }) => annotations)
-        .flat()
-        .filter((annotation) => annotation?.value_type === 'unicode')
-        .map((annotation) => annotation?.key)
-        .filter((key): key is string => key !== undefined) ?? [],
-    [corpusMetaData, level],
+    () => levelKeyMap[level ?? ''] ?? [],
+    [levelKeyMap, level],
   )
   useFormFieldDependency(form, 'key', availableKeys)
 
@@ -103,7 +106,7 @@ function SubcorpusNew() {
     isLoading: isLoadingFrequencies,
     error: errorFrequencies,
   } = useQuery({
-    ...corpusMetaFrequencies(corpusId, level, key),
+    ...corpusMetaFrequencies(corpusId, level, key, 'unicode'),
     enabled: corpusId !== undefined && level !== undefined && key !== undefined,
   })
 
@@ -121,11 +124,10 @@ function SubcorpusNew() {
       toast.error('Failed to create subcorpus')
     },
   })
-  const isDisabled = isLoadingMeta || isLoadingFrequencies || isPending
+  const isDisabled = isLoadingFrequencies || isPending
 
   return (
     <AppPageFrame title="New Subcorpus">
-      <ErrorMessage error={errorMeta} />
       <ErrorMessage error={errorCorpusList} />
       <ErrorMessage error={errorFrequencies} />
       <Card className="max-w-lg p-4">
@@ -143,13 +145,18 @@ function SubcorpusNew() {
                         className="w-full"
                         corpora={corpora}
                         corpusId={field.value}
-                        onChange={field.onChange}
+                        onChange={(...args) => {
+                          form.resetField('level')
+                          form.resetField('key')
+                          field.onChange(...args)
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="name"
@@ -163,6 +170,7 @@ function SubcorpusNew() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="description"
@@ -180,74 +188,72 @@ function SubcorpusNew() {
                   </FormItem>
                 )}
               />
-              {corpusMetaData && (
-                <FormField
-                  control={form.control}
-                  name="level"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Level</FormLabel>
-                      <FormControl>
-                        {availableLevels.length === 0 ? (
-                          <div className="text-muted-foreground">
-                            No levels available for this corpus
-                          </div>
-                        ) : (
-                          <Select onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a Level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                {availableLevels.map((level) => (
-                                  <SelectItem value={level} key={level}>
-                                    {level}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              {level !== undefined && (
-                <FormField
-                  control={form.control}
-                  name="key"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Key</FormLabel>
-                      <FormControl>
-                        {availableKeys.length === 0 ? (
-                          <div className="text-muted-foreground">
-                            No keys available for this level
-                          </div>
-                        ) : (
-                          <Select onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a Key" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                {availableKeys.map((key) => (
-                                  <SelectItem value={key} key={key}>
-                                    {key}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+
+              <FormField
+                control={form.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Level</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(...args) => {
+                          form.resetField('key')
+                          field.onChange(...args)
+                        }}
+                        disabled={availableLevels.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {availableLevels.map((level) => (
+                              <SelectItem value={level} key={level}>
+                                {level}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="key"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Key</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(...args) => {
+                          field.onChange(...args)
+                        }}
+                        disabled={availableKeys.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a Key" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {availableKeys.map((key) => (
+                              <SelectItem value={key} key={key}>
+                                {key}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {key !== undefined && (
                 <FormField
                   control={form.control}
@@ -271,6 +277,7 @@ function SubcorpusNew() {
                   )}
                 />
               )}
+
               <Button
                 type="submit"
                 className="col-span-full mt-4"

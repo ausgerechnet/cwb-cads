@@ -300,15 +300,39 @@ export const corpusMetaFrequencies = (
   corpusId: number,
   level: string,
   key: string,
+  createAsIfNotExists:
+    | 'datetime'
+    | 'numeric'
+    | 'unicode'
+    | 'boolean'
+    | false = false,
 ) =>
   queryOptions({
+    // createAsIfNotExists is a hack to create a new meta key if it doesn't exist, should not be a dep
+    // TODO: move this to the backend, probably
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: ['corpus-meta-frequencies', corpusId, level, key],
-    queryFn: ({ signal }) =>
-      apiClient.getCorpusIdmetafrequencies({
-        params: { id: corpusId.toString() },
-        queries: { level, key },
-        signal,
-      }),
+    queryFn: async ({ signal }) => {
+      if (!createAsIfNotExists) {
+        return getFrequencies()
+      }
+      try {
+        return await getFrequencies()
+      } catch (error) {
+        await apiClient.putCorpusIdmeta(
+          { level, key, value_type: createAsIfNotExists },
+          { params: { id: corpusId.toString() } },
+        )
+        return await getFrequencies()
+      }
+      function getFrequencies() {
+        return apiClient.getCorpusIdmetafrequencies({
+          params: { id: corpusId.toString() },
+          queries: { level, key },
+          signal,
+        })
+      }
+    },
   })
 
 // ==================== USERS ====================
