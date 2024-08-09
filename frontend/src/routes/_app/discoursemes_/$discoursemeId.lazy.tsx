@@ -1,8 +1,9 @@
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { Loader2Icon, PlusIcon, TrashIcon } from 'lucide-react'
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
 import {
+  corpusById,
   deleteDiscoursemeDescription,
   discoursemeById,
   discoursemeDescriptionsById,
@@ -88,9 +89,15 @@ function Description({
   description: z.infer<typeof schemas.DiscoursemeDescriptionOut>
 }) {
   const { mutate, isPending, error } = useMutation(deleteDiscoursemeDescription)
+  const {
+    data,
+    isLoading,
+    error: errorCorpus,
+  } = useQuery(corpusById(description.corpus_id!))
   return (
-    <div>
-      {description.id}
+    <div className="my-1 bg-muted">
+      {description.id} {isLoading ? 'Loading...' : `on Corpus "${data?.name}"`}
+      <br />
       {description.items?.map((i) => i.item).join(', ')}
       <Button
         onClick={() =>
@@ -104,6 +111,7 @@ function Description({
         {isPending ? <Loader2Icon className="animate-spin" /> : <TrashIcon />}
       </Button>
       <ErrorMessage error={error} />
+      <ErrorMessage error={errorCorpus} />
     </div>
   )
 }
