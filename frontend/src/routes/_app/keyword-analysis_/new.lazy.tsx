@@ -155,7 +155,7 @@ function KeywordAnalysisNew() {
                         disabled={corpusId === undefined}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Context Break" />
+                          <SelectValue placeholder="Query Layer" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
@@ -226,7 +226,7 @@ function KeywordAnalysisNew() {
                         disabled={corpusIdReference === undefined}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Context Break" />
+                          <SelectValue placeholder="Query Layer" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
