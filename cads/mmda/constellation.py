@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from collections import defaultdict
-
 from apiflask import APIBlueprint, Schema  # , abort
 from apiflask.fields import Boolean, Integer, List, Nested, String, Float
 from apiflask.validators import OneOf
@@ -74,12 +72,13 @@ def query_discourseme_corpora(keyword, discourseme_description):
     """ensure that KeywordDiscoursemeItems exist for discourseme description
 
     """
+
     # only if scores don't exist
     counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id,
                                                              discourseme_description_id=discourseme_description.id)
     if counts_from_sql.first():
         current_app.logger.debug(f'query_discourseme_corpora :: counts for discourseme "{discourseme_description.discourseme.name}" already exist')
-        return DataFrame(), DataFrame()
+        return
 
     corpus = keyword.corpus
     corpus_reference = keyword.corpus_reference
@@ -90,8 +89,9 @@ def query_discourseme_corpora(keyword, discourseme_description):
     s_query = discourseme_description.s
     items = [cqp_escape(item.item) for item in discourseme_description.items]
 
-    # target
     # TODO deal with zero matches in both cases
+
+    # target
     if not discourseme_description._query:
         discourseme_description.update_from_items()
     target_query = discourseme_description._query
@@ -126,34 +126,11 @@ def query_discourseme_corpora(keyword, discourseme_description):
         reference_matches = corpus_reference.ccc().subcorpus(df_dump=reference_matches_df, overwrite=False)
         reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
 
-    return target_breakdown, reference_breakdown
+    discourseme_counts_target = target_breakdown.reset_index().set_index('item')
+    discourseme_counts_reference = reference_breakdown.reset_index().set_index('item')
 
-
-def keyword_discourseme_counts(keyword, discourseme_descriptions):
-    """ensure that KeywordDiscoursemeItems exist for each discourseme description
-
-    """
-
-    current_app.logger.debug('get_discourseme_counts :: enter')
-    discourseme_counts_target = list()
-    discourseme_counts_reference = list()
-
-    for discourseme_description in discourseme_descriptions:
-        t_b, r_b = query_discourseme_corpora(keyword, discourseme_description)
-        if len(t_b) > 0:
-            t_b['discourseme_description_id'] = discourseme_description.id
-            discourseme_counts_target.append(t_b)
-        if len(r_b) > 0:
-            r_b['discourseme_description_id'] = discourseme_description.id
-            discourseme_counts_reference.append(r_b)
-
-    if len(discourseme_counts_target) == 0:
-        return
-
-    # counts
-    discourseme_counts_target = concat(discourseme_counts_target).reset_index().set_index(['item', 'discourseme_description_id'])
-    discourseme_counts_reference = concat(discourseme_counts_reference).reset_index().set_index(['item', 'discourseme_description_id'])
     discourseme_counts = discourseme_counts_target.join(discourseme_counts_reference).fillna(0, downcast='infer')
+    discourseme_counts['discourseme_description_id'] = discourseme_description.id
     discourseme_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
     discourseme_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
     discourseme_counts['keyword_id'] = keyword.id
@@ -186,11 +163,11 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
 
     """
 
+    # only if scores don't exist
     counts_from_sql = CollocationDiscoursemeItem.query.filter_by(collocation_id=collocation.id,
                                                                  discourseme_description_id=discourseme_description.id)
     if counts_from_sql.first():
         current_app.logger.debug(f'query_discourseme_cotext :: counts for discourseme "{discourseme_description.discourseme.name}" already exist')
-        # TODO also check for item counts?
         return
 
     focus_query = collocation._query
@@ -273,7 +250,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
     discourseme_item_scores.to_sql('collocation_discourseme_item_score', con=db.engine, if_exists='append', index=False)
 
 
-def collocation_discourseme_counts(collocation, discourseme_descriptions):
+def set_collocation_discourseme_scores(collocation, discourseme_descriptions):
     """ensure that CollocationDiscoursemeItems exist for each discourseme description
 
     """
@@ -282,17 +259,17 @@ def collocation_discourseme_counts(collocation, discourseme_descriptions):
     window = collocation.window
     s_break = collocation.s_break
 
-    current_app.logger.debug(f'get_discourseme_counts :: getting context of query {focus_query.id}')
+    current_app.logger.debug(f'set_collocation_discourseme_scores :: getting context of query {focus_query.id}')
     cotext = get_or_create_cotext(focus_query, window, s_break, return_df=True)
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
     df_cotext = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True).drop_duplicates(subset='cpos')
 
-    current_app.logger.debug('get_discourseme_counts :: getting discourseme counts')
+    current_app.logger.debug('set_collocation_discourseme_scores :: looping through descriptions')
     for discourseme_description in discourseme_descriptions:
         query_discourseme_cotext(collocation, df_cotext, discourseme_description)
 
 
-def collocation_discourseme_scores(collocation_id, discourseme_description_ids):
+def get_collocation_discourseme_scores(collocation_id, discourseme_description_ids):
     """get discourseme scores for collocation analysis
 
     """
@@ -343,8 +320,18 @@ def collocation_discourseme_scores(collocation_id, discourseme_description_ids):
     return discourseme_scores
 
 
-def keyword_discourseme_scores(keyword_id, discourseme_description_ids):
-    """get discourseme scores for collocation analysis
+def set_keyword_discourseme_scores(keyword, discourseme_descriptions):
+    """ensure that KeywordDiscoursemeItems exist for each discourseme description
+
+    """
+
+    current_app.logger.debug('set_keyword_discourseme_scores :: looping through descriptions')
+    for discourseme_description in discourseme_descriptions:
+        query_discourseme_corpora(keyword, discourseme_description)
+
+
+def get_keyword_discourseme_scores(keyword_id, discourseme_description_ids):
+    """get discourseme scores for keyword analysis
 
     """
 
@@ -850,7 +837,7 @@ def create_collocation(id, description_id, json_data):
     db.session.commit()
 
     get_or_create_counts(collocation, remove_focus_cpos=False)
-    collocation_discourseme_counts(collocation, description.discourseme_descriptions)
+    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions)
     ccc_init_semmap(collocation, semantic_map_id)
 
     return CollocationOut().dump(collocation), 200
@@ -905,8 +892,8 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
 
     # discourseme scores
-    collocation_discourseme_counts(collocation, description.discourseme_descriptions)
-    discourseme_scores = collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
+    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions)
+    discourseme_scores = get_collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
@@ -1016,7 +1003,7 @@ def create_keyword(id, description_id, json_data):
     db.session.commit()
 
     ccc_keywords(keyword)
-    keyword_discourseme_counts(keyword, description.discourseme_descriptions)
+    set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
     ccc_init_semmap(keyword, semantic_map_id)
 
     return KeywordOut().dump(keyword), 200
@@ -1060,8 +1047,8 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
     items = [KeywordItemOut().dump(db.get_or_404(KeywordItem, id)) for id in df_scores['keyword_item_id']]
 
     # discourseme scores
-    keyword_discourseme_counts(keyword, description.discourseme_descriptions)
-    discourseme_scores = keyword_discourseme_scores(keyword_id, [d.id for d in description.discourseme_descriptions])
+    set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
+    discourseme_scores = get_keyword_discourseme_scores(keyword_id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
         s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
