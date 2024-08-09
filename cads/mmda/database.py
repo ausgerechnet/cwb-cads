@@ -122,6 +122,7 @@ class DiscoursemeDescription(db.Model):
         )
         self.query_id = query.id
 
+        # zero matches?
         if query.error or query.zero_matches:
             return
 

@@ -159,16 +159,18 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
     cqp.nqr_save(corpus.cwb_id, name=name)
     cqp.__del__()
 
-    if isinstance(matches_df, str):  # ERROR
-        current_app.logger.error(f"description_items_to_query :: {matches_df}")
+    if isinstance(matches_df, str):  # error
+        current_app.logger.error(f"description_items_to_query :: error: '{matches_df}'")
         # db.session.delete(query)
         # db.session.commit()
         query.error = True
-        query.zero_matches = True
-        return matches_df
+        db.session.commit()
+        return query
 
-    if len(matches_df) == 0:  # no matches
+    if len(matches_df) == 0:    # 0 matches
         current_app.logger.debug("description_items_to_query :: 0 matches")
+        query.zero_matches = True
+        db.session.commit()
         return query
 
     # update name

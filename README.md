@@ -115,8 +115,8 @@
 - [x] concordance / lines / id → match\_id
 - [x] only return queries with NQR for now, do not return nqr\_cqp
 - [x] position discoursemes on semantic map
-- [ ] get DiscoursemeUnigramItems from DiscoursemeItems
-- [ ] deal with empty queries
+- [x] get DiscoursemeUnigramItems from DiscoursemeItems
+- [x] deal with empty queries
 - [ ] meta data: auto-init / show which is possible + if initialised?
 - [ ] auto-associate discoursemes
 - [ ] empty discourseme descriptions possible → constellations with empty discoursemes

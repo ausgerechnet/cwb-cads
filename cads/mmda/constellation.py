@@ -7,7 +7,7 @@ from apiflask.validators import OneOf
 from association_measures import measures
 from ccc.utils import cqp_escape
 from flask import current_app
-from pandas import DataFrame, concat, read_sql
+from pandas import DataFrame, read_sql
 
 from .. import db
 from ..collocation import (CollocationIn, CollocationItemOut,
@@ -52,11 +52,16 @@ def get_discourseme_coordinates(semantic_map, discourseme_descriptions):
             ccc_semmap_update(semantic_map, items)  # just to be sure
             coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item']).set_index('item')
             item_coordinates = coordinates.loc[items]
-            item_coordinates.loc[~ item_coordinates['x_user'].isna(), 'x'] = item_coordinates['x_user']
-            item_coordinates.loc[~ item_coordinates['y_user'].isna(), 'y'] = item_coordinates['y_user']
 
-            # discourseme coordinates
-            mean = item_coordinates[['x', 'y']].mean(axis=0)
+            # discourseme coordinates = centroid of items
+            if len(item_coordinates) == 0:
+                mean = {'x': 0, 'y': 0}
+            else:
+                item_coordinates.loc[~ item_coordinates['x_user'].isna(), 'x'] = item_coordinates['x_user']
+                item_coordinates.loc[~ item_coordinates['y_user'].isna(), 'y'] = item_coordinates['y_user']
+                mean = item_coordinates[['x', 'y']].mean(axis=0)
+
+            # save
             discourseme_coordinates = DiscoursemeCoordinates(discourseme_id=desc.discourseme.id,
                                                              semantic_map_id=semantic_map.id,
                                                              x=mean['x'], y=mean['y'])
@@ -89,19 +94,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
     s_query = discourseme_description.s
     items = [cqp_escape(item.item) for item in discourseme_description.items]
 
-    # TODO deal with zero matches in both cases
-
-    # target
-    if not discourseme_description._query:
-        discourseme_description.update_from_items()
-    target_query = discourseme_description._query
-    target_matches_df = ccc_query(target_query)
-    if not isinstance(target_matches_df, DataFrame):
-        target_breakdown = DataFrame()
-    target_matches = corpus.ccc().subcorpus(df_dump=target_matches_df, overwrite=False)
-    target_breakdown = target_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f1'}, axis=1)
-
-    # reference
+    # make sure discourseme description exists in reference corpus
     discourseme_description_reference = DiscoursemeDescription.query.filter_by(
         discourseme_id=discourseme_description.discourseme.id,
         corpus_id=corpus_id_reference,
@@ -116,20 +109,32 @@ def query_discourseme_corpora(keyword, discourseme_description):
                                                                            corpus_id_reference, subcorpus_id_reference,
                                                                            p_description, s_query, match_strategy)
 
+    # target
+    if not discourseme_description._query:
+        discourseme_description.update_from_items()
+    target_matches_df = ccc_query(discourseme_description._query)
+    if len(target_matches_df) == 0:
+        target_breakdown = DataFrame(columns=['f1'])
+        target_breakdown.index.name = 'item'
+    else:
+        target_matches = corpus.ccc().subcorpus(df_dump=target_matches_df, overwrite=False)
+        target_breakdown = target_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f1'}, axis=1).reset_index().set_index('item')
+
+    # reference
     if not discourseme_description_reference._query:
         discourseme_description_reference.update_from_items()
-    reference_query = discourseme_description_reference._query
-    reference_matches_df = ccc_query(reference_query)
-    if not isinstance(reference_matches_df, DataFrame):
-        reference_breakdown = DataFrame()
+    reference_matches_df = ccc_query(discourseme_description_reference._query)
+    if len(reference_matches_df) == 0:
+        reference_breakdown = DataFrame(columns=['f2'])
+        reference_breakdown.index.name = 'item'
     else:
         reference_matches = corpus_reference.ccc().subcorpus(df_dump=reference_matches_df, overwrite=False)
-        reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
+        reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1).reset_index().set_index('item')
 
-    discourseme_counts_target = target_breakdown.reset_index().set_index('item')
-    discourseme_counts_reference = reference_breakdown.reset_index().set_index('item')
-
-    discourseme_counts = discourseme_counts_target.join(discourseme_counts_reference).fillna(0, downcast='infer')
+    # combine
+    discourseme_counts = target_breakdown.join(reference_breakdown).fillna(0, downcast='infer')
+    if len(discourseme_counts) == 0:
+        return
     discourseme_counts['discourseme_description_id'] = discourseme_description.id
     discourseme_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
     discourseme_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
@@ -178,10 +183,9 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
     match_strategy = focus_query.match_strategy
     items = [cqp_escape(item.item) for item in discourseme_description.items]
 
-    # get matches of discourseme in whole corpus and in subcorpus of cotext
-    # three possibilities:
-    # - subcorpus and local marginals
+    # get matches of discourseme in whole corpus and in subcorpus of cotext; three possibilities:
     # - no subcorpus
+    # - subcorpus and local marginals
     # - subcorpus and global marginals
     current_app.logger.debug(
         f'query_discourseme_cotext :: .. getting matches of discourseme "{discourseme_description.discourseme.name}" in whole corpus'
@@ -196,6 +200,9 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
         corpus_query = description_items_to_query(items, p_description, s_query, corpus, None, match_strategy=match_strategy)
 
     corpus_matches_df = ccc_query(corpus_query).reset_index()
+    if len(corpus_matches_df) == 0:
+        return
+
     corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos'])
     if discourseme_matchend_in_context:
         corpus_matches_df['in_context'] = corpus_matches_df['in_context'] & corpus_matches_df['matchend'].isin(df_cotext['cpos'])

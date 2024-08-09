@@ -23,8 +23,8 @@ def ccc_breakdown(breakdown):
         # count matches
         from .query import ccc_query
         current_app.logger.debug('ccc_breakdown :: counting matches')
-        matches_df = ccc_query(breakdown._query, return_df=True)
-        if matches_df is None:
+        matches_df = ccc_query(breakdown._query)
+        if len(matches_df) == 0:
             current_app.logger.debug('ccc_breakdown :: 0 matches')
             return
         corpus = breakdown._query.corpus.ccc()

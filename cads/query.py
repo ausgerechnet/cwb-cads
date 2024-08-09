@@ -26,17 +26,18 @@ bp = APIBlueprint('query', __name__, url_prefix='/query')
 
 
 def ccc_query(query, return_df=True):
-    """create or get matches of this query
+    """get or create matches of this query
 
     """
 
     current_app.logger.debug(f'ccc_query :: query {query.id} in corpus {query.corpus.cwb_id}')
 
-    if query.zero_matches:
+    if query.zero_matches or query.error:
         current_app.logger.debug("ccc_query :: query has zero matches")
-        return None
+        return DataFrame()
 
     matches = Matches.query.filter_by(query_id=query.id)
+
     if not matches.first():
 
         if query.subcorpus:
@@ -51,22 +52,22 @@ def ccc_query(query, return_df=True):
                                match_strategy=query.match_strategy,
                                propagate_error=True)
 
-        if isinstance(matches, str):  # ERROR
-            current_app.logger.error(f"{matches}")
-            query.zero_matches = True
+        if isinstance(matches, str):  # error
+            current_app.logger.error(f"ccc_query :: error: '{matches}'")
             query.error = True
-            # db.session.delete(query)
             db.session.commit()
-            return matches
+            return DataFrame()
 
         if len(matches.df) == 0:  # no matches
             current_app.logger.debug("0 matches")
             query.zero_matches = True
             db.session.commit()
-            return None
+            return DataFrame()
+
+        # update name
+        query.nqr_cqp = matches.subcorpus_name
 
         # save matches
-        query.nqr_cqp = matches.subcorpus_name
         matches_df = matches.df.reset_index()[['match', 'matchend', 'contextid']]
         matches_df['contextid'] = matches_df['contextid'].astype(int)
         matches_df['query_id'] = query.id
@@ -74,16 +75,16 @@ def ccc_query(query, return_df=True):
         matches_df.to_sql('matches', con=db.engine, if_exists='append', index=False)
         db.session.commit()
         current_app.logger.debug("ccc_query :: saved to database")
+
         matches_df = matches_df.drop('query_id', axis=1).set_index(['match', 'matchend'])
 
     elif return_df:
         current_app.logger.debug("ccc_query :: getting matches from database")
         matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
         current_app.logger.debug(f"ccc_query :: got {len(matches_df)} matches from database")
-
     else:
-        current_app.logger.debug("ccc_query :: matches already exist in database")
-        matches_df = None
+        current_app.logger.debug("ccc_query :: matches exist in database")
+        return
 
     return matches_df
 

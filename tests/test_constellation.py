@@ -930,7 +930,6 @@ def test_constellation_2nd_order_collocation(client, auth):
         assert int(coll_conv["O11"]) == 18
 
 
-@pytest.mark.now
 def test_constellation_keyword(client, auth):
 
     auth_header = auth.login()
@@ -1106,3 +1105,135 @@ def test_constellation_coordinates(client, auth):
         assert collocation_items.status_code == 200
 
         assert len(collocation_items.json['discourseme_coordinates']) == len(discoursemes.json)
+
+
+def test_constellation_keyword_empty_queries(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # discourseme that is not in reference: "Bereicherung"
+        # discourseme without matches: "Bereicherung2"
+        discourseme = client.post(url_for('mmda.discourseme.create'),
+                                  json={
+                                      'name': 'Bereicherung',
+                                      'comment': 'Testdiskursem ohne Treffer in Referenz',
+                                      'template': [
+                                          {'surface': 'Bereicherung2', 'p': 'lemma'}
+                                      ],
+                                  },
+                                  content_type='application/json',
+                                  headers=auth_header)
+        assert discourseme.status_code == 200
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  headers=auth_header)
+        assert discoursemes.status_code == 200
+        # union_id = discoursemes.json[0]['id']
+
+        # create constellation
+        constellation = client.post(url_for('mmda.constellation.create'),
+                                    json={
+                                        'name': 'CDU',
+                                        'comment': 'Test Constellation HD',
+                                        'discourseme_ids': [disc['id'] for disc in discoursemes.json]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        # create description
+        description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1,
+                                      'subcorpus_id': 1,
+                                      's': 'text'
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        # create keyword
+        keyword = client.post(url_for('mmda.constellation.create_keyword',
+                                      id=constellation.json['id'],
+                                      description_id=description.json['id']),
+                              json={
+                                  'corpus_id_reference': 1,
+                                  'p_reference': 'lemma'
+                              },
+                              headers=auth_header)
+        assert keyword.status_code == 200
+
+        keyword_items = client.get(url_for('mmda.constellation.get_keyword_items',
+                                           id=constellation.json['id'],
+                                           description_id=description.json['id'],
+                                           keyword_id=keyword.json['id']),
+                                   headers=auth_header)
+        assert keyword_items.status_code == 200
+
+
+@pytest.mark.now
+def test_constellation_collocation_empty_queries(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # discourseme that is not in reference: "Bereicherung"
+        # discourseme without matches: "Bereicherung2"
+        discourseme = client.post(url_for('mmda.discourseme.create'),
+                                  json={
+                                      'name': 'Bereicherung',
+                                      'comment': 'Testdiskursem ohne Treffer in Referenz',
+                                      'template': [
+                                          {'surface': 'Bereicherung2', 'p': 'lemma'}
+                                      ],
+                                  },
+                                  content_type='application/json',
+                                  headers=auth_header)
+        assert discourseme.status_code == 200
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  headers=auth_header)
+        assert discoursemes.status_code == 200
+        # union_id = discoursemes.json[0]['id']
+
+        # create constellation
+        constellation = client.post(url_for('mmda.constellation.create'),
+                                    json={
+                                        'name': 'CDU',
+                                        'comment': 'Test Constellation HD',
+                                        'discourseme_ids': [disc['id'] for disc in discoursemes.json]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        # create description
+        description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1,
+                                      'subcorpus_id': 1,
+                                      's': 'text'
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        # create collocation
+        collocation = client.post(url_for('mmda.constellation.create_collocation',
+                                          id=constellation.json['id'],
+                                          description_id=description.json['id']),
+                                  json={
+                                      'focus_discourseme_id': 1,
+                                      'p': 'lemma',
+                                      'window': 10
+                                  },
+                                  headers=auth_header)
+        assert collocation.status_code == 200
+
+        collocation_items = client.get(url_for('mmda.constellation.get_collocation_items',
+                                               id=constellation.json['id'],
+                                               description_id=description.json['id'],
+                                               collocation_id=collocation.json['id']),
+                                       headers=auth_header)
+        assert collocation_items.status_code == 200
