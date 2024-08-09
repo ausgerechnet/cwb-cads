@@ -9,12 +9,13 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, Nested, String
+from apiflask.fields import Integer, List, Nested, String, Float
 from apiflask.validators import OneOf
 from ccc.cache import generate_idx
 from ccc.utils import cqp_escape
 from flask import abort, current_app
 from pandas import DataFrame, read_csv
+from pymagnitude import Magnitude
 
 from .. import db
 from ..database import Corpus, Query, User, get_or_create
@@ -141,10 +142,10 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
     ], prefix="Q_")
 
     # init corpus / CQP
-    if subcorpus:
-        crps = subcorpus.ccc()
+    if query.subcorpus:
+        crps = query.subcorpus.ccc()
     else:
-        crps = corpus.ccc()
+        crps = query.corpus.ccc()
 
     cqp = crps.start_cqp()
     cqp.Exec(f'define ${wl_name} < "{wl_path}";')
@@ -161,8 +162,6 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
 
     if isinstance(matches_df, str):  # error
         current_app.logger.error(f"description_items_to_query :: error: '{matches_df}'")
-        # db.session.delete(query)
-        # db.session.commit()
         query.error = True
         db.session.commit()
         return query
@@ -275,6 +274,19 @@ class DiscoursemeScoresOut(Schema):
     item_scores = Nested(CollocationItemOut(many=True))
     unigram_item_scores = Nested(CollocationItemOut(many=True))
     global_scores = Nested(CollocationScoreOut(many=True))
+
+
+class DiscoursemeDescriptionSimilarIn(Schema):
+
+    number = Integer(load_default=200)
+    min_freq = Integer(load_default=2)
+
+
+class DiscoursemeDescriptionSimilarOut(Schema):
+
+    item = String()
+    freq = Integer()
+    similarity = Float()
 
 
 #################
@@ -436,6 +448,34 @@ def delete_description(id, description_id):
     db.session.commit()
 
     return 'Deletion successful.', 200
+
+
+@bp.get('/<id>/description/<description_id>/similar')
+@bp.input(DiscoursemeDescriptionSimilarIn, location='query')
+@bp.output(DiscoursemeDescriptionSimilarOut(many=True))
+@bp.auth_required(auth)
+def description_get_similar(id, description_id, query_data):
+
+    number = query_data.get('number')
+    min_freq = query_data.get('min_freq')
+    description = db.get_or_404(DiscoursemeDescription, description_id)
+    items = [item.item for item in description.items]
+
+    # similar
+    embeddings = Magnitude(description.corpus.embeddings)
+    similar = embeddings.most_similar(positive=items, topn=number)
+    similar = DataFrame(index=[s[0] for s in similar], data={'similarity': [s[1] for s in similar]})
+
+    # marginals
+    freq_similar = description.corpus.ccc().marginals(similar.index, p_atts=[description.p])[['freq']]
+    freq_similar = freq_similar.loc[freq_similar['freq'] >= min_freq]  # drop hapaxes
+
+    # merge
+    freq_similar = freq_similar.join(similar)
+    freq_similar = freq_similar.sort_values(by="similarity", ascending=False)
+    freq_similar = freq_similar.reset_index().to_records()
+
+    return [DiscoursemeDescriptionSimilarOut().dump(f) for f in freq_similar], 200
 
 
 @bp.patch('/<id>/description/<description_id>/add-item')

@@ -782,6 +782,20 @@
         },
         "type": "object"
       },
+      "DiscoursemeDescriptionSimilarOut": {
+        "properties": {
+          "freq": {
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "similarity": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "DiscoursemeIn": {
         "properties": {
           "comment": {
@@ -5402,6 +5416,100 @@
           }
         ],
         "summary": "Patch discourseme: remove item from description.",
+        "tags": [
+          "Mmda.Discourseme"
+        ]
+      }
+    },
+    "/mmda/discourseme/{id}/description/{description_id}/similar": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "number",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_freq",
+            "required": false,
+            "schema": {
+              "default": 2,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DiscoursemeDescriptionSimilarOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Description Get Similar",
         "tags": [
           "Mmda.Discourseme"
         ]

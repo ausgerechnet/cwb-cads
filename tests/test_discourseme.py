@@ -140,3 +140,27 @@ def test_discourseme_patch_add_remove(client, auth):
                                    headers=auth_header)
 
         assert 'können' not in [item['item'] for item in description.json['items']]
+
+
+@pytest.mark.now
+def test_get_similar(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+        client.get("/")
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'), headers=auth_header)
+        kanzler = discoursemes.json[2]
+        description = client.post(url_for('mmda.discourseme.create_description', id=kanzler['id']),
+                                  content_type='application/json',
+                                  json={'corpus_id': 1},
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        similar = client.get(url_for('mmda.discourseme.description_get_similar', id=kanzler['id'], description_id=description.json['id']),
+                             content_type='application/json',
+                             headers=auth_header)
+
+        assert similar.status_code == 200
+        assert len(similar.json) == 200
+        assert similar.json[0]['item'] == 'Bundesregierung'
