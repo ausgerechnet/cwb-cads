@@ -341,9 +341,9 @@ def create_semantic_map(id, query_data):
     collocation = db.get_or_404(Collocation, id)
 
     if query_data['semantic_map_id']:
-
         collocation.semantic_map = db.get_or_404(SemanticMap, query_data['semantic_map_id'])
         db.session.commit()
+
         scores = CollocationItemScore.query.filter(
             CollocationItemScore.collocation_id == collocation.id,
             CollocationItemScore.measure == 'conservative_log_ratio'
@@ -353,15 +353,6 @@ def create_semantic_map(id, query_data):
         ccc_semmap_update(collocation.semantic_map, [item.item for item in new_items])
 
     else:
-
-        # if collocation.constellation:
-        #     get_or_create_counts(collocation, remove_focus_cpos=False)
-        #     filter_unigram = CollocationDiscoursemeUnigramItem.query.filter_by(collocation_id=collocation.id,
-        #                                                                        discourseme_id=collocation._query.discourseme.id)
-        #     filter_items = [f.item for f in filter_unigram]
-        # else:
-        filter_items = []
-
-        ccc_semmap([collocation.id], sort_by="conservative_log_ratio", number=500, blacklist_items=filter_items)
+        ccc_semmap([collocation.id], sort_by="conservative_log_ratio", number=500)
 
     return SemanticMapOut().dump(collocation.semantic_map), 200

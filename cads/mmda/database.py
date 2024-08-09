@@ -89,9 +89,7 @@ class DiscoursemeDescription(db.Model):
 
     items = db.RelationshipProperty("DiscoursemeDescriptionItems", backref="discourseme_description", cascade='all, delete')
     collocation_items = db.RelationshipProperty("CollocationDiscoursemeItem", backref="discourseme_description", cascade='all, delete')
-    collocation_unigram_items = db.RelationshipProperty("CollocationDiscoursemeUnigramItem", backref="discourseme_description", cascade='all, delete')
     keyword_items = db.RelationshipProperty("KeywordDiscoursemeItem", backref="discourseme_description", cascade='all, delete')
-    keyword_unigram_items = db.RelationshipProperty("KeywordDiscoursemeUnigramItem", backref="discourseme_description", cascade='all, delete')
 
     @property
     def _query(self):
@@ -198,39 +196,6 @@ class ConstellationDescription(db.Model):
 ###############
 # COLLOCATION #
 ###############
-class CollocationDiscoursemeUnigramItem(db.Model):
-    """
-    TODO: DiscourmseUnigramItems + can be calculated from DiscoursemeItem
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
-    discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'), index=True)
-
-    item = db.Column(db.Unicode)
-    f = db.Column(db.Integer)
-    f1 = db.Column(db.Integer)
-    f2 = db.Column(db.Integer)
-    N = db.Column(db.Integer)
-
-    scores = db.relationship("CollocationDiscoursemeUnigramItemScore", backref='collocation_discourseme_unigram_item', cascade='all, delete')
-
-
-class CollocationDiscoursemeUnigramItemScore(db.Model):
-    """
-
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    collocation_id = db.Column(db.Integer, db.ForeignKey('collocation.id', ondelete='CASCADE'), index=True)
-    collocation_item_id = db.Column(db.Integer, db.ForeignKey('collocation_discourseme_unigram_item.id', ondelete='CASCADE'), index=True)
-
-    measure = db.Column(db.Unicode)
-    score = db.Column(db.Float)
-
-
 class CollocationDiscoursemeItem(db.Model):
     """
 
@@ -267,40 +232,6 @@ class CollocationDiscoursemeItemScore(db.Model):
 ###########
 # KEYWORD #
 ###########
-class KeywordDiscoursemeUnigramItem(db.Model):
-    """
-    TODO: DiscourmseUnigramItems + can be calculated from DiscoursemeItem
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
-    discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'), index=True)
-
-    item = db.Column(db.Unicode)
-
-    f1 = db.Column(db.Integer)
-    N1 = db.Column(db.Integer)
-    f2 = db.Column(db.Integer)
-    N2 = db.Column(db.Integer)
-
-    scores = db.relationship("KeywordDiscoursemeUnigramItemScore", backref='keyword_discourseme_unigram_item', cascade='all, delete')
-
-
-class KeywordDiscoursemeUnigramItemScore(db.Model):
-    """
-
-    """
-
-    id = db.Column(db.Integer, primary_key=True)
-
-    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
-    keyword_item_id = db.Column(db.Integer, db.ForeignKey('keyword_discourseme_unigram_item.id', ondelete='CASCADE'), index=True)
-
-    measure = db.Column(db.Unicode)
-    score = db.Column(db.Float)
-
-
 class KeywordDiscoursemeItem(db.Model):
     """
 

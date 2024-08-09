@@ -26,10 +26,10 @@ from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
 from ..semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
 from ..users import auth
 from .database import (CollocationDiscoursemeItem,
-                       CollocationDiscoursemeUnigramItem, Constellation,
+                       Constellation,
                        ConstellationDescription, Discourseme,
                        DiscoursemeDescription, KeywordDiscoursemeItem,
-                       KeywordDiscoursemeUnigramItem, DiscoursemeCoordinates)
+                       DiscoursemeCoordinates)
 from .discourseme import (DiscoursemeOut, create_discourseme_description,
                           description_items_to_query, DiscoursemeScoresOut, DiscoursemeDescriptionOut)
 
@@ -71,15 +71,15 @@ def get_discourseme_coordinates(semantic_map, discourseme_descriptions):
 
 
 def query_discourseme_corpora(keyword, discourseme_description):
-    """ensure that KeywordDiscoursemeItem and KeywordDiscoursemeUnigramItem exist
+    """ensure that KeywordDiscoursemeItems exist for discourseme description
 
     """
     # only if scores don't exist
-    unigram_counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id,
-                                                                     discourseme_description_id=discourseme_description.id)
-    if unigram_counts_from_sql.first():
+    counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id,
+                                                             discourseme_description_id=discourseme_description.id)
+    if counts_from_sql.first():
         current_app.logger.debug(f'query_discourseme_corpora :: counts for discourseme "{discourseme_description.discourseme.name}" already exist')
-        return DataFrame(), DataFrame(), DataFrame(), DataFrame()
+        return DataFrame(), DataFrame()
 
     corpus = keyword.corpus
     corpus_reference = keyword.corpus_reference
@@ -98,10 +98,8 @@ def query_discourseme_corpora(keyword, discourseme_description):
     target_matches_df = ccc_query(target_query)
     if not isinstance(target_matches_df, DataFrame):
         target_breakdown = DataFrame()
-        target_unigram_breakdown = DataFrame()
     target_matches = corpus.ccc().subcorpus(df_dump=target_matches_df, overwrite=False)
     target_breakdown = target_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f1'}, axis=1)
-    target_unigram_breakdown = target_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f1'}, axis=1)
 
     # reference
     discourseme_description_reference = DiscoursemeDescription.query.filter_by(
@@ -124,38 +122,30 @@ def query_discourseme_corpora(keyword, discourseme_description):
     reference_matches_df = ccc_query(reference_query)
     if not isinstance(reference_matches_df, DataFrame):
         reference_breakdown = DataFrame()
-        reference_unigram_breakdown = DataFrame()
     else:
         reference_matches = corpus_reference.ccc().subcorpus(df_dump=reference_matches_df, overwrite=False)
         reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
-        reference_unigram_breakdown = reference_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f2'}, axis=1)
 
-    return target_breakdown, target_unigram_breakdown, reference_breakdown, reference_unigram_breakdown
+    return target_breakdown, reference_breakdown
 
 
 def keyword_discourseme_counts(keyword, discourseme_descriptions):
-    """ensure that KeywordDiscoursemeItem and KeywordDiscoursemeUnigramItem exist for each discourseme
+    """ensure that KeywordDiscoursemeItems exist for each discourseme description
 
     """
 
     current_app.logger.debug('get_discourseme_counts :: enter')
     discourseme_counts_target = list()
-    discourseme_unigram_counts_target = list()
     discourseme_counts_reference = list()
-    discourseme_unigram_counts_reference = list()
 
     for discourseme_description in discourseme_descriptions:
-        t_b, t_u_b, r_b, r_u_b = query_discourseme_corpora(keyword, discourseme_description)
+        t_b, r_b = query_discourseme_corpora(keyword, discourseme_description)
         if len(t_b) > 0:
             t_b['discourseme_description_id'] = discourseme_description.id
-            t_u_b['discourseme_description_id'] = discourseme_description.id
             discourseme_counts_target.append(t_b)
-            discourseme_unigram_counts_target.append(t_u_b)
         if len(r_b) > 0:
             r_b['discourseme_description_id'] = discourseme_description.id
-            r_u_b['discourseme_description_id'] = discourseme_description.id
             discourseme_counts_reference.append(r_b)
-            discourseme_unigram_counts_reference.append(r_u_b)
 
     if len(discourseme_counts_target) == 0:
         return
@@ -168,13 +158,6 @@ def keyword_discourseme_counts(keyword, discourseme_descriptions):
     discourseme_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
     discourseme_counts['keyword_id'] = keyword.id
 
-    discourseme_unigram_counts_target = concat(discourseme_unigram_counts_target).reset_index().set_index(['item', 'discourseme_description_id'])
-    discourseme_unigram_counts_reference = concat(discourseme_unigram_counts_reference).reset_index().set_index(['item', 'discourseme_description_id'])
-    discourseme_unigram_counts = discourseme_unigram_counts_target.join(discourseme_unigram_counts_reference).fillna(0, downcast='infer')
-    discourseme_unigram_counts['N1'] = keyword.subcorpus.nr_tokens if keyword.subcorpus else keyword.corpus.nr_tokens
-    discourseme_unigram_counts['N2'] = keyword.subcorpus_reference.nr_tokens if keyword.subcorpus_reference else keyword.corpus_reference.nr_tokens
-    discourseme_unigram_counts['keyword_id'] = keyword.id
-
     # sub_vs_rest correction
     sub_vs_rest = keyword.sub_vs_rest_strategy()
     if sub_vs_rest['sub_vs_rest']:
@@ -182,17 +165,12 @@ def keyword_discourseme_counts(keyword, discourseme_descriptions):
         if sub_vs_rest['target_is_subcorpus']:
             discourseme_counts['f2'] = discourseme_counts['f2'] - discourseme_counts['f1']
             discourseme_counts['N2'] = discourseme_counts['N2'] - discourseme_counts['N1']
-            discourseme_unigram_counts['f2'] = discourseme_unigram_counts['f2'] - discourseme_unigram_counts['f1']
-            discourseme_unigram_counts['N2'] = discourseme_unigram_counts['N2'] - discourseme_unigram_counts['N1']
         elif sub_vs_rest['reference_is_subcorpus']:
             discourseme_counts['f1'] = discourseme_counts['f1'] - discourseme_counts['f2']
             discourseme_counts['N1'] = discourseme_counts['N1'] - discourseme_counts['N2']
-            discourseme_unigram_counts['f1'] = discourseme_unigram_counts['f1'] - discourseme_unigram_counts['f2']
-            discourseme_unigram_counts['N1'] = discourseme_unigram_counts['N1'] - discourseme_unigram_counts['N2']
 
     # save to database
     discourseme_counts.to_sql('keyword_discourseme_item', con=db.engine, if_exists='append')
-    discourseme_unigram_counts.to_sql('keyword_discourseme_unigram_item', con=db.engine, if_exists='append')
 
     # KeywordDiscoursemeItemScore
     counts_from_sql = KeywordDiscoursemeItem.query.filter_by(keyword_id=keyword.id)
@@ -202,23 +180,15 @@ def keyword_discourseme_counts(keyword, discourseme_descriptions):
     scores['keyword_id'] = keyword.id
     scores.to_sql('keyword_discourseme_item_score', con=db.engine, if_exists='append', index=False)
 
-    # KeywordDiscoursemeUnigramItemScore
-    counts_from_sql = KeywordDiscoursemeUnigramItem.query.filter_by(keyword_id=keyword.id)
-    counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f1', 'N1', 'f2', 'N2']).set_index('id')
-    scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
-    scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename(columns={'id': 'keyword_item_id'})
-    scores['keyword_id'] = keyword.id
-    scores.to_sql('keyword_discourseme_unigram_item_score', con=db.engine, if_exists='append', index=False)
-
 
 def query_discourseme_cotext(collocation, df_cotext, discourseme_description, discourseme_matchend_in_context=True):
-    """ensure that CollocationDiscoursemeItem and CollocationDiscoursemeUnigramItem exist
+    """ensure that CollocationDiscoursemeItems exist for discourseme description
 
     """
 
-    unigram_counts_from_sql = CollocationDiscoursemeUnigramItem.query.filter_by(collocation_id=collocation.id,
-                                                                                discourseme_description_id=discourseme_description.id)
-    if unigram_counts_from_sql.first():
+    counts_from_sql = CollocationDiscoursemeItem.query.filter_by(collocation_id=collocation.id,
+                                                                 discourseme_description_id=discourseme_description.id)
+    if counts_from_sql.first():
         current_app.logger.debug(f'query_discourseme_cotext :: counts for discourseme "{discourseme_description.discourseme.name}" already exist')
         # TODO also check for item counts?
         return
@@ -274,37 +244,11 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
     corpus_matches_df = corpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
     corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
     corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
-    corpus_matches_unigram_breakdown = corpus_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f2'}, axis=1)
 
     current_app.logger.debug('query_discourseme_cotext :: .. creating breakdowns in context')
     subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
     subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
     subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f'}, axis=1)
-    # TODO just split the items of the full breakdown and combine
-    subcorpus_matches_unigram_breakdown = subcorpus_matches.breakdown(p_atts=[p_description], split=True).rename({'freq': 'f'}, axis=1)
-
-    # CollocationDiscoursemeUnigramItem
-    current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus unigram counts')
-    df = corpus_matches_unigram_breakdown.join(subcorpus_matches_unigram_breakdown)
-    df['f'] = 0 if 'f' not in df.columns else df['f']  # empty queries
-    df['discourseme_description_id'] = discourseme_description.id
-    df['collocation_id'] = collocation.id
-    df['f1'] = len(df_cotext)
-    df['N'] = corpus.size()
-
-    current_app.logger.debug('query_discourseme_cotext :: .. saving unigram counts and scoring')
-    counts = df.reset_index().fillna(0, downcast='infer')[['collocation_id', 'discourseme_description_id', 'item', 'f', 'f1', 'f2', 'N']]
-    counts.to_sql('collocation_discourseme_unigram_item', con=db.engine, if_exists='append', index=False)
-    counts_from_sql = CollocationDiscoursemeUnigramItem.query.filter_by(collocation_id=collocation.id,
-                                                                        discourseme_description_id=discourseme_description.id)
-    counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
-    vocab_size = len(counts)
-    discourseme_unigram_item_scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=vocab_size).reset_index()
-    discourseme_unigram_item_scores = discourseme_unigram_item_scores.melt(
-        id_vars=['id'], var_name='measure', value_name='score'
-    ).rename({'id': 'collocation_item_id'}, axis=1)
-    discourseme_unigram_item_scores['collocation_id'] = collocation.id
-    discourseme_unigram_item_scores.to_sql('collocation_discourseme_unigram_item_score', con=db.engine, if_exists='append', index=False)
 
     # CollocationDiscoursemeItem
     current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus item counts')
@@ -321,19 +265,16 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
     counts_from_sql = CollocationDiscoursemeItem.query.filter_by(collocation_id=collocation.id,
                                                                  discourseme_description_id=discourseme_description.id)
     counts = DataFrame([vars(s) for s in counts_from_sql], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
-    discourseme_item_scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=vocab_size).reset_index()
+    discourseme_item_scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
     discourseme_item_scores = discourseme_item_scores.melt(
         id_vars=['id'], var_name='measure', value_name='score'
     ).rename({'id': 'collocation_item_id'}, axis=1)
     discourseme_item_scores['collocation_id'] = collocation.id
     discourseme_item_scores.to_sql('collocation_discourseme_item_score', con=db.engine, if_exists='append', index=False)
 
-    # TODO return corpus_matches_cpos
-    return
-
 
 def collocation_discourseme_counts(collocation, discourseme_descriptions):
-    """ensure that CollocationDiscoursemeItem and CollocationDiscoursemeUnigramItem exist for each discourseme description
+    """ensure that CollocationDiscoursemeItems exist for each discourseme description
 
     """
 
@@ -347,26 +288,8 @@ def collocation_discourseme_counts(collocation, discourseme_descriptions):
     df_cotext = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True).drop_duplicates(subset='cpos')
 
     current_app.logger.debug('get_discourseme_counts :: getting discourseme counts')
-    # discourseme_cpos = set()
     for discourseme_description in discourseme_descriptions:
         query_discourseme_cotext(collocation, df_cotext, discourseme_description)
-
-    #   discourseme_matches = query_discourseme_cotext(collocation, df_cotext, discourseme_description)
-    #     if isinstance(discourseme_matches, set):
-    #         discourseme_cpos.update(discourseme_matches.matches())
-
-    # if len(discourseme_cpos) > 0:
-
-    #     current_app.logger.debug('get_discourseme_counts :: getting discoursemes_unigram_counts')
-    #     if focus_query.subcorpus and collocation.marginals == 'local':
-    #         corpus = collocation._query.subcorpus.ccc()
-    #     else:
-    #         corpus = collocation._query.corpus.ccc()
-    #     discoursemes_unigram_counts = corpus.counts.cpos(discourseme_cpos, [collocation.p])[['freq']].rename(columns={'freq': 'f'})
-    #     m = corpus.marginals(discoursemes_unigram_counts.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
-    #     discoursemes_unigram_counts = discoursemes_unigram_counts.join(m)
-
-    #     return discoursemes_unigram_counts
 
 
 def collocation_discourseme_scores(collocation_id, discourseme_description_ids):
@@ -374,58 +297,48 @@ def collocation_discourseme_scores(collocation_id, discourseme_description_ids):
 
     """
 
-    # TODO
     discourseme_scores = []
     for discourseme_description_id in discourseme_description_ids:
 
         discourseme_description = db.get_or_404(DiscoursemeDescription, discourseme_description_id)
         discourseme_id = discourseme_description.discourseme_id
 
-        discourseme_unigram_item_scores = defaultdict(list)
-        discourseme_item_scores = defaultdict(list)
-
-        discourseme_f = defaultdict(list)
-        discourseme_f1 = defaultdict(list)
-        discourseme_f2 = defaultdict(list)
-        discourseme_N = defaultdict(list)
-
         discourseme_items = CollocationDiscoursemeItem.query.filter_by(
             collocation_id=collocation_id,
             discourseme_description_id=discourseme_description_id
         )
+        df_discourseme_items = DataFrame([vars(s) for s in discourseme_items], columns=['item', 'f', 'f1', 'f2', 'N'])
+        if len(df_discourseme_items) == 0:
+            continue
+        df_discourseme_items['discourseme_id'] = discourseme_id
 
-        # df_discourseme_items = read_sql(discourseme_items.statement, con=db.engine)
-        # print(df_discourseme_items)
+        df_discourseme_unigram_items = df_discourseme_items.copy()
+        df_discourseme_unigram_items['item'] = df_discourseme_unigram_items['item'].str.split()
+        df_discourseme_unigram_items = df_discourseme_unigram_items.explode('item')
+        df_discourseme_unigram_items = df_discourseme_unigram_items.groupby('item').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
 
-        discourseme_unigram_items = CollocationDiscoursemeUnigramItem.query.filter_by(
-            collocation_id=collocation_id,
-            discourseme_description_id=discourseme_description_id
-        )
+        # TODO: make tests compliant with paper
+        # df_discourseme_global_scores = df_discourseme_unigram_items.groupby('discourseme_id').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
 
-        # df_discourseme_unigram_items = read_sql(discourseme_unigram_items.statement, con=db.engine)
-        # print(df_discourseme_unigram_items)
+        # TODO define more reasonable output format
+        df_discourseme_global_scores = df_discourseme_items.groupby('discourseme_id').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
+        df_global_scores = measures.score(df_discourseme_global_scores, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
+        df_unigram_item_scores = measures.score(df_discourseme_unigram_items, freq=True, per_million=True, digits=6, boundary='poisson')
+        _unigram_item_scores = df_unigram_item_scores.to_dict(orient='index')
+        unigram_item_scores = list()
+        for item in _unigram_item_scores.keys():
+            _scores = list()
+            for measure in _unigram_item_scores[item].keys():
+                _scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
+            unigram_item_scores.append({
+                'item': item,
+                'scores': _scores
+            })
 
-        for item in discourseme_items:
-            discourseme_item_scores[discourseme_id].append(item)
-            discourseme_f[discourseme_id].append(item.f)
-            discourseme_f1[discourseme_id].append(item.f1)
-            discourseme_f2[discourseme_id].append(item.f2)
-            discourseme_N[discourseme_id].append(item.N)
-
-        for item in discourseme_unigram_items:
-            discourseme_unigram_item_scores[item.discourseme_description.discourseme_id].append(item)
-
-        for discourseme_id in discourseme_item_scores.keys():
-            global_counts = DataFrame({'f': [sum(discourseme_f[discourseme_id])],
-                                       'f1': [max(discourseme_f1[discourseme_id])],
-                                       'f2': [sum(discourseme_f2[discourseme_id])],
-                                       'N': [max(discourseme_N[discourseme_id])],
-                                       'item': None}).set_index('item')
-            global_scores = measures.score(global_counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(global_counts)).reset_index()
-            discourseme_scores.append({'discourseme_id': discourseme_id,
-                                       'global_scores': global_scores.melt(var_name='measure', value_name='score').to_records(index=False),
-                                       'item_scores': discourseme_item_scores[discourseme_id],
-                                       'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
+        discourseme_scores.append({'discourseme_id': discourseme_id,
+                                   'global_scores': df_global_scores.melt(var_name='measure', value_name='score').to_records(index=False),
+                                   'item_scores': discourseme_items.all(),
+                                   'unigram_item_scores': unigram_item_scores})
 
     return discourseme_scores
 
@@ -435,58 +348,48 @@ def keyword_discourseme_scores(keyword_id, discourseme_description_ids):
 
     """
 
-    # TODO
     discourseme_scores = []
     for discourseme_description_id in discourseme_description_ids:
 
         discourseme_description = db.get_or_404(DiscoursemeDescription, discourseme_description_id)
         discourseme_id = discourseme_description.discourseme_id
 
-        discourseme_unigram_item_scores = defaultdict(list)
-        discourseme_item_scores = defaultdict(list)
-
-        discourseme_f1 = defaultdict(list)
-        discourseme_N1 = defaultdict(list)
-        discourseme_f2 = defaultdict(list)
-        discourseme_N2 = defaultdict(list)
-
         discourseme_items = KeywordDiscoursemeItem.query.filter_by(
             keyword_id=keyword_id,
             discourseme_description_id=discourseme_description_id
         )
+        df_discourseme_items = DataFrame([vars(s) for s in discourseme_items], columns=['item', 'f1', 'N1', 'f2', 'N2'])
+        if len(df_discourseme_items) == 0:
+            continue
+        df_discourseme_items['discourseme_id'] = discourseme_id
 
-        # df_discourseme_items = read_sql(discourseme_items.statement, con=db.engine)
-        # print(df_discourseme_items)
+        df_discourseme_unigram_items = df_discourseme_items.copy()
+        df_discourseme_unigram_items['item'] = df_discourseme_unigram_items['item'].str.split()
+        df_discourseme_unigram_items = df_discourseme_unigram_items.explode('item')
+        df_discourseme_unigram_items = df_discourseme_unigram_items.groupby('item').aggregate({'f1': 'sum', 'N1': 'max', 'f2': 'sum', 'N2': 'max'})
 
-        discourseme_unigram_items = KeywordDiscoursemeUnigramItem.query.filter_by(
-            keyword_id=keyword_id,
-            discourseme_description_id=discourseme_description_id
-        )
+        # TODO: make tests compliant with paper
+        # df_discourseme_global_scores = df_discourseme_unigram_items.groupby('discourseme_id').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
 
-        # df_discourseme_unigram_items = read_sql(discourseme_unigram_items.statement, con=db.engine)
-        # print(df_discourseme_unigram_items)
+        # TODO define more reasonable output format
+        df_discourseme_global_scores = df_discourseme_items.groupby('discourseme_id').aggregate({'f1': 'sum', 'N1': 'max', 'f2': 'sum', 'N2': 'max'})
+        df_global_scores = measures.score(df_discourseme_global_scores, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
+        df_unigram_item_scores = measures.score(df_discourseme_unigram_items, freq=True, per_million=True, digits=6, boundary='poisson')
+        _unigram_item_scores = df_unigram_item_scores.to_dict(orient='index')
+        unigram_item_scores = list()
+        for item in _unigram_item_scores.keys():
+            _scores = list()
+            for measure in _unigram_item_scores[item].keys():
+                _scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
+            unigram_item_scores.append({
+                'item': item,
+                'scores': _scores
+            })
 
-        for item in discourseme_items:
-            discourseme_item_scores[discourseme_id].append(item)
-            discourseme_f1[discourseme_id].append(item.f1)
-            discourseme_N1[discourseme_id].append(item.N1)
-            discourseme_f2[discourseme_id].append(item.f2)
-            discourseme_N2[discourseme_id].append(item.N2)
-
-        for item in discourseme_unigram_items:
-            discourseme_unigram_item_scores[item.discourseme_description.discourseme_id].append(item)
-
-        for discourseme_id in discourseme_item_scores.keys():
-            global_counts = DataFrame({'f1': [sum(discourseme_f1[discourseme_id])],
-                                       'N1': [max(discourseme_N1[discourseme_id])],
-                                       'f2': [sum(discourseme_f2[discourseme_id])],
-                                       'N2': [max(discourseme_N2[discourseme_id])],
-                                       'item': None}).set_index('item')
-            global_scores = measures.score(global_counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(global_counts)).reset_index()
-            discourseme_scores.append({'discourseme_id': discourseme_id,
-                                       'global_scores': global_scores.melt(var_name='measure', value_name='score').to_records(index=False),
-                                       'item_scores': discourseme_item_scores[discourseme_id],
-                                       'unigram_item_scores': discourseme_unigram_item_scores[discourseme_id]})
+        discourseme_scores.append({'discourseme_id': discourseme_id,
+                                   'global_scores': df_global_scores.melt(var_name='measure', value_name='score').to_records(index=False),
+                                   'item_scores': discourseme_items.all(),
+                                   'unigram_item_scores': unigram_item_scores})
 
     return discourseme_scores
 
@@ -1004,10 +907,8 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     # discourseme scores
     collocation_discourseme_counts(collocation, description.discourseme_descriptions)
     discourseme_scores = collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
-    # discourseme_scores = [s for s in collocation.discourseme_scores]  # if s['discourseme_id'] != focus_discourseme_id]
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
-        s['unigram_item_scores'] = [CollocationItemOut().dump(sc) for sc in s['unigram_item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
     # coordinates
@@ -1163,7 +1064,6 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
     discourseme_scores = keyword_discourseme_scores(keyword_id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
         s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
-        s['unigram_item_scores'] = [KeywordItemOut().dump(sc) for sc in s['unigram_item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
     # coordinates

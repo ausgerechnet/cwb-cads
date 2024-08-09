@@ -21,10 +21,9 @@ from ..database import Corpus, Query, User, get_or_create
 from ..users import auth
 from ..collocation import CollocationItemOut, CollocationScoreOut
 from .database import (CollocationDiscoursemeItem,
-                       CollocationDiscoursemeUnigramItem, Discourseme,
+                       Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
-                       DiscoursemeTemplateItems, KeywordDiscoursemeItem,
-                       KeywordDiscoursemeUnigramItem)
+                       DiscoursemeTemplateItems, KeywordDiscoursemeItem)
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 
@@ -81,24 +80,20 @@ def export_discoursemes(path_out):
 def delete_description_children(discourseme_description):
     """description update / modification (adding or removing items) implies:
 
-    - delete CollocationDiscoursemeItems, CollocationDiscoursemeUnigramItems, CollocationDiscoursemeUnigramScores
-    - delete KeywordDiscoursemeItems, KeywordDiscoursemeUnigramItems, KeywordDiscoursemeUnigramItemScores
+    - create new query
+    - delete CollocationDiscoursemeItems
+    - delete KeywordDiscoursemeItems
 
     """
 
     current_app.logger.debug("detaching Query belonging to this description")
-    # DiscoursemeDescription.query.filter_by(id=description.id).update({DiscoursemeDescription.query_id: None})
     discourseme_description.update_from_items()
 
     current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this description")
     CollocationDiscoursemeItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
-    current_app.logger.debug("deleting CollocationDiscoursemeUnigramItems belonging to this discourseme")
-    CollocationDiscoursemeUnigramItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
 
     current_app.logger.debug("deleting KeywordDiscoursemeItems belonging to this description")
     KeywordDiscoursemeItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
-    current_app.logger.debug("deleting KeywordDiscoursemeUnigramItems belonging to this description")
-    KeywordDiscoursemeUnigramItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
 
     db.session.commit()
 
