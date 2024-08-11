@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
-import { getCollocationItems, constellationCollocation } from '@/lib/queries'
+import { constellationCollocation, collocationItemsById } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { ErrorMessage } from '@/components/error-message'
 import {
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/pagination'
 import { Repeat } from '@/components/repeat'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useFilterSelection } from '@/routes/_app/constellations_/-use-filter-selection.ts'
 
 const measureOrder = [
   'conservative_log_ratio',
@@ -34,62 +35,66 @@ const measureOrder = [
   'local_mutual_information',
 ] as const
 
-export function Collocation({ constellationId }: { constellationId: number }) {
+export function Collocation({
+  constellationId,
+  descriptionId,
+}: {
+  constellationId: number
+  descriptionId?: number
+}) {
   const searchParams = useSearch({
     from: '/_app/constellations/$constellationId',
   })
   const {
-    windowSize = 3,
-    corpusId,
+    // windowSize,
+    // subcorpusId,
+    // secondary: filterItemPAtt,
+    setFilter,
+    focusDiscourseme,
+  } = useFilterSelection('/_app/constellations/$constellationId')
+  const {
     ccSortBy,
     ccPageSize = 5,
     ccPageNumber,
     ccSortOrder,
-    filterItemPAtt,
-    semanticBreak,
-    semanticMapId,
-    subcorpusId,
+    // semanticBreak,
+    // semanticMapId,
   } = searchParams
   const {
-    data,
+    data: collocation,
     isLoading: isLoadingConstellation,
     error,
   } = useQuery({
-    ...constellationCollocation(
-      constellationId,
-      // This component only renders if corpusId exists
-      corpusId as number,
-      {
-        // @ts-expect-error - pAtt is not optional, but `enabled` mitigates this
-        p: filterItemPAtt,
-        window: windowSize,
-        semanticMapId,
-        subcorpusId,
-        semanticBreak,
-      },
-    ),
+    ...constellationCollocation(constellationId, descriptionId!, {
+      focusDiscoursemeId: focusDiscourseme!,
+      filterItem: '',
+      filterItemPAttribute: '',
+      p: 'lemma',
+      sBreak: 's',
+      window: 3,
+    }),
     // keep previous data
     placeholderData: (p) => p,
-    enabled: Boolean(filterItemPAtt),
+    enabled: focusDiscourseme !== undefined && descriptionId !== undefined,
   })
   const {
-    data: dataItems,
+    data: collocationItems,
     isLoading: isLoadingItems,
     error: errorConstellation,
   } = useQuery({
-    ...getCollocationItems(data?.constellation_id as number, {
+    ...collocationItemsById(collocation?.id as number, {
       sortBy: ccSortBy,
       sortOrder: ccSortOrder,
       pageSize: ccPageSize,
       pageNumber: ccPageNumber,
     }),
-    enabled: Boolean(data?.constellation_id),
+    enabled: collocation?.id !== undefined,
   })
   const isLoading = isLoadingItems || isLoadingConstellation
   const navigate = useNavigate()
   const setSearch = useCallback(
     (key: string, value?: string | number | boolean) => {
-      navigate({
+      void navigate({
         search: (s) => ({ ...s, [key]: value }),
         params: (p) => p,
         replace: true,
@@ -97,6 +102,10 @@ export function Collocation({ constellationId }: { constellationId: number }) {
     },
     [navigate],
   )
+
+  console.log('> collocation', collocation)
+  console.log('> items', collocationItems)
+  console.log('> ids', constellationId, descriptionId, collocation?.id)
 
   return (
     <div>
@@ -119,10 +128,10 @@ export function Collocation({ constellationId }: { constellationId: number }) {
               </TableRow>
             </Repeat>
           )}
-          {(dataItems?.items ?? []).map(({ item, scores = [] }) => (
+          {(collocationItems?.items ?? []).map(({ item, scores = [] }) => (
             <TableRow key={item} className={cn(isLoading && 'animate-pulse')}>
               <TableCell>
-                <Button onClick={() => setSearch('filterItem', item)}>
+                <Button onClick={() => setFilter('filterItem', item)}>
                   {item}
                 </Button>
               </TableCell>
@@ -136,11 +145,11 @@ export function Collocation({ constellationId }: { constellationId: number }) {
         </TableBody>
       </Table>
       <Pagination
-        totalRows={dataItems?.nr_items ?? 0}
+        totalRows={collocationItems?.nr_items ?? 0}
         setPageSize={(size) => setSearch('ccPageSize', size)}
         setPageIndex={(index) => setSearch('ccPageNumber', index)}
         pageIndex={ccPageNumber ?? 0}
-        pageCount={dataItems?.page_count ?? 0}
+        pageCount={collocationItems?.page_count ?? 0}
         pageSize={ccPageSize}
       />
     </div>

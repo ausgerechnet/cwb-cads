@@ -2,6 +2,23 @@ import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient, queryClient, schemas } from '@/rest-client'
 
+type SortBy =
+  | 'conservative_log_ratio'
+  | 'O11'
+  | 'E11'
+  | 'ipm'
+  | 'ipm_expected'
+  | 'log_likelihood'
+  | 'z_score'
+  | 't_score'
+  | 'simple_ll'
+  | 'dice'
+  | 'log_ratio'
+  | 'min_sensitivity'
+  | 'liddell'
+  | 'mutual_information'
+  | 'local_mutual_information'
+
 // ==================== QUERIES ====================
 export const queriesList = queryOptions({
   queryKey: ['queries'],
@@ -37,16 +54,10 @@ export const patchQuery: MutationOptions<
   onSuccess: (data) => {
     const queryId = data.id
     if (queryId !== undefined) {
-      queryClient.invalidateQueries(queryById(queryId))
+      void queryClient.invalidateQueries(queryById(queryId))
     }
-    queryClient.invalidateQueries(queriesList)
+    void queryClient.invalidateQueries(queriesList)
   },
-}
-
-export const executeQuery: MutationOptions<unknown, Error, string> = {
-  mutationFn: (queryId: string) =>
-    apiClient.postQueryIdexecute(undefined, { params: { id: queryId } }),
-  onSuccess: () => queryClient.invalidateQueries(queriesList),
 }
 
 export const createQueryCQP: MutationOptions<
@@ -464,12 +475,12 @@ export const constellationList = queryOptions({
   queryFn: ({ signal }) => apiClient.getMmdaconstellation({ signal }),
 })
 
-export const constellationById = (constellationId: string) =>
+export const constellationById = (constellationId: number) =>
   queryOptions({
     queryKey: ['constellation', constellationId],
     queryFn: ({ signal }) =>
       apiClient.getMmdaconstellationId({
-        params: { id: constellationId },
+        params: { id: constellationId.toString() },
         signal,
       }),
   })
@@ -480,8 +491,8 @@ export const createConstellation: MutationOptions<
   z.infer<typeof schemas.ConstellationIn>
 > = {
   mutationFn: (body) => apiClient.postMmdaconstellation(body),
-  onSuccess: () => {
-    queryClient.invalidateQueries(constellationList)
+  onSettled: () => {
+    void queryClient.invalidateQueries(constellationList)
   },
 }
 
@@ -490,14 +501,109 @@ export const deleteConstellation: MutationOptions<unknown, Error, string> = {
     apiClient.deleteMmdaconstellationId(undefined, {
       params: { id: constellationId },
     }),
-  onSuccess: () => {
-    queryClient.invalidateQueries(constellationList)
+  onSettled: () => {
+    void queryClient.invalidateQueries(constellationList)
   },
 }
 
+export const patchConstellation: MutationOptions<
+  z.infer<typeof schemas.ConstellationOut>,
+  Error,
+  {
+    discoursemeIds: number[]
+    name: string
+    comment: string
+    constellationId: number
+  }
+> = {
+  mutationFn: async ({ constellationId, discoursemeIds, name, comment }) =>
+    apiClient.patchMmdaconstellationId(
+      { discourseme_ids: discoursemeIds, name, comment },
+      {
+        params: { id: constellationId.toString() },
+      },
+    ),
+  onSettled: (data) => {
+    const constellationId = data?.id
+    if (constellationId === undefined) return
+    queryClient.invalidateQueries(constellationById(constellationId))
+  },
+}
+
+export const constellationDescriptionsById = (constellationId: number) =>
+  queryOptions({
+    queryKey: ['constellation-descriptions', constellationId],
+    queryFn: ({ signal }) =>
+      apiClient.getMmdaconstellationIddescription({
+        params: { id: constellationId.toString() },
+        signal,
+      }),
+  })
+
+export const constellationDescriptionFor = ({
+  constellationId,
+  corpusId,
+  subcorpusId = undefined,
+  matchStrategy,
+  p,
+  s,
+}: {
+  constellationId: number
+  corpusId: z.infer<typeof schemas.DiscoursemeDescriptionIn.shape.corpus_id>
+  subcorpusId: z.infer<
+    typeof schemas.DiscoursemeDescriptionIn.shape.subcorpus_id
+  >
+  matchStrategy: z.infer<
+    typeof schemas.DiscoursemeDescriptionIn.shape.match_strategy
+  >
+  p: z.infer<typeof schemas.DiscoursemeDescriptionIn.shape.p>
+  s: z.infer<typeof schemas.DiscoursemeDescriptionIn.shape.s>
+}) =>
+  queryOptions({
+    queryKey: [
+      'constellation-descriptions',
+      constellationId,
+      corpusId,
+      subcorpusId,
+      matchStrategy,
+      p,
+      s,
+    ],
+    queryFn: async ({ signal }) => {
+      const getMatchingDescription = async () => {
+        const constellationDescriptions =
+          await apiClient.getMmdaconstellationIddescription({
+            params: { id: constellationId.toString() },
+            signal,
+          })
+        return constellationDescriptions.find(
+          (cd) =>
+            cd.corpus_id === corpusId &&
+            (cd.subcorpus_id ?? null) === (subcorpusId ?? null) &&
+            cd.p === p &&
+            cd.s === s &&
+            cd.match_strategy === matchStrategy,
+        )
+      }
+      const description = await getMatchingDescription()
+      if (description) return description
+      await apiClient.postMmdaconstellationIddescription(
+        {
+          corpus_id: corpusId,
+          subcorpus_id: subcorpusId,
+          p,
+          s,
+          match_strategy: matchStrategy,
+        },
+        { params: { id: constellationId.toString() }, signal },
+      )
+      return await getMatchingDescription()
+    },
+  })
+
 export const constellationConcordances = (
-  constellationId: string | number,
-  descriptionId: string | number,
+  constellationId: number,
+  descriptionId: number,
   focusDiscoursemeId: number,
   {
     window,
@@ -526,9 +632,9 @@ export const constellationConcordances = (
   queryOptions({
     queryKey: [
       'constellation-concordances',
-      String(constellationId),
-      String(descriptionId),
-      String(focusDiscoursemeId),
+      constellationId,
+      descriptionId,
+      focusDiscoursemeId,
       window,
       primary,
       secondary,
@@ -543,8 +649,8 @@ export const constellationConcordances = (
     queryFn: ({ signal }) =>
       apiClient.getMmdaconstellationIddescriptionDescription_idconcordance({
         params: {
-          id: String(constellationId),
-          description_id: String(descriptionId),
+          id: constellationId.toString(),
+          description_id: descriptionId.toString(),
         },
         queries: {
           focus_discourseme_id: focusDiscoursemeId,
@@ -566,65 +672,109 @@ export const constellationConcordances = (
 
 export const constellationCollocation = (
   constellationId: number,
-  corpusId: number,
+  descriptionId: number,
   {
-    p,
-    window,
-    semanticBreak,
-    semanticMapId,
-    subcorpusId,
-    marginals,
+    focusDiscoursemeId,
     filterItem,
-    filterItemPAtt,
-    filterDiscoursemeIds,
+    filterItemPAttribute,
+    marginals = 'local',
+    p,
+    sBreak,
+    semanticMapId,
+    window,
   }: {
-    p: string
-    window: number
-    semanticMapId?: number
-    subcorpusId?: number
-    semanticBreak?: string
+    focusDiscoursemeId: number
+    filterItem: string
+    filterItemPAttribute: string
     marginals?: 'local' | 'global'
-    filterItem?: string
-    filterItemPAtt?: string
-    filterDiscoursemeIds?: number[]
+    p: string
+    sBreak: string
+    semanticMapId?: number
+    window: number
   },
 ) =>
   queryOptions({
     queryKey: [
       'constellation-collocations',
-      String(constellationId),
-      String(corpusId),
-      semanticMapId,
-      subcorpusId,
-      p,
-      window,
-      semanticBreak,
-      marginals,
+      constellationId,
+      descriptionId,
       filterItem,
-      filterItemPAtt,
-      filterDiscoursemeIds,
+      filterItemPAttribute,
+      marginals,
+      p,
+      sBreak,
+      semanticMapId,
+      window,
+      focusDiscoursemeId,
     ],
-    queryFn: ({ signal }) =>
-      apiClient.getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems(
+    queryFn: () =>
+      apiClient.postMmdaconstellationIddescriptionDescription_idcollocation(
         {
-          params: { id: String(constellationId), corpus_id: String(corpusId) },
-          queries: {
-            p,
-            window,
-            semantic_map_id: semanticMapId,
-            subcorpus_id: subcorpusId,
-            s_break: semanticBreak,
-            marginals,
-            filter_item: filterItem,
-            filter_item_p_att: filterItemPAtt,
-            filter_discourseme_ids: filterDiscoursemeIds,
+          filter_item: filterItem,
+          filter_item_p_att: filterItemPAttribute,
+          focus_discourseme_id: focusDiscoursemeId,
+          marginals,
+          p,
+          s_break: sBreak,
+          semantic_map_id: semanticMapId,
+          window,
+        },
+        {
+          params: {
+            id: constellationId.toString(),
+            description_id: descriptionId.toString(),
           },
-          signal,
         },
       ),
     select: (data) => {
       return data
     },
+  })
+
+export const constellationCollocationItems = (
+  constellationId: number,
+  descriptionId: number,
+  collocationId: number,
+  {
+    sortOrder,
+    sortBy,
+    pageSize,
+    pageNumber,
+  }: {
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?: SortBy
+    pageSize?: number
+    pageNumber?: number
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-collocation-items',
+      constellationId,
+      descriptionId,
+      collocationId,
+      sortOrder,
+      sortBy,
+      pageSize,
+      pageNumber,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems(
+        {
+          params: {
+            id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+            collocation_id: collocationId.toString(),
+          },
+          queries: {
+            sort_order: sortOrder,
+            sort_by: sortBy,
+            page_size: pageSize,
+            page_number: pageNumber,
+          },
+          signal,
+        },
+      ),
   })
 
 export const deleteConstellationDiscourseme: MutationOptions<
@@ -649,8 +799,8 @@ export const deleteConstellationDiscourseme: MutationOptions<
   onSuccess: (constellation) => {
     const constellationId = constellation.id
     if (constellationId === undefined) return
-    queryClient.invalidateQueries(constellationById(String(constellationId)))
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries(constellationById(constellationId))
+    void queryClient.invalidateQueries({
       queryKey: ['query-concordances', String(constellationId)],
     })
   },
@@ -678,9 +828,9 @@ export const addConstellationDiscourseme: MutationOptions<
   onSuccess: (constellation) => {
     const constellationId = constellation.id
     if (constellationId === undefined) return
-    queryClient.invalidateQueries(constellationById(String(constellationId)))
-    queryClient.invalidateQueries({
-      queryKey: ['query-concordances', String(constellationId)],
+    void queryClient.invalidateQueries(constellationById(constellationId))
+    void queryClient.invalidateQueries({
+      queryKey: ['query-concordances', constellationId],
     })
   },
 }
@@ -744,6 +894,54 @@ export const getCollocationItems = (
       }),
   })
 
+// ================== COLLOCATION ANALYSIS ==================
+
+export const collocationById = (collocationId: number) =>
+  queryOptions({
+    queryKey: ['collocation', collocationId],
+    queryFn: ({ signal }) =>
+      apiClient.getCollocationId({
+        params: { id: collocationId.toString() },
+        signal,
+      }),
+  })
+
+export const collocationItemsById = (
+  collocationId: number,
+  {
+    sortOrder,
+    sortBy,
+    pageSize,
+    pageNumber,
+  }: {
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?: SortBy
+    pageSize?: number
+    pageNumber?: number
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'collocation-items',
+      collocationId,
+      sortOrder,
+      sortBy,
+      pageSize,
+      pageNumber,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getCollocationIditems({
+        params: { id: collocationId.toString() },
+        queries: {
+          sort_order: sortOrder,
+          sort_by: sortBy,
+          page_size: pageSize,
+          page_number: pageNumber,
+        },
+        signal,
+      }),
+  })
+
 // ==================== KEYWORD ANALYSIS ====================
 
 export const keywordAnalysesList = queryOptions({
@@ -767,7 +965,7 @@ export const createKeywordAnalysis: MutationOptions<
   z.infer<typeof schemas.KeywordIn>
 > = {
   mutationFn: (body) => apiClient.postKeyword(body),
-  onSuccess: () => {
-    queryClient.invalidateQueries(keywordAnalysesList)
+  onSettled: () => {
+    void queryClient.invalidateQueries(keywordAnalysesList)
   },
 }

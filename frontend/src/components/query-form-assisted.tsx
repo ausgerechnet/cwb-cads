@@ -85,7 +85,9 @@ export function QueryFormAssisted({
       createQueryAssisted.onSuccess?.(data, variables, context)
       const queryId = data.id
       toast.success('Query created')
-      typeof queryId === 'number' && onSuccess?.(queryId)
+      if (queryId !== undefined) {
+        onSuccess?.(queryId)
+      }
     },
     onError: (...args) => {
       createQueryAssisted.onError?.(...args)

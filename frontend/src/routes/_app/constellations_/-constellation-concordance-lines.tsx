@@ -35,7 +35,7 @@ export function ConstellationConcordanceLines({
   corpusId,
   className,
 }: {
-  constellationId: string
+  constellationId: number
   corpusId: number
   className?: string
 }) {
@@ -62,15 +62,15 @@ export function ConstellationConcordanceLines({
     clSortOrder = 'random',
     filterItem,
     filterItemPAtt,
+    focusDiscourseme,
   } = searchParams
 
   const {
     data: concordanceLines,
     isLoading,
     error,
-  } = useQuery(
-    // TODO: focusDiscoursemeId must be set!
-    constellationConcordances(constellationId, corpusId, 0, {
+  } = useQuery({
+    ...constellationConcordances(constellationId, corpusId, focusDiscourseme!, {
       primary,
       secondary,
       window: windowSize,
@@ -81,7 +81,8 @@ export function ConstellationConcordanceLines({
       sortOrder: clSortOrder,
       sortByOffset: clSortByOffset,
     }),
-  )
+    enabled: focusDiscourseme !== undefined,
+  })
 
   pageCountRef.current =
     concordanceLines?.page_count ?? pageCountRef.current ?? 0
@@ -112,7 +113,10 @@ export function ConstellationConcordanceLines({
             </TableHeader>
             <TableBody className="col-span-full grid grid-cols-subgrid">
               {concordanceLines?.lines?.map((line) => (
-                <ConcordanceLineRender key={line.id} concordanceLine={line} />
+                <ConcordanceLineRender
+                  key={line.match_id}
+                  concordanceLine={line}
+                />
               ))}
               {isLoading && (
                 <Repeat count={clPageSize}>
@@ -169,7 +173,7 @@ function MetaValue({ value }: { value: unknown }) {
 }
 
 function ConcordanceLineRender({
-  concordanceLine: { id, tokens = [], structural = {} },
+  concordanceLine: { match_id, tokens = [], structural = {} },
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
@@ -184,12 +188,12 @@ function ConcordanceLineRender({
   const isExpanded = false
 
   return (
-    <TableRow key={id} className="col-span-full grid grid-cols-subgrid">
+    <TableRow key={match_id} className="col-span-full grid grid-cols-subgrid">
       <TableCell className="w-max">
         <TooltipProvider>
           <Tooltip delayDuration={100}>
             <TooltipTrigger className="font-muted-foreground text-xs">
-              {formatNumber(id ?? 0)}
+              {formatNumber(match_id ?? 0)}
             </TooltipTrigger>
             {meta.length > 0 && (
               <TooltipContent side="top" sideOffset={10}>
