@@ -26,7 +26,6 @@ export function ConstellationFilter({ className }: { className?: string }) {
     windowSize,
     clSortByOffset,
     clSortOrder,
-    filterItemPAtt,
     filterItem,
     s,
     secondary,
@@ -78,27 +77,6 @@ export function ConstellationFilter({ className }: { className?: string }) {
               {['ascending', 'descending', 'random'].map((value) => (
                 <SelectItem key={value} value={value}>
                   {value}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Filter Item PAtt</span>
-        <Select
-          value={filterItemPAtt}
-          onValueChange={(value) => setFilter('filterItemPAtt', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter Item PAttr" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {pAttributes.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p}
                 </SelectItem>
               ))}
             </SelectGroup>

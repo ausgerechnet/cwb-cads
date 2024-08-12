@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query'
-import { useSearch } from '@tanstack/react-router'
 
 import {
   constellationCollocation,
@@ -40,28 +39,24 @@ const measureOrder = [
 export function Collocation({
   constellationId,
   descriptionId,
+  corpusId,
 }: {
   constellationId: number
+  corpusId?: number
   descriptionId?: number
 }) {
-  const searchParams = useSearch({
-    from: '/_app/constellations/$constellationId',
-  })
   const {
-    // windowSize,
-    // subcorpusId,
-    // secondary: filterItemPAtt,
     setFilter,
+    filterItem,
+    secondary,
+    s,
+    windowSize,
     focusDiscourseme,
-  } = useFilterSelection('/_app/constellations/$constellationId')
-  const {
+    ccPageSize,
     ccSortBy,
-    ccPageSize = 5,
-    ccPageNumber,
     ccSortOrder,
-    // semanticBreak,
-    // semanticMapId,
-  } = searchParams
+    ccPageNumber,
+  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
   const {
     data: collocation,
     isLoading: isLoadingConstellation,
@@ -69,15 +64,20 @@ export function Collocation({
   } = useQuery({
     ...constellationCollocation(constellationId, descriptionId!, {
       focusDiscoursemeId: focusDiscourseme!,
-      filterItem: '',
-      filterItemPAttribute: '',
-      p: 'lemma',
-      sBreak: 's',
-      window: 3,
+      filterItem: filterItem!,
+      filterItemPAttribute: secondary!,
+      p: secondary!,
+      sBreak: s!,
+      window: windowSize,
     }),
     // keep previous data
     placeholderData: (p) => p,
-    enabled: focusDiscourseme !== undefined && descriptionId !== undefined,
+    enabled:
+      focusDiscourseme !== undefined &&
+      descriptionId !== undefined &&
+      s !== undefined &&
+      secondary !== undefined &&
+      filterItem !== undefined,
   })
   const {
     data: collocationItems,
@@ -134,8 +134,8 @@ export function Collocation({
       <Pagination
         totalRows={collocationItems?.nr_items ?? 0}
         setPageSize={(size) => setFilter('ccPageSize', size)}
-        setPageIndex={(index) => setFilter('ccPageNumber', index)}
-        pageIndex={ccPageNumber ?? 0}
+        setPageIndex={(index) => setFilter('ccPageNumber', index + 1)}
+        pageIndex={(ccPageNumber ?? 1) - 1}
         pageCount={collocationItems?.page_count ?? 0}
         pageSize={ccPageSize}
       />
