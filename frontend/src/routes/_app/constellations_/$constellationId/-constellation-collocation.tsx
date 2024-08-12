@@ -1,22 +1,24 @@
-import { useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useSearch } from '@tanstack/react-router'
 
-import { constellationCollocation, collocationItemsById } from '@/lib/queries'
-import { cn } from '@/lib/utils'
-import { ErrorMessage } from '@/components/error-message'
+import {
+  constellationCollocation,
+  collocationItemsById,
+} from '@/lib/queries.ts'
+import { cn } from '@/lib/utils.ts'
+import { ErrorMessage } from '@/components/error-message.tsx'
 import {
   Table,
   TableBody,
   TableCell,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Pagination } from '@/components/pagination'
-import { Repeat } from '@/components/repeat'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useFilterSelection } from '@/routes/_app/constellations_/-use-filter-selection.ts'
+} from '@/components/ui/table.tsx'
+import { Button } from '@/components/ui/button.tsx'
+import { Pagination } from '@/components/pagination.tsx'
+import { Repeat } from '@/components/repeat.tsx'
+import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 
 const measureOrder = [
   'conservative_log_ratio',
@@ -91,21 +93,6 @@ export function Collocation({
     enabled: collocation?.id !== undefined,
   })
   const isLoading = isLoadingItems || isLoadingConstellation
-  const navigate = useNavigate()
-  const setSearch = useCallback(
-    (key: string, value?: string | number | boolean) => {
-      void navigate({
-        search: (s) => ({ ...s, [key]: value }),
-        params: (p) => p,
-        replace: true,
-      })
-    },
-    [navigate],
-  )
-
-  console.log('> collocation', collocation)
-  console.log('> items', collocationItems)
-  console.log('> ids', constellationId, descriptionId, collocation?.id)
 
   return (
     <div>
@@ -146,8 +133,8 @@ export function Collocation({
       </Table>
       <Pagination
         totalRows={collocationItems?.nr_items ?? 0}
-        setPageSize={(size) => setSearch('ccPageSize', size)}
-        setPageIndex={(index) => setSearch('ccPageNumber', index)}
+        setPageSize={(size) => setFilter('ccPageSize', size)}
+        setPageIndex={(index) => setFilter('ccPageNumber', index)}
         pageIndex={ccPageNumber ?? 0}
         pageCount={collocationItems?.page_count ?? 0}
         pageSize={ccPageSize}

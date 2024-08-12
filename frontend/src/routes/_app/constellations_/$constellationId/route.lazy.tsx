@@ -5,7 +5,13 @@ import {
   useIsMutating,
   useQuery,
 } from '@tanstack/react-query'
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  createLazyFileRoute,
+  Link,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import {
   Loader2Icon,
   MapIcon,
@@ -15,6 +21,7 @@ import {
 } from 'lucide-react'
 import { z } from 'zod'
 
+import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@/components/ui/card'
 import { Headline3, Muted, Small } from '@/components/ui/typography'
@@ -23,6 +30,7 @@ import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { Drawer } from '@/components/drawer'
+import { Label } from '@/components/ui/label'
 import {
   addConstellationDiscourseme,
   constellationById,
@@ -30,8 +38,8 @@ import {
   corpusList,
   deleteConstellationDiscourseme,
   discoursemesList,
-} from '@/lib/queries'
-import { cn } from '@/lib/utils'
+} from '@/lib/queries.ts'
+import { cn } from '@/lib/utils.ts'
 import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationFilter } from './-constellation-filter'
@@ -43,7 +51,39 @@ export const Route = createLazyFileRoute(
   component: ConstellationDetail,
 })
 
+function useDescription() {
+  const constellationId = parseInt(Route.useParams().constellationId)
+  const { corpusId } = Route.useSearch()
+  const { secondary, s } = useFilterSelection(
+    '/_app/constellations/$constellationId',
+    corpusId,
+  )
+  const {
+    data: description,
+    isLoading: isLoadingDescription,
+    error: errorDescription,
+  } = useQuery({
+    ...constellationDescriptionFor({
+      constellationId,
+      corpusId: corpusId!,
+      subcorpusId: undefined,
+      p: secondary,
+      s,
+      matchStrategy: 'longest',
+    }),
+    enabled:
+      corpusId !== undefined && secondary !== undefined && s !== undefined,
+  })
+  return { description, isLoadingDescription, errorDescription }
+}
+
 function ConstellationDetail() {
+  // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
+  const showsSemanticMap =
+    useRouterState().matches.find(
+      (match) =>
+        match.routeId === '/_app/constellations/$constellationId/semantic-map',
+    ) !== undefined
   const navigate = useNavigate()
   const constellationId = parseInt(Route.useParams().constellationId)
 
@@ -52,35 +92,25 @@ function ConstellationDetail() {
     isConcordanceVisible = true,
     focusDiscourseme,
   } = Route.useSearch()
-  const setCorpusId = (corpusId: number | undefined) =>
+
+  // TODO: combine these two
+  const setSelection = (
+    key: 'corpusId' | 'focusDiscourseme',
+    value: number | undefined,
+  ) =>
     navigate({
       to: '/constellations/$constellationId',
       params: { constellationId: constellationId.toString() },
-      search: (s) => ({ ...s, corpusId }),
-      replace: true,
-    })
-  const setFocusDiscourseme = (focusDiscourseme: number | undefined) =>
-    navigate({
-      to: '/constellations/$constellationId',
-      params: { constellationId: constellationId.toString() },
-      search: (s) => ({ ...s, focusDiscourseme }),
+      search: (s) => ({ ...s, [key]: value }),
       replace: true,
     })
 
   const {
     data: { comment, name, discoursemes: constellationDiscoursemes = [] },
   } = useSuspenseQuery(constellationById(constellationId))
-  const { data: description } = useQuery({
-    ...constellationDescriptionFor({
-      constellationId,
-      corpusId: corpusId!,
-      subcorpusId: undefined,
-      p: 'lemma',
-      s: 'p',
-      matchStrategy: 'longest',
-    }),
-    enabled: corpusId !== undefined,
-  })
+
+  const { description, isLoadingDescription, errorDescription } =
+    useDescription()
   const {
     mutate: addDiscourseme,
     isPending,
@@ -103,78 +133,102 @@ function ConstellationDetail() {
     )
     return discoursemes.filter((d) => constellationIds.includes(d.id))
   }, [description?.discourseme_descriptions, discoursemes])
-  console.log('discoursemes in description', discoursemesInDescription)
 
   return (
     <AppPageFrame
-      title="Constellation"
+      title={showsSemanticMap ? undefined : 'Constellation'}
       classNameContainer="pb-0 flex-grow"
       classNameContent="pb-0"
     >
-      <Headline3 className="border-0">{name}</Headline3>
-      {comment && <Muted>{comment}</Muted>}
-      <div className="mt-4 grid grid-cols-[2fr_1fr] gap-5">
-        <Card className="mx-0 grid w-full grid-cols-1 grid-rows-[min-content_1fr] gap-x-4 gap-y-0 p-4">
-          <div className="mb-2 flex place-items-center font-bold">
-            Discoursemes
-            <Button
-              variant="outline"
-              onClick={() => setIsEditMode(!isEditMode)}
-              className="m-0 ml-auto flex h-6 gap-1 p-0 pl-1 pr-2"
-            >
-              {!isEditMode ? (
-                <PencilIcon size={16} />
-              ) : (
-                <PencilOffIcon size={16} />
+      <ErrorMessage error={errorDescription} />
+      {!showsSemanticMap && (
+        <>
+          <Headline3 className="border-0">{name}</Headline3>
+          {comment && <Muted>{comment}</Muted>}
+          <div className="mt-4 grid grid-cols-[2fr_1fr] gap-5">
+            <Card className="mx-0 grid w-full grid-cols-1 grid-rows-[min-content_1fr] gap-x-4 gap-y-0 p-4">
+              <div className="mb-2 flex place-items-center font-bold">
+                Discoursemes
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className="m-0 ml-auto flex h-6 gap-1 p-0 pl-1 pr-2"
+                >
+                  {!isEditMode ? (
+                    <PencilIcon size={16} />
+                  ) : (
+                    <PencilOffIcon size={16} />
+                  )}
+                  Edit
+                </Button>
+              </div>
+              <div className="col-span-full flex flex-col gap-2">
+                {constellationDiscoursemes.map((discourseme) => (
+                  <DiscoursemeItem
+                    key={discourseme.id!}
+                    discourseme={discourseme}
+                    constellationId={constellationId}
+                    isEditable={isEditMode}
+                  />
+                ))}
+              </div>
+              {isEditMode && (
+                <DiscoursemeSelect
+                  className="mt-1"
+                  discoursemes={nonSelectedDiscoursemes}
+                  disabled={isPending}
+                  onChange={(discoursemeId) =>
+                    addDiscourseme({
+                      discoursemeId: discoursemeId as number,
+                      constellationId,
+                    })
+                  }
+                />
               )}
-              Edit
-            </Button>
+              <ErrorMessage error={errorAddDiscourseme} className="mt-2" />
+            </Card>
+            <Link
+              to="/constellations/$constellationId/semantic-map"
+              from="/constellations/$constellationId"
+              params={{ constellationId: constellationId.toString() }}
+              search={(s) => s}
+            >
+              <Card className="mx-0 flex h-48 w-full place-items-center bg-muted p-4 text-center text-muted-foreground">
+                <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
+                Semantic Map preview
+              </Card>
+            </Link>
           </div>
-          <div className="col-span-full flex flex-col gap-2">
-            {constellationDiscoursemes.map((discourseme) => (
-              <DiscoursemeItem
-                key={discourseme.id!}
-                discourseme={discourseme}
-                constellationId={constellationId}
-                isEditable={isEditMode}
+          <CorpusSelect
+            className="mt-4"
+            corpora={corpora}
+            onChange={(corpusId) => setSelection('corpusId', corpusId)}
+            corpusId={corpusId}
+          />
+          <Label>
+            Focus Discourseme:
+            <div className="relative">
+              <DiscoursemeSelect
+                discoursemes={discoursemesInDescription}
+                discoursemeId={focusDiscourseme}
+                onChange={(discoursemeId) =>
+                  setSelection('focusDiscourseme', discoursemeId)
+                }
+                disabled={isLoadingDescription}
+                className="w-full"
               />
-            ))}
-          </div>
-          {isEditMode && (
-            <DiscoursemeSelect
-              className="mt-1"
-              discoursemes={nonSelectedDiscoursemes}
-              disabled={isPending}
-              onChange={(discoursemeId) =>
-                addDiscourseme({
-                  discoursemeId: discoursemeId as number,
-                  constellationId,
-                })
-              }
-            />
-          )}
-          <ErrorMessage error={errorAddDiscourseme} className="mt-2" />
-        </Card>
-        <Card className="mx-0 flex h-48 w-full place-items-center bg-gray-200 p-4 text-center">
-          <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
-          Semantic Map preview and link will go here
-        </Card>
-      </div>
-      <CorpusSelect
-        className="mt-4"
-        corpora={corpora}
-        onChange={setCorpusId}
-        corpusId={corpusId}
-      />
-      <DiscoursemeSelect
-        discoursemes={discoursemesInDescription}
-        discoursemeId={focusDiscourseme}
-        onChange={setFocusDiscourseme}
-      />
+              {isLoadingDescription && (
+                <Loader2Icon className="absolute left-1/2 top-2 animate-spin" />
+              )}
+            </div>
+          </Label>
+        </>
+      )}
       {corpusId !== undefined && (
         <>
           <ConstellationFilter className="sticky top-14 bg-background" />
-          {focusDiscourseme !== undefined && (
+          <Outlet />
+          {focusDiscourseme !== undefined && !showsSemanticMap && (
             <Collocation
               constellationId={constellationId}
               descriptionId={description?.id}

@@ -1,13 +1,13 @@
 import { Fragment, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
 import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
-import { cn } from '@/lib/utils'
-import { corpusById, constellationConcordances } from '@/lib/queries'
-import { formatNumber } from '@/lib/format-number'
+import { cn } from '@/lib/utils.ts'
+import { corpusById, constellationConcordances } from '@/lib/queries.ts'
+import { formatNumber } from '@/lib/format-number.ts'
 import {
   Table,
   TableBody,
@@ -15,18 +15,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@/components/ui/table.tsx'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { ButtonTooltip } from '@/components/button-tooltip'
-import { ErrorMessage } from '@/components/error-message'
-import { Repeat } from '@/components/repeat'
-import { Pagination } from '@/components/pagination'
-import { Skeleton } from '@/components/ui/skeleton'
+} from '@/components/ui/tooltip.tsx'
+import { ButtonTooltip } from '@/components/button-tooltip.tsx'
+import { ErrorMessage } from '@/components/error-message.tsx'
+import { Repeat } from '@/components/repeat.tsx'
+import { Pagination } from '@/components/pagination.tsx'
+import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 
 const emptyArray = [] as const
 
@@ -40,7 +41,6 @@ export function ConstellationConcordanceLines({
   className?: string
 }) {
   const { data: corpus } = useQuery(corpusById(corpusId as number))
-  const navigate = useNavigate()
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
@@ -55,15 +55,16 @@ export function ConstellationConcordanceLines({
   // TODO: maybe just remember the last concordanceLines and overlay a spinner?
   const secondary = searchParams.secondary ?? pAttributes[0]
   const {
-    windowSize = 3,
-    clPageSize = 10,
-    clPageIndex = 0,
-    clSortByOffset = 0,
-    clSortOrder = 'random',
+    windowSize,
+    clPageSize,
+    clPageIndex,
+    clSortByOffset,
+    clSortOrder,
     filterItem,
     filterItemPAtt,
     focusDiscourseme,
-  } = searchParams
+    setFilter,
+  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
 
   const {
     data: concordanceLines,
@@ -136,20 +137,8 @@ export function ConstellationConcordanceLines({
           pageCount={pageCountRef.current}
           totalRows={nrLinesRef.current}
           pageIndex={clPageIndex}
-          setPageSize={(pageSize) => {
-            navigate({
-              params: (p) => p,
-              search: (s) => ({ ...s, clPageSize: pageSize }),
-              replace: true,
-            })
-          }}
-          setPageIndex={(pageIndex) => {
-            navigate({
-              params: (p) => p,
-              search: (s) => ({ ...s, clPageIndex: pageIndex }),
-              replace: true,
-            })
-          }}
+          setPageSize={(pageSize) => setFilter('clPageSize', pageSize)}
+          setPageIndex={(pageIndex) => setFilter('clPageIndex', pageIndex)}
         />
       </div>
     </div>
