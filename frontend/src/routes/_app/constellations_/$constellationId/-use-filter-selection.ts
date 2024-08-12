@@ -57,7 +57,9 @@ type FilterSchema = z.infer<typeof FilterSchema>
 
 // TODO: also use this in query detail etc.
 export function useFilterSelection(
-  path: '/_app/constellations/$constellationId',
+  path:
+    | '/_app/constellations/$constellationId'
+    | '/_app/constellations/$constellationId/semantic-map',
   corpusId?: number,
 ) {
   const {
