@@ -25,8 +25,10 @@ import { Route as AppKeywordAnalysisAnalysisIdImport } from './routes/_app/keywo
 import { Route as AppDiscoursemesDiscoursemeIdImport } from './routes/_app/discoursemes_/$discoursemeId'
 import { Route as AppCorporaCorpusIdImport } from './routes/_app/corpora_/$corpusId'
 import { Route as AppConstellationsNewImport } from './routes/_app/constellations_/new'
-import { Route as AppConstellationsConstellationIdImport } from './routes/_app/constellations_/$constellationId'
 import { Route as AppQueriesQueryIdRouteImport } from './routes/_app/queries_/$queryId/route'
+import { Route as AppConstellationsConstellationIdRouteImport } from './routes/_app/constellations_/$constellationId/route'
+import { Route as AppDiscoursemesDiscoursemeIdNewDescriptionImport } from './routes/_app/discoursemes_/$discoursemeId_/new-description'
+import { Route as AppConstellationsConstellationIdSemanticMapImport } from './routes/_app/constellations_/$constellationId/semantic-map'
 
 // Create Virtual Routes
 
@@ -181,22 +183,38 @@ const AppConstellationsNewRoute = AppConstellationsNewImport.update({
   import('./routes/_app/constellations_/new.lazy').then((d) => d.Route),
 )
 
-const AppConstellationsConstellationIdRoute =
-  AppConstellationsConstellationIdImport.update({
-    path: '/constellations/$constellationId',
-    getParentRoute: () => AppRoute,
-  } as any).lazy(() =>
-    import('./routes/_app/constellations_/$constellationId.lazy').then(
-      (d) => d.Route,
-    ),
-  )
-
 const AppQueriesQueryIdRouteRoute = AppQueriesQueryIdRouteImport.update({
   path: '/queries/$queryId',
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
   import('./routes/_app/queries_/$queryId/route.lazy').then((d) => d.Route),
 )
+
+const AppConstellationsConstellationIdRouteRoute =
+  AppConstellationsConstellationIdRouteImport.update({
+    path: '/constellations/$constellationId',
+    getParentRoute: () => AppRoute,
+  } as any).lazy(() =>
+    import('./routes/_app/constellations_/$constellationId/route.lazy').then(
+      (d) => d.Route,
+    ),
+  )
+
+const AppDiscoursemesDiscoursemeIdNewDescriptionRoute =
+  AppDiscoursemesDiscoursemeIdNewDescriptionImport.update({
+    path: '/discoursemes/$discoursemeId/new-description',
+    getParentRoute: () => AppRoute,
+  } as any).lazy(() =>
+    import(
+      './routes/_app/discoursemes_/$discoursemeId_/new-description.lazy'
+    ).then((d) => d.Route),
+  )
+
+const AppConstellationsConstellationIdSemanticMapRoute =
+  AppConstellationsConstellationIdSemanticMapImport.update({
+    path: '/semantic-map',
+    getParentRoute: () => AppConstellationsConstellationIdRouteRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -254,12 +272,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminImport
       parentRoute: typeof AppImport
     }
-    '/_app/queries/$queryId': {
-      preLoaderRoute: typeof AppQueriesQueryIdRouteImport
+    '/_app/constellations/$constellationId': {
+      preLoaderRoute: typeof AppConstellationsConstellationIdRouteImport
       parentRoute: typeof AppImport
     }
-    '/_app/constellations/$constellationId': {
-      preLoaderRoute: typeof AppConstellationsConstellationIdImport
+    '/_app/queries/$queryId': {
+      preLoaderRoute: typeof AppQueriesQueryIdRouteImport
       parentRoute: typeof AppImport
     }
     '/_app/constellations/new': {
@@ -298,6 +316,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoursemesNewLazyImport
       parentRoute: typeof AppImport
     }
+    '/_app/constellations/$constellationId/semantic-map': {
+      preLoaderRoute: typeof AppConstellationsConstellationIdSemanticMapImport
+      parentRoute: typeof AppConstellationsConstellationIdRouteImport
+    }
+    '/_app/discoursemes/$discoursemeId/new-description': {
+      preLoaderRoute: typeof AppDiscoursemesDiscoursemeIdNewDescriptionImport
+      parentRoute: typeof AppImport
+    }
   }
 }
 
@@ -314,8 +340,10 @@ export const routeTree = rootRoute.addChildren([
     AppQueriesRouteRoute,
     AppSubcorporaRouteRoute,
     AppAdminRoute,
+    AppConstellationsConstellationIdRouteRoute.addChildren([
+      AppConstellationsConstellationIdSemanticMapRoute,
+    ]),
     AppQueriesQueryIdRouteRoute,
-    AppConstellationsConstellationIdRoute,
     AppConstellationsNewRoute,
     AppCorporaCorpusIdRoute,
     AppDiscoursemesDiscoursemeIdRoute,
@@ -325,6 +353,7 @@ export const routeTree = rootRoute.addChildren([
     AppSubcorporaSubcorpusIdRoute,
     AppSubcorporaNewRoute,
     AppDiscoursemesNewLazyRoute,
+    AppDiscoursemesDiscoursemeIdNewDescriptionRoute,
   ]),
   LoginRoute,
   VignetteRoute,

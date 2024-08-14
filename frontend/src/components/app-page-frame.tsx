@@ -1,6 +1,7 @@
 import { ComponentProps, ReactNode } from 'react'
 import { Plus } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+
 import { Headline1 } from '@/components/ui/typography'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -12,7 +13,7 @@ export function AppPageFrame({
   classNameContainer,
   classNameContent,
 }: {
-  title: string
+  title?: string
   cta?: {
     nav: ComponentProps<typeof Link>
     label: ReactNode
@@ -23,18 +24,22 @@ export function AppPageFrame({
 }) {
   return (
     <div className={cn('flex flex-col p-2', classNameContainer)}>
-      <div className="mb-8 flex gap-4">
-        <Headline1 className="flex-grow overflow-hidden">{title}</Headline1>
-        {cta && (
-          <Link
-            {...cta.nav}
-            className={cn(buttonVariants(), cta.nav.className)}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            {cta.label}
-          </Link>
-        )}
-      </div>
+      {Boolean(title || cta) && (
+        <div className="mb-8 flex gap-4">
+          {title && (
+            <Headline1 className="flex-grow overflow-hidden">{title}</Headline1>
+          )}
+          {cta && (
+            <Link
+              {...cta.nav}
+              className={cn(buttonVariants(), cta.nav.className)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {cta.label}
+            </Link>
+          )}
+        </div>
+      )}
       <div
         className={cn(
           'col-span-full flex flex-grow flex-col',

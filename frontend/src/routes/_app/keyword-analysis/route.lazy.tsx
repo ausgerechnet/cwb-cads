@@ -26,7 +26,20 @@ function KeywordAnalysisList() {
 
   return (
     <KeywordAnalysisLayout>
-      {!hasKeywordAnalysis && (
+      {hasKeywordAnalysis ? (
+        <DataTable<z.infer<typeof schemas.KeywordOut>>
+          columns={columns}
+          rows={keywordAnalysisList}
+          onRowClick={(row) => {
+            const id = row.id
+            if (id === undefined) return
+            navigate({
+              to: '/keyword-analysis/$analysisId',
+              params: { analysisId: id.toString() },
+            })
+          }}
+        />
+      ) : (
         <div className="start flex flex-col gap-4">
           <Large>
             No keyword analyses yet.
@@ -42,18 +55,6 @@ function KeywordAnalysisList() {
           </Link>
         </div>
       )}
-      <DataTable<z.infer<typeof schemas.KeywordOut>>
-        columns={columns}
-        rows={keywordAnalysisList}
-        onRowClick={(row) => {
-          const id = row.id
-          if (id === undefined) return
-          navigate({
-            to: '/keyword-analysis/$analysisId',
-            params: { analysisId: id.toString() },
-          })
-        }}
-      />
     </KeywordAnalysisLayout>
   )
 }

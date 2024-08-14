@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Filter, Highlighter, Loader2 } from 'lucide-react'
+import { Loader2Icon } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -30,14 +30,11 @@ export const Route = createLazyFileRoute('/_app/constellations/new')({
 // We use a custom zod schema here because the API has too few constraints
 const ConstellationFormInput = z
   .object({
-    description: z.string().optional(),
-    filter_discourseme_ids: z
-      .array(z.number())
-      .min(1, { message: 'Select at least one discourseme' }),
-    highlight_discourseme_ids: z
-      .array(z.number())
-      .min(1, { message: 'Select at least one discourseme' }),
     name: z.string().min(3),
+    comment: z.string().optional(),
+    discourseme_ids: z
+      .array(z.number())
+      .min(1, { message: 'Select at least one discourseme' }),
   })
   .passthrough()
 type ConstellationFormInput = z.infer<typeof ConstellationFormInput>
@@ -59,9 +56,8 @@ function NewConstellationForm() {
     resolver: zodResolver(ConstellationFormInput),
     defaultValues: {
       name: '',
-      description: '',
-      filter_discourseme_ids: [],
-      highlight_discourseme_ids: [],
+      comment: '',
+      discourseme_ids: [],
     },
   })
 
@@ -83,15 +79,11 @@ function NewConstellationForm() {
   })
 
   // Prevent selecting discoursemes that are already selected
-  const filterDiscoursemeIds = form.watch('filter_discourseme_ids') ?? []
-  const highlightDiscoursemeIds = form.watch('highlight_discourseme_ids') ?? []
+  const discoursemeIds = form.watch('discourseme_ids') ?? []
   const { data: discoursemes } = useSuspenseQuery(discoursemesList)
   const selectableDiscoursemes: z.infer<typeof schemas.DiscoursemeOut>[] =
     discoursemes.filter(
-      ({ id }) =>
-        id !== undefined &&
-        !filterDiscoursemeIds.includes(id) &&
-        !highlightDiscoursemeIds.includes(id),
+      ({ id }) => id !== undefined && !discoursemeIds.includes(id),
     )
 
   return (
@@ -114,12 +106,13 @@ function NewConstellationForm() {
               </FormItem>
             )}
           />
+
           <FormField
-            name="description"
+            name="comment"
             control={form.control}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>Comment</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -127,36 +120,14 @@ function NewConstellationForm() {
               </FormItem>
             )}
           />
-          <div className="grid gap-x-4 gap-y-4 @xl:grid-cols-2">
+
+          <div className="grid-cols-full grid gap-x-4 gap-y-4">
             <FormField
-              name="highlight_discourseme_ids"
+              name="discourseme_ids"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="inline-flex">
-                    <Highlighter className="mr-2 h-4 w-4" /> Highlight
-                    Discoursemes
-                  </FormLabel>
-                  <FormControl>
-                    <DiscoursemeListSelect
-                      discoursemeIds={field.value}
-                      onChange={(ids) => field.onChange(ids)}
-                      selectableDiscoursemes={selectableDiscoursemes}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              name="filter_discourseme_ids"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="inline-flex">
-                    <Filter className="mr-2 h-4 w-4" />
-                    Filter Discoursemes
-                  </FormLabel>
+                  <FormLabel className="inline-flex">Discoursemes</FormLabel>
                   <FormControl>
                     <DiscoursemeListSelect
                       discoursemeIds={field.value}
@@ -175,7 +146,7 @@ function NewConstellationForm() {
             disabled={isPending || isSuccess}
           >
             {(isPending || isSuccess) && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
             )}
             Create Constellation
           </Button>
