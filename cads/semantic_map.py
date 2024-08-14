@@ -3,6 +3,7 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, List, String
+from apiflask.validators import OneOf
 from flask import current_app
 from numpy.random import normal
 from pandas import DataFrame, concat
@@ -16,7 +17,8 @@ from .users import auth
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
 
 
-def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[]):
+def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[], method='tsne'):
+    # TODO make analysis agnostic (keyword, collocation)
 
     semantic_map = None
     dfs = list()
@@ -31,7 +33,7 @@ def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[]):
 
         # create new semantic map
         if semantic_map is None:
-            semantic_map = SemanticMap(embeddings=embeddings, method='tsne')
+            semantic_map = SemanticMap(embeddings=embeddings, method=method)
             db.session.add(semantic_map)
             db.session.commit()
 
@@ -171,12 +173,20 @@ def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
     db.session.commit()
 
 
+class SemanticMapIn(Schema):
+
+    collocation_ids = List(Integer())
+    keyword_ids = List(Integer())
+    method = String(required=False, load_default='tsne', validate=OneOf(['tsne', 'umap']))
+
+
 class SemanticMapOut(Schema):
 
     id = Integer()
     # collocation_id = Integer()
     # keyword_id = Integer()
     p = String()
+    method = String()
 
 
 class CoordinatesIn(Schema):
@@ -212,7 +222,7 @@ def get_semantic_map(id):
 
 
 @bp.put('/')
-@bp.input({'collocation_ids': List(Integer)}, schema_name='CollocationIdsIn')
+@bp.input(SemanticMapIn)
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
 def create_semantic_map(json_data):
@@ -220,7 +230,11 @@ def create_semantic_map(json_data):
 
     """
 
-    semantic_map = ccc_semmap(json_data['collocation_ids'], sort_by='conservative_log_ratio', number=500)
+    collocation_ids = json_data.get('collocation_ids')
+    keyword_ids = json_data.get('keyword_ids')  # TODO
+    method = json_data.get('method')
+
+    semantic_map = ccc_semmap(collocation_ids, sort_by='conservative_log_ratio', number=500, method=method)
 
     return SemanticMapOut().dump(semantic_map), 200
 

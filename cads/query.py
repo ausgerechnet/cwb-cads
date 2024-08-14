@@ -180,44 +180,80 @@ def get_or_create_cotext(query, window, context_break, return_df=False):
     return cotext
 
 
-def iterative_query(focus_query, filter_queries, window):
+def filter_matches(focus_query, filter_queries, window, overlap):
+    """filter focus query matches according to presence of filter queries in window (and focus_query.s)
 
-    filter_sequence = "Q-" + "-".join([str(focus_query.id)] + [str(fq.id) for fq in filter_queries.values()])
-    # TODO retrieve if necessary
+    """
 
-    current_app.logger.debug("get_collocation :: second-order mode")
+    current_app.logger.debug("filter_matches :: enter")
+
     matches = Matches.query.filter_by(query_id=focus_query.id)
+
     # TODO learn proper SQLalchemy (aliased anti-join)
     matches_tmp = matches.all()
-    match_pos = set([m.match for m in matches_tmp])
+    relevant_match_pos = set([m.match for m in matches_tmp])
 
     # get relevant cotext lines
+    current_app.logger.debug("filter_matches :: getting cotext")
     cotext = get_or_create_cotext(focus_query, window, focus_query.s)
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
                                             CotextLines.offset <= window,
                                             CotextLines.offset >= -window)
 
-    for fq in filter_queries.values():
+    for key, fq in filter_queries.items():
 
-        current_app.logger.debug("get_collocation :: filtering cotext lines by joining matches")
-        cotext_lines_tmp = cotext_lines.join(
-            Matches,
-            (Matches.query_id == fq.id) &
-            (Matches.match == CotextLines.cpos)
-        )
-        match_pos = match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
+        if overlap == 'partial':
+            cotext_lines_tmp = cotext_lines.join(
+                Matches,
+                (Matches.query_id == fq.id) &
+                ((Matches.match == CotextLines.cpos) | (Matches.matchend == CotextLines.cpos))
+            )
+        elif overlap == 'full':
+            # TODO THIS DOESN'T WORK LIKE THIS; need to iteratively filter!
+            cotext_lines_tmp = cotext_lines.join(
+                Matches,
+                (Matches.query_id == fq.id) &
+                (Matches.match == CotextLines.cpos) & (Matches.matchend == CotextLines.cpos)
+            )
+        elif overlap == 'match':
+            cotext_lines_tmp = cotext_lines.join(
+                Matches,
+                (Matches.query_id == fq.id) &
+                (Matches.match == CotextLines.cpos)
+            )
+        elif overlap == 'matchend':
+            cotext_lines_tmp = cotext_lines.join(
+                Matches,
+                (Matches.query_id == fq.id) &
+                (Matches.matchend == CotextLines.cpos)
+            )
+        else:
+            raise ValueError("filter_matches :: overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
-        current_app.logger.debug("get_collocation :: filtering matches")
+        relevant_match_pos = relevant_match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
 
-        matches = Matches.query.filter(
-            Matches.query_id == focus_query.id,
-            Matches.match.in_(match_pos)
-            # Matches.matchend.in_(match_pos)
-        )
+        if len(relevant_match_pos) == 0:
+            current_app.logger.error(f"filter_matches :: no lines left after filtering for query {fq.cqp_query}")
+            return
 
-        # if len(matches.all()) == 0:
-        #     current_app.logger.error(f"no lines left after filtering for query {fq.cqp_query}")
-        #     abort(404, 'no collocates')
+    current_app.logger.debug("filter_matches :: filtering matches")
+
+    matches = Matches.query.filter(
+        Matches.query_id == focus_query.id,
+        Matches.match.in_(relevant_match_pos)
+    )
+
+    current_app.logger.debug("filter_matches :: exit")
+
+    return matches
+
+
+def iterative_query(focus_query, filter_queries, window, overlap='partial'):
+
+    # TODO retrieve if necessary
+    filter_sequence = "Q-" + "-".join([str(focus_query.id)] + [str(fq.id) for fq in filter_queries.values()])
+
+    matches = filter_matches(focus_query, filter_queries, window, overlap)
 
     # create query
     query = Query(

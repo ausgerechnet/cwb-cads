@@ -163,7 +163,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
     scores.to_sql('keyword_discourseme_item_score', con=db.engine, if_exists='append', index=False)
 
 
-def query_discourseme_cotext(collocation, df_cotext, discourseme_description, discourseme_matchend_in_context=True):
+def query_discourseme_cotext(collocation, df_cotext, discourseme_description, overlap='partial'):
     """ensure that CollocationDiscoursemeItems exist for discourseme description
 
     """
@@ -203,9 +203,16 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
     if len(corpus_matches_df) == 0:
         return
 
-    corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos'])
-    if discourseme_matchend_in_context:
-        corpus_matches_df['in_context'] = corpus_matches_df['in_context'] & corpus_matches_df['matchend'].isin(df_cotext['cpos'])
+    if overlap == 'partial':
+        corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos']) | corpus_matches_df['matchend'].isin(df_cotext['cpos'])
+    elif overlap == 'full':
+        corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos']) & corpus_matches_df['matchend'].isin(df_cotext['cpos'])
+    elif overlap == 'match':
+        corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos'])
+    elif overlap == 'matchend':
+        corpus_matches_df['in_context'] = corpus_matches_df['matchend'].isin(df_cotext['cpos'])
+    else:
+        raise ValueError("overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
     current_app.logger.debug(
         f'query_discourseme_cotext :: .. getting matches of discourseme "{discourseme_description.discourseme.name}" in context'
@@ -257,7 +264,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, di
     discourseme_item_scores.to_sql('collocation_discourseme_item_score', con=db.engine, if_exists='append', index=False)
 
 
-def set_collocation_discourseme_scores(collocation, discourseme_descriptions):
+def set_collocation_discourseme_scores(collocation, discourseme_descriptions, overlap='partial'):
     """ensure that CollocationDiscoursemeItems exist for each discourseme description
 
     """
@@ -273,7 +280,7 @@ def set_collocation_discourseme_scores(collocation, discourseme_descriptions):
 
     current_app.logger.debug('set_collocation_discourseme_scores :: looping through descriptions')
     for discourseme_description in discourseme_descriptions:
-        query_discourseme_cotext(collocation, df_cotext, discourseme_description)
+        query_discourseme_cotext(collocation, df_cotext, discourseme_description, overlap=overlap)
 
 
 def get_collocation_discourseme_scores(collocation_id, discourseme_description_ids):
@@ -414,6 +421,7 @@ class ConstellationDescriptionIn(Schema):
     p = String(required=False)
     s = String(required=False)
     match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
 
 
 class ConstellationDiscoursemeDescriptionIn(Schema):
@@ -635,6 +643,7 @@ def create_description(id, json_data):
     p_description = json_data.get('p', corpus.p_default)
     s_query = json_data.get('s', corpus.s_default)
     match_strategy = json_data.get('match_strategy')
+    overlap = json_data.get('overlap')
 
     description = ConstellationDescription(
         constellation_id=constellation.id,
@@ -642,7 +651,8 @@ def create_description(id, json_data):
         subcorpus_id=subcorpus_id,
         p=p_description,
         s=s_query,
-        match_strategy=match_strategy
+        match_strategy=match_strategy,
+        overlap=overlap
     )
 
     for discourseme in constellation.discoursemes:
@@ -786,7 +796,8 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
                                   window, extended_window, description.s,
                                   filter_queries=filter_queries, highlight_queries=highlight_queries,
                                   page_number=page_number, page_size=page_size,
-                                  sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order, sort_by_s_att=sort_by_s_att)
+                                  sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order, sort_by_s_att=sort_by_s_att,
+                                  overlap=description.overlap)
 
     return ConcordanceOut().dump(concordance), 200
 
@@ -828,7 +839,7 @@ def create_collocation(id, description_id, json_data):
         filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
 
     if len(filter_queries) > 0:
-        focus_query = iterative_query(focus_query, filter_queries, window)
+        focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
 
     # create collocation object
     collocation = Collocation(
@@ -844,7 +855,7 @@ def create_collocation(id, description_id, json_data):
     db.session.commit()
 
     get_or_create_counts(collocation, remove_focus_cpos=False)
-    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions)
+    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
     ccc_init_semmap(collocation, semantic_map_id)
 
     return CollocationOut().dump(collocation), 200
@@ -899,7 +910,7 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
 
     # discourseme scores
-    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions)
+    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
     discourseme_scores = get_collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]

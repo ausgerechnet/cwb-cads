@@ -122,6 +122,7 @@ def test_patch_constellation_discoursemes(client, auth):
         assert len(constellation.json['discoursemes']) == 2
 
 
+@pytest.mark.now
 def test_constellation_description(client, auth):
 
     auth_header = auth.login()
@@ -374,6 +375,7 @@ def test_constellation_concordance_filter(client, auth):
 #         df = concat(dfs)
 
 
+@pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -400,7 +402,8 @@ def test_constellation_collocation(client, auth):
         description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
                                   json={
                                       'corpus_id': 1,
-                                      's': 'text'
+                                      's': 'text',
+                                      'overlap': 'full'
                                   },
                                   headers=auth_header)
         assert description.status_code == 200
@@ -418,7 +421,7 @@ def test_constellation_collocation(client, auth):
 
         coll = client.get(url_for('mmda.constellation.get_collocation_items',
                                   id=constellation.json['id'],
-                                  description_id=union_id,
+                                  description_id=description.json['id'],
                                   collocation_id=collocation.json['id'],
                                   page_size=10, sort_by='O11'),
                           headers=auth_header)
@@ -429,7 +432,8 @@ def test_constellation_collocation(client, auth):
                                   json={
                                       'corpus_id': 1,
                                       'subcorpus_id': 1,
-                                      's': 'text'
+                                      's': 'text',
+                                      'overlap': 'full'
                                   },
                                   headers=auth_header)
         assert description.status_code == 200
@@ -808,7 +812,8 @@ def test_constellation_2nd_order_collocation(client, auth):
         description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
                                   json={
                                       'corpus_id': 1,
-                                      's': 'text'
+                                      's': 'text',
+                                      'overlap': 'match'
                                   },
                                   headers=auth_header)
         assert description.status_code == 200
@@ -1172,7 +1177,6 @@ def test_constellation_keyword_empty_queries(client, auth):
         assert keyword_items.status_code == 200
 
 
-@pytest.mark.now
 def test_constellation_collocation_empty_queries(client, auth):
 
     auth_header = auth.login()

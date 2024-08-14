@@ -61,17 +61,6 @@
         },
         "type": "object"
       },
-      "CollocationIdsIn": {
-        "properties": {
-          "collocation_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
       "CollocationItemOut": {
         "properties": {
           "item": {
@@ -326,6 +315,16 @@
               "longest",
               "shortest",
               "standard"
+            ],
+            "type": "string"
+          },
+          "overlap": {
+            "default": "partial",
+            "enum": [
+              "partial",
+              "full",
+              "match",
+              "matchend"
             ],
             "type": "string"
           },
@@ -1288,10 +1287,38 @@
         },
         "type": "object"
       },
+      "SemanticMapIn": {
+        "properties": {
+          "collocation_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "keyword_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "method": {
+            "default": "tsne",
+            "enum": [
+              "tsne",
+              "umap"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "SemanticMapOut": {
         "properties": {
           "id": {
             "type": "integer"
+          },
+          "method": {
+            "type": "string"
           },
           "p": {
             "type": "string"
@@ -6486,7 +6513,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CollocationIdsIn"
+                "$ref": "#/components/schemas/SemanticMapIn"
               }
             }
           }

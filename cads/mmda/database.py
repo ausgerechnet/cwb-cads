@@ -138,7 +138,7 @@ class DiscoursemeDescription(db.Model):
 
 
 class DiscoursemeDescriptionItems(db.Model):
-    """Constellation
+    """Discourseme Description Items
 
     """
 
@@ -168,7 +168,7 @@ class Constellation(db.Model):
 
 
 class ConstellationDescription(db.Model):
-    """
+    """Constellation Description
 
     """
     __table_args__ = {'sqlite_autoincrement': True}
@@ -182,6 +182,7 @@ class ConstellationDescription(db.Model):
     p = db.Column(db.String(), nullable=True)  # analysis / description layer
     s = db.Column(db.String(), nullable=True)  # for max. query context
     match_strategy = db.Column(db.Unicode, default='longest')
+    overlap = db.Column(db.Unicode, default='partial')  # when to count a discourseme to be in context (partial, full, match, matchend)
 
     discourseme_descriptions = db.relationship("DiscoursemeDescription", secondary=constellation_discourseme_description)
 

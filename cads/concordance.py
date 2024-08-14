@@ -11,7 +11,7 @@ from flask import current_app
 from pandas import DataFrame
 
 from . import db
-from .database import Concordance, ConcordanceLines, CotextLines, Matches
+from .database import Concordance, ConcordanceLines, Matches
 
 
 def ccc2attributes(line, primary, secondary, s_show, window):
@@ -93,7 +93,8 @@ def ccc_concordance(focus_query,
                     window, extended_window, context_break=None,
                     filter_queries=dict(), highlight_queries=dict(),
                     match_id=None, page_number=None, page_size=None,
-                    sort_by=None, sort_offset=0, sort_order='ascending', sort_by_s_att=None):
+                    sort_by=None, sort_offset=0, sort_order='ascending', sort_by_s_att=None,
+                    overlap='partial'):
     """Central concordance function.
 
     :param Query focus_query: focus in KWIC view
@@ -116,19 +117,21 @@ def ccc_concordance(focus_query,
     :param str sort_order: ascending / descending / random
     :param str sort_by_s_att: s-attribute to sort on
 
+    :param str overlap: which concordance lines to consider when filtering (partial | full | match | matchend)
+
     """
 
-    current_app.logger.debug("ccc_concordance")
+    current_app.logger.debug("ccc_concordance :: enter")
 
     # check parameters
     if sort_order == 'random' and (sort_by or sort_by_s_att):
-        raise ValueError("either get random or sorted concordance lines, not both")
+        raise ValueError("ccc_concordance :: either get random or sorted concordance lines, not both")
 
     if len(filter_queries) > 0 and match_id:
-        raise ValueError("cannot filter with specific match id")
+        raise ValueError("ccc_concordance :: cannot filter with specific match id")
 
     if sort_by and sort_by_s_att:
-        raise NotImplementedError("cannot sort by s-att and p-att")
+        raise NotImplementedError("ccc_concordance :: cannot sort by s-att and p-att")
 
     # get s-attribute settings
     s_show = focus_query.corpus.s_annotations
@@ -140,48 +143,14 @@ def ccc_concordance(focus_query,
         nr_lines = 1
         page_count = 1
 
-    # else: get relevant matches
     else:
 
-        matches = Matches.query.filter_by(query_id=focus_query.id)
+        from .query import filter_matches
 
         # filtering
-        if len(filter_queries) > 0:
-
-            from .query import get_or_create_cotext
-            current_app.logger.debug("ccc_concordance :: filtering: getting matches")
-            # TODO learn proper SQLalchemy (aliased anti-join)
-            matches_tmp = matches.all()
-            match_pos = set([m.match for m in matches_tmp])
-
-            # get relevant cotext lines
-            cotext = get_or_create_cotext(focus_query, window, context_break)
-            cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
-                                                    CotextLines.offset <= window,
-                                                    CotextLines.offset >= -window)
-            for key, fq in filter_queries.items():
-
-                current_app.logger.debug("ccc_concordance :: filtering cotext lines by joining matches")
-                cotext_lines_tmp = cotext_lines.join(
-                    Matches,
-                    (Matches.query_id == fq.id) &
-                    (Matches.match == CotextLines.cpos)
-                )
-                match_pos = match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
-
-                if key not in highlight_queries.keys():
-                    highlight_queries[key] = fq
-
-            current_app.logger.debug("ccc_concordance :: filtering matches")
-
-            matches = Matches.query.filter(
-                Matches.query_id == focus_query.id,
-                Matches.match.in_(match_pos)
-            )
-
-            if matches.count() == 0:
-                current_app.logger.error(f"no concordance lines left after filtering for query {fq.cqp_query}")
-                return
+        matches = filter_matches(focus_query, filter_queries, window, overlap)
+        if not matches:
+            return
 
         # sorting
         current_app.logger.debug("ccc_concordance :: sorting")
@@ -247,6 +216,8 @@ def ccc_concordance(focus_query,
         for token in line['tokens']:
             if token['cpos'] in filter_item_cpos:
                 token['is_filter_item'] = True
+
+    current_app.logger.debug("ccc_concordance :: exit")
 
     return {
         'lines': [ConcordanceLineOut().dump(line) for line in lines],
