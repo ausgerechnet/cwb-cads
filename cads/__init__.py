@@ -63,8 +63,10 @@ def create_app(config=CONFIG):
     # init database
     from . import database
     from .mmda import database as mmda_database
+    from .spheroscope import database as spheroscope_database
     app.register_blueprint(database.bp)
     app.register_blueprint(mmda_database.bp)
+    app.register_blueprint(spheroscope_database.bp)
     db.init_app(app)
 
     # TODO increase timeout
@@ -108,5 +110,8 @@ def create_app(config=CONFIG):
 
     from . import mmda
     app.register_blueprint(mmda.bp)
+
+    from . import spheroscope
+    app.register_blueprint(spheroscope.bp)
 
     return app
