@@ -39,7 +39,13 @@ discoursemes:
 	export CWB_CADS_CONFIG=cfg.DevConfig && \
 	flask --app cads discourseme import --path_in "tests/discoursemes/climate-change.tsv"
 
-examples: init corpora discoursemes
+library:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.DevConfig && \
+	flask --app cads library import-library --lib_dir "tests/library/"
+
+
+examples: init corpora discoursemes library
 
 run:
 	. venv/bin/activate && \

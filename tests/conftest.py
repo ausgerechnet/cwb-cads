@@ -7,6 +7,7 @@ from cads import create_app
 from cads.corpus import read_corpora, subcorpora_from_tsv, meta_from_within_xml
 from cads.database import init_db
 from cads.mmda.discourseme import import_discoursemes
+from cads.spheroscope.library import import_library
 
 app = create_app('cfg.TestConfig')
 
@@ -22,6 +23,8 @@ with app.app_context():
     meta_from_within_xml("GERMAPARL1386")
 
     subcorpora_from_tsv("GERMAPARL1386", "tests/corpora/subcorpora-germaparl.tsv")
+
+    import_library("tests/library/", corpus_id=1, username='admin')
 
 
 class AuthActions(object):

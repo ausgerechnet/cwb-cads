@@ -1,11 +1,10 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, String, Nested
 from apiflask.validators import OneOf
+import json
 
 from flask import current_app
 from .database import SlotQuery
@@ -16,47 +15,23 @@ from .. import db
 bp = APIBlueprint('slot_query', __name__, url_prefix='/slot-query')
 
 
-def ccc_get_library(slot_query, wordlists=[], macros=[]):
-
-    crps = slot_query.corpus.ccc()
-    cqp = crps.start_cqp()
-
-    for wordlist in wordlists:
-        name = wordlist.split('/')[-1].split('.')[0]
-        abs_path = os.path.abspath(wordlist)
-        cqp_exec = f'define ${name} < "{abs_path}";'
-        cqp.Exec(cqp_exec)
-
-    # macros
-    for macro in macros:
-        abs_path = os.path.abspath(macro)
-        cqp_exec = f'define macro < "{abs_path}";'
-        cqp.Exec(cqp_exec)
-    # for wordlists defined in macros, it is necessary to execute the macro once
-    macros = cqp.Exec("show macro;").split("\n")
-    for macro in macros:
-        # NB: this yields !cqp.Ok() if macro is not zero-valent
-        cqp.Exec(macro.split("(")[0] + "();")
-
-    cqp.Exec("set ParseOnly on;")
-    cqp.Exec("set SpheroscopeDebug on;")
-    cqp.Exec("set SpheroscopeDebug;")
-    print(cqp.Ok())
-    print(cqp.Exec(slot_query.cqp_query))
-    print(cqp.Ok())
-    cqp.__del__()
-
-
 def ccc_slot_query(slot_query):
 
     crps = slot_query.corpus.ccc()
 
-    # get dump
+    corrections = dict()
+    for d in slot_query.corrections:
+        try:
+            k = int(d['anchor'])
+        except ValueError:
+            k = d['anchor']
+        corrections[k] = d['correction']
+
     dump = crps.query(
         cqp_query=slot_query.cqp_query,
-        corrections=slot_query.corrections,
+        corrections=corrections,
         match_strategy=slot_query.match_strategy,
-        propagate_error=True
+        propagate_error=True,
     )
 
     # invalid query
@@ -105,6 +80,19 @@ class SlotQueryOut(Schema):
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
 
+@bp.get('/')
+@bp.output(SlotQueryOut(many=True))
+@bp.auth_required(auth)
+def get_all():
+    """
+
+    """
+
+    slot_queries = SlotQuery.query.all()
+
+    return [SlotQueryOut().dump(q) for q in slot_queries], 200
+
+
 @bp.post('/create')
 @bp.input(SlotQueryIn)
 @bp.output(SlotQueryOut)
@@ -122,16 +110,26 @@ def create(json_data):
         name=json_data.get('name'),
         corpus_id=corpus.id,
         match_strategy=json_data.get('match_strategy'),
-        _slots="",
-        _corrections="",
+        _slots=json.dumps(slots),
+        _corrections=json.dumps(corrections),
     )
-    import os
-    from glob import glob
 
-    wordlists = glob(os.path.join('tests', 'library', 'wordlists', '*.txt'))
-    macros = glob(os.path.join('tests', 'library', 'macros', '*.txt'))
+    return SlotQueryOut().dump(slot_query), 200
 
-    ccc_get_library(slot_query, wordlists, macros)
-    # ccc_slot_query(slot_query)
+
+@bp.post('/<id>/execute')
+@bp.output(SlotQueryOut)
+@bp.auth_required(auth)
+def execute(id):
+    """
+
+    """
+
+    slot_query = db.get_or_404(SlotQuery, id)
+
+    # this is the dataframe with corpus positions of match, matchend (as index), anchors (0-9), and context and contextend:
+    df = ccc_slot_query(slot_query)
+    # TODO flexiconc integration
+    print(df)
 
     return SlotQueryOut().dump(slot_query), 200

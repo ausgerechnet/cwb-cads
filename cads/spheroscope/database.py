@@ -3,15 +3,13 @@
 
 from datetime import datetime
 
-from flask import Blueprint
-import click
 from .. import db
 from ..database import Corpus
-from glob import glob
+from ccc.cqpy import cqpy_dump
 import os
+from flask import current_app
 
-
-bp = Blueprint('spheroscope-database', __name__, url_prefix='/spheroscope-database', cli_group='spheroscope-database')
+import json
 
 
 class WordList(db.Model):
@@ -33,6 +31,15 @@ class WordList(db.Model):
     # p_att = db.Column(db.Unicode(50), nullable=False)
 
     comment = db.Column(db.Unicode)
+
+    @property
+    def path(self):
+        return os.path.join(current_app.config['CCC_LIB_DIR'], "wordlists", self.name + ".txt")
+
+    def write(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, "wt") as f:
+            f.write("\n".join([w. word for w in self.words]))
 
 
 class WordListWords(db.Model):
@@ -64,18 +71,27 @@ class Macro(db.Model):
 
     comment = db.Column(db.Unicode)
 
+    @property
+    def path(self):
+        return os.path.join(current_app.config['CCC_LIB_DIR'], "macros", self.name + ".txt")
+
+    def write(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, "wt") as f:
+            f.write(self.macro)
+
 
 class SlotQuery(db.Model):
 
-    __table_args__ = (
-        db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
-    )
+    # __table_args__ = (
+    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
+    # )
 
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     name = db.Column(db.Unicode(255), nullable=False)
 
@@ -91,54 +107,31 @@ class SlotQuery(db.Model):
         return db.get_or_404(Corpus, self.corpus_id)
 
     @property
+    def path(self):
+        return os.path.join(current_app.config['CCC_LIB_DIR'], "queries", self.name + ".cqpy")
+
+    @property
     def slots(self):
-        return self._slots
+        return json.loads(self._slots)
 
     @property
     def corrections(self):
-        return self._corrections
+        return json.loads(self._corrections)
 
+    def serialize(self):
 
-def import_macro(path):
+        return {
+            'meta': {
+                'name': self.name,
+                'comment': self.comment
+            },
+            'cqp': self.cqp_query,
+            'anchors': {
+                'corrections': self.corrections,
+                'slots': self.slots
+            }
+        }
 
-    name = path.split("/")[-1].split(".")[0]
-    with open(path, "rt") as f:
-        macro = f.read().strip()
-
-    db.session.add(Macro(
-        name=name,
-        macro=macro,
-        comment='imported macro'
-    ))
-
-    db.session.commit()
-
-
-def import_wordlist(path):
-
-    name = path.split('/')[-1].split('.')[0]
-    with open(path, "rt") as f:
-        words = f.read().strip().split("\n")
-
-    wordlist = WordList(
-        name=name,
-        comment='imported wordlist'
-    )
-    db.session.add(wordlist)
-    db.session.commit()
-    for word in words:
-        db.session.add(WordListWords(wordlist_id=wordlist.id, word=word))
-    db.session.commit()
-
-
-@bp.cli.command('import-library')
-@click.option('--lib_dir', default='tests/library/')
-def import_library(lib_dir):
-
-    paths_macros = glob(os.path.join(lib_dir, "macros", "*.txt"))
-    paths_wordlists = glob(os.path.join(lib_dir, "wordlists", "*.txt"))
-
-    for path in paths_macros:
-        import_macro(path)
-    for path in paths_wordlists:
-        import_wordlist(path)
+    def write(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        cqpy_dump(self.serialize(), self.path)
