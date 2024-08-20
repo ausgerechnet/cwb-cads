@@ -1,6 +1,31 @@
 {
   "components": {
     "schemas": {
+      "AnchorCorrection": {
+        "properties": {
+          "anchor": {
+            "type": "string"
+          },
+          "correction": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "AnchorSlot": {
+        "properties": {
+          "end": {
+            "type": "string"
+          },
+          "slot": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "AnnotationsOut": {
         "properties": {
           "key": {
@@ -1322,6 +1347,80 @@
           },
           "p": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SlotQueryIn": {
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "corrections": {
+            "items": {
+              "$ref": "#/components/schemas/AnchorCorrection"
+            },
+            "type": "array"
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "match_strategy": {
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/AnchorSlot"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "corpus_id"
+        ],
+        "type": "object"
+      },
+      "SlotQueryOut": {
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "corrections": {
+            "items": {
+              "$ref": "#/components/schemas/AnchorCorrection"
+            },
+            "type": "array"
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/AnchorSlot"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -6802,6 +6901,155 @@
         ]
       }
     },
+    "/spheroscope/slot-query/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SlotQueryOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get All",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      }
+    },
+    "/spheroscope/slot-query/create": {
+      "post": {
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlotQueryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotQueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      }
+    },
+    "/spheroscope/slot-query/{id}/execute": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotQueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Execute",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      }
+    },
     "/user/": {
       "get": {
         "parameters": [],
@@ -7177,6 +7425,12 @@
     },
     {
       "name": "Mmda.Constellation"
+    },
+    {
+      "name": "Spheroscope"
+    },
+    {
+      "name": "Spheroscope.Slot_Query"
     }
   ]
 }
