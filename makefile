@@ -31,6 +31,9 @@ apispec:
 # DEVELOPMENT #
 ###############
 
+clean:
+	rm -rf ./instance/
+
 init:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=${config} && \
