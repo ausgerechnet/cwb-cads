@@ -43,7 +43,7 @@ type CoordinatesOut = Partial<{
 }>
 type ConcordanceLineOut = Partial<{
   discourseme_ranges: Array<DiscoursemeRangeOut>
-  id: number
+  match_id: number
   structural: {}
   tokens: Array<TokenOut>
 }>
@@ -69,6 +69,7 @@ type ConcordanceOut = Partial<{
 }>
 type ConstellationCollocationItemsOut = Partial<{
   coordinates: Array<CoordinatesOut> | null
+  discourseme_coordinates: Array<DiscoursemeCoordinatesOut> | null
   discourseme_scores: Array<DiscoursemeScoresOut> | null
   id: number
   items: Array<CollocationItemOut>
@@ -77,6 +78,14 @@ type ConstellationCollocationItemsOut = Partial<{
   page_number: number
   page_size: number
   sort_by: string
+}>
+type DiscoursemeCoordinatesOut = Partial<{
+  discourseme_id: number
+  semantic_map_id: number
+  x: number
+  x_user: number
+  y: number
+  y_user: number
 }>
 type DiscoursemeScoresOut = Partial<{
   discourseme_id: number
@@ -123,6 +132,7 @@ type ConstellationDescriptionOutUpdate = Partial<{
 }>
 type ConstellationKeywordItemsOut = Partial<{
   coordinates: Array<CoordinatesOut> | null
+  discourseme_coordinates: Array<DiscoursemeCoordinatesOut> | null
   discourseme_scores: Array<DiscoursemeScoresOut> | null
   id: number
   items: Array<KeywordItemOut>
@@ -243,9 +253,9 @@ const CoordinatesOut: z.ZodType<CoordinatesOut> = z
     item: z.string(),
     semantic_map_id: z.number().int(),
     x: z.number(),
-    x_user: z.number(),
+    x_user: z.number().nullable(),
     y: z.number(),
-    y_user: z.number(),
+    y_user: z.number().nullable(),
   })
   .partial()
   .passthrough()
@@ -271,12 +281,7 @@ const CollocationItemsOut: z.ZodType<CollocationItemsOut> = z
   .partial()
   .passthrough()
 const SemanticMapOut = z
-  .object({
-    collocation_id: z.number().int(),
-    id: z.number().int(),
-    keyword_id: z.number().int(),
-    p: z.string(),
-  })
+  .object({ id: z.number().int(), p: z.string() })
   .partial()
   .passthrough()
 const CorpusOut: z.ZodType<CorpusOut> = z
@@ -347,6 +352,8 @@ const KeywordOut = z
   .object({
     corpus_id: z.number().int(),
     corpus_id_reference: z.number().int(),
+    corpus_name: z.string(),
+    corpus_name_reference: z.string(),
     id: z.number().int(),
     min_freq: z.number().int(),
     nr_items: z.number().int(),
@@ -354,8 +361,10 @@ const KeywordOut = z
     p_reference: z.string(),
     semantic_map_id: z.number().int().nullable(),
     sub_vs_rest: z.boolean(),
-    subcorpus_id: z.number().int(),
-    subcorpus_id_reference: z.number().int(),
+    subcorpus_id: z.number().int().nullable(),
+    subcorpus_id_reference: z.number().int().nullable(),
+    subcorpus_name: z.string(),
+    subcorpus_name_reference: z.string().nullable(),
   })
   .partial()
   .passthrough()
@@ -368,8 +377,8 @@ const KeywordIn = z
     p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish(),
     sub_vs_rest: z.boolean().optional().default(true),
-    subcorpus_id: z.number().int().nullish(),
-    subcorpus_id_reference: z.number().int().nullish(),
+    subcorpus_id: z.number().int().nullish().nullable(),
+    subcorpus_id_reference: z.number().int().nullish().nullable(),
   })
   .passthrough()
 const KeywordPatchIn = z
@@ -454,10 +463,10 @@ const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
     items: z.array(DiscoursemeDescriptionItem),
     match_strategy: z.string(),
     p: z.string(),
-    query_id: z.number().int(),
+    query_id: z.number().int().nullable(),
     s: z.string(),
     semantic_map_id: z.number().int(),
-    subcorpus_id: z.number().int(),
+    subcorpus_id: z.number().int().nullable(),
   })
   .partial()
   .passthrough()
@@ -471,7 +480,7 @@ const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
     p: z.string(),
     s: z.string(),
     semantic_map_id: z.number().int(),
-    subcorpus_id: z.number().int(),
+    subcorpus_id: z.number().int().nullable(),
   })
   .partial()
   .passthrough()
@@ -519,6 +528,17 @@ const ConstellationCollocationIn = z
     window: z.number().int().optional().default(10),
   })
   .passthrough()
+const DiscoursemeCoordinatesOut: z.ZodType<DiscoursemeCoordinatesOut> = z
+  .object({
+    discourseme_id: z.number().int(),
+    semantic_map_id: z.number().int(),
+    x: z.number(),
+    x_user: z.number().nullable(),
+    y: z.number(),
+    y_user: z.number().nullable(),
+  })
+  .partial()
+  .passthrough()
 const DiscoursemeScoresOut: z.ZodType<DiscoursemeScoresOut> = z
   .object({
     discourseme_id: z.number().int(),
@@ -532,6 +552,7 @@ const ConstellationCollocationItemsOut: z.ZodType<ConstellationCollocationItemsO
   z
     .object({
       coordinates: z.array(CoordinatesOut).nullable(),
+      discourseme_coordinates: z.array(DiscoursemeCoordinatesOut).nullable(),
       discourseme_scores: z.array(DiscoursemeScoresOut).nullable(),
       id: z.number().int(),
       items: z.array(CollocationItemOut),
@@ -565,7 +586,7 @@ const TokenOut: z.ZodType<TokenOut> = z
 const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
   .object({
     discourseme_ranges: z.array(DiscoursemeRangeOut),
-    id: z.number().int(),
+    match_id: z.number().int(),
     structural: z.object({}).partial().passthrough(),
     tokens: z.array(TokenOut),
   })
@@ -588,12 +609,13 @@ const ConstellationKeywordIn = z
     p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish(),
     sub_vs_rest: z.boolean().optional().default(true),
-    subcorpus_id_reference: z.number().int().nullish(),
+    subcorpus_id_reference: z.number().int().nullish().nullable(),
   })
   .passthrough()
 const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
   .object({
     coordinates: z.array(CoordinatesOut).nullable(),
+    discourseme_coordinates: z.array(DiscoursemeCoordinatesOut).nullable(),
     discourseme_scores: z.array(DiscoursemeScoresOut).nullable(),
     id: z.number().int(),
     items: z.array(KeywordItemOut),
@@ -604,6 +626,13 @@ const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
     sort_by: z.string(),
   })
   .partial()
+  .passthrough()
+const DiscoursemeCoordinatesIn = z
+  .object({
+    discourseme_id: z.number().int(),
+    x_user: z.number().optional(),
+    y_user: z.number().optional(),
+  })
   .passthrough()
 const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
   .object({
@@ -639,11 +668,8 @@ const QueryOut = z
     corpus_id: z.number().int(),
     corpus_name: z.string(),
     cqp_query: z.string(),
-    discourseme_id: z.number().int().nullable(),
-    discourseme_name: z.string().nullable(),
     id: z.number().int(),
     match_strategy: z.string(),
-    nqr_cqp: z.string(),
     random_seed: z.number().int(),
     subcorpus_id: z.number().int().nullable(),
     subcorpus_name: z.string().nullable(),
@@ -654,7 +680,6 @@ const QueryIn = z
   .object({
     corpus_id: z.number().int(),
     cqp_query: z.string(),
-    discourseme_id: z.number().int().nullish(),
     match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().optional(),
@@ -663,7 +688,6 @@ const QueryIn = z
 const QueryAssistedIn = z
   .object({
     corpus_id: z.number().int(),
-    discourseme_id: z.number().int().nullish(),
     escape: z.boolean().optional(),
     ignore_case: z.boolean().optional(),
     ignore_diacritics: z.boolean().optional(),
@@ -783,6 +807,7 @@ export const schemas = {
   ConstellationDiscoursemeDescriptionIn,
   ConstellationDescriptionOutUpdate,
   ConstellationCollocationIn,
+  DiscoursemeCoordinatesOut,
   DiscoursemeScoresOut,
   ConstellationCollocationItemsOut,
   DiscoursemeRangeOut,
@@ -791,6 +816,7 @@ export const schemas = {
   ConcordanceOut,
   ConstellationKeywordIn,
   ConstellationKeywordItemsOut,
+  DiscoursemeCoordinatesIn,
   DiscoursemeIn,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
@@ -1234,6 +1260,37 @@ const endpoints = makeApi([
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/:id/subcorpus/:subcorpus_id',
+    alias: 'getCorpusIdsubcorpusSubcorpus_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'subcorpus_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SubCorpusOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
       },
     ],
   },
@@ -1856,6 +1913,7 @@ const endpoints = makeApi([
     path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/auto-associate',
     alias:
       'putMmdaconstellationIddescriptionDescription_idcollocationCollocation_idautoAssociate',
+    description: `Output: DiscoursemeDescription(many&#x3D;True)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2271,6 +2329,90 @@ const endpoints = makeApi([
       },
     ],
     response: ConstellationDescriptionOutUpdate,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/',
+    alias:
+      'getMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'semantic_map_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(DiscoursemeCoordinatesOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/',
+    alias:
+      'putMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeCoordinatesIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'semantic_map_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(DiscoursemeCoordinatesOut),
     errors: [
       {
         status: 401,
@@ -2758,36 +2900,9 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'post',
-    path: '/query/:id/execute',
-    alias: 'postQueryIdexecute',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: QueryOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-    ],
-  },
-  {
     method: 'get',
     path: '/query/:query_id/breakdown',
     alias: 'getQueryQuery_idbreakdown',
-    description: `TODO: pagination needed?`,
     requestFormat: 'json',
     parameters: [
       {
