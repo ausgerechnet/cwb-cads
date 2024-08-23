@@ -195,6 +195,32 @@ type AnnotationsOut = Partial<{
   key: string
   value_type: 'datetime' | 'numeric' | 'boolean' | 'unicode'
 }>
+type SlotQueryIn = {
+  corpus_id: number
+  corrections?: Array<AnchorCorrection> | undefined
+  cqp_query?: string | undefined
+  match_strategy?: ('longest' | 'shortest' | 'standard') | undefined
+  name?: string | undefined
+  slots?: Array<AnchorSlot> | undefined
+}
+type AnchorCorrection = Partial<{
+  anchor: string
+  correction: number
+}>
+type AnchorSlot = Partial<{
+  end: string
+  slot: string
+  start: string
+}>
+type SlotQueryOut = Partial<{
+  corpus_id: number
+  corrections: Array<AnchorCorrection>
+  cqp_query: string
+  id: number
+  match_strategy: 'longest' | 'shortest' | 'standard'
+  name: string
+  slots: Array<AnchorSlot>
+}>
 type SubCorpusOut = Partial<{
   corpus: CorpusOut
   description: string | null
@@ -253,9 +279,9 @@ const CoordinatesOut: z.ZodType<CoordinatesOut> = z
     item: z.string(),
     semantic_map_id: z.number().int(),
     x: z.number(),
-    x_user: z.number().nullable(),
+    x_user: z.number(),
     y: z.number(),
-    y_user: z.number().nullable(),
+    y_user: z.number(),
   })
   .partial()
   .passthrough()
@@ -281,7 +307,7 @@ const CollocationItemsOut: z.ZodType<CollocationItemsOut> = z
   .partial()
   .passthrough()
 const SemanticMapOut = z
-  .object({ id: z.number().int(), p: z.string() })
+  .object({ id: z.number().int(), method: z.string(), p: z.string() })
   .partial()
   .passthrough()
 const CorpusOut: z.ZodType<CorpusOut> = z
@@ -361,10 +387,10 @@ const KeywordOut = z
     p_reference: z.string(),
     semantic_map_id: z.number().int().nullable(),
     sub_vs_rest: z.boolean(),
-    subcorpus_id: z.number().int().nullable(),
-    subcorpus_id_reference: z.number().int().nullable(),
+    subcorpus_id: z.number().int(),
+    subcorpus_id_reference: z.number().int(),
     subcorpus_name: z.string(),
-    subcorpus_name_reference: z.string().nullable(),
+    subcorpus_name_reference: z.string(),
   })
   .partial()
   .passthrough()
@@ -377,8 +403,8 @@ const KeywordIn = z
     p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish(),
     sub_vs_rest: z.boolean().optional().default(true),
-    subcorpus_id: z.number().int().nullish().nullable(),
-    subcorpus_id_reference: z.number().int().nullish().nullable(),
+    subcorpus_id: z.number().int().nullish(),
+    subcorpus_id_reference: z.number().int().nullish(),
   })
   .passthrough()
 const KeywordPatchIn = z
@@ -463,10 +489,10 @@ const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
     items: z.array(DiscoursemeDescriptionItem),
     match_strategy: z.string(),
     p: z.string(),
-    query_id: z.number().int().nullable(),
+    query_id: z.number().int(),
     s: z.string(),
     semantic_map_id: z.number().int(),
-    subcorpus_id: z.number().int().nullable(),
+    subcorpus_id: z.number().int(),
   })
   .partial()
   .passthrough()
@@ -480,7 +506,7 @@ const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
     p: z.string(),
     s: z.string(),
     semantic_map_id: z.number().int(),
-    subcorpus_id: z.number().int().nullable(),
+    subcorpus_id: z.number().int(),
   })
   .partial()
   .passthrough()
@@ -491,6 +517,10 @@ const ConstellationDescriptionIn = z
       .enum(['longest', 'shortest', 'standard'])
       .optional()
       .default('longest'),
+    overlap: z
+      .enum(['partial', 'full', 'match', 'matchend'])
+      .optional()
+      .default('partial'),
     p: z.string().optional(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().optional(),
@@ -533,9 +563,9 @@ const DiscoursemeCoordinatesOut: z.ZodType<DiscoursemeCoordinatesOut> = z
     discourseme_id: z.number().int(),
     semantic_map_id: z.number().int(),
     x: z.number(),
-    x_user: z.number().nullable(),
+    x_user: z.number(),
     y: z.number(),
-    y_user: z.number().nullable(),
+    y_user: z.number(),
   })
   .partial()
   .passthrough()
@@ -609,7 +639,7 @@ const ConstellationKeywordIn = z
     p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish(),
     sub_vs_rest: z.boolean().optional().default(true),
-    subcorpus_id_reference: z.number().int().nullish().nullable(),
+    subcorpus_id_reference: z.number().int().nullish(),
   })
   .passthrough()
 const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
@@ -662,6 +692,10 @@ const DiscoursemeDescriptionIn = z
     s: z.string().optional(),
     subcorpus_id: z.number().int().optional(),
   })
+  .passthrough()
+const DiscoursemeDescriptionSimilarOut = z
+  .object({ freq: z.number().int(), item: z.string(), similarity: z.number() })
+  .partial()
   .passthrough()
 const QueryOut = z
   .object({
@@ -729,8 +763,12 @@ const QueryMetaOut = z
   })
   .partial()
   .passthrough()
-const CollocationIdsIn = z
-  .object({ collocation_ids: z.array(z.number()) })
+const SemanticMapIn = z
+  .object({
+    collocation_ids: z.array(z.number()),
+    keyword_ids: z.array(z.number()),
+    method: z.enum(['tsne', 'umap']).default('tsne'),
+  })
   .partial()
   .passthrough()
 const CoordinatesIn = z
@@ -738,6 +776,36 @@ const CoordinatesIn = z
     item: z.string(),
     x_user: z.number().nullish(),
     y_user: z.number().nullish(),
+  })
+  .passthrough()
+const AnchorCorrection: z.ZodType<AnchorCorrection> = z
+  .object({ anchor: z.string(), correction: z.number().int() })
+  .partial()
+  .passthrough()
+const AnchorSlot: z.ZodType<AnchorSlot> = z
+  .object({ end: z.string(), slot: z.string(), start: z.string() })
+  .partial()
+  .passthrough()
+const SlotQueryOut: z.ZodType<SlotQueryOut> = z
+  .object({
+    corpus_id: z.number().int(),
+    corrections: z.array(AnchorCorrection),
+    cqp_query: z.string(),
+    id: z.number().int(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']),
+    name: z.string(),
+    slots: z.array(AnchorSlot),
+  })
+  .partial()
+  .passthrough()
+const SlotQueryIn: z.ZodType<SlotQueryIn> = z
+  .object({
+    corpus_id: z.number().int(),
+    corrections: z.array(AnchorCorrection).optional(),
+    cqp_query: z.string().optional(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
+    name: z.string().optional(),
+    slots: z.array(AnchorSlot).optional(),
   })
   .passthrough()
 const UserOut = z
@@ -820,14 +888,19 @@ export const schemas = {
   DiscoursemeIn,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
+  DiscoursemeDescriptionSimilarOut,
   QueryOut,
   QueryIn,
   QueryAssistedIn,
   BreakdownItemsOut,
   BreakdownOut,
   QueryMetaOut,
-  CollocationIdsIn,
+  SemanticMapIn,
   CoordinatesIn,
+  AnchorCorrection,
+  AnchorSlot,
+  SlotQueryOut,
+  SlotQueryIn,
   UserOut,
   UserRegister,
   UserIn,
@@ -2804,6 +2877,52 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
+    path: '/mmda/discourseme/:id/description/:description_id/similar',
+    alias: 'getMmdadiscoursemeIddescriptionDescription_idsimilar',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'number',
+        type: 'Query',
+        schema: z.number().int().optional().default(200),
+      },
+      {
+        name: 'min_freq',
+        type: 'Query',
+        schema: z.number().int().optional().default(2),
+      },
+    ],
+    response: z.array(DiscoursemeDescriptionSimilarOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/query/',
     alias: 'getQuery',
     requestFormat: 'json',
@@ -3283,7 +3402,7 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: CollocationIdsIn,
+        schema: SemanticMapIn,
       },
     ],
     response: SemanticMapOut,
@@ -3405,6 +3524,72 @@ const endpoints = makeApi([
       {
         status: 404,
         description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/spheroscope/slot-query/',
+    alias: 'getSpheroscopeslotQuery',
+    requestFormat: 'json',
+    response: z.array(SlotQueryOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/spheroscope/slot-query/:id/execute',
+    alias: 'postSpheroscopeslotQueryIdexecute',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SlotQueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/spheroscope/slot-query/create',
+    alias: 'postSpheroscopeslotQuerycreate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SlotQueryIn,
+      },
+    ],
+    response: SlotQueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
         schema: HTTPError,
       },
       {
