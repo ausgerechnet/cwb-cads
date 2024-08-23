@@ -160,6 +160,7 @@ class CollocationOut(Schema):
 
     # constellation_id = Integer(metadata={'nullable': True})
     semantic_map_id = Integer(metadata={'nullable': True})
+    query_id = Integer(metadata={'nullable': False})
 
     marginals = String(validate=OneOf(['local', 'global']))
     p = String()

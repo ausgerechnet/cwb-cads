@@ -448,6 +448,12 @@ class ConstellationCollocationIn(CollocationIn):
     filter_discourseme_ids = List(Integer(), load_default=[], required=False)
 
 
+class ConstellationCollocationOut(CollocationOut):
+
+    focus_discourseme_id = Integer(required=True)
+    filter_discourseme_ids = List(Integer(), load_default=[], required=False)
+
+
 class ConstellationKeywordIn(Schema):
 
     semantic_map_id = Integer(required=False, load_default=None)
@@ -577,7 +583,7 @@ def patch_constellation(id, json_data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_constellation_add(id, json_data):
-    """Patch constellation.
+    """Patch constellation: add discourseme.
 
     """
     constellation = db.get_or_404(Constellation, id)
@@ -595,7 +601,7 @@ def patch_constellation_add(id, json_data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_constellation_remove(id, json_data):
-    """Patch constellation.
+    """Patch constellation: remove discourseme.
 
     """
     constellation = db.get_or_404(Constellation, id)
@@ -629,7 +635,6 @@ def get_constellations():
 @bp.auth_required(auth)
 def create_description(id, json_data):
     """Create description of constellation in corpus. Makes sure individual discourseme descriptions exist.
-
 
     """
 
@@ -684,6 +689,9 @@ def create_description(id, json_data):
 @bp.output(ConstellationDescriptionOut(many=True))
 @bp.auth_required(auth)
 def get_all_descriptions(id):
+    """Get all descriptions of this constellation.
+
+    """
 
     constellation = db.get_or_404(Constellation, id)
     descriptions = ConstellationDescription.query.filter_by(constellation_id=constellation.id).all()
@@ -695,6 +703,9 @@ def get_all_descriptions(id):
 @bp.output(ConstellationDescriptionOut)
 @bp.auth_required(auth)
 def get_description(id, description_id):
+    """Get constellation description.
+
+    """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -705,6 +716,9 @@ def get_description(id, description_id):
 @bp.delete('/<id>/description/<description_id>/')
 @bp.auth_required(auth)
 def delete_description(id, description_id):
+    """Delete constellation description.
+
+    """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -719,6 +733,9 @@ def delete_description(id, description_id):
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_description_add(id, description_id, json_data):
+    """Patch constellation description: add discourseme description.
+
+    """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -736,6 +753,9 @@ def patch_description_add(id, description_id, json_data):
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_description_remove(id, description_id, json_data):
+    """Patch constellation description: remove discourseme description.
+
+    """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -756,7 +776,7 @@ def patch_description_remove(id, description_id, json_data):
 @bp.output(ConcordanceOut)
 @bp.auth_required(auth)
 def concordance_lines(id, description_id, query_data, query_focus, query_filter):
-    """Get concordance lines of constellation in corpus. Redirects to query endpoint.
+    """Get concordance lines of constellation in corpus.
 
     """
 
@@ -805,10 +825,10 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
 # COLLOCATION
 @bp.post("/<id>/description/<description_id>/collocation/")
 @bp.input(ConstellationCollocationIn)
-@bp.output(CollocationOut)
+@bp.output(ConstellationCollocationOut)
 @bp.auth_required(auth)
 def create_collocation(id, description_id, json_data):
-    """Create collocation analysis of constellation in corpus.
+    """Create collocation analysis of constellation description.
 
     """
 
@@ -858,7 +878,29 @@ def create_collocation(id, description_id, json_data):
     set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
     ccc_init_semmap(collocation, semantic_map_id)
 
-    return CollocationOut().dump(collocation), 200
+    collocation.focus_discourseme_id = json_data['focus_discourseme_id']
+
+    return ConstellationCollocationOut().dump(collocation), 200
+
+
+@bp.get("/<id>/description/<description_id>/collocation/")
+@bp.output(ConstellationCollocationOut(many=True))
+@bp.auth_required(auth)
+def get_all_collocation(id, description_id):
+    """Get all collocation analyses of constellation description.
+
+    """
+
+    description = db.get_or_404(ConstellationDescription, description_id)
+
+    collocations = list()
+    for desc in description.discourseme_descriptions:
+        collocation = Collocation.query.filter_by(query_id=desc._query.id).first()
+        if collocation:
+            collocation.focus_discourseme_id = desc.discourseme.id
+            collocations.append(collocation)
+
+    return [ConstellationCollocationOut().dump(collocation) for collocation in collocations], 200
 
 
 @bp.get("/<id>/description/<description_id>/collocation/<collocation_id>/items")
@@ -866,7 +908,7 @@ def create_collocation(id, description_id, json_data):
 @bp.output(ConstellationCollocationItemsOut)
 @bp.auth_required(auth)
 def get_collocation_items(id, description_id, collocation_id, query_data):
-    """Get scored items of collocation analysis.
+    """Get scored items and discourseme scores of constellation collocation analysis.
 
     """
 
@@ -950,9 +992,8 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
 @bp.put('/<id>/description/<description_id>/collocation/<collocation_id>/auto-associate')
 @bp.auth_required(auth)
 def associate_discoursemes(id, description_id, collocation_id):
-    """automatically associate discoursemes that occur in the top collocational profile with this constellation
+    """Automatically associate discoursemes that occur in the top collocational profile with this constellation.
 
-    Output: DiscoursemeDescription(many=True)
     """
 
     constellation = db.get_or_404(Constellation, id)
@@ -983,7 +1024,11 @@ def associate_discoursemes(id, description_id, collocation_id):
 @bp.post("/<id>/description/<description_id>/keyword/")
 @bp.input(ConstellationKeywordIn)
 @bp.output(KeywordOut)
+@bp.auth_required(auth)
 def create_keyword(id, description_id, json_data):
+    """Create keyword analysis for constellation description.
+
+    """
 
     # description
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -1027,12 +1072,23 @@ def create_keyword(id, description_id, json_data):
     return KeywordOut().dump(keyword), 200
 
 
+@bp.get("/<id>/description/<description_id>/keyword/")
+@bp.output(KeywordOut(many=True))
+@bp.auth_required(auth)
+def get_all_keyword(id, description_id):
+    """Get all keyword analyses featuring this constellation. (Not implemented.)
+
+    """
+
+    raise NotImplementedError()
+
+
 @bp.get("/<id>/description/<description_id>/keyword/<keyword_id>/items")
 @bp.input(KeywordItemsIn, location='query')
 @bp.output(ConstellationKeywordItemsOut)
 @bp.auth_required(auth)
 def get_keyword_items(id, description_id, keyword_id, query_data):
-    """Get scored items of collocation analysis.
+    """Get scored items and discourseme scores of constellation keyword analysis.
 
     """
 
@@ -1106,7 +1162,7 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
 @bp.put('/<id>/description/<description_id>/keyword/<keyword_id>/auto-associate')
 @bp.auth_required(auth)
 def associate_discoursemes_keyword(id, description_id, keyword_id):
-    """automatically associate discoursemes that occur in the top collocational profile with this constellation
+    """Automatically associate discoursemes that occur in the top keyword profile with this constellation.
 
     """
 

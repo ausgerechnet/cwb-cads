@@ -154,6 +154,10 @@
           "p": {
             "type": "string"
           },
+          "query_id": {
+            "nullable": false,
+            "type": "integer"
+          },
           "s_break": {
             "type": "string"
           },
@@ -327,6 +331,51 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "ConstellationCollocationOut": {
+        "properties": {
+          "filter_discourseme_ids": {
+            "default": [],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "focus_discourseme_id": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "marginals": {
+            "enum": [
+              "local",
+              "global"
+            ],
+            "type": "string"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "string"
+          },
+          "query_id": {
+            "nullable": false,
+            "type": "integer"
+          },
+          "s_break": {
+            "type": "string"
+          },
+          "semantic_map_id": {
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "focus_discourseme_id"
+        ],
         "type": "object"
       },
       "ConstellationDescriptionIn": {
@@ -1632,7 +1681,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev3"
+    "version": "0.3.0.dev4"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3396,7 +3445,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch constellation.",
+        "summary": "Patch constellation: add discourseme.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -3454,7 +3503,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get All Descriptions",
+        "summary": "Get all descriptions of this constellation.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -3587,7 +3636,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Delete Description",
+        "summary": "Delete constellation description.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -3648,7 +3697,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get Description",
+        "summary": "Get constellation description.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -3730,13 +3779,77 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch Description Add",
+        "summary": "Patch constellation description: add discourseme description.",
         "tags": [
           "Mmda.Constellation"
         ]
       }
     },
     "/mmda/constellation/{id}/description/{description_id}/collocation/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConstellationCollocationOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all collocation analyses of constellation description.",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      },
       "post": {
         "parameters": [
           {
@@ -3770,7 +3883,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CollocationOut"
+                  "$ref": "#/components/schemas/ConstellationCollocationOut"
                 }
               }
             },
@@ -3812,7 +3925,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create collocation analysis of constellation in corpus.",
+        "summary": "Create collocation analysis of constellation description.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -3820,7 +3933,6 @@
     },
     "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/auto-associate": {
       "put": {
-        "description": "Output: DiscoursemeDescription(many=True)",
         "parameters": [
           {
             "in": "path",
@@ -3882,7 +3994,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "automatically associate discoursemes that occur in the top collocational profile with this constellation",
+        "summary": "Automatically associate discoursemes that occur in the top collocational profile with this constellation.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -4020,7 +4132,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get scored items of collocation analysis.",
+        "summary": "Get scored items and discourseme scores of constellation collocation analysis.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -4259,13 +4371,77 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get concordance lines of constellation in corpus. Redirects to query endpoint.",
+        "summary": "Get concordance lines of constellation in corpus.",
         "tags": [
           "Mmda.Constellation"
         ]
       }
     },
     "/mmda/constellation/{id}/description/{description_id}/keyword/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/KeywordOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all keyword analyses featuring this constellation. (Not implemented.)",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      },
       "post": {
         "parameters": [
           {
@@ -4305,6 +4481,16 @@
             },
             "description": "Successful response"
           },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
           "404": {
             "content": {
               "application/json": {
@@ -4326,7 +4512,12 @@
             "description": "Validation error"
           }
         },
-        "summary": "Create Keyword",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create keyword analysis for constellation description.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -4395,7 +4586,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "automatically associate discoursemes that occur in the top collocational profile with this constellation",
+        "summary": "Automatically associate discoursemes that occur in the top keyword profile with this constellation.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -4533,7 +4724,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get scored items of collocation analysis.",
+        "summary": "Get scored items and discourseme scores of constellation keyword analysis.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -4615,7 +4806,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch Description Remove",
+        "summary": "Patch constellation description: remove discourseme description.",
         "tags": [
           "Mmda.Constellation"
         ]
@@ -4854,7 +5045,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch constellation.",
+        "summary": "Patch constellation: remove discourseme.",
         "tags": [
           "Mmda.Constellation"
         ]
