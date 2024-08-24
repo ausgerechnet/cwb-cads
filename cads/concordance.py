@@ -231,70 +231,73 @@ def ccc_concordance(focus_query,
 ################
 # API schemata #
 ################
+
+# Input
 class ConcordanceIn(Schema):
 
-    window = Integer(load_default=10, required=False)
-    extended_window = Integer(load_default=50, required=False)
+    window = Integer(required=False, load_default=10)
+    extended_window = Integer(required=False, load_default=50)
 
-    primary = String(load_default='word', required=False)
-    secondary = String(load_default='lemma', required=False)
+    primary = String(required=False, load_default='word')
+    secondary = String(required=False, load_default='lemma')
 
-    page_size = Integer(load_default=10, required=False)
-    page_number = Integer(load_default=1, required=False)
+    page_size = Integer(required=False, load_default=10)
+    page_number = Integer(required=False, load_default=1)
 
-    sort_order = String(load_default='random', required=False, validate=OneOf(['first', 'random', 'ascending', 'descending']))
+    sort_order = String(required=False, load_default='random', validate=OneOf(['first', 'random', 'ascending', 'descending']))
 
-    sort_by_offset = Integer(load_default=0, required=False)
-    sort_by_p_att = String(load_default=None, required=False)
-    sort_by_s_att = String(load_default=None, required=False)
+    sort_by_offset = Integer(required=False, load_default=0)
+    sort_by_p_att = String(required=False, load_default=None)
+    sort_by_s_att = String(required=False, load_default=None)
 
-    filter_item = String(metadata={'nullable': True}, required=False)
-    filter_item_p_att = String(load_default='lemma', required=False)
+    filter_item = String(required=False, metadata={'nullable': True})
+    filter_item_p_att = String(required=False, load_default='lemma')
 
-    filter_query_ids = List(Integer, load_default=[], required=False)
-    highlight_query_ids = List(Integer, load_default=[], required=False)
+    filter_query_ids = List(Integer, required=False, load_default=[])
+    highlight_query_ids = List(Integer, required=False, load_default=[])
 
 
 class ConcordanceLineIn(Schema):
 
-    window = Integer(load_default=10, required=False)
-    extended_window = Integer(load_default=50, required=False)
-    extended_context_break = String(load_default='text', required=False)  # or determine via corpus settings
+    window = Integer(required=False, load_default=10)
+    extended_window = Integer(required=False, load_default=50)
+    extended_context_break = String(required=False)
 
-    primary = String(load_default='word', required=False)
-    secondary = String(load_default='lemma', required=False)
+    primary = String(required=False, load_default='word')
+    secondary = String(required=False, load_default='lemma')
 
 
+# Output
 class DiscoursemeRangeOut(Schema):
 
-    discourseme_id = Integer()
-    start = Integer()
-    end = Integer()
+    discourseme_id = Integer(required=True)
+    start = Integer(required=True)
+    end = Integer(required=True)
 
 
 class TokenOut(Schema):
 
-    cpos = Integer()
-    offset = Integer()
-    primary = String()
-    secondary = String()
-    out_of_window = Boolean(dump_default=False)
-    is_filter_item = Boolean(dump_default=False)
+    cpos = Integer(required=True)
+    offset = Integer(required=True)
+    primary = String(required=True)
+    secondary = String(required=True)
+    out_of_window = Boolean(required=True, dump_default=False)
+    is_filter_item = Boolean(required=True, dump_default=False)
 
 
 class ConcordanceLineOut(Schema):
 
-    match_id = Integer()
-    tokens = Nested(TokenOut(many=True))
-    structural = Dict()
-    discourseme_ranges = Nested(DiscoursemeRangeOut(many=True))
+    match_id = Integer(required=True)
+    tokens = Nested(TokenOut(many=True), required=True, dump_default=[])
+    structural = Dict(required=True, dump_default={})
+    discourseme_ranges = Nested(DiscoursemeRangeOut(many=True), required=True, dump_default=[])
 
 
 class ConcordanceOut(Schema):
 
-    nr_lines = Integer()
-    page_size = Integer()
-    page_number = Integer()
-    page_count = Integer()
+    nr_lines = Integer(required=True)
+    page_size = Integer(required=True)
+    page_number = Integer(required=True)
+    page_count = Integer(required=True)
 
-    lines = Nested(ConcordanceLineOut(many=True))
+    lines = Nested(ConcordanceLineOut(many=True), required=True, dump_default=[])

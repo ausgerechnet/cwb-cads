@@ -49,27 +49,30 @@ def ccc_breakdown(breakdown):
 ################
 # API schemata #
 ################
+
+# INPUT
 class BreakdownIn(Schema):
 
     p = String(required=True)
 
 
+# OUTPUT
 class BreakdownItemsOut(Schema):
 
-    id = Integer()
-    breakdown_id = Integer()
-    item = String()
-    freq = Integer()
-    nr_tokens = Integer()
-    ipm = Float()
+    id = Integer(required=True)
+    breakdown_id = Integer(required=True)
+    item = String(required=True)
+    freq = Integer(required=True)
+    nr_tokens = Integer(required=True)
+    ipm = Float(required=True)
 
 
 class BreakdownOut(Schema):
 
-    id = Integer()
-    query_id = Integer()
-    p = String()
-    items = Nested(BreakdownItemsOut(many=True))
+    id = Integer(required=True)
+    query_id = Integer(required=True)
+    p = String(required=True)
+    items = Nested(BreakdownItemsOut(many=True), required=True, dump_default=[])
 
 
 # #################

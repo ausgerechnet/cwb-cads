@@ -371,70 +371,73 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', description='imported 
 ################
 # API schemata #
 ################
-class CorpusOut(Schema):
 
-    id = Integer()
-    cwb_id = String()
-    name = String(metadata={'nullable': True})
-    language = String(metadata={'nullable': True})
-    register = String(metadata={'nullable': True})
-    description = String(metadata={'nullable': True})
-    s_atts = List(String)
-    p_atts = List(String)
-    s_annotations = List(String)
-
-
-class SubCorpusOut(Schema):
-
-    id = Integer()
-    corpus = Nested(CorpusOut)
-    name = String(metadata={'nullable': True})
-    description = String(metadata={'nullable': True})
-    nqr_cqp = String(metadata={'nullable': True})
-
-
+# Input
 class SubCorpusIn(Schema):
 
-    level = String()
-    key = String()
-    name = String()
-    description = String(metadata={'nullable': True}, required=False)
-    values_numeric = List(Float, metadata={'nullable': True}, required=False)
-    values_unicode = List(String, metadata={'nullable': True}, required=False)
-    value_boolean = Boolean(metadata={'nullable': True}, required=False)
-    create_nqr = Boolean(load_default=True)
-
-
-class AnnotationsOut(Schema):
-
-    key = String()
-    value_type = String(validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
+    level = String(required=True)
+    key = String(required=True)
+    name = String(required=True)
+    description = String(required=False, metadata={'nullable': True})
+    values_numeric = List(Float, required=False, metadata={'nullable': True})
+    values_unicode = List(String, required=False, metadata={'nullable': True})
+    value_boolean = Boolean(required=False, metadata={'nullable': True})
+    create_nqr = Boolean(required=False, load_default=True)
 
 
 class MetaIn(Schema):
 
-    level = String()
-    key = String()
-    value_type = String(validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
-
-
-class MetaOut(Schema):
-
-    level = String()
-    annotations = Nested(AnnotationsOut(many=True))
+    level = String(required=True)
+    key = String(required=True)
+    value_type = String(required=True, validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
 
 
 class MetaFrequenciesIn(Schema):
 
-    level = String()
-    key = String()
+    level = String(required=True)
+    key = String(required=True)
+
+
+# Output
+class CorpusOut(Schema):
+
+    id = Integer(required=True)
+    cwb_id = String(required=True)
+    name = String(required=True, metadata={'nullable': True})
+    language = String(required=True, metadata={'nullable': True})
+    register = String(required=True, metadata={'nullable': True})
+    description = String(required=True, metadata={'nullable': True})
+    s_atts = List(String, required=True, dump_default=[])
+    p_atts = List(String, required=True, dump_default=[])
+    s_annotations = List(String, required=True, dump_default=[])
+
+
+class SubCorpusOut(Schema):
+
+    id = Integer(required=True)
+    corpus = Nested(CorpusOut, required=True)
+    name = String(required=True, dump_default=None, metadata={'nullable': True})
+    description = String(required=True, dump_default=None, metadata={'nullable': True})
+    nqr_cqp = String(required=True, dump_default=None, metadata={'nullable': True})
+
+
+class AnnotationsOut(Schema):
+
+    key = String(required=True)
+    value_type = String(required=True, validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
+
+
+class MetaOut(Schema):
+
+    level = String(required=True)
+    annotations = Nested(AnnotationsOut(many=True), required=True, dump_default=[])
 
 
 class MetaFrequenciesOut(Schema):
 
-    value = String()
-    nr_spans = Integer()
-    nr_tokens = Integer()
+    value = String(required=True)
+    nr_spans = Integer(required=True)
+    nr_tokens = Integer(required=True)
 
 
 #################

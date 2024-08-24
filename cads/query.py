@@ -278,11 +278,12 @@ def iterative_query(focus_query, filter_queries, window, overlap='partial'):
 ################
 # API schemata #
 ################
+
+# INPUT
 class QueryIn(Schema):
 
-    # discourseme_id = Integer(required=False, metadata={'nullable': True})
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False)
+    subcorpus_id = Integer(required=False, metadata={'nullable': True})
 
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
@@ -293,51 +294,49 @@ class QueryIn(Schema):
 
 class QueryAssistedIn(Schema):
 
-    # discourseme_id = Integer(required=False, metadata={'nullable': True})
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False)
+    subcorpus_id = Integer(required=False, metadata={'nullable': True})
 
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
     items = List(String, required=True)
     p = String(required=True)
-    ignore_case = Boolean(dump_default=True, required=False)
-    ignore_diacritics = Boolean(dump_default=True, required=False)
-    escape = Boolean(dump_default=True, required=False)
+
+    ignore_case = Boolean(required=False, dump_default=True)
+    ignore_diacritics = Boolean(required=False, dump_default=True)
+    escape = Boolean(required=False, dump_default=True)
 
     s = String(required=False)
 
 
-class QueryOut(Schema):
-
-    id = Integer()
-    # discourseme_id = Integer(metadata={'nullable': True})
-    # discourseme_name = String(metadata={'nullable': True})
-    corpus_id = Integer()
-    corpus_name = String()
-    subcorpus_id = Integer(metadata={'nullable': True})
-    subcorpus_name = String(metadata={'nullable': True})
-    match_strategy = String()
-    cqp_query = String()
-    # nqr_cqp = String()
-    random_seed = Integer()
-
-
 class QueryMetaIn(Schema):
 
-    level = String()
-    key = String()
+    level = String(required=True)
+    key = String(required=True)
     p = String(required=False, load_default='word')
+
+
+# OUTPUT
+class QueryOut(Schema):
+
+    id = Integer(required=True)
+    corpus_id = Integer(required=True)
+    corpus_name = String(required=True)
+    subcorpus_id = Integer(required=True, metadata={'nullable': True})
+    subcorpus_name = String(required=True, metadata={'nullable': True})
+    match_strategy = String(required=True)
+    cqp_query = String(required=True)
+    random_seed = Integer(required=True)
 
 
 class QueryMetaOut(Schema):
 
-    item = String()
-    value = String()
-    frequency = Integer()
-    nr_tokens = Integer()
-    nr_texts = Integer()
-    ipm = Float()
+    item = String(required=True)
+    value = String(required=True)
+    frequency = Integer(required=True)
+    nr_tokens = Integer(required=True)
+    nr_texts = Integer(required=True)
+    ipm = Float(required=True)
 
 
 #################
@@ -571,7 +570,7 @@ def concordance_line(query_id, match_id, query_data):
     query = db.get_or_404(Query, query_id)
 
     # display options
-    extended_context_break = query_data.get('extended_context_break')
+    extended_context_break = query_data.get('extended_context_break', query.corpus.s_default)
     extended_window = query_data.get('extended_window')
     window = query_data.get('window')
     primary = query_data.get('primary')

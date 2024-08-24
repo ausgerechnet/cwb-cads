@@ -15,14 +15,30 @@ from .database import User
 bp = APIBlueprint('user', __name__, url_prefix='/user')
 
 
+@auth.verify_token
+def verify_token(token):
+
+    if not token:
+        return abort(403, "missing authorization header")
+    data = decode_token(token)
+    user = db.get_or_404(User, data['sub']['id'])
+
+    return user
+
+
+################
+# API schemata #
+################
+
+# Input
 class UserRegister(Schema):
 
     username = String(required=True)
     password = String(required=True)
     confirm_password = String(required=True)
-    first_name = String()
-    last_name = String()
-    email = String()
+    first_name = String(required=False, metadata={'nullable': True})
+    last_name = String(required=False, metadata={'nullable': True})
+    email = String(required=False, metadata={'nullable': True})
 
 
 class UserIn(Schema):
@@ -38,35 +54,27 @@ class UserUpdate(Schema):
     confirm_password = String(required=True)
 
 
+# Output
 class UserOut(Schema):
 
     id = Integer(required=True)
     username = String(required=True)
-    # roles = List(String())
 
 
 class HTTPTokenOut(Schema):
 
-    access_token = String(required=False)
-    refresh_token = String(required=False)
+    access_token = String(required=True)
+    refresh_token = String(required=True)
 
 
 class HTTPRefreshTokenIn(Schema):
 
-    refresh_token = String()
+    refresh_token = String(required=True)
 
 
-@auth.verify_token
-def verify_token(token):
-
-    if not token:
-        return abort(403, "missing authorization header")
-    data = decode_token(token)
-    user = db.get_or_404(User, data['sub']['id'])
-
-    return user
-
-
+#################
+# API endpoints #
+#################
 @bp.post('/login')
 @bp.input(UserIn, location='form')
 @bp.output(HTTPTokenOut)

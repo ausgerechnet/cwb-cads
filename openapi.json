@@ -41,6 +41,10 @@
             "type": "string"
           }
         },
+        "required": [
+          "key",
+          "value_type"
+        ],
         "type": "object"
       },
       "BreakdownItemsOut": {
@@ -64,6 +68,14 @@
             "type": "integer"
           }
         },
+        "required": [
+          "breakdown_id",
+          "freq",
+          "id",
+          "ipm",
+          "item",
+          "nr_tokens"
+        ],
         "type": "object"
       },
       "BreakdownOut": {
@@ -84,6 +96,12 @@
             "type": "integer"
           }
         },
+        "required": [
+          "id",
+          "items",
+          "p",
+          "query_id"
+        ],
         "type": "object"
       },
       "CollocationItemOut": {
@@ -98,6 +116,10 @@
             "type": "array"
           }
         },
+        "required": [
+          "item",
+          "scores"
+        ],
         "type": "object"
       },
       "CollocationItemsOut": {
@@ -106,7 +128,6 @@
             "items": {
               "$ref": "#/components/schemas/CoordinatesOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "id": {
@@ -134,6 +155,16 @@
             "type": "string"
           }
         },
+        "required": [
+          "coordinates",
+          "id",
+          "items",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by"
+        ],
         "type": "object"
       },
       "CollocationOut": {
@@ -142,10 +173,6 @@
             "type": "integer"
           },
           "marginals": {
-            "enum": [
-              "local",
-              "global"
-            ],
             "type": "string"
           },
           "nr_items": {
@@ -155,7 +182,6 @@
             "type": "string"
           },
           "query_id": {
-            "nullable": false,
             "type": "integer"
           },
           "s_break": {
@@ -166,6 +192,15 @@
             "type": "integer"
           }
         },
+        "required": [
+          "id",
+          "marginals",
+          "nr_items",
+          "p",
+          "query_id",
+          "s_break",
+          "semantic_map_id"
+        ],
         "type": "object"
       },
       "CollocationPatchIn": {
@@ -187,6 +222,10 @@
             "type": "number"
           }
         },
+        "required": [
+          "measure",
+          "score"
+        ],
         "type": "object"
       },
       "ConcordanceLineOut": {
@@ -210,6 +249,12 @@
             "type": "array"
           }
         },
+        "required": [
+          "discourseme_ranges",
+          "match_id",
+          "structural",
+          "tokens"
+        ],
         "type": "object"
       },
       "ConcordanceOut": {
@@ -233,6 +278,13 @@
             "type": "integer"
           }
         },
+        "required": [
+          "lines",
+          "nr_lines",
+          "page_count",
+          "page_number",
+          "page_size"
+        ],
         "type": "object"
       },
       "ConstellationCollocationIn": {
@@ -270,6 +322,8 @@
             "type": "string"
           },
           "semantic_map_id": {
+            "default": null,
+            "nullable": true,
             "type": "integer"
           },
           "window": {
@@ -289,14 +343,12 @@
             "items": {
               "$ref": "#/components/schemas/CoordinatesOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "discourseme_coordinates": {
             "items": {
               "$ref": "#/components/schemas/DiscoursemeCoordinatesOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "discourseme_scores": {
@@ -331,12 +383,23 @@
             "type": "string"
           }
         },
+        "required": [
+          "coordinates",
+          "discourseme_coordinates",
+          "discourseme_scores",
+          "id",
+          "items",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by"
+        ],
         "type": "object"
       },
       "ConstellationCollocationOut": {
         "properties": {
           "filter_discourseme_ids": {
-            "default": [],
             "items": {
               "type": "integer"
             },
@@ -349,10 +412,6 @@
             "type": "integer"
           },
           "marginals": {
-            "enum": [
-              "local",
-              "global"
-            ],
             "type": "string"
           },
           "nr_items": {
@@ -362,7 +421,6 @@
             "type": "string"
           },
           "query_id": {
-            "nullable": false,
             "type": "integer"
           },
           "s_break": {
@@ -374,7 +432,15 @@
           }
         },
         "required": [
-          "focus_discourseme_id"
+          "filter_discourseme_ids",
+          "focus_discourseme_id",
+          "id",
+          "marginals",
+          "nr_items",
+          "p",
+          "query_id",
+          "s_break",
+          "semantic_map_id"
         ],
         "type": "object"
       },
@@ -447,12 +513,24 @@
             "type": "string"
           },
           "semantic_map_id": {
+            "nullable": true,
             "type": "integer"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           }
         },
+        "required": [
+          "corpus_id",
+          "discourseme_ids",
+          "id",
+          "match_strategy",
+          "p",
+          "s",
+          "semantic_map_id",
+          "subcorpus_id"
+        ],
         "type": "object"
       },
       "ConstellationDescriptionOutUpdate": {
@@ -485,9 +563,11 @@
             "type": "string"
           },
           "semantic_map_id": {
+            "nullable": true,
             "type": "integer"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -496,6 +576,7 @@
       "ConstellationDiscoursemeDescriptionIn": {
         "properties": {
           "discourseme_description_ids": {
+            "default": [],
             "items": {
               "type": "integer"
             },
@@ -507,6 +588,7 @@
       "ConstellationIn": {
         "properties": {
           "comment": {
+            "nullable": true,
             "type": "string"
           },
           "discourseme_ids": {
@@ -517,6 +599,7 @@
             "type": "array"
           },
           "name": {
+            "nullable": true,
             "type": "string"
           }
         },
@@ -525,6 +608,7 @@
       "ConstellationInUpdate": {
         "properties": {
           "comment": {
+            "nullable": true,
             "type": "string"
           },
           "discourseme_ids": {
@@ -535,6 +619,7 @@
             "type": "array"
           },
           "name": {
+            "nullable": true,
             "type": "string"
           }
         },
@@ -579,14 +664,12 @@
             "items": {
               "$ref": "#/components/schemas/CoordinatesOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "discourseme_coordinates": {
             "items": {
               "$ref": "#/components/schemas/DiscoursemeCoordinatesOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "discourseme_scores": {
@@ -621,6 +704,18 @@
             "type": "string"
           }
         },
+        "required": [
+          "coordinates",
+          "discourseme_coordinates",
+          "discourseme_scores",
+          "id",
+          "items",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by"
+        ],
         "type": "object"
       },
       "ConstellationOut": {
@@ -643,6 +738,12 @@
             "type": "string"
           }
         },
+        "required": [
+          "comment",
+          "discoursemes",
+          "id",
+          "name"
+        ],
         "type": "object"
       },
       "CoordinatesIn": {
@@ -678,15 +779,25 @@
             "type": "number"
           },
           "x_user": {
+            "nullable": true,
             "type": "number"
           },
           "y": {
             "type": "number"
           },
           "y_user": {
+            "nullable": true,
             "type": "number"
           }
         },
+        "required": [
+          "item",
+          "semantic_map_id",
+          "x",
+          "x_user",
+          "y",
+          "y_user"
+        ],
         "type": "object"
       },
       "CorpusOut": {
@@ -732,6 +843,17 @@
             "type": "array"
           }
         },
+        "required": [
+          "cwb_id",
+          "description",
+          "id",
+          "language",
+          "name",
+          "p_atts",
+          "register",
+          "s_annotations",
+          "s_atts"
+        ],
         "type": "object"
       },
       "DiscoursemeCoordinatesIn": {
@@ -740,14 +862,18 @@
             "type": "integer"
           },
           "x_user": {
+            "nullable": true,
             "type": "number"
           },
           "y_user": {
+            "nullable": true,
             "type": "number"
           }
         },
         "required": [
-          "discourseme_id"
+          "discourseme_id",
+          "x_user",
+          "y_user"
         ],
         "type": "object"
       },
@@ -763,15 +889,25 @@
             "type": "number"
           },
           "x_user": {
+            "nullable": true,
             "type": "number"
           },
           "y": {
             "type": "number"
           },
           "y_user": {
+            "nullable": true,
             "type": "number"
           }
         },
+        "required": [
+          "discourseme_id",
+          "semantic_map_id",
+          "x",
+          "x_user",
+          "y",
+          "y_user"
+        ],
         "type": "object"
       },
       "DiscoursemeDescriptionIn": {
@@ -780,6 +916,7 @@
             "type": "integer"
           },
           "items": {
+            "default": [],
             "items": {
               "type": "string"
             },
@@ -801,6 +938,7 @@
             "type": "string"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -815,6 +953,9 @@
             "type": "string"
           }
         },
+        "required": [
+          "item"
+        ],
         "type": "object"
       },
       "DiscoursemeDescriptionOut": {
@@ -847,12 +988,26 @@
             "type": "string"
           },
           "semantic_map_id": {
+            "nullable": true,
             "type": "integer"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           }
         },
+        "required": [
+          "corpus_id",
+          "discourseme_id",
+          "id",
+          "items",
+          "match_strategy",
+          "p",
+          "query_id",
+          "s",
+          "semantic_map_id",
+          "subcorpus_id"
+        ],
         "type": "object"
       },
       "DiscoursemeDescriptionSimilarOut": {
@@ -867,20 +1022,28 @@
             "type": "number"
           }
         },
+        "required": [
+          "freq",
+          "item",
+          "similarity"
+        ],
         "type": "object"
       },
       "DiscoursemeIn": {
         "properties": {
           "comment": {
+            "nullable": true,
             "type": "string"
           },
           "name": {
+            "nullable": true,
             "type": "string"
           },
           "template": {
             "items": {
               "$ref": "#/components/schemas/DiscoursemeTemplateItem"
             },
+            "nullable": true,
             "type": "array"
           }
         },
@@ -889,15 +1052,18 @@
       "DiscoursemeInUpdate": {
         "properties": {
           "comment": {
+            "nullable": true,
             "type": "string"
           },
           "name": {
+            "nullable": true,
             "type": "string"
           },
           "template": {
             "items": {
               "$ref": "#/components/schemas/DiscoursemeTemplateItem"
             },
+            "nullable": true,
             "type": "array"
           }
         },
@@ -920,9 +1086,16 @@
             "items": {
               "$ref": "#/components/schemas/DiscoursemeTemplateItem"
             },
+            "nullable": true,
             "type": "array"
           }
         },
+        "required": [
+          "comment",
+          "id",
+          "name",
+          "template"
+        ],
         "type": "object"
       },
       "DiscoursemeRangeOut": {
@@ -937,6 +1110,11 @@
             "type": "integer"
           }
         },
+        "required": [
+          "discourseme_id",
+          "end",
+          "start"
+        ],
         "type": "object"
       },
       "DiscoursemeScoresOut": {
@@ -963,6 +1141,12 @@
             "type": "array"
           }
         },
+        "required": [
+          "discourseme_id",
+          "global_scores",
+          "item_scores",
+          "unigram_item_scores"
+        ],
         "type": "object"
       },
       "DiscoursemeTemplateItem": {
@@ -999,6 +1183,9 @@
             "type": "string"
           }
         },
+        "required": [
+          "refresh_token"
+        ],
         "type": "object"
       },
       "HTTPTokenOut": {
@@ -1010,6 +1197,10 @@
             "type": "string"
           }
         },
+        "required": [
+          "access_token",
+          "refresh_token"
+        ],
         "type": "object"
       },
       "KeywordIn": {
@@ -1070,6 +1261,10 @@
             "type": "array"
           }
         },
+        "required": [
+          "item",
+          "scores"
+        ],
         "type": "object"
       },
       "KeywordItemsOut": {
@@ -1078,7 +1273,6 @@
             "items": {
               "$ref": "#/components/schemas/CoordinatesOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "id": {
@@ -1106,6 +1300,16 @@
             "type": "string"
           }
         },
+        "required": [
+          "coordinates",
+          "id",
+          "items",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by"
+        ],
         "type": "object"
       },
       "KeywordOut": {
@@ -1145,27 +1349,43 @@
             "type": "boolean"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           },
           "subcorpus_id_reference": {
+            "nullable": true,
             "type": "integer"
           },
           "subcorpus_name": {
+            "nullable": true,
             "type": "string"
           },
           "subcorpus_name_reference": {
+            "nullable": true,
             "type": "string"
           }
         },
+        "required": [
+          "corpus_id",
+          "corpus_id_reference",
+          "corpus_name",
+          "corpus_name_reference",
+          "id",
+          "min_freq",
+          "nr_items",
+          "p",
+          "p_reference",
+          "semantic_map_id",
+          "sub_vs_rest",
+          "subcorpus_id",
+          "subcorpus_id_reference",
+          "subcorpus_name",
+          "subcorpus_name_reference"
+        ],
         "type": "object"
       },
       "KeywordPatchIn": {
         "properties": {
-          "constellation_id": {
-            "default": null,
-            "nullable": true,
-            "type": "integer"
-          },
           "semantic_map_id": {
             "default": null,
             "nullable": true,
@@ -1183,6 +1403,10 @@
             "type": "number"
           }
         },
+        "required": [
+          "measure",
+          "score"
+        ],
         "type": "object"
       },
       "MetaFrequenciesOut": {
@@ -1197,6 +1421,11 @@
             "type": "string"
           }
         },
+        "required": [
+          "nr_spans",
+          "nr_tokens",
+          "value"
+        ],
         "type": "object"
       },
       "MetaIn": {
@@ -1217,6 +1446,11 @@
             "type": "string"
           }
         },
+        "required": [
+          "key",
+          "level",
+          "value_type"
+        ],
         "type": "object"
       },
       "MetaOut": {
@@ -1231,6 +1465,10 @@
             "type": "string"
           }
         },
+        "required": [
+          "annotations",
+          "level"
+        ],
         "type": "object"
       },
       "QueryAssistedIn": {
@@ -1268,6 +1506,7 @@
             "type": "string"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -1298,6 +1537,7 @@
             "type": "string"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -1328,6 +1568,14 @@
             "type": "string"
           }
         },
+        "required": [
+          "frequency",
+          "ipm",
+          "item",
+          "nr_texts",
+          "nr_tokens",
+          "value"
+        ],
         "type": "object"
       },
       "QueryOut": {
@@ -1359,17 +1607,29 @@
             "type": "string"
           }
         },
+        "required": [
+          "corpus_id",
+          "corpus_name",
+          "cqp_query",
+          "id",
+          "match_strategy",
+          "random_seed",
+          "subcorpus_id",
+          "subcorpus_name"
+        ],
         "type": "object"
       },
       "SemanticMapIn": {
         "properties": {
           "collocation_ids": {
+            "default": [],
             "items": {
               "type": "integer"
             },
             "type": "array"
           },
           "keyword_ids": {
+            "default": [],
             "items": {
               "type": "integer"
             },
@@ -1398,6 +1658,11 @@
             "type": "string"
           }
         },
+        "required": [
+          "id",
+          "method",
+          "p"
+        ],
         "type": "object"
       },
       "SlotQueryIn": {
@@ -1512,6 +1777,11 @@
             "type": "array"
           }
         },
+        "required": [
+          "key",
+          "level",
+          "name"
+        ],
         "type": "object"
       },
       "SubCorpusOut": {
@@ -1535,6 +1805,13 @@
             "type": "string"
           }
         },
+        "required": [
+          "corpus",
+          "description",
+          "id",
+          "name",
+          "nqr_cqp"
+        ],
         "type": "object"
       },
       "TokenOut": {
@@ -1558,6 +1835,14 @@
             "type": "string"
           }
         },
+        "required": [
+          "cpos",
+          "is_filter_item",
+          "offset",
+          "out_of_window",
+          "primary",
+          "secondary"
+        ],
         "type": "object"
       },
       "UserIn": {
@@ -1596,12 +1881,15 @@
             "type": "string"
           },
           "email": {
+            "nullable": true,
             "type": "string"
           },
           "first_name": {
+            "nullable": true,
             "type": "string"
           },
           "last_name": {
+            "nullable": true,
             "type": "string"
           },
           "password": {
@@ -1681,7 +1969,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev4"
+    "version": "0.3.0.dev5"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -2356,7 +2644,7 @@
           {
             "in": "query",
             "name": "level",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -2364,7 +2652,7 @@
           {
             "in": "query",
             "name": "key",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -6194,6 +6482,8 @@
             "name": "semantic_map_id",
             "required": false,
             "schema": {
+              "default": null,
+              "nullable": true,
               "type": "integer"
             }
           },
@@ -6216,14 +6506,6 @@
           },
           {
             "in": "query",
-            "name": "s_break",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "marginals",
             "required": false,
             "schema": {
@@ -6232,6 +6514,14 @@
                 "local",
                 "global"
               ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "s_break",
+            "required": false,
+            "schema": {
               "type": "string"
             }
           },
@@ -6627,7 +6917,6 @@
             "name": "extended_context_break",
             "required": false,
             "schema": {
-              "default": "text",
               "type": "string"
             }
           },
@@ -6717,7 +7006,7 @@
           {
             "in": "query",
             "name": "level",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }
@@ -6725,7 +7014,7 @@
           {
             "in": "query",
             "name": "key",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string"
             }

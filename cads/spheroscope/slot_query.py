@@ -1,16 +1,17 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String, Nested
-from apiflask.validators import OneOf
 import json
 
+from apiflask import APIBlueprint, Schema
+from apiflask.fields import Integer, Nested, String
+from apiflask.validators import OneOf
 from flask import current_app
-from .database import SlotQuery
+
+from .. import db
 from ..database import Corpus
 from ..users import auth
-from .. import db
+from .database import SlotQuery
 
 bp = APIBlueprint('slot_query', __name__, url_prefix='/slot-query')
 

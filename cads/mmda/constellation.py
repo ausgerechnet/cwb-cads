@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema  # , abort
-from apiflask.fields import Boolean, Integer, List, Nested, String, Float
+from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from ccc.utils import cqp_escape
@@ -11,8 +11,8 @@ from pandas import DataFrame, read_sql
 
 from .. import db
 from ..collocation import (CollocationIn, CollocationItemOut,
-                           CollocationItemsIn, CollocationItemsOut, CollocationOut,
-                           get_or_create_counts)
+                           CollocationItemsIn, CollocationItemsOut,
+                           CollocationOut, get_or_create_counts)
 from ..concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
 from ..database import (Collocation, CollocationItem, CollocationItemScore,
                         Corpus, CotextLines, Keyword, KeywordItem,
@@ -23,13 +23,14 @@ from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
                      iterative_query)
 from ..semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
 from ..users import auth
-from .database import (CollocationDiscoursemeItem,
-                       Constellation,
+from .database import (CollocationDiscoursemeItem, Constellation,
                        ConstellationDescription, Discourseme,
-                       DiscoursemeDescription, KeywordDiscoursemeItem,
-                       DiscoursemeCoordinates)
-from .discourseme import (DiscoursemeOut, create_discourseme_description,
-                          description_items_to_query, DiscoursemeScoresOut, DiscoursemeDescriptionOut)
+                       DiscoursemeCoordinates, DiscoursemeDescription,
+                       KeywordDiscoursemeItem)
+from .discourseme import (DiscoursemeCoordinatesIn, DiscoursemeCoordinatesOut,
+                          DiscoursemeDescriptionOut, DiscoursemeOut,
+                          DiscoursemeScoresOut, create_discourseme_description,
+                          description_items_to_query)
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -398,19 +399,13 @@ def get_keyword_discourseme_scores(keyword_id, discourseme_description_ids):
 ################
 # API schemata #
 ################
+
+# INPUT
 class ConstellationIn(Schema):
 
-    name = String(required=False)
-    comment = String(required=False)
-    discourseme_ids = List(Integer, required=False, load_default=[])
-
-
-class ConstellationOut(Schema):
-
-    id = Integer()
-    name = String(metadata={'nullable': True})
+    name = String(required=False, metadata={'nullable': True})
     comment = String(required=False, metadata={'nullable': True})
-    discoursemes = Nested(DiscoursemeOut(many=True))
+    discourseme_ids = List(Integer, required=False, load_default=[])
 
 
 class ConstellationDescriptionIn(Schema):
@@ -426,29 +421,10 @@ class ConstellationDescriptionIn(Schema):
 
 class ConstellationDiscoursemeDescriptionIn(Schema):
 
-    discourseme_description_ids = List(Integer())
-
-
-class ConstellationDescriptionOut(Schema):
-
-    id = Integer()
-    discourseme_ids = List(Integer())
-    corpus_id = Integer()
-    subcorpus_id = Integer()
-    p = String()
-    s = String()
-    match_strategy = String()
-    semantic_map_id = Integer()
-    discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True))
+    discourseme_description_ids = List(Integer(), required=False, load_default=[])
 
 
 class ConstellationCollocationIn(CollocationIn):
-
-    focus_discourseme_id = Integer(required=True)
-    filter_discourseme_ids = List(Integer(), load_default=[], required=False)
-
-
-class ConstellationCollocationOut(CollocationOut):
 
     focus_discourseme_id = Integer(required=True)
     filter_discourseme_ids = List(Integer(), load_default=[], required=False)
@@ -464,33 +440,44 @@ class ConstellationKeywordIn(Schema):
     min_freq = Integer(required=False, load_default=3)
 
 
-class DiscoursemeCoordinatesOut(Schema):
+# OUTPUT
+class ConstellationOut(Schema):
 
-    semantic_map_id = Integer()
-    discourseme_id = Integer()
-    x = Float()
-    y = Float()
-    x_user = Float()
-    y_user = Float()
+    id = Integer(required=True)
+    name = String(required=True, metadata={'nullable': True})
+    comment = String(required=True, metadata={'nullable': True})
+    discoursemes = Nested(DiscoursemeOut(many=True), required=True, dump_default=[])
 
 
-class DiscoursemeCoordinatesIn(Schema):
+class ConstellationDescriptionOut(Schema):
 
-    discourseme_id = Integer(required=True)
-    x_user = Float()
-    y_user = Float()
+    id = Integer(required=True)
+    discourseme_ids = List(Integer(), required=True, dump_default=[])
+    corpus_id = Integer(required=True)
+    subcorpus_id = Integer(required=True, metadata={'nullable': True})
+    p = String(required=True)
+    s = String(required=True)
+    match_strategy = String(required=True)
+    semantic_map_id = Integer(required=True, metadata={'nullable': True})
+    discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True), dump_default=[])
+
+
+class ConstellationCollocationOut(CollocationOut):
+
+    focus_discourseme_id = Integer(required=True)
+    filter_discourseme_ids = List(Integer(), required=True, dump_default=[])
 
 
 class ConstellationCollocationItemsOut(CollocationItemsOut):
 
-    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
-    discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=False, metadata={'nullable': True})
+    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=True, metadata={'nullable': True})
+    discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=True, dump_default=[])
 
 
 class ConstellationKeywordItemsOut(KeywordItemsOut):
 
-    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=False, metadata={'nullable': True})
-    discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=False, metadata={'nullable': True})
+    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=True, metadata={'nullable': True})
+    discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=True, dump_default=[])
 
 
 #################

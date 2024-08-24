@@ -4,7 +4,7 @@
 
 from apiflask import APIBlueprint
 
-from . import slot_query, library
+from . import library, slot_query
 
 bp = APIBlueprint('spheroscope', __name__, url_prefix='/spheroscope')
 

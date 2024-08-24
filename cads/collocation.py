@@ -138,35 +138,36 @@ def get_or_create_counts(collocation, remove_focus_cpos=True):
 ################
 # API schemata #
 ################
+
+# Input
 class CollocationIn(Schema):
 
-    # constellation_id = Integer(required=False)
-    semantic_map_id = Integer(required=False)
+    semantic_map_id = Integer(required=False, load_default=None, metadata={'nullable': True})
 
     p = String(required=True)
     window = Integer(required=False, load_default=10)
-    s_break = String(required=False)
     marginals = String(required=False, load_default='local', validate=OneOf(['local', 'global']))
+    s_break = String(required=False)
 
     # filtering for second-order collocation
-    filter_item = String(metadata={'nullable': True}, required=False)
-    filter_item_p_att = String(load_default='lemma', required=False)
-    filter_discourseme_ids = List(Integer, load_default=[], required=False)
+    filter_item = String(required=False, metadata={'nullable': True})
+    filter_item_p_att = String(required=False, load_default='lemma')
+    filter_discourseme_ids = List(Integer, required=False, load_default=[])
 
 
+# Output
 class CollocationOut(Schema):
 
-    id = Integer()
+    id = Integer(required=True)
 
-    # constellation_id = Integer(metadata={'nullable': True})
-    semantic_map_id = Integer(metadata={'nullable': True})
-    query_id = Integer(metadata={'nullable': False})
+    semantic_map_id = Integer(required=True, metadata={'nullable': True})
+    query_id = Integer(required=True)
 
-    marginals = String(validate=OneOf(['local', 'global']))
-    p = String()
-    s_break = String()
+    marginals = String(required=True)
+    p = String(required=True)
+    s_break = String(required=True)
 
-    nr_items = Integer()
+    nr_items = Integer(required=True)
 
 
 # IDENTICAL TO KEYWORDS ↓
@@ -177,36 +178,36 @@ class CollocationPatchIn(Schema):
 
 class CollocationItemsIn(Schema):
 
-    sort_order = String(load_default='descending', required=False, validate=OneOf(['ascending', 'descending']))
-    sort_by = String(load_default='conservative_log_ratio', required=False, validate=OneOf(AMS_DICT.keys()))
-    page_size = Integer(load_default=10, required=False)
-    page_number = Integer(load_default=1, required=False)
+    sort_order = String(required=False, load_default='descending', validate=OneOf(['ascending', 'descending']))
+    sort_by = String(required=False, load_default='conservative_log_ratio', validate=OneOf(AMS_DICT.keys()))
+    page_size = Integer(required=False, load_default=10)
+    page_number = Integer(required=False, load_default=1)
 
 
 class CollocationScoreOut(Schema):
 
-    measure = String()
-    score = Float()
+    measure = String(required=True)
+    score = Float(required=True)
 
 
 class CollocationItemOut(Schema):
 
-    item = String()
-    scores = Nested(CollocationScoreOut(many=True))
+    item = String(required=True)
+    scores = Nested(CollocationScoreOut(many=True), required=True)
 
 
 class CollocationItemsOut(Schema):
 
-    id = Integer()
+    id = Integer(required=True)
 
-    sort_by = String()
-    nr_items = Integer()
-    page_size = Integer()
-    page_number = Integer()
-    page_count = Integer()
+    sort_by = String(required=True)
+    nr_items = Integer(required=True)
+    page_size = Integer(required=True)
+    page_number = Integer(required=True)
+    page_count = Integer(required=True)
 
-    items = Nested(CollocationItemOut(many=True), required=False)
-    coordinates = Nested(CoordinatesOut(many=True), required=False, metadata={'nullable': True})
+    items = Nested(CollocationItemOut(many=True), required=True, dump_default=[])
+    coordinates = Nested(CoordinatesOut(many=True), required=True, dump_default=[])
 
 
 #################

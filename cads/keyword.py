@@ -85,49 +85,52 @@ def ccc_keywords(keyword):
 ################
 # API schemata #
 ################
+
+# Input
 class KeywordIn(Schema):
 
-    semantic_map_id = Integer(required=False, load_default=None)
+    semantic_map_id = Integer(required=False, load_default=None, metadata={'nullable': True})
 
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False, load_default=None)
+    subcorpus_id = Integer(required=False, load_default=None, metadata={'nullable': True})
     p = String(required=False, load_default='lemma')
 
     corpus_id_reference = Integer(required=True)
-    subcorpus_id_reference = Integer(required=False, load_default=None)
+    subcorpus_id_reference = Integer(required=False, load_default=None, metadata={'nullable': True})
     p_reference = String(required=False, load_default='lemma')
 
     sub_vs_rest = Boolean(required=False, load_default=True)
     min_freq = Integer(required=False, load_default=3)
 
 
+# Output
 class KeywordOut(Schema):
 
-    id = Integer()
+    id = Integer(required=True)
 
-    semantic_map_id = Integer(metadata={'nullable': True})
+    semantic_map_id = Integer(required=True, metadata={'nullable': True})
 
-    corpus_id = Integer()
-    corpus_name = String()
-    subcorpus_id = Integer()
-    subcorpus_name = String()
-    p = String()
+    corpus_id = Integer(required=True)
+    corpus_name = String(required=True)
+    subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    subcorpus_name = String(required=True, dump_default=None, metadata={'nullable': True})
+    p = String(required=True)
 
-    corpus_id_reference = Integer()
-    corpus_name_reference = String()
-    subcorpus_id_reference = Integer()
-    subcorpus_name_reference = String()
-    p_reference = String()
+    corpus_id_reference = Integer(required=True)
+    corpus_name_reference = String(required=True)
+    subcorpus_id_reference = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    subcorpus_name_reference = String(required=True, dump_default=None, metadata={'nullable': True})
+    p_reference = String(required=True)
 
-    sub_vs_rest = Boolean()
-    min_freq = Integer()
+    sub_vs_rest = Boolean(required=True)
+    min_freq = Integer(required=True)
 
-    nr_items = Integer()
+    nr_items = Integer(required=True)
 
 
+# IDENTICAL TO COLLOCATION ↓
 class KeywordPatchIn(Schema):
 
-    constellation_id = Integer(required=False, load_default=None)
     semantic_map_id = Integer(required=False, load_default=None)
 
 
@@ -141,28 +144,28 @@ class KeywordItemsIn(Schema):
 
 class KeywordScoreOut(Schema):
 
-    measure = String()
-    score = Float()
+    measure = String(required=True)
+    score = Float(required=True)
 
 
 class KeywordItemOut(Schema):
 
-    item = String()
-    scores = Nested(KeywordScoreOut(many=True))
+    item = String(required=True)
+    scores = Nested(KeywordScoreOut(many=True), required=True)
 
 
 class KeywordItemsOut(Schema):
 
-    id = Integer()
+    id = Integer(required=True)
 
-    sort_by = String()
-    nr_items = Integer()
-    page_size = Integer()
-    page_number = Integer()
-    page_count = Integer()
+    sort_by = String(required=True)
+    nr_items = Integer(required=True)
+    page_size = Integer(required=True)
+    page_number = Integer(required=True)
+    page_count = Integer(required=True)
 
-    items = Nested(KeywordItemOut(many=True), required=False)
-    coordinates = Nested(CoordinatesOut(many=True), required=False, metadata={'nullable': True})
+    items = Nested(KeywordItemOut(many=True), required=True, dump_default=[])
+    coordinates = Nested(CoordinatesOut(many=True), required=True, dump_default=[])
 
 
 #################

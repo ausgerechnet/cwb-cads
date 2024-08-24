@@ -1,14 +1,16 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import json
 import os
 from glob import glob
+
 import click
-from flask import Blueprint
 from ccc.cqpy import cqpy_load
-from .database import WordList, Macro, SlotQuery, WordListWords
+from flask import Blueprint
+
 from .. import db
-import json
+from .database import Macro, SlotQuery, WordList, WordListWords
 
 bp = Blueprint('library', __name__, url_prefix='/library', cli_group='library')
 

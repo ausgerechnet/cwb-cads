@@ -1,15 +1,15 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import json
+import os
 from datetime import datetime
+
+from ccc.cqpy import cqpy_dump
+from flask import current_app
 
 from .. import db
 from ..database import Corpus
-from ccc.cqpy import cqpy_dump
-import os
-from flask import current_app
-
-import json
 
 
 class WordList(db.Model):

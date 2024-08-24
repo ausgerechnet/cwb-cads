@@ -3,12 +3,13 @@
 
 from datetime import datetime
 
-# from ccc.utils import cqp_escape
-# from flask import Blueprint
-
 from .. import db
 from ..breakdown import ccc_breakdown
 from ..database import Breakdown, Corpus, Query, SubCorpus, get_or_create
+
+# from ccc.utils import cqp_escape
+# from flask import Blueprint
+
 
 # bp = Blueprint('mmda-database', __name__, url_prefix='/mmda-database', cli_group='mmda-database')
 

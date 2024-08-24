@@ -1,6 +1,7 @@
-from flask import url_for
 from pprint import pprint
+
 import pytest
+from flask import url_for
 
 
 def test_create_get_constellation(client, auth):
@@ -595,6 +596,7 @@ def test_constellation_collocation(client, auth):
         assert coll_loc.json['discourseme_scores'][1]['discourseme_id'] == 2
 
         from pandas import DataFrame, concat
+
         ##########
         # GLOBAL
         ##########

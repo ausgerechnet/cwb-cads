@@ -9,7 +9,7 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, List, Nested, String, Float
+from apiflask.fields import Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc.cache import generate_idx
 from ccc.utils import cqp_escape
@@ -18,11 +18,10 @@ from pandas import DataFrame, read_csv
 from pymagnitude import Magnitude
 
 from .. import db
+from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..database import Corpus, Query, User, get_or_create
 from ..users import auth
-from ..collocation import CollocationItemOut, CollocationScoreOut
-from .database import (CollocationDiscoursemeItem,
-                       Discourseme,
+from .database import (CollocationDiscoursemeItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem)
 
@@ -215,78 +214,100 @@ def create_discourseme_description(discourseme, items, corpus_id, subcorpus_id, 
 ################
 # API schemata #
 ################
+
+
+# INPUT / OUTPUT
 class DiscoursemeTemplateItem(Schema):
 
-    p = String(metadata={'nullable': True})
-    surface = String(metadata={'nullable': True})
-    cqp_query = String(metadata={'nullable': True})
+    p = String(required=False, metadata={'nullable': True})
+    surface = String(required=False, metadata={'nullable': True})
+    cqp_query = String(required=False, metadata={'nullable': True})
 
 
+# INPUT
 class DiscoursemeIn(Schema):
 
-    name = String(required=False)
-    comment = String(required=False)
-    template = Nested(DiscoursemeTemplateItem(many=True))
-
-
-class DiscoursemeOut(Schema):
-
-    id = Integer()
-    name = String(metadata={'nullable': True})
-    comment = String(metadata={'nullable': True})
-    template = Nested(DiscoursemeTemplateItem(many=True))
-
-
-class DiscoursemeDescriptionItem(Schema):
-
-    item = String()
+    name = String(required=False, metadata={'nullable': True})
+    comment = String(required=False, metadata={'nullable': True})
+    template = Nested(DiscoursemeTemplateItem(many=True), required=False, metadata={'nullable': True})
 
 
 class DiscoursemeDescriptionIn(Schema):
 
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False)
+    subcorpus_id = Integer(required=False, metadata={'nullable': True})
 
     p = String(required=False)
     s = String(required=False)
-    match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    match_strategy = String(required=False, load_default='longest', validate=OneOf(['longest', 'shortest', 'standard']))
 
-    items = List(String, required=False)
-
-
-class DiscoursemeDescriptionOut(Schema):
-
-    id = Integer()
-    discourseme_id = Integer()
-    corpus_id = Integer()
-    subcorpus_id = Integer()
-    p = String()
-    s = String()
-    match_strategy = String()
-    query_id = Integer()
-    semantic_map_id = Integer()
-    items = Nested(DiscoursemeDescriptionItem(many=True))
-
-
-class DiscoursemeScoresOut(Schema):
-
-    discourseme_id = Integer()
-    item_scores = Nested(CollocationItemOut(many=True))
-    unigram_item_scores = Nested(CollocationItemOut(many=True))
-    global_scores = Nested(CollocationScoreOut(many=True))
+    items = List(String, required=False, load_default=[])
 
 
 class DiscoursemeDescriptionSimilarIn(Schema):
 
-    number = Integer(load_default=200)
-    min_freq = Integer(load_default=2)
+    number = Integer(required=False, load_default=200)
+    min_freq = Integer(required=False, load_default=2)
+
+
+class DiscoursemeCoordinatesIn(Schema):
+
+    discourseme_id = Integer(required=True)
+    x_user = Float(required=True, metadata={'nullable': True})
+    y_user = Float(required=True, metadata={'nullable': True})
+
+
+# OUTPUT
+class DiscoursemeOut(Schema):
+
+    id = Integer(required=True)
+    name = String(required=True, metadata={'nullable': True})
+    comment = String(required=True, metadata={'nullable': True})
+    template = Nested(DiscoursemeTemplateItem(many=True), required=True, metadata={'nullable': True})
+
+
+class DiscoursemeDescriptionItem(Schema):
+
+    item = String(required=True)
+
+
+class DiscoursemeDescriptionOut(Schema):
+
+    id = Integer(required=True)
+    discourseme_id = Integer(required=True)
+    corpus_id = Integer(required=True)
+    subcorpus_id = Integer(required=True, metadata={'nullable': True})
+    query_id = Integer(required=True)
+    p = String(required=True)
+    s = String(required=True)
+    match_strategy = String(required=True)
+    semantic_map_id = Integer(required=True, metadata={'nullable': True})
+    items = Nested(DiscoursemeDescriptionItem(many=True), required=True, dump_default=[])
+
+
+class DiscoursemeScoresOut(Schema):
+
+    discourseme_id = Integer(required=True)
+    item_scores = Nested(CollocationItemOut(many=True), required=True)
+    unigram_item_scores = Nested(CollocationItemOut(many=True), required=True)
+    global_scores = Nested(CollocationScoreOut(many=True), required=True)
 
 
 class DiscoursemeDescriptionSimilarOut(Schema):
 
-    item = String()
-    freq = Integer()
-    similarity = Float()
+    item = String(required=True)
+    freq = Integer(required=True)
+    similarity = Float(required=True)
+
+
+class DiscoursemeCoordinatesOut(Schema):
+
+    semantic_map_id = Integer(required=True)
+    discourseme_id = Integer(required=True)
+    x = Float(required=True)
+    y = Float(required=True)
+    x_user = Float(required=True, metadata={'nullable': True})
+    y_user = Float(required=True, metadata={'nullable': True})
 
 
 #################

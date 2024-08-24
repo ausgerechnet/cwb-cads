@@ -173,20 +173,16 @@ def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
     db.session.commit()
 
 
+################
+# API schemata #
+################
+
+# INPUT
 class SemanticMapIn(Schema):
 
-    collocation_ids = List(Integer())
-    keyword_ids = List(Integer())
+    collocation_ids = List(Integer(), required=False, load_default=[])
+    keyword_ids = List(Integer(), required=False, load_default=[])
     method = String(required=False, load_default='tsne', validate=OneOf(['tsne', 'umap']))
-
-
-class SemanticMapOut(Schema):
-
-    id = Integer()
-    # collocation_id = Integer()
-    # keyword_id = Integer()
-    p = String()
-    method = String()
 
 
 class CoordinatesIn(Schema):
@@ -196,14 +192,22 @@ class CoordinatesIn(Schema):
     y_user = Float(required=False, load_default=None)
 
 
+# OUTPUT
+class SemanticMapOut(Schema):
+
+    id = Integer(required=True)
+    p = String(required=True)
+    method = String(required=True)
+
+
 class CoordinatesOut(Schema):
 
-    semantic_map_id = Integer()
-    item = String()
-    x = Float()
-    y = Float()
-    x_user = Float()
-    y_user = Float()
+    semantic_map_id = Integer(required=True)
+    item = String(required=True)
+    x = Float(required=True)
+    y = Float(required=True)
+    x_user = Float(required=True, metadata={'nullable': True})
+    y_user = Float(required=True, metadata={'nullable': True})
 
 
 #################

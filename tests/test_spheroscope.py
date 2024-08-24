@@ -1,7 +1,8 @@
-from flask import url_for
-import pytest
 from pprint import pprint
+
+import pytest
 from ccc.cqpy import cqpy_load
+from flask import url_for
 
 
 def test_get_slot_queries(client, auth):
