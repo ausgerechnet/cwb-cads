@@ -1,30 +1,30 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
 
-type BreakdownOut = Partial<{
+type BreakdownOut = {
   id: number
   items: Array<BreakdownItemsOut>
   p: string
   query_id: number
-}>
-type BreakdownItemsOut = Partial<{
+}
+type BreakdownItemsOut = {
   breakdown_id: number
   freq: number
   id: number
   ipm: number
   item: string
   nr_tokens: number
-}>
-type CollocationItemOut = Partial<{
+}
+type CollocationItemOut = {
   item: string
   scores: Array<CollocationScoreOut>
-}>
-type CollocationScoreOut = Partial<{
+}
+type CollocationScoreOut = {
   measure: string
   score: number
-}>
-type CollocationItemsOut = Partial<{
-  coordinates: Array<CoordinatesOut> | null
+}
+type CollocationItemsOut = {
+  coordinates: Array<CoordinatesOut>
   id: number
   items: Array<CollocationItemOut>
   nr_items: number
@@ -32,44 +32,44 @@ type CollocationItemsOut = Partial<{
   page_number: number
   page_size: number
   sort_by: string
-}>
-type CoordinatesOut = Partial<{
+}
+type CoordinatesOut = {
   item: string
   semantic_map_id: number
   x: number
-  x_user: number
+  x_user: number | null
   y: number
-  y_user: number
-}>
-type ConcordanceLineOut = Partial<{
+  y_user: number | null
+}
+type ConcordanceLineOut = {
   discourseme_ranges: Array<DiscoursemeRangeOut>
   match_id: number
   structural: {}
   tokens: Array<TokenOut>
-}>
-type DiscoursemeRangeOut = Partial<{
+}
+type DiscoursemeRangeOut = {
   discourseme_id: number
   end: number
   start: number
-}>
-type TokenOut = Partial<{
+}
+type TokenOut = {
   cpos: number
   is_filter_item: boolean
   offset: number
   out_of_window: boolean
   primary: string
   secondary: string
-}>
-type ConcordanceOut = Partial<{
+}
+type ConcordanceOut = {
   lines: Array<ConcordanceLineOut>
   nr_lines: number
   page_count: number
   page_number: number
   page_size: number
-}>
-type ConstellationCollocationItemsOut = Partial<{
-  coordinates: Array<CoordinatesOut> | null
-  discourseme_coordinates: Array<DiscoursemeCoordinatesOut> | null
+}
+type ConstellationCollocationItemsOut = {
+  coordinates: Array<CoordinatesOut>
+  discourseme_coordinates: Array<DiscoursemeCoordinatesOut>
   discourseme_scores: Array<DiscoursemeScoresOut> | null
   id: number
   items: Array<CollocationItemOut>
@@ -78,33 +78,33 @@ type ConstellationCollocationItemsOut = Partial<{
   page_number: number
   page_size: number
   sort_by: string
-}>
-type DiscoursemeCoordinatesOut = Partial<{
+}
+type DiscoursemeCoordinatesOut = {
   discourseme_id: number
   semantic_map_id: number
   x: number
-  x_user: number
+  x_user: number | null
   y: number
-  y_user: number
-}>
-type DiscoursemeScoresOut = Partial<{
+  y_user: number | null
+}
+type DiscoursemeScoresOut = {
   discourseme_id: number
   global_scores: Array<CollocationScoreOut>
   item_scores: Array<CollocationItemOut>
   unigram_item_scores: Array<CollocationItemOut>
-}>
-type ConstellationDescriptionOut = Partial<{
+}
+type ConstellationDescriptionOut = {
   corpus_id: number
-  discourseme_descriptions: Array<DiscoursemeDescriptionOut>
+  discourseme_descriptions?: Array<DiscoursemeDescriptionOut> | undefined
   discourseme_ids: Array<number>
   id: number
   match_strategy: string
   p: string
   s: string
-  semantic_map_id: number
-  subcorpus_id: number
-}>
-type DiscoursemeDescriptionOut = Partial<{
+  semantic_map_id: number | null
+  subcorpus_id: number | null
+}
+type DiscoursemeDescriptionOut = {
   corpus_id: number
   discourseme_id: number
   id: number
@@ -113,12 +113,12 @@ type DiscoursemeDescriptionOut = Partial<{
   p: string
   query_id: number
   s: string
-  semantic_map_id: number
-  subcorpus_id: number
-}>
-type DiscoursemeDescriptionItem = Partial<{
+  semantic_map_id: number | null
+  subcorpus_id: number | null
+}
+type DiscoursemeDescriptionItem = {
   item: string
-}>
+}
 type ConstellationDescriptionOutUpdate = Partial<{
   corpus_id: number
   discourseme_descriptions: Array<DiscoursemeDescriptionOut>
@@ -127,12 +127,12 @@ type ConstellationDescriptionOutUpdate = Partial<{
   match_strategy: string
   p: string
   s: string
-  semantic_map_id: number
-  subcorpus_id: number
+  semantic_map_id: number | null
+  subcorpus_id: number | null
 }>
-type ConstellationKeywordItemsOut = Partial<{
-  coordinates: Array<CoordinatesOut> | null
-  discourseme_coordinates: Array<DiscoursemeCoordinatesOut> | null
+type ConstellationKeywordItemsOut = {
+  coordinates: Array<CoordinatesOut>
+  discourseme_coordinates: Array<DiscoursemeCoordinatesOut>
   discourseme_scores: Array<DiscoursemeScoresOut> | null
   id: number
   items: Array<KeywordItemOut>
@@ -141,44 +141,44 @@ type ConstellationKeywordItemsOut = Partial<{
   page_number: number
   page_size: number
   sort_by: string
-}>
-type KeywordItemOut = Partial<{
+}
+type KeywordItemOut = {
   item: string
   scores: Array<KeywordScoreOut>
-}>
-type KeywordScoreOut = Partial<{
+}
+type KeywordScoreOut = {
   measure: string
   score: number
-}>
-type ConstellationOut = Partial<{
+}
+type ConstellationOut = {
   comment: string | null
   discoursemes: Array<DiscoursemeOut>
   id: number
   name: string | null
-}>
-type DiscoursemeOut = Partial<{
+}
+type DiscoursemeOut = {
   comment: string | null
   id: number
   name: string | null
-  template: Array<DiscoursemeTemplateItem>
-}>
+  template: Array<DiscoursemeTemplateItem> | null
+}
 type DiscoursemeTemplateItem = Partial<{
   cqp_query: string | null
   p: string | null
   surface: string | null
 }>
 type DiscoursemeIn = Partial<{
-  comment: string
-  name: string
-  template: Array<DiscoursemeTemplateItem>
+  comment: string | null
+  name: string | null
+  template: Array<DiscoursemeTemplateItem> | null
 }>
 type DiscoursemeInUpdate = Partial<{
-  comment: string
-  name: string
-  template: Array<DiscoursemeTemplateItem>
+  comment: string | null
+  name: string | null
+  template: Array<DiscoursemeTemplateItem> | null
 }>
-type KeywordItemsOut = Partial<{
-  coordinates: Array<CoordinatesOut> | null
+type KeywordItemsOut = {
+  coordinates: Array<CoordinatesOut>
   id: number
   items: Array<KeywordItemOut>
   nr_items: number
@@ -186,15 +186,15 @@ type KeywordItemsOut = Partial<{
   page_number: number
   page_size: number
   sort_by: string
-}>
-type MetaOut = Partial<{
+}
+type MetaOut = {
   annotations: Array<AnnotationsOut>
   level: string
-}>
-type AnnotationsOut = Partial<{
+}
+type AnnotationsOut = {
   key: string
   value_type: 'datetime' | 'numeric' | 'boolean' | 'unicode'
-}>
+}
 type SlotQueryIn = {
   corpus_id: number
   corrections?: Array<AnchorCorrection> | undefined
@@ -221,14 +221,14 @@ type SlotQueryOut = Partial<{
   name: string
   slots: Array<AnchorSlot>
 }>
-type SubCorpusOut = Partial<{
+type SubCorpusOut = {
   corpus: CorpusOut
   description: string | null
   id: number
   name: string | null
   nqr_cqp: string | null
-}>
-type CorpusOut = Partial<{
+}
+type CorpusOut = {
   cwb_id: string
   description: string | null
   id: number
@@ -238,18 +238,18 @@ type CorpusOut = Partial<{
   register: string | null
   s_annotations: Array<string>
   s_atts: Array<string>
-}>
+}
 
 const CollocationOut = z
   .object({
     id: z.number().int(),
-    marginals: z.enum(['local', 'global']),
+    marginals: z.string(),
     nr_items: z.number().int(),
     p: z.string(),
+    query_id: z.number().int(),
     s_break: z.string(),
     semantic_map_id: z.number().int().nullable(),
   })
-  .partial()
   .passthrough()
 const HTTPError = z
   .object({ detail: z.object({}).partial().passthrough(), message: z.string() })
@@ -279,23 +279,20 @@ const CoordinatesOut: z.ZodType<CoordinatesOut> = z
     item: z.string(),
     semantic_map_id: z.number().int(),
     x: z.number(),
-    x_user: z.number(),
+    x_user: z.number().nullable(),
     y: z.number(),
-    y_user: z.number(),
+    y_user: z.number().nullable(),
   })
-  .partial()
   .passthrough()
 const CollocationScoreOut: z.ZodType<CollocationScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
-  .partial()
   .passthrough()
 const CollocationItemOut: z.ZodType<CollocationItemOut> = z
   .object({ item: z.string(), scores: z.array(CollocationScoreOut) })
-  .partial()
   .passthrough()
 const CollocationItemsOut: z.ZodType<CollocationItemsOut> = z
   .object({
-    coordinates: z.array(CoordinatesOut).nullable(),
+    coordinates: z.array(CoordinatesOut),
     id: z.number().int(),
     items: z.array(CollocationItemOut),
     nr_items: z.number().int(),
@@ -304,11 +301,9 @@ const CollocationItemsOut: z.ZodType<CollocationItemsOut> = z
     page_size: z.number().int(),
     sort_by: z.string(),
   })
-  .partial()
   .passthrough()
 const SemanticMapOut = z
   .object({ id: z.number().int(), method: z.string(), p: z.string() })
-  .partial()
   .passthrough()
 const CorpusOut: z.ZodType<CorpusOut> = z
   .object({
@@ -322,18 +317,15 @@ const CorpusOut: z.ZodType<CorpusOut> = z
     s_annotations: z.array(z.string()),
     s_atts: z.array(z.string()),
   })
-  .partial()
   .passthrough()
 const AnnotationsOut: z.ZodType<AnnotationsOut> = z
   .object({
     key: z.string(),
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
-  .partial()
   .passthrough()
 const MetaOut: z.ZodType<MetaOut> = z
   .object({ annotations: z.array(AnnotationsOut), level: z.string() })
-  .partial()
   .passthrough()
 const MetaIn = z
   .object({
@@ -341,7 +333,6 @@ const MetaIn = z
     level: z.string(),
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
-  .partial()
   .passthrough()
 const MetaFrequenciesOut = z
   .object({
@@ -349,7 +340,6 @@ const MetaFrequenciesOut = z
     nr_tokens: z.number().int(),
     value: z.string(),
   })
-  .partial()
   .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
   .object({
@@ -359,20 +349,18 @@ const SubCorpusOut: z.ZodType<SubCorpusOut> = z
     name: z.string().nullable(),
     nqr_cqp: z.string().nullable(),
   })
-  .partial()
   .passthrough()
 const SubCorpusIn = z
   .object({
-    create_nqr: z.boolean().default(true),
-    description: z.string().nullable(),
+    create_nqr: z.boolean().optional().default(true),
+    description: z.string().nullish(),
     key: z.string(),
     level: z.string(),
     name: z.string(),
-    value_boolean: z.boolean().nullable(),
-    values_numeric: z.array(z.number()).nullable(),
-    values_unicode: z.array(z.string()).nullable(),
+    value_boolean: z.boolean().nullish(),
+    values_numeric: z.array(z.number()).nullish(),
+    values_unicode: z.array(z.string()).nullish(),
   })
-  .partial()
   .passthrough()
 const KeywordOut = z
   .object({
@@ -387,12 +375,11 @@ const KeywordOut = z
     p_reference: z.string(),
     semantic_map_id: z.number().int().nullable(),
     sub_vs_rest: z.boolean(),
-    subcorpus_id: z.number().int(),
-    subcorpus_id_reference: z.number().int(),
-    subcorpus_name: z.string(),
-    subcorpus_name_reference: z.string(),
+    subcorpus_id: z.number().int().nullable(),
+    subcorpus_id_reference: z.number().int().nullable(),
+    subcorpus_name: z.string().nullable(),
+    subcorpus_name_reference: z.string().nullable(),
   })
-  .partial()
   .passthrough()
 const KeywordIn = z
   .object({
@@ -408,23 +395,18 @@ const KeywordIn = z
   })
   .passthrough()
 const KeywordPatchIn = z
-  .object({
-    constellation_id: z.number().int().nullable(),
-    semantic_map_id: z.number().int().nullable(),
-  })
+  .object({ semantic_map_id: z.number().int().nullable() })
   .partial()
   .passthrough()
 const KeywordScoreOut: z.ZodType<KeywordScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
-  .partial()
   .passthrough()
 const KeywordItemOut: z.ZodType<KeywordItemOut> = z
   .object({ item: z.string(), scores: z.array(KeywordScoreOut) })
-  .partial()
   .passthrough()
 const KeywordItemsOut: z.ZodType<KeywordItemsOut> = z
   .object({
-    coordinates: z.array(CoordinatesOut).nullable(),
+    coordinates: z.array(CoordinatesOut),
     id: z.number().int(),
     items: z.array(KeywordItemOut),
     nr_items: z.number().int(),
@@ -433,7 +415,6 @@ const KeywordItemsOut: z.ZodType<KeywordItemsOut> = z
     page_size: z.number().int(),
     sort_by: z.string(),
   })
-  .partial()
   .passthrough()
 const DiscoursemeTemplateItem: z.ZodType<DiscoursemeTemplateItem> = z
   .object({
@@ -448,9 +429,8 @@ const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
     comment: z.string().nullable(),
     id: z.number().int(),
     name: z.string().nullable(),
-    template: z.array(DiscoursemeTemplateItem),
+    template: z.array(DiscoursemeTemplateItem).nullable(),
   })
-  .partial()
   .passthrough()
 const ConstellationOut: z.ZodType<ConstellationOut> = z
   .object({
@@ -459,27 +439,25 @@ const ConstellationOut: z.ZodType<ConstellationOut> = z
     id: z.number().int(),
     name: z.string().nullable(),
   })
-  .partial()
   .passthrough()
 const ConstellationIn = z
   .object({
-    comment: z.string(),
+    comment: z.string().nullable(),
     discourseme_ids: z.array(z.number()).default([]),
-    name: z.string(),
+    name: z.string().nullable(),
   })
   .partial()
   .passthrough()
 const ConstellationInUpdate = z
   .object({
-    comment: z.string(),
+    comment: z.string().nullable(),
     discourseme_ids: z.array(z.number()).default([]),
-    name: z.string(),
+    name: z.string().nullable(),
   })
   .partial()
   .passthrough()
 const DiscoursemeDescriptionItem: z.ZodType<DiscoursemeDescriptionItem> = z
   .object({ item: z.string() })
-  .partial()
   .passthrough()
 const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
   .object({
@@ -491,24 +469,22 @@ const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
     p: z.string(),
     query_id: z.number().int(),
     s: z.string(),
-    semantic_map_id: z.number().int(),
-    subcorpus_id: z.number().int(),
+    semantic_map_id: z.number().int().nullable(),
+    subcorpus_id: z.number().int().nullable(),
   })
-  .partial()
   .passthrough()
 const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
   .object({
     corpus_id: z.number().int(),
-    discourseme_descriptions: z.array(DiscoursemeDescriptionOut),
+    discourseme_descriptions: z.array(DiscoursemeDescriptionOut).optional(),
     discourseme_ids: z.array(z.number()),
     id: z.number().int(),
     match_strategy: z.string(),
     p: z.string(),
     s: z.string(),
-    semantic_map_id: z.number().int(),
-    subcorpus_id: z.number().int(),
+    semantic_map_id: z.number().int().nullable(),
+    subcorpus_id: z.number().int().nullable(),
   })
-  .partial()
   .passthrough()
 const ConstellationDescriptionIn = z
   .object({
@@ -527,7 +503,7 @@ const ConstellationDescriptionIn = z
   })
   .passthrough()
 const ConstellationDiscoursemeDescriptionIn = z
-  .object({ discourseme_description_ids: z.array(z.number()) })
+  .object({ discourseme_description_ids: z.array(z.number()).default([]) })
   .partial()
   .passthrough()
 const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUpdate> =
@@ -540,11 +516,24 @@ const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUp
       match_strategy: z.string(),
       p: z.string(),
       s: z.string(),
-      semantic_map_id: z.number().int(),
-      subcorpus_id: z.number().int(),
+      semantic_map_id: z.number().int().nullable(),
+      subcorpus_id: z.number().int().nullable(),
     })
     .partial()
     .passthrough()
+const ConstellationCollocationOut = z
+  .object({
+    filter_discourseme_ids: z.array(z.number()),
+    focus_discourseme_id: z.number().int(),
+    id: z.number().int(),
+    marginals: z.string(),
+    nr_items: z.number().int(),
+    p: z.string(),
+    query_id: z.number().int(),
+    s_break: z.string(),
+    semantic_map_id: z.number().int().nullable(),
+  })
+  .passthrough()
 const ConstellationCollocationIn = z
   .object({
     filter_discourseme_ids: z.array(z.number()).optional().default([]),
@@ -554,7 +543,7 @@ const ConstellationCollocationIn = z
     marginals: z.enum(['local', 'global']).optional().default('local'),
     p: z.string(),
     s_break: z.string().optional(),
-    semantic_map_id: z.number().int().optional(),
+    semantic_map_id: z.number().int().nullish(),
     window: z.number().int().optional().default(10),
   })
   .passthrough()
@@ -563,11 +552,10 @@ const DiscoursemeCoordinatesOut: z.ZodType<DiscoursemeCoordinatesOut> = z
     discourseme_id: z.number().int(),
     semantic_map_id: z.number().int(),
     x: z.number(),
-    x_user: z.number(),
+    x_user: z.number().nullable(),
     y: z.number(),
-    y_user: z.number(),
+    y_user: z.number().nullable(),
   })
-  .partial()
   .passthrough()
 const DiscoursemeScoresOut: z.ZodType<DiscoursemeScoresOut> = z
   .object({
@@ -576,13 +564,12 @@ const DiscoursemeScoresOut: z.ZodType<DiscoursemeScoresOut> = z
     item_scores: z.array(CollocationItemOut),
     unigram_item_scores: z.array(CollocationItemOut),
   })
-  .partial()
   .passthrough()
 const ConstellationCollocationItemsOut: z.ZodType<ConstellationCollocationItemsOut> =
   z
     .object({
-      coordinates: z.array(CoordinatesOut).nullable(),
-      discourseme_coordinates: z.array(DiscoursemeCoordinatesOut).nullable(),
+      coordinates: z.array(CoordinatesOut),
+      discourseme_coordinates: z.array(DiscoursemeCoordinatesOut),
       discourseme_scores: z.array(DiscoursemeScoresOut).nullable(),
       id: z.number().int(),
       items: z.array(CollocationItemOut),
@@ -592,7 +579,6 @@ const ConstellationCollocationItemsOut: z.ZodType<ConstellationCollocationItemsO
       page_size: z.number().int(),
       sort_by: z.string(),
     })
-    .partial()
     .passthrough()
 const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
   .object({
@@ -600,7 +586,6 @@ const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
     end: z.number().int(),
     start: z.number().int(),
   })
-  .partial()
   .passthrough()
 const TokenOut: z.ZodType<TokenOut> = z
   .object({
@@ -611,7 +596,6 @@ const TokenOut: z.ZodType<TokenOut> = z
     primary: z.string(),
     secondary: z.string(),
   })
-  .partial()
   .passthrough()
 const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
   .object({
@@ -620,7 +604,6 @@ const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
     structural: z.object({}).partial().passthrough(),
     tokens: z.array(TokenOut),
   })
-  .partial()
   .passthrough()
 const ConcordanceOut: z.ZodType<ConcordanceOut> = z
   .object({
@@ -630,7 +613,6 @@ const ConcordanceOut: z.ZodType<ConcordanceOut> = z
     page_number: z.number().int(),
     page_size: z.number().int(),
   })
-  .partial()
   .passthrough()
 const ConstellationKeywordIn = z
   .object({
@@ -644,8 +626,8 @@ const ConstellationKeywordIn = z
   .passthrough()
 const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
   .object({
-    coordinates: z.array(CoordinatesOut).nullable(),
-    discourseme_coordinates: z.array(DiscoursemeCoordinatesOut).nullable(),
+    coordinates: z.array(CoordinatesOut),
+    discourseme_coordinates: z.array(DiscoursemeCoordinatesOut),
     discourseme_scores: z.array(DiscoursemeScoresOut).nullable(),
     id: z.number().int(),
     items: z.array(KeywordItemOut),
@@ -655,47 +637,45 @@ const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
     page_size: z.number().int(),
     sort_by: z.string(),
   })
-  .partial()
   .passthrough()
 const DiscoursemeCoordinatesIn = z
   .object({
     discourseme_id: z.number().int(),
-    x_user: z.number().optional(),
-    y_user: z.number().optional(),
+    x_user: z.number().nullable(),
+    y_user: z.number().nullable(),
   })
   .passthrough()
 const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
   .object({
-    comment: z.string(),
-    name: z.string(),
-    template: z.array(DiscoursemeTemplateItem),
+    comment: z.string().nullable(),
+    name: z.string().nullable(),
+    template: z.array(DiscoursemeTemplateItem).nullable(),
   })
   .partial()
   .passthrough()
 const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
   .object({
-    comment: z.string(),
-    name: z.string(),
-    template: z.array(DiscoursemeTemplateItem),
+    comment: z.string().nullable(),
+    name: z.string().nullable(),
+    template: z.array(DiscoursemeTemplateItem).nullable(),
   })
   .partial()
   .passthrough()
 const DiscoursemeDescriptionIn = z
   .object({
     corpus_id: z.number().int(),
-    items: z.array(z.string()).optional(),
+    items: z.array(z.string()).optional().default([]),
     match_strategy: z
       .enum(['longest', 'shortest', 'standard'])
       .optional()
       .default('longest'),
     p: z.string().optional(),
     s: z.string().optional(),
-    subcorpus_id: z.number().int().optional(),
+    subcorpus_id: z.number().int().nullish(),
   })
   .passthrough()
 const DiscoursemeDescriptionSimilarOut = z
   .object({ freq: z.number().int(), item: z.string(), similarity: z.number() })
-  .partial()
   .passthrough()
 const QueryOut = z
   .object({
@@ -708,7 +688,6 @@ const QueryOut = z
     subcorpus_id: z.number().int().nullable(),
     subcorpus_name: z.string().nullable(),
   })
-  .partial()
   .passthrough()
 const QueryIn = z
   .object({
@@ -716,7 +695,7 @@ const QueryIn = z
     cqp_query: z.string(),
     match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     s: z.string().optional(),
-    subcorpus_id: z.number().int().optional(),
+    subcorpus_id: z.number().int().nullish(),
   })
   .passthrough()
 const QueryAssistedIn = z
@@ -729,7 +708,7 @@ const QueryAssistedIn = z
     match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     p: z.string(),
     s: z.string().optional(),
-    subcorpus_id: z.number().int().optional(),
+    subcorpus_id: z.number().int().nullish(),
   })
   .passthrough()
 const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
@@ -741,7 +720,6 @@ const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
     item: z.string(),
     nr_tokens: z.number().int(),
   })
-  .partial()
   .passthrough()
 const BreakdownOut: z.ZodType<BreakdownOut> = z
   .object({
@@ -750,7 +728,6 @@ const BreakdownOut: z.ZodType<BreakdownOut> = z
     p: z.string(),
     query_id: z.number().int(),
   })
-  .partial()
   .passthrough()
 const QueryMetaOut = z
   .object({
@@ -761,12 +738,11 @@ const QueryMetaOut = z
     nr_tokens: z.number().int(),
     value: z.string(),
   })
-  .partial()
   .passthrough()
 const SemanticMapIn = z
   .object({
-    collocation_ids: z.array(z.number()),
-    keyword_ids: z.array(z.number()),
+    collocation_ids: z.array(z.number()).default([]),
+    keyword_ids: z.array(z.number()).default([]),
     method: z.enum(['tsne', 'umap']).default('tsne'),
   })
   .partial()
@@ -814,9 +790,9 @@ const UserOut = z
 const UserRegister = z
   .object({
     confirm_password: z.string(),
-    email: z.string().optional(),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
+    email: z.string().nullish(),
+    first_name: z.string().nullish(),
+    last_name: z.string().nullish(),
     password: z.string(),
     username: z.string(),
   })
@@ -826,12 +802,8 @@ const UserIn = z
   .passthrough()
 const HTTPTokenOut = z
   .object({ access_token: z.string(), refresh_token: z.string() })
-  .partial()
   .passthrough()
-const HTTPRefreshTokenIn = z
-  .object({ refresh_token: z.string() })
-  .partial()
-  .passthrough()
+const HTTPRefreshTokenIn = z.object({ refresh_token: z.string() }).passthrough()
 const UserUpdate = z
   .object({
     confirm_password: z.string(),
@@ -874,6 +846,7 @@ export const schemas = {
   ConstellationDescriptionIn,
   ConstellationDiscoursemeDescriptionIn,
   ConstellationDescriptionOutUpdate,
+  ConstellationCollocationOut,
   ConstellationCollocationIn,
   DiscoursemeCoordinatesOut,
   DiscoursemeScoresOut,
@@ -1247,12 +1220,12 @@ const endpoints = makeApi([
       {
         name: 'level',
         type: 'Query',
-        schema: z.string().optional(),
+        schema: z.string(),
       },
       {
         name: 'key',
         type: 'Query',
-        schema: z.string().optional(),
+        schema: z.string(),
       },
     ],
     response: z.array(MetaFrequenciesOut),
@@ -1475,7 +1448,10 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: KeywordPatchIn,
+        schema: z
+          .object({ semantic_map_id: z.number().int().nullable() })
+          .partial()
+          .passthrough(),
       },
       {
         name: 'id',
@@ -1941,6 +1917,37 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/',
+    alias: 'getMmdaconstellationIddescriptionDescription_idcollocation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(ConstellationCollocationOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
     method: 'post',
     path: '/mmda/constellation/:id/description/:description_id/collocation/',
     alias: 'postMmdaconstellationIddescriptionDescription_idcollocation',
@@ -1962,7 +1969,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: CollocationOut,
+    response: ConstellationCollocationOut,
     errors: [
       {
         status: 401,
@@ -1986,7 +1993,6 @@ const endpoints = makeApi([
     path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/auto-associate',
     alias:
       'putMmdaconstellationIddescriptionDescription_idcollocationCollocation_idautoAssociate',
-    description: `Output: DiscoursemeDescription(many&#x3D;True)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2223,6 +2229,37 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/',
+    alias: 'getMmdaconstellationIddescriptionDescription_idkeyword',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(KeywordOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
     method: 'post',
     path: '/mmda/constellation/:id/description/:description_id/keyword/',
     alias: 'postMmdaconstellationIddescriptionDescription_idkeyword',
@@ -2246,6 +2283,11 @@ const endpoints = makeApi([
     ],
     response: KeywordOut,
     errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
       {
         status: 404,
         description: `Not found`,
@@ -2802,7 +2844,7 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ item: z.string() }).partial().passthrough(),
+        schema: z.object({ item: z.string() }).passthrough(),
       },
       {
         name: 'id',
@@ -2843,7 +2885,7 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ item: z.string() }).partial().passthrough(),
+        schema: z.object({ item: z.string() }).passthrough(),
       },
       {
         name: 'id',
@@ -3068,7 +3110,7 @@ const endpoints = makeApi([
       {
         name: 'semantic_map_id',
         type: 'Query',
-        schema: z.number().int().optional(),
+        schema: z.number().int().nullish(),
       },
       {
         name: 'p',
@@ -3081,14 +3123,14 @@ const endpoints = makeApi([
         schema: z.number().int().optional().default(10),
       },
       {
-        name: 's_break',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
         name: 'marginals',
         type: 'Query',
         schema: z.enum(['local', 'global']).optional().default('local'),
+      },
+      {
+        name: 's_break',
+        type: 'Query',
+        schema: z.string().optional(),
       },
       {
         name: 'filter_item',
@@ -3258,7 +3300,7 @@ const endpoints = makeApi([
       {
         name: 'extended_context_break',
         type: 'Query',
-        schema: z.string().optional().default('text'),
+        schema: z.string().optional(),
       },
       {
         name: 'primary',
@@ -3330,12 +3372,12 @@ const endpoints = makeApi([
       {
         name: 'level',
         type: 'Query',
-        schema: z.string().optional(),
+        schema: z.string(),
       },
       {
         name: 'key',
         type: 'Query',
-        schema: z.string().optional(),
+        schema: z.string(),
       },
       {
         name: 'p',
@@ -3745,7 +3787,7 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ refresh_token: z.string() }).partial().passthrough(),
+        schema: z.object({ refresh_token: z.string() }).passthrough(),
       },
     ],
     response: HTTPTokenOut,
