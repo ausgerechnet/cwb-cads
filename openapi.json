@@ -355,7 +355,6 @@
             "items": {
               "$ref": "#/components/schemas/DiscoursemeScoresOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "id": {
@@ -523,6 +522,7 @@
         },
         "required": [
           "corpus_id",
+          "discourseme_descriptions",
           "discourseme_ids",
           "id",
           "match_strategy",
@@ -676,7 +676,6 @@
             "items": {
               "$ref": "#/components/schemas/DiscoursemeScoresOut"
             },
-            "nullable": true,
             "type": "array"
           },
           "id": {
@@ -1086,7 +1085,6 @@
             "items": {
               "$ref": "#/components/schemas/DiscoursemeTemplateItem"
             },
-            "nullable": true,
             "type": "array"
           }
         },

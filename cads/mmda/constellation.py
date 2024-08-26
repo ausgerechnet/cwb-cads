@@ -454,12 +454,12 @@ class ConstellationDescriptionOut(Schema):
     id = Integer(required=True)
     discourseme_ids = List(Integer(), required=True, dump_default=[])
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=True, metadata={'nullable': True})
+    subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     p = String(required=True)
     s = String(required=True)
     match_strategy = String(required=True)
-    semantic_map_id = Integer(required=True, metadata={'nullable': True})
-    discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True), dump_default=[])
+    semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True), required=True, dump_default=[])
 
 
 class ConstellationCollocationOut(CollocationOut):
@@ -470,13 +470,13 @@ class ConstellationCollocationOut(CollocationOut):
 
 class ConstellationCollocationItemsOut(CollocationItemsOut):
 
-    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=True, metadata={'nullable': True})
+    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=True, dump_default=[])
     discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=True, dump_default=[])
 
 
 class ConstellationKeywordItemsOut(KeywordItemsOut):
 
-    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=True, metadata={'nullable': True})
+    discourseme_scores = Nested(DiscoursemeScoresOut(many=True), required=True, dump_default=[])
     discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=True, dump_default=[])
 
 

@@ -206,8 +206,8 @@ class CoordinatesOut(Schema):
     item = String(required=True)
     x = Float(required=True)
     y = Float(required=True)
-    x_user = Float(required=True, metadata={'nullable': True})
-    y_user = Float(required=True, metadata={'nullable': True})
+    x_user = Float(required=True, dump_default=None, metadata={'nullable': True})
+    y_user = Float(required=True, dump_default=None, metadata={'nullable': True})
 
 
 #################

@@ -160,7 +160,7 @@ class CollocationOut(Schema):
 
     id = Integer(required=True)
 
-    semantic_map_id = Integer(required=True, metadata={'nullable': True})
+    semantic_map_id = Integer(required=True, metadata={'nullable': True}, dump_default=None)
     query_id = Integer(required=True)
 
     marginals = String(required=True)

@@ -261,9 +261,9 @@ class DiscoursemeCoordinatesIn(Schema):
 class DiscoursemeOut(Schema):
 
     id = Integer(required=True)
-    name = String(required=True, metadata={'nullable': True})
-    comment = String(required=True, metadata={'nullable': True})
-    template = Nested(DiscoursemeTemplateItem(many=True), required=True, metadata={'nullable': True})
+    name = String(required=True, dump_default=None, metadata={'nullable': True})
+    comment = String(required=True, dump_default=None, metadata={'nullable': True})
+    template = Nested(DiscoursemeTemplateItem(many=True), required=True, dump_default=[])
 
 
 class DiscoursemeDescriptionItem(Schema):
@@ -276,12 +276,12 @@ class DiscoursemeDescriptionOut(Schema):
     id = Integer(required=True)
     discourseme_id = Integer(required=True)
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=True, metadata={'nullable': True})
+    subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     query_id = Integer(required=True)
     p = String(required=True)
     s = String(required=True)
     match_strategy = String(required=True)
-    semantic_map_id = Integer(required=True, metadata={'nullable': True})
+    semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     items = Nested(DiscoursemeDescriptionItem(many=True), required=True, dump_default=[])
 
 
@@ -306,8 +306,8 @@ class DiscoursemeCoordinatesOut(Schema):
     discourseme_id = Integer(required=True)
     x = Float(required=True)
     y = Float(required=True)
-    x_user = Float(required=True, metadata={'nullable': True})
-    y_user = Float(required=True, metadata={'nullable': True})
+    x_user = Float(required=True, dump_default=None, metadata={'nullable': True})
+    y_user = Float(required=True, dump_default=None, metadata={'nullable': True})
 
 
 #################
