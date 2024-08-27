@@ -871,6 +871,8 @@ def create_collocation(id, description_id, json_data):
     if description.semantic_map_id is None:
         description.semantic_map_id = collocation.semantic_map_id
 
+    collocation.focus_discourseme_id = json_data['focus_discourseme_id']
+
     return ConstellationCollocationOut().dump(collocation), 200
 
 
