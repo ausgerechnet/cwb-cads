@@ -574,7 +574,7 @@ class Keyword(db.Model):
     subcorpus_id_reference = db.Column(db.Integer(), db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), nullable=True)
     p_reference = db.Column(db.Unicode(255), nullable=False)  # TODO
 
-    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id'))
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
     sub_vs_rest = db.Column(db.Boolean)
     min_freq = db.Column(db.Integer)

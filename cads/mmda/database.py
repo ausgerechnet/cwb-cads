@@ -186,6 +186,7 @@ class ConstellationDescription(db.Model):
     overlap = db.Column(db.Unicode, default='partial')  # when to count a discourseme to be in context (partial, full, match, matchend)
 
     discourseme_descriptions = db.relationship("DiscoursemeDescription", secondary=constellation_discourseme_description)
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
     @property
     def corpus(self):

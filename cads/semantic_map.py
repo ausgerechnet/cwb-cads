@@ -18,7 +18,10 @@ bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
 
 
 def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[], method='tsne'):
+    """
+
     # TODO make analysis agnostic (keyword, collocation)
+    """
 
     semantic_map = None
     dfs = list()
@@ -182,6 +185,7 @@ class SemanticMapIn(Schema):
 
     collocation_ids = List(Integer(), required=False, load_default=[])
     keyword_ids = List(Integer(), required=False, load_default=[])
+
     method = String(required=False, load_default='tsne', validate=OneOf(['tsne', 'umap']))
 
 

@@ -281,7 +281,7 @@ class DiscoursemeDescriptionOut(Schema):
     p = String(required=True)
     s = String(required=True)
     match_strategy = String(required=True)
-    semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    # semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     items = Nested(DiscoursemeDescriptionItem(many=True), required=True, dump_default=[])
 
 

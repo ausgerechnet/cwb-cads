@@ -171,9 +171,9 @@ class CollocationOut(Schema):
 
 
 # IDENTICAL TO KEYWORDS ↓
-class CollocationPatchIn(Schema):
+# class CollocationPatchIn(Schema):
 
-    semantic_map_id = Integer(required=False, load_default=None)
+#     semantic_map_id = Integer(required=False, load_default=None)
 
 
 class CollocationItemsIn(Schema):
@@ -253,22 +253,22 @@ def delete_collocation(id):
     return 'Deletion successful.', 200
 
 
-@bp.patch('/<id>/')
-@bp.input(CollocationPatchIn)
-@bp.output(CollocationOut)
-@bp.auth_required(auth)
-def patch_collocation(id, json_data):
-    """Patch a collocation analysis. Use for updating semantic map.
+# @bp.patch('/<id>/')
+# @bp.input(CollocationPatchIn)
+# @bp.output(CollocationOut)
+# @bp.auth_required(auth)
+# def patch_collocation(id, json_data):
+#     """Patch a collocation analysis. Use for updating semantic map.
 
-    """
+#     """
 
-    collocation = db.get_or_404(Collocation, id)
+#     collocation = db.get_or_404(Collocation, id)
 
-    for attr, value in json_data.items():
-        setattr(collocation, attr, value)
-    db.session.commit()
+#     for attr, value in json_data.items():
+#         setattr(collocation, attr, value)
+#     db.session.commit()
 
-    return CollocationOut().dump(collocation), 200
+#     return CollocationOut().dump(collocation), 200
 
 
 @bp.get("/<id>/items")

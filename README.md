@@ -130,3 +130,30 @@
 - [ ] rm or rename query / concordance / discourseme ranges
 - [ ] example meta data creation
 - [ ] example subcorpus creation
+
+
+## Semantic Maps
+semantic maps are created by default for all
+- collocation analyses (`GET /query/<query_id>/collocation/`)
+- keyword analyses (`POST /keyword/`)
+this behaviour cannot be de-activated right now.
+
+analyses can be patched:
+- `PATCH /collocation/<id>/`
+- `PATCH /keyword/<id>/`
+in fact, `semantic_map_id` is the only property that can be set via PATCH. I just realised that this is superfluous because there is also
+- `POST /collocation/<id>/semantic-map/`
+- `POST /keyword/<id>/semantic-map/`
+which also accepts `semantic_map_id` and makes sure that all top items of the analyses actually have coordinates (if `semantic_map_id is None`, this creates a new semantic map). **I thus removed the `PATCH` endpoint.**
+
+there's also `PUT /semantic-map/` which can be ignored right now.
+
+### MMDA
+discoursemes do not have semantic maps, this was a blunder on my part. instead, constellations descriptions have default semantic maps that can be used across analyses. these maps can be set when creating the description:
+`POST /mmda/constellation/constellation_id/description/`
+accepts a `sematntic_map_id`.
+
+additionally, when creating keyword or collocation analyses via
+- `POST /mmda/constellation/<id>/description/<description_id>/collocation/`
+- `POST /mmda/constellation/<id>/description/<description_id>/keyword/`
+also accept a `semantic_map_id`. if provided, the endpoint makes sure that there are coordinates for all top items of the analysis (as above). if None is given, the default semantic map of the constellation description will be used. if this is also None, a new one will be created. if the constellation description did not have a default semantic map, it will have one after starting an analysis.

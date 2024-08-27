@@ -413,6 +413,7 @@ class ConstellationDescriptionIn(Schema):
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False)
 
+    semantic_map_id = Integer(required=False, load_default=None)
     p = String(required=False)
     s = String(required=False)
     match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
@@ -426,6 +427,7 @@ class ConstellationDiscoursemeDescriptionIn(Schema):
 
 class ConstellationCollocationIn(CollocationIn):
 
+    semantic_map_id = Integer(required=False, load_default=None)
     focus_discourseme_id = Integer(required=True)
     filter_discourseme_ids = List(Integer(), load_default=[], required=False)
 
@@ -537,7 +539,7 @@ def delete_constellation(id):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_constellation(id, json_data):
-    """Patch constellation.
+    """Patch constellation. Use for updating name, comment, or discoursemes.
 
     """
     constellation = db.get_or_404(Constellation, id)
@@ -570,7 +572,7 @@ def patch_constellation(id, json_data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_constellation_add(id, json_data):
-    """Patch constellation: add discourseme.
+    """Patch constellation: add discourseme(s).
 
     """
     constellation = db.get_or_404(Constellation, id)
@@ -588,7 +590,7 @@ def patch_constellation_add(id, json_data):
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
 def patch_constellation_remove(id, json_data):
-    """Patch constellation: remove discourseme.
+    """Patch constellation: remove discourseme(s).
 
     """
     constellation = db.get_or_404(Constellation, id)
@@ -631,6 +633,7 @@ def create_description(id, json_data):
     corpus = db.get_or_404(Corpus, corpus_id)
     subcorpus_id = json_data.get('subcorpus_id')
     # subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
+    semantic_map_id = json_data.get('semantic_map_id')
 
     p_description = json_data.get('p', corpus.p_default)
     s_query = json_data.get('s', corpus.s_default)
@@ -639,6 +642,7 @@ def create_description(id, json_data):
 
     description = ConstellationDescription(
         constellation_id=constellation.id,
+        semantic_map_id=semantic_map_id,
         corpus_id=corpus.id,
         subcorpus_id=subcorpus_id,
         p=p_description,
@@ -694,7 +698,7 @@ def get_description(id, description_id):
 
     """
 
-    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
+    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
 
     return ConstellationDescriptionOut().dump(description)
@@ -707,7 +711,7 @@ def delete_description(id, description_id):
 
     """
 
-    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
+    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
     db.session.delete(description)
     db.session.commit()
@@ -832,6 +836,7 @@ def create_collocation(id, description_id, json_data):
 
     # semantic map
     semantic_map_id = json_data.get('semantic_map_id', None)
+    semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
 
     # filtering
     filter_discourseme_ids = json_data.get('filter_discourseme_ids')
@@ -850,7 +855,6 @@ def create_collocation(id, description_id, json_data):
 
     # create collocation object
     collocation = Collocation(
-        # constellation_id=constellation_id,
         semantic_map_id=semantic_map_id,
         query_id=focus_query.id,
         p=p,
@@ -864,8 +868,8 @@ def create_collocation(id, description_id, json_data):
     get_or_create_counts(collocation, remove_focus_cpos=False)
     set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
     ccc_init_semmap(collocation, semantic_map_id)
-
-    collocation.focus_discourseme_id = json_data['focus_discourseme_id']
+    if description.semantic_map_id is None:
+        description.semantic_map_id = collocation.semantic_map_id
 
     return ConstellationCollocationOut().dump(collocation), 200
 
@@ -1031,14 +1035,14 @@ def create_keyword(id, description_id, json_data):
     p_reference = json_data.get('p_reference')
 
     # semantic map
-    semantic_map_id = json_data.get('semantic_map_id')
+    semantic_map_id = json_data.get('semantic_map_id', None)
+    semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
 
     # settings
     sub_vs_rest = json_data.get('sub_vs_rest')
     min_freq = json_data.get('min_freq')
 
     keyword = Keyword(
-        # constellation_id=constellation_id,
         semantic_map_id=semantic_map_id,
         corpus_id=corpus_id,
         subcorpus_id=subcorpus_id,
@@ -1055,6 +1059,8 @@ def create_keyword(id, description_id, json_data):
     ccc_keywords(keyword)
     set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
     ccc_init_semmap(keyword, semantic_map_id)
+    if description.semantic_map_id is None:
+        description.semantic_map_id = keyword.semantic_map_id
 
     return KeywordOut().dump(keyword), 200
 

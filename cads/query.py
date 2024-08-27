@@ -670,10 +670,6 @@ def get_collocation(query_id, query_data):
     s_break = query_data.get('s_break')
     marginals = query_data.get('marginals', 'global')
 
-    # constellation and semantic map
-    # constellation_id = query_data.get('constellation_id', None)
-    # constellation = db.get_or_404(Constellation, constellation_id) if constellation_id else None
-
     semantic_map_id = query_data.get('semantic_map_id', None)
 
     # filtering for second-order collocation
@@ -697,6 +693,7 @@ def get_collocation(query_id, query_data):
 
     if len(filter_queries) > 0:
 
+        # TODO
         # note that the database scheme does not allow to have several filter queries
         # we thus name the actual query result here to be able to retrieve it
         nqr_name = "SOC" + "_" + "_q".join(["q" + str(query.id)] + [str(fq.id) for fq in filter_queries])
@@ -741,7 +738,6 @@ def get_collocation(query_id, query_data):
             corpus_id=query.corpus.id,
             subcorpus_id=query.subcorpus.id if query.subcorpus else None,
             soc_sequence=nqr_name,
-            # discourseme_id=query.discourseme.id,
             match_strategy=query.match_strategy,
             s=query.s
         )
@@ -754,8 +750,6 @@ def get_collocation(query_id, query_data):
         df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
 
     collocation = Collocation(
-        # constellation_id=constellation_id,
-        # semantic_map_id=semantic_map_id,
         query_id=query.id,
         p=p,
         s_break=s_break,
@@ -766,10 +760,7 @@ def get_collocation(query_id, query_data):
     db.session.commit()
 
     get_or_create_counts(collocation, remove_focus_cpos=True)
+    # TODO make optional:
     ccc_init_semmap(collocation, semantic_map_id)
-
-    # if constellation:
-    #     discoursemes = constellation.highlight_discoursemes + constellation.filter_discoursemes
-    #     ccc_discourseme_counts(collocation, discoursemes)
 
     return CollocationOut().dump(collocation), 200

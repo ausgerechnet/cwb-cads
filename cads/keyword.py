@@ -129,9 +129,9 @@ class KeywordOut(Schema):
 
 
 # IDENTICAL TO COLLOCATION ↓
-class KeywordPatchIn(Schema):
+# class KeywordPatchIn(Schema):
 
-    semantic_map_id = Integer(required=False, load_default=None)
+#     semantic_map_id = Integer(required=False, load_default=None)
 
 
 class KeywordItemsIn(Schema):
@@ -212,22 +212,22 @@ def delete_keyword(id):
     return 'Deletion successful.', 200
 
 
-@bp.patch('/<id>/')
-@bp.input(KeywordPatchIn)
-@bp.output(KeywordOut)
-@bp.auth_required(auth)
-def patch_keyword(id, json_data):
-    """Patch a keyword analysis. Use for updating semantic map.
+# @bp.patch('/<id>/')
+# @bp.input(KeywordPatchIn)
+# @bp.output(KeywordOut)
+# @bp.auth_required(auth)
+# def patch_keyword(id, json_data):
+#     """Patch a keyword analysis. Use for updating semantic map.
 
-    """
+#     """
 
-    keyword = db.get_or_404(Keyword, id)
+#     keyword = db.get_or_404(Keyword, id)
 
-    for attr, value in json_data.items():
-        setattr(keyword, attr, value)
-    db.session.commit()
+#     for attr, value in json_data.items():
+#         setattr(keyword, attr, value)
+#     db.session.commit()
 
-    return KeywordOut().dump(keyword), 200
+#     return KeywordOut().dump(keyword), 200
 
 
 @bp.get('/<id>/items')
@@ -300,7 +300,7 @@ def create_keyword(json_data):
     """
 
     # semantic map
-    semantic_map_id = json_data.get('semantic_map_id')
+    semantic_map_id = json_data.get('semantic_map_id', None)
 
     # corpus
     corpus_id = json_data.get('corpus_id')
@@ -317,7 +317,6 @@ def create_keyword(json_data):
     min_freq = json_data.get('min_freq')
 
     keyword = Keyword(
-        semantic_map_id=semantic_map_id,
         corpus_id=corpus_id,
         subcorpus_id=subcorpus_id,
         p=p,
@@ -331,6 +330,7 @@ def create_keyword(json_data):
     db.session.commit()
 
     ccc_keywords(keyword)
+    # TODO make optional:
     ccc_init_semmap(keyword, semantic_map_id)
 
     return KeywordOut().dump(keyword), 200
