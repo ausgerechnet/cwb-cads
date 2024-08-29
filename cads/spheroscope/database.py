@@ -135,3 +135,36 @@ class SlotQuery(db.Model):
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         cqpy_dump(self.serialize(), self.path)
+
+
+class QueryHistory(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.Unicode)
+
+    history_entries = db.relationship("QueryHistoryEntry", back_populates="parent", passive_deletes=True, cascade='all, delete')
+
+
+    def add_entry(self, query_id, comment):
+
+        entry = QueryHistoryEntry(
+            history_id = self.id,
+            query_id = query_id,
+            comment = comment
+        )
+
+        self.history_entries.append(entry)
+
+        return entry
+
+
+class QueryHistoryEntry(db.Model):
+
+    history_id = db.Column(db.Integer, db.ForeignKey("query_history.id", ondelete="CASCADE"), primary_key=True)
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
+
+    time = db.Column(db.DateTime, default=datetime.utcnow, primary_key=True)
+    comment = db.Column(db.Unicode)
+
+    parent = db.relationship("QueryHistory", back_populates="history_entries")
