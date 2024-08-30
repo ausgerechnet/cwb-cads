@@ -19,7 +19,7 @@ from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
 from .corpus import get_meta_frequencies, get_meta_number_tokens
 from .database import (Breakdown, Collocation, Corpus, Cotext, CotextLines,
                        Matches, Query, get_or_create)
-from .semantic_map import ccc_init_semmap
+from .semantic_map import ccc_semmap_init
 from .users import auth
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -670,24 +670,18 @@ def get_collocation(query_id, query_data):
     s_break = query_data.get('s_break')
     marginals = query_data.get('marginals', 'global')
 
+    # semantic map
     semantic_map_id = query_data.get('semantic_map_id', None)
+    semantic_map_init = query_data.get('semantic_map_init', True)
 
     # filtering for second-order collocation
     filter_item = query_data.pop('filter_item', None)
     filter_item_p_att = query_data.pop('filter_item_p_att', None)
-    # filter_discourseme_ids = query_data.pop('filter_discourseme_ids', None)
 
     # prepare filter queries
     filter_queries = set()
 
-    # for discourseme_id in filter_discourseme_ids:
-    #     # always run on whole corpus
-    #     fd = db.get_or_404(Discourseme, discourseme_id)
-    #     fq = get_or_create_query_discourseme(query.corpus, fd)
-    #     filter_queries.add(fq)
-
     if filter_item:
-        # TODO: run only on subcorpus → temporary
         fq = get_or_create_query_item(query.corpus, filter_item, filter_item_p_att, query.s)
         filter_queries.add(fq)
 
@@ -760,7 +754,8 @@ def get_collocation(query_id, query_data):
     db.session.commit()
 
     get_or_create_counts(collocation, remove_focus_cpos=True)
-    # TODO make optional:
-    ccc_init_semmap(collocation, semantic_map_id)
+
+    if semantic_map_init:
+        ccc_semmap_init(collocation, semantic_map_id)
 
     return CollocationOut().dump(collocation), 200

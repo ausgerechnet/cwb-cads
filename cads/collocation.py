@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, List, Nested, String
+from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
@@ -10,8 +10,8 @@ from pandas import DataFrame, read_sql
 
 from . import db
 from .database import (Collocation, CollocationItem, CollocationItemScore,
-                       CotextLines, SemanticMap)
-from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap,
+                       CotextLines)
+from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap_init,
                            ccc_semmap_update)
 from .users import auth
 from .utils import AMS_DICT
@@ -143,6 +143,7 @@ def get_or_create_counts(collocation, remove_focus_cpos=True):
 class CollocationIn(Schema):
 
     semantic_map_id = Integer(required=False, load_default=None, metadata={'nullable': True})
+    semantic_map_init = Boolean(required=False, load_default=True)
 
     p = String(required=True)
     window = Integer(required=False, load_default=10)
@@ -332,7 +333,9 @@ def get_collocation_items(id, query_data):
 
 
 @bp.post('/<id>/semantic-map/')
-@bp.input({'semantic_map_id': Integer(load_default=None)}, location='query')
+@bp.input({'semantic_map_id': Integer(load_default=None),
+           'method': String(required=False, load_default='tsne', validate=OneOf(['tsne', 'umap']))},
+          location='query')
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
 def create_semantic_map(id, query_data):
@@ -341,20 +344,13 @@ def create_semantic_map(id, query_data):
     """
 
     collocation = db.get_or_404(Collocation, id)
+    semantic_map_id = query_data['semantic_map_id']
+    method = query_data.get('method')
 
-    if query_data['semantic_map_id']:
-        collocation.semantic_map = db.get_or_404(SemanticMap, query_data['semantic_map_id'])
-        db.session.commit()
+    # remove old semantic map
+    collocation.semantic_map_id = None
+    db.session.commit()
 
-        scores = CollocationItemScore.query.filter(
-            CollocationItemScore.collocation_id == collocation.id,
-            CollocationItemScore.measure == 'conservative_log_ratio'
-        ).order_by(CollocationItemScore.score.desc()).paginate(page=1, per_page=500)
-        df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
-        new_items = [CollocationItem.query.filter_by(id=id).first() for id in df_scores['collocation_item_id']]
-        ccc_semmap_update(collocation.semantic_map, [item.item for item in new_items])
+    ccc_semmap_init(collocation, semantic_map_id, method=method)
 
-    else:
-        ccc_semmap([collocation.id], sort_by="conservative_log_ratio", number=500)
-
-    return SemanticMapOut().dump(collocation.semantic_map), 200
+    return CollocationOut().dump(collocation), 200

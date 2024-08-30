@@ -11,7 +11,7 @@ from pandas import DataFrame
 
 from . import db
 from .database import Keyword, KeywordItem, KeywordItemScore
-from .semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
+from .semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from .users import auth
 from .utils import AMS_DICT
 
@@ -90,6 +90,7 @@ def ccc_keywords(keyword):
 class KeywordIn(Schema):
 
     semantic_map_id = Integer(required=False, load_default=None, metadata={'nullable': True})
+    semantic_map_init = Boolean(required=False, load_default=True)
 
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False, load_default=None, metadata={'nullable': True})
@@ -301,6 +302,7 @@ def create_keyword(json_data):
 
     # semantic map
     semantic_map_id = json_data.get('semantic_map_id', None)
+    semantic_map_init = json_data.get('semantic_map_init', True)
 
     # corpus
     corpus_id = json_data.get('corpus_id')
@@ -330,26 +332,32 @@ def create_keyword(json_data):
     db.session.commit()
 
     ccc_keywords(keyword)
-    # TODO make optional:
-    ccc_init_semmap(keyword, semantic_map_id)
+
+    if semantic_map_init:
+        ccc_semmap_init(keyword, semantic_map_id)
 
     return KeywordOut().dump(keyword), 200
 
 
 @bp.post('/<id>/semantic-map/')
-@bp.input({'semantic_map_id': Integer(load_default=None)}, location='query')
+@bp.input({'semantic_map_id': Integer(load_default=None),
+           'method': String(required=False, load_default='tsne', validate=OneOf(['tsne', 'umap']))},
+          location='query')
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
 def create_semantic_map(id, query_data):
-    """Create new semantic map for keyword items or associate with existing semantic map.
+    """Create new semantic map for keyword items or make sure there are coordinates for all items on an existing map.
 
     """
 
     keyword = db.get_or_404(Keyword, id)
+    semantic_map_id = query_data['semantic_map_id']
+    method = query_data.get('method')
+
+    # remove old semantic map
     keyword.semantic_map_id = None
     db.session.commit()
 
-    semantic_map_id = query_data['semantic_map_id']
-    ccc_init_semmap(keyword, semantic_map_id)
+    ccc_semmap_init(keyword, semantic_map_id, method=method)
 
     return KeywordOut().dump(keyword), 200

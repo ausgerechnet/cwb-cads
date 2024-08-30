@@ -5,66 +5,44 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, List, String
 from apiflask.validators import OneOf
 from flask import current_app
-from numpy.random import normal
-from pandas import DataFrame, concat
+# from numpy.random import normal
+from pandas import DataFrame
 from semmap import SemanticSpace
 
 from . import db
-from .database import (Collocation, CollocationItem, CollocationItemScore,
-                       Coordinates, SemanticMap)
+from .database import Collocation, Coordinates, Keyword, SemanticMap
 from .users import auth
 
 bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
 
 
-def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[], method='tsne'):
+def ccc_semmap(analyses, embeddings, per_am=200, method='tsne', blacklist_items=[]):
+    """create a combined semantic map for all top items in all analyses
+
     """
 
-    # TODO make analysis agnostic (keyword, collocation)
-    """
-
-    semantic_map = None
-    dfs = list()
-    embeddings_set = set()
+    # create new semantic map
+    semantic_map = SemanticMap(embeddings=embeddings, method=method)
+    db.session.add(semantic_map)
+    db.session.commit()
 
     current_app.logger.debug('ccc_semmap :: selecting items')
-    for collocation_id in collocation_ids:
+    all_items = set()
+    for analysis in analyses:
 
-        collocation = db.get_or_404(Collocation, collocation_id)
-        embeddings = collocation._query.corpus.embeddings
-        embeddings_set.add(embeddings)
-
-        # create new semantic map
-        if semantic_map is None:
-            semantic_map = SemanticMap(embeddings=embeddings, method=method)
-            db.session.add(semantic_map)
-            db.session.commit()
-
-        # and set as semantic map of the collocation analysis
-        collocation.semantic_map_id = semantic_map.id
-        db.session.add(collocation)
+        # set semantic map of the analysis
+        analysis.semantic_map_id = semantic_map.id
         db.session.commit()
 
-        # get IDs of blacklist
-        blacklist = CollocationItem.query.filter(
-            CollocationItem.collocation_id == collocation.id,
-            CollocationItem.item.in_(blacklist_items)
-        )
+        items = analysis.top_items(per_am)
+        items = [item for item in items if item not in blacklist_items]
+        if len(items) < 10:
+            current_app.logger.error('ccc_semmap :: no enough items after considering blacklist')
+        all_items = all_items.union(items)
 
-        # get some items
-        scores = CollocationItemScore.query.filter(
-            CollocationItemScore.collocation_id == collocation.id,
-            CollocationItemScore.measure == sort_by,
-            ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
-        ).order_by(CollocationItemScore.score.desc()).paginate(page=1, per_page=number)
-        dfs.append(DataFrame([vars(s) for s in scores], columns=['collocation_item_id']))
-
-    df_scores = concat(dfs)
-    items = list(set([CollocationItem.query.filter_by(id=id).first().item for id in df_scores['collocation_item_id']]))
-
-    current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(items)} items')
+    current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(all_items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)
-    coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
+    coordinates = semspace.generate2d(all_items, method=semantic_map.method, parameters=None)
     coordinates.index.name = 'item'
     coordinates['semantic_map_id'] = semantic_map.id
     coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
@@ -75,8 +53,8 @@ def ccc_semmap(collocation_ids, sort_by, number, blacklist_items=[], method='tsn
 
 
 def ccc_semmap_update(semantic_map, items):
-    """
-    make sure there's coordinates for all items
+    """make sure there's coordinates for all items on the semantic map
+
     """
 
     coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item'])
@@ -98,8 +76,8 @@ def ccc_semmap_update(semantic_map, items):
         current_app.logger.debug('ccc_semmap_update :: all requested items already have coordinates')
 
 
-def ccc_init_semmap(analysis, semantic_map_id=None):
-    """create new semantic map for analysis or make sure there are coordinates for top items on an existing map.
+def ccc_semmap_init(analysis, semantic_map_id=None, per_am=200, method='tsne'):
+    """create a new semantic map for analysis or make sure there are coordinates for top items on an existing map.
 
     analysis = keyword / collocation analysis (database model) with following methods / properties:
     - .top_items()
@@ -108,21 +86,20 @@ def ccc_init_semmap(analysis, semantic_map_id=None):
 
     """
 
-    items = analysis.top_items()
+    items = analysis.top_items(per_am)
 
     if semantic_map_id:
-        # associate keyword analysis with existing semantic map
+        current_app.logger.debug('ccc_semmap_init :: associating existing semantic map with analysis')
         semantic_map = db.get_or_404(SemanticMap, semantic_map_id)
         analysis.semantic_map = semantic_map
         db.session.commit()
 
     if analysis.semantic_map:
-        # make sure there are coordinates for top items
         ccc_semmap_update(analysis.semantic_map, items)
 
     else:
-        # create new semantic map
-        semantic_map = SemanticMap(embeddings=analysis.corpus.embeddings, method='tsne')
+        current_app.logger.debug('ccc_semmap_init :: creating new semantic map')
+        semantic_map = SemanticMap(embeddings=analysis.corpus.embeddings, method=method)
         db.session.add(semantic_map)
         db.session.commit()
 
@@ -137,43 +114,43 @@ def ccc_init_semmap(analysis, semantic_map_id=None):
         db.session.commit()
 
 
-def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
-    """
-    update coordinates of items belonging to a discourseme
-    """
+# def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
+#     """update coordinates of items belonging to a discourseme
 
-    semantic_map = collocation.semantic_map
-    coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item'])
-    coordinates = coordinates.set_index('item')
-    coordinates = coordinates.loc[~coordinates.index.duplicated()]
+#     """
 
-    # update positions of discourseme items
-    current_app.logger.debug('ccc_semmap_discoursemes :: update discourseme coordinates')
-    for discourseme in collocation.constellation.highlight_discoursemes:
-        discourseme_items = discourseme.get_items()
-        index_items = coordinates.index.isin(discourseme_items)
-        user_coordinates = coordinates.loc[index_items & ~ coordinates['x_user'].isna()]
-        if len(user_coordinates) > 0:
-            # if user coordinates: move to center of all user coordinates
-            x_center = user_coordinates['x_user'].mean()
-            y_center = user_coordinates['y_user'].mean()
-        else:
-            # else: move to center of all coordinates
-            x_center = coordinates.loc[index_items, 'x'].mean()
-            y_center = coordinates.loc[index_items, 'y'].mean()
-        coordinates.loc[index_items, 'x_user'] = x_center + normal(0, sigma_wiggle, sum(index_items))
-        coordinates.loc[index_items, 'y_user'] = y_center + normal(0, sigma_wiggle, sum(index_items))
+#     semantic_map = collocation.semantic_map
+#     coordinates = DataFrame([vars(s) for s in semantic_map.coordinates], columns=['x', 'y', 'x_user', 'y_user', 'item'])
+#     coordinates = coordinates.set_index('item')
+#     coordinates = coordinates.loc[~coordinates.index.duplicated()]
 
-    coordinates['semantic_map_id'] = semantic_map.id
-    coordinates.index.name = 'item'
+#     # update positions of discourseme items
+#     current_app.logger.debug('ccc_semmap_discoursemes :: update discourseme coordinates')
+#     for discourseme in collocation.constellation.highlight_discoursemes:
+#         discourseme_items = discourseme.get_items()
+#         index_items = coordinates.index.isin(discourseme_items)
+#         user_coordinates = coordinates.loc[index_items & ~ coordinates['x_user'].isna()]
+#         if len(user_coordinates) > 0:
+#             # if user coordinates: move to center of all user coordinates
+#             x_center = user_coordinates['x_user'].mean()
+#             y_center = user_coordinates['y_user'].mean()
+#         else:
+#             # else: move to center of all coordinates
+#             x_center = coordinates.loc[index_items, 'x'].mean()
+#             y_center = coordinates.loc[index_items, 'y'].mean()
+#         coordinates.loc[index_items, 'x_user'] = x_center + normal(0, sigma_wiggle, sum(index_items))
+#         coordinates.loc[index_items, 'y_user'] = y_center + normal(0, sigma_wiggle, sum(index_items))
 
-    # delete old coordinates
-    [db.session.delete(c) for c in semantic_map.coordinates]
-    db.session.commit()
+#     coordinates['semantic_map_id'] = semantic_map.id
+#     coordinates.index.name = 'item'
 
-    # add new coordinates
-    coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
-    db.session.commit()
+#     # delete old coordinates
+#     [db.session.delete(c) for c in semantic_map.coordinates]
+#     db.session.commit()
+
+#     # add new coordinates
+#     coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
+#     db.session.commit()
 
 
 ################
@@ -234,15 +211,21 @@ def get_semantic_map(id):
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
 def create_semantic_map(json_data):
-    """Create semantic map for items in the provided collocation analyses.
+    """Create semantic map for all top items in the provided keyword and collocation analyses.
 
     """
 
-    collocation_ids = json_data.get('collocation_ids')
-    keyword_ids = json_data.get('keyword_ids')  # TODO
     method = json_data.get('method')
 
-    semantic_map = ccc_semmap(collocation_ids, sort_by='conservative_log_ratio', number=500, method=method)
+    collocation_ids = json_data.get('collocation_ids')
+    collocations = [db.get_or_404(Collocation, collocation_id) for collocation_id in collocation_ids]
+    keyword_ids = json_data.get('keyword_ids')
+    keywords = [db.get_or_404(Keyword, keyword_id) for keyword_id in keyword_ids]
+
+    analyses = collocations + keywords
+    embeddings = analyses[0].corpus.embeddings
+
+    semantic_map = ccc_semmap(analyses, embeddings, per_am=200, method=method)
 
     return SemanticMapOut().dump(semantic_map), 200
 
@@ -261,7 +244,7 @@ def delete_semantic_map(id):
     return 'Deletion successful.', 200
 
 
-@bp.get("/<id>/coordinates")
+@bp.get("/<id>/coordinates/")
 @bp.output(CoordinatesOut(many=True))
 @bp.auth_required(auth)
 def get_coordinates(id):

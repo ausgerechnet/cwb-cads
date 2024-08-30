@@ -21,7 +21,7 @@ from ..keyword import (KeywordItemOut, KeywordItemsIn, KeywordItemsOut,
                        KeywordOut, ccc_keywords)
 from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
                      iterative_query)
-from ..semantic_map import CoordinatesOut, ccc_init_semmap, ccc_semmap_update
+from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from ..users import auth
 from .database import (CollocationDiscoursemeItem, Constellation,
                        ConstellationDescription, Discourseme,
@@ -867,7 +867,7 @@ def create_collocation(id, description_id, json_data):
 
     get_or_create_counts(collocation, remove_focus_cpos=False)
     set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
-    ccc_init_semmap(collocation, semantic_map_id)
+    ccc_semmap_init(collocation, semantic_map_id)
     if description.semantic_map_id is None:
         description.semantic_map_id = collocation.semantic_map_id
 
@@ -1060,7 +1060,7 @@ def create_keyword(id, description_id, json_data):
 
     ccc_keywords(keyword)
     set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
-    ccc_init_semmap(keyword, semantic_map_id)
+    ccc_semmap_init(keyword, semantic_map_id)
     if description.semantic_map_id is None:
         description.semantic_map_id = keyword.semantic_map_id
 
