@@ -143,7 +143,7 @@ class QueryHistory(db.Model):
 
     name = db.Column(db.Unicode)
 
-    history_entries = db.relationship("QueryHistoryEntry", back_populates="parent", passive_deletes=True, cascade='all, delete')
+    entries = db.relationship("QueryHistoryEntry", back_populates="parent", passive_deletes=True, cascade='all, delete')
 
 
     def add_entry(self, query_id, comment):
@@ -154,7 +154,7 @@ class QueryHistory(db.Model):
             comment = comment
         )
 
-        self.history_entries.append(entry)
+        self.entries.append(entry)
 
         return entry
 
@@ -167,4 +167,4 @@ class QueryHistoryEntry(db.Model):
     time = db.Column(db.DateTime, default=datetime.utcnow, primary_key=True)
     comment = db.Column(db.Unicode)
 
-    parent = db.relationship("QueryHistory", back_populates="history_entries")
+    parent = db.relationship("QueryHistory", back_populates="entries")
