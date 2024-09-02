@@ -48,7 +48,7 @@ class QueryHistoryOut(Schema):
 @bp.output(QueryHistoryOut)
 @bp.auth_required(auth)
 def create(json_data):
-    """
+    """Create a new quey history.
     
     """
 
@@ -67,7 +67,7 @@ def create(json_data):
 @bp.output(QueryHistoryOut(many=True))
 @bp.auth_required(auth)
 def get_all():
-    """
+    """Get all query histories.
 
     """
 
@@ -81,7 +81,7 @@ def get_all():
 @bp.output(QueryHistoryEntryOut)
 @bp.auth_required(auth)
 def add_query(id, json_data):
-    """
+    """Create a new entry in a given query history.
     
     """
 
@@ -103,7 +103,7 @@ def add_query(id, json_data):
 @bp.output(QueryHistoryEntryOut(many=True))
 @bp.auth_required(auth)
 def get_history(id):
-    """
+    """Get all entries in a given query history.
     
     """
 
