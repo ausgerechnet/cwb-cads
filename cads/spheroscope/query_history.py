@@ -1,14 +1,14 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, Schema
+from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Integer, String, Date, Nested
 from apiflask.validators import OneOf
 import json
 
 from flask import current_app
 from .database import QueryHistory, QueryHistoryEntry
-from ..database import Corpus
+from ..database import Corpus, Query
 from ..users import auth
 from .. import db
 
@@ -92,9 +92,11 @@ def add_query(id, json_data):
         json_data.get("comment")
     )
 
-    db.session.commit()
-
-    return QueryHistoryEntryOut().dump(entry), 200
+    try:
+        db.session.commit()
+        return QueryHistoryEntryOut().dump(entry), 200
+    except:
+        return abort(400, message=f"Query with id {json_data.get('query_id')} does not exist in database")
 
 
 @bp.get("/<id>")
