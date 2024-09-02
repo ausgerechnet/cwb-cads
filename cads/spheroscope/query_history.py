@@ -78,7 +78,7 @@ def get_all():
 
 @bp.put("/<id>/entry")
 @bp.input(QueryHistoryEntryIn)
-@bp.output(QueryHistoryEntryOut)
+@bp.output(QueryHistoryOut)
 @bp.auth_required(auth)
 def add_query(id, json_data):
     """Create a new entry in a given query history.
@@ -94,13 +94,13 @@ def add_query(id, json_data):
 
     try:
         db.session.commit()
-        return QueryHistoryEntryOut().dump(entry), 200
+        return QueryHistoryOut().dump(history), 200
     except:
         return abort(400, message=f"Query with id {json_data.get('query_id')} does not exist in database")
 
 
 @bp.get("/<id>")
-@bp.output(QueryHistoryEntryOut(many=True))
+@bp.output(QueryHistoryOut)
 @bp.auth_required(auth)
 def get_history(id):
     """Get all entries in a given query history.
@@ -109,6 +109,4 @@ def get_history(id):
 
     history = db.get_or_404(QueryHistory, id)
 
-    current_app.logger.info(history.history_entries)
-
-    return [QueryHistoryEntryOut().dump(h) for h in history.history_entries], 200
+    return QueryHistoryOut().dump(history), 200
