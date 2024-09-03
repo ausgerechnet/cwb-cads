@@ -168,3 +168,4 @@ class QueryHistoryEntry(db.Model):
     comment = db.Column(db.Unicode)
 
     parent = db.relationship("QueryHistory", back_populates="entries")
+    query = db.relationship("Query")
