@@ -7,6 +7,8 @@ from apiflask.validators import OneOf
 import json
 
 from flask import current_app
+
+from cads.query import QueryOut
 from .database import QueryHistory, QueryHistoryEntry
 from ..database import Corpus, Query
 from ..users import auth
@@ -29,6 +31,8 @@ class QueryHistoryEntryOut(Schema):
 
     time = String()
     comment = String()
+
+    query = Nested(QueryOut)
 
 
 class QueryHistoryIn(Schema):
