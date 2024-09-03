@@ -114,3 +114,20 @@ def get_history(id):
     history = db.get_or_404(QueryHistory, id)
 
     return QueryHistoryOut().dump(history), 200
+
+
+@bp.delete("/<id>")
+@bp.auth_required(auth)
+def delete_history(id):
+    """ Deletes a given query history
+    
+    """
+
+    history = db.get_or_404(QueryHistory, id)
+    
+    try:
+        db.session.delete(history)
+        db.session.commit()
+        return f"Deleted QueryHistory with id {id} successfully", 200
+    except:
+        return abort(400, message=f"QueryHistory with id {id} could not be deleted")
