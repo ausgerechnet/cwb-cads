@@ -11,7 +11,14 @@ export function CorpusSelect({
   className,
   disabled,
 }: {
-  corpora: z.infer<typeof schemas.CorpusOut>[]
+  corpora: (Pick<
+    z.infer<typeof schemas.CorpusOut>,
+    'id' | 'name' | 'description'
+  > &
+    Partial<
+      Pick<z.infer<typeof schemas.SubCorpusOut>, 'nqr_cqp'> &
+        Pick<z.infer<typeof schemas.CorpusOut>, 'cwb_id'>
+    >)[]
   corpusId?: number
   onChange?: (corpusId: number | undefined) => void
   className?: string
@@ -30,9 +37,9 @@ export function CorpusSelect({
         .map((corpus) => ({
           id: corpus.id as number,
           name: corpus.name ?? '',
-          searchValue: `${corpus.cwb_id ?? ''} ${corpus.name ?? ''} ${
-            corpus.description ?? ''
-          }`
+          searchValue: `${corpus?.cwb_id ?? corpus?.nqr_cqp ?? ''} ${
+            corpus.name ?? ''
+          } ${corpus.description ?? ''}`
             .toLowerCase()
             .replace(/\s+/g, '_'),
         })),

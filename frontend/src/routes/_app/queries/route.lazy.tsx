@@ -1,4 +1,4 @@
-import { Eye, Loader2, MoreVertical, Plus } from 'lucide-react'
+import { Eye, MoreVertical, Plus } from 'lucide-react'
 import {
   Link,
   createLazyFileRoute,
@@ -7,12 +7,12 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import { ColumnDef } from '@tanstack/react-table'
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { toast } from 'sonner'
 
 import { cn } from '@/lib/utils'
-import { deleteQuery, discoursemeById, queriesList } from '@/lib/queries'
+import { deleteQuery, queriesList } from '@/lib/queries'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@/components/ui/button'
 import { Large } from '@/components/ui/typography'
@@ -57,11 +57,9 @@ function Queries() {
           columns={columns}
           rows={queries}
           onRowClick={(row) => {
-            // TODO: this property SHOULD be mandatory at some point
-            const queryId = row.id!
-            navigate({
+            void navigate({
               to: '/queries/$queryId',
-              params: { queryId: String(queryId) },
+              params: { queryId: String(row.id) },
             })
           }}
         />
@@ -95,27 +93,6 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
   {
     accessorKey: 'cqp_query',
     header: ({ column }) => <SortButton column={column}>Query</SortButton>,
-  },
-  {
-    accessorKey: 'discourseme_id',
-    header: 'Discourseme (TODO: include in queries response?)',
-    cell: (cell) => {
-      const discoursemeId = cell.row.original.discourseme_id ?? null
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      const { data, isLoading } = useQuery({
-        ...discoursemeById(discoursemeId!),
-        enabled: discoursemeId !== null,
-      })
-      if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />
-      return (
-        <>
-          {(data?.template ?? [])
-            .map((item) => item.surface)
-            .filter((surface) => Boolean(surface))
-            ?.join(', ') || <span className="italic">empty</span>}
-        </>
-      )
-    },
   },
   {
     accessorKey: 'cqp_nqr_matches',

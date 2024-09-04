@@ -153,7 +153,7 @@ function DiscoursemeDescriptionNew() {
                     <CorpusSelect
                       className="w-full"
                       corpora={subcorpora}
-                      corpusId={field.value}
+                      corpusId={field.value ?? undefined}
                       onChange={field.onChange}
                       disabled={!subcorpora.length}
                     />

@@ -31,34 +31,7 @@ export const queryById = (queryId: number) =>
     queryKey: ['query', queryId],
     queryFn: ({ signal }) =>
       apiClient.getQueryId({ params: { id: String(queryId) }, signal }),
-    placeholderData: {},
   })
-
-export const patchQuery: MutationOptions<
-  z.infer<typeof schemas.QueryOut>,
-  Error,
-  { queryId: string; discourseme_id: number | undefined }
-> = {
-  mutationFn: async ({ queryId }) => {
-    // TODO: implement patchQueryMutationOptions
-    console.warn('Query Patch is not implemented yet')
-    const mockResponse: z.infer<typeof schemas.QueryOut> = {
-      id: parseInt(queryId),
-      corpus: {
-        id: 1,
-        name: 'corpus',
-      },
-    }
-    return mockResponse
-  },
-  onSuccess: (data) => {
-    const queryId = data.id
-    if (queryId !== undefined) {
-      void queryClient.invalidateQueries(queryById(queryId))
-    }
-    void queryClient.invalidateQueries(queriesList)
-  },
-}
 
 export const createQueryCQP: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
@@ -67,7 +40,7 @@ export const createQueryCQP: MutationOptions<
 > = {
   mutationFn: (body) => apiClient.postQuery(body),
   onSuccess: () => {
-    queryClient.invalidateQueries(queriesList)
+    void queryClient.invalidateQueries(queriesList)
   },
 }
 
@@ -78,7 +51,7 @@ export const createQueryAssisted: MutationOptions<
 > = {
   mutationFn: (body) => apiClient.postQueryassisted(body),
   onSuccess: () => {
-    queryClient.invalidateQueries(queriesList)
+    void queryClient.invalidateQueries(queriesList)
   },
 }
 
@@ -86,7 +59,7 @@ export const deleteQuery: MutationOptions<unknown, Error, string> = {
   mutationFn: (queryId: string) =>
     apiClient.deleteQueryId(undefined, { params: { id: queryId } }),
   onSuccess: () => {
-    queryClient.invalidateQueries(queriesList)
+    void queryClient.invalidateQueries(queriesList)
   },
 }
 
@@ -171,7 +144,7 @@ export const shuffleQueryConcordances: MutationOptions<
       // TODO: QueryOut should have more mandatory fields
       data.query_id === undefined ? undefined : data.id
     if (queryId === undefined) return
-    queryClient.invalidateQueries(queryConcordances(queryId))
+    void queryClient.invalidateQueries(queryConcordances(queryId))
   },
 }
 
@@ -281,9 +254,9 @@ export const createSubcorpus: MutationOptions<
       params: { id: corpus_id.toString() },
     }),
   onSuccess: (data) => {
-    queryClient.invalidateQueries(corpusList)
-    queryClient.invalidateQueries(subcorporaList)
-    queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))
+    void queryClient.invalidateQueries(corpusList)
+    void queryClient.invalidateQueries(subcorporaList)
+    void queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))
   },
 }
 
@@ -292,8 +265,8 @@ export const updateSubcorpus: MutationOptions<unknown, Error, string> = {
   mutationFn: async (id: string) => '42 ' + id,
   //   apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
   onSuccess: () => {
-    queryClient.invalidateQueries(corpusList)
-    queryClient.invalidateQueries(subcorporaList)
+    void queryClient.invalidateQueries(corpusList)
+    void queryClient.invalidateQueries(subcorporaList)
   },
 }
 
@@ -411,7 +384,7 @@ export const createDiscourseme: MutationOptions<
 > = {
   mutationFn: (body) => apiClient.postMmdadiscourseme(body),
   onSuccess: () => {
-    queryClient.invalidateQueries(discoursemesList)
+    void queryClient.invalidateQueries(discoursemesList)
   },
 }
 
@@ -421,7 +394,7 @@ export const deleteDiscourseme: MutationOptions<unknown, Error, string> = {
       params: { id: discoursemeId },
     }),
   onSettled: () => {
-    queryClient.invalidateQueries(discoursemesList)
+    void queryClient.invalidateQueries(discoursemesList)
   },
 }
 
@@ -447,7 +420,7 @@ export const addDiscoursemeDescription: MutationOptions<
   onSettled: (data) => {
     const discoursemeId = data?.discourseme_id
     if (discoursemeId === undefined) return
-    queryClient.invalidateQueries(discoursemeById(discoursemeId))
+    void queryClient.invalidateQueries(discoursemeById(discoursemeId))
   },
 }
 
@@ -464,7 +437,9 @@ export const deleteDiscoursemeDescription: MutationOptions<
       },
     }),
   onSettled: () => {
-    queryClient.invalidateQueries({ queryKey: ['discourseme-descriptions'] })
+    void queryClient.invalidateQueries({
+      queryKey: ['discourseme-descriptions'],
+    })
   },
 }
 
@@ -526,13 +501,13 @@ export const patchConstellation: MutationOptions<
   onSettled: (data) => {
     const constellationId = data?.id
     if (constellationId === undefined) return
-    queryClient.invalidateQueries(constellationById(constellationId))
+    void queryClient.invalidateQueries(constellationById(constellationId))
   },
 }
 
 export const constellationDescriptionsById = (constellationId: number) =>
   queryOptions({
-    queryKey: ['constellation-descriptions', constellationId],
+    queryKey: ['constellation-description-list', constellationId],
     queryFn: ({ signal }) =>
       apiClient.getMmdaconstellationIddescription({
         params: { id: constellationId.toString() },
@@ -543,7 +518,7 @@ export const constellationDescriptionsById = (constellationId: number) =>
 export const constellationDescriptionFor = ({
   constellationId,
   corpusId,
-  subcorpusId = undefined,
+  subcorpusId,
   matchStrategy,
   p,
   s,
@@ -561,7 +536,7 @@ export const constellationDescriptionFor = ({
 }) =>
   queryOptions({
     queryKey: [
-      'constellation-descriptions',
+      'constellation-description',
       constellationId,
       corpusId,
       subcorpusId,
@@ -590,7 +565,7 @@ export const constellationDescriptionFor = ({
       await apiClient.postMmdaconstellationIddescription(
         {
           corpus_id: corpusId,
-          subcorpus_id: subcorpusId,
+          subcorpus_id: subcorpusId ?? undefined,
           p,
           s,
           match_strategy: matchStrategy,
@@ -707,8 +682,45 @@ export const constellationCollocation = (
       window,
       focusDiscoursemeId,
     ],
-    queryFn: () =>
-      apiClient.postMmdaconstellationIddescriptionDescription_idcollocation(
+    staleTime: 1_000 * 60 * 5, // 5 minutes
+    queryFn: async () => {
+      const collocationAnalyses =
+        await apiClient.getMmdaconstellationIddescriptionDescription_idcollocation(
+          {
+            params: {
+              id: constellationId.toString(),
+              description_id: descriptionId.toString(),
+            },
+          },
+        )
+      const matchingAnalysis = collocationAnalyses.find(
+        (analysis) =>
+          analysis.filter_item === filterItem &&
+          analysis.filter_item_p_att === filterItemPAttribute &&
+          analysis.focus_discourseme_id === focusDiscoursemeId &&
+          analysis.p === p &&
+          analysis.s_break === sBreak &&
+          (analysis.semantic_map_id ?? null) === (semanticMapId ?? null) &&
+          analysis.window === window,
+      )
+      console.group('constellationCollocation')
+      console.log('found analyses:', collocationAnalyses)
+      console.log('matching analysis:', matchingAnalysis)
+      console.log('parameters', {
+        constellationId,
+        descriptionId,
+        filterItem,
+        filterItemPAttribute,
+        focusDiscoursemeId,
+        marginals,
+        p,
+        sBreak,
+        semanticMapId,
+        window,
+      })
+      console.groupEnd()
+      if (matchingAnalysis) return matchingAnalysis
+      return apiClient.postMmdaconstellationIddescriptionDescription_idcollocation(
         {
           filter_item: filterItem,
           filter_item_p_att: filterItemPAttribute,
@@ -725,7 +737,8 @@ export const constellationCollocation = (
             description_id: descriptionId.toString(),
           },
         },
-      ),
+      )
+    },
     select: (data) => {
       return data
     },
@@ -745,7 +758,7 @@ export const constellationCollocationItems = (
     sortBy?: SortBy
     pageSize?: number
     pageNumber?: number
-  },
+  } = {},
 ) =>
   queryOptions({
     queryKey: [

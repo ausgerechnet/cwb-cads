@@ -1,9 +1,3 @@
-import { useQuery } from '@tanstack/react-query'
-
-import {
-  constellationCollocation,
-  collocationItemsById,
-} from '@/lib/queries.ts'
 import { cn } from '@/lib/utils.ts'
 import { ErrorMessage } from '@/components/error-message.tsx'
 import {
@@ -18,6 +12,7 @@ import { Pagination } from '@/components/pagination.tsx'
 import { Repeat } from '@/components/repeat.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
+import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation.ts'
 
 const measureOrder = [
   'conservative_log_ratio',
@@ -45,59 +40,18 @@ export function Collocation({
   corpusId?: number
   descriptionId?: number
 }) {
-  const {
-    setFilter,
-    filterItem,
-    secondary,
-    s,
-    windowSize,
-    focusDiscourseme,
-    ccPageSize,
-    ccSortBy,
-    ccSortOrder,
-    ccPageNumber,
-  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
-  const {
-    data: collocation,
-    isLoading: isLoadingConstellation,
-    error,
-  } = useQuery({
-    ...constellationCollocation(constellationId, descriptionId!, {
-      focusDiscoursemeId: focusDiscourseme!,
-      filterItem: filterItem!,
-      filterItemPAttribute: secondary!,
-      p: secondary!,
-      sBreak: s!,
-      window: windowSize,
-    }),
-    // keep previous data
-    placeholderData: (p) => p,
-    enabled:
-      focusDiscourseme !== undefined &&
-      descriptionId !== undefined &&
-      s !== undefined &&
-      secondary !== undefined &&
-      filterItem !== undefined,
-  })
-  const {
-    data: collocationItems,
-    isLoading: isLoadingItems,
-    error: errorConstellation,
-  } = useQuery({
-    ...collocationItemsById(collocation?.id as number, {
-      sortBy: ccSortBy,
-      sortOrder: ccSortOrder,
-      pageSize: ccPageSize,
-      pageNumber: ccPageNumber,
-    }),
-    enabled: collocation?.id !== undefined,
-  })
-  const isLoading = isLoadingItems || isLoadingConstellation
-
+  const { setFilter, ccPageSize, ccPageNumber } = useFilterSelection(
+    '/_app/constellations/$constellationId',
+    corpusId,
+  )
+  const { error, isLoading, collocationItems } = useCollocation(
+    constellationId,
+    descriptionId,
+    corpusId,
+  )
   return (
     <div>
       <ErrorMessage error={error} />
-      <ErrorMessage error={errorConstellation} />
       <Table>
         <TableHeader>
           <TableCell>Item</TableCell>

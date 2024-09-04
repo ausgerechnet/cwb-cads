@@ -90,7 +90,7 @@ export function DataTable<RowData>({
   const { pageIndex, pageSize } = table.getState().pagination
   const navigate = useNavigate()
   useEffect(() => {
-    navigate({
+    void navigate({
       replace: true,
       params: (p) => p,
       search: (search) => ({

@@ -19,7 +19,7 @@ function Admin() {
   const { data: users = [] } = useSuspenseQuery(usersList)
   return (
     <AppPageFrame title="Admin">
-      <DataTable<z.infer<typeof schemas.ConstellationOut>>
+      <DataTable<z.infer<typeof schemas.UserOut>>
         columns={columns}
         rows={users}
       />
@@ -27,7 +27,7 @@ function Admin() {
   )
 }
 
-const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
+const columns: ColumnDef<z.infer<typeof schemas.UserOut>>[] = [
   {
     accessorKey: 'id',
     enableSorting: true,

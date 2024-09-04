@@ -33,6 +33,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
     setFilter,
     pAttributes,
     contextBreakList,
+    ccSortBy,
   } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
 
   return (
@@ -153,6 +154,44 @@ export function ConstellationFilter({ className }: { className?: string }) {
             setFilter('filterItem', event.target.value ?? '')
           }
         />
+      </div>
+
+      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
+        <span>Sort by</span>
+        <Select
+          value={ccSortBy}
+          onValueChange={(value) =>
+            setFilter('ccSortBy', FilterSchema.shape.ccSortBy.parse(value))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {[
+                'conservative_log_ratio',
+                'O11',
+                'E11',
+                'ipm',
+                'log_likelihood',
+                'z_score',
+                't_score',
+                'simple_ll',
+                'dice',
+                'log_ratio',
+                'min_sensitivity',
+                'liddell',
+                'mutual_information',
+                'local_mutual_information',
+              ].map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value.replaceAll('_', ' ')}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   )

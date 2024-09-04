@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 
-type Word = {
+export type Word = {
   id: string
   word: string
   x: number
@@ -16,36 +16,37 @@ type Word = {
   radius: number
   discoursemes?: string[]
 }
-
-function createWord(override: Partial<Word> = {}): Word {
-  const position = [
-    faker.number.float({ min: 100, max: 800 }),
-    faker.number.float({ min: 100, max: 800 }),
-  ]
-  return {
-    id: faker.string.uuid(),
-    word: faker.lorem.word(),
-    x: position[0],
-    y: position[1],
-    originX: position[0],
-    originY: position[1],
-    significance: faker.number.float({ min: 0, max: 1 }),
-    radius: 0,
-    ...override,
-  }
-}
-
-function createWordCloud(count = 500): Word[] {
-  faker.seed(23)
-  return [
-    createWord({ discoursemes: ['a'] }),
-    createWord({ discoursemes: ['a'] }),
-    createWord({ discoursemes: ['a'] }),
-    ...faker.helpers.multiple(createWord, { count }),
-  ]
-}
-
-const defaultWords = createWordCloud(100)
+//
+// function createWord(override: Partial<Word> = {}): Word {
+//   const position = [
+//     faker.number.float({ min: 100, max: 800 }),
+//     faker.number.float({ min: 100, max: 800 }),
+//   ]
+//   return {
+//     id: faker.string.uuid(),
+//     word: faker.lorem.word(),
+//     x: position[0],
+//     y: position[1],
+//     originX: position[0],
+//     originY: position[1],
+//     significance: faker.number.float({ min: 0, max: 1 }),
+//     radius: 0,
+//     ...override,
+//   }
+// }
+//
+// function createWordCloud(count = 500): Word[] {
+//   faker.seed(23)
+//   return [
+//     createWord({ discoursemes: ['a'] }),
+//     createWord({ discoursemes: ['a'] }),
+//     createWord({ discoursemes: ['a'] }),
+//     ...faker.helpers.multiple(createWord, { count }),
+//   ]
+// }
+//
+// const defaultWords = createWordCloud(100)
+const defaultWords: Word[] = []
 
 export default function WordCloud({
   words = defaultWords,
@@ -102,13 +103,13 @@ export default function WordCloud({
 
     const container = svg.select('g').attr('cursor', 'grab')
 
-    container.on('click', () => {
-      navigate({
-        params: (p) => p,
-        search: (s) => ({ ...s, select: undefined }),
-        replace: true,
-      })
-    })
+    // container.on('click', () => {
+    //   navigate({
+    //     params: (p) => p,
+    //     search: (s) => ({ ...s, select: undefined }),
+    //     replace: true,
+    //   })
+    // })
 
     const simulation = d3.forceSimulation()
 
@@ -161,13 +162,14 @@ export default function WordCloud({
       .attr('cx', (d) => d.x)
       .attr('cy', (d) => d.y)
       .attr('r', (d) => d.radius)
+      // @ts-expect-error TODO: type later
       .on('click', (event, d) => {
         event.stopPropagation()
-        navigate({
-          params: (p) => p,
-          search: (s) => ({ ...s, select: d.id }),
-          replace: true,
-        })
+        // navigate({
+        //   params: (p) => p,
+        //   search: (s) => ({ ...s, select: d.id }),
+        //   replace: true,
+        // })
       })
       .call(
         // @ts-expect-error TODO: type later

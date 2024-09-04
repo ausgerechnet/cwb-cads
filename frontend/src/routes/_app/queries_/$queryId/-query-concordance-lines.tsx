@@ -115,7 +115,10 @@ export function ConcordanceLines({
             </TableHeader>
             <TableBody className="col-span-full grid grid-cols-subgrid">
               {concordanceLines?.lines?.map((line) => (
-                <ConcordanceLineRender key={line.id} concordanceLine={line} />
+                <ConcordanceLineRender
+                  key={line.match_id}
+                  concordanceLine={line}
+                />
               ))}
               {isLoading && (
                 <Repeat count={clPageSize}>
@@ -136,14 +139,14 @@ export function ConcordanceLines({
           totalRows={nrLinesRef.current}
           pageIndex={clPageIndex}
           setPageSize={(pageSize) => {
-            navigate({
+            void navigate({
               params: (p) => p,
               search: (s) => ({ ...s, clPageSize: pageSize }),
               replace: true,
             })
           }}
           setPageIndex={(pageIndex) => {
-            navigate({
+            void navigate({
               params: (p) => p,
               search: (s) => ({ ...s, clPageIndex: pageIndex }),
               replace: true,
@@ -172,7 +175,7 @@ function MetaValue({ value }: { value: unknown }) {
 }
 
 function ConcordanceLineRender({
-  concordanceLine: { id, tokens = [], structural = {} },
+  concordanceLine: { match_id, tokens = [], structural = {} },
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
@@ -187,12 +190,12 @@ function ConcordanceLineRender({
   const isExpanded = false
 
   return (
-    <TableRow key={id} className="col-span-full grid grid-cols-subgrid">
+    <TableRow key={match_id} className="col-span-full grid grid-cols-subgrid">
       <TableCell className="w-max">
         <TooltipProvider>
           <Tooltip delayDuration={100}>
             <TooltipTrigger className="font-muted-foreground text-xs">
-              {formatNumber(id ?? 0)}
+              {formatNumber(match_id ?? 0)}
             </TooltipTrigger>
             {meta.length > 0 && (
               <TooltipContent side="top" sideOffset={10}>

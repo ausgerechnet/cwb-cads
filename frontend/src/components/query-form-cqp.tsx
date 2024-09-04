@@ -92,7 +92,6 @@ export function QueryFormCQP({
     if (isDisabled) return
     postQuery(data)
   }
-  console.log(corpusId, subcorpora)
 
   return (
     <div className="@container">

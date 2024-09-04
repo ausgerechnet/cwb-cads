@@ -8,7 +8,6 @@ import {
 import {
   createLazyFileRoute,
   Link,
-  Outlet,
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
@@ -34,7 +33,6 @@ import { Label } from '@/components/ui/label'
 import {
   addConstellationDiscourseme,
   constellationById,
-  constellationDescriptionFor,
   corpusList,
   deleteConstellationDiscourseme,
   discoursemesList,
@@ -44,38 +42,14 @@ import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationFilter } from './-constellation-filter'
 import { Collocation } from './-constellation-collocation'
+import { SemanticMap } from './-semantic-map'
+import { useDescription } from './-use-description'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations/$constellationId',
 )({
   component: ConstellationDetail,
 })
-
-function useDescription() {
-  const constellationId = parseInt(Route.useParams().constellationId)
-  const { corpusId } = Route.useSearch()
-  const { secondary, s } = useFilterSelection(
-    '/_app/constellations/$constellationId',
-    corpusId,
-  )
-  const {
-    data: description,
-    isLoading: isLoadingDescription,
-    error: errorDescription,
-  } = useQuery({
-    ...constellationDescriptionFor({
-      constellationId,
-      corpusId: corpusId!,
-      subcorpusId: undefined,
-      p: secondary,
-      s,
-      matchStrategy: 'longest',
-    }),
-    enabled:
-      corpusId !== undefined && secondary !== undefined && s !== undefined,
-  })
-  return { description, isLoadingDescription, errorDescription }
-}
 
 function ConstellationDetail() {
   // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
@@ -92,6 +66,8 @@ function ConstellationDetail() {
     isConcordanceVisible = true,
     focusDiscourseme,
   } = Route.useSearch()
+
+  console.log('route corpus id', corpusId)
 
   const { setFilter } = useFilterSelection(
     '/_app/constellations/$constellationId',
@@ -232,10 +208,13 @@ function ConstellationDetail() {
           </Label>
         </>
       )}
+      <div>Description ID: {description?.id}</div>
       {corpusId !== undefined && (
         <>
           <ConstellationFilter className="sticky top-14 bg-background" />
-          <Outlet />
+          {showsSemanticMap && (
+            <SemanticMap constellationId={constellationId} />
+          )}
           {focusDiscourseme !== undefined && !showsSemanticMap && (
             <Collocation
               constellationId={constellationId}
