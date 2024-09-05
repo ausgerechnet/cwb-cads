@@ -6,6 +6,8 @@ import json
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, Nested, String
 from apiflask.validators import OneOf
+from ccc.cqpy import cqpy_load
+
 from flask import current_app
 
 from .. import db
@@ -45,6 +47,25 @@ def ccc_slot_query(slot_query):
         current_app.logger.warning(f'no results for query {slot_query.id}')
 
     return dump.df
+
+
+def import_slot_query(path, corpus_id):
+
+    query = cqpy_load(path)
+
+    slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]
+    corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in query['anchors']['corrections'].items()]
+
+    slot_query = SlotQuery(
+        corpus_id=corpus_id,
+        cqp_query=query['cqp'],
+        name=query['meta']['name'],
+        _slots=json.dumps(slots),
+        _corrections=json.dumps(corrections)
+    )
+    db.session.add(slot_query)
+    db.session.commit()
+    slot_query.write()
 
 
 class AnchorCorrection(Schema):
