@@ -82,6 +82,7 @@ class DiscoursemeDescription(db.Model):
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))
+    filter_sequence = db.Column(db.String(), nullable=True)
 
     s = db.Column(db.String(), nullable=True)  # for max. query context
     match_strategy = db.Column(db.Unicode, default='longest')

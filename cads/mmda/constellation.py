@@ -9,13 +9,15 @@ from flask import current_app
 from pandas import DataFrame, read_sql
 
 from .. import db
+from ..breakdown import ccc_breakdown
 from ..collocation import (CollocationIn, CollocationItemOut,
                            CollocationItemsIn, CollocationItemsOut,
                            CollocationOut, get_or_create_counts)
 from ..concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
-from ..database import (Collocation, CollocationItem, CollocationItemScore,
-                        Corpus, CotextLines, Keyword, KeywordItem,
-                        KeywordItemScore, SemanticMap)
+from ..database import (Breakdown, Collocation, CollocationItem,
+                        CollocationItemScore, Corpus, CotextLines, Keyword,
+                        KeywordItem, KeywordItemScore, SemanticMap,
+                        get_or_create)
 from ..keyword import (KeywordItemOut, KeywordItemsIn, KeywordItemsOut,
                        KeywordOut, ccc_keywords)
 from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
@@ -30,8 +32,6 @@ from .discourseme import (DiscoursemeCoordinatesIn, DiscoursemeCoordinatesOut,
                           DiscoursemeDescriptionOut, DiscoursemeOut,
                           DiscoursemeScoresOut,
                           discourseme_template_to_description)
-from ..breakdown import ccc_breakdown
-from ..database import get_or_create, Breakdown
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -39,6 +39,7 @@ bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 def get_discourseme_coordinates(semantic_map, discourseme_descriptions, p=None):
     """
 
+    # TODO check that all items in the breakdown have coordinates
     """
 
     output = list()
@@ -46,8 +47,6 @@ def get_discourseme_coordinates(semantic_map, discourseme_descriptions, p=None):
 
         discourseme_coordinates = DiscoursemeCoordinates.query.filter_by(semantic_map_id=semantic_map.id,
                                                                          discourseme_id=desc.discourseme.id).first()
-
-        # TODO check that all items in the breakdown have coordinates
 
         if not discourseme_coordinates:
 
@@ -111,6 +110,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
         discourseme_id=discourseme_description.discourseme.id,
         corpus_id=corpus_id_reference,
         subcorpus_id=subcorpus_id_reference,
+        filter_sequence=None,
         s=s_query,
         match_strategy=match_strategy
     ).first()
@@ -210,6 +210,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
             discourseme_id=discourseme_description.discourseme_id,
             corpus_id=discourseme_description.corpus_id,
             subcorpus_id=None,
+            filter_sequence=None,
             s=discourseme_description.s,
             match_strategy=discourseme_description.match_strategy
         ).first()
@@ -247,7 +248,6 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
         current_app.logger.debug(
             f'query_discourseme_cotext :: no matches in context for discourseme "{discourseme_description.discourseme.name}"'
         )
-        # TODO return corpus_matches_cpos
         return
 
     # corpus / subcorpus
@@ -468,8 +468,6 @@ class ConstellationDiscoursemeDescriptionIn(Schema):
 
 class ConstellationCollocationIn(CollocationIn):
 
-    semantic_map_id = Integer(required=False, load_default=None)
-    p = String(required=False, load_default='lemma')
     focus_discourseme_id = Integer(required=True)
     filter_discourseme_ids = List(Integer(), load_default=[], required=False)
 
@@ -695,6 +693,7 @@ def create_description(id, json_data):
         desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
                                                       corpus_id=corpus_id,
                                                       subcorpus_id=subcorpus_id,
+                                                      filter_sequence=None,
                                                       s=s_query,
                                                       match_strategy=match_strategy).first()
         if not desc:
@@ -809,7 +808,7 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
 
     """
 
-    # constellation = db.get_or_404(Constellation, id)  # TODO needed?
+    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
 
     # display options
@@ -834,7 +833,7 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
     filter_item_p_att = query_data.get('filter_item_p_att')
 
     # select and categorise queries
-    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions}
+    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
     focus_query = highlight_queries[query_focus['focus_discourseme_id']]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
@@ -861,7 +860,7 @@ def create_collocation(id, description_id, json_data):
 
     """
 
-    # constellation = db.get_or_404(Constellation, id)  # TODO needed?
+    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
 
     # context options
@@ -882,14 +881,27 @@ def create_collocation(id, description_id, json_data):
     filter_item_p_att = json_data.get('filter_item_p_att')
 
     # select and categorise queries
-    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions}
+    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
     focus_query = highlight_queries[json_data['focus_discourseme_id']]
+
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
         filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
-
     if len(filter_queries) > 0:
         focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
+        # we create a new discourseme description for the filtered focus discourseme here
+        discourseme_description = DiscoursemeDescription(
+            discourseme_id=json_data['focus_discourseme_id'],
+            corpus_id=description.corpus_id,
+            subcorpus_id=description.subcorpus_id,
+            s=description.s,
+            filter_sequence=focus_query.filter_sequence,
+            match_strategy=description.match_strategy,
+            query_id=focus_query.id
+        )
+        description.discourseme_descriptions.append(discourseme_description)
+        db.session.add(discourseme_description)
+        db.session.commit()
 
     # create collocation object
     collocation = Collocation(
@@ -904,12 +916,15 @@ def create_collocation(id, description_id, json_data):
     db.session.commit()
 
     get_or_create_counts(collocation, remove_focus_cpos=False)
-    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
+    set_collocation_discourseme_scores(collocation,
+                                       [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
+                                       overlap=description.overlap)
     ccc_semmap_init(collocation, semantic_map_id)
     if description.semantic_map_id is None:
         description.semantic_map_id = collocation.semantic_map_id
 
     collocation.focus_discourseme_id = json_data['focus_discourseme_id']
+    collocation.filter_discourseme_ids = json_data['filter_discourseme_ids']
 
     return ConstellationCollocationOut().dump(collocation), 200
 
@@ -926,9 +941,12 @@ def get_all_collocation(id, description_id):
 
     collocations = list()
     for desc in description.discourseme_descriptions:
-        collocation = Collocation.query.filter_by(query_id=desc._query.id).first()
-        if collocation:
+        collocations_with_this_focus = Collocation.query.filter_by(query_id=desc._query.id).all()
+        for collocation in collocations_with_this_focus:
             collocation.focus_discourseme_id = desc.discourseme.id
+            if desc._query.filter_sequence is not None:
+                filter_discourseme_ids = [int(x) for x in desc._query.filter_sequence.lstrip("Q-").split("-")[1:]]
+                collocation.filter_discourseme_ids = filter_discourseme_ids
             collocations.append(collocation)
 
     return [ConstellationCollocationOut().dump(collocation) for collocation in collocations], 200
@@ -941,6 +959,8 @@ def get_all_collocation(id, description_id):
 def get_collocation_items(id, description_id, collocation_id, query_data):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
+    TODO also return ranks (to ease frontend pagination)?
+    TODO filter out focus discourseme (traditional) or all discoursemes (correction of marginals needed!) or None?
     """
 
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -951,8 +971,7 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
-    # TODO filter out focus discourseme (traditional) or all discoursemes (correction of marginals needed!) or None?
-    # # TODO anti-joins
+    # TODO anti-joins
     # unigram_items = CollocationDiscoursemeUnigramItem.query.filter_by(
     #     collocation_id=collocation.id,
     #     constellation_description_id=description_id
@@ -983,7 +1002,9 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
 
     # discourseme scores
-    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
+    set_collocation_discourseme_scores(collocation,
+                                       [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
+                                       overlap=description.overlap)
     discourseme_scores = get_collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
@@ -1003,7 +1024,6 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
         discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
         discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
 
-    # TODO: also return ranks (to ease frontend pagination)?
     collocation_items = {
         'id': collocation.id,
         'sort_by': sort_by,
@@ -1123,6 +1143,8 @@ def get_all_keyword(id, description_id):
 def get_keyword_items(id, description_id, keyword_id, query_data):
     """Get scored items and discourseme scores of constellation keyword analysis.
 
+    TODO find the bug: why are there duplicated measures?!
+    TODO also return ranks (to ease frontend pagination)?
     """
 
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -1159,7 +1181,7 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
     # for s in discourseme_scores:
     #     s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-    # # TODO find the bug: why are there duplicated measures?!
+
     # # from pprint import pprint
     # for sc in discourseme_scores:
     #     # pprint(sc['item_scores'])
@@ -1185,7 +1207,6 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
         discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions, keyword.p)
         discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
 
-    # TODO: also return ranks (to ease frontend pagination)?
     keyword_items = {
         'id': keyword.id,
         'sort_by': sort_by,
