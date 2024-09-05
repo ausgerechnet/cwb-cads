@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Float, Integer, List, Nested, String
+from apiflask.fields import Boolean, Float, Integer, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
@@ -153,7 +153,7 @@ class CollocationIn(Schema):
     # filtering for second-order collocation
     filter_item = String(required=False, metadata={'nullable': True})
     filter_item_p_att = String(required=False, load_default='lemma')
-    filter_discourseme_ids = List(Integer, required=False, load_default=[])
+    filter_overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
 
 
 # Output

@@ -181,8 +181,12 @@ def get_or_create_cotext(query, window, context_break, return_df=False):
 
 
 def filter_matches(focus_query, filter_queries, window, overlap):
-    """filter focus query matches according to presence of filter queries in window (and focus_query.s)
+    """Filter matches of focus query matches according to presence of filter queries in window (and focus_query.s)
 
+    :param Query focus_query:
+    :param dict(Query) filter_queries:
+    :param int window:
+    :param str overlap: one of 'match', 'matchend', 'partial', or 'full'
     """
 
     current_app.logger.debug("filter_matches :: enter")
@@ -246,6 +250,9 @@ def filter_matches(focus_query, filter_queries, window, overlap):
 
 
 def iterative_query(focus_query, filter_queries, window, overlap='partial'):
+    """create a new query (and matches) based on filtered matches of focus query
+
+    """
 
     # TODO retrieve if necessary
     filter_sequence = "Q-" + "-".join([str(focus_query.id)] + [str(fq.id) for fq in filter_queries.values()])
@@ -671,74 +678,15 @@ def get_collocation(query_id, query_data):
     semantic_map_id = query_data.get('semantic_map_id', None)
     semantic_map_init = query_data.get('semantic_map_init', True)
 
-    # filtering for second-order collocation
+    # filtering
     filter_item = query_data.pop('filter_item', None)
     filter_item_p_att = query_data.pop('filter_item_p_att', None)
-
-    # prepare filter queries
-    filter_queries = set()
-
+    filter_overlap = query_data.pop('filter_overlap', 'partial')
+    filter_queries = dict()
     if filter_item:
-        fq = get_or_create_query_item(query.corpus, filter_item, filter_item_p_att, query.s)
-        filter_queries.add(fq)
-
+        filter_queries['_FILTER'] = get_or_create_query_item(query.corpus, filter_item, filter_item_p_att, query.s)
     if len(filter_queries) > 0:
-
-        # TODO
-        # note that the database scheme does not allow to have several filter queries
-        # we thus name the actual query result here to be able to retrieve it
-        nqr_name = "SOC" + "_" + "_q".join(["q" + str(query.id)] + [str(fq.id) for fq in filter_queries])
-        # TODO retrieve if necessary
-
-        current_app.logger.debug("get_collocation :: second-order mode")
-        matches = Matches.query.filter_by(query_id=query.id)
-        current_app.logger.debug("get_collocation :: filtering: getting matches")
-        # TODO learn proper SQLalchemy (aliased anti-join)
-        matches_tmp = matches.all()
-        match_pos = set([m.match for m in matches_tmp])
-
-        # get relevant cotext lines
-        cotext = get_or_create_cotext(query, window, s_break)
-        cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
-                                                CotextLines.offset <= window,
-                                                CotextLines.offset >= -window)
-
-        for fq in filter_queries:
-
-            current_app.logger.debug("get_collocation :: filtering cotext lines by joining matches")
-            cotext_lines_tmp = cotext_lines.join(
-                Matches,
-                (Matches.query_id == fq.id) &
-                (Matches.match == CotextLines.cpos)
-            )
-            match_pos = match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
-
-            current_app.logger.debug("get_collocation :: filtering matches")
-
-            matches = Matches.query.filter(
-                Matches.query_id == query.id,
-                Matches.match.in_(match_pos)
-            )
-
-            if len(matches.all()) == 0:
-                current_app.logger.error(f"no lines left after filtering for query {fq.cqp_query}")
-                abort(404, 'no collocates')
-
-        # create query
-        query = Query(
-            corpus_id=query.corpus.id,
-            subcorpus_id=query.subcorpus.id if query.subcorpus else None,
-            soc_sequence=nqr_name,
-            match_strategy=query.match_strategy,
-            s=query.s
-        )
-        db.session.add(query)
-        db.session.commit()
-
-        # matches to database
-        df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
-        df_matches['query_id'] = query.id
-        df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
+        query = iterative_query(query, filter_queries, window, filter_overlap)
 
     collocation = Collocation(
         query_id=query.id,
