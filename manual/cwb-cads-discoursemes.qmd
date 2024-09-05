@@ -39,12 +39,16 @@ access.token <- str_interp("${url_api}/user/login") |>
 # Discoursemes
 
 - the canonical corpus linguistic approach to discourse analysis involves the grouping of observed surface types
-  + usually from keyword or collocate tables on an **analysis layer** (typically word or lemma)
+  + usually from keyword or collocate tables on a **description layer** (typically word or lemma)
   + multi-word units (MWUs) are usually not featured in such tables, but reasonable units
     - e.g. NEs "Wladimir Putin", "BUND Naturschutz", or (especially English) noun compounds: "nuclear energy", "conspiracy theory"
+  + in general, we use corpus queries to search for discourseme realisations (see below)
+    - note that the description layer and the query layer(s) are uncoupled
+    - we can e.g. search for "measures" (the word), but otherwise look at lemmata
+    - this means that not all types on the description layer are treated equal!
 - these groupings try to capture minimal units of lexical meaning in the context of a discourse
-- we call these "building blocks" of discourse analysis **discoursemes**
-- some examples of discoursemes are given
+  + we call these "building blocks" of discourse analysis **discoursemes**
+  + some examples of discoursemes are given on the development server
 ```{r}
 discoursemes <- str_interp("${url_api}/mmda/discourseme/") |> 
   request() |> 
@@ -64,38 +68,41 @@ discourseme
 discourseme.id <- discourseme |> pull(id)
 ```
 
-## Descriptions
+## Descriptions & Realisations
 
-- we refer to the actual groups of surface types in a corpus as **discourseme descriptions**
-  - discourseme descriptions are created on the fly in analyses by grouping observed items
 - analysts have access to two major sources of information
   - frequency tables (collocates, keywords) calculated on a positional attribute (`p_description="lemma"`)
-  - concordance lines showing the primary (word) layer and the description layer (+ additionaly p-atts / s-atts))
-- unigram items from frequency tables can be directly taken to create (or update) discourseme descriptions
-  - assumption: all identical tokens / token sequences on the analysis layer belong to the same discourseme
-  - MWUs can be described by (multi-token) CQP queries
+  - concordance lines showing the primary (word) layer and the description layer (+ additional p-atts / s-atts))
+- unigram items from frequency tables can be directly taken to **describe** discoursemes
+  - the assumption here would be that all identical tokens / token sequences on the description layer belong to the same discourseme
   - MWUs are usually found by generalising from concordance lines
-    + default CQP query = surface realisation on analysis layer
-  - in the backend, all descriptions are converted to CQP queries and translated to surface realisations (to deal with overlapping matches)
+    + default CQP query = surface realisation on description layer
+  - in the backend, all descriptions are converted to CQP queries
+    + MWUs are usually just (multi-token) CQP queries on the description layer
+  - we refer to the disjunction of queries in a corpus as a **discourseme description**
+  - all matches of the joint query are the **discourseme realisation**
 
 - the MMDA frontend is designed to allow the user to categorise types on the description layer (`p_description`)
   - especially based on frequency comparisons of unigram types
 - note that this assumes all identical types on `p_description` belong to the same discourseme
   + this is obviously an assumption because any categorisation will have FPs and FNs
     - reading actual concordance lines establishes ultimate ground truth
-    - nonetheless, the aim here is to form reproducible clusters on `p_description`
   + this is reasonable because
-    (1) a "lightweight" WSD (e.g. POS-based WSD) can be accomplished via choice of `p_description` (→ corpus annotation)
-    (2) we allow disambiguation via constellations (see below)
-    (3) for queries spanning several tokens, this is typically the case anyway (cf. spheroscope: exact same string, but different argument?)
+    (1) the aim here is to form reproducible groupings on `p_description`
+    (2) a "lightweight" WSD (e.g. POS-based WSD) can be accomplished via choice of `p_description` (→ corpus annotation)
+    (3) we allow disambiguation via constellations (see below)
+    (4) for queries spanning several tokens, this is typically the case anyway (cf. spheroscope: exact same string, but different argument?)
+    (5) we still allow to restrict discourseme description by means of actual CQP queries
 - alternative: allow to manually categorise initial matches + extend
-  + easiest case: allow removal of types on the `p_description` layer
-  + however, especially when only looking at unigram queries, FPs are still likely, meaning that the same type (such as "BUND") can belong to different discoursemes
-  + easy case: exclusion of MWUs ("BUND Naturschutz")
-  + lots of problems though and not what we want to do here
+- describing a discourseme in a corpus ~ give a list of items, each item being
+  + a surface realisation on a description layer (`'[p_description="surface"]'`)
+    - token-level CQP wildcards can be used (`'[p_description="surfa.*"%cd]'`)
+  + MWUS, i.e. a sequence of surface realisations (`'[p_description="item.*"%cd] [p_description="another_item"]'`)
+  + a full CQP query (which might include p-att and/or s-att restrictions)
+  + an anchored CQP query (with anchor corrections and slots)
 
-- describing a discourseme in a corpus = give a list of items on the description layer
-  - we use the SZ-2018-2022 corpus as an example
+- we use the SZ-2018-2022 corpus as an example
+
 ```{r}
 corpora <- str_interp("${url_api}/corpus/") |> 
   request() |> 
@@ -113,7 +120,14 @@ corpus.id <- corpora |> filter(cwb_id == "SZ-2018-2022") |> pull(id)
 description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/description/") |> 
   request() |> 
   req_auth_bearer_token(access.token) |> 
-  req_body_json(list(corpus_id = corpus.id, p = 'lemma', items = c("Klimawandel", "Klimaveränderung", "global Erwärmung"))) |>
+  req_body_json(
+    list(corpus_id = corpus.id, 
+         items = list(
+           list(p = "lemma", surface = "Klimawandel"),
+           list(p = "lemma", surface = "Klimaveränderung"),
+           list(p = "lemma", surface = "global Erwärmung")
+         ))
+    ) |>
   req_perform() |> 
   magrittr::extract2("body") |>
   rawToChar() |> fromJSON()
@@ -138,7 +152,7 @@ request(str_interp("${url_api}/query/${description.query.id}/breakdown")) |>
   select(item, ipm, freq, nr_tokens)
 ```
 
-- the user now can add items to a description
+- the user can now add items to a description
 ```{r}
 description.id <- description |> magrittr::extract2("id")
 
@@ -146,7 +160,7 @@ description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/descrip
   request() |> 
   req_auth_bearer_token(access.token) |>
   req_method("patch") |> 
-  req_body_json(list(item = 'Klimakrise')) |> 
+  req_body_json(list('p' = 'lemma', 'surface' = 'Klimakrise')) |> 
   req_perform() |> 
   magrittr::extract2("body") |> rawToChar() |> fromJSON()
 
@@ -173,7 +187,7 @@ description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/descrip
   request() |> 
   req_auth_bearer_token(access.token) |>
   req_method("patch") |> 
-  req_body_json(list(item = 'Klimakrise')) |> 
+  req_body_json(list(p = 'lemma', surface = 'Klimakrise')) |> 
   req_perform() |> 
   magrittr::extract2("body") |> rawToChar() |> fromJSON()
 
@@ -194,20 +208,13 @@ request(str_interp("${url_api}/query/${description.query.id}/breakdown")) |>
 ## Templates
 
 - discourseme descriptions without concrete corpora are possible via **discourseme templates**
-- each item of a template is a CQP query, e.g.
-  + an expected surface realisation on an expected analysis layer (`'[p_att="item"]'`)
-    - token-level CQP wildcards can be used (`'[p_att="item.*"%cd]'`)
-  + a sequence of surface realisations (`'[p_att="item.*"%cd] [p_att="another_item"]'`)
-  + a full CQP query (which might include s-att restrictions)
-  + an anchored CQP query (with anchor corrections and slots)
-
+- otherwise they follow the same logics as descriptions
 - template of discourseme "Klimawandel"
 ```{r}
 discourseme |> pull(template)
 ```
 
 - templates can be used to create a description in a corpus
-- this works by creating a discourseme description from the query matches of the template
 ```{r}
 description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/description/") |> 
   request() |> 
@@ -218,6 +225,20 @@ description <- str_interp("${url_api}/mmda/discourseme/${discourseme.id}/descrip
   rawToChar() |> fromJSON()
 
 description |> magrittr::extract2("items")
+```
+
+
+```{r}
+description.query.id <- description |> magrittr::extract2("query_id")
+
+request(str_interp("${url_api}/query/${description.query.id}/breakdown")) |> 
+  req_auth_bearer_token(access.token) |>
+  req_url_query(p = "lemma") |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("items") |> 
+  tibble() |> 
+  select(item, ipm, freq, nr_tokens)
 ```
 
 
@@ -234,7 +255,7 @@ discoursemes
 ```{r}
 constellation <- str_interp("${url_api}/mmda/constellation/") |> 
   request() |> 
-  req_body_json(list(discourseme_ids = 1:13)) |> 
+  req_body_json(list(discourseme_ids = 1:12)) |> 
   req_auth_bearer_token(access.token) |> 
   req_perform() |> 
   magrittr::extract2("body") |>
@@ -243,16 +264,16 @@ constellation <- str_interp("${url_api}/mmda/constellation/") |>
 constellation
 ```
 
-## Descriptions
+## Constellation Descriptions
 
 - as with discoursemes, the user wants to **describe** constellations in corpora
-- constellation descriptions consist of all the individual discourseme descriptions on one joint p-att for describing (and a joint s-attribute for query indexing)
+- constellation descriptions consist of all the individual discourseme descriptions with a joint s-attribute for query indexing
 - when creating a constellation description, the backend makes sure that all discoursemes belonging to this constellation have an adequate description (using existing descriptions or creating descriptions from templates)
 
 ```{r}
 constellation.id <- constellation |> magrittr::extract2("id")
 
-description <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/") |> 
+constellation.description <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/") |> 
   request() |> 
   req_body_json(list(corpus_id = corpus.id)) |> 
   req_auth_bearer_token(access.token) |> 
@@ -260,18 +281,18 @@ description <- str_interp("${url_api}/mmda/constellation/${constellation.id}/des
   magrittr::extract2("body") |>
   rawToChar() |> fromJSON()
 
-description
+constellation.description
 ```
 
-- descriptions are the appropriate starting point when working with corpus data (concordancing, analyses)
+- constellation descriptions are the appropriate starting point when working with corpus data (concordancing, analyses)
 
 ## Concordancing
 
 - when accessing concordances and analyses via the constellation endpoint, you get information about all discoursemes of the constellation
 - choose a `focus_discourseme_id` to extract concordance lines of a constellation (the discourseme used for initial filtering and centering in KWIC)
 ```{r}
-description.id <- description |> magrittr::extract2("id")
-concordance <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/concordance") |> 
+constellation.description.id <- constellation.description |> magrittr::extract2("id")
+concordance <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/concordance") |> 
   request() |> 
   req_url_query(focus_discourseme_id = discourseme.id) |> 
   req_auth_bearer_token(access.token) |> 
@@ -292,7 +313,7 @@ concordance |> magrittr::extract2("lines") |>
 
 - for filtering, you can give (additional) discourseme ids
 ```{r}
-concordance <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/concordance") |> 
+concordance <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/concordance/") |> 
   request() |> 
   req_url_query(focus_discourseme_id = discourseme.id,
                 filter_discourseme_ids = c(1)) |> 
@@ -318,7 +339,7 @@ concordance |> magrittr::extract2("lines") |>
 
 - focusing on a discourseme in an analysis, you can create a collocation analysis
 ```{r}
-collocation <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/")) |> 
+collocation <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/")) |> 
   req_body_json(list(p = 'lemma', window = 10, focus_discourseme_id = discourseme.id)) |> 
   req_auth_bearer_token(access.token) |> 
   req_perform() |> 
@@ -327,9 +348,9 @@ collocation <- request(str_interp("${url_api}/mmda/constellation/${constellation
 collocation.id <- collocation |> magrittr::extract2("id")
 ```
 
-- this takes longer because scores for each discourseme will be calculated
+- this takes longer than usual because scores for each discourseme will be calculated
 ```{r}
-collocation.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/${collocation.id}/items")) |> 
+collocation.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/items")) |> 
   req_auth_bearer_token(access.token) |> 
   req_url_query(page_size = 50) |> 
   req_perform() |> 
@@ -361,7 +382,8 @@ collocation.items |> magrittr::extract2("discourseme_scores")
 discourseme.scores <- collocation.items |> 
   magrittr::extract2("discourseme_scores") |> 
   pull(global_scores) |> 
-  bind_rows(.id = "discourseme_id") |>
+  bind_rows(.id = "discourseme_id") |> 
+  filter(measure != "discourseme_id") |>
   pivot_wider(names_from = measure, values_from = score) |> 
   mutate(discourseme_id = collocation.items |> magrittr::extract2("discourseme_scores") |> magrittr::extract2("discourseme_id"))
 
@@ -414,6 +436,7 @@ coordinates <- collocation.items |>
 coordinates
 ```
 
+#### TODO
 - in the visualisation, we filter out all items belonging to any discourseme unigram breakdown
 ```{r}
 map <- item.scores |> 
@@ -456,7 +479,7 @@ map |>
   - interpretation: collocates of co-occurrence of both nodes, but with a focus on the original discourseme
   
 ```{r}
-collocation <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/") |> 
+collocation <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/") |> 
   request() |> 
   req_body_json(list(
     focus_discourseme_id = discourseme.id,
@@ -471,7 +494,7 @@ collocation.id <- collocation |> magrittr::extract2("id")
 ```
 
 ```{r}
-collocation.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/collocation/${collocation.id}/items")) |> 
+collocation.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/items")) |> 
   req_auth_bearer_token(access.token) |> 
   req_perform() |> 
   magrittr::extract2("body") |> rawToChar() |> fromJSON()
@@ -490,11 +513,11 @@ item.scores
 
 ## Keyword Analysis
 
-- keyword analyses in the presence of discourseme constellations similarly yields discourseme scores
+- keyword analyses in the presence of discourseme constellations similarly yield discourseme scores
 ```{r}
 corpus.id.reference <- corpora |> filter(cwb_id == "SZ-2009-2014") |> pull(id)
 
-keyword <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/keyword/")) |>
+keyword <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/keyword/")) |>
   req_body_json(list(corpus_id_reference = corpus.id.reference)) |> 
   req_auth_bearer_token(access.token) |> 
   req_perform() |> 
@@ -504,7 +527,7 @@ keyword.id <- keyword |> magrittr::extract2("id")
 ```
 
 ```{r}
-keyword.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${description.id}/keyword/${keyword.id}/items")) |> 
+keyword.items <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/keyword/${keyword.id}/items")) |> 
   req_url_query(page_size = 50) |> 
   req_auth_bearer_token(access.token) |> 
   req_perform() |> 
@@ -533,6 +556,7 @@ discourseme.scores <- keyword.items |>
   magrittr::extract2("discourseme_scores") |> 
   pull(global_scores) |> 
   bind_rows(.id = "discourseme_id") |>
+  filter(measure != "discourseme_id") |> 
   pivot_wider(names_from = measure, values_from = score) |> 
   mutate(discourseme_id = keyword.items |> magrittr::extract2("discourseme_scores") |> magrittr::extract2("discourseme_id"))
 
@@ -594,7 +618,7 @@ map <- rbind(
 
 ```{r}
 map |> 
-  # filter(conservative_log_ratio > 0) |>
+  filter(conservative_log_ratio > 0) |>
   ggplot(aes(x = x, y = y, label = item)) + 
   geom_label_repel(aes(size = conservative_log_ratio, color = discourseme_id), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
   xlab("") + ylab("") +
@@ -636,7 +660,13 @@ str_interp("${url_api}/mmda/constellation/${constellation.id}/add-discourseme") 
 new.discourseme.description <- str_interp("${url_api}/mmda/discourseme/${new.discourseme.id}/description/") |> 
   request() |> 
   req_auth_bearer_token(access.token) |> 
-  req_body_json(list(corpus_id = corpus.id, p = 'lemma', items = c("Bolsonaro", "Trump"))) |>
+  req_body_json(
+    list(corpus_id = corpus.id, 
+         items = list(
+           list(p = "lemma", surface = "Bolsonaro"),
+           list(p = "lemma", surface = "Trump")
+         ))
+    ) |>
   req_perform() |> 
   magrittr::extract2("body") |>
   rawToChar() |> fromJSON()

@@ -36,7 +36,91 @@
   flask --app cads discourseme export --path_out "exported-discoursemes.tsv"
   ```
 
-## Features
+## Quick Start
+
+for more details, look at the [manual](manual/cwb-cads-functionality.html)
+
+### corpora & meta data
+
+### queries
+
+### concordances
+
+### collocates
+
+### keywords
+
+### semantic Maps
+
+#### creation
+
+semantic maps are created by default for all keyword and collocation analyses
+
+    GET /query/<query_id>/collocation/
+    POST /keyword/
+
+you can de-activate this behaviour setting `semantic_map_init=False`.
+
+semantic maps can also be created (or linked to analyses) via
+
+    POST /collocation/<id>/semantic-map/
+    POST /keyword/<id>/semantic-map/
+
+this makes sure that all top items of the analysis actually have coordinates on the provided semantic map (if any).  if `semantic_map_id=None`, this creates a new semantic map.
+
+a combined semantic map based on items of several analyses can be created using
+
+    PUT /semantic-map/
+
+#### coordinates
+
+coordinates can then be accessed via
+
+    GET /semantic-map/<id>/coordinates/
+
+note that all items have to sets of coordinates: the initial coordinates that are automatically created and user-defined coordinates (which are all `None` after directly after creation).
+
+modifying the user coordinates works via
+
+    PUT /semantic-map/<id>/coordinates/
+    
+"deleting" user coordinates means setting them to `None`.
+
+## MMDA
+
+for more details, look at the [MMDA manual](manual/cwb-cads-discoursemes.html)
+
+### discoursemes
+
+discoursemes can be search for using corpus queries
+
+
+### semantic maps
+
+semantic maps are most helpful when used across multiple analyses.  constellation descriptions have "default" semantic maps.  existing semantic maps can be set as the default when creating constellation descriptions:
+
+    POST /mmda/constellation/constellation_id/description/
+
+accepts a `semantic_map_id`.
+
+additionally, you **can** provide a `semantic_map_id` when creating keyword or collocation analyses via
+
+    POST /mmda/constellation/<id>/description/<description_id>/collocation/
+    POST /mmda/constellation/<id>/description/<description_id>/keyword/
+
+the behaviour is as follows:
+- if a `semantic_map_id` is provided, the endpoint makes sure that there are coordinates for all top items of the analysis (as above)
+  + if the constellation description didn't have a default semantic map before, the provided semantic map will be set as default
+- if `semantic_map_id=None` (as by default)
+  + the default semantic map of the constellation description will be used (if any)
+  + if this is also `None`, a new semantic map will be created
+
+note that if the constellation description did not have a default semantic map before starting an analysis, it will have one after (as will the newly created analyses).
+
+
+## Road Map
+
+### Features
 - [x] query
 - [x] breakdown
 - [x] concordance
@@ -53,7 +137,7 @@
 - [ ] anchored queries
 - [ ] topographic maps
 
-## TODO
+### TODO
 - [x] speed up deleting queries
 - [x] extend tests
 - [x] meta from s-att
@@ -86,24 +170,19 @@
   + spheroscope: select one slot (left adjusted)
     - alternatively: complete sentence / tweet
 
-## nice to have
-- Concordance: primary / secondary vs. give all → separate branch
-- DiscoursemeTemplate: p + surface vs. cqp_query | two lists
-- DiscoursemeTemplatePreview
-
-## Review 2024-07-17
+### review 2024-07-17
 - [x] constellation: enforce min of one filter discourseme?
 - [x] constellation: if no name → name of filter discourseme
 - [ ] several queries for one discourseme?
   + duplicate queries write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
 
-## review 2024-07-30
+### review 2024-07-30
 - [ ] improve logging
 - [ ] search for item on collocation table
 - [ ] formatted_score: 3 führende Stellen scores
 - [ ] only return items with E11 < O11
 
-## review 2024-08-05
+### review 2024-08-05
 - [x] wrongly indexed s-atts in corpora (e.g. GERMAPARL\_1949\_2021 on obelix)
 - [x] save wordlists permanently
 - [x] get keyword analyses loading time: replace `len(items)`
@@ -131,67 +210,10 @@
 - [ ] example meta data creation
 - [ ] example subcorpus creation
 
+### review 2024-09-03
+- [ ] GET `/mmda/constellation/{id}/description/{description_id}/collocation/` doesn't yield all info
 
-## Semantic Maps
-
-### Creation
-
-semantic maps are created by default for all
-
-- collocation analyses
-
-    `GET /query/<query_id>/collocation/`
-
-- keyword analyses
-
-    `POST /keyword/`
-
-you can de-activate this behaviour setting `semantic_map_init=False`.
-
-semantic maps of analyses can be created (or associated) via
-
-    `POST /collocation/<id>/semantic-map/`
-    `POST /keyword/<id>/semantic-map/`
-
-this makes sure that all top items of the analyses actually have coordinates on the provided semantic map (if any). if `semantic_map_id=None`, this creates a new semantic map.
-
-a combined semantic map based on items of several analyses can be created using
-
-    `PUT /semantic-map/`
-
-### Coordinates
-
-coordinates can then be accessed via
-
-    `GET /semantic-map/<id>/coordinates/`
-
-note that all items have to sets of coordinates: the initial coordinates that are automatically created and user-defined coordinates (which are all `None` after directly after creation).
-
-modifying the user coordinates works via
-
-    `PUT /semantic-map/<id>/coordinates/`
-    
-"deleting" user coordinates means setting them to `None`.
-
-### MMDA
-
-semantic maps are most helpful when used across multiple analyses.  constellation descriptions have "default" semantic maps. existing semantic maps can be set as the default when creating constellation descriptions:
-
-    `POST /mmda/constellation/constellation_id/description/`
-
-accepts a `semantic_map_id`.
-
-additionally, you **can** provide a `semantic_map_id` when creating keyword or collocation analyses via
-
-    `POST /mmda/constellation/<id>/description/<description_id>/collocation/`
-    `POST /mmda/constellation/<id>/description/<description_id>/keyword/`
-
-the behaviour is as follows:
-- if a `semantic_map_id` is provided, the endpoint makes sure that there are coordinates for all top items of the analysis (as above)
-  + this semantic map will be the default semantic map of this analysis
-  + additionally, if the constellation description didn't have a default semantic map before, the current semantic map will be set as default
-- if `semantic_map_id=None` (as by default)
-  + the default semantic map of the constellation description will be used (if any)
-  + if this is also `None`, a new semantic map will be created
-
-note that if the constellation description did not have a default semantic map before starting an analysis, it will have one after.
+### nice to have
+- Concordance: primary / secondary vs. give all → separate branch
+- DiscoursemeTemplate: p + surface vs. cqp_query | two lists
+- DiscoursemeTemplatePreview
