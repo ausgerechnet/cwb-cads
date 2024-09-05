@@ -436,7 +436,6 @@ coordinates <- collocation.items |>
 coordinates
 ```
 
-#### TODO
 - in the visualisation, we filter out all items belonging to any discourseme unigram breakdown
 ```{r}
 map <- item.scores |> 
