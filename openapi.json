@@ -294,6 +294,16 @@
             "default": "lemma",
             "type": "string"
           },
+          "filter_overlap": {
+            "default": "partial",
+            "enum": [
+              "partial",
+              "full",
+              "match",
+              "matchend"
+            ],
+            "type": "string"
+          },
           "focus_discourseme_id": {
             "type": "integer"
           },
@@ -306,7 +316,6 @@
             "type": "string"
           },
           "p": {
-            "default": "lemma",
             "type": "string"
           },
           "s_break": {
@@ -327,7 +336,8 @@
           }
         },
         "required": [
-          "focus_discourseme_id"
+          "focus_discourseme_id",
+          "p"
         ],
         "type": "object"
       },
@@ -4141,6 +4151,7 @@
     },
     "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/items": {
       "get": {
+        "description": "TODO also return ranks (to ease frontend pagination)?\nTODO filter out focus discourseme (traditional) or all discoursemes (correction of marginals needed!) or None?",
         "parameters": [
           {
             "in": "path",
@@ -4733,6 +4744,7 @@
     },
     "/mmda/constellation/{id}/description/{description_id}/keyword/{keyword_id}/items": {
       "get": {
+        "description": "TODO find the bug: why are there duplicated measures?!\nTODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
@@ -6493,18 +6505,19 @@
             }
           },
           {
-            "explode": true,
             "in": "query",
-            "name": "filter_discourseme_ids",
+            "name": "filter_overlap",
             "required": false,
             "schema": {
-              "default": [],
-              "items": {
-                "type": "integer"
-              },
-              "type": "array"
-            },
-            "style": "form"
+              "default": "partial",
+              "enum": [
+                "partial",
+                "full",
+                "match",
+                "matchend"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
