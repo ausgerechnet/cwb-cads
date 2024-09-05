@@ -306,6 +306,7 @@
             "type": "string"
           },
           "p": {
+            "default": "lemma",
             "type": "string"
           },
           "s_break": {
@@ -316,14 +317,17 @@
             "nullable": true,
             "type": "integer"
           },
+          "semantic_map_init": {
+            "default": true,
+            "type": "boolean"
+          },
           "window": {
             "default": 10,
             "type": "integer"
           }
         },
         "required": [
-          "focus_discourseme_id",
-          "p"
+          "focus_discourseme_id"
         ],
         "type": "object"
       },
@@ -457,9 +461,6 @@
             ],
             "type": "string"
           },
-          "p": {
-            "type": "string"
-          },
           "s": {
             "type": "string"
           },
@@ -500,9 +501,6 @@
           "match_strategy": {
             "type": "string"
           },
-          "p": {
-            "type": "string"
-          },
           "s": {
             "type": "string"
           },
@@ -521,7 +519,6 @@
           "discourseme_ids",
           "id",
           "match_strategy",
-          "p",
           "s",
           "semantic_map_id",
           "subcorpus_id"
@@ -549,9 +546,6 @@
             "type": "integer"
           },
           "match_strategy": {
-            "type": "string"
-          },
-          "p": {
             "type": "string"
           },
           "s": {
@@ -628,6 +622,10 @@
           "min_freq": {
             "default": 3,
             "type": "integer"
+          },
+          "p": {
+            "default": "lemma",
+            "type": "string"
           },
           "p_reference": {
             "default": "lemma",
@@ -912,8 +910,9 @@
           "items": {
             "default": [],
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/DiscoursemeItem"
             },
+            "nullable": true,
             "type": "array"
           },
           "match_strategy": {
@@ -923,9 +922,6 @@
               "shortest",
               "standard"
             ],
-            "type": "string"
-          },
-          "p": {
             "type": "string"
           },
           "s": {
@@ -938,17 +934,6 @@
         },
         "required": [
           "corpus_id"
-        ],
-        "type": "object"
-      },
-      "DiscoursemeDescriptionItem": {
-        "properties": {
-          "item": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "item"
         ],
         "type": "object"
       },
@@ -965,14 +950,11 @@
           },
           "items": {
             "items": {
-              "$ref": "#/components/schemas/DiscoursemeDescriptionItem"
+              "$ref": "#/components/schemas/DiscoursemeItem"
             },
             "type": "array"
           },
           "match_strategy": {
-            "type": "string"
-          },
-          "p": {
             "type": "string"
           },
           "query_id": {
@@ -992,7 +974,6 @@
           "id",
           "items",
           "match_strategy",
-          "p",
           "query_id",
           "s",
           "subcorpus_id"
@@ -1004,17 +985,21 @@
           "freq": {
             "type": "integer"
           },
-          "item": {
+          "p": {
             "type": "string"
           },
           "similarity": {
             "type": "number"
+          },
+          "surface": {
+            "type": "string"
           }
         },
         "required": [
           "freq",
-          "item",
-          "similarity"
+          "p",
+          "similarity",
+          "surface"
         ],
         "type": "object"
       },
@@ -1029,8 +1014,9 @@
             "type": "string"
           },
           "template": {
+            "default": [],
             "items": {
-              "$ref": "#/components/schemas/DiscoursemeTemplateItem"
+              "$ref": "#/components/schemas/DiscoursemeItem"
             },
             "nullable": true,
             "type": "array"
@@ -1049,11 +1035,29 @@
             "type": "string"
           },
           "template": {
+            "default": [],
             "items": {
-              "$ref": "#/components/schemas/DiscoursemeTemplateItem"
+              "$ref": "#/components/schemas/DiscoursemeItem"
             },
             "nullable": true,
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "DiscoursemeItem": {
+        "properties": {
+          "cqp_query": {
+            "nullable": true,
+            "type": "string"
+          },
+          "p": {
+            "nullable": true,
+            "type": "string"
+          },
+          "surface": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "type": "object"
@@ -1073,7 +1077,7 @@
           },
           "template": {
             "items": {
-              "$ref": "#/components/schemas/DiscoursemeTemplateItem"
+              "$ref": "#/components/schemas/DiscoursemeItem"
             },
             "type": "array"
           }
@@ -1137,23 +1141,6 @@
         ],
         "type": "object"
       },
-      "DiscoursemeTemplateItem": {
-        "properties": {
-          "cqp_query": {
-            "nullable": true,
-            "type": "string"
-          },
-          "p": {
-            "nullable": true,
-            "type": "string"
-          },
-          "surface": {
-            "nullable": true,
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "HTTPError": {
         "properties": {
           "detail": {
@@ -1215,6 +1202,10 @@
             "default": null,
             "nullable": true,
             "type": "integer"
+          },
+          "semantic_map_init": {
+            "default": true,
+            "type": "boolean"
           },
           "sub_vs_rest": {
             "default": true,
@@ -1947,7 +1938,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev6"
+    "version": "0.3.0.dev7"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -2256,6 +2247,19 @@
               "default": null,
               "nullable": true,
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "method",
+            "required": false,
+            "schema": {
+              "default": "tsne",
+              "enum": [
+                "tsne",
+                "umap"
+              ],
+              "type": "string"
             }
           }
         ],
@@ -3174,6 +3178,19 @@
               "nullable": true,
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "method",
+            "required": false,
+            "schema": {
+              "default": "tsne",
+              "enum": [
+                "tsne",
+                "umap"
+              ],
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3223,7 +3240,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create new semantic map for keyword items or associate with existing semantic map.",
+        "summary": "Create new semantic map for keyword items or make sure there are coordinates for all items on an existing map.",
         "tags": [
           "Keyword"
         ]
@@ -5495,13 +5512,13 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get All Descriptions",
+        "summary": "Get all descriptions of discourseme.",
         "tags": [
           "Mmda.Discourseme"
         ]
       },
       "post": {
-        "description": "Will automatically create query (from template / description) if it doesn't exist.",
+        "description": "Will automatically create query (from provided items or template).",
         "parameters": [
           {
             "in": "path",
@@ -5629,7 +5646,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Delete Description",
+        "summary": "Delete discourseme description.",
         "tags": [
           "Mmda.Discourseme"
         ]
@@ -5690,7 +5707,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get Description",
+        "summary": "Get details of description.",
         "tags": [
           "Mmda.Discourseme"
         ]
@@ -5720,7 +5737,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DiscoursemeDescriptionItem"
+                "$ref": "#/components/schemas/DiscoursemeItem"
               }
             }
           }
@@ -5772,95 +5789,13 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch discourseme: add item to description.",
+        "summary": "Patch discourseme description: add item to description.",
         "tags": [
           "Mmda.Discourseme"
         ]
       }
     },
-    "/mmda/discourseme/{id}/description/{description_id}/remove-item": {
-      "patch": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "description_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DiscoursemeDescriptionItem"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Patch discourseme: remove item from description.",
-        "tags": [
-          "Mmda.Discourseme"
-        ]
-      }
-    },
-    "/mmda/discourseme/{id}/description/{description_id}/similar": {
+    "/mmda/discourseme/{id}/description/{description_id}/breakdown": {
       "get": {
         "parameters": [
           {
@@ -5874,6 +5809,95 @@
           {
             "in": "path",
             "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get breakdown of discourseme description.",
+        "tags": [
+          "Mmda.Discourseme"
+        ]
+      }
+    },
+    "/mmda/discourseme/{id}/description/{description_id}/breakdown/{breakdown_id}/similar": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "breakdown_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5948,7 +5972,89 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Description Get Similar",
+        "summary": "Get items most similar to the ones in discourseme breakdown.",
+        "tags": [
+          "Mmda.Discourseme"
+        ]
+      }
+    },
+    "/mmda/discourseme/{id}/description/{description_id}/remove-item": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch discourseme description: remove item from description.",
         "tags": [
           "Mmda.Discourseme"
         ]
@@ -6319,6 +6425,15 @@
               "default": null,
               "nullable": true,
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "semantic_map_init",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
             }
           },
           {
@@ -6968,7 +7083,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create semantic map for items in the provided collocation analyses.",
+        "summary": "Create semantic map for all top items in the provided keyword and collocation analyses.",
         "tags": [
           "Semantic_Map"
         ]
@@ -7080,7 +7195,7 @@
         ]
       }
     },
-    "/semantic-map/{id}/coordinates": {
+    "/semantic-map/{id}/coordinates/": {
       "get": {
         "parameters": [
           {
@@ -7136,9 +7251,7 @@
         "tags": [
           "Semantic_Map"
         ]
-      }
-    },
-    "/semantic-map/{id}/coordinates/": {
+      },
       "put": {
         "parameters": [
           {

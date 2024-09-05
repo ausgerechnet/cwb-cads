@@ -44,6 +44,9 @@ def ccc2attributes(line, primary, secondary, s_show, window):
 
 
 def sort_matches(query, sort_by, sort_offset=0):
+    """
+
+    """
 
     random_seed = query.random_seed
     concordance = Concordance.query.filter_by(query_id=query.id, sort_by=sort_by, sort_offset=sort_offset, random_seed=random_seed).first()

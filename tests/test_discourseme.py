@@ -57,7 +57,32 @@ def test_discourseme_create_description(client, auth):
                                   headers=auth_header)
 
         assert description.status_code == 200
-        assert len(description.json['items']) == 6
+        assert len(description.json['items']) == 5
+
+
+def test_discourseme_get_breakdown(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+        client.get("/")
+
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'), headers=auth_header).json
+        union = discoursemes[0]
+        description = client.post(url_for('mmda.discourseme.create_description', id=union['id']),
+                                  json={'corpus_id': 1},
+                                  content_type='application/json',
+                                  headers=auth_header)
+
+        assert description.status_code == 200
+        assert len(description.json['items']) == 5
+
+        breakdown = client.get(url_for('mmda.discourseme.description_get_breakdown',
+                                       id=union['id'], description_id=description.json['id'], p='lemma'),
+                               content_type='application/json',
+                               headers=auth_header)
+
+        assert len(breakdown.json['items']) == 6
 
 
 # def test_discourseme_concordance(client, auth):
@@ -126,20 +151,20 @@ def test_discourseme_patch_add_remove(client, auth):
                                   json={'corpus_id': 1},
                                   headers=auth_header)
         assert description.status_code == 200
-        assert 'können' not in [item['item'] for item in description.json['items']]
+        assert 'können' not in [item['surface'] for item in description.json['items']]
 
         description = client.patch(url_for('mmda.discourseme.description_patch_add', id=union['id'], description_id=description.json['id']),
-                                   json={'item': 'können'},
+                                   json={'surface': 'können', 'p': 'lemma'},
                                    content_type='application/json',
                                    headers=auth_header)
-        assert 'können' in [item['item'] for item in description.json['items']]
+        assert 'können' in [item['surface'] for item in description.json['items']]
 
         description = client.patch(url_for('mmda.discourseme.description_patch_remove', id=union['id'], description_id=description.json['id']),
-                                   json={'item': 'können'},
+                                   json={'surface': 'können', 'p': 'lemma'},
                                    content_type='application/json',
                                    headers=auth_header)
 
-        assert 'können' not in [item['item'] for item in description.json['items']]
+        assert 'können' not in [item['surface'] for item in description.json['items']]
 
 
 @pytest.mark.now
@@ -157,10 +182,17 @@ def test_get_similar(client, auth):
                                   headers=auth_header)
         assert description.status_code == 200
 
-        similar = client.get(url_for('mmda.discourseme.description_get_similar', id=kanzler['id'], description_id=description.json['id']),
+        breakdown = client.get(url_for('mmda.discourseme.description_get_breakdown',
+                                       id=kanzler['id'], description_id=description.json['id'], p='lemma'),
+                               content_type='application/json',
+                               headers=auth_header)
+        assert breakdown.status_code == 200
+
+        similar = client.get(url_for('mmda.discourseme.description_get_similar',
+                                     id=kanzler['id'], description_id=description.json['id'], breakdown_id=breakdown.json['id']),
                              content_type='application/json',
                              headers=auth_header)
 
         assert similar.status_code == 200
         assert len(similar.json) == 200
-        assert similar.json[0]['item'] == 'Bundesregierung'
+        assert similar.json[0]['surface'] == 'Bundesregierung'

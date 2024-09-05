@@ -9,7 +9,7 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, List, Nested, String
+from apiflask.fields import Float, Integer, Nested, String
 from apiflask.validators import OneOf
 from ccc.cache import generate_idx
 from ccc.utils import cqp_escape
@@ -18,8 +18,9 @@ from pandas import DataFrame, read_csv
 from pymagnitude import Magnitude
 
 from .. import db
+from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from ..collocation import CollocationItemOut, CollocationScoreOut
-from ..database import Corpus, Query, User, get_or_create
+from ..database import Breakdown, Corpus, Query, User, get_or_create
 from ..users import auth
 from .database import (CollocationDiscoursemeItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
@@ -29,6 +30,9 @@ bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group=
 
 
 def read_ldjson(path_ldjson):
+    """read discoursemes from ldjson file
+
+    """
 
     discoursemes = defaultdict(list)
     with gzip.open(path_ldjson, "rt") as f:
@@ -39,8 +43,15 @@ def read_ldjson(path_ldjson):
     return discoursemes
 
 
-def import_discoursemes(glob_in, p='lemma', col_surface='query', col_name='name', username='admin'):
+def import_discoursemes(glob_in, p='lemma', col_surface='surface', col_name='name', username='admin'):
     """import discoursemes from TSV file
+
+    - name
+    - either surface + p (default = lemma)
+    - or cqp_query
+    - or both (for different rows)
+
+    surface may contain wildcards, MWUs, disjunction
 
     """
 
@@ -68,10 +79,13 @@ def export_discoursemes(path_out):
     """export discoursemes to TSV file
 
     """
+
     records = list()
     for discourseme in Discourseme.query.all():
         for item in discourseme.template:
-            records.append({'name': discourseme.name, 'query': item.surface, 'username': discourseme.user.username})
+            records.append({'name': discourseme.name,
+                            'surface': item.surface, 'p': item.p, 'cqp_query': item.cqp_query,
+                            'username': discourseme.user.username})
     discoursemes = DataFrame(records)
 
     discoursemes.to_csv(path_out, sep="\t", index=False)
@@ -86,8 +100,8 @@ def delete_description_children(discourseme_description):
 
     """
 
-    current_app.logger.debug("detaching Query belonging to this description")
-    discourseme_description.update_from_items()
+    current_app.logger.debug("creating new Query belonging to this description")
+    discourseme_description.create_query
 
     current_app.logger.debug("deleting CollocationDiscoursemeItems belonging to this description")
     CollocationDiscoursemeItem.query.filter_by(discourseme_description_id=discourseme_description.discourseme_id).delete()
@@ -98,34 +112,40 @@ def delete_description_children(discourseme_description):
     db.session.commit()
 
 
-def description_items_to_query(items, p_description, s_query, corpus, subcorpus=None, match_strategy='longest'):
+def description_items_to_query(description_items, s_query, corpus, subcorpus=None, match_strategy='longest'):
+    """query corpus or subcorpus for discourseme provided items (p + item or cqp_query)
 
-    # create query & wordlist
+    """
+
+    # create queries & wordlists
     queries = list()
-    wordlist = list()
-    for item in items:
-        tokens = item.split(" ")
-        if len(tokens) > 1 or cqp_escape(item) != item:
+    wordlists = defaultdict(list)
+    for item in description_items:
+        if item.is_query:
+            queries.append(item.query)
+        elif item.is_unigram and cqp_escape(item.surface) == item.surface:
+            wordlists[item.p].append(item.surface)
+        else:                   # MWU
+            tokens = item.surface.split(" ")
             query = ""
             for token in tokens:
-                query += f'[{p_description}="{token}"]'
+                query += f'[{item.p}="{token}"]'
             queries.append(query)
-        else:
-            wordlist.append(item)
 
-    # define wordlists
-    wl_name = generate_idx(wordlist, prefix="W_")
-    os.makedirs(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists'), exist_ok=True)
-    wl_path = os.path.abspath(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists', wl_name + '.txt'))
-    queries.append(f"[{p_description} = ${wl_name}]")
-    with open(wl_path, mode='wt') as f:
-        f.write("\n".join(wordlist))
+    # define wordlists and append to queries
+    for p in wordlists.keys():
+        wl_name = generate_idx(wordlists[p], prefix=f"W_{p}_")
+        wl_path = os.path.abspath(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists', wl_name + '.txt'))
+        os.makedirs(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists'), exist_ok=True)
+        with open(wl_path, mode='wt') as f:
+            f.write("\n".join(wordlists[p]))
+        queries.append(f"[{p} = ${wl_name}]")
 
-    # create query
+    # create joint query
     cqp_query = "|".join(queries)
     cqp_query = f'({cqp_query}) within {s_query};' if s_query is not None else query + ";"
 
-    # define query
+    # save query to database
     query = Query(
         corpus_id=corpus.id,
         subcorpus_id=subcorpus.id if subcorpus else None,
@@ -136,6 +156,7 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
     db.session.add(query)
     db.session.commit()
 
+    # query name
     name = generate_idx([
         corpus.cwb_id, subcorpus.nqr_cqp if subcorpus else None, cqp_query, s_query, match_strategy
     ], prefix="Q_")
@@ -147,7 +168,10 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
         crps = query.corpus.ccc()
 
     cqp = crps.start_cqp()
-    cqp.Exec(f'define ${wl_name} < "{wl_path}";')
+    for p in wordlists.keys():
+        wl_name = generate_idx(wordlists[p], prefix=f"W_{p}_")
+        wl_path = os.path.abspath(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists', wl_name + '.txt'))
+        cqp.Exec(f'define ${wl_name} < "{wl_path}";')
 
     # query CQP and exit
     cqp.Exec(f'set MatchingStrategy "{match_strategy}";')
@@ -171,7 +195,7 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
         db.session.commit()
         return query
 
-    # update name
+    # save NQR name
     query.nqr_cqp = name
     db.session.commit()
 
@@ -187,26 +211,35 @@ def description_items_to_query(items, p_description, s_query, corpus, subcorpus=
     return query
 
 
-def create_discourseme_description(discourseme, items, corpus_id, subcorpus_id, p_description, s_query, match_strategy):
+def discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy):
+    """create discourseme description from template or items, then create query
 
+    """
+
+    # items from template?
     if len(items) == 0:
         if len(discourseme.template) == 0:
             discourseme.generate_template()
-        items = [item.surface for item in discourseme.template]
+        items = [{'surface': item.surface, 'p': item.p, 'cqp_query': item.cqp_query} for item in discourseme.template]
 
     # description
     description = DiscoursemeDescription(
         discourseme_id=discourseme.id,
         corpus_id=corpus_id,
         subcorpus_id=subcorpus_id,
-        p=p_description,
         s=s_query,
         match_strategy=match_strategy
     )
     db.session.add(description)
     db.session.commit()
 
-    description.update_from_items(items)
+    for item in items:
+        description.items.append(DiscoursemeDescriptionItems(discourseme_description_id=description.id,
+                                                             p=item['p'],
+                                                             surface=item['surface']))
+    db.session.commit()
+
+    description.create_query
 
     return description
 
@@ -215,9 +248,11 @@ def create_discourseme_description(discourseme, items, corpus_id, subcorpus_id, 
 # API schemata #
 ################
 
-
 # INPUT / OUTPUT
-class DiscoursemeTemplateItem(Schema):
+class DiscoursemeItem(Schema):
+    """Used both for templates and descriptions, in- and output.
+
+    """
 
     p = String(required=False, metadata={'nullable': True})
     surface = String(required=False, metadata={'nullable': True})
@@ -229,7 +264,7 @@ class DiscoursemeIn(Schema):
 
     name = String(required=False, metadata={'nullable': True})
     comment = String(required=False, metadata={'nullable': True})
-    template = Nested(DiscoursemeTemplateItem(many=True), required=False, metadata={'nullable': True})
+    template = Nested(DiscoursemeItem(many=True), required=False, metadata={'nullable': True}, load_default=[])
 
 
 class DiscoursemeDescriptionIn(Schema):
@@ -237,11 +272,10 @@ class DiscoursemeDescriptionIn(Schema):
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False, metadata={'nullable': True})
 
-    p = String(required=False)
     s = String(required=False)
     match_strategy = String(required=False, load_default='longest', validate=OneOf(['longest', 'shortest', 'standard']))
 
-    items = List(String, required=False, load_default=[])
+    items = Nested(DiscoursemeItem(many=True), required=False, metadata={'nullable': True}, load_default=[])
 
 
 class DiscoursemeDescriptionSimilarIn(Schema):
@@ -263,12 +297,7 @@ class DiscoursemeOut(Schema):
     id = Integer(required=True)
     name = String(required=True, dump_default=None, metadata={'nullable': True})
     comment = String(required=True, dump_default=None, metadata={'nullable': True})
-    template = Nested(DiscoursemeTemplateItem(many=True), required=True, dump_default=[])
-
-
-class DiscoursemeDescriptionItem(Schema):
-
-    item = String(required=True)
+    template = Nested(DiscoursemeItem(many=True), required=True, dump_default=[])
 
 
 class DiscoursemeDescriptionOut(Schema):
@@ -278,11 +307,9 @@ class DiscoursemeDescriptionOut(Schema):
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     query_id = Integer(required=True)
-    p = String(required=True)
     s = String(required=True)
     match_strategy = String(required=True)
-    # semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
-    items = Nested(DiscoursemeDescriptionItem(many=True), required=True, dump_default=[])
+    items = Nested(DiscoursemeItem(many=True), required=True, dump_default=[])
 
 
 class DiscoursemeScoresOut(Schema):
@@ -295,7 +322,8 @@ class DiscoursemeScoresOut(Schema):
 
 class DiscoursemeDescriptionSimilarOut(Schema):
 
-    item = String(required=True)
+    p = String(required=True)
+    surface = String(required=True)
     freq = Integer(required=True)
     similarity = Float(required=True)
 
@@ -342,11 +370,13 @@ def create(json_data):
     )
     db.session.add(discourseme)
     db.session.commit()
-    if template:
-        for item in template:
-            db.session.add(DiscoursemeTemplateItems(
-                discourseme_id=discourseme.id, surface=item['surface'], p=item['p']
-            ))
+
+    for item in template:
+        db.session.add(DiscoursemeTemplateItems(
+            discourseme_id=discourseme.id,
+            p=item['p'],
+            surface=item['surface']
+        ))
     db.session.commit()
 
     return DiscoursemeOut().dump(discourseme), 200
@@ -389,15 +419,21 @@ def patch(id, json_data):
     discourseme = db.get_or_404(Discourseme, id)
 
     template = json_data.pop('template', None)
-    if template:
+    if template and len(template) > 0:
+
+        # delete old template
         for item in discourseme.template:
             db.session.delete(item)
-            db.session.commit()
+        db.session.commit()
+
+        # create new template
         for item in template:
             db.session.add(DiscoursemeTemplateItems(
-                discourseme_id=discourseme.id, surface=item['surface'], p=item['p']
+                discourseme_id=discourseme.id,
+                p=item['p'],
+                surface=item['surface']
             ))
-            db.session.commit()
+        db.session.commit()
 
     for attr, value in json_data.items():
         setattr(discourseme, attr, value)
@@ -415,7 +451,7 @@ def patch(id, json_data):
 def create_description(id, json_data):
     """Create description of discourseme in corpus.
 
-    Will automatically create query (from template / description) if it doesn't exist.
+    Will automatically create query (from provided items or template).
 
     """
 
@@ -426,13 +462,12 @@ def create_description(id, json_data):
     subcorpus_id = json_data.get('subcorpus_id')
     # subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
 
-    p_description = json_data.get('p', corpus.p_default)
     s_query = json_data.get('s', corpus.s_default)
     match_strategy = json_data.get('match_strategy')
 
     items = json_data.get('items', [])  # will use discourseme template if not given
 
-    description = create_discourseme_description(discourseme, items, corpus_id, subcorpus_id, p_description, s_query, match_strategy)
+    description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
 
     return DiscoursemeDescriptionOut().dump(description), 200
 
@@ -441,6 +476,9 @@ def create_description(id, json_data):
 @bp.output(DiscoursemeDescriptionOut(many=True))
 @bp.auth_required(auth)
 def get_all_descriptions(id):
+    """Get all descriptions of discourseme.
+
+    """
 
     discourseme = db.get_or_404(Discourseme, id)
     descriptions = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id).all()
@@ -452,6 +490,9 @@ def get_all_descriptions(id):
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def get_description(id, description_id):
+    """Get details of description.
+
+    """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(DiscoursemeDescription, description_id)
@@ -462,6 +503,9 @@ def get_description(id, description_id):
 @bp.delete('/<id>/description/<description_id>/')
 @bp.auth_required(auth)
 def delete_description(id, description_id):
+    """Delete discourseme description.
+
+    """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(DiscoursemeDescription, description_id)
@@ -471,16 +515,49 @@ def delete_description(id, description_id):
     return 'Deletion successful.', 200
 
 
-@bp.get('/<id>/description/<description_id>/similar')
+@bp.get('/<id>/description/<description_id>/breakdown')
+@bp.input(BreakdownIn, location='query')
+@bp.output(BreakdownOut)
+@bp.auth_required(auth)
+def description_get_breakdown(id, description_id, query_data):
+    """Get breakdown of discourseme description.
+
+    """
+
+    description = db.get_or_404(DiscoursemeDescription, description_id)
+
+    p = query_data.get('p')
+    query = description._query
+
+    if p not in query.corpus.p_atts:
+        msg = f'p-attribute "{p}" does not exist in corpus "{query.corpus.cwb_id}"'
+        current_app.logger.error(msg)
+        abort(404, msg)
+
+    breakdown = get_or_create(Breakdown, query_id=query.id, p=p)
+    ccc_breakdown(breakdown)
+
+    return BreakdownOut().dump(breakdown), 200
+
+
+@bp.get('/<id>/description/<description_id>/breakdown/<breakdown_id>/similar')
 @bp.input(DiscoursemeDescriptionSimilarIn, location='query')
 @bp.output(DiscoursemeDescriptionSimilarOut(many=True))
 @bp.auth_required(auth)
-def description_get_similar(id, description_id, query_data):
+def description_get_similar(id, description_id, breakdown_id, query_data):
+    """Get items most similar to the ones in discourseme breakdown.
+
+    """
+
+    description = db.get_or_404(DiscoursemeDescription, description_id)
+    breakdown = db.get_or_404(Breakdown, breakdown_id)
+    p = breakdown.p
 
     number = query_data.get('number')
     min_freq = query_data.get('min_freq')
-    description = db.get_or_404(DiscoursemeDescription, description_id)
-    items = [item.item for item in description.items]
+
+    df_breakdown = ccc_breakdown(breakdown)
+    items = list(df_breakdown.index)
 
     # similar
     embeddings = Magnitude(description.corpus.embeddings)
@@ -488,39 +565,46 @@ def description_get_similar(id, description_id, query_data):
     similar = DataFrame(index=[s[0] for s in similar], data={'similarity': [s[1] for s in similar]})
 
     # marginals
-    freq_similar = description.corpus.ccc().marginals(similar.index, p_atts=[description.p])[['freq']]
+    freq_similar = description.corpus.ccc().marginals(similar.index, p_atts=[p])[['freq']]
     freq_similar = freq_similar.loc[freq_similar['freq'] >= min_freq]  # drop hapaxes
 
     # merge
     freq_similar = freq_similar.join(similar)
     freq_similar = freq_similar.sort_values(by="similarity", ascending=False)
-    freq_similar = freq_similar.reset_index().to_records()
+    freq_similar = freq_similar.reset_index()
+    freq_similar['p'] = p
+    freq_similar = freq_similar.rename({'item': 'surface'}, axis=1)
+    freq_similar = freq_similar.to_records()
 
     return [DiscoursemeDescriptionSimilarOut().dump(f) for f in freq_similar], 200
 
 
 @bp.patch('/<id>/description/<description_id>/add-item')
-@bp.input(DiscoursemeDescriptionItem)
+@bp.input(DiscoursemeItem)
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def description_patch_add(id, description_id, json_data):
-    """Patch discourseme: add item to description.
+    """Patch discourseme description: add item to description.
 
     """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(DiscoursemeDescription, description_id)
-    item = json_data.get('item')
+    p = json_data.get('p')
+    surface = json_data.get('surface')
     db_item = DiscoursemeDescriptionItems.query.filter_by(
         discourseme_description_id=description.id,
-        item=item
+        p=p,
+        surface=surface
     ).first()
     if db_item:
-        current_app.logger.debug(f"item {item} already in description")
+        current_app.logger.debug(f'item {p}="{surface}" already in description')
+
     else:
         db_item = DiscoursemeDescriptionItems(
             discourseme_description_id=description.id,
-            item=item
+            p=p,
+            surface=surface
         )
         db.session.add(db_item)
         db.session.commit()
@@ -530,20 +614,22 @@ def description_patch_add(id, description_id, json_data):
 
 
 @bp.patch('/<id>/description/<description_id>/remove-item')
-@bp.input(DiscoursemeDescriptionItem)
+@bp.input(DiscoursemeItem)
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def description_patch_remove(id, description_id, json_data):
-    """Patch discourseme: remove item from description.
+    """Patch discourseme description: remove item from description.
 
     """
 
     # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(DiscoursemeDescription, description_id)
-    item = json_data.get('item')
+    p = json_data.get('p')
+    surface = json_data.get('surface')
     db_item = DiscoursemeDescriptionItems.query.filter_by(
         discourseme_description_id=description.id,
-        item=item
+        p=p,
+        surface=surface
     ).first()
 
     if not db_item:

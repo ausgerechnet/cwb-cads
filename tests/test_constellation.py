@@ -123,7 +123,7 @@ def test_patch_constellation_discoursemes(client, auth):
         assert len(constellation.json['discoursemes']) == 2
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_description(client, auth):
 
     auth_header = auth.login()
@@ -937,6 +937,7 @@ def test_constellation_2nd_order_collocation(client, auth):
         assert int(coll_conv["O11"]) == 18
 
 
+@pytest.mark.now
 def test_constellation_keyword(client, auth):
 
     auth_header = auth.login()

@@ -82,19 +82,28 @@ class DiscoursemeDescription(db.Model):
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))
-    p = db.Column(db.String(), nullable=True)  # analysis / description layer
+
     s = db.Column(db.String(), nullable=True)  # for max. query context
     match_strategy = db.Column(db.Unicode, default='longest')
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id'))
 
     items = db.RelationshipProperty("DiscoursemeDescriptionItems", backref="discourseme_description", cascade='all, delete')
+
     collocation_items = db.RelationshipProperty("CollocationDiscoursemeItem", backref="discourseme_description", cascade='all, delete')
     keyword_items = db.RelationshipProperty("KeywordDiscoursemeItem", backref="discourseme_description", cascade='all, delete')
 
     @property
     def _query(self):
+        if not self.query_id:
+            self.create_query
         return db.get_or_404(Query, self.query_id)
+
+    def breakdown(self, p):
+
+        breakdown = get_or_create(Breakdown, query_id=self._query.id, p=p)
+        breakdown = ccc_breakdown(breakdown)
+        return breakdown
 
     @property
     def corpus(self):
@@ -104,38 +113,23 @@ class DiscoursemeDescription(db.Model):
     def subcorpus(self):
         return db.get_or_404(SubCorpus, self.subcorpus_id) if self.subcorpus_id else None
 
-    def update_from_items(self, items=[]):
+    @property
+    def create_query(self):
 
         from .discourseme import description_items_to_query
 
-        # get new items, delete old ones
-        items = [item.item for item in self.items] if len(items) == 0 else items
-        [db.session.delete(item) for item in self.items]
-
         # query
         query = description_items_to_query(
-            items,
-            self.p,
+            self.items,
             self.s,
             self.corpus,
             self.subcorpus,
             self.match_strategy
         )
         self.query_id = query.id
-
-        # zero matches?
-        if query.error or query.zero_matches:
-            return
-
-        # breakdown
-        breakdown = get_or_create(Breakdown, query_id=query.id, p=self.p)
-        breakdown_df = ccc_breakdown(breakdown)
-
-        # description items
-        discourseme_description_items = breakdown_df.reset_index()[['item']]
-        discourseme_description_items['discourseme_description_id'] = self.id
-        discourseme_description_items.to_sql("discourseme_description_items", con=db.engine, if_exists='append', index=False)
         db.session.commit()
+
+        return query
 
 
 class DiscoursemeDescriptionItems(db.Model):
@@ -148,7 +142,18 @@ class DiscoursemeDescriptionItems(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     discourseme_description_id = db.Column(db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'))
 
-    item = db.Column(db.String(), nullable=True)
+    p = db.Column(db.String(), nullable=True)
+    surface = db.Column(db.String(), nullable=True)
+    cqp_query = db.Column(db.String(), nullable=True)
+
+    @property
+    def is_unigram(self):
+        if self.surface:
+            return len(self.surface.split(" ")) == 1
+
+    @property
+    def is_query(self):
+        return self.cqp_query is not None
 
 
 class Constellation(db.Model):
@@ -180,7 +185,6 @@ class ConstellationDescription(db.Model):
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))
-    p = db.Column(db.String(), nullable=True)  # analysis / description layer
     s = db.Column(db.String(), nullable=True)  # for max. query context
     match_strategy = db.Column(db.Unicode, default='longest')
     overlap = db.Column(db.Unicode, default='partial')  # when to count a discourseme to be in context (partial, full, match, matchend)
