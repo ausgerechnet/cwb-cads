@@ -188,56 +188,53 @@ def filter_matches(focus_query, filter_queries, window, overlap):
     current_app.logger.debug("filter_matches :: enter")
 
     matches = Matches.query.filter_by(query_id=focus_query.id)
-
-    # TODO learn proper SQLalchemy (aliased anti-join)
     matches_tmp = matches.all()
     relevant_match_pos = set([m.match for m in matches_tmp])
 
     # get relevant cotext lines
     current_app.logger.debug("filter_matches :: getting cotext")
     cotext = get_or_create_cotext(focus_query, window, focus_query.s)
+    current_app.logger.debug("filter_matches :: filtering cotext")
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
                                             CotextLines.offset <= window,
                                             CotextLines.offset >= -window)
-
     for key, fq in filter_queries.items():
+        current_app.logger.debug(f"filter_matches :: filtering cotext: {key}")
 
+        current_app.logger.debug("filter_matches :: filtering cotext: matches")
+        cotext_lines_match = cotext_lines.join(
+            Matches,
+            (Matches.query_id == fq.id) &
+            (Matches.match == CotextLines.cpos)
+        )
+        matches_in_cotext = set([c.match_pos for c in cotext_lines_match])
+        current_app.logger.debug("filter_matches :: filtering cotext: matchends")
+        cotext_lines_matchend = cotext_lines.join(
+            Matches,
+            (Matches.query_id == fq.id) &
+            (Matches.matchend == CotextLines.cpos)
+        )
+        matchends_in_cotext = set([c.match_pos for c in cotext_lines_matchend])
+
+        current_app.logger.debug(f"filter_matches :: filtering cotext: overlap mode: {overlap}")
         if overlap == 'partial':
-            cotext_lines_tmp = cotext_lines.join(
-                Matches,
-                (Matches.query_id == fq.id) &
-                ((Matches.match == CotextLines.cpos) | (Matches.matchend == CotextLines.cpos))
-            )
+            relevant_match_pos = relevant_match_pos.intersection(matches_in_cotext.union(matchends_in_cotext))
         elif overlap == 'full':
-            # TODO THIS DOESN'T WORK LIKE THIS; need to iteratively filter!
-            cotext_lines_tmp = cotext_lines.join(
-                Matches,
-                (Matches.query_id == fq.id) &
-                (Matches.match == CotextLines.cpos) & (Matches.matchend == CotextLines.cpos)
-            )
+            # TODO: this does not work perfectly, since it does not take into account that
+            # match and matchend could stem from different filter query matches
+            relevant_match_pos = relevant_match_pos.intersection(matches_in_cotext.intersection(matchends_in_cotext))
         elif overlap == 'match':
-            cotext_lines_tmp = cotext_lines.join(
-                Matches,
-                (Matches.query_id == fq.id) &
-                (Matches.match == CotextLines.cpos)
-            )
+            relevant_match_pos = relevant_match_pos.intersection(matches_in_cotext)
         elif overlap == 'matchend':
-            cotext_lines_tmp = cotext_lines.join(
-                Matches,
-                (Matches.query_id == fq.id) &
-                (Matches.matchend == CotextLines.cpos)
-            )
+            relevant_match_pos = relevant_match_pos.intersection(matchends_in_cotext)
         else:
-            raise ValueError("filter_matches :: overlap must be one of 'match', 'matchend', 'partial', or 'full'")
-
-        relevant_match_pos = relevant_match_pos.intersection(set([c.match_pos for c in cotext_lines_tmp]))
+            raise ValueError("filter_matches :: filtering cotext: overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
         if len(relevant_match_pos) == 0:
-            current_app.logger.error(f"filter_matches :: no lines left after filtering for query {fq.cqp_query}")
+            current_app.logger.error(f"filter_matches :: filtering cotext: no lines left after filtering for query {fq.cqp_query}")
             return
 
     current_app.logger.debug("filter_matches :: filtering matches")
-
     matches = Matches.query.filter(
         Matches.query_id == focus_query.id,
         Matches.match.in_(relevant_match_pos)

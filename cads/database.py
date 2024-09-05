@@ -328,7 +328,7 @@ class Matches(db.Model):
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
     match = db.Column(db.Integer, nullable=False, index=True)
-    matchend = db.Column(db.Integer, nullable=False)
+    matchend = db.Column(db.Integer, nullable=False, index=True)
 
 
 # BREAKDOWN #
