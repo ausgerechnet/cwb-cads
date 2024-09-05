@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import os
+
 from datetime import datetime
 
 from ccc import Corpus as Crps
@@ -883,6 +885,77 @@ class KeywordItemScore(db.Model):
 
     measure = db.Column(db.Unicode)
     score = db.Column(db.Float)
+
+
+# WORD LISTS AND MACROS #
+#########################
+class WordList(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    # __table_args__ = (
+    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
+    # )
+
+    id = db.Column(db.Integer, primary_key=True)
+    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
+    # corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    name = db.Column(db.Unicode(255), nullable=False)
+    words = db.relationship("WordListWords", backref="word_list", cascade="all, delete")
+    # p_att = db.Column(db.Unicode(50), nullable=False)
+
+    comment = db.Column(db.Unicode)
+
+    @property
+    def path(self):
+        return os.path.join(current_app.config['CCC_LIB_DIR'], "wordlists", self.name + ".txt")
+
+    def write(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, "wt") as f:
+            f.write("\n".join([w. word for w in self.words]))
+
+
+class WordListWords(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer(), primary_key=True)
+    wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete='CASCADE'))
+
+    word = db.Column(db.Unicode(), nullable=True)
+
+
+class Macro(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    # __table_args__ = (
+    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
+    # )
+
+    id = db.Column(db.Integer, primary_key=True)
+    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
+    # corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    name = db.Column(db.Unicode(255), nullable=False)
+    macro = db.Column(db.Unicode)
+
+    comment = db.Column(db.Unicode)
+
+    @property
+    def path(self):
+        return os.path.join(current_app.config['CCC_LIB_DIR'], "macros", self.name + ".txt")
+
+    def write(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, "wt") as f:
+            f.write(self.macro)
 
 
 # CLI #

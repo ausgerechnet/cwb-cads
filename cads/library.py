@@ -6,11 +6,12 @@ import os
 from glob import glob
 
 import click
-from ccc.cqpy import cqpy_load
 from flask import Blueprint
+from .database import WordList, Macro, WordListWords
+from . import db
+import json
 
-from .. import db
-from .database import Macro, SlotQuery, WordList, WordListWords
+from .spheroscope.slot_query import import_slot_query
 
 bp = Blueprint('library', __name__, url_prefix='/library', cli_group='library')
 
@@ -93,25 +94,6 @@ def import_wordlist(path):
     wordlist.write()
 
 
-def import_query(path, corpus_id):
-
-    query = cqpy_load(path)
-
-    slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]
-    corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in query['anchors']['corrections'].items()]
-
-    slot_query = SlotQuery(
-        corpus_id=corpus_id,
-        cqp_query=query['cqp'],
-        name=query['meta']['name'],
-        _slots=json.dumps(slots),
-        _corrections=json.dumps(corrections)
-    )
-    db.session.add(slot_query)
-    db.session.commit()
-    slot_query.write()
-
-
 def import_library(lib_dir, corpus_id, username):
 
     paths_macros = glob(os.path.join(lib_dir, "macros", "*.txt"))
@@ -123,7 +105,7 @@ def import_library(lib_dir, corpus_id, username):
     for path in paths_wordlists:
         import_wordlist(path)
     for path in paths_queries:
-        import_query(path, corpus_id)
+        import_slot_query(path, corpus_id)
 
 
 @bp.cli.command('import-library')
