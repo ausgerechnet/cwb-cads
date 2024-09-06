@@ -768,13 +768,13 @@ export const addConstellationDiscourseme: MutationOptions<
     constellationId: number
     discoursemeId: number
   }) =>
-    apiClient.patchMmdaconstellationIdaddDiscourseme(
-      { discourseme_id: discoursemeId },
+    apiClient.patch(
+      '/mmda/constellation/:id/add-discourseme',
+      { discourseme_ids: [discoursemeId] },
       {
         params: { id: constellationId.toString() },
       },
     ),
-  mutationKey: ['add-constellation-discourseme'],
   onSuccess: (constellation) => {
     const constellationId = constellation.id
     if (constellationId === undefined) return
