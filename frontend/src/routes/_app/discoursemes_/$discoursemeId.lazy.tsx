@@ -98,7 +98,7 @@ function Description({
     <div className="my-1 bg-muted">
       {description.id} {isLoading ? 'Loading...' : `on Corpus "${data?.name}"`}
       <br />
-      {description.items?.map((i) => i.item).join(', ')}
+      {description.items?.map((i) => i.surface).join(', ')}
       <Button
         onClick={() =>
           mutate({

@@ -69,7 +69,7 @@ function ConstellationDiscoursemesEditor({
     from: '/_app/constellations/$constellationId',
   })
   if (corpusId === undefined) throw new Error('corpusId is undefined')
-  const { p, s } = useFilterSelection(
+  const { s } = useFilterSelection(
     '/_app/constellations/$constellationId',
     corpusId,
   )
@@ -82,7 +82,6 @@ function ConstellationDiscoursemesEditor({
       corpusId,
       subcorpusId: null,
       matchStrategy: 'longest',
-      p,
       s,
     }),
   )

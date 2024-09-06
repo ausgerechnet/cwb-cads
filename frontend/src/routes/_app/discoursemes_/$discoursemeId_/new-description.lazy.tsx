@@ -45,10 +45,23 @@ export const Route = createLazyFileRoute(
   component: DiscoursemeDescriptionNew,
 })
 
-const FormInput = schemas.DiscoursemeDescriptionIn.extend({
-  discourseme_id: z.number(),
-  items: z.string().array().nonempty(),
-})
+const FormInput =
+  // copy/paste of DiscoursemeDescriptionIn / the z.ZodType<> doesn't allow .extend()
+  z
+    .object({
+      corpus_id: z.number().int(),
+      match_strategy: z
+        .enum(['longest', 'shortest', 'standard'])
+        .optional()
+        .default('longest'),
+      s: z.string().optional(),
+      subcorpus_id: z.number().int().nullish(),
+    })
+    .extend({
+      discourseme_id: z.number(),
+      items: z.string().array().nonempty(),
+      p: z.string(),
+    })
 
 function DiscoursemeDescriptionNew() {
   const navigate = useNavigate()
@@ -64,7 +77,7 @@ function DiscoursemeDescriptionNew() {
       addDiscoursemeDescription.onSuccess?.(data, ...args)
       toast.success('Discourseme description created')
       if (discoursemeId === undefined) return
-      navigate({
+      void navigate({
         to: `/discoursemes/$discoursemeId`,
         params: { discoursemeId: discoursemeId.toString() },
       })
@@ -118,7 +131,16 @@ function DiscoursemeDescriptionNew() {
         <Large>New Description for Discourseme {discourseme?.name}</Large>
         <Form {...form}>
           <form
-            onSubmit={form.handleSubmit((data) => mutate(data))}
+            onSubmit={form.handleSubmit(({ items, p, ...data }) => {
+              mutate({
+                ...data,
+                items: items.map((surface) => ({
+                  surface,
+                  p,
+                  // TODO: cqp_query missing -- where would this come from?
+                })),
+              })
+            })}
             className="grid w-full grid-cols-2 gap-4"
           >
             <FormField

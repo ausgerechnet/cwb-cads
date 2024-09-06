@@ -20,7 +20,6 @@ import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
-import { schemas } from '@/rest-client'
 import {
   Select,
   SelectContent,
@@ -33,7 +32,17 @@ import { ItemsInput } from '@/components/ui/items-input'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useNavigate } from '@tanstack/react-router'
 
-const FormInput = schemas.DiscoursemeDescriptionIn.extend({
+// The automatically generated DiscoursemeDescriptionIn does not support .extend()
+const FormInput = z.object({
+  corpus_id: z.number().int(),
+  items: z.string().array().nonempty(),
+  match_strategy: z
+    .enum(['longest', 'shortest', 'standard'])
+    .optional()
+    .default('longest'),
+  s: z.string().optional(),
+  p: z.string(),
+  subcorpus_id: z.number().int().nullish(),
   discourseme_id: z.number(),
 })
 
@@ -49,7 +58,6 @@ export function DiscoursemeAnalysis({
   defaultValues?: {
     items?: string[]
     match_strategy?: 'longest' | 'shortest' | 'standard'
-    p?: string
     s?: string
   }
 }) {
@@ -72,7 +80,7 @@ export function DiscoursemeAnalysis({
       addDiscoursemeDescription.onSuccess?.(data, ...args)
       toast.success('Discourseme description created')
       if (discoursemeId === undefined) return
-      navigate({
+      void navigate({
         to: `/discoursemes/$discoursemeId`,
         params: { discoursemeId: discoursemeId.toString() },
       })
@@ -90,7 +98,16 @@ export function DiscoursemeAnalysis({
           <Headline3 className="w-full">Start Discourseme Analysis</Headline3>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((data) => mutate(data))}
+              onSubmit={form.handleSubmit(({ p, items, ...data }) => {
+                mutate({
+                  ...data,
+                  items: items.map((surface) => ({
+                    surface,
+                    p: p ?? '',
+                    // TODO: cqp_query missing!
+                  })),
+                })
+              })}
               className="grid w-full grid-cols-2 gap-4"
             >
               <FormField
@@ -240,6 +257,7 @@ export function DiscoursemeAnalysis({
           className="w-full"
           onClick={() => {
             Object.entries(defaultValues).forEach(([key, value]) => {
+              // @ts-expect-error TODO: fix types
               form.setValue(key, value)
             })
             setIsOpen(true)

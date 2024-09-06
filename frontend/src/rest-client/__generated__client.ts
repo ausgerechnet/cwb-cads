@@ -99,7 +99,6 @@ type ConstellationDescriptionOut = {
   discourseme_ids: Array<number>
   id: number
   match_strategy: string
-  p: string
   s: string
   semantic_map_id: number | null
   subcorpus_id: number | null
@@ -108,23 +107,23 @@ type DiscoursemeDescriptionOut = {
   corpus_id: number
   discourseme_id: number
   id: number
-  items: Array<DiscoursemeDescriptionItem>
+  items: Array<DiscoursemeItem>
   match_strategy: string
-  p: string
   query_id: number
   s: string
   subcorpus_id: number | null
 }
-type DiscoursemeDescriptionItem = {
-  item: string
-}
+type DiscoursemeItem = Partial<{
+  cqp_query: string | null
+  p: string | null
+  surface: string | null
+}>
 type ConstellationDescriptionOutUpdate = Partial<{
   corpus_id: number
   discourseme_descriptions: Array<DiscoursemeDescriptionOut>
   discourseme_ids: Array<number>
   id: number
   match_strategy: string
-  p: string
   s: string
   semantic_map_id: number | null
   subcorpus_id: number | null
@@ -159,22 +158,24 @@ type DiscoursemeOut = {
   comment: string | null
   id: number
   name: string | null
-  template: Array<DiscoursemeTemplateItem>
+  template: Array<DiscoursemeItem>
 }
-type DiscoursemeTemplateItem = Partial<{
-  cqp_query: string | null
-  p: string | null
-  surface: string | null
-}>
+type DiscoursemeDescriptionIn = {
+  corpus_id: number
+  items?: (Array<DiscoursemeItem> | null) | undefined
+  match_strategy?: ('longest' | 'shortest' | 'standard') | undefined
+  s?: string | undefined
+  subcorpus_id?: (number | null) | undefined
+}
 type DiscoursemeIn = Partial<{
   comment: string | null
   name: string | null
-  template: Array<DiscoursemeTemplateItem> | null
+  template: Array<DiscoursemeItem> | null
 }>
 type DiscoursemeInUpdate = Partial<{
   comment: string | null
   name: string | null
-  template: Array<DiscoursemeTemplateItem> | null
+  template: Array<DiscoursemeItem> | null
 }>
 type KeywordItemsOut = {
   coordinates: Array<CoordinatesOut>
@@ -384,6 +385,7 @@ const KeywordIn = z
     p: z.string().optional().default('lemma'),
     p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish(),
+    semantic_map_init: z.boolean().optional().default(true),
     sub_vs_rest: z.boolean().optional().default(true),
     subcorpus_id: z.number().int().nullish(),
     subcorpus_id_reference: z.number().int().nullish(),
@@ -407,7 +409,7 @@ const KeywordItemsOut: z.ZodType<KeywordItemsOut> = z
     sort_by: z.string(),
   })
   .passthrough()
-const DiscoursemeTemplateItem: z.ZodType<DiscoursemeTemplateItem> = z
+const DiscoursemeItem: z.ZodType<DiscoursemeItem> = z
   .object({
     cqp_query: z.string().nullable(),
     p: z.string().nullable(),
@@ -420,7 +422,7 @@ const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
     comment: z.string().nullable(),
     id: z.number().int(),
     name: z.string().nullable(),
-    template: z.array(DiscoursemeTemplateItem),
+    template: z.array(DiscoursemeItem),
   })
   .passthrough()
 const ConstellationOut: z.ZodType<ConstellationOut> = z
@@ -447,17 +449,13 @@ const ConstellationInUpdate = z
   })
   .partial()
   .passthrough()
-const DiscoursemeDescriptionItem: z.ZodType<DiscoursemeDescriptionItem> = z
-  .object({ item: z.string() })
-  .passthrough()
 const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
   .object({
     corpus_id: z.number().int(),
     discourseme_id: z.number().int(),
     id: z.number().int(),
-    items: z.array(DiscoursemeDescriptionItem),
+    items: z.array(DiscoursemeItem),
     match_strategy: z.string(),
-    p: z.string(),
     query_id: z.number().int(),
     s: z.string(),
     subcorpus_id: z.number().int().nullable(),
@@ -470,7 +468,6 @@ const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
     discourseme_ids: z.array(z.number()),
     id: z.number().int(),
     match_strategy: z.string(),
-    p: z.string(),
     s: z.string(),
     semantic_map_id: z.number().int().nullable(),
     subcorpus_id: z.number().int().nullable(),
@@ -487,7 +484,6 @@ const ConstellationDescriptionIn = z
       .enum(['partial', 'full', 'match', 'matchend'])
       .optional()
       .default('partial'),
-    p: z.string().optional(),
     s: z.string().optional(),
     semantic_map_id: z.number().int().nullish(),
     subcorpus_id: z.number().int().optional(),
@@ -505,7 +501,6 @@ const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUp
       discourseme_ids: z.array(z.number()),
       id: z.number().int(),
       match_strategy: z.string(),
-      p: z.string(),
       s: z.string(),
       semantic_map_id: z.number().int().nullable(),
       subcorpus_id: z.number().int().nullable(),
@@ -530,11 +525,16 @@ const ConstellationCollocationIn = z
     filter_discourseme_ids: z.array(z.number()).optional().default([]),
     filter_item: z.string().nullish(),
     filter_item_p_att: z.string().optional().default('lemma'),
+    filter_overlap: z
+      .enum(['partial', 'full', 'match', 'matchend'])
+      .optional()
+      .default('partial'),
     focus_discourseme_id: z.number().int(),
     marginals: z.enum(['local', 'global']).optional().default('local'),
     p: z.string(),
     s_break: z.string().optional(),
     semantic_map_id: z.number().int().nullish(),
+    semantic_map_init: z.boolean().optional().default(true),
     window: z.number().int().optional().default(10),
   })
   .passthrough()
@@ -609,6 +609,7 @@ const ConstellationKeywordIn = z
   .object({
     corpus_id_reference: z.number().int(),
     min_freq: z.number().int().optional().default(3),
+    p: z.string().optional().default('lemma'),
     p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish(),
     sub_vs_rest: z.boolean().optional().default(true),
@@ -640,7 +641,7 @@ const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
   .object({
     comment: z.string().nullable(),
     name: z.string().nullable(),
-    template: z.array(DiscoursemeTemplateItem).nullable(),
+    template: z.array(DiscoursemeItem).nullable().default([]),
   })
   .partial()
   .passthrough()
@@ -648,25 +649,47 @@ const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
   .object({
     comment: z.string().nullable(),
     name: z.string().nullable(),
-    template: z.array(DiscoursemeTemplateItem).nullable(),
+    template: z.array(DiscoursemeItem).nullable().default([]),
   })
   .partial()
   .passthrough()
-const DiscoursemeDescriptionIn = z
+const DiscoursemeDescriptionIn: z.ZodType<DiscoursemeDescriptionIn> = z
   .object({
     corpus_id: z.number().int(),
-    items: z.array(z.string()).optional().default([]),
+    items: z.array(DiscoursemeItem).nullish().default([]),
     match_strategy: z
       .enum(['longest', 'shortest', 'standard'])
       .optional()
       .default('longest'),
-    p: z.string().optional(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().nullish(),
   })
   .passthrough()
+const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
+  .object({
+    breakdown_id: z.number().int(),
+    freq: z.number().int(),
+    id: z.number().int(),
+    ipm: z.number(),
+    item: z.string(),
+    nr_tokens: z.number().int(),
+  })
+  .passthrough()
+const BreakdownOut: z.ZodType<BreakdownOut> = z
+  .object({
+    id: z.number().int(),
+    items: z.array(BreakdownItemsOut),
+    p: z.string(),
+    query_id: z.number().int(),
+  })
+  .passthrough()
 const DiscoursemeDescriptionSimilarOut = z
-  .object({ freq: z.number().int(), item: z.string(), similarity: z.number() })
+  .object({
+    freq: z.number().int(),
+    p: z.string(),
+    similarity: z.number(),
+    surface: z.string(),
+  })
   .passthrough()
 const QueryOut = z
   .object({
@@ -700,24 +723,6 @@ const QueryAssistedIn = z
     p: z.string(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().nullish(),
-  })
-  .passthrough()
-const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
-  .object({
-    breakdown_id: z.number().int(),
-    freq: z.number().int(),
-    id: z.number().int(),
-    ipm: z.number(),
-    item: z.string(),
-    nr_tokens: z.number().int(),
-  })
-  .passthrough()
-const BreakdownOut: z.ZodType<BreakdownOut> = z
-  .object({
-    id: z.number().int(),
-    items: z.array(BreakdownItemsOut),
-    p: z.string(),
-    query_id: z.number().int(),
   })
   .passthrough()
 const QueryMetaOut = z
@@ -824,12 +829,11 @@ export const schemas = {
   KeywordScoreOut,
   KeywordItemOut,
   KeywordItemsOut,
-  DiscoursemeTemplateItem,
+  DiscoursemeItem,
   DiscoursemeOut,
   ConstellationOut,
   ConstellationIn,
   ConstellationInUpdate,
-  DiscoursemeDescriptionItem,
   DiscoursemeDescriptionOut,
   ConstellationDescriptionOut,
   ConstellationDescriptionIn,
@@ -850,12 +854,12 @@ export const schemas = {
   DiscoursemeIn,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
+  BreakdownItemsOut,
+  BreakdownOut,
   DiscoursemeDescriptionSimilarOut,
   QueryOut,
   QueryIn,
   QueryAssistedIn,
-  BreakdownItemsOut,
-  BreakdownOut,
   QueryMetaOut,
   SemanticMapIn,
   CoordinatesIn,
@@ -1033,6 +1037,11 @@ const endpoints = makeApi([
         name: 'semantic_map_id',
         type: 'Query',
         schema: z.number().int().nullish(),
+      },
+      {
+        name: 'method',
+        type: 'Query',
+        schema: z.enum(['tsne', 'umap']).optional().default('tsne'),
       },
     ],
     response: SemanticMapOut,
@@ -1477,6 +1486,11 @@ const endpoints = makeApi([
         name: 'semantic_map_id',
         type: 'Query',
         schema: z.number().int().nullish(),
+      },
+      {
+        name: 'method',
+        type: 'Query',
+        schema: z.enum(['tsne', 'umap']).optional().default('tsne'),
       },
     ],
     response: KeywordOut,
@@ -1941,6 +1955,8 @@ const endpoints = makeApi([
     path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/items',
     alias:
       'getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems',
+    description: `TODO also return ranks (to ease frontend pagination)?
+TODO filter out focus discourseme (traditional) or all discoursemes (correction of marginals needed!) or None?`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2253,6 +2269,8 @@ const endpoints = makeApi([
     path: '/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/items',
     alias:
       'getMmdaconstellationIddescriptionDescription_idkeywordKeyword_iditems',
+    description: `TODO find the bug: why are there duplicated measures?!
+TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2651,7 +2669,7 @@ const endpoints = makeApi([
     method: 'post',
     path: '/mmda/discourseme/:id/description/',
     alias: 'postMmdadiscoursemeIddescription',
-    description: `Will automatically create query (from template / description) if it doesn&#x27;t exist.`,
+    description: `Will automatically create query (from provided items or template).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2755,48 +2773,7 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ item: z.string() }).passthrough(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'description_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeDescriptionOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/mmda/discourseme/:id/description/:description_id/remove-item',
-    alias: 'patchMmdadiscoursemeIddescriptionDescription_idremoveItem',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({ item: z.string() }).passthrough(),
+        schema: DiscoursemeItem,
       },
       {
         name: 'id',
@@ -2830,8 +2807,8 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/discourseme/:id/description/:description_id/similar',
-    alias: 'getMmdadiscoursemeIddescriptionDescription_idsimilar',
+    path: '/mmda/discourseme/:id/description/:description_id/breakdown',
+    alias: 'getMmdadiscoursemeIddescriptionDescription_idbreakdown',
     requestFormat: 'json',
     parameters: [
       {
@@ -2841,6 +2818,53 @@ const endpoints = makeApi([
       },
       {
         name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'p',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: BreakdownOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/discourseme/:id/description/:description_id/breakdown/:breakdown_id/similar',
+    alias:
+      'getMmdadiscoursemeIddescriptionDescription_idbreakdownBreakdown_idsimilar',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'breakdown_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2856,6 +2880,47 @@ const endpoints = makeApi([
       },
     ],
     response: z.array(DiscoursemeDescriptionSimilarOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/discourseme/:id/description/:description_id/remove-item',
+    alias: 'patchMmdadiscoursemeIddescriptionDescription_idremoveItem',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeItem,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeDescriptionOut,
     errors: [
       {
         status: 401,
@@ -3024,6 +3089,11 @@ const endpoints = makeApi([
         schema: z.number().int().nullish(),
       },
       {
+        name: 'semantic_map_init',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+      {
         name: 'p',
         type: 'Query',
         schema: z.string(),
@@ -3054,9 +3124,12 @@ const endpoints = makeApi([
         schema: z.string().optional().default('lemma'),
       },
       {
-        name: 'filter_discourseme_ids',
+        name: 'filter_overlap',
         type: 'Query',
-        schema: z.array(z.number()).optional().default([]),
+        schema: z
+          .enum(['partial', 'full', 'match', 'matchend'])
+          .optional()
+          .default('partial'),
       },
     ],
     response: CollocationOut,
@@ -3426,7 +3499,7 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/semantic-map/:id/coordinates',
+    path: '/semantic-map/:id/coordinates/',
     alias: 'getSemanticMapIdcoordinates',
     requestFormat: 'json',
     parameters: [

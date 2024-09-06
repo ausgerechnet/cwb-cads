@@ -20,7 +20,6 @@ export function useDescription() {
       constellationId,
       corpusId: corpusId!,
       subcorpusId: undefined,
-      p: secondary,
       s,
       matchStrategy: 'longest',
     }),

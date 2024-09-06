@@ -69,7 +69,6 @@ function SingleQuery() {
             sAttributes={corpus.s_atts ?? []}
             defaultValues={{
               items,
-              p: pAtt,
               s: contextBreak,
             }}
           />

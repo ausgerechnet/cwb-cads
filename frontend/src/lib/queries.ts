@@ -148,60 +148,6 @@ export const shuffleQueryConcordances: MutationOptions<
   },
 }
 
-export const queryCollocation = (
-  queryId: string,
-  p: string,
-  window: number,
-  {
-    // constellationId,
-    semanticMapId,
-    sBreak,
-    marginals,
-    filterItem,
-    filterItemPAtt,
-    filterDiscoursemeIds = [],
-  }: {
-    // constellationId?: number | undefined
-    semanticMapId?: number | undefined
-    sBreak?: string | undefined
-    marginals?: 'local' | 'global' | undefined
-    filterItem?: string
-    filterItemPAtt?: string
-    filterDiscoursemeIds?: number[] | undefined
-  } = {},
-) =>
-  queryOptions({
-    queryKey: [
-      'query-collocation',
-      queryId,
-      p,
-      window,
-      // constellationId,
-      semanticMapId,
-      sBreak,
-      marginals,
-      filterItem,
-      filterItemPAtt,
-      filterDiscoursemeIds,
-    ],
-    queryFn: ({ signal }) =>
-      apiClient.getQueryQuery_idcollocation({
-        params: { query_id: queryId },
-        queries: {
-          p,
-          window,
-          // constellation_id: constellationId,
-          semantic_map_id: semanticMapId,
-          s_break: sBreak,
-          marginals,
-          filter_item: filterItem,
-          filter_item_p_att: filterItemPAtt,
-          filter_discourseme_ids: filterDiscoursemeIds,
-        },
-        signal,
-      }),
-  })
-
 // ==================== CORPORA ====================
 
 export const corpusById = (corpusId: number) =>
@@ -518,21 +464,15 @@ export const constellationDescriptionsById = (constellationId: number) =>
 export const constellationDescriptionFor = ({
   constellationId,
   corpusId,
-  subcorpusId,
+  subcorpusId = null,
   matchStrategy,
-  p,
   s,
 }: {
   constellationId: number
-  corpusId: z.infer<typeof schemas.DiscoursemeDescriptionIn.shape.corpus_id>
-  subcorpusId: z.infer<
-    typeof schemas.DiscoursemeDescriptionIn.shape.subcorpus_id
-  >
-  matchStrategy: z.infer<
-    typeof schemas.DiscoursemeDescriptionIn.shape.match_strategy
-  >
-  p: z.infer<typeof schemas.DiscoursemeDescriptionIn.shape.p>
-  s: z.infer<typeof schemas.DiscoursemeDescriptionIn.shape.s>
+  corpusId: number
+  subcorpusId?: number | null
+  matchStrategy: 'longest' | 'shortest' | 'standard'
+  s?: string
 }) =>
   queryOptions({
     queryKey: [
@@ -541,7 +481,6 @@ export const constellationDescriptionFor = ({
       corpusId,
       subcorpusId,
       matchStrategy,
-      p,
       s,
     ],
     queryFn: async ({ signal }) => {
@@ -555,7 +494,6 @@ export const constellationDescriptionFor = ({
           (cd) =>
             cd.corpus_id === corpusId &&
             (cd.subcorpus_id ?? null) === (subcorpusId ?? null) &&
-            cd.p === p &&
             cd.s === s &&
             cd.match_strategy === matchStrategy,
         )
@@ -566,7 +504,6 @@ export const constellationDescriptionFor = ({
         {
           corpus_id: corpusId,
           subcorpus_id: subcorpusId ?? undefined,
-          p,
           s,
           match_strategy: matchStrategy,
         },
