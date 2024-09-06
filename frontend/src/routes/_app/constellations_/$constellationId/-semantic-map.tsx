@@ -106,10 +106,12 @@ function ConstellationDiscoursemesEditor({
   console.log('constellation description', constellationDescription)
   return (
     <div>
+      Constellation Description Id: {constellationDescription?.id}
+      <br />
       <ErrorMessage error={error} />
       <ErrorMessage error={errorDeleteDiscourseme} />
       {discoursemes.map((discourseme) => (
-        <div>
+        <div key={discourseme.id}>
           {discourseme.id} {discourseme.name}
           <button
             disabled={isDeleting}

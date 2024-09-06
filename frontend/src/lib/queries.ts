@@ -1,6 +1,7 @@
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { apiClient, queryClient, schemas } from '@/rest-client'
+import { arraysContainEqualItems } from './arrays-contain-equal-items'
 
 type SortBy =
   | 'conservative_log_ratio'
@@ -483,22 +484,44 @@ export const constellationDescriptionFor = ({
       matchStrategy,
       s,
     ],
+    // TODO: This should all probably be done on the backend
     queryFn: async ({ signal }) => {
       const getMatchingDescription = async () => {
+        // We need these to filter out the correct description
+        const discoursemeIds = (
+          await apiClient.getMmdaconstellationId({
+            params: { id: constellationId.toString() },
+            signal,
+          })
+        ).discoursemes.map((d) => d.id)
+        console.log('discourseme ids for constellation:', discoursemeIds)
         const constellationDescriptions =
           await apiClient.getMmdaconstellationIddescription({
             params: { id: constellationId.toString() },
             signal,
           })
-        return constellationDescriptions.find(
+        console.log('found possible descriptions', constellationDescriptions)
+        const matchingDescriptions = constellationDescriptions.filter(
           (cd) =>
             cd.corpus_id === corpusId &&
             (cd.subcorpus_id ?? null) === (subcorpusId ?? null) &&
             cd.s === s &&
-            cd.match_strategy === matchStrategy,
+            cd.match_strategy === matchStrategy &&
+            // TODO: cd.discourseme_ids is always empty
+            arraysContainEqualItems(
+              discoursemeIds,
+              cd.discourseme_descriptions.map((d) => d.discourseme_id),
+            ),
         )
+        console.log(
+          `found ${matchingDescriptions.length} matching descriptions`,
+          matchingDescriptions,
+          matchingDescriptions.map((d) => d.id).join(', '),
+        )
+        return matchingDescriptions[0]
       }
       const description = await getMatchingDescription()
+      console.log('found matching description')
       if (description) return description
       await apiClient.postMmdaconstellationIddescription(
         {
@@ -756,6 +779,9 @@ export const deleteConstellationDiscourseme: MutationOptions<
     void queryClient.invalidateQueries({
       queryKey: ['query-concordances', String(constellationId)],
     })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-description'],
+    })
   },
 }
 
@@ -784,6 +810,9 @@ export const addConstellationDiscourseme: MutationOptions<
     void queryClient.invalidateQueries(constellationById(constellationId))
     void queryClient.invalidateQueries({
       queryKey: ['query-concordances', constellationId],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-description'],
     })
   },
 }
