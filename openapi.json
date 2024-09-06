@@ -190,6 +190,9 @@
           "semantic_map_id": {
             "nullable": true,
             "type": "integer"
+          },
+          "window": {
+            "type": "integer"
           }
         },
         "required": [
@@ -199,7 +202,8 @@
           "p",
           "query_id",
           "s_break",
-          "semantic_map_id"
+          "semantic_map_id",
+          "window"
         ],
         "type": "object"
       },
@@ -432,6 +436,9 @@
           "semantic_map_id": {
             "nullable": true,
             "type": "integer"
+          },
+          "window": {
+            "type": "integer"
           }
         },
         "required": [
@@ -443,7 +450,8 @@
           "p",
           "query_id",
           "s_break",
-          "semantic_map_id"
+          "semantic_map_id",
+          "window"
         ],
         "type": "object"
       },

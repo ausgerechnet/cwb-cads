@@ -164,8 +164,9 @@ class CollocationOut(Schema):
     semantic_map_id = Integer(required=True, metadata={'nullable': True}, dump_default=None)
     query_id = Integer(required=True)
 
-    marginals = String(required=True)
     p = String(required=True)
+    window = Integer(required=True)
+    marginals = String(required=True)
     s_break = String(required=True)
 
     nr_items = Integer(required=True)
