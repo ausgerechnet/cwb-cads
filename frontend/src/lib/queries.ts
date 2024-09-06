@@ -739,15 +739,18 @@ export const deleteConstellationDiscourseme: MutationOptions<
     constellationId: number
     discoursemeId: number
   }) =>
-    apiClient.patchMmdaconstellationIdremoveDiscourseme(
-      { discourseme_id: discoursemeId },
+    apiClient.patch(
+      '/mmda/constellation/:id/remove-discourseme',
+      { discourseme_ids: [discoursemeId] },
       {
-        params: { id: constellationId.toString() },
+        params: {
+          id: constellationId.toString(),
+        },
       },
     ),
-  mutationKey: ['delete-constellation-discourseme'],
   onSuccess: (constellation) => {
     const constellationId = constellation.id
+    console.log('deleted something from constellation', constellation)
     if (constellationId === undefined) return
     void queryClient.invalidateQueries(constellationById(constellationId))
     void queryClient.invalidateQueries({

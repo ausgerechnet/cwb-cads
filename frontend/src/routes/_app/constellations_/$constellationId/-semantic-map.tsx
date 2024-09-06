@@ -1,16 +1,23 @@
 import { useMemo } from 'react'
 import { Link, useSearch } from '@tanstack/react-router'
 import { ArrowLeftIcon, Loader2Icon } from 'lucide-react'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
 import { cn } from '@/lib/utils'
-import { constellationById, constellationDescriptionFor } from '@/lib/queries'
+import {
+  addConstellationDiscourseme,
+  constellationById,
+  constellationDescriptionFor,
+  deleteConstellationDiscourseme,
+  discoursemesList,
+} from '@/lib/queries'
 import { buttonVariants } from '@/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
 import { ErrorMessage } from '@/components/error-message'
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
+import { DiscoursemeSelect } from '../../../../components/select-discourseme'
 
 const COORDINATES_SCALE_FACTOR = 20
 
@@ -76,6 +83,7 @@ function ConstellationDiscoursemesEditor({
   const {
     data: { discoursemes },
   } = useSuspenseQuery(constellationById(constellationId))
+  const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)
   const { data: constellationDescription, error } = useQuery(
     constellationDescriptionFor({
       constellationId,
@@ -85,15 +93,50 @@ function ConstellationDiscoursemesEditor({
       s,
     }),
   )
+  const {
+    mutate: addDiscourseme,
+    isPending,
+    error: errorAddDiscourseme,
+  } = useMutation(addConstellationDiscourseme)
+  const {
+    mutate: deleteDiscourseme,
+    isPending: isDeleting,
+    error: errorDeleteDiscourseme,
+  } = useMutation(deleteConstellationDiscourseme)
   console.log('constellation description', constellationDescription)
   return (
     <div>
       <ErrorMessage error={error} />
+      <ErrorMessage error={errorDeleteDiscourseme} />
       {discoursemes.map((discourseme) => (
         <div>
           {discourseme.id} {discourseme.name}
+          <button
+            disabled={isDeleting}
+            className="bg-red-500 p-1"
+            onClick={() =>
+              deleteDiscourseme({
+                constellationId,
+                discoursemeId: discourseme.id,
+              })
+            }
+          >
+            Delete
+          </button>
         </div>
       ))}
+      <ErrorMessage error={errorAddDiscourseme} />
+      <DiscoursemeSelect
+        disabled={isPending}
+        discoursemes={allDiscoursemes}
+        onChange={(discoursemeId) => {
+          if (discoursemeId === undefined) return
+          addDiscourseme({
+            constellationId,
+            discoursemeId,
+          })
+        }}
+      />
     </div>
   )
 }
