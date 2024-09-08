@@ -11,7 +11,7 @@ export function useCollocation(
   corpusId?: number,
 ) {
   const {
-    filterItem,
+    ccFilterItem,
     secondary,
     s,
     windowSize,
@@ -28,7 +28,7 @@ export function useCollocation(
   } = useQuery({
     ...constellationCollocation(constellationId, descriptionId!, {
       focusDiscoursemeId: focusDiscourseme!,
-      filterItem: filterItem!,
+      filterItem: ccFilterItem!,
       filterItemPAttribute: secondary!,
       p: secondary!,
       sBreak: s!,

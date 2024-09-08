@@ -15,6 +15,7 @@ import {
   FilterSchema,
   useFilterSelection,
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
+import { Button } from '@/components/ui/button'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationFilter({ className }: { className?: string }) {
@@ -26,7 +27,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
     windowSize,
     clSortByOffset,
     clSortOrder,
-    filterItem,
+    clFilterItem,
+    ccFilterItem,
     s,
     secondary,
     primary,
@@ -148,13 +150,21 @@ export function ConstellationFilter({ className }: { className?: string }) {
       <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
         <span>Filter Item</span>
         <Input
-          defaultValue={filterItem}
-          key={filterItem}
+          defaultValue={clFilterItem}
+          key={clFilterItem}
           onChange={(event) =>
-            setFilter('filterItem', event.target.value ?? '')
+            setFilter('clFilterItem', event.target.value ?? '')
           }
         />
       </div>
+
+      {ccFilterItem !== clFilterItem && (
+        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
+          <Button onClick={() => setFilter('ccFilterItem', clFilterItem)}>
+            Start Collocation Analysis for {clFilterItem}
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
         <span>Sort by</span>

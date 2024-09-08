@@ -17,6 +17,8 @@ export const FilterSchema = z.object({
   clSortByOffset: z.number().int().optional().catch(undefined),
   clPageSize: z.number().positive().int().optional().catch(undefined),
   clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
+  clFilterItem: z.string().optional().catch(undefined),
+  clFilterItemPAtt: z.string().optional().catch(undefined),
   ccPageSize: z.number().positive().int().optional().catch(undefined),
   ccPageNumber: z.number().nonnegative().int().optional().catch(undefined),
   ccSortOrder: z
@@ -42,11 +44,11 @@ export const FilterSchema = z.object({
     ] as const)
     .optional()
     .catch(undefined),
+  ccFilterItem: z.string().optional().catch(undefined),
+  ccFilterItemPAtt: z.string().optional().catch(undefined),
   p: z.string().optional().catch(undefined),
   // semanticBreak: z.string().optional().catch(undefined),
   semanticMapId: z.number().optional().catch(undefined),
-  filterItem: z.string().optional().catch(undefined),
-  filterItemPAtt: z.string().optional().catch(undefined),
   // TODO: probably should be here, because it's fixed for queries for example
   corpusId: z.number().optional().catch(undefined),
   subcorpusId: z.number().optional().catch(undefined),

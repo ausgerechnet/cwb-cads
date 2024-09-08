@@ -60,8 +60,8 @@ export function ConstellationConcordanceLines({
     clPageIndex,
     clSortByOffset,
     clSortOrder,
-    filterItem,
-    filterItemPAtt,
+    clFilterItem,
+    clFilterItemPAtt,
     focusDiscourseme,
     setFilter,
   } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
@@ -75,8 +75,8 @@ export function ConstellationConcordanceLines({
       primary,
       secondary,
       window: windowSize,
-      filterItem,
-      filterItemPAtt,
+      filterItem: clFilterItem,
+      filterItemPAtt: clFilterItemPAtt,
       pageSize: clPageSize,
       pageNumber: clPageIndex + 1,
       sortOrder: clSortOrder,
@@ -240,7 +240,7 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
           <Link
             replace
             params={(p) => p}
-            search={(s) => ({ ...s, filterItem: token.primary })}
+            search={(s) => ({ ...s, clFilterItem: token.primary })}
             className={cn(
               'cursor-pointer rounded-md hover:bg-muted hover:ring-2 hover:ring-muted',
               token.out_of_window && 'text-muted-foreground/70',

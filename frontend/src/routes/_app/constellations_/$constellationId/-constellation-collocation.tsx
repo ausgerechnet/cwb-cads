@@ -72,7 +72,12 @@ export function Collocation({
           {(collocationItems?.items ?? []).map(({ item, scores = [] }) => (
             <TableRow key={item} className={cn(isLoading && 'animate-pulse')}>
               <TableCell>
-                <Button onClick={() => setFilter('filterItem', item)}>
+                <Button
+                  onClick={() => {
+                    setFilter('ccFilterItem', item)
+                    setFilter('clFilterItem', item)
+                  }}
+                >
                   {item}
                 </Button>
               </TableCell>
