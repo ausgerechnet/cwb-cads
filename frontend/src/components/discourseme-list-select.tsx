@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { z } from 'zod'
@@ -18,13 +19,29 @@ export function DiscoursemeListSelect({
   onChange: (ids: number[]) => void
 }) {
   const { data: discoursemes } = useSuspenseQuery(discoursemesList)
-  const selectedDiscoursemes = discoursemes.filter(
-    ({ id }) => id !== undefined && discoursemeIds.includes(id),
+  const selectedDiscoursemes = useMemo(
+    () =>
+      discoursemes.filter(
+        ({ id }) => id !== undefined && discoursemeIds.includes(id),
+      ),
+    [discoursemes, discoursemeIds],
   )
 
-  const handleDelete = (id: number) => {
-    onChange(discoursemeIds.filter((i) => i !== id))
-  }
+  const handleDelete = useCallback(
+    (id: number) => {
+      onChange(discoursemeIds.filter((i) => i !== id))
+    },
+    [onChange, discoursemeIds],
+  )
+
+  const handleChange = useCallback(
+    (selectedId: number | undefined) => {
+      if (selectedId !== undefined) {
+        onChange([...discoursemeIds, selectedId])
+      }
+    },
+    [onChange, discoursemeIds],
+  )
 
   return (
     <div className="flex flex-col gap-2">
@@ -55,11 +72,7 @@ export function DiscoursemeListSelect({
         discoursemes={selectableDiscoursemes}
         discoursemeId={undefined}
         undefinedName="Select a discourseme to add…"
-        onChange={(selectedId) => {
-          if (selectedId !== undefined) {
-            onChange([...discoursemeIds, selectedId])
-          }
-        }}
+        onChange={handleChange}
       />
     </div>
   )

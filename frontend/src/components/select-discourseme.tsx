@@ -38,6 +38,7 @@ export function DiscoursemeSelect({
               .join(' ') ?? ''
           }`
             .toLowerCase()
+            .slice(0, 200)
             .replace(/\s+/g, '_'),
           renderValue: <span>{discourseme.name}</span>,
         })),
