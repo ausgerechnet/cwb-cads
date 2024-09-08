@@ -96,7 +96,6 @@ type DiscoursemeScoresOut = {
 type ConstellationDescriptionOut = {
   corpus_id: number
   discourseme_descriptions: Array<DiscoursemeDescriptionOut>
-  discourseme_ids: Array<number>
   id: number
   match_strategy: string
   s: string
@@ -121,7 +120,6 @@ type DiscoursemeItem = Partial<{
 type ConstellationDescriptionOutUpdate = Partial<{
   corpus_id: number
   discourseme_descriptions: Array<DiscoursemeDescriptionOut>
-  discourseme_ids: Array<number>
   id: number
   match_strategy: string
   s: string
@@ -249,6 +247,7 @@ const CollocationOut = z
     query_id: z.number().int(),
     s_break: z.string(),
     semantic_map_id: z.number().int().nullable(),
+    window: z.number().int(),
   })
   .passthrough()
 const HTTPError = z
@@ -449,12 +448,10 @@ const ConstellationInUpdate = z
   })
   .partial()
   .passthrough()
-// TODO: remove this
-// @ts-ignore temporary workaround
 const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
   .object({
     corpus_id: z.number().int(),
-    discourseme_id: z.number().int().nullable(),
+    discourseme_id: z.number().int(),
     id: z.number().int(),
     items: z.array(DiscoursemeItem),
     match_strategy: z.string(),
@@ -467,7 +464,6 @@ const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
   .object({
     corpus_id: z.number().int(),
     discourseme_descriptions: z.array(DiscoursemeDescriptionOut),
-    discourseme_ids: z.array(z.number()),
     id: z.number().int(),
     match_strategy: z.string(),
     s: z.string(),
@@ -500,7 +496,6 @@ const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUp
     .object({
       corpus_id: z.number().int(),
       discourseme_descriptions: z.array(DiscoursemeDescriptionOut),
-      discourseme_ids: z.array(z.number()),
       id: z.number().int(),
       match_strategy: z.string(),
       s: z.string(),
@@ -520,6 +515,7 @@ const ConstellationCollocationOut = z
     query_id: z.number().int(),
     s_break: z.string(),
     semantic_map_id: z.number().int().nullable(),
+    window: z.number().int(),
   })
   .passthrough()
 const ConstellationCollocationIn = z
