@@ -390,6 +390,95 @@ export const deleteDiscoursemeDescription: MutationOptions<
   },
 }
 
+// TODO: backend: Isn't "p" unnecessary, because it's already a part of the description?
+// TODO: backend: cqp_query should be created on the backend
+// TODO: backend: I think the "discourseme_id" could be inferred from the description
+export const addDescriptionItem: MutationOptions<
+  z.infer<typeof schemas.DiscoursemeDescriptionOut>,
+  Error,
+  {
+    discoursemeId: number
+    descriptionId: number
+    cqpQuery: string
+    p: string
+    surface: string
+  }
+> = {
+  mutationFn({ discoursemeId, descriptionId, cqpQuery, p, surface }) {
+    return apiClient.patch(
+      '/mmda/discourseme/:id/description/:description_id/add-item',
+      { cqp_query: cqpQuery, p, surface },
+      {
+        params: {
+          id: discoursemeId.toString(),
+          description_id: descriptionId.toString(),
+        },
+      },
+    )
+  },
+  onSettled(discoursemeDescription) {
+    const discoursemeId = discoursemeDescription?.discourseme_id
+    if (discoursemeId === undefined) return
+    void queryClient.invalidateQueries({
+      queryKey: ['collocation-items'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-description'],
+    })
+    void queryClient.invalidateQueries(discoursemeById(discoursemeId))
+    void queryClient.invalidateQueries(
+      discoursemeDescriptionsById(discoursemeId),
+    )
+  },
+}
+
+// TODO: backend: Isn't "p" unnecessary, because it's already a part of the description?
+// TODO: backend: I think the "discourseme_id" could be inferred from the description
+// TODO: cqpQuery is not used... seems not necessary (and it should not), but I am unsure.
+export const removeDescriptionItem: MutationOptions<
+  z.infer<typeof schemas.DiscoursemeDescriptionOut>,
+  Error,
+  {
+    discoursemeId: number
+    descriptionId: number
+    // cqpQuery: string
+    p: string
+    surface: string
+  }
+> = {
+  mutationFn({
+    discoursemeId,
+    descriptionId,
+    // cqpQuery,
+    p,
+    surface,
+  }) {
+    return apiClient.patch(
+      '/mmda/discourseme/:id/description/:description_id/remove-item',
+      { p, surface },
+      {
+        params: {
+          id: discoursemeId.toString(),
+          description_id: descriptionId.toString(),
+        },
+      },
+    )
+  },
+  onSettled(discoursemeDescription) {
+    const discoursemeId = discoursemeDescription?.discourseme_id
+    if (discoursemeId === undefined) return
+    void queryClient.invalidateQueries({
+      queryKey: ['collocation-items'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-description'],
+    })
+    void queryClient.invalidateQueries(discoursemeById(discoursemeId))
+    void queryClient.invalidateQueries(
+      discoursemeDescriptionsById(discoursemeId),
+    )
+  },
+}
 // =================== CONSTELLATIONS ====================
 
 export const constellationList = queryOptions({
@@ -750,7 +839,7 @@ export const constellationCollocationItems = (
       ),
   })
 
-export const deleteConstellationDiscourseme: MutationOptions<
+export const removeConstellationDiscourseme: MutationOptions<
   z.infer<typeof schemas.ConstellationOut>,
   Error,
   { constellationId: number; discoursemeId: number }

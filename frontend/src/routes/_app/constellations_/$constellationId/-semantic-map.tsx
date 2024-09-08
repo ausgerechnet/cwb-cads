@@ -8,22 +8,25 @@ import {
   addConstellationDiscourseme,
   constellationById,
   constellationDescriptionFor,
-  deleteConstellationDiscourseme,
+  removeConstellationDiscourseme,
   discoursemesList,
+  addDescriptionItem,
+  removeDescriptionItem,
 } from '@/lib/queries'
 import { buttonVariants } from '@/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
 import { ErrorMessage } from '@/components/error-message'
+import { DiscoursemeSelect } from '@/components/select-discourseme'
+import { ComplexSelect } from '@/components/select-complex'
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
-import { DiscoursemeSelect } from '../../../../components/select-discourseme'
 
-const COORDINATES_SCALE_FACTOR = 20
+const COORDINATES_SCALE_FACTOR = 40
 
 export function SemanticMap({ constellationId }: { constellationId: number }) {
   const { description } = useDescription()
-  const { collocationItems, isLoading } = useCollocation(
+  const { collocationItemsMap, isLoading } = useCollocation(
     constellationId,
     description?.id,
     description?.corpus_id,
@@ -31,7 +34,7 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
 
   const words = useMemo(
     () =>
-      (collocationItems?.coordinates ?? []).map(
+      (collocationItemsMap?.coordinates ?? []).map(
         (item): Word => ({
           id: item.item,
           word: item.item,
@@ -43,7 +46,7 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
           radius: 20,
         }),
       ),
-    [collocationItems?.coordinates],
+    [collocationItemsMap],
   )
 
   return (
@@ -62,7 +65,9 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
       </Link>
       <ConstellationDiscoursemesEditor constellationId={constellationId} />
       {isLoading && <Loader2Icon className="h-6 w-6 animate-spin" />}
-      <WordCloud words={words} />
+      <div className="bg-blue-200">
+        <WordCloud words={words} />
+      </div>
     </div>
   )
 }
@@ -99,10 +104,15 @@ function ConstellationDiscoursemesEditor({
     error: errorAddDiscourseme,
   } = useMutation(addConstellationDiscourseme)
   const {
-    mutate: deleteDiscourseme,
-    isPending: isDeleting,
+    mutate: removeDiscourseme,
+    isPending: isRemovingDiscourseme,
     error: errorDeleteDiscourseme,
-  } = useMutation(deleteConstellationDiscourseme)
+  } = useMutation(removeConstellationDiscourseme)
+  const {
+    mutate: removeItem,
+    isPending: isRemovingItem,
+    error: errorRemoveItem,
+  } = useMutation(removeDescriptionItem)
   console.log('constellation description', constellationDescription)
   return (
     <div>
@@ -110,23 +120,59 @@ function ConstellationDiscoursemesEditor({
       <br />
       <ErrorMessage error={error} />
       <ErrorMessage error={errorDeleteDiscourseme} />
-      {discoursemes.map((discourseme) => (
-        <div key={discourseme.id}>
-          {discourseme.id} {discourseme.name}
-          <button
-            disabled={isDeleting}
-            className="bg-red-500 p-1"
-            onClick={() =>
-              deleteDiscourseme({
-                constellationId,
-                discoursemeId: discourseme.id,
-              })
+      <ErrorMessage error={errorRemoveItem} />
+      {constellationDescription?.discourseme_descriptions.map(
+        (discoursemeDescription) => (
+          <div key={discoursemeDescription.id}>
+            {discoursemeDescription.id}{' '}
+            {
+              discoursemes.find(
+                ({ id }) => id === discoursemeDescription.discourseme_id,
+              )?.name
             }
-          >
-            Delete
-          </button>
-        </div>
-      ))}
+            <button
+              disabled={isRemovingDiscourseme}
+              className="bg-red-500 p-1"
+              onClick={() =>
+                removeDiscourseme({
+                  constellationId,
+                  discoursemeId: discoursemeDescription.discourseme_id,
+                })
+              }
+            >
+              Delete
+              {/*  TODO: Handle case when this is the filter discourseme*/}
+            </button>
+            <ul>
+              {discoursemeDescription.items.map((item) => (
+                <li key={item.surface}>
+                  {item.surface}
+                  <button
+                    className="my-0.5 ml-1 rounded bg-red-500 p-1 py-0"
+                    onClick={() =>
+                      removeItem({
+                        discoursemeId: discoursemeDescription.discourseme_id,
+                        descriptionId: discoursemeDescription.id,
+                        // cqpQuery: item.cqp_query,
+                        p: item.p!,
+                        surface: item.surface!,
+                      })
+                    }
+                    disabled={isRemovingItem}
+                  >
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <AddDescriptionItem
+              constellationId={constellationId}
+              discoursemeId={discoursemeDescription.discourseme_id}
+              discoursemeDescriptionId={discoursemeDescription.id}
+            />
+          </div>
+        ),
+      )}
       <ErrorMessage error={errorAddDiscourseme} />
       <DiscoursemeSelect
         disabled={isPending}
@@ -140,5 +186,73 @@ function ConstellationDiscoursemesEditor({
         }}
       />
     </div>
+  )
+}
+
+function AddDescriptionItem({
+  discoursemeDescriptionId,
+  discoursemeId,
+  constellationId,
+}: {
+  discoursemeDescriptionId: number
+  discoursemeId: number
+  constellationId: number
+}) {
+  const {
+    mutate: addItem,
+    isPending: isAddingItem,
+    error: errorAddItem,
+  } = useMutation(addDescriptionItem)
+  const { corpusId } = useSearch({
+    from: '/_app/constellations/$constellationId',
+  })
+  const { secondary } = useFilterSelection(
+    '/_app/constellations/$constellationId',
+    corpusId,
+  )
+  const { description } = useDescription()
+  const { collocationItemsMap } = useCollocation(
+    constellationId,
+    description?.id,
+    description?.corpus_id,
+  )
+  const collocationItems = useMemo(
+    () =>
+      (collocationItemsMap?.items ?? []).map(({ item }, id) => ({
+        id,
+        name: item,
+        searchValue: item,
+      })),
+    [collocationItemsMap],
+  )
+
+  return (
+    <>
+      <ErrorMessage error={errorAddItem} />
+      <ComplexSelect
+        disabled={isAddingItem}
+        items={collocationItems}
+        onChange={(itemIndex) => {
+          if (itemIndex === undefined) return
+          const surface = collocationItemsMap?.items[itemIndex]?.item
+          if (surface === undefined || secondary === undefined) {
+            console.warn('Could not add item, missing values', {
+              surface,
+              secondary,
+            })
+            return
+          }
+          console.log('selected surface', surface)
+          addItem({
+            discoursemeId,
+            descriptionId: discoursemeDescriptionId,
+            // TODO: Where to get this from?
+            cqpQuery: `[${secondary}="${surface}"]`,
+            surface: surface,
+            p: secondary,
+          })
+        }}
+      />
+    </>
   )
 }

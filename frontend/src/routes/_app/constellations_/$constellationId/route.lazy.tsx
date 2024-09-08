@@ -34,7 +34,7 @@ import {
   addConstellationDiscourseme,
   constellationById,
   corpusList,
-  deleteConstellationDiscourseme,
+  removeConstellationDiscourseme,
   discoursemesList,
 } from '@/lib/queries.ts'
 import { cn } from '@/lib/utils.ts'
@@ -257,8 +257,8 @@ function DiscoursemeItem({
   isEditable: boolean
 }) {
   const discoursemeId = discourseme.id! // TODO: Fix this non-null assertion
-  const { mutate, error } = useMutation(deleteConstellationDiscourseme)
-  const isMutating = useIsMutating(deleteConstellationDiscourseme) > 0
+  const { mutate, error } = useMutation(removeConstellationDiscourseme)
+  const isMutating = useIsMutating(removeConstellationDiscourseme) > 0
 
   return (
     <li

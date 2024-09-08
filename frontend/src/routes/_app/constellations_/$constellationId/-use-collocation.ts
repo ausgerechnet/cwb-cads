@@ -56,12 +56,27 @@ export function useCollocation(
     }),
     enabled: collocation?.id !== undefined,
   })
-  const isLoading = isLoadingItems || isLoadingConstellation
+  const {
+    data: collocationItemsMap,
+    isLoading: isLoadingItemsMap,
+    error: errorConstellationMap,
+  } = useQuery({
+    ...collocationItemsById(collocation?.id as number, {
+      sortBy: ccSortBy,
+      sortOrder: ccSortOrder,
+      pageSize: 300,
+      pageNumber: 1,
+    }),
+    enabled: collocation?.id !== undefined,
+  })
+  const isLoading =
+    isLoadingItems || isLoadingConstellation || isLoadingItemsMap
 
   return {
     isLoading,
-    error: error ?? errorConstellation ?? null,
+    error: error ?? errorConstellation ?? errorConstellationMap ?? null,
     collocation,
     collocationItems,
+    collocationItemsMap,
   }
 }
