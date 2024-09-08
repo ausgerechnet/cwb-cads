@@ -207,26 +207,6 @@ export const createSubcorpus: MutationOptions<
   },
 }
 
-export const updateSubcorpus: MutationOptions<unknown, Error, string> = {
-  // TODO: implement correct API call
-  mutationFn: async (id: string) => '42 ' + id,
-  //   apiClient.putCorpusIdsubcorpus(undefined, { params: { id } }),
-  onSuccess: () => {
-    void queryClient.invalidateQueries(corpusList)
-    void queryClient.invalidateQueries(subcorporaList)
-  },
-}
-
-export const corpusMetaById = (corpusId: number) =>
-  queryOptions({
-    queryKey: ['corpus-meta', corpusId],
-    queryFn: ({ signal }) =>
-      apiClient.getCorpusIdmeta({
-        params: { id: corpusId.toString() },
-        signal,
-      }),
-  })
-
 export const corpusMetaFrequencies = (
   corpusId: number,
   level: string,
@@ -287,7 +267,7 @@ export const logIn: MutationOptions<
     if (refresh_token) {
       localStorage.setItem('refresh-token', refresh_token)
     }
-    queryClient.invalidateQueries(sessionQueryOptions)
+    void queryClient.invalidateQueries(sessionQueryOptions)
   },
 }
 
@@ -514,30 +494,6 @@ export const deleteConstellation: MutationOptions<unknown, Error, string> = {
     }),
   onSettled: () => {
     void queryClient.invalidateQueries(constellationList)
-  },
-}
-
-export const patchConstellation: MutationOptions<
-  z.infer<typeof schemas.ConstellationOut>,
-  Error,
-  {
-    discoursemeIds: number[]
-    name: string
-    comment: string
-    constellationId: number
-  }
-> = {
-  mutationFn: async ({ constellationId, discoursemeIds, name, comment }) =>
-    apiClient.patchMmdaconstellationId(
-      { discourseme_ids: discoursemeIds, name, comment },
-      {
-        params: { id: constellationId.toString() },
-      },
-    ),
-  onSettled: (data) => {
-    const constellationId = data?.id
-    if (constellationId === undefined) return
-    void queryClient.invalidateQueries(constellationById(constellationId))
   },
 }
 
@@ -793,52 +749,6 @@ export const constellationCollocation = (
     },
   })
 
-export const constellationCollocationItems = (
-  constellationId: number,
-  descriptionId: number,
-  collocationId: number,
-  {
-    sortOrder,
-    sortBy,
-    pageSize,
-    pageNumber,
-  }: {
-    sortOrder?: 'ascending' | 'descending'
-    sortBy?: SortBy
-    pageSize?: number
-    pageNumber?: number
-  } = {},
-) =>
-  queryOptions({
-    queryKey: [
-      'constellation-collocation-items',
-      constellationId,
-      descriptionId,
-      collocationId,
-      sortOrder,
-      sortBy,
-      pageSize,
-      pageNumber,
-    ],
-    queryFn: ({ signal }) =>
-      apiClient.getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems(
-        {
-          params: {
-            id: constellationId.toString(),
-            description_id: descriptionId.toString(),
-            collocation_id: collocationId.toString(),
-          },
-          queries: {
-            sort_order: sortOrder,
-            sort_by: sortBy,
-            page_size: pageSize,
-            page_number: pageNumber,
-          },
-          signal,
-        },
-      ),
-  })
-
 export const removeConstellationDiscourseme: MutationOptions<
   z.infer<typeof schemas.ConstellationOut>,
   Error,
@@ -1073,16 +983,6 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
 }
 
 // ================== COLLOCATION ANALYSIS ==================
-
-export const collocationById = (collocationId: number) =>
-  queryOptions({
-    queryKey: ['collocation', collocationId],
-    queryFn: ({ signal }) =>
-      apiClient.getCollocationId({
-        params: { id: collocationId.toString() },
-        signal,
-      }),
-  })
 
 export const collocationItemsById = (
   collocationId: number,
