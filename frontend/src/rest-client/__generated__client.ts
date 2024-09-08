@@ -449,10 +449,12 @@ const ConstellationInUpdate = z
   })
   .partial()
   .passthrough()
+// TODO: remove this
+// @ts-ignore temporary workaround
 const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
   .object({
     corpus_id: z.number().int(),
-    discourseme_id: z.number().int(),
+    discourseme_id: z.number().int().nullable(),
     id: z.number().int(),
     items: z.array(DiscoursemeItem),
     match_strategy: z.string(),

@@ -1002,7 +1002,7 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
       throw new Error('p is null or undefined for this description')
     }
 
-    const newDiscourseme = await apiClient.post('/mmda/discourseme/', {
+    const newDiscourseme = await apiClient.postMmdadiscourseme({
       name: 'New Discourseme',
       comment: '',
       template: surfaces.map((surface) => ({
@@ -1020,20 +1020,21 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
       },
     )
 
-    const newDiscoursemeDescription = await apiClient.post(
-      '/mmda/discourseme/:id/description/',
-      {
-        corpus_id,
-        subcorpus_id: subcorpus_id ?? undefined,
-        items: surfaces.map((surface) => ({
-          surface,
-          p,
-        })),
-      },
-      {
-        params: { id: newDiscourseme.id.toString() },
-      },
-    )
+    const newDiscoursemeDescription =
+      await apiClient.postMmdadiscoursemeIddescription(
+        // '/mmda/discourseme/:id/description/',
+        {
+          corpus_id,
+          subcorpus_id: subcorpus_id ?? undefined,
+          items: surfaces.map((surface) => ({
+            surface,
+            p,
+          })),
+        },
+        {
+          params: { id: newDiscourseme.id.toString() },
+        },
+      )
 
     return await apiClient.patch(
       '/mmda/constellation/:id/description/:description_id/add-discourseme',
@@ -1049,7 +1050,7 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
     )
   },
   onSettled: function (constellationDescriptionUpdate) {
-    constellationDescriptionUpdate?.discourseme_descriptions.forEach(
+    constellationDescriptionUpdate?.discourseme_descriptions?.forEach(
       (discoursemeDescription) => {
         void queryClient.invalidateQueries(
           discoursemeDescriptionsById(discoursemeDescription.discourseme_id),
