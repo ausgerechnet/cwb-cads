@@ -1,7 +1,17 @@
-import { useMemo } from 'react'
-import { Link, useSearch } from '@tanstack/react-router'
-import { ArrowLeftIcon, Loader2Icon } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { z } from 'zod'
+import { Link, useParams, useSearch } from '@tanstack/react-router'
+import {
+  AlertCircle,
+  ArrowLeftIcon,
+  Loader2,
+  Loader2Icon,
+  Plus,
+} from 'lucide-react'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 import { cn } from '@/lib/utils'
 import {
@@ -12,12 +22,32 @@ import {
   discoursemesList,
   addDescriptionItem,
   removeDescriptionItem,
+  createDiscoursemeForConstellationDescription,
 } from '@/lib/queries'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { ComplexSelect } from '@/components/select-complex'
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { ItemsInput } from '@/components/ui/items-input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { required_error } from '@/lib/strings'
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
@@ -25,6 +55,7 @@ import { useFilterSelection } from './-use-filter-selection'
 const COORDINATES_SCALE_FACTOR = 40
 
 export function SemanticMap({ constellationId }: { constellationId: number }) {
+  console.log('Semantic map constellation id', constellationId)
   const { description } = useDescription()
   const { collocationItemsMap, isLoading } = useCollocation(
     constellationId,
@@ -92,12 +123,14 @@ function ConstellationDiscoursemesEditor({
   const { data: constellationDescription, error } = useQuery(
     constellationDescriptionFor({
       constellationId,
+      // TODO
       corpusId,
       subcorpusId: null,
       matchStrategy: 'longest',
       s,
     }),
   )
+  const constellationDescriptionId = constellationDescription?.id
   const {
     mutate: addDiscourseme,
     isPending,
@@ -113,14 +146,21 @@ function ConstellationDiscoursemesEditor({
     isPending: isRemovingItem,
     error: errorRemoveItem,
   } = useMutation(removeDescriptionItem)
-  console.log('constellation description', constellationDescription)
   return (
     <div>
-      Constellation Description Id: {constellationDescription?.id}
+      Constellation Description Id: {constellationDescriptionId}
       <br />
       <ErrorMessage error={error} />
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorRemoveItem} />
+      {constellationDescriptionId === undefined ? (
+        <Loader2Icon className="h-6 w-6 animate-spin" />
+      ) : (
+        <AttachNewDiscourseme
+          constellationId={constellationId}
+          constellationDescriptionId={constellationDescriptionId}
+        />
+      )}
       {constellationDescription?.discourseme_descriptions.map(
         (discoursemeDescription) => (
           <div key={discoursemeDescription.id}>
@@ -254,5 +294,111 @@ function AddDescriptionItem({
         }}
       />
     </>
+  )
+}
+
+const Discourseme = z.object({
+  surfaces: z.array(z.string({ required_error }), { required_error }),
+})
+
+function AttachNewDiscourseme({
+  className,
+  constellationId,
+  constellationDescriptionId,
+}: {
+  className?: string
+  constellationId: number
+  constellationDescriptionId: number
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+  const {
+    mutate: postNewDiscourseme,
+    isPending,
+    error,
+  } = useMutation({
+    ...createDiscoursemeForConstellationDescription,
+    onError: (...args) => {
+      createDiscoursemeForConstellationDescription.onError?.(...args)
+      toast.error('Failed to create discourseme')
+    },
+    onSuccess: (data, ...rest) => {
+      createDiscoursemeForConstellationDescription.onSuccess?.(data, ...rest)
+      toast.success('Discourseme created and attached')
+      setIsOpen(false)
+    },
+  })
+
+  const form = useForm<Discourseme>({
+    resolver: zodResolver(Discourseme),
+    disabled: isPending,
+    defaultValues: {
+      surfaces: [],
+    },
+  })
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button
+                variant="secondary"
+                size="icon"
+                className={cn(className, 'aspect-square')}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>Create a new discourseme</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <DialogContent>
+        <Form {...form}>
+          Constellation Id: {constellationId}
+          <form
+            onSubmit={form.handleSubmit((discourseme) =>
+              postNewDiscourseme({
+                surfaces: discourseme.surfaces,
+                constellationId,
+                constellationDescriptionId,
+              }),
+            )}
+          >
+            <fieldset disabled={isPending} className="flex flex-col gap-4">
+              <FormField
+                control={form.control}
+                name="surfaces"
+                render={({ field }) => (
+                  <FormItem className="col-span-full">
+                    <FormLabel>Items</FormLabel>
+                    <FormControl>
+                      <ItemsInput
+                        onChange={field.onChange}
+                        defaultValue={field.value}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={isPending}>
+                {isPending && (
+                  <Loader2 className="animation-spin mr-2 h-4 w-4" />
+                )}
+                New Discourseme
+              </Button>
+              {error && (
+                <Alert>
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  <AlertDescription>{error.message}</AlertDescription>
+                </Alert>
+              )}
+            </fieldset>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   )
 }

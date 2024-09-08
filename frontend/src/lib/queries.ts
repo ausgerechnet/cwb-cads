@@ -965,6 +965,112 @@ export const getCollocationItems = (
       }),
   })
 
+// TODO: backend - the constellationId should be inferred from the description; ideally the end point would just take in the descriptionId and the surfaces
+export const createDiscoursemeForConstellationDescription: MutationOptions<
+  z.infer<typeof schemas.ConstellationDescriptionOutUpdate>,
+  Error,
+  {
+    constellationId: number
+    constellationDescriptionId: number
+    surfaces: string[]
+  }
+> = {
+  mutationFn: async ({
+    constellationDescriptionId,
+    constellationId,
+    surfaces,
+  }) => {
+    console.log('create discourseme for constellation description', {
+      constellationId,
+      constellationDescriptionId,
+      surfaces,
+    })
+    const constellationDescription =
+      await apiClient.getMmdaconstellationIddescriptionDescription_id({
+        params: {
+          id: constellationId.toString(),
+          description_id: constellationDescriptionId.toString(),
+        },
+      })
+
+    const { corpus_id, subcorpus_id } = constellationDescription
+    // TODO: brittle!
+    const p = constellationDescription.discourseme_descriptions[0].items.find(
+      ({ p }) => p !== null && p !== undefined,
+    )?.p
+    if (p === null || p === undefined) {
+      throw new Error('p is null or undefined for this description')
+    }
+
+    const newDiscourseme = await apiClient.post('/mmda/discourseme/', {
+      name: 'New Discourseme',
+      comment: '',
+      template: surfaces.map((surface) => ({
+        surface,
+        p,
+        cqp_query: `[${p}="${surface}"]`,
+      })),
+    })
+
+    await apiClient.patch(
+      `/mmda/constellation/:id/add-discourseme`,
+      { discourseme_ids: [newDiscourseme.id] },
+      {
+        params: { id: constellationId.toString() },
+      },
+    )
+
+    const newDiscoursemeDescription = await apiClient.post(
+      '/mmda/discourseme/:id/description/',
+      {
+        corpus_id,
+        subcorpus_id: subcorpus_id ?? undefined,
+        items: surfaces.map((surface) => ({
+          surface,
+          p,
+        })),
+      },
+      {
+        params: { id: newDiscourseme.id.toString() },
+      },
+    )
+
+    return await apiClient.patch(
+      '/mmda/constellation/:id/description/:description_id/add-discourseme',
+      {
+        discourseme_description_ids: [newDiscoursemeDescription.id],
+      },
+      {
+        params: {
+          id: constellationId.toString(),
+          description_id: constellationDescriptionId.toString(),
+        },
+      },
+    )
+  },
+  onSettled: function (constellationDescriptionUpdate) {
+    constellationDescriptionUpdate?.discourseme_descriptions.forEach(
+      (discoursemeDescription) => {
+        void queryClient.invalidateQueries(
+          discoursemeDescriptionsById(discoursemeDescription.discourseme_id),
+        )
+      },
+    )
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-collocations'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-concordances'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['collocation-items'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['collocation'],
+    })
+  },
+}
+
 // ================== COLLOCATION ANALYSIS ==================
 
 export const collocationById = (collocationId: number) =>
