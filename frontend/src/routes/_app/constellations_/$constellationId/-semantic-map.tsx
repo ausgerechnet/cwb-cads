@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
-import { Link, useParams, useSearch } from '@tanstack/react-router'
+import { Link, useSearch } from '@tanstack/react-router'
 import {
   AlertCircle,
   ArrowLeftIcon,
@@ -44,7 +44,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { ItemsInput } from '@/components/ui/items-input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { required_error } from '@/lib/strings'
@@ -300,6 +299,8 @@ function AddDescriptionItem({
 const Discourseme = z.object({
   surfaces: z.array(z.string({ required_error }), { required_error }),
 })
+
+type Discourseme = z.infer<typeof Discourseme>
 
 function AttachNewDiscourseme({
   className,
