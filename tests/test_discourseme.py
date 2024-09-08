@@ -167,7 +167,7 @@ def test_discourseme_patch_add_remove(client, auth):
         assert 'können' not in [item['surface'] for item in description.json['items']]
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_get_similar(client, auth):
 
     auth_header = auth.login()
@@ -196,3 +196,22 @@ def test_get_similar(client, auth):
         assert similar.status_code == 200
         assert len(similar.json) == 200
         assert similar.json[0]['surface'] == 'Bundesregierung'
+
+
+# @pytest.mark.now
+def test_deletion(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'), headers=auth_header)
+        kanzler = discoursemes.json[2]
+        description = client.post(url_for('mmda.discourseme.create_description', id=kanzler['id']),
+                                  content_type='application/json',
+                                  json={'corpus_id': 1},
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        client.delete(url_for('mmda.discourseme.delete_discourseme', id=kanzler['id']),
+                      headers=auth_header)

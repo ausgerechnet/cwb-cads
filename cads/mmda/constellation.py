@@ -495,7 +495,7 @@ class ConstellationOut(Schema):
 class ConstellationDescriptionOut(Schema):
 
     id = Integer(required=True)
-    discourseme_ids = List(Integer(), required=True, dump_default=[])
+    # discourseme_ids = List(Integer(), required=True, dump_default=[])
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     s = String(required=True)

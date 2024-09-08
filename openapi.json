@@ -507,12 +507,6 @@
             },
             "type": "array"
           },
-          "discourseme_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array"
-          },
           "id": {
             "type": "integer"
           },
@@ -534,7 +528,6 @@
         "required": [
           "corpus_id",
           "discourseme_descriptions",
-          "discourseme_ids",
           "id",
           "match_strategy",
           "s",
@@ -551,12 +544,6 @@
           "discourseme_descriptions": {
             "items": {
               "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
-            },
-            "type": "array"
-          },
-          "discourseme_ids": {
-            "items": {
-              "type": "integer"
             },
             "type": "array"
           },
@@ -1956,7 +1943,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev7"
+    "version": "0.3.0.dev8"
   },
   "openapi": "3.0.2",
   "paths": {

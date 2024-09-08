@@ -376,7 +376,7 @@ def test_constellation_concordance_filter(client, auth):
 #         df = concat(dfs)
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -937,7 +937,7 @@ def test_constellation_2nd_order_collocation(client, auth):
         assert int(coll_conv["O11"]) == 18
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_keyword(client, auth):
 
     auth_header = auth.login()
@@ -1244,3 +1244,36 @@ def test_constellation_collocation_empty_queries(client, auth):
                                                collocation_id=collocation.json['id']),
                                        headers=auth_header)
         assert collocation_items.status_code == 200
+
+
+@pytest.mark.now
+def test_discourseme_deletion(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  content_type='application/json',
+                                  headers=auth_header).json
+
+        # constellation
+        constellation = client.post(url_for('mmda.constellation.create'),
+                                    json={
+                                        'name': 'factions',
+                                        'comment': 'union and FDP',
+                                        'discourseme_ids': [discourseme['id'] for discourseme in discoursemes[0:2]]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        client.delete(url_for('mmda.discourseme.delete_discourseme', id=discoursemes[0]['id']),
+                      headers=auth_header)

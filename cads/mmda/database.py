@@ -16,14 +16,14 @@ from ..database import Breakdown, Corpus, Query, SubCorpus, get_or_create
 
 constellation_discourseme = db.Table(
     'constellation_discourseme',
-    db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id')),
-    db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id'))
+    db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE')),
+    db.Column('discourseme_id', db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE')),
 )
 
 constellation_discourseme_description = db.Table(
     'constellation_discourseme_description',
-    db.Column('constellation_description_id', db.Integer, db.ForeignKey('constellation_description.id')),
-    db.Column('discourseme_description_id', db.Integer, db.ForeignKey('discourseme_description.id'))
+    db.Column('constellation_description_id', db.Integer, db.ForeignKey('constellation_description.id', ondelete='CASCADE')),
+    db.Column('discourseme_description_id', db.Integer, db.ForeignKey('discourseme_description.id', ondelete='CASCADE'))
 )
 
 
@@ -44,7 +44,7 @@ class Discourseme(db.Model):
 
     template = db.RelationshipProperty("DiscoursemeTemplateItems", backref="discourseme", cascade='all, delete')
 
-    descriptions = db.relationship("DiscoursemeDescription", backref="discourseme", lazy=True)
+    descriptions = db.relationship("DiscoursemeDescription", backref="discourseme", passive_deletes=True, cascade='all, delete')
 
     def generate_template(self, p='word'):
         # items = set(self.template_items)
