@@ -112,7 +112,7 @@ def import_library(lib_dir, corpus_id, username):
 @click.option('--lib_dir', default='tests/library/')
 def import_library_cmd(lib_dir):
 
-    corpus_id = 1               # TODO
+    corpus_id = 1               # TODO assign library files to corpus subdirectories
     username = 'admin'
 
     import_library(lib_dir, corpus_id, username)
