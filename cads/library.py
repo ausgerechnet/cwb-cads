@@ -16,51 +16,7 @@ from .spheroscope.slot_query import import_slot_query
 bp = Blueprint('library', __name__, url_prefix='/library', cli_group='library')
 
 
-def ccc_get_library(slot_query, wordlists=[], macros=[]):
-
-    crps = slot_query.corpus.ccc()
-    cqp = crps.start_cqp()
-
-    for wordlist in wordlists:
-        name = wordlist.split('/')[-1].split('.')[0]
-        abs_path = os.path.abspath(wordlist)
-        cqp_exec = f'define ${name} < "{abs_path}";'
-        cqp.Exec(cqp_exec)
-
-    # macros
-    for macro in macros:
-        abs_path = os.path.abspath(macro)
-        cqp_exec = f'define macro < "{abs_path}";'
-        cqp.Exec(cqp_exec)
-    # for wordlists defined in macros, it is necessary to execute the macro once
-    macros = cqp.Exec("show macro;").split("\n")
-    for macro in macros:
-        # NB: this yields !cqp.Ok() if macro is not zero-valent
-        cqp.Exec(macro.split("(")[0] + "();")
-
-    cqp.Exec("set ParseOnly on;")
-    cqp.Exec('set PrettyPrint off;')
-    cqp.Exec("set SpheroscopeDebug on;")
-    cqp.Exec("set SpheroscopeDebug;")
-
-    result = cqp.Exec(slot_query.cqp_query)
-    cqp.__del__()
-
-    wordlists = list()
-    macros = list()
-    for line in result.split("\n"):
-        if line.startswith("WORDLIST"):
-            wordlists.append(line.split(" ")[-1])
-        elif line.startswith("MACRO"):
-            macros.append(line.split(" ")[-1])
-
-    return {
-        'wordlists': wordlists,
-        'macros': macros
-    }
-
-
-def import_macro(path):
+def import_macro(path, corpus_id):
 
     name = path.split("/")[-1].split(".")[0]
     with open(path, "rt") as f:
@@ -68,15 +24,16 @@ def import_macro(path):
 
     macro = Macro(
         name=name,
+        corpus_id=corpus_id,
         macro=macro,
-        comment='imported macro'
+        comment='imported via CLI'
     )
     db.session.add(macro)
     db.session.commit()
     macro.write()
 
 
-def import_wordlist(path):
+def import_wordlist(path, corpus_id):
 
     name = path.split('/')[-1].split('.')[0]
     with open(path, "rt") as f:
@@ -84,7 +41,8 @@ def import_wordlist(path):
 
     wordlist = WordList(
         name=name,
-        comment='imported wordlist'
+        corpus_id=corpus_id,
+        comment='imported via CLI'
     )
     db.session.add(wordlist)
     db.session.commit()
@@ -96,23 +54,26 @@ def import_wordlist(path):
 
 def import_library(lib_dir, corpus_id, username):
 
+    """Imports a library of macros, word lists and slot queries for a
+    given corpus from a given directory"""
+
     paths_macros = glob(os.path.join(lib_dir, "macros", "*.txt"))
     paths_wordlists = glob(os.path.join(lib_dir, "wordlists", "*.txt"))
     paths_queries = glob(os.path.join(lib_dir, "queries", "*.cqpy"))
 
     for path in paths_macros:
-        import_macro(path)
+        import_macro(path, corpus_id)
     for path in paths_wordlists:
-        import_wordlist(path)
+        import_wordlist(path, corpus_id)
     for path in paths_queries:
         import_slot_query(path, corpus_id)
 
 
 @bp.cli.command('import-library')
+@click.option('--corpus_id', default=1)
 @click.option('--lib_dir', default='tests/library/')
-def import_library_cmd(lib_dir):
+def import_library_cmd(corpus_id, lib_dir):
 
-    corpus_id = 1               # TODO assign library files to corpus subdirectories
     username = 'admin'
 
     import_library(lib_dir, corpus_id, username)
