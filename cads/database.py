@@ -161,7 +161,7 @@ class Corpus(db.Model):
 
     def ccc(self):
         return Crps(corpus_name=self.cwb_id,
-                    lib_dir=current_app.config['CCC_LIB_DIR'],
+                    lib_dir=os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.id}"),
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'],
@@ -900,7 +900,7 @@ class WordList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
 
-    # corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     name = db.Column(db.Unicode(255), nullable=False)
@@ -911,7 +911,7 @@ class WordList(db.Model):
 
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], "wordlists", self.name + ".txt")
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "wordlists", self.name + ".txt")
 
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
@@ -940,7 +940,7 @@ class Macro(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
 
-    # corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     name = db.Column(db.Unicode(255), nullable=False)
@@ -950,7 +950,7 @@ class Macro(db.Model):
 
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], "macros", self.name + ".txt")
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "macros", self.name + ".txt")
 
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)

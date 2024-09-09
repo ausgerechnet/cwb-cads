@@ -39,7 +39,7 @@ class SlotQuery(db.Model):
 
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], "queries", self.name + ".cqpy")
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "queries", self.name + ".cqpy")
 
     @property
     def slots(self):
