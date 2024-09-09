@@ -6,14 +6,16 @@ import os
 from glob import glob
 
 import click
-from flask import Blueprint
-from .database import WordList, Macro, WordListWords
+from apiflask import APIBlueprint, Schema, abort
+from apiflask.fields import Boolean, Float, Integer, List, Nested, String
+from .database import WordList, Macro, WordListWords, Corpus
+from .users import auth
 from . import db
-import json
 
 from .spheroscope.slot_query import import_slot_query
 
-bp = Blueprint('library', __name__, url_prefix='/library', cli_group='library')
+
+bp = APIBlueprint('library', __name__, url_prefix='/library', cli_group='library')
 
 
 def import_macro(path, corpus_id):
@@ -73,10 +75,49 @@ def import_library(lib_dir, corpus_id, username):
         import_slot_query(path, corpus_id)
 
 
+################
+# API schemata #
+################
+
+class WordListOut(Schema):
+    
+    id = Integer()
+    modified = String()
+    corpus_id = Integer()
+    name = String()
+    comment = String()
+    words = List(String())
+
+#################
+# API endpoints #
+#################
+
+@bp.get("/<corpus_id>/wordlists/<id>")
+@bp.output(WordListOut)
+@bp.auth_required(auth)
+def get_word_list(corpus_id, id):
+
+    corpus = db.get_or_404(Corpus, corpus_id) 
+
+    try:
+        wl = WordList.query \
+                .filter(WordList.corpus_id == corpus.id) \
+                .filter(WordList.id == id) \
+                .one()
+
+        return WordListOut().dump(wl), 200
+    except:
+        return abort(404, message=f"Word list with id {id} does not exist for corpus with id {corpus_id} in database")
+
+
+################
+# CLI commands #
+################
+
 @bp.cli.command('import-library')
 @click.option('--corpus_id', default=1)
 @click.option('--lib_dir', default='tests/library/')
-def import_library_cmd(corpus_id, lib_dir):
+def import_library_cmd(corpus_id, lib_dir): 
 
     username = 'admin'
 

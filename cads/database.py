@@ -773,6 +773,9 @@ class WordListWords(db.Model):
 
     word = db.Column(db.Unicode(), nullable=True)
 
+    def __str__(self):
+        return self.word
+
 
 class Macro(db.Model):
 
