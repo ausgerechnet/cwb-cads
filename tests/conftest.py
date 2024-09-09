@@ -7,7 +7,7 @@ from cads import create_app
 from cads.corpus import meta_from_within_xml, read_corpora, subcorpora_from_tsv
 from cads.database import init_db
 from cads.mmda.discourseme import import_discoursemes
-from cads.spheroscope.library import import_library
+from cads.library import import_library
 
 app = create_app('cfg.TestConfig')
 
