@@ -120,8 +120,8 @@ function ConstellationDetail() {
   return (
     <AppPageFrame
       title={showsSemanticMap ? undefined : 'Constellation'}
-      classNameContainer="pb-0 flex-grow"
-      classNameContent="pb-0"
+      classNameContainer="p-0 flex-grow"
+      classNameContent="p-0 relative"
     >
       <ErrorMessage error={errorDescription} />
       {!showsSemanticMap && (
@@ -208,10 +208,14 @@ function ConstellationDetail() {
           </Label>
         </>
       )}
-      <div>Description ID: {description?.id}</div>
       {corpusId !== undefined && (
         <>
-          <ConstellationFilter className="sticky top-14 bg-background" />
+          <ConstellationFilter
+            className={cn(
+              'sticky top-14 bg-background',
+              showsSemanticMap && 'absolute',
+            )}
+          />
           {showsSemanticMap && (
             <SemanticMap constellationId={constellationId} />
           )}
@@ -223,7 +227,10 @@ function ConstellationDetail() {
             />
           )}
           <Drawer
-            className="z-10"
+            className={cn(
+              'z-10',
+              showsSemanticMap && 'absolute left-0 right-0 w-full',
+            )}
             isVisible={isConcordanceVisible}
             onToggle={(isVisible) =>
               navigate({

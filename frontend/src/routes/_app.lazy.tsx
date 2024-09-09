@@ -71,7 +71,7 @@ function App() {
 
   return (
     <main className="flex">
-      <div className="border-r-1 sticky top-14 z-10 h-[calc(100svh-3.5rem)] border-r border-r-muted">
+      <div className="border-r-1 sticky top-14 z-20 h-[calc(100svh-3.5rem)] border-r border-r-muted">
         <ScrollArea className="h-full">
           <nav className="flex h-full min-h-[calc(100svh-3.75rem)] flex-col gap-0.5 p-2 ">
             <AppMenuLink to="/corpora" icon={BookIcon}>
@@ -98,7 +98,7 @@ function App() {
               </AppMenuLink>
             )}
             <TooltipProvider disableHoverableContent={!isSmall}>
-              <Tooltip open={isSmall === false ? false : undefined}>
+              <Tooltip open={!isSmall ? false : undefined}>
                 <TooltipTrigger asChild>
                   <Button
                     className={cn(

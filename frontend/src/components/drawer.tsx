@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -14,10 +14,19 @@ export function Drawer({
   onToggle: (isVisible: boolean) => void
   className?: string
 }) {
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown)
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onToggle(false)
+      }
+    }
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onToggle])
   return (
     <div
       className={cn(
-        'sticky bottom-0 right-0 -mx-2 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 border-t-muted bg-background p-4 [box-shadow:0_-5px_10px_-10px_black]',
+        'sticky bottom-0 right-0 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 border-t-muted bg-background p-4 [box-shadow:0_-5px_10px_-10px_black]',
         className,
       )}
     >

@@ -54,7 +54,6 @@ import { useFilterSelection } from './-use-filter-selection'
 const COORDINATES_SCALE_FACTOR = 40
 
 export function SemanticMap({ constellationId }: { constellationId: number }) {
-  console.log('Semantic map constellation id', constellationId)
   const { description } = useDescription()
   const { collocationItemsMap, isLoading } = useCollocation(
     constellationId,
@@ -80,7 +79,7 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
   )
 
   return (
-    <div className="-mx-2 flex-grow bg-muted">
+    <div className="flex-grow bg-muted">
       <Link
         to="/constellations/$constellationId"
         from="/constellations/$constellationId/semantic-map"
@@ -94,8 +93,12 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
         <ArrowLeftIcon />
       </Link>
       <ConstellationDiscoursemesEditor constellationId={constellationId} />
-      {isLoading && <Loader2Icon className="h-6 w-6 animate-spin" />}
-      <div className="bg-blue-200">
+      {isLoading && (
+        <div className="-transform-x-1/2 -transform-y-1/2 absolute left-1/2 top-1/2">
+          <Loader2Icon className="h-6 w-6 animate-spin" />
+        </div>
+      )}
+      <div className="bg-muted">
         <WordCloud words={words} />
       </div>
     </div>
@@ -146,9 +149,7 @@ function ConstellationDiscoursemesEditor({
     error: errorRemoveItem,
   } = useMutation(removeDescriptionItem)
   return (
-    <div>
-      Constellation Description Id: {constellationDescriptionId}
-      <br />
+    <div className="absolute bottom-24 right-4 top-64 overflow-auto rounded-xl bg-background shadow">
       <ErrorMessage error={error} />
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorRemoveItem} />
@@ -285,8 +286,6 @@ function AddDescriptionItem({
           addItem({
             discoursemeId,
             descriptionId: discoursemeDescriptionId,
-            // TODO: Where to get this from?
-            cqpQuery: `[${secondary}="${surface}"]`,
             surface: surface,
             p: secondary,
           })

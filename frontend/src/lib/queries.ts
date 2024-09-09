@@ -948,7 +948,7 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
       },
     )
   },
-  onSettled: function (constellationDescriptionUpdate) {
+  onSettled: (constellationDescriptionUpdate) => {
     constellationDescriptionUpdate?.discourseme_descriptions?.forEach(
       (discoursemeDescription) => {
         void queryClient.invalidateQueries(
