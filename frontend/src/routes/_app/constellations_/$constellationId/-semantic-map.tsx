@@ -57,11 +57,11 @@ const COORDINATES_SCALE_FACTOR = 40
 
 export function SemanticMap({ constellationId }: { constellationId: number }) {
   const { description } = useDescription()
-  const { collocationItemsMap, isLoading } = useCollocation(
-    constellationId,
-    description?.id,
-    description?.corpus_id,
-  )
+  const {
+    collocationItemsMap,
+    isLoading,
+    error: errorCollocation,
+  } = useCollocation(constellationId, description?.id, description?.corpus_id)
 
   const words = useMemo(
     () =>
@@ -86,6 +86,7 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
 
   return (
     <div className="group/map flex-grow bg-muted">
+      <ErrorMessage error={errorCollocation} />
       <Link
         to="/constellations/$constellationId"
         from="/constellations/$constellationId/semantic-map"
@@ -116,7 +117,7 @@ function ConstellationDiscoursemesEditor({
 }: {
   constellationId: number
 }) {
-  const { corpusId } = useSearch({
+  const { corpusId, focusDiscourseme } = useSearch({
     from: '/_app/constellations/$constellationId',
   })
   if (corpusId === undefined) throw new Error('corpusId is undefined')
@@ -128,7 +129,7 @@ function ConstellationDiscoursemesEditor({
     data: { discoursemes },
   } = useSuspenseQuery(constellationById(constellationId))
   const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)
-  const { data: constellationDescription, error } = useQuery(
+  const { data: constellationDescription, error: errorDiscoursemes } = useQuery(
     constellationDescriptionFor({
       constellationId,
       // TODO
@@ -156,7 +157,7 @@ function ConstellationDiscoursemesEditor({
   } = useMutation(removeDescriptionItem)
   return (
     <div className="absolute bottom-24 right-4 top-64 flex flex-col overflow-hidden rounded-xl bg-background shadow-xl">
-      <ErrorMessage error={error} />
+      <ErrorMessage error={errorDiscoursemes} />
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorRemoveItem} />
       <ErrorMessage error={errorAddDiscourseme} />
@@ -188,6 +189,11 @@ function ConstellationDiscoursemesEditor({
                     ({ id }) => id === discoursemeDescription.discourseme_id,
                   )?.name
                 }
+                {focusDiscourseme === discoursemeDescription.discourseme_id && (
+                  <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
+                    Focus Discourseme
+                  </span>
+                )}
                 <Button
                   className="ml-auto"
                   variant="ghost"

@@ -24,7 +24,7 @@ export function useCollocation(
   const {
     data: collocation,
     isLoading: isLoadingConstellation,
-    error,
+    error: errorCollocation,
   } = useQuery({
     ...constellationCollocation(constellationId, descriptionId!, {
       focusDiscoursemeId: focusDiscourseme!,
@@ -74,7 +74,8 @@ export function useCollocation(
 
   return {
     isLoading,
-    error: error ?? errorConstellation ?? errorConstellationMap ?? null,
+    error:
+      errorCollocation ?? errorConstellation ?? errorConstellationMap ?? null,
     collocation,
     collocationItems,
     collocationItemsMap,
