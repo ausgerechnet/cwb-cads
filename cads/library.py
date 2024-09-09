@@ -97,6 +97,8 @@ class WordListOut(Schema):
 @bp.auth_required(auth)
 def get_word_list(corpus_id, id):
 
+    """Gets a single wordlist for a specified corpus"""
+
     corpus = db.get_or_404(Corpus, corpus_id) 
 
     try:
@@ -108,6 +110,22 @@ def get_word_list(corpus_id, id):
         return WordListOut().dump(wl), 200
     except:
         return abort(404, message=f"Word list with id {id} does not exist for corpus with id {corpus_id} in database")
+
+
+@bp.get("/<corpus_id>/wordlists")
+@bp.output(WordListOut(many=True))
+@bp.auth_required(auth)
+def get_word_lists(corpus_id):
+
+    """Gets all wordlists for a specified corpus"""
+
+    corpus = db.get_or_404(Corpus, corpus_id) 
+
+    wls = WordList.query \
+            .filter(WordList.corpus_id == corpus.id) \
+            .all()
+
+    return [WordListOut().dump(wl) for wl in wls], 200
 
 
 ################
