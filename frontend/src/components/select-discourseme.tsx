@@ -11,6 +11,9 @@ export function DiscoursemeSelect({
   className,
   disabled,
   undefinedName = 'No Discourseme Selected',
+  selectMessage = 'Select a discourseme',
+  placeholder = 'Search for a discourseme...',
+  emptyMessage = 'No discourseme found.',
 }: {
   discoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
   disabled?: boolean
@@ -18,6 +21,9 @@ export function DiscoursemeSelect({
   onChange?: (discoursemeId: number | undefined) => void
   className?: string
   undefinedName?: string
+  selectMessage?: string
+  placeholder?: string
+  emptyMessage?: string
 }) {
   const searchableItems = useMemo(
     () => [
@@ -48,9 +54,9 @@ export function DiscoursemeSelect({
 
   return (
     <ComplexSelect
-      selectMessage="Select a discourseme"
-      placeholder="Search for a discourseme..."
-      emptyMessage="No discourseme found."
+      selectMessage={selectMessage}
+      placeholder={placeholder}
+      emptyMessage={emptyMessage}
       disabled={disabled}
       items={searchableItems}
       itemId={discoursemeId}

@@ -7,6 +7,7 @@ import {
   Loader2,
   Loader2Icon,
   Plus,
+  Trash2Icon,
 } from 'lucide-react'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -50,6 +51,7 @@ import { required_error } from '@/lib/strings'
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
+import { getColorForNumber } from '@/lib/get-color-for-number'
 
 const COORDINATES_SCALE_FACTOR = 40
 
@@ -65,6 +67,10 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
     () =>
       (collocationItemsMap?.coordinates ?? []).map(
         (item): Word => ({
+          discoursemes:
+            description?.discourseme_descriptions
+              .filter((dd) => dd.items.some((i) => i.surface === item.item))
+              .map((dd) => dd.id) ?? [],
           id: item.item,
           word: item.item,
           x: (item.x_user ?? item.x) * COORDINATES_SCALE_FACTOR,
@@ -75,11 +81,11 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
           radius: 20,
         }),
       ),
-    [collocationItemsMap],
+    [collocationItemsMap?.coordinates, description?.discourseme_descriptions],
   )
 
   return (
-    <div className="flex-grow bg-muted">
+    <div className="group/map flex-grow bg-muted">
       <Link
         to="/constellations/$constellationId"
         from="/constellations/$constellationId/semantic-map"
@@ -149,82 +155,109 @@ function ConstellationDiscoursemesEditor({
     error: errorRemoveItem,
   } = useMutation(removeDescriptionItem)
   return (
-    <div className="absolute bottom-24 right-4 top-64 overflow-auto rounded-xl bg-background shadow">
+    <div className="absolute bottom-24 right-4 top-64 flex flex-col overflow-hidden rounded-xl bg-background shadow-xl">
       <ErrorMessage error={error} />
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorRemoveItem} />
-      {constellationDescriptionId === undefined ? (
-        <Loader2Icon className="h-6 w-6 animate-spin" />
-      ) : (
-        <AttachNewDiscourseme
-          constellationId={constellationId}
-          constellationDescriptionId={constellationDescriptionId}
-        />
-      )}
-      {constellationDescription?.discourseme_descriptions.map(
-        (discoursemeDescription) => (
-          <div key={discoursemeDescription.id}>
-            {discoursemeDescription.id}{' '}
-            {
-              discoursemes.find(
-                ({ id }) => id === discoursemeDescription.discourseme_id,
-              )?.name
-            }
-            <button
-              disabled={isRemovingDiscourseme}
-              className="bg-red-500 p-1"
-              onClick={() =>
-                removeDiscourseme({
-                  constellationId,
-                  discoursemeId: discoursemeDescription.discourseme_id,
-                })
-              }
-            >
-              Delete
-              {/*  TODO: Handle case when this is the filter discourseme*/}
-            </button>
-            <ul>
-              {discoursemeDescription.items.map((item) => (
-                <li key={item.surface}>
-                  {item.surface}
-                  <button
-                    className="my-0.5 ml-1 rounded bg-red-500 p-1 py-0"
-                    onClick={() =>
-                      removeItem({
-                        discoursemeId: discoursemeDescription.discourseme_id,
-                        descriptionId: discoursemeDescription.id,
-                        // cqpQuery: item.cqp_query,
-                        p: item.p!,
-                        surface: item.surface!,
-                      })
-                    }
-                    disabled={isRemovingItem}
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <AddDescriptionItem
-              constellationId={constellationId}
-              discoursemeId={discoursemeDescription.discourseme_id}
-              discoursemeDescriptionId={discoursemeDescription.id}
-            />
-          </div>
-        ),
-      )}
       <ErrorMessage error={errorAddDiscourseme} />
-      <DiscoursemeSelect
-        disabled={isPending}
-        discoursemes={allDiscoursemes}
-        onChange={(discoursemeId) => {
-          if (discoursemeId === undefined) return
-          addDiscourseme({
-            constellationId,
-            discoursemeId,
-          })
-        }}
-      />
+      {constellationDescriptionId === undefined && (
+        <div className="flex w-full flex-grow place-content-center place-items-center">
+          <Loader2Icon className="h-6 w-6 animate-spin" />
+        </div>
+      )}
+      <div className="flex-grow overflow-auto">
+        {constellationDescription?.discourseme_descriptions.map(
+          (discoursemeDescription) => (
+            <div key={discoursemeDescription.id} className="flex flex-col">
+              <h4
+                className={cn(
+                  'sticky top-0 flex items-center border-t bg-background px-2 pt-2 font-bold',
+                  `discourseme-${discoursemeDescription.discourseme_id}`,
+                )}
+              >
+                <span
+                  className="mr-2 aspect-square w-5 rounded-full"
+                  style={{
+                    backgroundColor: getColorForNumber(
+                      discoursemeDescription.id,
+                    ),
+                  }}
+                />
+                {
+                  discoursemes.find(
+                    ({ id }) => id === discoursemeDescription.discourseme_id,
+                  )?.name
+                }
+                <Button
+                  className="ml-auto"
+                  variant="ghost"
+                  size="icon"
+                  disabled={isRemovingDiscourseme}
+                  onClick={() =>
+                    removeDiscourseme({
+                      constellationId,
+                      discoursemeId: discoursemeDescription.discourseme_id,
+                    })
+                  }
+                >
+                  <Trash2Icon className="h-4 w-4" />
+                  {/*  TODO: Handle case when this is the filter discourseme*/}
+                </Button>
+              </h4>
+              <ul className="px-2">
+                {discoursemeDescription.items.map((item) => (
+                  <li
+                    key={item.surface}
+                    className="group/description flex max-w-md items-center rounded leading-tight hover:bg-muted"
+                  >
+                    {item.surface}
+                    <button
+                      className="ml-auto mr-1 opacity-0 group-hover/description:opacity-100"
+                      onClick={() =>
+                        removeItem({
+                          discoursemeId: discoursemeDescription.discourseme_id,
+                          descriptionId: discoursemeDescription.id,
+                          // cqpQuery: item.cqp_query,
+                          p: item.p!,
+                          surface: item.surface!,
+                        })
+                      }
+                      disabled={isRemovingItem}
+                    >
+                      <Trash2Icon className="m-2 h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <AddDescriptionItem
+                constellationId={constellationId}
+                discoursemeId={discoursemeDescription.discourseme_id}
+                discoursemeDescriptionId={discoursemeDescription.id}
+              />
+            </div>
+          ),
+        )}
+      </div>
+      <div className="flex flex-col gap-1 border-t bg-muted p-2">
+        <DiscoursemeSelect
+          undefinedName="Select Discourseme to add to constellation"
+          disabled={isPending}
+          discoursemes={allDiscoursemes}
+          onChange={(discoursemeId) => {
+            if (discoursemeId === undefined) return
+            addDiscourseme({
+              constellationId,
+              discoursemeId,
+            })
+          }}
+        />
+        {constellationDescriptionId !== undefined && (
+          <AttachNewDiscourseme
+            constellationId={constellationId}
+            constellationDescriptionId={constellationDescriptionId}
+          />
+        )}
+      </div>
     </div>
   )
 }
@@ -270,6 +303,8 @@ function AddDescriptionItem({
     <>
       <ErrorMessage error={errorAddItem} />
       <ComplexSelect
+        className="m-2"
+        selectMessage="Select description item to add"
         disabled={isAddingItem}
         items={collocationItems}
         onChange={(itemIndex) => {
@@ -343,10 +378,10 @@ function AttachNewDiscourseme({
           <TooltipTrigger asChild>
             <DialogTrigger asChild>
               <Button
-                variant="secondary"
-                size="icon"
+                variant="outline"
                 className={cn(className, 'aspect-square')}
               >
+                Create new Discourseme to add
                 <Plus className="h-4 w-4" />
               </Button>
             </DialogTrigger>
@@ -356,7 +391,6 @@ function AttachNewDiscourseme({
       </TooltipProvider>
       <DialogContent>
         <Form {...form}>
-          Constellation Id: {constellationId}
           <form
             onSubmit={form.handleSubmit((discourseme) =>
               postNewDiscourseme({
