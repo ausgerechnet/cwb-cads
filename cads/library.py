@@ -24,6 +24,7 @@ def import_macro(path, corpus_id):
 
     macro = Macro(
         name=name,
+        version=1,
         corpus_id=corpus_id,
         macro=macro,
         comment='imported via CLI'
@@ -41,14 +42,17 @@ def import_wordlist(path, corpus_id):
 
     wordlist = WordList(
         name=name,
+        version=1,
         corpus_id=corpus_id,
         comment='imported via CLI'
     )
     db.session.add(wordlist)
     db.session.commit()
+
     for word in words:
         db.session.add(WordListWords(wordlist_id=wordlist.id, word=word))
     db.session.commit()
+
     wordlist.write()
 
 
