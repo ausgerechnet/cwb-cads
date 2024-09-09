@@ -898,12 +898,14 @@ class WordList(db.Model):
     # )
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
-
-    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     name = db.Column(db.Unicode(255), nullable=False)
+    version = db.Column(db.Integer, nullable=False)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
     words = db.relationship("WordListWords", backref="word_list", cascade="all, delete")
     # p_att = db.Column(db.Unicode(50), nullable=False)
 
@@ -938,12 +940,14 @@ class Macro(db.Model):
     # )
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
-
-    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
     name = db.Column(db.Unicode(255), nullable=False)
+    version = db.Column(db.Integer, nullable=False)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
     macro = db.Column(db.Unicode)
 
     comment = db.Column(db.Unicode)
