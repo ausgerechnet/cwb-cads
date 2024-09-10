@@ -529,13 +529,11 @@ export const constellationDescriptionFor = ({
             signal,
           })
         ).discoursemes.map((d) => d.id)
-        console.log('discourseme ids for constellation:', discoursemeIds)
         const constellationDescriptions =
           await apiClient.getMmdaconstellationIddescription({
             params: { id: constellationId.toString() },
             signal,
           })
-        console.log('found possible descriptions', constellationDescriptions)
         const matchingDescriptions = constellationDescriptions.filter(
           (cd) =>
             cd.corpus_id === corpusId &&
@@ -548,15 +546,12 @@ export const constellationDescriptionFor = ({
               cd.discourseme_descriptions.map((d) => d.discourseme_id),
             ),
         )
-        console.log(
-          `found ${matchingDescriptions.length} matching descriptions`,
-          matchingDescriptions,
-          matchingDescriptions.map((d) => d.id).join(', '),
-        )
+        if (matchingDescriptions.length > 1) {
+          console.warn('Found multiple matching descriptions!')
+        }
         return matchingDescriptions[0]
       }
       const description = await getMatchingDescription()
-      console.log('found matching description')
       if (description) return description
       await apiClient.postMmdaconstellationIddescription(
         {
@@ -698,22 +693,6 @@ export const constellationCollocation = (
           (analysis.semantic_map_id ?? null) === (semanticMapId ?? null) &&
           analysis.window === window,
       )
-      console.group('constellationCollocation')
-      console.log('found analyses:', collocationAnalyses)
-      console.log('matching analysis:', matchingAnalysis)
-      console.log('parameters', {
-        constellationId,
-        descriptionId,
-        filterItem,
-        filterItemPAttribute,
-        focusDiscoursemeId,
-        marginals,
-        p,
-        sBreak,
-        semanticMapId,
-        window,
-      })
-      console.groupEnd()
       if (matchingAnalysis) return matchingAnalysis
       return apiClient.postMmdaconstellationIddescriptionDescription_idcollocation(
         {
@@ -762,7 +741,6 @@ export const removeConstellationDiscourseme: MutationOptions<
     ),
   onSuccess: (constellation) => {
     const constellationId = constellation.id
-    console.log('deleted something from constellation', constellation)
     if (constellationId === undefined) return
     void queryClient.invalidateQueries(constellationById(constellationId))
     void queryClient.invalidateQueries({
@@ -880,11 +858,6 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
     constellationId,
     surfaces,
   }) => {
-    console.log('create discourseme for constellation description', {
-      constellationId,
-      constellationDescriptionId,
-      surfaces,
-    })
     const constellationDescription =
       await apiClient.getMmdaconstellationIddescriptionDescription_id({
         params: {

@@ -345,7 +345,6 @@ function AddDescriptionItem({
             })
             return
           }
-          console.log('selected surface', surface)
           addItem({
             discoursemeId,
             descriptionId: discoursemeDescriptionId,

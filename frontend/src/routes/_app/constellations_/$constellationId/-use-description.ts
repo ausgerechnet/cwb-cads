@@ -6,7 +6,6 @@ import { Route } from '@/routes/_app/constellations_/$constellationId/route.lazy
 export function useDescription() {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { corpusId } = Route.useSearch()
-  console.log('use description corpus id', corpusId)
   const { secondary, s } = useFilterSelection(
     '/_app/constellations/$constellationId',
     corpusId,

@@ -67,8 +67,6 @@ function ConstellationDetail() {
     focusDiscourseme,
   } = Route.useSearch()
 
-  console.log('route corpus id', corpusId)
-
   const { setFilter } = useFilterSelection(
     '/_app/constellations/$constellationId',
     corpusId,
