@@ -28,6 +28,7 @@ import { Repeat } from '@/components/repeat.tsx'
 import { Pagination } from '@/components/pagination.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
+import { useDescription } from '@/routes/_app/constellations_/$constellationId/-use-description'
 
 const emptyArray = [] as const
 
@@ -65,24 +66,30 @@ export function ConstellationConcordanceLines({
     focusDiscourseme,
     setFilter,
   } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
+  const descriptionId = useDescription()?.description?.id
 
   const {
     data: concordanceLines,
     isLoading,
     error,
   } = useQuery({
-    ...constellationConcordances(constellationId, corpusId, focusDiscourseme!, {
-      primary,
-      secondary,
-      window: windowSize,
-      filterItem: clFilterItem,
-      filterItemPAtt: clFilterItemPAtt,
-      pageSize: clPageSize,
-      pageNumber: clPageIndex + 1,
-      sortOrder: clSortOrder,
-      sortByOffset: clSortByOffset,
-    }),
-    enabled: focusDiscourseme !== undefined,
+    ...constellationConcordances(
+      constellationId,
+      descriptionId!,
+      focusDiscourseme!,
+      {
+        primary,
+        secondary,
+        window: windowSize,
+        filterItem: clFilterItem,
+        filterItemPAtt: clFilterItemPAtt,
+        pageSize: clPageSize,
+        pageNumber: clPageIndex + 1,
+        sortOrder: clSortOrder,
+        sortByOffset: clSortByOffset,
+      },
+    ),
+    enabled: focusDiscourseme !== undefined && descriptionId !== undefined,
   })
 
   pageCountRef.current =
