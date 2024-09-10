@@ -1258,12 +1258,25 @@ def test_discourseme_deletion(client, auth):
                                   content_type='application/json',
                                   headers=auth_header).json
 
+        tmp_disc = client.post(url_for('mmda.discourseme.create'),
+                               json={
+                                   'name': 'Modalverben',
+                                   'comment': 'Testdiskursem das gelöscht wird',
+                                   'template': [
+                                       {'surface': 'können', 'p': 'lemma'}
+                                   ],
+                                  },
+                               content_type='application/json',
+                               headers=auth_header)
+
+        assert tmp_disc.status_code == 200
+
         # constellation
         constellation = client.post(url_for('mmda.constellation.create'),
                                     json={
                                         'name': 'factions',
                                         'comment': 'union and FDP',
-                                        'discourseme_ids': [discourseme['id'] for discourseme in discoursemes[0:2]]
+                                        'discourseme_ids': [tmp_disc.json['id']] + [discourseme['id'] for discourseme in discoursemes[0:2]]
                                     },
                                     headers=auth_header)
         assert constellation.status_code == 200
@@ -1275,5 +1288,5 @@ def test_discourseme_deletion(client, auth):
                                   headers=auth_header)
         assert description.status_code == 200
 
-        client.delete(url_for('mmda.discourseme.delete_discourseme', id=discoursemes[0]['id']),
+        client.delete(url_for('mmda.discourseme.delete_discourseme', id=tmp_disc.json['id']),
                       headers=auth_header)

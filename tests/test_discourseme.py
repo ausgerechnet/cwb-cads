@@ -202,16 +202,30 @@ def test_get_similar(client, auth):
 def test_deletion(client, auth):
 
     auth_header = auth.login()
+
     with client:
         client.get("/")
+        discourseme = client.post(url_for('mmda.discourseme.create'),
+                                  json={
+                                      'name': 'Modalverben',
+                                      'comment': 'Testdiskursem das gelöscht wird',
+                                      'template': [
+                                          {'surface': 'können', 'p': 'lemma'}
+                                      ],
+                                  },
+                                  content_type='application/json',
+                                  headers=auth_header)
+        assert discourseme.status_code == 200
 
-        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'), headers=auth_header)
-        kanzler = discoursemes.json[2]
-        description = client.post(url_for('mmda.discourseme.create_description', id=kanzler['id']),
+        discourseme = client.get(url_for('mmda.discourseme.get_discourseme', id=discourseme.json['id']),
+                                 headers=auth_header)
+        assert discourseme.status_code == 200
+
+        description = client.post(url_for('mmda.discourseme.create_description', id=discourseme.json['id']),
                                   content_type='application/json',
                                   json={'corpus_id': 1},
                                   headers=auth_header)
         assert description.status_code == 200
 
-        client.delete(url_for('mmda.discourseme.delete_discourseme', id=kanzler['id']),
+        client.delete(url_for('mmda.discourseme.delete_discourseme', id=discourseme.json['id']),
                       headers=auth_header)
