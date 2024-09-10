@@ -392,7 +392,7 @@ export default function WordCloud({
     setTimeout(render, 1_000)
 
     // @ts-expect-error TODO: type later
-    svg.call(d3.zoom().scaleExtent([0.5, 5]).on('zoom', zoomed))
+    svg.call(d3.zoom().scaleExtent([1, 10]).on('zoom', zoomed))
 
     function zoomed({ transform }: { transform: d3.ZoomTransform }) {
       transformationState = transform
