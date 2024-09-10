@@ -18,6 +18,9 @@ export type Word = {
   discoursemes?: number[]
 }
 
+const fontSizeMin = 10
+const fontSizeMax = 24
+
 const defaultWords: Word[] = []
 
 export default function WordCloud({
@@ -161,7 +164,10 @@ export default function WordCloud({
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('lengthAdjust', 'spacingAndGlyphs')
-      .attr('font-size', (d) => d.significance * 10 + 10)
+      .attr(
+        'font-size',
+        (d) => d.significance * (fontSizeMax - fontSizeMin) + fontSizeMin,
+      )
       .text((d) => d.word)
 
     textGroup.each(function (d) {
@@ -171,10 +177,10 @@ export default function WordCloud({
         .node() as SVGTextElement
       const bbox = textElement.getBBox()
       d.width = bbox.width + 10
-      d.height = bbox.height
+      d.height = bbox.height + 4
       d3.select(this)
         .select('rect')
-        .attr('transform', `translate(-${d.width / 2}, -${d.height / 2 + 1})`)
+        .attr('transform', `translate(-${d.width / 2}, -${d.height / 2 - 6})`)
         .attr('width', d.width)
         .attr('height', d.height)
         .attr('rx', 3)
@@ -370,7 +376,12 @@ export default function WordCloud({
         .attr('y', (d) => d.y)
       textGroup
         .select('text')
-        .attr('font-size', (d) => ((d.significance * 10 + 10) / k) * 2)
+        .attr(
+          'font-size',
+          (d) =>
+            ((d.significance * (fontSizeMax - fontSizeMin) + fontSizeMin) / k) *
+            2,
+        )
       textGroup
         .select('rect')
         .attr('width', (d) => (d.width / k) * 2)
