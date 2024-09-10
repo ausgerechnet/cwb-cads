@@ -1,11 +1,11 @@
-const colorMap = new Map<number, string>()
-
-export function getColorForNumber(num: number) {
-  if (colorMap.has(num)) {
-    return colorMap.get(num) as string
-  }
+export function getColorForNumber(
+  num: number,
+  alpha = 1,
+  s = 0.5,
+  l = 0.5,
+): string {
   const hue = Math.floor((num * 29.5) % 360) // use golden angle approximation
-  const colorString = `hsl(${hue}, 50%, 50%)`
-  colorMap.set(num, colorString)
-  return colorString
+  return `hsl(${hue} ${Math.floor(s * 100)}% ${Math.floor(
+    l * 100,
+  )}% / ${Math.floor(alpha * 100)}%)`
 }

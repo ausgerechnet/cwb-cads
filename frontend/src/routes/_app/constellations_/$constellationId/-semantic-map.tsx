@@ -62,27 +62,49 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
     isLoading,
     error: errorCollocation,
   } = useCollocation(constellationId, description?.id, description?.corpus_id)
+  const sortBy = useFilterSelection(
+    '/_app/constellations/$constellationId',
+    description?.corpus_id,
+  ).ccSortBy
 
-  const words = useMemo(
-    () =>
-      (collocationItemsMap?.coordinates ?? []).map(
-        (item): Word => ({
-          discoursemes:
-            description?.discourseme_descriptions
-              .filter((dd) => dd.items.some((i) => i.surface === item.item))
-              .map((dd) => dd.id) ?? [],
-          id: item.item,
-          word: item.item,
-          x: (item.x_user ?? item.x) * COORDINATES_SCALE_FACTOR,
-          y: (item.y_user ?? item.y) * COORDINATES_SCALE_FACTOR,
-          originX: (item.x_user ?? item.x) * COORDINATES_SCALE_FACTOR,
-          originY: (item.y_user ?? item.y) * COORDINATES_SCALE_FACTOR,
-          significance: 0.5,
-          radius: 20,
-        }),
-      ),
-    [collocationItemsMap?.coordinates, description?.discourseme_descriptions],
-  )
+  const words = useMemo(() => {
+    const { min, max } = (collocationItemsMap?.items ?? []).reduce(
+      (acc, item) => {
+        const score = item.scores.find((m) => m.measure === sortBy)?.score
+        if (score === undefined) return acc
+        if (score < acc.min) acc.min = score
+        if (score > acc.max) acc.max = score
+        return acc
+      },
+      { min: Infinity, max: -Infinity },
+    )
+    return (collocationItemsMap?.coordinates ?? []).map((item): Word => {
+      const score = collocationItemsMap?.items
+        ?.find((i) => i.item === item.item)
+        ?.scores.find((m) => m.measure === sortBy)?.score
+      if (score === undefined)
+        throw new Error(`score is undefined for item ${item.item}`)
+      return {
+        discoursemes:
+          description?.discourseme_descriptions
+            .filter((dd) => dd.items.some((i) => i.surface === item.item))
+            .map((dd) => dd.id) ?? [],
+        id: item.item,
+        word: item.item,
+        x: (item.x_user ?? item.x) * COORDINATES_SCALE_FACTOR,
+        y: (item.y_user ?? item.y) * COORDINATES_SCALE_FACTOR,
+        originX: (item.x_user ?? item.x) * COORDINATES_SCALE_FACTOR,
+        originY: (item.y_user ?? item.y) * COORDINATES_SCALE_FACTOR,
+        significance: (score - min) / (max - min),
+        radius: 20,
+      }
+    })
+  }, [
+    collocationItemsMap?.coordinates,
+    collocationItemsMap?.items,
+    description?.discourseme_descriptions,
+    sortBy,
+  ])
 
   return (
     <div className="group/map flex-grow bg-muted">

@@ -2,6 +2,7 @@ import * as d3 from 'd3'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { getColorForNumber } from '@/lib/get-color-for-number'
+import { useTheme } from '@/components/theme-provider'
 
 export type Word = {
   id: string
@@ -16,36 +17,7 @@ export type Word = {
   radius: number
   discoursemes?: number[]
 }
-//
-// function createWord(override: Partial<Word> = {}): Word {
-//   const position = [
-//     faker.number.float({ min: 100, max: 800 }),
-//     faker.number.float({ min: 100, max: 800 }),
-//   ]
-//   return {
-//     id: faker.string.uuid(),
-//     word: faker.lorem.word(),
-//     x: position[0],
-//     y: position[1],
-//     originX: position[0],
-//     originY: position[1],
-//     significance: faker.number.float({ min: 0, max: 1 }),
-//     radius: 0,
-//     ...override,
-//   }
-// }
-//
-// function createWordCloud(count = 500): Word[] {
-//   faker.seed(23)
-//   return [
-//     createWord({ discoursemes: ['a'] }),
-//     createWord({ discoursemes: ['a'] }),
-//     createWord({ discoursemes: ['a'] }),
-//     ...faker.helpers.multiple(createWord, { count }),
-//   ]
-// }
-//
-// const defaultWords = createWordCloud(100)
+
 const defaultWords: Word[] = []
 
 export default function WordCloud({
@@ -55,20 +27,23 @@ export default function WordCloud({
 }) {
   const svgRef = useRef(null)
   const navigate = useNavigate()
+  const { theme } = useTheme()
 
   useEffect(() => {
+    const isDarkMode = theme === 'dark'
     let hoveredBubbleId: string | null = null
 
     // TODO: ensure that words and discoursemes have universally(!) unique identifiers
-    const bubbleData = words.map((word) => ({
+    const wordData = words.map((word) => ({
       ...word,
-      radius: word.significance * 20 + 10,
+      width: 10,
+      height: 10,
     }))
 
     const discoursemeData = [
       ...new Set(words.map((words) => words.discoursemes ?? []).flat()),
     ].map((id) => {
-      const bubbles = bubbleData.filter((b) => b.discoursemes?.includes(id))
+      const bubbles = wordData.filter((b) => b.discoursemes?.includes(id))
       const x =
         bubbles.reduce((acc, bubble) => acc + bubble.x, 0) / bubbles.length
       const y =
@@ -101,17 +76,9 @@ export default function WordCloud({
 
     const svg = d3.select(svgRef.current)
 
-    const container = svg.select('g').attr('cursor', 'grab')
+    const container = svg.select('g')
 
-    // container.on('click', () => {
-    //   navigate({
-    //     params: (p) => p,
-    //     search: (s) => ({ ...s, select: undefined }),
-    //     replace: true,
-    //   })
-    // })
-
-    const simulation = d3.forceSimulation()
+    const simulation = d3.forceSimulation().alphaDecay(0.0001)
 
     // let discoursemeAnchor: d3.Selection<
     //   SVGCircleElement | d3.BaseType,
@@ -144,67 +111,178 @@ export default function WordCloud({
 
     const originLine = container
       .selectAll('.origin-line')
-      .data(bubbleData)
+      .data(wordData)
       .join('line')
-      .attr('stroke', 'limegreen')
+      .attr(
+        'stroke',
+        isDarkMode ? 'rgb(255 255 255 / 10%)' : 'rgba(0 0 0 / 10%)',
+      )
       .attr('stroke-opacity', 0.5)
+      .attr('stroke-dasharray', '5 5')
       .attr('x1', (d) => d.x)
       .attr('y1', (d) => d.y)
       .attr('x2', (d) => d.originX)
       .attr('y2', (d) => d.originY)
 
-    const bubbleUpdate = container.selectAll('.word-bubble').data(bubbleData)
+    const textGroup = container
+      .selectAll('.text-group')
+      .data(wordData)
+      .join('g')
+      .attr('class', 'text-group')
+      .attr('x', (d) => d.x)
+      .attr('y', (d) => d.y)
 
-    const bubble = bubbleUpdate
-      .join('circle')
-      // .attr('stroke-opacity', (d) => (d.discoursemes?.includes('a') ? 1 : 0.05))
-      .attr('transform', `translate(0, 0)`)
-      .attr('cx', (d) => d.x)
-      .attr('cy', (d) => d.y)
-      .attr('r', (d) => d.radius)
-      // @ts-expect-error TODO: type later
-      .on('click', (event, d) => {
-        event.stopPropagation()
-        // navigate({
-        //   params: (p) => p,
-        //   search: (s) => ({ ...s, select: d.id }),
-        //   replace: true,
-        // })
-      })
-      .call(
-        // @ts-expect-error TODO: type later
-        drag.on('start', dragStarted).on('drag', dragged).on('end', dragEnded),
+    textGroup
+      .append('rect')
+      .attr(
+        'fill',
+        isDarkMode ? 'rgba(255 255 255 / 0.1%)' : 'rgba(0 0 0 / 0.1%',
       )
-      .on('mouseenter', (_, d) => {
-        hoveredBubbleId = d.id
-      })
-      .on('mouseleave', (_, d) => {
-        if (hoveredBubbleId === d.id) hoveredBubbleId = null
-      })
+      .attr('stroke', 'black')
 
-    const text = container
-      .selectAll('.word-text')
-      .data(bubbleData)
-      .join('text')
+    textGroup
+      .append('text')
       .attr('class', 'pointer-events-none')
       .attr('x', (d) => d.x)
       .attr('y', (d) => d.y)
-      .attr('opacity', (d) => d.significance * 0.4 + 0.6)
-      .attr('fill', 'currentColor')
+      .attr('opacity', (d) =>
+        d?.discoursemes?.length ? 1 : d.significance * 0.4 + 0.6,
+      )
+      .attr('fill', (d) => {
+        const discoursemes = d.discoursemes
+        if (!discoursemes || !discoursemes.length) return 'currentColor'
+        return getColorForNumber(
+          discoursemes[0]!,
+          1,
+          undefined,
+          isDarkMode ? 0.8 : 0.3,
+        )
+      })
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('lengthAdjust', 'spacingAndGlyphs')
-      .attr('textLength', (d) => d.radius * 2 - 20)
+      .attr('font-size', (d) => d.significance * 10 + 10)
       .text((d) => d.word)
 
+    textGroup.each(function (d) {
+      const textElement = d3
+        .select(this)
+        .select('text')
+        .node() as SVGTextElement
+      const bbox = textElement.getBBox()
+      d.width = bbox.width + 10
+      d.height = bbox.height
+      d3.select(this)
+        .select('rect')
+        .attr('transform', `translate(-${d.width / 2}, -${d.height / 2 + 1})`)
+        .attr('width', d.width)
+        .attr('height', d.height)
+        .attr('rx', 3)
+        .attr('ry', 3)
+        .attr('stroke-width', 1)
+        .attr('stroke', (d) => {
+          // @ts-expect-error TODO: type later
+          const discoursemes = d.discoursemes
+          if (!discoursemes || !discoursemes.length) return 'rgb(100 100 100)'
+          return getColorForNumber(discoursemes[0]!)
+        })
+        .attr('fill', (d) => {
+          // @ts-expect-error TODO: type later
+          const discoursemes = d.discoursemes
+          if (!discoursemes || !discoursemes.length) return 'transparent'
+          return getColorForNumber(discoursemes[0]!, 0.2)
+        })
+        .call(
+          // @ts-expect-error TODO: type later
+          drag
+            .on('start', dragStarted)
+            .on('drag', dragged)
+            .on('end', dragEnded),
+        )
+        .on('mouseenter', (_, d) => {
+          // @ts-expect-error TODO: type later
+          hoveredBubbleId = d.id
+        })
+        .on('mouseleave', (_, d) => {
+          // @ts-expect-error TODO: type later
+          if (hoveredBubbleId === d.id) hoveredBubbleId = null
+        })
+    })
+
+    let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
+
+    // Custom force to repel overlapping rectangles
+    // function forceRectangles() {
+    //   let nodes
+    //   let strength = 1
+    //
+    //   function force(alpha) {
+    //     for (let i = 0; i < nodes.length; ++i) {
+    //       for (let j = i + 1; j < nodes.length; ++j) {
+    //         const nodeA = nodes[i]
+    //         const nodeB = nodes[j]
+    //
+    //         const dx = nodeB.x - nodeA.x
+    //         const dy = nodeB.y - nodeA.y
+    //
+    //         const k = (1 / (transformationState.k ?? 1)) * 2
+    //         const widthA = nodeA.width * k
+    //         const heightA = nodeA.height * k
+    //         const widthB = nodeB.width * k
+    //         const heightB = nodeB.height * k
+    //
+    //         const minDistanceX = (widthA + widthB) / 2
+    //         const minDistanceY = (heightA + heightB) / 2
+    //
+    //         if (Math.abs(dx) < minDistanceX && Math.abs(dy) < minDistanceY) {
+    //           const overlapX = minDistanceX - Math.abs(dx)
+    //           const overlapY = minDistanceY - Math.abs(dy)
+    //
+    //           if (overlapX > 0 && overlapY > 0) {
+    //             const moveX = (overlapX / 2) * strength * Math.min(1, alpha * 2)
+    //             const moveY = (overlapY / 2) * strength * Math.min(1, alpha * 2)
+    //
+    //             if (dx > 0) {
+    //               nodeA.x -= moveX
+    //               nodeB.x += moveX
+    //             } else {
+    //               nodeA.x += moveX
+    //               nodeB.x -= moveX
+    //             }
+    //
+    //             if (dy > 0) {
+    //               nodeA.y -= moveY
+    //               nodeB.y += moveY
+    //             } else {
+    //               nodeA.y += moveY
+    //               nodeB.y -= moveY
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    //
+    //   force.initialize = function (newNodes) {
+    //     nodes = newNodes
+    //   }
+    //
+    //   force.strength = function (newStrength: number) {
+    //     strength = newStrength
+    //   }
+    //
+    //   return force
+    // }
+
     simulation
-      .nodes([...bubbleData, ...discoursemeData])
+      .nodes([...wordData, ...discoursemeData])
       .force(
         'collide',
+        // forceRectangles(),
         d3
           .forceCollide()
           // @ts-expect-error TODO: type later
-          .radius((d) => d.radius)
+          .radius((d) => d.width)
           .strength(1),
       )
       // This forces discoursemes together
@@ -218,17 +296,20 @@ export default function WordCloud({
       // )
       .force('origin', originForce)
       .on('tick', () => {
-        bubble
-          .data(bubbleData)
-          .attr('fill', 'transparent')
-          .attr('stroke', (d) =>
-            d.discoursemes?.length
-              ? getColorForNumber(d.discoursemes?.[0] || 0)
-              : 'transparent',
-          )
-          .attr('stroke-width', 4)
-          .attr('cx', (d) => d.x)
-          .attr('cy', (d) => d.y)
+        originLine
+          .data(wordData)
+          .attr('x1', (d) => d.x)
+          .attr('y1', (d) => d.y)
+        textGroup
+          .data(wordData)
+          .select('text')
+          .attr('x', (d) => d.x)
+          .attr('y', (d) => d.y)
+        textGroup
+          .data(wordData)
+          .select('rect')
+          .attr('x', (d) => d.x)
+          .attr('y', (d) => d.y)
           .attr('class', (d) => {
             // @ts-expect-error TODO: type later
             const isDragging = !!d.isDragging
@@ -241,21 +322,13 @@ export default function WordCloud({
             }
             return `cursor-grab`
           })
-        originLine
-          .data(bubbleData)
-          .attr('x1', (d) => d.x)
-          .attr('y1', (d) => d.y)
-        text
-          .data(bubbleData)
-          .attr('x', (d) => d.x)
-          .attr('y', (d) => d.y)
+
         // discoursemeLink
         //   .data(discoursemeLinks)
         //   .attr('x2', (d) => d.targetBubble.x)
         //   .attr('y2', (d) => d.targetBubble.y)
       })
 
-    let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
     function render() {
       // Renders the discourseme connection lines ans central bubble
       // discoursemeAnchor?.remove()
@@ -285,21 +358,38 @@ export default function WordCloud({
       //   .attr('transform', transformationState)
 
       const k = transformationState.k
-      bubble
+      originLine
         // @ts-expect-error TODO: type later
         .attr('transform', transformationState)
-        .attr('r', (d) => d.radius / k)
-      // @ts-expect-error TODO: type later
-      originLine.attr('transform', transformationState)
-      text
+        .attr('stroke-width', 1 / k)
+
+      textGroup
         // @ts-expect-error TODO: type later
         .attr('transform', transformationState)
-        .attr('textLength', (d) => Math.max((d.radius * 2) / k - 20, 20))
+        .attr('x', (d) => d.x)
+        .attr('y', (d) => d.y)
+      textGroup
+        .select('text')
+        .attr('font-size', (d) => ((d.significance * 10 + 10) / k) * 2)
+      textGroup
+        .select('rect')
+        .attr('width', (d) => (d.width / k) * 2)
+        .attr('height', (d) => (d.height / k) * 2)
+        .attr('rx', (3 / k) * 2)
+        .attr('ry', (3 / k) * 2)
+        .attr('stroke-width', (1 / k) * 2)
+        .attr(
+          'transform',
+          (d) => `translate(-${d.width / k}, -${d.height / k})`,
+        )
+      // .attr('textLength', (d) => Math.max((d.radius * 2) / k - 20, 20))
+
       simulation.alpha(0.3).restart()
       // @ts-expect-error TODO: type later
-      simulation.force('collide')?.radius((d) => d.radius / k)
+      simulation.force('collide')?.radius((d) => (d.width + 5) / k)
     }
     render()
+    setTimeout(render, 1_000)
 
     // @ts-expect-error TODO: type later
     svg.call(d3.zoom().scaleExtent([0.5, 5]).on('zoom', zoomed))
@@ -327,22 +417,8 @@ export default function WordCloud({
       event.subject.isDragging = true
       // @ts-expect-error TODO: type later
       d3.select(this)
-        .attr(
-          'cx',
-          (d.x = scaleFrom(
-            event.x,
-            d.dragStartX ?? d.originX,
-            transformationState.k,
-          )),
-        )
-        .attr(
-          'cy',
-          (d.y = scaleFrom(
-            event.y,
-            d.dragStartY ?? d.originY,
-            transformationState.k,
-          )),
-        )
+        .attr('x', (d.x = event.x))
+        .attr('y', (d.y = event.y))
     }
 
     // function groupToDiscourseme(itemAId: string, itemBId: string) {
@@ -416,7 +492,7 @@ export default function WordCloud({
         const node = nodes[i]
         // This would prevent discourseme items to be pulled back to their origin
         // if (node.discoursemes?.length) continue
-        const k = alpha * 0.1 * homeStrength
+        const k = alpha * 0.02 * homeStrength
         // @ts-expect-error TODO: type later
         node.vx -= (node.x - node.originX) * k * 2
         // @ts-expect-error TODO: type later
@@ -425,13 +501,13 @@ export default function WordCloud({
     }
 
     return () => {
-      bubble.remove()
+      // bubble.remove()
       originLine.remove()
-      text.remove()
+      textGroup.remove()
       // discoursemeAnchor.remove()
       // discoursemeLink.remove()
     }
-  }, [words, navigate])
+  }, [words, navigate, theme])
 
   return (
     <svg ref={svgRef} className="h-[calc(100svh-3.5rem)] w-full">
@@ -442,6 +518,6 @@ export default function WordCloud({
   )
 }
 
-function scaleFrom(position: number, origin: number, scale: number) {
-  return (position - origin) / scale + origin
-}
+// function scaleFrom(position: number, origin: number, scale: number) {
+//   return (position - origin) / scale + origin
+// }
