@@ -79,18 +79,66 @@ def import_library(lib_dir, corpus_id, username):
 # API schemata #
 ################
 
+class MacroOut(Schema):
+
+    id = Integer()
+    modified = String()
+    corpus_id = Integer()
+    name = String()
+    version = Integer()
+    comment = String()
+    macro = String()
+
+
 class WordListOut(Schema):
     
     id = Integer()
     modified = String()
     corpus_id = Integer()
     name = String()
+    version = Integer()
     comment = String()
     words = List(String())
 
 #################
 # API endpoints #
 #################
+
+@bp.get("/<corpus_id>/macros/<id>")
+@bp.output(MacroOut)
+@bp.auth_required(auth)
+def get_macro(corpus_id, id):
+
+    """Gets a single macro for a specified corpus"""
+
+    corpus = db.get_or_404(Corpus, corpus_id) 
+
+    try:
+        macro = Macro.query \
+                .filter(Macro.corpus_id == corpus.id) \
+                .filter(Macro.id == id) \
+                .one()
+
+        return MacroOut().dump(macro), 200
+    except:
+        return abort(404, message=f"Macro with id {id} does not exist for corpus with id {corpus_id} in database")
+
+
+@bp.get("/<corpus_id>/macros")
+@bp.output(MacroOut(many=True))
+@bp.auth_required(auth)
+def get_macros(corpus_id):
+
+    """Gets all macros for a specified corpus"""
+
+    corpus = db.get_or_404(Corpus, corpus_id) 
+
+    macros = Macro.query \
+            .filter(Macro.corpus_id == corpus.id) \
+            .all()
+
+    return [MacroOut().dump(m) for m in macros], 200
+
 
 @bp.get("/<corpus_id>/wordlists/<id>")
 @bp.output(WordListOut)
