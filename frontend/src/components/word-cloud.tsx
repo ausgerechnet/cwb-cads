@@ -3,6 +3,9 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { getColorForNumber } from '@/lib/get-color-for-number'
 import { useTheme } from '@/components/theme-provider'
+import { Button } from '@/components/ui/button'
+import { LocateIcon } from 'lucide-react'
+import { clamp } from '@/lib/clamp'
 
 export type Word = {
   id: string
@@ -18,17 +21,11 @@ export type Word = {
   discoursemes?: number[]
 }
 
-const fontSizeMin = 10
+const fontSizeMin = 6
 const fontSizeMax = 24
 
-const defaultWords: Word[] = []
-
-export default function WordCloud({
-  words = defaultWords,
-}: {
-  words?: Word[]
-}) {
-  const svgRef = useRef(null)
+export default function WordCloud({ words }: { words: Word[] }) {
+  const svgRef = useRef<SVGSVGElement>(null)
   const navigate = useNavigate()
   const { theme } = useTheme()
 
@@ -81,7 +78,7 @@ export default function WordCloud({
 
     const container = svg.select('g')
 
-    const simulation = d3.forceSimulation().alphaDecay(0.0001)
+    const simulation = d3.forceSimulation().alphaDecay(0.001)
 
     // let discoursemeAnchor: d3.Selection<
     //   SVGCircleElement | d3.BaseType,
@@ -180,7 +177,7 @@ export default function WordCloud({
       d.height = bbox.height + 4
       d3.select(this)
         .select('rect')
-        .attr('transform', `translate(-${d.width / 2}, -${d.height / 2 - 6})`)
+        .attr('transform', `translate(-${d.width / 2}, -${d.height / 2 - 4})`)
         .attr('width', d.width)
         .attr('height', d.height)
         .attr('rx', 3)
@@ -391,19 +388,21 @@ export default function WordCloud({
         .attr('stroke-width', (1 / k) * 2)
         .attr(
           'transform',
-          (d) => `translate(-${d.width / k}, -${d.height / k})`,
+          (d) => `translate(-${d.width / k}, -${d.height / k + 2 / k})`,
         )
       // .attr('textLength', (d) => Math.max((d.radius * 2) / k - 20, 20))
 
       simulation.alpha(0.3).restart()
-      // @ts-expect-error TODO: type later
-      simulation.force('collide')?.radius((d) => (d.width + 5) / k)
+      simulation
+        .force('collide')
+        // @ts-expect-error TODO: type later
+        ?.radius((d) => (d.width + 5) / k)
     }
     render()
     setTimeout(render, 1_000)
 
     // @ts-expect-error TODO: type later
-    svg.call(d3.zoom().scaleExtent([1, 10]).on('zoom', zoomed))
+    svg.call(d3.zoom().scaleExtent([0.25, 10]).on('zoom', zoomed))
 
     function zoomed({ transform }: { transform: d3.ZoomTransform }) {
       transformationState = transform
@@ -503,7 +502,15 @@ export default function WordCloud({
         const node = nodes[i]
         // This would prevent discourseme items to be pulled back to their origin
         // if (node.discoursemes?.length) continue
-        const k = alpha * 0.02 * homeStrength
+        const k =
+          alpha *
+          0.02 *
+          homeStrength *
+          // smaller strength for less significant items
+          // @ts-expect-error TODO: type later
+          (node.significance * 0.8 + 0.2) *
+          // increase strength on higher zoom levels
+          clamp(transformationState.k, 0.5, 2)
         // @ts-expect-error TODO: type later
         node.vx -= (node.x - node.originX) * k * 2
         // @ts-expect-error TODO: type later
@@ -511,21 +518,53 @@ export default function WordCloud({
       }
     }
 
+    // TODO: add this event listener the 'react' way
+    document.querySelector('#center-map')?.addEventListener('click', centerView)
+
+    function centerView() {
+      const svg = d3.select(svgRef.current)
+      const width = svgRef.current?.clientWidth ?? 0
+      const height = svgRef.current?.clientHeight ?? 0
+      const centerX = width / 2
+      const centerY = height / 2
+
+      const zoomTransform = d3.zoomIdentity.translate(centerX, centerY).scale(1)
+
+      // @ts-expect-error TODO: type later
+      svg.call(d3.zoom().transform, zoomTransform)
+      zoomed({ transform: zoomTransform })
+    }
+
+    centerView()
+
     return () => {
       // bubble.remove()
       originLine.remove()
       textGroup.remove()
+      document
+        .querySelector('#center-map')
+        ?.removeEventListener('click', centerView)
       // discoursemeAnchor.remove()
       // discoursemeLink.remove()
     }
   }, [words, navigate, theme])
 
   return (
-    <svg ref={svgRef} className="h-[calc(100svh-3.5rem)] w-full">
-      <g>
-        <rect fill="transparent" width="100%" height="100%" />
-      </g>
-    </svg>
+    <>
+      <svg ref={svgRef} className="h-[calc(100svh-3.5rem)] w-full">
+        <g>
+          <rect fill="transparent" width="100%" height="100%" />
+        </g>
+      </svg>
+      <Button
+        className="absolute bottom-20 left-10 shadow"
+        id="center-map"
+        variant="outline"
+        size="icon"
+      >
+        <LocateIcon />
+      </Button>
+    </>
   )
 }
 

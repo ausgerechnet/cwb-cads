@@ -1,4 +1,5 @@
 import { useSearch } from '@tanstack/react-router'
+import { FilterIcon } from 'lucide-react'
 
 import {
   Select,
@@ -7,15 +8,15 @@ import {
   SelectGroup,
   SelectItem,
   SelectValue,
-} from '@/components/ui/select.tsx'
-import { Slider } from '@/components/ui/slider.tsx'
-import { cn } from '@/lib/utils.ts'
-import { Input } from '@/components/ui/input.tsx'
+} from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
+import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 import {
   FilterSchema,
   useFilterSelection,
-} from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
-import { Button } from '@/components/ui/button'
+} from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
+import { ButtonTooltip } from '@/components/button-tooltip'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationFilter({ className }: { className?: string }) {
@@ -40,8 +41,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
 
   return (
     <div className={cn('z-10 mb-8 grid grid-cols-8 gap-2', className)}>
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Window Size {windowSize}</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Window Size {windowSize}</span>
         <Slider
           defaultValue={[windowSize]}
           onValueChange={([newValue]) => setFilter('windowSize', newValue)}
@@ -50,8 +51,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
           className="my-auto"
         />
       </div>
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Sort By Offset {clSortByOffset}</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Sort By Offset {clSortByOffset}</span>
         <Slider
           defaultValue={[clSortByOffset]}
           onValueChange={([newValue]) => setFilter('clSortByOffset', newValue)}
@@ -61,8 +62,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
         />
       </div>
 
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Sort Order</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Sort Order</span>
         <Select
           value={clSortOrder}
           onValueChange={(value) =>
@@ -87,8 +88,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
         </Select>
       </div>
 
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Context Break</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Context Break</span>
         <Select value={s} onValueChange={(value) => setFilter('s', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Context Break" />
@@ -105,8 +106,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
         </Select>
       </div>
 
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Primary</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Primary</span>
         <Select
           value={primary}
           onValueChange={(value) => setFilter('primary', value)}
@@ -126,8 +127,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
         </Select>
       </div>
 
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Secondary</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Secondary</span>
         <Select
           value={secondary}
           onValueChange={(value) => setFilter('secondary', value)}
@@ -147,8 +148,21 @@ export function ConstellationFilter({ className }: { className?: string }) {
         </Select>
       </div>
 
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Filter Item</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">
+          Filter Item
+          {ccFilterItem !== clFilterItem && (
+            <ButtonTooltip
+              size="sm"
+              onClick={() => setFilter('ccFilterItem', clFilterItem)}
+              className="ml-2 h-auto py-1 text-xs"
+              variant="secondary"
+              tooltip="Create new collocation analysis with this filter item"
+            >
+              <FilterIcon className="h-3 w-3" />
+            </ButtonTooltip>
+          )}
+        </span>
         <Input
           defaultValue={clFilterItem}
           key={clFilterItem}
@@ -158,16 +172,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
         />
       </div>
 
-      {ccFilterItem !== clFilterItem && (
-        <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-          <Button onClick={() => setFilter('ccFilterItem', clFilterItem)}>
-            Start Collocation Analysis for {clFilterItem}
-          </Button>
-        </div>
-      )}
-
-      <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
-        <span>Sort by</span>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Sort by</span>
         <Select
           value={ccSortBy}
           onValueChange={(value) =>

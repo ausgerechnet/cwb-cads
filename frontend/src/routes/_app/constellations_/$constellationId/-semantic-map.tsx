@@ -24,6 +24,7 @@ import {
   addDescriptionItem,
   removeDescriptionItem,
   createDiscoursemeForConstellationDescription,
+  corpusById,
 } from '@/lib/queries'
 import { Button, buttonVariants } from '@/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
@@ -52,6 +53,12 @@ import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { getColorForNumber } from '@/lib/get-color-for-number'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const COORDINATES_SCALE_FACTOR = 40
 
@@ -147,6 +154,7 @@ function ConstellationDiscoursemesEditor({
     '/_app/constellations/$constellationId',
     corpusId,
   )
+  const corpusName = useQuery(corpusById(corpusId)).data?.name
   const {
     data: { discoursemes },
   } = useSuspenseQuery(constellationById(constellationId))
@@ -161,6 +169,11 @@ function ConstellationDiscoursemesEditor({
       s,
     }),
   )
+  const itemCount = useCollocation(
+    constellationId,
+    constellationDescription?.id,
+    corpusId,
+  ).collocationItemsMap?.items.length
   const constellationDescriptionId = constellationDescription?.id
   const {
     mutate: addDiscourseme,
@@ -178,94 +191,119 @@ function ConstellationDiscoursemesEditor({
     error: errorRemoveItem,
   } = useMutation(removeDescriptionItem)
   return (
-    <div className="absolute bottom-24 right-4 top-64 flex flex-col overflow-hidden rounded-xl bg-background shadow-xl">
+    <div className="absolute bottom-24 right-4 top-48 flex w-96 flex-col overflow-hidden rounded-xl bg-background shadow-xl">
       <ErrorMessage error={errorDiscoursemes} />
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorRemoveItem} />
       <ErrorMessage error={errorAddDiscourseme} />
+      <div className="flex justify-between p-2 pr-3">
+        <span>
+          <strong>Corpus:</strong> {corpusName ?? <>...</>}
+        </span>
+        <span>{itemCount ?? '...'} Items</span>
+      </div>
       {constellationDescriptionId === undefined && (
         <div className="flex w-full flex-grow place-content-center place-items-center">
           <Loader2Icon className="h-6 w-6 animate-spin" />
         </div>
       )}
-      <div className="flex-grow overflow-auto">
+      <ScrollArea className="flex-grow">
         {constellationDescription?.discourseme_descriptions.map(
           (discoursemeDescription) => (
-            <div key={discoursemeDescription.id} className="flex flex-col">
-              <h4
-                className={cn(
-                  'sticky top-0 flex items-center border-t bg-background px-2 pt-2 font-bold',
-                  `discourseme-${discoursemeDescription.discourseme_id}`,
-                )}
+            <Collapsible>
+              <div
+                key={discoursemeDescription.id}
+                className="flex w-96 flex-col"
               >
-                <span
-                  className="mr-2 aspect-square w-5 rounded-full"
-                  style={{
-                    backgroundColor: getColorForNumber(
-                      discoursemeDescription.id,
-                    ),
-                  }}
-                />
-                {
-                  discoursemes.find(
-                    ({ id }) => id === discoursemeDescription.discourseme_id,
-                  )?.name
-                }
-                {focusDiscourseme === discoursemeDescription.discourseme_id && (
-                  <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
-                    Focus Discourseme
-                  </span>
-                )}
-                <Button
-                  className="ml-auto"
-                  variant="ghost"
-                  size="icon"
-                  disabled={isRemovingDiscourseme}
-                  onClick={() =>
-                    removeDiscourseme({
-                      constellationId,
-                      discoursemeId: discoursemeDescription.discourseme_id,
-                    })
-                  }
+                <h4
+                  className={cn(
+                    'sticky top-0 flex items-center border-t bg-background px-2 pt-2 font-bold',
+                    `discourseme-${discoursemeDescription.discourseme_id}`,
+                  )}
                 >
-                  <Trash2Icon className="h-4 w-4" />
-                  {/*  TODO: Handle case when this is the filter discourseme*/}
-                </Button>
-              </h4>
-              <ul className="px-2">
-                {discoursemeDescription.items.map((item) => (
-                  <li
-                    key={item.surface}
-                    className="group/description flex max-w-md items-center rounded leading-tight hover:bg-muted"
-                  >
-                    {item.surface}
-                    <button
-                      className="ml-auto mr-1 opacity-0 group-hover/description:opacity-100"
-                      onClick={() =>
-                        removeItem({
-                          discoursemeId: discoursemeDescription.discourseme_id,
-                          descriptionId: discoursemeDescription.id,
-                          // cqpQuery: item.cqp_query,
-                          p: item.p!,
-                          surface: item.surface!,
-                        })
-                      }
-                      disabled={isRemovingItem}
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      className="-ml-1 mb-1 flex h-auto flex-grow justify-start gap-2 p-2 pl-1"
+                      variant="ghost"
                     >
-                      <Trash2Icon className="m-2 h-4 w-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <AddDescriptionItem
-                constellationId={constellationId}
-                discoursemeId={discoursemeDescription.discourseme_id}
-                discoursemeDescriptionId={discoursemeDescription.id}
-              />
-            </div>
+                      <span
+                        className="aspect-square w-5 rounded-full"
+                        style={{
+                          backgroundColor: getColorForNumber(
+                            discoursemeDescription.id,
+                          ),
+                        }}
+                      />
+                      {
+                        discoursemes.find(
+                          ({ id }) =>
+                            id === discoursemeDescription.discourseme_id,
+                        )?.name
+                      }
+                      <span className="muted-foreground">
+                        {discoursemeDescription.items.length} items
+                      </span>
+                      {focusDiscourseme ===
+                        discoursemeDescription.discourseme_id && (
+                        <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
+                          Focus Discourseme
+                        </span>
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={isRemovingDiscourseme}
+                    onClick={() =>
+                      removeDiscourseme({
+                        constellationId,
+                        discoursemeId: discoursemeDescription.discourseme_id,
+                      })
+                    }
+                  >
+                    <Trash2Icon className="h-4 w-4" />
+                    {/*  TODO: Handle case when this is the filter discourseme*/}
+                  </Button>
+                </h4>
+                <CollapsibleContent>
+                  <ul className="px-2">
+                    {discoursemeDescription.items.map((item) => (
+                      <li
+                        key={item.surface}
+                        className="group/description flex items-center rounded leading-tight hover:bg-muted"
+                      >
+                        {item.surface}
+                        <button
+                          className="ml-auto mr-1 opacity-0 group-hover/description:opacity-100"
+                          onClick={() =>
+                            removeItem({
+                              discoursemeId:
+                                discoursemeDescription.discourseme_id,
+                              descriptionId: discoursemeDescription.id,
+                              // cqpQuery: item.cqp_query,
+                              p: item.p!,
+                              surface: item.surface!,
+                            })
+                          }
+                          disabled={isRemovingItem}
+                        >
+                          <Trash2Icon className="m-2 h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <AddDescriptionItem
+                    constellationId={constellationId}
+                    discoursemeId={discoursemeDescription.discourseme_id}
+                    discoursemeDescriptionId={discoursemeDescription.id}
+                  />
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
           ),
         )}
-      </div>
+      </ScrollArea>
       <div className="flex flex-col gap-1 border-t bg-muted p-2">
         <DiscoursemeSelect
           undefinedName="Select Discourseme to add to constellation"

@@ -118,8 +118,8 @@ function ConstellationDetail() {
   return (
     <AppPageFrame
       title={showsSemanticMap ? undefined : 'Constellation'}
-      classNameContainer="p-0 flex-grow"
-      classNameContent="p-0 relative"
+      classNameContainer={cn('flex-grow', showsSemanticMap && 'p-0')}
+      classNameContent={cn('relative', showsSemanticMap && 'p-0')}
     >
       <ErrorMessage error={errorDescription} />
       {!showsSemanticMap && (
@@ -173,10 +173,25 @@ function ConstellationDetail() {
               from="/constellations/$constellationId"
               params={{ constellationId: constellationId.toString() }}
               search={(s) => s}
+              disabled={
+                corpusId === undefined || focusDiscourseme === undefined
+              }
             >
-              <Card className="mx-0 flex h-48 w-full place-items-center bg-muted p-4 text-center text-muted-foreground">
-                <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
-                Semantic Map preview
+              <Card className="mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 bg-muted p-4 text-center text-muted-foreground">
+                <div className="flex gap-3">
+                  <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
+                  <span>Semantic Map</span>
+                </div>
+                {(corpusId === undefined || focusDiscourseme === undefined) && (
+                  <div className="flex flex-col gap-1 rounded bg-amber-200 p-2 text-amber-800">
+                    {corpusId === undefined && (
+                      <div>Select a corpus to view the map</div>
+                    )}{' '}
+                    {focusDiscourseme === undefined && (
+                      <div>Select a focus discourseme to view the map</div>
+                    )}
+                  </div>
+                )}
               </Card>
             </Link>
           </div>
@@ -211,7 +226,8 @@ function ConstellationDetail() {
           <ConstellationFilter
             className={cn(
               'sticky top-14 bg-background',
-              showsSemanticMap && 'absolute',
+              showsSemanticMap &&
+                'absolute left-10 right-5 top-10 rounded-xl p-2 shadow',
             )}
           />
           {showsSemanticMap && (
@@ -261,7 +277,7 @@ function DiscoursemeItem({
   constellationId: number
   isEditable: boolean
 }) {
-  const discoursemeId = discourseme.id! // TODO: Fix this non-null assertion
+  const discoursemeId = discourseme.id
   const { mutate, error } = useMutation(removeConstellationDiscourseme)
   const isMutating = useIsMutating(removeConstellationDiscourseme) > 0
 
