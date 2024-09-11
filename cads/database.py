@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import json
 
 from datetime import datetime
 
@@ -913,7 +914,7 @@ class WordList(db.Model):
 
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "wordlists", self.name + ".txt")
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "wordlists", f"{self.name}__v{self.version}.txt")
 
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
@@ -945,24 +946,51 @@ class Macro(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(db.Unicode(255), nullable=False)
+    valency = db.Column(db.Integer, nullable=False)
+    argument_names = db.Column(db.Unicode(255), nullable=True)
     version = db.Column(db.Integer, nullable=False)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
 
-    macro = db.Column(db.Unicode)
+    body = db.Column(db.Unicode)
 
     comment = db.Column(db.Unicode)
 
+    nested = db.relationship("NestedMacro", passive_deletes=True, \
+                             cascade='all, delete', primaryjoin="Macro.id == NestedMacro.macro_id")
+
+    @property
+    def canonical_name(self):
+        return f"{self.name}__{self.valency}__v{self.version}"
+
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "macros", self.name + ".txt")
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", \
+                            "macros", self.canonical_name)
 
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, "wt") as f:
-            f.write(self.macro)
+
+            if self.argument_names:
+                names = json.loads(self.argument_names)
+                assert len(names) == self.valency
+                argstring = " ".join(f"${i}={n}" for i, n in enumerate(names))
+                f.write(f"MACRO {self.canonical_name}({argstring})\n")
+            else:
+                f.write(f"MACRO {self.canonical_name}({self.valency})\n")
+            f.write(self.body)
+            f.write(";\n")
+
+
+class NestedMacro(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+    nested_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
 
 
 # CLI #
