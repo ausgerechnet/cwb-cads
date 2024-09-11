@@ -2,15 +2,17 @@
 # -*- coding: utf-8 -*-
 
 import json
+import re
+import os
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, Nested, String, Dict, List
 from apiflask.validators import OneOf
 from ccc.cqpy import cqpy_load
 
-from flask import current_app
 from pandas import DataFrame, concat
 from ccc import SubCorpus
+from flask import current_app as app
 
 from .. import db
 from ..database import Corpus
@@ -90,12 +92,12 @@ def ccc_slot_query(slot_query):
 
     # invalid query
     if isinstance(dump, str):
-        current_app.logger.error('invalid query')
+        app.logger.error('invalid query')
         return dump
 
     # valid query, but no matches
     if len(dump.df) == 0:
-        current_app.logger.warning(f'no results for query {slot_query.id}')
+        app.logger.warning(f'no results for query {slot_query.id}')
 
     return dump.df
 
@@ -137,9 +139,9 @@ def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
         subcorpus_name=None,
         df_dump=df_dump,
         corpus_name=cwb_id,
-        cqp_bin=current_app.config['CCC_CQP_BIN'],
-        registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-        data_dir=current_app.config['CCC_DATA_DIR'],
+        cqp_bin=app.config['CCC_CQP_BIN'],
+        registry_dir=app.config['CCC_REGISTRY_DIR'],
+        data_dir=app.config['CCC_DATA_DIR'],
         overwrite=False,
         lib_dir=None
     ).concordance(
@@ -260,6 +262,12 @@ def import_slot_query(path, corpus_id):
 
     slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]
     corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in query['anchors']['corrections'].items()]
+
+    # app.logger.debug(f"importing query {query['cqp']}")
+
+    macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[.*?\]", query['cqp'])
+    macro_calls = {m[1] for m in macro_matches}
+    # app.logger.debug(f"\tcontains calls to macros '{macro_calls}'")
 
     slot_query = SlotQuery(
         corpus_id=corpus_id,
