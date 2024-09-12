@@ -1,0 +1,20 @@
+MACRO annoying(1)
+(
+    [lemma = "$0"]
+)
+;
+
+MACRO annoying(2)
+(
+    [lemma = "$0"]
+    [lemma = "$1"]
+)
+;
+
+MACRO annoying(3)
+(
+    [lemma = "$0"]
+    [lemma = "$1"]
+    [lemma = "$2"]
+)
+;
