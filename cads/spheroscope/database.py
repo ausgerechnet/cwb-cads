@@ -9,37 +9,22 @@ from ccc.cqpy import cqpy_dump
 from flask import current_app
 
 from .. import db
-from ..database import Corpus
+from ..database import Query
 
 
-class SlotQuery(db.Model):
-
-    # __table_args__ = (
-    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
-    # )
-
-    id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
-
-    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    name = db.Column(db.Unicode(255), nullable=False)
+class SlotQuery(Query):
 
     _corrections = db.Column(db.Unicode)
     _slots = db.Column(db.Unicode)
-    cqp_query = db.Column(db.Unicode)
-    match_strategy = db.Column(db.Unicode, default='longest')
 
-    comment = db.Column(db.Unicode)
-
-    @property
-    def corpus(self):
-        return db.get_or_404(Corpus, self.corpus_id)
+    __mapper_args__ = {
+        "polymorphic_identity": "slot_query",
+    }
 
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "queries", self.name + ".cqpy")
+        identifier = self.name if self.name else str(self.corpus_id)
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "queries", identifier + ".cqpy")
 
     @property
     def slots(self):

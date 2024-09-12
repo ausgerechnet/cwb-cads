@@ -10,7 +10,7 @@ import click
 from flask import current_app as app
 from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
-from .database import Macro, NestedMacro, WordList, WordListWords, Corpus
+from .database import Macro, NestedMacro, NestedWordList, WordList, WordListWords, Corpus
 from .users import auth
 from . import db
 
@@ -24,7 +24,6 @@ argstring_simple = re.compile(r"\d|10")
 argstring_named = re.compile(r"\d=([a-zA-Z_][a-zA-Z0-9_\-]*)")
 
 def parse_macro_arguments(argstring):
-    print(argstring)
     match = argstring_simple.match(argstring)
     if match:
         return int(argstring), None
@@ -49,29 +48,62 @@ def import_macro(name, valency, argument_names, body, corpus_id):
     db.session.add(macro)
     db.session.commit()
 
-    # handle nested macros
-    nested_identifiers = {m[1] for m in re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[.*?\]", macro.body)}
-    if nested_identifiers:
-        app.logger.debug(f"\tcontains nested macro calls: '{nested_identifiers}'")
+    ## handle nested word lists
+    nested_wordlists = {m[1] for m in re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", macro.body)}
+    if nested_wordlists:
+        app.logger.debug(f"\tcontains nested word list calls: '{nested_wordlists}'")  
 
-    nested_macros = []
-    for unmangled in nested_identifiers:
-        # check if macro with this identifier is in db
+    for identifier in nested_wordlists:
+        # check if word list with this identifier is in db
         # and get latest version
-        nm = Macro.query \
-                .filter(Macro.name == unmangled) \
-                .order_by(Macro.version.desc()) \
+        wl = WordList.query \
+                .filter(WordList.name == identifier) \
+                .order_by(WordList.version.desc()) \
                 .first()
         
-        if not nm:
+        if not wl:
             # abort and delete macro if it cannot be called
-            app.logger.error(f"could not import macro {name} because it contains undefined nested macro calls")
+            app.logger.error(f"could not import macro {name} because it contains undefined word list {identifier}")
             db.session.delete(macro)
             db.session.commit()
             return
         else:
             # mangle and replace identifiers in the macro definition
-            pattern = fr"/{unmangled}\[(.*?)\]"
+            pattern = fr"\${wl.name}"
+            repl = fr"${wl.name}__v{wl.version}"
+            macro.body = re.sub(pattern, repl, macro.body, flags=re.S)
+
+            # save the dependency in the db
+            record = NestedWordList(
+                macro_id=macro.id,
+                wordlist_id=wl.id
+            )
+
+            db.session.add(record)
+
+
+    ## handle nested macros
+    nested_macros = {m[1] for m in re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[.*?\]", macro.body)}
+    if nested_macros:
+        app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
+
+    for identifier in nested_macros:
+        # check if macro with this identifier is in db
+        # and get latest version
+        nm = Macro.query \
+                .filter(Macro.name == identifier) \
+                .order_by(Macro.version.desc()) \
+                .first()
+        
+        if not nm:
+            # abort and delete macro if it cannot be called
+            app.logger.error(f"could not import macro {name} because it contains undefined nested macro call {identifier}")
+            db.session.delete(macro)
+            db.session.commit()
+            return
+        else:
+            # mangle and replace identifiers in the macro definition
+            pattern = fr"/{identifier}\[(.*?)\]"
             repl = fr"/{nm.name}__v{nm.version}[\1]"
             macro.body = re.sub(pattern, repl, macro.body, flags=re.S)
 
@@ -80,9 +112,9 @@ def import_macro(name, valency, argument_names, body, corpus_id):
                 macro_id=macro.id,
                 nested_id=nm.id
             )
-            nested_macros.append(record)
 
-    db.session.bulk_save_objects(nested_macros)
+            db.session.add(record)
+
     db.session.commit()
 
     # write macro to disk so it can be loaded by CQP
@@ -120,6 +152,9 @@ def import_library(lib_dir, corpus_id, username):
     paths_wordlists = glob(os.path.join(lib_dir, "wordlists", "*.txt"))
     paths_queries = glob(os.path.join(lib_dir, "queries", "*.cqpy"))
 
+    for path in paths_wordlists:
+        import_wordlist(path, corpus_id)
+
     for path in paths_macros:
         # load the file
         with open(path, "rt") as f:
@@ -144,9 +179,6 @@ def import_library(lib_dir, corpus_id, username):
                 app.logger.debug(f"Importing macro '{name}' with {valency} arguments from file '{path}'")
             
             import_macro(name, valency, argument_names, body, corpus_id)
-
-    for path in paths_wordlists:
-        import_wordlist(path, corpus_id)
 
     for path in paths_queries:
         import_slot_query(path, corpus_id)
