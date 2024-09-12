@@ -3,6 +3,7 @@
 
 import os
 import json
+import re
 
 from datetime import datetime
 
@@ -322,6 +323,62 @@ class Query(db.Model):
         "polymorphic_on": "type",
         "polymorphic_identity": "query",
     }
+
+    def __init__(self, **kwargs):
+        super(Query, self).__init__(**kwargs)
+        db.session.add(self)
+
+        ## perform dependency resolution and fail if resolution is impossible
+        
+        ## word list extraction
+
+        wl_matches = re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.cqp_query)
+        wl_calls = {wl[1] for wl in wl_matches}
+        current_app.logger.debug(f"\tcontains word lists '{wl_calls}'")
+
+        # resolve word lists and save relationship for later mangling before execution
+        for identifier in wl_calls:
+            wl = WordList.query \
+                    .filter(WordList.name == identifier) \
+                    .order_by(WordList.version.desc()) \
+                    .first()
+            
+            if not wl:
+                db.session.delete(self)
+                raise Exception(f"undefined word list {identifier}")
+            else:
+                call = WordListCall(
+                    query_id=self.id,
+                    wordlist_id=wl.id
+                )
+                db.session.add(call)
+
+        db.session.commit()
+
+        ## macro extraction
+
+        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[.*?\]", self.cqp_query)
+        macro_calls = {m[1] for m in macro_matches}
+        current_app.logger.debug(f"\tcontains macros '{macro_calls}'")
+
+        # resolve macros and save relationship for later mangling before execution
+        for identifier in macro_calls:
+            macro = Macro.query \
+                    .filter(Macro.name == identifier) \
+                    .order_by(Macro.version.desc()) \
+                    .first()
+            
+            if not macro:
+                db.session.delete(self)
+                raise Exception(f"undefined macro {identifier}")
+            else:
+                call = MacroCall(
+                    query_id=self.id,
+                    macro_id=macro.id
+                )
+                db.session.add(call)
+
+        db.session.commit()
 
     @property
     def number_matches(self):
