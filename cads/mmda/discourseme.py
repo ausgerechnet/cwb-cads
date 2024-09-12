@@ -22,7 +22,7 @@ from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..database import Breakdown, Corpus, Query, User, get_or_create
 from ..users import auth
-from .database import (CollocationDiscoursemeItem, Discourseme,
+from .database import (CollocationDiscoursemeItem, Discourseme, Constellation,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem)
 
@@ -43,7 +43,7 @@ def read_ldjson(path_ldjson):
     return discoursemes
 
 
-def import_discoursemes(glob_in, p='lemma', col_surface='surface', col_name='name', username='admin'):
+def import_discoursemes(glob_in, p='lemma', col_surface='surface', col_name='name', username='admin', create_constellation=True):
     """import discoursemes from TSV file
 
     - name
@@ -61,16 +61,23 @@ def import_discoursemes(glob_in, p='lemma', col_surface='surface', col_name='nam
         current_app.logger.debug(f'path: {path}')
         df = read_csv(path, sep="\t")
         df = df.rename({col_surface: 'surface'}, axis=1)
+        discoursemes = list()
+        constellation_name = path.split("/")[-1].split(".")[0]
         for name, items in df.groupby(col_name):
 
             discourseme = get_or_create(Discourseme, user_id=user.id, name=name)
             db.session.add(discourseme)
             db.session.commit()
+            discoursemes.append(discourseme)
 
             items = items[['surface']]
             items['discourseme_id'] = discourseme.id
             items['p'] = p
             items.to_sql("discourseme_template_items", con=db.engine, if_exists='append', index=False)
+
+        constellation = get_or_create(Constellation, user_id=user.id, name=constellation_name)
+        [constellation.discoursemes.append(discourseme) for discourseme in discoursemes]
+        db.session.add(discourseme)
 
     db.session.commit()
 
