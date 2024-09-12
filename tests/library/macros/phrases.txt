@@ -1,0 +1,21 @@
+MACRO adjp()
+    [pos = "RB.*"]?
+    [pos = "JJ.*"]
+;
+
+MACRO np($0=N_Adj)
+    [pos = "DT"]
+    ( /adjp[] ){$0}
+    [pos = "NNS?"]
+;
+
+MACRO np($0=Noun $1=N_Adj)
+    [pos = "DT"]
+    ( /adjp[] ){$1}
+    [(pos = "NN") & (lemma = "$0")]
+;
+
+MACRO pp($0=Prep $1=N_Adj)
+    [(word = "$0") & (pos = "IN|TO")]
+    /np[$1]
+;
