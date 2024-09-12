@@ -106,8 +106,15 @@ def import_slot_query(path, corpus_id):
 
     query = cqpy_load(path)
 
-    slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]
-    corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in query['anchors']['corrections'].items()]
+
+    anchors = query.get('anchors')
+    slots = []
+    corrections = []
+    if anchors:
+        if anchors.get('slots'):
+            slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]      
+        if anchors.get('corrections'):
+            corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in query['anchors']['corrections'].items()]
 
     app.logger.debug(f"importing SlottedQuery {query['meta']['name']}")
 
@@ -116,8 +123,8 @@ def import_slot_query(path, corpus_id):
             corpus_id=corpus_id,
             cqp_query=query['cqp'],
             name=query['meta']['name'],
-            _slots=json.dumps(slots),
-            _corrections=json.dumps(corrections),
+            _slots=json.dumps(slots) if slots else None,
+            _corrections=json.dumps(corrections) if corrections else None,
             s="s", #TODO: don't hard code this? s seems like a safe default though
         )
         db.session.add(slot_query)
