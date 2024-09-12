@@ -111,70 +111,21 @@ def import_slot_query(path, corpus_id):
 
     app.logger.debug(f"importing SlottedQuery {query['meta']['name']}")
 
-    slot_query = SlotQuery(
-        corpus_id=corpus_id,
-        cqp_query=query['cqp'],
-        name=query['meta']['name'],
-        _slots=json.dumps(slots),
-        _corrections=json.dumps(corrections),
-        s="s", #TODO: don't hard code this? s seems like a safe default though
-    )
-    db.session.add(slot_query)
-    db.session.commit()
-
-    ## word list extraction
-
-    wl_matches = re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", slot_query.cqp_query)
-    wl_calls = {wl[1] for wl in wl_matches}
-    app.logger.debug(f"\tcontains word lists '{wl_calls}'")
-
-    # resolve word lists and save relationship for later mangling before execution
-    for identifier in wl_calls:
-        wl = WordList.query \
-                .filter(WordList.name == identifier) \
-                .order_by(WordList.version.desc()) \
-                .first()
-        
-        if not wl:
-            app.logger.error(f"could not import query {slot_query.name} because it contains undefined word list {identifier}")
-            db.session.delete(slot_query)
-            db.session.commit()
-            return
-        else:
-            call = WordListCall(
-                query_id=slot_query.id,
-                wordlist_id=wl.id
-            )
-            db.session.add(call)
-
-    db.session.commit()
-
-    ## macro extraction
-
-    macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[.*?\]", slot_query.cqp_query)
-    macro_calls = {m[1] for m in macro_matches}
-    app.logger.debug(f"\tcontains macros '{macro_calls}'")
-
-    # resolve macros and save relationship for later mangling before execution
-    for identifier in macro_calls:
-        macro = Macro.query \
-                .filter(Macro.name == identifier) \
-                .order_by(Macro.version.desc()) \
-                .first()
-        
-        if not macro:
-            app.logger.error(f"could not import query {slot_query.name} because it contains undefined macro call {identifier}")
-            db.session.delete(slot_query)
-            db.session.commit()
-            return
-        else:
-            call = MacroCall(
-                query_id=slot_query.id,
-                macro_id=macro.id
-            )
-            db.session.add(call)
-
-    db.session.commit()
+    try:
+        slot_query = SlotQuery(
+            corpus_id=corpus_id,
+            cqp_query=query['cqp'],
+            name=query['meta']['name'],
+            _slots=json.dumps(slots),
+            _corrections=json.dumps(corrections),
+            s="s", #TODO: don't hard code this? s seems like a safe default though
+        )
+        db.session.add(slot_query)
+    except Exception as e:
+        app.logger.error(f"could not init query: {e}")
+        return
+    finally:
+        db.session.commit()
 
     ## dump to library directory
     # TODO: is this really necessary? it just basically duplicates the input and is never read by the backend
