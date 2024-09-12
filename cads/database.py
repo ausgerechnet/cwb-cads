@@ -289,12 +289,16 @@ class Query(db.Model):
     __table_args__ = ({'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Unicode(255))
+    type = db.Column(db.Unicode(10))
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
     zero_matches = db.Column(db.Boolean, default=False)
     error = db.Column(db.Boolean, default=False)
+
+    comment = db.Column(db.Unicode)
 
     filter_sequence = db.Column(db.Unicode)
 
@@ -310,6 +314,14 @@ class Query(db.Model):
     collocations = db.relationship('Collocation', backref='_query', passive_deletes=True, cascade='all, delete')
     concordances = db.relationship('Concordance', backref='_query', passive_deletes=True, cascade='all, delete')
     cotexts = db.relationship('Cotext', backref='_query', passive_deletes=True, cascade='all, delete')
+
+    wordlist_calls = db.relationship("WordListCall", passive_deletes=True, cascade='all, delete')
+    macro_calls = db.relationship("MacroCall", passive_deletes=True, cascade='all, delete')
+
+    __mapper_args__ = {
+        "polymorphic_on": "type",
+        "polymorphic_identity": "query",
+    }
 
     @property
     def number_matches(self):
@@ -934,6 +946,15 @@ class WordListWords(db.Model):
     def __str__(self):
         return self.word
 
+class WordListCall(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
+    wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete="CASCADE"), primary_key=True)
+
+    wordlist = db.relationship("WordList")
+
 
 class Macro(db.Model):
 
@@ -958,7 +979,8 @@ class Macro(db.Model):
 
     comment = db.Column(db.Unicode)
 
-    nested = db.relationship("NestedMacro", passive_deletes=True, \
+    nested_wordlist = db.relationship("NestedWordList", passive_deletes=True, cascade='all, delete')
+    nested_macro = db.relationship("NestedMacro", passive_deletes=True, \
                              cascade='all, delete', primaryjoin="Macro.id == NestedMacro.macro_id")
 
     @property
@@ -968,7 +990,7 @@ class Macro(db.Model):
     @property
     def path(self):
         return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", \
-                            "macros", self.canonical_name)
+                            "macros", self.canonical_name + ".txt")
 
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
@@ -991,6 +1013,24 @@ class NestedMacro(db.Model):
 
     macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
     nested_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+
+
+class NestedWordList(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+    wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete="CASCADE"), primary_key=True)
+
+
+class MacroCall(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
+    macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+
+    macro = db.relationship("Macro")
 
 
 # CLI #
