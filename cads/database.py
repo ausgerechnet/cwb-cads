@@ -282,6 +282,15 @@ class SegmentationSpanAnnotation(db.Model):
 
 # QUERIES #
 ###########
+def parse_macro_call_arguments(argstring):
+    """Determines the number of arguments supplied to a macro call"""
+
+    if argstring:
+        return len(argstring.split(","))
+    else:
+        return 0
+
+
 class Query(db.Model):
     """Query: executed in CQP and dumped to disk
 
@@ -357,20 +366,21 @@ class Query(db.Model):
 
         ## macro extraction
 
-        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[.*?\]", self.cqp_query)
-        macro_calls = {m[1] for m in macro_matches}
+        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.cqp_query)
+        macro_calls = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
         current_app.logger.debug(f"\tcontains macros '{macro_calls}'")
 
         # resolve macros and save relationship for later mangling before execution
-        for identifier in macro_calls:
+        for identifier, valency in macro_calls:
             macro = Macro.query \
                     .filter(Macro.name == identifier) \
+                    .filter(Macro.valency == valency) \
                     .order_by(Macro.version.desc()) \
                     .first()
             
             if not macro:
                 db.session.delete(self)
-                raise Exception(f"undefined macro {identifier}")
+                raise Exception(f"undefined macro {identifier} with valency {valency}")
             else:
                 call = MacroCall(
                     query_id=self.id,
