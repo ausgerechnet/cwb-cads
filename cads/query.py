@@ -53,7 +53,7 @@ def ccc_query(query, return_df=True):
         # apply macro mangling
         for mc in query.macro_calls:
             m = mc.macro
-            pattern = fr"/{m.name}(\[.*?\])"
+            pattern = fr"/{m.name}(\[{', ?'.join(m.valency * [r'[^,\s]+?'])}\])"
             repl = fr"/{m.name}__{m.valency}__v{m.version}\1"
             mangled_query = re.sub(pattern, repl, mangled_query)
 
@@ -75,7 +75,7 @@ def ccc_query(query, return_df=True):
             current_app.logger.error(f"ccc_query :: error: '{matches}'")
             query.error = True
             db.session.commit()
-            return DataFrame()
+            return DataFrame()  
 
         if len(matches.df) == 0:  # no matches
             current_app.logger.debug("0 matches")
