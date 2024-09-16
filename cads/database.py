@@ -343,7 +343,8 @@ class Query(db.Model):
 
         wl_matches = re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.cqp_query)
         wl_calls = {wl[1] for wl in wl_matches}
-        current_app.logger.debug(f"\tcontains word lists '{wl_calls}'")
+        if wl_calls:
+            current_app.logger.debug(f"\tcontains word lists '{wl_calls}'")
 
         # resolve word lists and save relationship for later mangling before execution
         for identifier in wl_calls:
@@ -368,7 +369,8 @@ class Query(db.Model):
 
         macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.cqp_query)
         macro_calls = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
-        current_app.logger.debug(f"\tcontains macros '{macro_calls}'")
+        if macro_calls:
+            current_app.logger.debug(f"\tcontains macros '{macro_calls}'")
 
         # resolve macros and save relationship for later mangling before execution
         for identifier, valency in macro_calls:
@@ -1049,6 +1051,77 @@ class Macro(db.Model):
     nested_wordlist = db.relationship("NestedWordList", passive_deletes=True, cascade='all, delete')
     nested_macro = db.relationship("NestedMacro", passive_deletes=True, \
                              cascade='all, delete', primaryjoin="Macro.id == NestedMacro.macro_id")
+
+    def __init__(self, **kwargs):
+        super(Macro, self).__init__(**kwargs)
+        db.session.add(self)
+
+        ## perform dependency resolution and fail init if resolution is impossible
+        # TODO: refactor and unify this code with Query __init__
+
+        ## handle nested word lists
+        nested_wordlists = {m[1] for m in re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.body)}
+        if nested_wordlists:
+            current_app.logger.debug(f"\tcontains nested word list calls: '{nested_wordlists}'")  
+
+        for identifier in nested_wordlists:
+            # check if word list with this identifier is in db
+            # and get latest version
+            wl = WordList.query \
+                    .filter(WordList.name == identifier) \
+                    .order_by(WordList.version.desc()) \
+                    .first()
+            
+            if not wl:
+                # abort and delete self if there is no candidate
+                db.session.delete(self)
+                raise Exception(f"undefined word list {identifier}")
+            else:
+                # mangle and replace identifiers in the macro definition
+                pattern = fr"\${wl.name}"
+                repl = fr"${wl.name}__v{wl.version}"
+                self.body = re.sub(pattern, repl, self.body, flags=re.S)
+
+                # save the dependency in the db
+                record = NestedWordList(
+                    macro_id=self.id,
+                    wordlist_id=wl.id
+                )
+
+                db.session.add(record)
+
+        ## handle nested macros
+        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.body)
+        nested_macros = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
+        if nested_macros:
+            current_app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
+
+        for identifier, valency in nested_macros:
+            # check if macro with this identifier and valency is in db
+            # and get latest version
+            nm = Macro.query \
+                    .filter(Macro.name == identifier) \
+                    .filter(Macro.valency == valency) \
+                    .order_by(Macro.version.desc()) \
+                    .first()
+            
+            if not nm:
+                # abort and delete self if no candidate exists
+                db.session.delete(self)
+                raise Exception(f"undefined nested macro call {identifier} with valency {valency}")
+            else:
+                # mangle and replace identifiers in the macro definition
+                pattern = fr"/{nm.name}(\[{', ?'.join(nm.valency * [r'[^,\s]+?'])}\])"
+                repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
+                self.body = re.sub(pattern, repl, self.body, flags=re.S)
+
+                # save the dependency in the db
+                record = NestedMacro(
+                    macro_id=self.id,
+                    nested_id=nm.id
+                )
+
+                db.session.add(record)
 
     @property
     def canonical_name(self):
