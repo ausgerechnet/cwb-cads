@@ -10,7 +10,7 @@ import click
 from flask import current_app as app
 from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
-from .database import Macro, NestedMacro, NestedWordList, WordList, WordListWords, Corpus
+from .database import Macro, NestedMacro, NestedWordList, WordList, WordListWords, Corpus, parse_macro_call_arguments
 from .users import auth
 from . import db
 
@@ -24,6 +24,8 @@ argstring_simple = re.compile(r"\d|10")
 argstring_named = re.compile(r"\d=([a-zA-Z_][a-zA-Z0-9_\-]*)")
 
 def parse_macro_arguments(argstring):
+    """Parses a macro definition to determine number and name of arguments"""
+
     match = argstring_simple.match(argstring)
     if match:
         return int(argstring), None
@@ -83,28 +85,30 @@ def import_macro(name, valency, argument_names, body, corpus_id):
 
 
     ## handle nested macros
-    nested_macros = {m[1] for m in re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[.*?\]", macro.body)}
+    macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", macro.body)
+    nested_macros = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
     if nested_macros:
         app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
 
-    for identifier in nested_macros:
+    for identifier, valency in nested_macros:
         # check if macro with this identifier is in db
         # and get latest version
         nm = Macro.query \
                 .filter(Macro.name == identifier) \
+                .filter(Macro.valency == valency) \
                 .order_by(Macro.version.desc()) \
                 .first()
         
         if not nm:
             # abort and delete macro if it cannot be called
-            app.logger.error(f"could not import macro {name} because it contains undefined nested macro call {identifier}")
+            app.logger.error(f"could not import macro {name} because it contains undefined nested macro call {identifier} with valency {valency}")
             db.session.delete(macro)
             db.session.commit()
             return
         else:
             # mangle and replace identifiers in the macro definition
-            pattern = fr"/{identifier}\[(.*?)\]"
-            repl = fr"/{nm.name}__v{nm.version}[\1]"
+            pattern = fr"/{nm.name}(\[{', ?'.join(nm.valency * [r'[^,\s]+?'])}\])"
+            repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
             macro.body = re.sub(pattern, repl, macro.body, flags=re.S)
 
             # save the dependency in the db
