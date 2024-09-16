@@ -34,92 +34,24 @@ def parse_macro_arguments(argstring):
         return len(args), args if args else None
 
 
-# macros are fun macros are fun macros are fun
 def import_macro(name, valency, argument_names, body, corpus_id):
 
-    macro = Macro(
-        name=name,
-        valency=valency,
-        argument_names=json.dumps(argument_names) if argument_names else None,
-        version=1,
-        corpus_id=corpus_id,
-        body=body,
-        comment='imported via CLI'
-    )
-
-    db.session.add(macro)
-    db.session.commit()
-
-    ## handle nested word lists
-    nested_wordlists = {m[1] for m in re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", macro.body)}
-    if nested_wordlists:
-        app.logger.debug(f"\tcontains nested word list calls: '{nested_wordlists}'")  
-
-    for identifier in nested_wordlists:
-        # check if word list with this identifier is in db
-        # and get latest version
-        wl = WordList.query \
-                .filter(WordList.name == identifier) \
-                .order_by(WordList.version.desc()) \
-                .first()
-        
-        if not wl:
-            # abort and delete macro if it cannot be called
-            app.logger.error(f"could not import macro {name} because it contains undefined word list {identifier}")
-            db.session.delete(macro)
-            db.session.commit()
-            return
-        else:
-            # mangle and replace identifiers in the macro definition
-            pattern = fr"\${wl.name}"
-            repl = fr"${wl.name}__v{wl.version}"
-            macro.body = re.sub(pattern, repl, macro.body, flags=re.S)
-
-            # save the dependency in the db
-            record = NestedWordList(
-                macro_id=macro.id,
-                wordlist_id=wl.id
-            )
-
-            db.session.add(record)
-
-
-    ## handle nested macros
-    macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", macro.body)
-    nested_macros = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
-    if nested_macros:
-        app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
-
-    for identifier, valency in nested_macros:
-        # check if macro with this identifier is in db
-        # and get latest version
-        nm = Macro.query \
-                .filter(Macro.name == identifier) \
-                .filter(Macro.valency == valency) \
-                .order_by(Macro.version.desc()) \
-                .first()
-        
-        if not nm:
-            # abort and delete macro if it cannot be called
-            app.logger.error(f"could not import macro {name} because it contains undefined nested macro call {identifier} with valency {valency}")
-            db.session.delete(macro)
-            db.session.commit()
-            return
-        else:
-            # mangle and replace identifiers in the macro definition
-            pattern = fr"/{nm.name}(\[{', ?'.join(nm.valency * [r'[^,\s]+?'])}\])"
-            repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
-            macro.body = re.sub(pattern, repl, macro.body, flags=re.S)
-
-            # save the dependency in the db
-            record = NestedMacro(
-                macro_id=macro.id,
-                nested_id=nm.id
-            )
-
-            db.session.add(record)
-
-    db.session.commit()
+    try:
+        macro = Macro(
+            name=name,
+            valency=valency,
+            argument_names=json.dumps(argument_names) if argument_names else None,
+            version=1,
+            corpus_id=corpus_id,
+            body=body,
+            comment='imported via CLI'
+        )
+        db.session.add(macro)
+    except Exception as e:
+        app.logger.error(f"could not init Macro: {e}")
+        return
+    finally:
+        db.session.commit()
 
     # write macro to disk so it can be loaded by CQP
     macro.write()
