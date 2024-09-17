@@ -118,14 +118,16 @@ def import_slot_query(path, corpus_id):
 
     app.logger.debug(f"importing SlottedQuery {query['meta']['name']}")
 
+    corpus = db.get_or_404(Corpus, corpus_id)
+
     try:
         slot_query = SlotQuery(
-            corpus_id=corpus_id,
+            corpus_id=corpus.id,
             cqp_query=query['cqp'],
             name=query['meta']['name'],
             _slots=json.dumps(slots) if slots else None,
             _corrections=json.dumps(corrections) if corrections else None,
-            s="s", #TODO: don't hard code this? s seems like a safe default though
+            s=corpus.s_default
         )
         db.session.add(slot_query)
     except Exception as e:
