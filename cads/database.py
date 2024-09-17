@@ -299,7 +299,8 @@ class Query(db.Model):
     __table_args__ = ({'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Unicode(255))
+    name = db.Column(db.Unicode(255))    
+    version = db.Column(db.Unicode(255))   
     type = db.Column(db.Unicode(10))
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -327,6 +328,10 @@ class Query(db.Model):
 
     wordlist_calls = db.relationship("WordListCall", passive_deletes=True, cascade='all, delete')
     macro_calls = db.relationship("MacroCall", passive_deletes=True, cascade='all, delete')
+
+    __table_args__ = (
+        db.UniqueConstraint("name", "version"), # alternative primary key for version history
+    )
 
     __mapper_args__ = {
         "polymorphic_on": "type",
@@ -993,6 +998,10 @@ class WordList(db.Model):
 
     comment = db.Column(db.Unicode)
 
+    __table_args__ = (
+        db.UniqueConstraint("name", "version", "corpus_id"), # alternative primary key for version history
+    )
+
     @property
     def path(self):
         return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "wordlists", f"{self.name}__v{self.version}.txt")
@@ -1029,10 +1038,6 @@ class Macro(db.Model):
 
     __table_args__ = {'sqlite_autoincrement': True}
 
-    # __table_args__ = (
-    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
-    # )
-
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(db.Unicode(255), nullable=False)
@@ -1051,6 +1056,10 @@ class Macro(db.Model):
     nested_wordlist = db.relationship("NestedWordList", passive_deletes=True, cascade='all, delete')
     nested_macro = db.relationship("NestedMacro", passive_deletes=True, \
                              cascade='all, delete', primaryjoin="Macro.id == NestedMacro.macro_id")
+
+    __table_args__ = (
+        db.UniqueConstraint("name", "valency", "version", "corpus_id"), # alternative primary key for version history
+    )
 
     def __init__(self, **kwargs):
         super(Macro, self).__init__(**kwargs)
