@@ -354,6 +354,7 @@ class Query(db.Model):
         # resolve word lists and save relationship for later mangling before execution
         for identifier in wl_calls:
             wl = WordList.query \
+                    .filter(WordList.corpus_id == self.corpus_id) \
                     .filter(WordList.name == identifier) \
                     .order_by(WordList.version.desc()) \
                     .first()
@@ -380,6 +381,7 @@ class Query(db.Model):
         # resolve macros and save relationship for later mangling before execution
         for identifier, valency in macro_calls:
             macro = Macro.query \
+                    .filter(Macro.corpus_id == self.corpus_id) \
                     .filter(Macro.name == identifier) \
                     .filter(Macro.valency == valency) \
                     .order_by(Macro.version.desc()) \
@@ -1077,6 +1079,7 @@ class Macro(db.Model):
             # check if word list with this identifier is in db
             # and get latest version
             wl = WordList.query \
+                    .filter(WordList.corpus_id == self.corpus_id) \
                     .filter(WordList.name == identifier) \
                     .order_by(WordList.version.desc()) \
                     .first()
@@ -1109,6 +1112,7 @@ class Macro(db.Model):
             # check if macro with this identifier and valency is in db
             # and get latest version
             nm = Macro.query \
+                    .filter(Macro.corpus_id == self.corpus_id) \
                     .filter(Macro.name == identifier) \
                     .filter(Macro.valency == valency) \
                     .order_by(Macro.version.desc()) \
