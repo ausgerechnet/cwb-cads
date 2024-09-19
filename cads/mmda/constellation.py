@@ -971,6 +971,17 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
+    # discourseme scores
+    set_collocation_discourseme_scores(collocation,
+                                       [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
+                                       overlap=description.overlap)
+    discourseme_scores = get_collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
+    for s in discourseme_scores:
+        s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
+    discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+    print(discourseme_scores.keys())
+    # discourseme_scores['']
+
     # TODO anti-joins
     # unigram_items = CollocationDiscoursemeUnigramItem.query.filter_by(
     #     collocation_id=collocation.id,
@@ -1000,15 +1011,6 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     # format
     df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
     items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
-
-    # discourseme scores
-    set_collocation_discourseme_scores(collocation,
-                                       [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
-                                       overlap=description.overlap)
-    discourseme_scores = get_collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
-    for s in discourseme_scores:
-        s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
-    discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
     # coordinates
     coordinates = list()
