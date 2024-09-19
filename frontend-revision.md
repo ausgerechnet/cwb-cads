@@ -6,6 +6,10 @@ collocation parameters (*window size*, *context break*, *secondary*) should be s
 
 filter item (and filter discourseme) should be accessible via clicking. this should directly filter concordance lines and provide the option to start a "secondary" collocation analysis.
 
+## concordance KWIC view
+
+doesn't show MWUs as keywords, only first token
+
 ## concordance filtering and sorting
 
 sorting doesn't work as expected [backend issue?]
