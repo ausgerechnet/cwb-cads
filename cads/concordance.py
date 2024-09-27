@@ -128,9 +128,11 @@ def ccc_concordance(focus_query,
 
     # check parameters
     if sort_order == 'random' and (sort_by or sort_by_s_att):
+        # TODO 400
         raise ValueError("ccc_concordance :: either get random or sorted concordance lines, not both")
 
     if len(filter_queries) > 0 and match_id:
+        # TODO 400
         raise ValueError("ccc_concordance :: cannot filter with specific match id")
 
     if sort_by and sort_by_s_att:
