@@ -979,7 +979,7 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-    print(discourseme_scores.keys())
+    # print(discourseme_scores.keys())
     # discourseme_scores['']
 
     # TODO anti-joins
