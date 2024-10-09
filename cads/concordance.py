@@ -135,6 +135,9 @@ def ccc_concordance(focus_query,
         # TODO 400
         raise ValueError("ccc_concordance :: cannot filter with specific match id")
 
+    if sort_by_s_att:
+        raise NotImplementedError("ccc_concordance :: cannot sort by s-att")
+
     if sort_by and sort_by_s_att:
         raise NotImplementedError("ccc_concordance :: cannot sort by s-att and p-att")
 
@@ -242,6 +245,7 @@ class ConcordanceIn(Schema):
 
     window = Integer(required=False, load_default=10)
     extended_window = Integer(required=False, load_default=50)
+    context_break = String(required=False, load_default=None)
 
     primary = String(required=False, load_default='word')
     secondary = String(required=False, load_default='lemma')

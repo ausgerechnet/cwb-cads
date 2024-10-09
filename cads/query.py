@@ -510,6 +510,7 @@ def concordance_lines(query_id, query_data):
     primary = query_data.get('primary')
     secondary = query_data.get('secondary')
     extended_window = query_data.get('extended_window')
+    context_break = query_data.get('context_break')
 
     # pagination
     page_size = query_data.get('page_size')
@@ -540,7 +541,7 @@ def concordance_lines(query_id, query_data):
 
     concordance = ccc_concordance(query,
                                   primary, secondary,
-                                  window, extended_window,
+                                  window, extended_window, context_break,
                                   filter_queries=filter_queries, highlight_queries=highlight_queries,
                                   page_number=page_number, page_size=page_size,
                                   sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order, sort_by_s_att=sort_by_s_att)

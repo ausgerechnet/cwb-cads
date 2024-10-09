@@ -1,4 +1,5 @@
 from flask import url_for
+import pytest
 
 
 def test_create_query(client, auth):
@@ -278,3 +279,59 @@ def test_query_collocation(client, auth):
         assert collocation_items.status_code == 200
 
         assert collocation_items.json['items'][0]['item'] == 'Hornung'
+
+
+@pytest.mark.now
+def test_query_concordance_sort_complete(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="SPD"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
+
+        # SORT BY CORPUS OCCURRENCE
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+                                   sort_by='text_date', sort_order='ascending', window=8),
+                           headers=auth_header)
+
+        assert lines.status_code == 200
+
+        match_ids = list()
+        for line in lines.json['lines']:
+            match_ids.append(line['match_id'])
+        print(match_ids)
+
+        # SORT BY OFFSET -2 ASCENDING
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=8),
+                           headers=auth_header)
+
+        assert lines.status_code == 200
+
+        tokens = list()
+        for line in lines.json['lines']:
+            t = [t['primary'] for t in line['tokens'] if t['offset'] == -2][0]
+            tokens.append(t)
+
+        assert list(sorted(tokens)) == tokens
+
+        # SORT BY OFFSET -2 DESCENDING
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=8),
+                           headers=auth_header)
+
+        assert lines.status_code == 200
+
+        tokens = list()
+        for line in lines.json['lines']:
+            t = [t['primary'] for t in line['tokens'] if t['offset'] == -2][0]
+            tokens.append(t)
+
+        assert list(reversed(sorted(tokens))) == tokens
