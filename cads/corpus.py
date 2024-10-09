@@ -95,7 +95,7 @@ def meta_from_df(corpus, df_meta, level, column_mapping):
     superfluous = set(column_mapping.keys()) - set(df_meta.columns)
 
     for col in undefined:
-        if col not in ['match', 'matchend']:
+        if col not in ['match', 'matchend'] and not col.endswith("_cwbid"):
             current_app.logger.error(f'column "{col}" not defined, saving as "unicode"')
             column_mapping[col] = 'unicode'
 
