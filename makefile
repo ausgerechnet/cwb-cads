@@ -56,8 +56,8 @@ discoursemes:
 
 library:
 	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=${config} && \
-	flask --app cads library import-library --lib_dir ${library}
+	export CWB_CADS_CONFIG=cfg.DevConfig && \
+	flask --app cads library import-library --corpus_id 1 --lib_dir "tests/library/"
 
 examples: init corpora discoursemes
 
