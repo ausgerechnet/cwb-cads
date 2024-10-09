@@ -1,16 +1,30 @@
+config = cfg.DevConfig
+cwb_id = GERMAPARL-1386
+# cwb_id = GERMAPARL-1949-2021
+meta = tests/corpora/germaparl-meta.tsv
+# meta = ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz
+subcorpora = tests/corpora/germaparl-subcorpora.tsv
+# subcorpora = ../norm-rechts/outreach/cpss-2024/subcorpora.tsv
+# subcorpora = ../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv
+discoursemes = tests/discoursemes/climate-change.tsv
+# discoursemes = "../*-discoursemes.tsv"
+library = tests/library/
+
 install:
 	python3 -m venv venv && \
 	. venv/bin/activate && \
 	pip3 install -U pip setuptools wheel && \
 	pip3 install -r requirements.txt
 
+nvm:
+	. ${NVM_DIR}/nvm.sh && cd frontend && nvm use && $(CMD)
+
+install_frontend:
+	make nvm CMD="npm install"
+
 apispec:
 	. venv/bin/activate && \
 	flask --app cads spec > openapi.json
-
-lint:
-	. venv/bin/activate && \
-	pylint --rcfile=.pylintrc cads/*.py
 
 
 ###############
@@ -19,97 +33,62 @@ lint:
 
 init:
 	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.DevConfig && \
+	export CWB_CADS_CONFIG=${config} && \
 	flask --app cads database init
 
 corpora:
 	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.DevConfig && \
-	flask --app cads corpus import # && \
-#	flask --app cads corpus read-meta GERMAPARL-1949-2021 ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz
+	export CWB_CADS_CONFIG=${config} && \
+	flask --app cads corpus import
 
-# subcorpora:
-# 	. venv/bin/activate && \
-# 	export CWB_CADS_CONFIG=cfg.DevConfig && \
-# 	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../norm-rechts/outreach/cpss-2024/subcorpora.tsv" && \
-# 	flask --app cads corpus subcorpora "GERMAPARL-1949-2021" "../thesis/ccc-analyses/case-studies/norm-rechts/subcorpora-*.tsv"
+subcorpora:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=${config} && \
+	flask --app cads corpus subcorpora ${cwb_id} ${subcorpora}
 
 discoursemes:
 	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.DevConfig && \
-	flask --app cads discourseme import --path_in "tests/discoursemes/climate-change.tsv"
+	export CWB_CADS_CONFIG=${config} && \
+	flask --app cads discourseme import --path_in ${discoursemes}
 
 library:
 	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.DevConfig && \
-	flask --app cads library import-library --lib_dir "tests/library/"
+	export CWB_CADS_CONFIG=${config} && \
+	flask --app cads library import-library --lib_dir ${library}
 
-
-examples: init corpora discoursemes library
+examples: init corpora discoursemes
 
 run:
 	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.DevConfig && \
+	export CWB_CADS_CONFIG=${config} && \
 	flask --app cads --debug run
 
 run_frontend:
-	cd frontend && \
-	. ~/.nvm/nvm.sh && \
-	nvm install && \
-	nvm use && \
-	npm install && \
-	npm run dev
-
-export:
-	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.DevConfig && \
-	flask --app cads discourseme export
-
-
-##############
-# PRODUCTION #
-##############
-
-init_prod:
-	. venv/bin/activate && \
-	flask --app cads database init && \
-	flask --app cads corpus import
-
-examples_prod:
-	. venv/bin/activate && \
-	flask --app cads database init && \
-	flask --app cads corpus import && \
-	flask --app cads discourseme import --path_in "../*-discoursemes.tsv" # && \
-#	flask --app cads corpus read-meta "GERMAPARL_1949_2021" --path "../germaparl-speaker-nodes.tsv.gz" && \
-#	flask --app cads corpus subcorpora "GERMAPARL_1949_2021" "../subcorpora-*.tsv"
-
-frontend_prod:
-	cd frontend && \
-	. ~/.nvm/nvm.sh && \
-	nvm install && \
-	nvm use && \
-	npm install && \
-	npm run build
+	make nvm CMD="npm run dev"
 
 ########
 # TEST #
 ########
 
-init_test:
+lint:
 	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.TestConfig && \
-	flask --app cads database init && \
-	flask --app cads corpus import && \
-	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv" && \
-	flask --app cads discourseme import --path_in "tests/discoursemes/russland.tsv" && \
-	flask --app cads corpus read-meta "GERMAPARL1386"
-
-run_test:
-	. venv/bin/activate && \
-	export CWB_CADS_CONFIG=cfg.TestConfig && \
-	flask --app cads --debug run
+	pylint --recursive y --rcfile=.pylintrc cads/
 
 test:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=cfg.TestConfig && \
 	pytest -s -v
+
+test_examples:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.TestConfig && \
+	flask --app cads database init && \
+	flask --app cads corpus import && \
+	flask --app cads corpus read-meta "GERMAPARL1386" --path "tests/corpora/germaparl-meta.tsv" && \
+	flask --app cads corpus subcorpora "GERMAPARL1386" "tests/corpora/germaparl-subcorpora.tsv" && \
+	flask --app cads discourseme import --path_in "tests/discoursemes/germaparl.tsv"
+
+test_run:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=cfg.TestConfig && \
+	flask --app cads --debug run

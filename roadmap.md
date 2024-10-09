@@ -65,6 +65,8 @@ probably best handled in backend
 
 ## Backend
 
+update manuals
+
 ### Features
 - [x] query
 - [x] breakdown

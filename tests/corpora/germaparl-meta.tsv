@@ -1,0 +1,347 @@
+match	matchend	id	name	text_id	parliamentary_group	role	who	party	position
+0	1801	0	Rita Süssmuth	i13_86_1_1	NA	presidency	Dr. Rita Süssmuth	CDU	Präsidentin
+1802	7437	1	Günter Rexrodt	i13_86_1_2	NA	government	Dr. Günter Rexrodt	FDP	Bundesminister für Wirtschaft
+7438	7449	2	Rita Süssmuth	i13_86_1_3	NA	presidency	Dr. Rita Süssmuth	CDU	Präsidentin
+7450	10610	3	Rudolf Scharping	i13_86_1_4	SPD	mp	Rudolf Scharping	SPD	NA
+10611	10627	4	Rita Süssmuth	i13_86_1_5	NA	presidency	Dr. Rita Süssmuth	CDU	Präsidentin
+10628	14281	5	Michael Glos	i13_86_1_6	CDU/CSU	mp	Michael Glos	CSU	NA
+14282	14297	6	Antje Vollmer	i13_86_1_7	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+14298	16683	7	Joschka Fischer	i13_86_1_8	BÜNDNIS 90/DIE GRÜNEN	mp	Joseph Fischer	Bündnis 90/Die Grünen	NA
+16684	16697	8	Antje Vollmer	i13_86_1_9	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+16698	16778	9	Burkhard Hirsch	i13_86_1_10	F.D.P.	mp	Dr. Burkhard Hirsch	FDP	NA
+16779	17410	10	Joschka Fischer	i13_86_1_11	BÜNDNIS 90/DIE GRÜNEN	mp	Joseph Fischer	Bündnis 90/Die Grünen	NA
+17411	17422	11	Antje Vollmer	i13_86_1_12	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+17423	17443	12	Joschka Fischer	i13_86_1_13	BÜNDNIS 90/DIE GRÜNEN	mp	Joseph Fischer	Bündnis 90/Die Grünen	NA
+17444	17469	13	Antje Vollmer	i13_86_1_14	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+17470	17529	14	Jürgen Koppelin	i13_86_1_15	F.D.P.	mp	Jürgen Koppelin	FDP	NA
+17530	18222	15	Joschka Fischer	i13_86_1_16	BÜNDNIS 90/DIE GRÜNEN	mp	Joseph Fischer	Bündnis 90/Die Grünen	NA
+18223	18237	16	Antje Vollmer	i13_86_1_17	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+18238	21318	17	Wolfgang Gerhardt	i13_86_1_18	F.D.P.	mp	Dr. Wolfgang Gerhardt	FDP	NA
+21319	21327	18	Antje Vollmer	i13_86_1_19	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+21328	21570	19	Gregor Gysi	i13_86_1_20	PDS	mp	Dr. Gregor Gysi	PDS	NA
+21571	21592	20	Antje Vollmer	i13_86_1_21	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+21593	24208	21	Gregor Gysi	i13_86_1_22	PDS	mp	Dr. Gregor Gysi	PDS	NA
+24209	24216	22	Antje Vollmer	i13_86_1_23	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+24217	24306	23	Gregor Gysi	i13_86_1_24	PDS	mp	Dr. Gregor Gysi	PDS	NA
+24307	24320	24	Antje Vollmer	i13_86_1_25	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+24321	25246	25	Erwin Teufel	i13_86_1_26	NA	federal_council	Erwin Teufel	CDU	Ministerpräsident
+25247	25258	26	Antje Vollmer	i13_86_1_27	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+25259	25282	27	Erwin Teufel	i13_86_1_28	NA	federal_council	Erwin Teufel	CDU	Ministerpräsident
+25283	25284	28	Antje Vollmer	i13_86_1_29	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+25285	25365	29	Anke Fuchs	i13_86_1_30	SPD	mp	Anke Fuchs	SPD	NA
+25366	25522	30	Erwin Teufel	i13_86_1_31	NA	federal_council	Erwin Teufel	CDU	Ministerpräsident
+25523	25559	31	Antje Vollmer	i13_86_1_32	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+25560	25671	32	Erwin Teufel	i13_86_1_33	NA	federal_council	Erwin Teufel	CDU	Ministerpräsident
+25672	25681	33	Antje Vollmer	i13_86_1_34	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+25682	28811	34	Erwin Teufel	i13_86_1_35	NA	federal_council	Erwin Teufel	CDU	Ministerpräsident
+28812	28830	35	Antje Vollmer	i13_86_1_36	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+28831	29279	36	Heide Simonis	i13_86_1_37	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+29280	29347	37	Antje Vollmer	i13_86_1_38	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+29348	29511	38	Heide Simonis	i13_86_1_39	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+29512	29543	39	Antje Vollmer	i13_86_1_40	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+29544	31349	40	Heide Simonis	i13_86_1_41	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+31350	31360	41	Antje Vollmer	i13_86_1_42	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+31361	31363	42	Heide Simonis	i13_86_1_43	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+31364	31370	43	Norbert Blüm	i13_86_1_44	CDU/CSU	mp	Dr. Norbert Blüm	CDU	NA
+31371	31387	44	Heide Simonis	i13_86_1_45	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+31388	31401	45	Norbert Blüm	i13_86_1_46	CDU/CSU	mp	Dr. Norbert Blüm	CDU	NA
+31402	31439	46	Heide Simonis	i13_86_1_47	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+31440	31476	47	Norbert Blüm	i13_86_1_48	CDU/CSU	mp	Dr. Norbert Blüm	CDU	NA
+31477	31933	48	Heide Simonis	i13_86_1_49	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+31934	31944	49	Antje Vollmer	i13_86_1_50	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+31945	32331	50	Heide Simonis	i13_86_1_51	NA	federal_council	Heide Simonis	SPD	Ministerpräsidentin
+32332	32355	51	Antje Vollmer	i13_86_1_52	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+32356	32960	52	Dietrich Austermann	i13_86_1_53	CDU/CSU	mp	Dietrich Austermann	CDU	NA
+32961	33077	53	Antje Vollmer	i13_86_1_54	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+33078	33671	54	Dietrich Austermann	i13_86_1_55	CDU/CSU	mp	Dietrich Austermann	CDU	NA
+33672	33683	55	Antje Vollmer	i13_86_1_56	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+33684	34483	56	Dietrich Austermann	i13_86_1_57	CDU/CSU	mp	Dietrich Austermann	CDU	NA
+34484	34505	57	Antje Vollmer	i13_86_1_58	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+34506	35334	58	Dietrich Austermann	i13_86_1_59	CDU/CSU	mp	Dietrich Austermann	CDU	NA
+35335	35340	59	Antje Vollmer	i13_86_1_60	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+35341	35370	60	Dietrich Austermann	i13_86_1_61	CDU/CSU	mp	Dietrich Austermann	CDU	NA
+35371	35399	61	Antje Vollmer	i13_86_1_62	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+35400	35515	62	Dietrich Austermann	i13_86_1_63	CDU/CSU	mp	Dietrich Austermann	CDU	NA
+35516	35525	63	Antje Vollmer	i13_86_1_64	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+35526	36121	64	Jürgen Koppelin	i13_86_1_65	F.D.P.	mp	Jürgen Koppelin	FDP	NA
+36122	36335	65	Hans-Ulrich Klose	i13_86_1_66	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+36336	36380	66	Hans-Ulrich Klose	i13_86_1_67	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+36381	37009	67	Wolfgang Schäuble	i13_86_1_68	CDU/CSU	mp	Dr. Wolfgang Schäuble	CDU	NA
+37010	37038	68	Hans-Ulrich Klose	i13_86_1_69	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+37039	37046	69	Hans-Ulrich Klose	i13_86_1_70	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+37047	38037	70	Renate Hellwig	i13_86_1_71	CDU/CSU	mp	Dr. Renate Hellwig	CDU	NA
+38038	38051	71	Hans-Ulrich Klose	i13_86_1_72	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+38052	39942	72	Margareta Wolf	i13_86_1_73	BÜNDNIS 90/DIE GRÜNEN	mp	Margareta Wolf	Bündnis 90/Die Grünen	NA
+39943	39953	73	Hans-Ulrich Klose	i13_86_1_74	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+39954	42163	74	Otto Graf Lambsdorff	i13_86_1_75	F.D.P.	mp	Dr. Otto Graf Lambsdorff	FDP	NA
+42164	42173	75	Hans-Ulrich Klose	i13_86_1_76	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+42174	42252	76	Otto Graf Lambsdorff	i13_86_1_77	F.D.P.	mp	Dr. Otto Graf Lambsdorff	FDP	NA
+42253	42259	77	Hans-Ulrich Klose	i13_86_1_78	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+42260	48934	78	Helmut Kohl	i13_86_1_79	NA	government	Dr. Helmut Kohl	CDU	Bundeskanzler
+48935	48945	79	Hans-Ulrich Klose	i13_86_1_80	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+48946	52322	80	Oskar Lafontaine	i13_86_1_81	NA	federal_council	Oskar Lafontaine	SPD	Ministerpräsident
+52323	52328	81	Hans-Ulrich Klose	i13_86_1_82	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+52329	52370	82	Otto Graf Lambsdorff	i13_86_1_83	F.D.P.	mp	Dr. Otto Graf Lambsdorff	FDP	NA
+52371	54438	83	Oskar Lafontaine	i13_86_1_84	NA	federal_council	Oskar Lafontaine	SPD	Ministerpräsident
+54439	54451	84	Hans-Ulrich Klose	i13_86_1_85	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+54452	58750	85	Wolfgang Schäuble	i13_86_1_86	CDU/CSU	mp	Dr. Wolfgang Schäuble	CDU	NA
+58751	58758	86	Antje Vollmer	i13_86_1_87	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+58759	60262	87	Ottmar Schreiner	i13_86_1_88	SPD	mp	Ottmar Schreiner	SPD	NA
+60263	60273	88	Antje Vollmer	i13_86_1_89	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+60274	60279	89	Ottmar Schreiner	i13_86_1_90	SPD	mp	Ottmar Schreiner	SPD	NA
+60280	60323	90	Otto Graf Lambsdorff	i13_86_1_91	F.D.P.	mp	Dr. Otto Graf Lambsdorff	FDP	NA
+60324	60331	91	Ottmar Schreiner	i13_86_1_92	SPD	mp	Ottmar Schreiner	SPD	NA
+60332	60339	92	Otto Graf Lambsdorff	i13_86_1_93	F.D.P.	mp	Dr. Otto Graf Lambsdorff	FDP	NA
+60340	60380	93	Ottmar Schreiner	i13_86_1_94	SPD	mp	Ottmar Schreiner	SPD	NA
+60381	60511	94	Otto Graf Lambsdorff	i13_86_1_95	F.D.P.	mp	Dr. Otto Graf Lambsdorff	FDP	NA
+60512	61464	95	Ottmar Schreiner	i13_86_1_96	SPD	mp	Ottmar Schreiner	SPD	NA
+61465	61474	96	Antje Vollmer	i13_86_1_97	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+61475	62783	97	Christa Luft	i13_86_1_98	PDS	mp	Dr. Christa Luft	PDS	NA
+62784	62794	98	Antje Vollmer	i13_86_1_99	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+62795	63007	99	Otto Graf Lambsdorff	i13_86_1_100	F.D.P.	mp	Dr. Otto Graf Lambsdorff	FDP	NA
+63008	63014	100	Antje Vollmer	i13_86_1_101	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+63015	63153	101	Christa Luft	i13_86_1_102	PDS	mp	Dr. Christa Luft	PDS	NA
+63154	63161	102	Antje Vollmer	i13_86_1_103	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+63162	64265	103	Jürgen Türk	i13_86_1_104	F.D.P.	mp	Jürgen Türk	FDP	NA
+64266	64273	104	Antje Vollmer	i13_86_1_105	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+64274	66217	105	Ernst Schwanhold	i13_86_1_106	SPD	mp	Ernst Schwanhold	SPD	NA
+66218	66623	106	Antje Vollmer	i13_86_1_107	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+66624	67644	107	Fritz Rudolf Körper	i13_86_2_108	SPD	mp	Fritz Rudolf Körper	SPD	NA
+67645	67652	108	Antje Vollmer	i13_86_2_109	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+67653	68381	109	Erwin Marschewski	i13_86_2_110	CDU/CSU	mp	Erwin Marschewski	CDU	NA
+68382	68390	110	Antje Vollmer	i13_86_2_111	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+68391	68398	111	Erwin Marschewski	i13_86_2_112	CDU/CSU	mp	Erwin Marschewski	CDU	NA
+68399	68616	112	Cem Özdemir	i13_86_2_113	BÜNDNIS 90/DIE GRÜNEN	mp	Cem Özdemir	Bündnis 90/Die Grünen	NA
+68617	68736	113	Erwin Marschewski	i13_86_2_114	CDU/CSU	mp	Erwin Marschewski	CDU	NA
+68737	68747	114	Antje Vollmer	i13_86_2_115	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+68748	69631	115	Erwin Marschewski	i13_86_2_116	CDU/CSU	mp	Erwin Marschewski	CDU	NA
+69632	69642	116	Antje Vollmer	i13_86_2_117	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+69643	69995	117	Burkhard Hirsch	i13_86_2_118	F.D.P.	mp	Dr. Burkhard Hirsch	FDP	NA
+69996	70002	118	Antje Vollmer	i13_86_2_119	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+70003	70193	119	Erwin Marschewski	i13_86_2_120	CDU/CSU	mp	Erwin Marschewski	CDU	NA
+70194	70202	120	Antje Vollmer	i13_86_2_121	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+70203	71428	121	Cem Özdemir	i13_86_2_122	BÜNDNIS 90/DIE GRÜNEN	mp	Cem Özdemir	Bündnis 90/Die Grünen	NA
+71429	71436	122	Antje Vollmer	i13_86_2_123	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+71437	71824	123	Peter Altmaier	i13_86_2_124	CDU/CSU	mp	Peter Altmaier	CDU	NA
+71825	71831	124	Antje Vollmer	i13_86_2_125	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+71832	72211	125	Cem Özdemir	i13_86_2_126	BÜNDNIS 90/DIE GRÜNEN	mp	Cem Özdemir	Bündnis 90/Die Grünen	NA
+72212	72240	126	Antje Vollmer	i13_86_2_127	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+72241	73784	127	Cornelia Schmalz-Jacobsen	i13_86_2_128	F.D.P.	mp	Cornelia Schmalz-Jacobsen	FDP	NA
+73785	73791	128	Antje Vollmer	i13_86_2_129	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+73792	74599	129	Ulla Jelpke	i13_86_2_130	PDS	mp	Ulla Jelpke	PDS	NA
+74600	74613	130	Antje Vollmer	i13_86_2_131	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+74614	74773	131	Cem Özdemir	i13_86_2_132	BÜNDNIS 90/DIE GRÜNEN	mp	Cem Özdemir	Bündnis 90/Die Grünen	NA
+74774	74782	132	Antje Vollmer	i13_86_2_133	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+74783	75163	133	Wolfgang Zeitlmann	i13_86_2_134	CDU/CSU	mp	Wolfgang Zeitlmann	CSU	NA
+75164	75174	134	Antje Vollmer	i13_86_2_135	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+75175	75928	135	Wolfgang Zeitlmann	i13_86_2_136	CDU/CSU	mp	Wolfgang Zeitlmann	CSU	NA
+75929	75999	136	Burkhard Hirsch	i13_86_2_137	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+76000	76021	137	Cornelie Sonntag-Wolgast	i13_86_2_138	SPD	mp	Dr. Cornelie Sonntag-Wolgast	SPD	NA
+76022	76026	138	Burkhard Hirsch	i13_86_2_139	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+76027	76236	139	Cem Özdemir	i13_86_2_140	BÜNDNIS 90/DIE GRÜNEN	mp	Cem Özdemir	Bündnis 90/Die Grünen	NA
+76237	76248	140	Burkhard Hirsch	i13_86_2_141	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+76249	76338	141	Wolfgang Zeitlmann	i13_86_2_142	CDU/CSU	mp	Wolfgang Zeitlmann	CSU	NA
+76339	76349	142	Burkhard Hirsch	i13_86_2_143	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+76350	76697	143	Cornelie Sonntag-Wolgast	i13_86_2_144	SPD	mp	Dr. Cornelie Sonntag-Wolgast	SPD	NA
+76698	76760	144	Burkhard Hirsch	i13_86_2_145	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+76761	78302	145	Cornelie Sonntag-Wolgast	i13_86_2_146	SPD	mp	Dr. Cornelie Sonntag-Wolgast	SPD	NA
+78303	78865	146	Burkhard Hirsch	i13_86_2_147	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+78866	79748	147	Heribert Blens	i13_86_3_148	CDU/CSU	mp	Dr. Heribert Blens	CDU	NA
+79749	79761	148	Burkhard Hirsch	i13_86_3_149	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+79762	80581	149	Peter Struck	i13_86_3_150	SPD	mp	Dr. Peter Struck	SPD	NA
+80582	80617	150	Burkhard Hirsch	i13_86_3_151	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+80618	81148	151	Peter Struck	i13_86_3_152	SPD	mp	Dr. Peter Struck	SPD	NA
+81149	81159	152	Burkhard Hirsch	i13_86_3_153	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+81160	82055	153	Kerstin Müller	i13_86_3_154	BÜNDNIS 90/DIE GRÜNEN	mp	Kerstin Müller	Bündnis 90/Die Grünen	NA
+82056	82067	154	Burkhard Hirsch	i13_86_3_155	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+82068	82825	155	Ulrich Irmer	i13_86_3_156	F.D.P.	mp	Ulrich Irmer	FDP	NA
+82826	82871	156	Burkhard Hirsch	i13_86_3_157	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+82872	83646	157	Heidi Knake-Werner	i13_86_3_158	PDS	mp	Dr. Heidi Knake-Werner	PDS	NA
+83647	83665	158	Burkhard Hirsch	i13_86_3_159	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+83666	83826	159	Norbert Blüm	i13_86_3_160	NA	government	Dr. Norbert Blüm	CDU	Bundesminister für Arbeit und Sozialordnung
+83827	91928	160	Burkhard Hirsch	i13_86_3_161	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+91929	93043	161	Ulf Fink	i13_86_4_162	CDU/CSU	mp	Ulf Fink	CDU	NA
+93044	93052	162	Burkhard Hirsch	i13_86_4_163	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+93053	94041	163	Hans-Eberhard Urbaniak	i13_86_4_164	SPD	mp	Hans-Eberhard Urbaniak	SPD	NA
+94042	94050	164	Burkhard Hirsch	i13_86_4_165	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+94051	94612	165	Andrea Fischer	i13_86_4_166	BÜNDNIS 90/DIE GRÜNEN	mp	Andrea Fischer	Bündnis 90/Die Grünen	NA
+94613	94624	166	Burkhard Hirsch	i13_86_4_167	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+94625	94626	167	Andrea Fischer	i13_86_4_168	BÜNDNIS 90/DIE GRÜNEN	mp	Andrea Fischer	Bündnis 90/Die Grünen	NA
+94627	94628	168	Burkhard Hirsch	i13_86_4_169	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+94629	94736	169	Ulf Fink	i13_86_4_170	CDU/CSU	mp	Ulf Fink	CDU	NA
+94737	95092	170	Andrea Fischer	i13_86_4_171	BÜNDNIS 90/DIE GRÜNEN	mp	Andrea Fischer	Bündnis 90/Die Grünen	NA
+95093	95102	171	Burkhard Hirsch	i13_86_4_172	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+95103	96046	172	Cornelia Schmalz-Jacobsen	i13_86_4_173	F.D.P.	mp	Cornelia Schmalz-Jacobsen	FDP	NA
+96047	96057	173	Burkhard Hirsch	i13_86_4_174	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+96058	96703	174	Heidi Knake-Werner	i13_86_4_175	PDS	mp	Dr. Heidi Knake-Werner	PDS	NA
+96704	96906	175	Burkhard Hirsch	i13_86_4_176	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+96907	97012	176	Antje Vollmer	i13_86_4_177	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+97013	99328	177	Antje Vollmer	i13_86_4_178	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+99329	100175	178	Wolfgang Dehnel	i13_86_5_179	CDU/CSU	mp	Wolfgang Dehnel	CDU	NA
+100176	100184	179	Antje Vollmer	i13_86_5_180	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+100185	100886	180	Reinhold Hiller	i13_86_5_181	SPD	mp	Reinhold Hiller	SPD	NA
+100887	100895	181	Antje Vollmer	i13_86_5_182	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+100896	102859	182	Gerald Häfner	i13_86_5_183	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+102860	102868	183	Antje Vollmer	i13_86_5_184	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+102869	103438	184	Karlheinz Guttmacher	i13_86_5_185	F.D.P.	mp	Dr. Karlheinz Guttmacher	FDP	NA
+103439	103449	185	Antje Vollmer	i13_86_5_186	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+103450	103451	186	Karlheinz Guttmacher	i13_86_5_187	F.D.P.	mp	Dr. Karlheinz Guttmacher	FDP	NA
+103452	103602	187	Christa Nickels	i13_86_5_188	BÜNDNIS 90/DIE GRÜNEN	mp	Christa Nickels	Bündnis 90/Die Grünen	NA
+103603	103935	188	Karlheinz Guttmacher	i13_86_5_189	F.D.P.	mp	Dr. Karlheinz Guttmacher	FDP	NA
+103936	103956	189	Antje Vollmer	i13_86_5_190	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+103957	104748	190	Uwe-Jens Heuer	i13_86_5_191	PDS	mp	Dr. Uwe-Jens Heuer	PDS	NA
+104749	107287	191	Antje Vollmer	i13_86_5_192	NA	presidency	Dr. Antje Vollmer	GRUENE	Vizepräsidentin
+107288	108397	192	Wolfgang Zöller	i13_86_6_193	CDU/CSU	mp	Wolfgang Zöller	CSU	NA
+108398	108419	193	Burkhard Hirsch	i13_86_6_194	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+108420	108782	194	Petra Ernstberger	i13_86_6_195	SPD	mp	Petra Ernstberger	SPD	NA
+108783	108793	195	Burkhard Hirsch	i13_86_6_196	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+108794	109796	196	Petra Ernstberger	i13_86_6_197	SPD	mp	Petra Ernstberger	SPD	NA
+109797	109807	197	Burkhard Hirsch	i13_86_6_198	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+109808	109945	198	Wolfgang Zöller	i13_86_6_199	CDU/CSU	mp	Wolfgang Zöller	CSU	NA
+109946	109957	199	Burkhard Hirsch	i13_86_6_200	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+109958	110025	200	Petra Ernstberger	i13_86_6_201	SPD	mp	Petra Ernstberger	SPD	NA
+110026	110035	201	Burkhard Hirsch	i13_86_6_202	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+110036	110746	202	Monika Knoche	i13_86_6_203	BÜNDNIS 90/DIE GRÜNEN	mp	Monika Knoche	Bündnis 90/Die Grünen	NA
+110747	110756	203	Burkhard Hirsch	i13_86_6_204	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+110757	111204	204	Dieter Thomae	i13_86_6_205	F.D.P.	mp	Dr. Dieter Thomae	FDP	NA
+111205	111282	205	Klaus Kirschner	i13_86_6_206	SPD	mp	Klaus Kirschner	SPD	NA
+111283	111367	206	Dieter Thomae	i13_86_6_207	F.D.P.	mp	Dr. Dieter Thomae	FDP	NA
+111368	111378	207	Burkhard Hirsch	i13_86_6_208	NA	presidency	Dr. Burkhard Hirsch	FDP	Vizepräsident
+111379	111719	208	Dieter Thomae	i13_86_6_209	F.D.P.	mp	Dr. Dieter Thomae	FDP	NA
+111720	111729	209	Hans-Ulrich Klose	i13_86_6_210	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+111730	111752	210	Dieter Thomae	i13_86_6_211	F.D.P.	mp	Dr. Dieter Thomae	FDP	NA
+111753	111818	211	Hans-Ulrich Klose	i13_86_6_212	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+111819	111867	212	Petra Ernstberger	i13_86_6_213	SPD	mp	Petra Ernstberger	SPD	NA
+111868	111946	213	Dieter Thomae	i13_86_6_214	F.D.P.	mp	Dr. Dieter Thomae	FDP	NA
+111947	111962	214	Hans-Ulrich Klose	i13_86_6_215	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+111963	112068	215	Monika Knoche	i13_86_6_216	BÜNDNIS 90/DIE GRÜNEN	mp	Monika Knoche	Bündnis 90/Die Grünen	NA
+112069	112182	216	Dieter Thomae	i13_86_6_217	F.D.P.	mp	Dr. Dieter Thomae	FDP	NA
+112183	112193	217	Hans-Ulrich Klose	i13_86_6_218	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+112194	112653	218	Ruth Fuchs	i13_86_6_219	PDS	mp	Dr. Ruth Fuchs	PDS	NA
+112654	112661	219	Hans-Ulrich Klose	i13_86_6_220	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+112662	113419	220	Waltraud Lehn	i13_86_6_221	SPD	mp	Waltraud Lehn	SPD	NA
+113420	113430	221	Hans-Ulrich Klose	i13_86_6_222	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+113431	113462	222	Waltraud Lehn	i13_86_6_223	SPD	mp	Waltraud Lehn	SPD	NA
+113463	113586	223	Wolfgang Lohmann	i13_86_6_224	CDU/CSU	mp	Wolfgang Lohmann	CDU	NA
+113587	114100	224	Waltraud Lehn	i13_86_6_225	SPD	mp	Waltraud Lehn	SPD	NA
+114101	114562	225	Hans-Ulrich Klose	i13_86_6_226	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+114563	114698	226	Dagmar Enkelmann	i13_86_7_227	PDS	mp	Dr. Dagmar Enkelmann	PDS	NA
+114699	114724	227	Hans-Ulrich Klose	i13_86_7_228	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+114725	116646	228	Hans-Joachim Hacker	i13_86_7_229	SPD	mp	Hans-Joachim Hacker	SPD	NA
+116647	116679	229	Hans-Ulrich Klose	i13_86_7_230	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+116680	117643	230	Dietrich Mahlo	i13_86_7_231	CDU/CSU	mp	Dr. Dietrich Mahlo	CDU	NA
+117644	117655	231	Hans-Ulrich Klose	i13_86_7_232	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+117656	117669	232	Dietrich Mahlo	i13_86_7_233	CDU/CSU	mp	Dr. Dietrich Mahlo	CDU	NA
+117670	117671	233	Hans-Ulrich Klose	i13_86_7_234	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+117672	117788	234	Hans-Joachim Hacker	i13_86_7_235	SPD	mp	Hans-Joachim Hacker	SPD	NA
+117789	118266	235	Dietrich Mahlo	i13_86_7_236	CDU/CSU	mp	Dr. Dietrich Mahlo	CDU	NA
+118267	118280	236	Hans-Ulrich Klose	i13_86_7_237	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+118281	119124	237	Gerald Häfner	i13_86_7_238	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+119125	119136	238	Hans-Ulrich Klose	i13_86_7_239	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+119137	119141	239	Gerald Häfner	i13_86_7_240	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+119142	119231	240	Michael Luther	i13_86_7_241	CDU/CSU	mp	Dr. Michael Luther	CDU	NA
+119232	119240	241	Gerald Häfner	i13_86_7_242	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+119241	119248	242	Hans-Ulrich Klose	i13_86_7_243	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+119249	119625	243	Gerald Häfner	i13_86_7_244	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+119626	119641	244	Hans-Ulrich Klose	i13_86_7_245	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+119642	119704	245	Michael Luther	i13_86_7_246	CDU/CSU	mp	Dr. Michael Luther	CDU	NA
+119705	120082	246	Gerald Häfner	i13_86_7_247	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+120083	120157	247	Hans-Ulrich Klose	i13_86_7_248	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+120158	120159	248	Gerald Häfner	i13_86_7_249	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+120160	120356	249	Reiner Krziskewitz	i13_86_7_250	CDU/CSU	mp	Reiner Krziskewitz	CDU	NA
+120357	120364	250	Hans-Ulrich Klose	i13_86_7_251	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+120365	120375	251	Reiner Krziskewitz	i13_86_7_252	CDU/CSU	mp	Reiner Krziskewitz	CDU	NA
+120376	120688	252	Gerald Häfner	i13_86_7_253	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+120689	120699	253	Hans-Ulrich Klose	i13_86_7_254	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+120700	120702	254	Gerald Häfner	i13_86_7_255	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+120703	120704	255	Hans-Ulrich Klose	i13_86_7_256	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+120705	120854	256	Norbert Geis	i13_86_7_257	CDU/CSU	mp	Norbert Geis	CSU	NA
+120855	122272	257	Gerald Häfner	i13_86_7_258	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+122273	122280	258	Hans-Ulrich Klose	i13_86_7_259	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+122281	122682	259	Detlef Kleinert	i13_86_7_260	F.D.P.	mp	Detlef Kleinert	FDP	NA
+122683	122694	260	Hans-Ulrich Klose	i13_86_7_261	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+122695	122698	261	Detlef Kleinert	i13_86_7_262	F.D.P.	mp	Detlef Kleinert	FDP	NA
+122699	122840	262	Andrea Fischer	i13_86_7_263	BÜNDNIS 90/DIE GRÜNEN	mp	Andrea Fischer	Bündnis 90/Die Grünen	NA
+122841	123357	263	Detlef Kleinert	i13_86_7_264	F.D.P.	mp	Detlef Kleinert	FDP	NA
+123358	123367	264	Hans-Ulrich Klose	i13_86_7_265	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+123368	124221	265	Uwe-Jens Heuer	i13_86_7_266	PDS	mp	Dr. Uwe-Jens Heuer	PDS	NA
+124222	124230	266	Hans-Ulrich Klose	i13_86_7_267	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+124231	124234	267	Uwe-Jens Heuer	i13_86_7_268	PDS	mp	Dr. Uwe-Jens Heuer	PDS	NA
+124235	124307	268	Hans-Joachim Hacker	i13_86_7_269	SPD	mp	Hans-Joachim Hacker	SPD	NA
+124308	124379	269	Uwe-Jens Heuer	i13_86_7_270	PDS	mp	Dr. Uwe-Jens Heuer	PDS	NA
+124380	124385	270	Hans-Joachim Hacker	i13_86_7_271	SPD	mp	Hans-Joachim Hacker	SPD	NA
+124386	124552	271	Uwe-Jens Heuer	i13_86_7_272	PDS	mp	Dr. Uwe-Jens Heuer	PDS	NA
+124553	125113	272	Hans-Ulrich Klose	i13_86_7_273	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+125114	125511	273	Hans-Ulrich Klose	i13_86_7_274	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+125512	125606	274	Hans-Ulrich Klose	i13_86_7_275	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+125607	126822	275	Hans-Ulrich Klose	i13_86_7_276	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+126823	126837	276	Hans-Ulrich Klose	i13_86_7_277	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+126838	127073	277	Norbert Geis	i13_86_7_278	CDU/CSU	mp	Norbert Geis	CSU	NA
+127074	127089	278	Hans-Ulrich Klose	i13_86_7_279	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+127090	127183	279	Dietrich Mahlo	i13_86_7_280	CDU/CSU	mp	Dr. Dietrich Mahlo	CDU	NA
+127184	127271	280	Hans-Ulrich Klose	i13_86_7_281	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+127272	127599	281	Herta Däubler-Gmelin	i13_86_7_282	SPD	mp	Dr. Herta Däubler-Gmelin	SPD	NA
+127600	127759	282	Hans-Ulrich Klose	i13_86_7_283	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+127760	128217	283	Gerald Häfner	i13_86_7_284	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+128218	128230	284	Hans-Ulrich Klose	i13_86_7_285	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+128231	128439	285	Hans-Joachim Hacker	i13_86_7_286	SPD	mp	Hans-Joachim Hacker	SPD	NA
+128440	128454	286	Hans-Ulrich Klose	i13_86_7_287	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+128455	128471	287	Uwe-Jens Heuer	i13_86_7_288	PDS	mp	Dr. Uwe-Jens Heuer	PDS	NA
+128472	128536	288	Hans-Ulrich Klose	i13_86_7_289	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+128537	128547	289	Uwe-Jens Heuer	i13_86_7_290	PDS	mp	Dr. Uwe-Jens Heuer	PDS	NA
+128548	128842	290	Hans-Ulrich Klose	i13_86_7_291	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+128843	129426	291	Hans-Ulrich Klose	i13_86_7_292	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+129427	129440	292	Hans-Ulrich Klose	i13_86_7_293	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+129441	131429	293	Michael Luther	i13_86_7_294	CDU/CSU	mp	Dr. Michael Luther	CDU	NA
+131430	131440	294	Hans-Ulrich Klose	i13_86_7_295	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+131441	131515	295	Michael Luther	i13_86_7_296	CDU/CSU	mp	Dr. Michael Luther	CDU	NA
+131516	131520	296	Hans-Ulrich Klose	i13_86_7_297	NA	presidency	Hans-Ulrich Klose	SPD	Vizepräsident
+131521	131767	297	Gerald Häfner	i13_86_7_298	BÜNDNIS 90/DIE GRÜNEN	mp	Gerald Häfner	Bündnis 90/Die Grünen	NA
+131768	132264	298	Michael Luther	i13_86_7_299	CDU/CSU	mp	Dr. Michael Luther	CDU	NA
+132265	132321	299	Hans Klein	i13_86_7_300	NA	presidency	Hans Klein	CSU	Vizepräsident
+132322	132356	300	Michael Luther	i13_86_7_301	CDU/CSU	mp	Dr. Michael Luther	CDU	NA
+132357	132370	301	Hans Klein	i13_86_7_302	NA	presidency	Hans Klein	CSU	Vizepräsident
+132371	133915	302	Edzard Schmidt-Jortzig	i13_86_7_303	NA	government	Dr. Edzard Schmidt-Jortzig	FDP	Bundesminister der Justiz
+133916	133939	303	Hans Klein	i13_86_7_304	NA	presidency	Hans Klein	CSU	Vizepräsident
+133940	134009	304	Edzard Schmidt-Jortzig	i13_86_7_305	NA	government	Dr. Edzard Schmidt-Jortzig	FDP	Bundesminister der Justiz
+134010	134078	305	Hans Klein	i13_86_7_306	NA	presidency	Hans Klein	CSU	Vizepräsident
+134079	134196	306	Klaus-Jürgen Warnick	i13_86_7_307	PDS	mp	Klaus-Jürgen Warnick	PDS	NA
+134197	134232	307	Hans Klein	i13_86_7_308	NA	presidency	Hans Klein	CSU	Vizepräsident
+134233	134663	308	Klaus-Jürgen Warnick	i13_86_7_309	PDS	mp	Klaus-Jürgen Warnick	PDS	NA
+134664	135177	309	Hans Klein	i13_86_7_310	NA	presidency	Hans Klein	CSU	Vizepräsident
+135178	136093	310	Siegfried Hornung	i13_86_8_311	CDU/CSU	mp	Siegfried Hornung	CDU	NA
+136094	136101	311	Hans Klein	i13_86_8_312	NA	presidency	Hans Klein	CSU	Vizepräsident
+136102	137583	312	Heidemarie Wright	i13_86_8_313	SPD	mp	Heidi Wright	SPD	NA
+137584	137591	313	Hans Klein	i13_86_8_314	NA	presidency	Hans Klein	CSU	Vizepräsident
+137592	138203	314	Steffi Lemke	i13_86_8_315	BÜNDNIS 90/DIE GRÜNEN	mp	Steffi Lemke	Bündnis 90/Die Grünen	NA
+138204	138242	315	Hans Klein	i13_86_8_316	NA	presidency	Hans Klein	CSU	Vizepräsident
+138243	139557	316	Lisa Peters	i13_86_8_317	F.D.P.	mp	Lisa Peters	FDP	NA
+139558	139611	317	Hans Klein	i13_86_8_318	NA	presidency	Hans Klein	CSU	Vizepräsident
+139612	140045	318	Ulla Jelpke	i13_86_8_319	PDS	mp	Ulla Jelpke	PDS	NA
+140046	140063	319	Hans Klein	i13_86_8_320	NA	presidency	Hans Klein	CSU	Vizepräsident
+140064	140112	320	Sabine Bergmann-Pohl	i13_86_8_321	NA	government	Dr. Sabine Bergmann-Pohl	CDU	Parl. Staatssekretärin beim Bundesminister für Gesundheit
+140113	140870	321	Hans Klein	i13_86_8_322	NA	presidency	Hans Klein	CSU	Vizepräsident
+140871	141923	322	Johannes Singhammer	i13_86_9_323	CDU/CSU	mp	Johannes Singhammer	CSU	NA
+141924	141931	323	Hans Klein	i13_86_9_324	NA	presidency	Hans Klein	CSU	Vizepräsident
+141932	143645	324	Gerd Andres	i13_86_9_325	SPD	mp	Gerd Andres	SPD	NA
+143646	143651	325	Hans Klein	i13_86_9_326	NA	presidency	Hans Klein	CSU	Vizepräsident
+143652	143715	326	Gerd Andres	i13_86_9_327	SPD	mp	Gerd Andres	SPD	NA
+143716	143725	327	Hans Klein	i13_86_9_328	NA	presidency	Hans Klein	CSU	Vizepräsident
+143726	144728	328	Andrea Fischer	i13_86_9_329	BÜNDNIS 90/DIE GRÜNEN	mp	Andrea Fischer	Bündnis 90/Die Grünen	NA
+144729	144739	329	Hans Klein	i13_86_9_330	NA	presidency	Hans Klein	CSU	Vizepräsident
+144740	145706	330	Gisela Babel	i13_86_9_331	F.D.P.	mp	Dr. Gisela Babel	FDP	NA
+145707	145714	331	Hans Klein	i13_86_9_332	NA	presidency	Hans Klein	CSU	Vizepräsident
+145715	145749	332	Gisela Babel	i13_86_9_333	F.D.P.	mp	Dr. Gisela Babel	FDP	NA
+145750	145759	333	Hans Klein	i13_86_9_334	NA	presidency	Hans Klein	CSU	Vizepräsident
+145760	146172	334	Petra Bläss	i13_86_9_335	PDS	mp	Petra Bläss	PDS	NA
+146173	146200	335	Hans Klein	i13_86_9_336	NA	presidency	Hans Klein	CSU	Vizepräsident
+146201	146426	336	Petra Bläss	i13_86_9_337	PDS	mp	Petra Bläss	PDS	NA
+146427	146442	337	Hans Klein	i13_86_9_338	NA	presidency	Hans Klein	CSU	Vizepräsident
+146443	147789	338	Norbert Blüm	i13_86_9_339	NA	government	Dr. Norbert Blüm	CDU	Bundesminister für Arbeit und Sozialordnung
+147790	147794	339	Hans Klein	i13_86_9_340	NA	presidency	Hans Klein	CSU	Vizepräsident
+147795	147889	340	Norbert Blüm	i13_86_9_341	NA	government	Dr. Norbert Blüm	CDU	Bundesminister für Arbeit und Sozialordnung
+147890	148285	341	Hans Klein	i13_86_9_342	NA	presidency	Hans Klein	CSU	Vizepräsident
+148286	149080	342	Winfried Wolf	i13_86_10_343	PDS	mp	Dr. Winfried Wolf	PDS	NA
+149081	149088	343	Hans Klein	i13_86_10_344	NA	presidency	Hans Klein	CSU	Vizepräsident
+149089	149725	344	Albert Schmidt	i13_86_10_345	BÜNDNIS 90/DIE GRÜNEN	mp	Albert Schmidt	Bündnis 90/Die Grünen	NA
+149726	149799	345	Hans Klein	i13_86_10_346	NA	presidency	Hans Klein	CSU	Vizepräsident

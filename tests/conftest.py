@@ -22,7 +22,7 @@ with app.app_context():
 
     meta_from_within_xml("GERMAPARL1386")
 
-    subcorpora_from_tsv("GERMAPARL1386", "tests/corpora/subcorpora-germaparl.tsv")
+    subcorpora_from_tsv("GERMAPARL1386", "tests/corpora/germaparl-subcorpora.tsv")
 
     import_library("tests/library/", corpus_id=1, username='admin')
 

@@ -90,6 +90,19 @@ def meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_
 
 def meta_from_df(corpus, df_meta, level, column_mapping):
 
+    # defined = set(df_meta.columns).intersection(set(column_mapping.keys()))
+    undefined = set(df_meta.columns) - set(column_mapping.keys())
+    superfluous = set(column_mapping.keys()) - set(df_meta.columns)
+
+    for col in undefined:
+        if col not in ['match', 'matchend']:
+            current_app.logger.error(f'column "{col}" not defined, saving as "unicode"')
+            column_mapping[col] = 'unicode'
+
+    for col in superfluous:
+        column_mapping.pop(col)
+        current_app.logger.error(f'column "{col}" defined but not found, skipping')
+
     # segmentation
     segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
     if segmentation is not None:
@@ -113,11 +126,9 @@ def meta_from_df(corpus, df_meta, level, column_mapping):
     )
     current_app.logger.debug("merging with new information")
     df_meta = segmentation_spans.merge(df_meta, on=['match', 'matchend'])
+
     for col, value_type in column_mapping.items():
         current_app.logger.debug(f'key: "{col}", value_type: "{value_type}"')
-        if col not in df_meta.columns:
-            current_app.logger.error(f'.. column "{col}" not found, skipping')
-            continue
 
         # segmentation annotation
         segmentation_annotation = SegmentationAnnotation.query.filter_by(

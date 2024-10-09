@@ -2,11 +2,36 @@
 
 - implemented in Python/APIFlask
   + JWT authorisation
-  + interactive OpenAPI documentation at [cwb-cads/docs](https://corpora.linguistik.uni-erlangen.de/cwb-cads/docs)
+  + interactive OpenAPI documentation at [cwb-cads/docs](https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/docs)
 
-- uses [cwb-ccc](https://github.com/ausgerechnet/cwb-ccc) for connecting to the CWB
+- uses [cwb-ccc](https://github.com/ausgerechnet/cwb-ccc) for connecting to CWB
   + CWB must be installed and corpora must be encoded via cwb-encode
   + meta data can be stored separately or be parsed from s-attributes
+
+## Reference
+
+The functionality is explained in detail in [Heinrich & Evert (2024)](https://aclanthology.org/2024.cpss-1.3/).
+
+**Abstract:** We propose a framework for quantitative-qualitative research in corpus-assisted discourse studies (CADS), which operationalises the central process of manually forming groups of related words and phrases in terms of “discoursemes” and their constellations. We introduce an open-source implementation of this framework in the form of a REST API based on Corpus Workbench. Going through the workflow of a collocation analysis for fleeing and related terms in the German Federal Parliament, the paper gives details about the underlying algorithms, with available parameters and further possible choices. We also address multi-word units (which are often disregarded by CADS tools), a semantic map visualisation of collocations, and how to compute assocations between discoursemes.
+
+```bibtex
+@InProceedings{HeinrichEvert2024,
+  author    = {Heinrich, Philipp and Evert, Stephanie},
+  title     = {Operationalising the Hermeneutic Grouping Process in Corpus-assisted Discourse Studies},
+  booktitle = {Proceedings of the 4th Workshop on Computational Linguistics for the Political and Social Sciences: Long and short papers},
+  year      = {2024},
+  editor    = {Klamm, Christopher and Lapesa, Gabriella and Ponzetto, Simone Paolo and Rehbein, Ines and Sen, Indira},
+  pages     = {33--44},
+  address   = {Vienna, Austria},
+  month     = sep,
+  publisher = {Association for Computational Linguistics},
+  url       = {https://aclanthology.org/2024.cpss-1.3}
+}
+```
+
+## Manual
+
+We provide detailed information regarding general CADS functionality in the [manual](manual/cwb-cads-functionality.html) and details on MMDA functionality in the [MMDA manual](manual/cwb-cads-discoursemes.html).
 
 ## Installation and Configuration
 
@@ -49,10 +74,6 @@
   flask --app cads --debug run
   ```
 
-## Manual
-
-We provide detailed information regarding general CADS functionality in the [manual](manual/cwb-cads-functionality.html) and details on MMDA functionality in the [MMDA manual](manual/cwb-cads-discoursemes.html).
-
 ## Frontend
 
 The repository contains a beta version of a frontend supporting MMDA functionality.
@@ -81,24 +102,3 @@ Setup:
   ```sh
   npm run dev
   ```
-
-## References
-
-The MMDA functionality is explained in detail in [Heinrich & Evert (2024)](https://aclanthology.org/2024.cpss-1.3/).
-
-Abstract: We propose a framework for quantitative-qualitative research in corpus-assisted discourse studies (CADS), which operationalises the central process of manually forming groups of related words and phrases in terms of “discoursemes” and their constellations. We introduce an open-source implementation of this framework in the form of a REST API based on Corpus Workbench. Going through the workflow of a collocation analysis for fleeing and related terms in the German Federal Parliament, the paper gives details about the underlying algorithms, with available parameters and further possible choices. We also address multi-word units (which are often disregarded by CADS tools), a semantic map visualisation of collocations, and how to compute assocations between discoursemes.
-
-```bibtex
-@InProceedings{HeinrichEvert2024,
-  author    = {Heinrich, Philipp and Evert, Stephanie},
-  title     = {Operationalising the Hermeneutic Grouping Process in Corpus-assisted Discourse Studies},
-  booktitle = {Proceedings of the 4th Workshop on Computational Linguistics for the Political and Social Sciences: Long and short papers},
-  year      = {2024},
-  editor    = {Klamm, Christopher and Lapesa, Gabriella and Ponzetto, Simone Paolo and Rehbein, Ines and Sen, Indira},
-  pages     = {33--44},
-  address   = {Vienna, Austria},
-  month     = sep,
-  publisher = {Association for Computational Linguistics},
-  url       = {https://aclanthology.org/2024.cpss-1.3}
-}
-```
