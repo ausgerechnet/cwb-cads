@@ -170,7 +170,11 @@ def export_discoursemes(path_out):
     records = list()
     for discourseme in Discourseme.query.all():
         for item in discourseme.get_items():
-            records.append({'name': discourseme.name, 'query': item})  # , 'username': discourseme.user.username})
+            try:
+                username = discourseme.user.username
+            except AttributeError:
+                username = "UNKNOWN"
+            records.append({'name': discourseme.name, 'query': item, 'username': username})
 
     discoursemes = DataFrame(records)
     discoursemes.to_csv(path_out, sep="\t", index=False)
