@@ -167,7 +167,13 @@ def get_all_collocation(username):
 
     user = User.query.filter_by(username=username).first()
     collocation_analyses = Collocation.query.filter_by(user_id=user.id).all()
-    collocation_list = [collocation.serialize for collocation in collocation_analyses if collocation.serialize['subcorpus'] != 'SOC']
+    collocation_list = list()
+    for collocation in collocation_analyses:
+        try:
+            if collocation.serialize['subcorpus'] != 'SOC':
+                collocation_list.append(collocation.serialize)
+        except AttributeError:
+            continue
 
     return jsonify(collocation_list), 200
 
