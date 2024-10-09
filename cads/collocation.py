@@ -91,7 +91,7 @@ def get_or_create_counts(collocation, remove_focus_cpos=True):
     ###################
     current_app.logger.debug('get_or_create_counts :: adding scores')
     counts = DataFrame([vars(s) for s in collocation.items], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
-    scores = measures.score(counts, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = measures.score(counts, freq=False, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'collocation_item_id'}, axis=1)
     scores['collocation_id'] = collocation.id
     scores.to_sql('collocation_item_score', con=db.engine, if_exists='append', index=False)
