@@ -89,6 +89,7 @@ str_interp("${url_api}/corpus/${corpus.id}/meta/") |>
 
 - we can store meta data from annotated s-attributes (`level_key`) using a `PUT` request
 - we specify the `value_type` here (use `"unicode"` for categorical data)
+- this runs idempotently
 ```{r}
 str_interp("${url_api}/corpus/${corpus.id}/meta/") |> 
   request() |> 
@@ -133,14 +134,29 @@ str_interp("${url_api}/corpus/${corpus.id}/meta/frequencies") |>
 - we create subcorpora for each year in `"SZ-2018-2022"`
 - we need `level`, `key`, the corresponding `values_unicode`, and the `name` of the subcorpus
 ```{r}
+subcorpora <- str_interp("${url_api}/corpus/${corpus.id}/subcorpus/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
 for (y in 2018:2022){
-  subcorpus <- str_interp("${url_api}/corpus/${corpus.id}/subcorpus/") |> 
-    request() |> 
-    req_method('PUT') |> 
-    req_body_json(data = list(level = 'text', key = 'year', values_unicode = list(paste0("y", as.character(y))), name = as.character(y))) |> 
-    req_auth_bearer_token(access.token) |> 
-    req_perform() |> 
-    magrittr::extract2("body") |> rawToChar() |> fromJSON()
+  # we only create the subcorpus if it does not already exist
+  .subcorpus.exists <- F
+  if (length(subcorpora) > 0){
+    if (length(subcorpora |> filter(name == as.character(y), corpus.id == corpus.id)) > 0){
+      .subcorpus.exists <- T
+    }
+  }
+  if (!.subcorpus.exists){
+    subcorpus <- str_interp("${url_api}/corpus/${corpus.id}/subcorpus/") |> 
+      request() |> 
+      req_method('PUT') |> 
+      req_body_json(data = list(level = 'text', key = 'year', values_unicode = list(paste0("y", as.character(y))), name = as.character(y))) |> 
+      req_auth_bearer_token(access.token) |> 
+      req_perform() |> 
+      magrittr::extract2("body") |> rawToChar() |> fromJSON() 
+  }
 }
 ```
 
@@ -174,7 +190,7 @@ corpus.id.reference <- corpora |> filter(cwb_id == "FAZ-2020-2022") |> pull(id)
 ### Creation
 
 - different positional attributes can be compared to one another (`p` and `p_reference`)
-  + default: `lemma` (fallback if not given in corpus: `word`)
+  + default: `lemma` (fallback if not defined in corpus: `word`)
 ```{r}
 kw.id <- request(str_interp("${url_api}/keyword/")) |> 
   req_body_json(list(corpus_id = corpus.id,
@@ -187,7 +203,7 @@ kw.id <- request(str_interp("${url_api}/keyword/")) |>
 
 ### Keyword Table
 
-- the result of a keyword analysis is a frequency comparison table of individual `items` with corresponding association measures (`scores`)
+- the result of a keyword analysis is a frequency comparison table of individual `items` (i.e. `p`-types) with corresponding association measures (`scores`)
 ```{r}
 kw.table.page <- request(str_interp("${url_api}/keyword/${kw.id}/items")) |>
   req_auth_bearer_token(access.token) |> 
@@ -203,7 +219,7 @@ kw.table.page |>
 ```
 
 - by default, the top `page_size=10` items according to `sort_by="conservative_log_ratio"` are given
-- user should be able to switch between different association measures and paginate through results
+- you can switch between different association measures and paginate through results
 ```{r}
 kw.table.page <- request(str_interp("${url_api}/keyword/${kw.id}/items")) |>
   req_url_query(sort_by = "log_likelihood", page_size = 20, page_number = 2) |> 
@@ -287,8 +303,9 @@ kw.items$scores |>
 
 ### Concordance Lines
 
-- clicking on an item in the keyword table (or the semantic map, see below) should retrieve concordance lines featuring this item
-- we retrieve concordance lines using the assisted query endpoint (`/query/assisted/`), see below for more details
+- here: concordances of specific items on the keyword list
+- concordances always belong to a query (in this case: a query for the item)
+- we create a query using the assisted query endpoint (`/query/assisted/`), see below for more details
 - note that we performed the keyword analysis on the `p="lemma"` layer
 
 ```{r}
@@ -310,18 +327,19 @@ concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordanc
   magrittr::extract2("lines")
 ```
 
-- actual concordance lines can be found in `tokens`
-```{r}
-concordance.lines |> magrittr::extract2("tokens") |> head(2)
-```
-
-- meta data are stored in `structural`
+- by default, all available structural data (as stored in CWB) are returned
 ```{r}
 concordance.lines |> magrittr::extract2("structural")
 ```
 
-- when working on a subcorpus, the query must be defined on this subcorpus
-- here: `"SZ-2020"`
+- only two positional attributes (`primary="word"` and `secondary="lemma"`) are returned
+- actual concordance lines (as verticalised text) can be found in `tokens`
+```{r}
+concordance.lines |> magrittr::extract2("tokens") |> magrittr::extract2(2)
+```
+
+- by default, you can paginate through random lines via `page_size` and `page_number`, see below for more details on filtering and sorting
+- note that when working on a subcorpus, the query must be defined on this subcorpus, e.g. in `"SZ-2020"`:
 ```{r}
 query <- request(str_interp("${url_api}/query/assisted")) |> 
   req_body_json(list(p = "lemma", items = list("Corona-Bonds"), corpus_id = corpus.id, subcorpus_id = subcorpus.id, s = "text")) |> 
@@ -332,54 +350,27 @@ query <- request(str_interp("${url_api}/query/assisted")) |>
 query.id <- query |> magrittr::extract2("id")
 ```
 
+
 ```{r}
 request(str_interp("${url_api}/query/${query.id}/concordance")) |> 
   req_auth_bearer_token(access.token) |> 
+  req_url_query(page_size = 1000) |> 
   req_perform() |> 
   magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
   magrittr::extract2("lines") |> 
-  magrittr::extract2("structural") |> pull(text_date)
+  magrittr::extract2("structural") |> 
+  pull(text_date) |> table()
 ```
 
-- see below for more details on concordancing
 
 ### Visualisation (Semantic Map)
 
 - keyword tables (and collocation tables, see below) are visualised via semantic maps
-- association measures and (initial) coordinates are provided by the backend
-- semantic maps should display the top `page_size=200` items according to the `sort_by="conservative_log_ratio"` association measure
-  + user should be able to set these parameters
-  + we set `page_size=50` here, frontend should make the map zoomable (best case: get more items until a user-defined cut-off)
-
-#### Creation of semantic maps
-
-semantic maps are created by default for all keyword and collocation analyses:
-
-    GET /query/<query_id>/collocation/
-    POST /keyword/
-
-you can de-activate this behaviour setting `semantic_map_init=False`.
-
-this makes sure that all top items of the analysis actually have coordinates on the provided semantic map (if any).  if `semantic_map_id=None`, this creates a new semantic map.
-
-a combined semantic map based on items of several analyses can be created using
-
-    PUT /semantic-map/
-    
-coordinates can then be accessed via
-
-    GET /semantic-map/<id>/coordinates/
-
-note that all items have to sets of coordinates: the initial coordinates that are automatically created and user-defined coordinates (which are all `None` after directly after creation).
-
-modifying the user coordinates works via
-
-    PUT /semantic-map/<id>/coordinates/
-    
-"deleting" user coordinates means setting them to `None`.
-
-
-#### Coordinates in keyword analyses
+- semantic map = two-dimensional arrangement using coordinates + size = association measure
+- association measures and (initial) coordinates are provided by the API
+- semantic maps can e.g. display the top `page_size=200` items according to the `sort_by="conservative_log_ratio"` association measure
+  + in an interactive frontend, the user should be able to set these parameters
+  + we set `page_size=50` here, but a good frontend should make the map zoomable (best case: get more items until a user-defined cut-off)
 
 - coordinates are provided automatically for all items
 ```{r}
@@ -397,9 +388,8 @@ coordinates
 ```
 
 - note that two types of coordinates are given:
-  + initial coordinates as determined by the backend
-  + user coordinates that take precedence if defined via dragging on the semantic map by the user
-- semantic map = two-dimensional arrangement using coordinates + size = association measure
+  + initial coordinates as determined by the API
+  + user coordinates that take precedence if defined via dragging on the semantic map by the user (see below)
 
 ```{r}
 scores <- kw.table.page |>
@@ -429,44 +419,12 @@ map |>
     + some reasonable defaults can be proposed though
     + best case scenario: user-defined
 
-#### Interaction
-
-- clicking on an item should retrieve relevant concordance lines, see above
-
-- dragging an item updates its user coordinates
-```{r}
-semantic_map.id <- coordinates |> pull(semantic_map_id) |> head(1)
-
-coordinates <- request(str_interp("${url_api}/semantic-map/${semantic_map.id}/coordinates/")) |>
-  req_method('put') |> 
-  req_body_json(list(item = "Corona-Bonds", x_user = 35, y_user = 20)) |> 
-  req_auth_bearer_token(access.token) |> 
-  req_perform() |> 
-  magrittr::extract2("body") |> rawToChar() |> fromJSON()
-
-map <- scores |> 
-  left_join(coordinates, by = "item") |> 
-  mutate(x = if_else(!is.na(x_user), x_user, x),
-         y = if_else(!is.na(y_user), y_user, y)) |> 
-  select(item, conservative_log_ratio, x, y)
-
-map |> 
-  filter(conservative_log_ratio > 0) |>
-  ggplot(aes(x = x, y = y, label = item)) + 
-  geom_label_repel(aes(size = conservative_log_ratio), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
-  xlab("") + ylab("") +
-  theme(legend.position = "bottom")
-```
-
-- dropping two items together will create a discourseme, see separate document
-
 # Query
 
 ## Creation
 
-- we create a query using the full query end point here
-  - for assisted mode, see above
-  - for creating queries from discoursemes, see separate document
+- here: CQP query in a (sub-)corpus, i.e. we create a query using the full query end point here
+- for assisted mode, see above
 
 ```{r}
 query <- str_interp("${url_api}/query/") |> 
@@ -489,22 +447,39 @@ concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordanc
 ```
 
 ```{r}
-concordance.lines |> names()
-
 concordance.lines |> 
   magrittr::extract2("tokens") |> 
-  head(1)
+  magrittr::extract2(1)
+```
+
+### Context Settings
+
+- you can provide three parameters to define how much context is displayed (and what should be treated as `out_of_window`)
+  + `window`: number of tokens left and right of the matches considered as immediate context
+  + `extended_window`: maximum number of tokens totally returned
+  + `context_break`: structural attribute to delimit context
+
+```{r}
+request(str_interp("${url_api}/query/${query.id}/concordance")) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_url_query(window = 5, extended_window = 10, context_break = 's') |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("lines") |> 
+  magrittr::extract2("tokens") |> 
+  magrittr::extract2(10)
 ```
 
 ### Filtering
 
-- we can filter concordance lines according to certain items in the context (`out_of_window=FALSE`)
+- we can filter concordance lines according to certain items in the context
+- this only takes into consideration items in the immediate context (i.e. where `out_of_window=FALSE`)
 
 ```{r}
 item = "Erderwärmung"
 
 concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordance")) |> 
-  req_url_query(filter_item = item, filter_item_p_att = 'lemma') |> 
+  req_url_query(filter_item = item, filter_item_p_att = 'lemma', extended_window = 10, context_break = 's') |> 
   req_auth_bearer_token(access.token) |> 
   req_perform() |> 
   magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
@@ -513,16 +488,16 @@ concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordanc
 
 ```{r}
 concordance.lines |> 
-  magrittr::extract2("tokens") |> head(1)
+  magrittr::extract2("tokens") |> magrittr::extract(1)
 ```
 
 ### Sorting
 
-- we can sort according to certain offsets
-- note that this only works with sort_order != 'random'
+- by default, the API provides concordances in randomised order
+- use `sort_order="first"` to sort by corpus occurrence
 ```{r}
 concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordance")) |> 
-  req_url_query(sort_by_offset = 1, sort_by_p_att = 'lemma', sort_order = 'ascending', page_size = 20, page_number = 150) |> 
+  req_url_query(sort_order = 'first', page_size = 20) |> 
   req_auth_bearer_token(access.token) |> 
   req_perform() |> 
   magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
@@ -530,14 +505,30 @@ concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordanc
 ```
 
 ```{r}
-for (i in 1:20){
-  concordance.lines  |> 
+concordance.lines |> pull(match_id)
+```
+
+- you can also use `sort_order="ascending"` or `sort_order="descending"`
+- this has to be combined with `sort_by` (p-attribute) and `sort_by_offset` (relative to match..matchend)
+- the following request retrieves e.g. concordance lines sorted by lemmata next to the match
+```{r}
+concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordance")) |> 
+  req_url_query(sort_by_offset = 1, sort_by_p_att = 'lemma', sort_order = 'ascending', page_number = 10, page_size = 500) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("lines")
+```
+
+```{r}
+lemmata <- c()
+for (i in 50:150){
+  lemma <- concordance.lines |> 
     magrittr::extract2("tokens") |> magrittr::extract2(i) |> 
-    tibble() |> 
-    filter(offset == 1) |> 
-    pull(secondary) |> 
-    print()
+    filter(offset == 1) |> pull(secondary)
+    lemmata <- c(lemmata, lemma)
 }
+lemmata
 ```
 
 
@@ -558,7 +549,7 @@ breakdown <- request(str_interp("${url_api}/query/${query.id}/breakdown")) |>
 breakdown|> select(item, ipm, freq, nr_tokens)
 ```
 
-- note that nr_tokens (and ipm) is correctly calculated in subcorpora
+- note that nr_tokens (and ipm) is calculated taken the subcorpus size into account (if query is run on subcorpus)
 ```{r}
 subcorpus.query.id <- str_interp("${url_api}/query/") |> 
   request() |> 
@@ -693,5 +684,99 @@ concordance.lines <- request(str_interp("${url_api}/query/${query.id}/concordanc
   magrittr::extract2("lines")
 
 concordance.lines |> 
-  magrittr::extract2("tokens") |> head(1)
+  magrittr::extract2("tokens") |> magrittr::extract2(1)
+```
+
+
+# Semantic Maps
+
+- semantic maps are a powerful way to visualise semantic profiles (keyword or collocate tables)
+- semantic profile = arrangement of items on $n$-best list in two-dimensional space
+- coordinates are based on automatic dimensionality reduction (t-SNE / UMAP on high-dimensional type embeddings)
+- automatically created coordinates do not always reflect the intended view on a semantic profile
+- in an interactive setting, users should thus be able to drag items in order to adjust their coordinates
+- (dropping items is useful for creating categories, see document about discourseme description)
+
+## Creation
+- semantic maps are created by default for all keyword and collocation analyses, i.e. at
+  + `GET /query/<query_id>/collocation/`
+  + `POST /keyword/`
+- you can de-activate this behaviour setting `semantic_map_init=False`
+- this makes sure that all top items of the analysis have coordinates on the newly created map
+- if you provide a `semantic_map_id`, the API makes sure that all top items have coordinates on the provided map
+- a combined semantic map based on items of several analyses can also be created using
+  + `PUT /semantic-map/`
+  
+## Interacting with coordinates
+- coordinates can be accessed via
+  + `GET /semantic-map/<id>/coordinates/`
+- all items have two sets of coordinates:
+  - the initial coordinates that are automatically created, and
+  - user-defined coordinates (which are all `None` after directly after creation)
+- modifying the user coordinates works via
+  + `PUT /semantic-map/<id>/coordinates/`
+- "deleting" user coordinates means setting them to `None`
+- we take the map of the above collocation analysis as example
+```{r}
+semantic_map.id <- collocation$semantic_map_id
+```
+
+- directly get the coordinates from the API
+```{r}
+coordinates <- request(str_interp("${url_api}/semantic-map/${semantic_map.id}/coordinates/")) |> 
+  req_auth_bearer_token(access.token) |>
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() 
+```
+
+- analysis scores are linked via items to these coordinates
+```{r}
+coll.table.page <- request(str_interp("${url_api}/collocation/${collocation.id}/items")) |> 
+  req_url_query(page_size = 50) |> 
+  req_auth_bearer_token(access.token) |>
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() 
+
+scores <- coll.table.page |> 
+  magrittr::extract2("items") |> 
+  magrittr::extract2("scores") |> 
+  bind_rows(.id = "item") |>
+  pivot_wider(names_from = measure, values_from = score) |> 
+  mutate(item = coll.table.page |> magrittr::extract2("items") |> magrittr::extract2("item"))
+
+map <- scores |> 
+  left_join(coordinates, by = "item") |> 
+  mutate(x = if_else(!is.na(x_user), x_user, x),
+         y = if_else(!is.na(y_user), y_user, y)) |> 
+  select(item, conservative_log_ratio, x, y)
+
+map |> 
+  filter(conservative_log_ratio > 0) |>
+  ggplot(aes(x = x, y = y, label = item)) + 
+  geom_label_repel(aes(size = conservative_log_ratio), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") +
+  theme(legend.position = "bottom")
+```
+
+- drag items to other positions
+```{r}
+coordinates <- request(str_interp("${url_api}/semantic-map/${semantic_map.id}/coordinates/")) |>
+  req_method('put') |> 
+  req_body_json(list(item = "Artensterben", x_user = 25, y_user = 20)) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+map <- scores |> 
+  left_join(coordinates, by = "item") |> 
+  mutate(x = if_else(!is.na(x_user), x_user, x),
+         y = if_else(!is.na(y_user), y_user, y)) |> 
+  select(item, conservative_log_ratio, x, y)
+
+map |> 
+  filter(conservative_log_ratio > 0) |>
+  ggplot(aes(x = x, y = y, label = item)) + 
+  geom_label_repel(aes(size = conservative_log_ratio), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") +
+  theme(legend.position = "bottom")
 ```

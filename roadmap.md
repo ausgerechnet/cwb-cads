@@ -65,7 +65,7 @@ probably best handled in backend
 
 ## Backend
 
-update manuals
+- [ ] update manuals
 
 ### Features
 - [x] query
@@ -81,40 +81,31 @@ update manuals
 - [x] meta distribution
 - [ ] pairwise associations of discoursemes (triangular matrix)
 - [ ] usage fluctuation analysis
-- [ ] anchored queries
-- [ ] topographic maps
+- [ ] anchored queries [spheroscope]
 
-### TODO
+### Bugs / Improvements
 - [x] speed up deleting queries
 - [x] extend tests
 - [x] meta from s-att
 - [x] more than one filter discourseme → second-order collocation
-- [ ] make sure PUT runs idempotently
-- [ ] consistencise trailing slashes
 - [ ] speed up supcorpus queries
-- [ ] directed collocation analyses
 - [ ] constellation/collocation: return one object with items categorised to discoursemes
-- [ ] click.echo instead of logging for CLI commands
-- [ ] race conditions gdbm (spheroscophe)
 - [ ] corpora settings
-- [ ] stop words (language specific / user-defined) / POS filtering
 - [ ] semmap: function for adding items to the topic discourseme
-  + if one realises one of the collocates should actually be part of the topic discourseme,
-    there should be a way to directly update the topic discourseme from within the semantic cloud
+  + if one realises one of the collocates should actually be part of the topic discourseme, there should be a way to directly update the topic discourseme from within the semantic cloud
 - [ ] projects
 - [ ] quantitative analyses
   + how many items have been categorized
   + how many concordance lines contain at least one of them
-- [ ] UFA / steamgraph
 - [ ] topic-item suggestion in analysis definition
   + existing items in the corpus should be shown to the user (by frequency) = pre-check
   + to limit memory usage
     - the list should only contain items with a frequency above X (e.g. 3 ocurrences)
     - and maybe a word-length of above Y (e.g. words longer than 3 letters)
-- [ ] KWIC
-  + collocation analysis: node
-  + MMDA constellations: select one discourseme
-  + spheroscope: select one slot (left adjusted)
+- [ ] concordancing
+  + collocation analysis: KWIC on node
+  + MMDA constellations: KWIC on one selected discourseme
+  + [spheroscope]: KWIC on one selected slot (left adjusted)
     - alternatively: complete sentence / tweet
 
 ### review 2024-07-17
@@ -161,6 +152,15 @@ update manuals
 - [ ] GET `/mmda/constellation/{id}/description/{description_id}/collocation/` doesn't yield all info
 
 ### nice to have
-- Concordance: primary / secondary vs. give all → separate branch
+- Concordance: primary / secondary vs. give all
 - DiscoursemeTemplate: p + surface vs. cqp_query | two lists
 - DiscoursemeTemplatePreview
+- [ ] concordance lines: sort\_by\_s\_att
+- [ ] topographic maps
+- [ ] make sure PUT runs idempotently
+- [ ] consistencise trailing slashes
+- [ ] directed collocation analyses
+- [ ] [steamgraph](http://leebyron.com/streamgraph/)
+- [ ] click.echo instead of logging for CLI commands
+- [ ] stop words (language specific / user-defined) / POS filtering
+- [ ] race conditions gdbm [spheroscope]
