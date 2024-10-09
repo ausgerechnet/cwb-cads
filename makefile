@@ -1,5 +1,5 @@
 config = cfg.DevConfig
-cwb_id = GERMAPARL-1386
+cwb_id = GERMAPARL1386
 # cwb_id = GERMAPARL-1949-2021
 meta = tests/corpora/germaparl-meta.tsv
 # meta = ../thesis/ccc-analyses/meta-data/germaparl-speaker-nodes.tsv.gz
