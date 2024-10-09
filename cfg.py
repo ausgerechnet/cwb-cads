@@ -36,7 +36,7 @@ class ProdConfig(Config):
     ADMIN_PASSWORD = "mmda-admin"  # only user (name = 'admin')
 
     CORPORA = '/data/Philipp/mmda-corpora.json'
-    CCC_REGISTRY_DIR = '/data/Philipp/cwb-cads/tests/corpora/registry'
+    CCC_REGISTRY_DIR = '/data/corpora/cqpweb/registry'
 
     CCC_DATA_DIR = str(getenv('CCC_DATA_DIR', default='/tmp/mmda-ccc-data/'))
 

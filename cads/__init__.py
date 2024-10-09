@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .version import __version__
 
-CONFIG = os.getenv('CWB_CADS_CONFIG', default='cfg.TestConfig')
+CONFIG = os.getenv('CWB_CADS_CONFIG', default='cfg.ProdConfig')
 
 NAME = 'cads'
 TITLE = 'cwb-cads'
