@@ -351,7 +351,35 @@ request(str_interp("${url_api}/query/${query.id}/concordance")) |>
   + user should be able to set these parameters
   + we set `page_size=50` here, frontend should make the map zoomable (best case: get more items until a user-defined cut-off)
 
-#### Coordinates
+#### Creation of semantic maps
+
+semantic maps are created by default for all keyword and collocation analyses:
+
+    GET /query/<query_id>/collocation/
+    POST /keyword/
+
+you can de-activate this behaviour setting `semantic_map_init=False`.
+
+this makes sure that all top items of the analysis actually have coordinates on the provided semantic map (if any).  if `semantic_map_id=None`, this creates a new semantic map.
+
+a combined semantic map based on items of several analyses can be created using
+
+    PUT /semantic-map/
+    
+coordinates can then be accessed via
+
+    GET /semantic-map/<id>/coordinates/
+
+note that all items have to sets of coordinates: the initial coordinates that are automatically created and user-defined coordinates (which are all `None` after directly after creation).
+
+modifying the user coordinates works via
+
+    PUT /semantic-map/<id>/coordinates/
+    
+"deleting" user coordinates means setting them to `None`.
+
+
+#### Coordinates in keyword analyses
 
 - coordinates are provided automatically for all items
 ```{r}

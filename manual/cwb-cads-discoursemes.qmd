@@ -241,7 +241,6 @@ request(str_interp("${url_api}/query/${description.query.id}/breakdown")) |>
   select(item, ipm, freq, nr_tokens)
 ```
 
-
 # Discourseme Constellations
 
 - several discoursemes can be combined to form a **discourseme constellation**
@@ -623,6 +622,29 @@ map |>
   xlab("") + ylab("") +
   theme(legend.position = "bottom")
 ```
+
+
+# Semantic Maps
+
+semantic maps are most helpful when used across multiple analyses.  constellation descriptions have "default" semantic maps.  existing semantic maps can be set as the default when creating constellation descriptions:
+
+    POST /mmda/constellation/constellation_id/description/
+
+accepts a `semantic_map_id`.
+
+additionally, you **can** provide a `semantic_map_id` when creating keyword or collocation analyses via
+
+    POST /mmda/constellation/<id>/description/<description_id>/collocation/
+    POST /mmda/constellation/<id>/description/<description_id>/keyword/
+
+the behaviour is as follows:
+- if a `semantic_map_id` is provided, the endpoint makes sure that there are coordinates for all top items of the analysis (as above)
+  + if the constellation description didn't have a default semantic map before, the provided semantic map will be set as default
+- if `semantic_map_id=None` (as by default)
+  + the default semantic map of the constellation description will be used (if any)
+  + if this is also `None`, a new semantic map will be created
+
+note that if the constellation description did not have a default semantic map before starting an analysis, it will have one after (as will the newly created analyses).
 
 
 # Iterative Work
