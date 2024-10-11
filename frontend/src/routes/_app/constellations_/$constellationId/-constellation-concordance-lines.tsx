@@ -45,11 +45,15 @@ export function ConstellationConcordanceLines({
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
+  // TODO: use a hook that handles default values etc. useFilterSelection()
   const searchParams = useSearch({
     from: '/_app/constellations/$constellationId',
   })
   const pAttributes = corpus?.p_atts ?? emptyArray
-  const primary = searchParams.primary ?? pAttributes[0]
+  const primary =
+    searchParams.primary ??
+    pAttributes.find((a) => a === 'word') ??
+    pAttributes[0]
 
   // Remember a few values between renders: this helps rendering a proper skeleton
   // thus avoiding flicker

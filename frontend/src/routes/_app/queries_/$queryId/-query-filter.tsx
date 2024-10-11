@@ -44,7 +44,10 @@ export function QueryFilter({
   const { data: corpus } = useQuery(corpusById(corpusId))
   const contextBreakList = corpus?.s_atts ?? emptyArray
   const pAttributes = corpus?.p_atts ?? emptyArray
-  const primary = searchParams.primary ?? pAttributes[0]
+  const primary =
+    searchParams.primary ??
+    pAttributes.find((a) => a === 'word') ??
+    pAttributes[0]
 
   const { mutate: shuffle, isPending: isShuffling } = useMutation(
     shuffleQueryConcordances,

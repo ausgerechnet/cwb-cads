@@ -111,6 +111,10 @@ export function useFilterSelection(
     if (p !== undefined && !pAtts.includes(p)) {
       setFilter('p', pAtts[0])
     }
+    /*
+      TODO: Check whether that's required after all since the return
+       handles this check
+    */
     if (primary !== undefined && !pAtts.includes(primary)) {
       setFilter('primary', pAtts[0])
     }
@@ -133,7 +137,7 @@ export function useFilterSelection(
     ccPageSize,
     setFilter,
     p: defaultTo(p, corpus?.p_atts),
-    primary: defaultTo(primary, corpus?.p_atts),
+    primary: defaultTo(primary, corpus?.p_atts, 'word'),
     secondary: defaultTo(secondary, corpus?.p_atts),
     s: defaultTo(s, corpus?.s_atts),
     pAttributes,
@@ -142,8 +146,15 @@ export function useFilterSelection(
   }
 }
 
-function defaultTo<T>(value: T, validValues: T[] | undefined): T | undefined {
+function defaultTo<T>(
+  value: T,
+  validValues: T[] | undefined,
+  preferredValue?: T,
+): T | undefined {
   if (validValues === undefined) return value
   if (validValues.includes(value)) return value
+  if (preferredValue !== undefined && validValues.includes(preferredValue)) {
+    return preferredValue
+  }
   return validValues[0]
 }
