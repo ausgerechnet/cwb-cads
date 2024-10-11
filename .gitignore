@@ -133,3 +133,13 @@ ENV/
 .\#*
 *~
 
+# R stuff
+# -------
+.Rproj.user
+*.Rproj
+.RData
+.Rhistory
+
+# Config
+# ------
+cfg.py

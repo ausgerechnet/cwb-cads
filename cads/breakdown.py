@@ -2,131 +2,130 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, String
-from ccc import Corpus
+from apiflask.fields import Float, Integer, Nested, String
 from flask import current_app
+from pandas import DataFrame
 
 from . import db
-from .database import Breakdown, Query
-from .users import auth
-from .query import ccc_query
+from .database import BreakdownItems
 
-bp = APIBlueprint('breakdown', __name__, url_prefix='/<query_id>/breakdown')
+bp = APIBlueprint('breakdown', __name__, url_prefix='/breakdown')
 
 
 def ccc_breakdown(breakdown):
 
-    matches_df = ccc_query(breakdown._query)
-    corpus = Corpus(breakdown._query.corpus.cwb_id,
-                    cqp_bin=current_app.config['CCC_CQP_BIN'],
-                    registry_dir=current_app.config['CCC_REGISTRY_DIR'],
-                    data_dir=current_app.config['CCC_DATA_DIR'])
+    current_app.logger.debug(f'ccc_breakdown :: breakdown {breakdown.id} in corpus {breakdown._query.corpus.cwb_id}')
 
-    matches = corpus.subcorpus(df_dump=matches_df, overwrite=False)
-    breakdown_df = matches.breakdown(p_atts=[breakdown.p])
-    breakdown_df['breakdown_id'] = breakdown.id
-    breakdown_df.to_sql("breakdown_items", con=db.engine, if_exists='append')
-    db.session.commit()
+    breakdown_items = BreakdownItems.query.filter_by(breakdown_id=breakdown.id)
+
+    if not breakdown_items.first():
+
+        # count matches
+        from .query import ccc_query
+        current_app.logger.debug('ccc_breakdown :: counting matches')
+        matches_df = ccc_query(breakdown._query)
+        if len(matches_df) == 0:
+            current_app.logger.debug('ccc_breakdown :: 0 matches')
+            return
+        corpus = breakdown._query.corpus.ccc()
+        matches = corpus.subcorpus(df_dump=matches_df, overwrite=False)
+
+        # save breakdown
+        breakdown_df = matches.breakdown(p_atts=[breakdown.p])
+        breakdown_df['breakdown_id'] = breakdown.id
+        current_app.logger.debug(f"ccc_breakdown :: saving {len(breakdown_df)} breakdown items to database")
+        breakdown_df.to_sql("breakdown_items", con=db.engine, if_exists='append')
+        db.session.commit()
+        current_app.logger.debug("ccc_breakdown :: saved to database")
+
+    else:
+        current_app.logger.debug("ccc_breakdown :: getting breakdown items from database")
+        breakdown_df = DataFrame([vars(s) for s in breakdown.items], columns=['freq', 'breakdown_id', 'item']).set_index(['item'])
+        current_app.logger.debug(f"ccc_breakdown :: got {len(breakdown_df)} breakdown items from database")
 
     return breakdown_df
 
 
+################
+# API schemata #
+################
+
+# INPUT
 class BreakdownIn(Schema):
 
-    query_id = Integer()
-    p = String()
+    p = String(required=True)
+
+
+# OUTPUT
+class BreakdownItemsOut(Schema):
+
+    id = Integer(required=True)
+    breakdown_id = Integer(required=True)
+    item = String(required=True)
+    freq = Integer(required=True)
+    nr_tokens = Integer(required=True)
+    ipm = Float(required=True)
 
 
 class BreakdownOut(Schema):
 
-    id = Integer()
-    query_id = Integer()
-    p = String()
+    id = Integer(required=True)
+    query_id = Integer(required=True)
+    p = String(required=True)
+    items = Nested(BreakdownItemsOut(many=True), required=True, dump_default=[])
 
 
-class BreakdownItemsOut(Schema):
+# #################
+# # API endpoints #
+# #################
+# @bp.get('/<id>')
+# @bp.output(BreakdownOut)
+# @bp.auth_required(auth)
+# def get_breakdown(id):
+#     """Get breakdown.
 
-    id = Integer()
-    breakdown_id = Integer()
-    item = String()
-    freq = Integer()
+#     """
 
-
-@bp.post('/')
-@bp.input(BreakdownIn)
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def create(query_id, data):
-    """Create new breakdown for query.
-
-    """
-    breakdown = Breakdown(query_id=query_id, **data)
-    db.session.add(breakdown)
-    db.session.commit()
-
-    return BreakdownOut().dump(breakdown), 200
+#     breakdown = db.get_or_404(Breakdown, id)
+#     return BreakdownOut().dump(breakdown), 200
 
 
-@bp.get('/')
-@bp.output(BreakdownOut(many=True))
-@bp.auth_required(auth)
-def get_breakdowns(query_id):
-    """Get all breakdowns of query.
+# @bp.delete('/<id>')
+# @bp.auth_required(auth)
+# def delete_breakdown(id):
+#     """Delete breakdown.
 
-    """
+#     """
 
-    query = db.get_or_404(Query, query_id)
-    return [BreakdownOut().dump(breakdown) for breakdown in query.breakdowns], 200
+#     breakdown = db.get_or_404(Breakdown, id)
+#     db.session.delete(breakdown)
+#     db.session.commit()
 
-
-@bp.get('/<id>')
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def get_breakdown(query_id, id):
-    """Get breakdown.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-    return BreakdownOut().dump(breakdown), 200
+#     return 'Deletion successful.', 200
 
 
-@bp.delete('/<id>')
-@bp.auth_required(auth)
-def delete_breakdown(query_id, id):
-    """Delete breakdown.
+# @bp.post('/<id>/execute')
+# @bp.output(BreakdownOut)
+# @bp.auth_required(auth)
+# def execute(id):
+#     """Execute breakdown: Calculate frequencies of query matches.
 
-    """
+#     """
 
-    breakdown = db.get_or_404(Breakdown, id)
-    db.session.delete(breakdown)
-    db.session.commit()
+#     breakdown = db.get_or_404(Breakdown, id)
+#     ccc_breakdown(breakdown)
 
-    return 'Deletion successful.', 200
-
-
-@bp.post('/<id>/execute')
-@bp.output(BreakdownOut)
-@bp.auth_required(auth)
-def execute(query_id, id):
-    """Execute breakdown: Calculate frequencies of query matches.
-
-    """
-
-    breakdown = db.get_or_404(Breakdown, id)
-    ccc_breakdown(breakdown)
-
-    return BreakdownOut().dump(breakdown), 200
+#     return BreakdownOut().dump(breakdown), 200
 
 
-@bp.get("/<id>/items")
-@bp.output(BreakdownItemsOut(many=True))
-@bp.auth_required(auth)
-def get_breakdown_items(query_id, id):
-    """Get breakdown items.
+# @bp.get("/<id>/items")
+# @bp.output(BreakdownItemsOut(many=True))
+# @bp.auth_required(auth)
+# def get_breakdown_items(id):
+#     """Get breakdown items.
 
-    """
+#     """
 
-    breakdown = db.get_or_404(Breakdown, id)
+#     breakdown = db.get_or_404(Breakdown, id)
 
-    return [BreakdownItemsOut().dump(item) for item in breakdown.items], 200
+#     return [BreakdownItemsOut().dump(item) for item in breakdown.items], 200

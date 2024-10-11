@@ -1,15 +1,15 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
 import os
+import sys
 from logging.config import dictConfig
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, dir_path)
 
 from cads import create_app
-from cfg import DevConfig
+from cfg import ProdConfig
 
 dictConfig({
     'version': 1,
@@ -26,9 +26,9 @@ dictConfig({
         "level": "DEBUG"
     }},
     'root': {
-        'level': 'INFO',
+        'level': 'DEBUG',
         'handlers': ['wsgi']
     }
 })
 
-application = create_app(DevConfig)
+application = create_app(ProdConfig)

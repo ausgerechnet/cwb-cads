@@ -1,43 +1,44 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from apiflask import APIBlueprint, HTTPBasicAuth, Schema, abort
-from apiflask.fields import Integer, List, String
-from flask import current_app, g, jsonify, request, session
+
+from apiflask import APIBlueprint, Schema, abort
+from apiflask.fields import Integer, String
+from flask import current_app
+from flask_jwt_extended import (create_access_token, create_refresh_token,
+                                decode_token)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import db
+from . import auth, db
 from .database import User
 
 bp = APIBlueprint('user', __name__, url_prefix='/user')
-auth = HTTPBasicAuth()
 
 
-@bp.before_app_request
-def load_logged_in_user():
-    user_id = session.get('user_id')
-    if user_id is None:
-        g.user = None
-    else:
-        g.user = User.query.filter_by(id=user_id).first()
+@auth.verify_token
+def verify_token(token):
+
+    if not token:
+        return abort(403, "missing authorization header")
+    data = decode_token(token)
+    user = db.get_or_404(User, data['sub']['id'])
+
+    return user
 
 
-@auth.verify_password
-def verify_password(username, password):
-    user = User.query.filter_by(username=username).first()
-    if user and check_password_hash(user.password_hash, password):
-        return username
-    return None
+################
+# API schemata #
+################
 
-
+# Input
 class UserRegister(Schema):
 
     username = String(required=True)
-    first_name = String()
-    last_name = String()
-    email = String()
     password = String(required=True)
     confirm_password = String(required=True)
+    first_name = String(required=False, metadata={'nullable': True})
+    last_name = String(required=False, metadata={'nullable': True})
+    email = String(required=False, metadata={'nullable': True})
 
 
 class UserIn(Schema):
@@ -53,22 +54,36 @@ class UserUpdate(Schema):
     confirm_password = String(required=True)
 
 
+# Output
 class UserOut(Schema):
 
     id = Integer(required=True)
     username = String(required=True)
-    roles = List(String())
 
 
+class HTTPTokenOut(Schema):
+
+    access_token = String(required=True)
+    refresh_token = String(required=True)
+
+
+class HTTPRefreshTokenIn(Schema):
+
+    refresh_token = String(required=True)
+
+
+#################
+# API endpoints #
+#################
 @bp.post('/login')
 @bp.input(UserIn, location='form')
-@bp.output(UserOut)
-def login(data):
-    """Login with name and password.
+@bp.output(HTTPTokenOut)
+def login(form_data):
+    """Login with name and password to get JWT token
 
     """
-    username = request.form.get('username')
-    password = request.form.get('password')
+    username = form_data['username']
+    password = form_data['password']
 
     user = User.query.filter_by(username=username).first()
 
@@ -77,53 +92,65 @@ def login(data):
     if not check_password_hash(user.password_hash, password):
         return abort(401, 'incorrect password')
 
-    # clear session and set user
-    session.clear()
-    session['user_id'] = user.id
-    g.user = user
+    tokens = {
+        'access_token': create_access_token(UserOut().dump(user)),
+        'refresh_token': create_refresh_token(UserOut().dump(user))
+    }
 
-    return UserOut().dump(user), 200
+    return tokens, 200
 
 
-@bp.post('/logout')
-@bp.auth_required(auth)
-def logout():
-    """Logout current user.
+@bp.post('/refresh')
+@bp.input(HTTPRefreshTokenIn)
+@bp.output(HTTPTokenOut)
+def refresh(json_data):
+    """Return a new token if the user has a refresh token
 
     """
 
-    session.clear()
+    refresh_token = json_data['refresh_token']
+    data = decode_token(refresh_token)
+    user = db.get_or_404(User, data['sub']['id'])
 
-    return 'Logout successful.', 200
+    tokens = {
+        'access_token': create_access_token(UserOut().dump(user)),
+        'refresh_token': create_refresh_token(UserOut().dump(user))
+    }
+
+    return tokens, 200
+
+
+@bp.get('/identify')
+@bp.auth_required(auth)
+def identify():
+    """Identify who is logged with token
+
+    """
+
+    return UserOut().dump(auth.current_user), 200
 
 
 @bp.post('/')
-@bp.input(UserIn)
+@bp.input(UserRegister)
 @bp.output(UserOut)
 @bp.auth_required(auth)
-def create_user(username):
+def create_user(json_data):
     """Register new user.
 
     """
 
-    username = request.json.get('username')
-    first_name = request.json.get('first_name')
-    last_name = request.json.get('last_name')
-    email = request.json.get('email')
-    password = request.json.get('password')
-
     # does user already exist?
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=json_data['username']).first()
     if user:
-        current_app.logger.debug('User %s already exists', username)
-        return jsonify({'msg': 'User already exists'}), 409
+        current_app.logger.debug('Username %s already taken', json_data['username'])
+        return 'Username already taken', 409
 
     user = User(
-        username=username,
-        email=email,
-        first_name=first_name,
-        last_name=last_name,
-        password_hash=generate_password_hash(password)
+        username=json_data['username'],
+        email=json_data['email'],
+        first_name=json_data['first_name'],
+        last_name=json_data['last_name'],
+        password_hash=generate_password_hash(json_data['password'])
     )
     db.session.add(user)
     db.session.commit()
@@ -161,30 +188,13 @@ def get_users():
 @bp.input(UserUpdate)
 @bp.output(UserOut)
 @bp.auth_required(auth)
-def update_user(username):
+def update_user(id, json_data):
     """Update details of a user.
 
     """
 
-    # Check Request
-    new_password = request.json.get('password')
-
-    # Get User
-    user = User.query.filter_by(username=username).first()
-    if not user:
-        current_app.logger.debug('No such user %s', username)
-        return jsonify({'msg': 'No such user'}), 404
-
-    # Generate salted password hash
-    hashed_password = generate_password_hash(new_password)
-
-    if not hashed_password:
-        current_app.logger.debug('Password could not be changed. No hash generated')
-        return jsonify({'msg': 'Password could not be changed'}), 500
-
-    # Only set if we got a valid hash
-    user.password = hashed_password
+    user = auth.current_user
+    user.password_hash = generate_password_hash(json_data['new_password'])
     db.session.commit()
 
-    current_app.logger.debug('Password updated for user %s', user.id)
     return UserOut().dump(user), 200

@@ -1,0 +1,40 @@
+name: Backend Test
+
+on: [workflow_dispatch, push]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [ 3.8, 3.9, "3.10", "3.11" ]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install CWB
+      run: |
+        sudo apt-get install libncurses5-dev
+        wget https://kumisystems.dl.sourceforge.net/project/cwb/cwb/cwb-3.5/deb/cwb_3.5.0-1_amd64.deb
+        wget https://master.dl.sourceforge.net/project/cwb/cwb/cwb-3.5/deb/cwb-dev_3.5.0-1_amd64.deb
+        sudo apt-get install ./cwb_3.5.0-1_amd64.deb
+        sudo apt-get install ./cwb-dev_3.5.0-1_amd64.deb
+        cp cfg_example.py cfg.py
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -q pipenv
+        make install
+    - name: Lint
+      continue-on-error: true
+      run: |
+        make lint
+    - name: Test
+      run: |
+        make test
