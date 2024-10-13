@@ -11,7 +11,7 @@ export const FilterSchema = z.object({
   primary: z.string().optional(),
   secondary: z.string().optional().catch(undefined),
   clSortOrder: z
-    .enum(['ascending', 'descending', 'random'] as const)
+    .enum(['ascending', 'descending', 'random', 'first'] as const)
     .optional()
     .catch(undefined),
   clSortByOffset: z.number().int().optional().catch(undefined),
@@ -67,7 +67,7 @@ export function useFilterSelection(
   const {
     windowSize = 3,
     clSortByOffset = 0,
-    clSortOrder = 'descending',
+    clSortOrder = 'random',
     clPageIndex = 0,
     clPageSize = 5,
     ccSortBy = 'conservative_log_ratio',
@@ -125,15 +125,17 @@ export function useFilterSelection(
 
   const pAttributes = useMemo(() => corpus?.p_atts ?? [], [corpus?.p_atts])
   const contextBreakList = useMemo(() => corpus?.s_atts ?? [], [corpus?.s_atts])
+  const isSortable = clSortOrder !== 'first' && clSortOrder !== 'random'
 
   return {
     ...search,
+    isSortable,
     windowSize,
-    clSortByOffset,
+    clSortByOffset: isSortable ? clSortByOffset : undefined,
     clSortOrder,
     clPageIndex,
     clPageSize,
-    ccSortBy,
+    ccSortBy: isSortable ? ccSortBy : undefined,
     ccPageSize,
     setFilter,
     p: defaultTo(p, corpus?.p_atts),

@@ -590,7 +590,7 @@ export const constellationConcordances = (
     filterDiscoursemeIds?: number[]
     pageSize?: number
     pageNumber?: number
-    sortOrder?: 'ascending' | 'descending' | 'random'
+    sortOrder?: 'ascending' | 'descending' | 'random' | 'first'
     sortByOffset?: number
   } = {},
 ) =>

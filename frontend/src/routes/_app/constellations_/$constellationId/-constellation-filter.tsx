@@ -25,6 +25,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
   })
   const corpusId = searchParams.corpusId
   const {
+    isSortable,
     windowSize,
     clSortByOffset,
     clSortOrder,
@@ -54,7 +55,8 @@ export function ConstellationFilter({ className }: { className?: string }) {
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">Sort By Offset {clSortByOffset}</span>
         <Slider
-          defaultValue={[clSortByOffset]}
+          disabled={!isSortable}
+          defaultValue={[clSortByOffset ?? 0]}
           onValueChange={([newValue]) => setFilter('clSortByOffset', newValue)}
           min={-5}
           max={5}
@@ -78,7 +80,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {['ascending', 'descending', 'random'].map((value) => (
+              {['ascending', 'descending', 'random', 'first'].map((value) => (
                 <SelectItem key={value} value={value}>
                   {value}
                 </SelectItem>
@@ -175,6 +177,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">Sort by</span>
         <Select
+          disabled={!isSortable}
           value={ccSortBy}
           onValueChange={(value) =>
             setFilter('ccSortBy', FilterSchema.shape.ccSortBy.parse(value))
