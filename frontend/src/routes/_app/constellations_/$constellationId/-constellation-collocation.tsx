@@ -4,6 +4,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table.tsx'
@@ -54,10 +55,12 @@ export function Collocation({
       <ErrorMessage error={error} />
       <Table>
         <TableHeader>
-          <TableCell>Item</TableCell>
-          {measureOrder.map((measure) => (
-            <TableCell key={measure}>{measure}</TableCell>
-          ))}
+          <TableRow>
+            <TableHead>Item</TableHead>
+            {measureOrder.map((measure) => (
+              <TableHead key={measure}>{measure}</TableHead>
+            ))}
+          </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading && (
