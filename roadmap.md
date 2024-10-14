@@ -1,73 +1,30 @@
 # Frontend
 
-## parameters
+## Bugfixes
 
-collocation parameters (*window size*, *context break*, *secondary*, *sort by*, *sort order*) should be separated from concordance parameters (*sort by offset*, *sort order*, *primary*). note that collocation parameters are always also considered in concordancing.
+- [ ] concordance KWIC view doesn't show MWUs as keywords, only first token
+- [ ] concordance sorting doesn't work as expected
+- [ ] I think there's a general confusion between the items in the discourseme description (which are CQP queries, or p/surface pairs) and the items on the (unigram) breakdown -- which should be highlighted in the semantic map.
+- [ ] collocation items: after selecting a corpus and a focus discourseme, the frontend asks for collocation analyses via `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/`, but then does not use `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/<id>/items` but `GET /collocation/<id>/items` instead. this endpoint does return the same items, but no discourseme scores (or coordinates).
 
-filter item (and filter discourseme) should be accessible via clicking. this should directly filter concordance lines and provide the option to start a "secondary" collocation analysis.
+## Features
 
-## concordance KWIC view
+- [ ] semantic map: mini map
+- [ ] semantic map: discourseme names should be visualised in the semantic map. the correct endpoint (see above) returns corresponding coordinates. when selecting a discourseme by clicking on it, their individual items should be displayed on the side.
+- [ ] semantic map: moving items (and discoursemes) on the map should be possible.
+- [ ] semantic map: filtering concordance lines via selecting an item or a discourseme should be possible via clicking (as above).
+- [ ] semantic map: there should be the possibility to hide items that belong to the unigram breakdown of a discourseme (especially the focus discourseme).
+- [ ] constellation view: collocation parameters (*window size*, *context break*, *secondary*, *sort by*, *sort order*) should be separated from concordance parameters (*sort by offset*, *sort order*, *primary*). note that collocation parameters are always also considered in concordancing.
+- [ ] constellation view: filter item (and filter discourseme) should be accessible via clicking. this should directly filter concordance lines and provide the option to start a "secondary" collocation analysis.
 
-doesn't show MWUs as keywords, only first token
+# Misc
 
-## concordance filtering and sorting
-
-sorting doesn't work as expected [backend issue? (MMDA submodule problem?)]
-
-## collocation items
-
-after selecting a corpus and a focus discourseme, the frontend asks for collocation analyses via
-
-    GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/
-    
-but then does not use
-
-    GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/<id>/items
-
-but
-
-    GET /collocation/<id>/items
-    
-instead. this endpoint does return the same items, but no discourseme scores (or coordinates).
-
-- REPRODUCIBLE EXAMPLE on server
-
-## discourseme visualisation
-
-discourseme names should be visualised in the semantic map. the correct endpoint (see above) returns corresponding coordinates. when selecting a discourseme by clicking on it, their individual items should be displayed on the side.
-
-mini map
-
-BACKEND:
-- norm [-1, 1]
-- indicate relevance (relevant, irrelevant; w/o negative evidence → take out completely)
-
-## discourseme items
-
-I think there's a general confusion between the items in the discourseme description (which are CQP queries, or p/surface pairs) and the items on the (unigram) breakdown -- which should be highlighted in the semantic map.
-
-- remove items of FOCUS DISCOURSEME
-
-## semantic map interaction
-
-moving items (and discoursemes) on the map should be possible.
-
-filtering concordance lines via selecting an item or a discourseme should be possible via clicking (as above).
-
-there should be the possibility to hide items that belong to the unigram breakdown of a discourseme (especially the focus discourseme).
-
-## scaling
-
-sigmoid / tangens scaling vs. linear scaling
-
-probably best handled in backend
-
+- [ ] overlapping segmentation annotation (LaTeX / Quarto)
+- [ ] update manuals
 
 ## Backend
 
-- [ ] update manuals
-
-### Features
+### Major features
 - [x] query
 - [x] breakdown
 - [x] concordance
@@ -81,22 +38,22 @@ probably best handled in backend
 - [x] meta distribution
 - [ ] pairwise associations of discoursemes (triangular matrix)
 - [ ] usage fluctuation analysis
+- [ ] quantitative feedback for collocation / keyword discourseme categorisation
+  + how many items have been categorised?
+  + how many concordance lines contain at least one of them
 - [ ] anchored queries [spheroscope]
 
-### Bugs / Improvements
-- [x] speed up deleting queries
-- [x] extend tests
-- [x] meta from s-att
-- [x] more than one filter discourseme → second-order collocation
-- [ ] speed up supcorpus queries
-- [ ] constellation/collocation: return one object with items categorised to discoursemes
+### Minor features
+- [ ] scores: indicate relevance (relevant, irrelevant)
+- [x] scores: do not return items with negative evidence
+- [ ] scores: sigmoid / tangens scaling vs. linear scaling
+- [x] semantic map: normalise to [-1, 1]^2
+- [ ] scores / semantic map: remove items of focus discourseme in collocation analyses
+- [ ] speed up constellation concordance retrieval (discourseme range retrieval / sorting)
 - [ ] corpora settings
+- [ ] projects for discoursemes / constellations
 - [ ] semmap: function for adding items to the topic discourseme
   + if one realises one of the collocates should actually be part of the topic discourseme, there should be a way to directly update the topic discourseme from within the semantic cloud
-- [ ] projects
-- [ ] quantitative analyses
-  + how many items have been categorized
-  + how many concordance lines contain at least one of them
 - [ ] topic-item suggestion in analysis definition
   + existing items in the corpus should be shown to the user (by frequency) = pre-check
   + to limit memory usage
@@ -107,6 +64,12 @@ probably best handled in backend
   + MMDA constellations: KWIC on one selected discourseme
   + [spheroscope]: KWIC on one selected slot (left adjusted)
     - alternatively: complete sentence / tweet
+- [x] speed up deleting queries
+- [x] extend tests
+- [x] meta from s-att
+- [x] more than one filter discourseme → second-order collocation
+- [ ] speed up supcorpus queries
+- [ ] constellation/collocation: return one object with items categorised to discoursemes
 
 ### review 2024-07-17
 - [x] constellation: enforce min of one filter discourseme?
@@ -117,8 +80,8 @@ probably best handled in backend
 ### review 2024-07-30
 - [ ] improve logging
 - [ ] search for item on collocation table
-- [ ] formatted_score: 3 führende Stellen scores
-- [ ] only return items with E11 < O11
+- [ ] scores formatted: 3 leading digits
+- [x] only return items with E11 < O11
 
 ### review 2024-08-05
 - [x] wrongly indexed s-atts in corpora (e.g. GERMAPARL\_1949\_2021 on obelix)
