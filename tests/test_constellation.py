@@ -376,7 +376,7 @@ def test_constellation_concordance_filter(client, auth):
 #         df = concat(dfs)
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -493,21 +493,21 @@ def test_constellation_collocation(client, auth):
         # - 306   times in context of discourseme in subcorpus
 
         # collocation in whole corpus
-        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores'] + coll.json['items'][0]['raw_scores']}
         assert int(coll_conv['N']) == 149800
         assert int(coll_conv['R1']) == 14647
         assert int(coll_conv['C1']) == 13765
         assert int(coll_conv['O11']) == 1434
 
         # collocation in subcorpus with global marginals
-        coll_conv = {c['measure']: c['score'] for c in coll_glob.json['items'][0]['scores']}
+        coll_conv = {c['measure']: c['score'] for c in coll_glob.json['items'][0]['scores'] + coll_glob.json['items'][0]['raw_scores']}
         assert int(coll_conv['N']) == 149800
         assert int(coll_conv['R1']) == 3367
         assert int(coll_conv['C1']) == 13765
         assert int(coll_conv['O11']) == 306
 
         # collocation in subcorpus with local marginals
-        coll_conv = {c['measure']: c['score'] for c in coll_loc.json['items'][0]['scores']}
+        coll_conv = {c['measure']: c['score'] for c in coll_loc.json['items'][0]['scores'] + coll_loc.json['items'][0]['raw_scores']}
         assert int(coll_conv['N']) == 35980
         assert int(coll_conv['R1']) == 3367
         assert int(coll_conv['C1']) == 3642
@@ -844,7 +844,7 @@ def test_constellation_2nd_order_collocation(client, auth):
         # number of tokens in window: R1 = 14647
         # most frequent collocate: "die" with O11 = 1481 co-occurrences
         assert coll.json['items'][0]['item'] == 'die'
-        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores'] + coll.json['items'][0]['raw_scores']}
         assert int(coll_conv["R1"]) == 14647
         assert int(coll_conv["O11"]) == 1434
 
@@ -873,7 +873,7 @@ def test_constellation_2nd_order_collocation(client, auth):
         # number of tokens in window: R1 = 1769
         # most frequent collocate: "die" with O11 = 181 co-occurrences
         assert coll.json['items'][0]['item'] == 'die'
-        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores'] + coll.json['items'][0]['raw_scores']}
         assert int(coll_conv["R1"]) == 1769
         assert int(coll_conv["O11"]) == 180
 
@@ -902,7 +902,7 @@ def test_constellation_2nd_order_collocation(client, auth):
         # number of tokens in window: R1 = 6584
         # most frequent collocate: "die" with O11 = 817 co-occurrences
         assert coll.json['items'][0]['item'] == 'die'
-        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores'] + coll.json['items'][0]['raw_scores']}
         assert int(coll_conv["R1"]) == 6584
         assert int(coll_conv["O11"]) == 817
 
@@ -932,7 +932,7 @@ def test_constellation_2nd_order_collocation(client, auth):
         # number of tokens in window: R1 = 169
         # most frequent collocate: "die" with O11 = 18 co-occurrences
         assert coll.json['items'][0]['item'] == 'die'
-        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores']}
+        coll_conv = {c['measure']: c['score'] for c in coll.json['items'][0]['scores'] + coll.json['items'][0]['raw_scores']}
         assert int(coll_conv["R1"]) == 169
         assert int(coll_conv["O11"]) == 18
 
@@ -1246,7 +1246,7 @@ def test_constellation_collocation_empty_queries(client, auth):
         assert collocation_items.status_code == 200
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_discourseme_deletion(client, auth):
 
     auth_header = auth.login()

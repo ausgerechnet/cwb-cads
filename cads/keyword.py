@@ -66,7 +66,8 @@ def ccc_keywords(keyword):
     # calculate scores
     current_app.logger.debug('ccc_keywords :: calculating scores')
     counts = DataFrame([vars(s) for s in keyword.items], columns=['id', 'f1', 'N1', 'f2', 'N2']).set_index('id')
-    scores = measures.score(counts, freq=False, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = scores.drop(['O12', 'O21', 'O22', 'E12', 'E21', 'E22', 'R1', 'R2', 'C1', 'C2', 'N'], axis=1)
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'keyword_item_id'}, axis=1)
     scores['keyword_id'] = keyword.id
 
@@ -153,6 +154,7 @@ class KeywordItemOut(Schema):
 
     item = String(required=True)
     scores = Nested(KeywordScoreOut(many=True), required=True)
+    raw_scores = Nested(KeywordScoreOut(many=True), required=True)
 
 
 class KeywordItemsOut(Schema):
