@@ -42,7 +42,7 @@ def ccc_semmap(analyses, embeddings, per_am=200, method='tsne', blacklist_items=
 
     current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(all_items)} items')
     semspace = SemanticSpace(semantic_map.embeddings)
-    coordinates = semspace.generate2d(all_items, method=semantic_map.method, parameters=None)
+    coordinates = semspace.generate2d(all_items, method=semantic_map.method, parameters=None, normalise=True)
     coordinates.index.name = 'item'
     coordinates['semantic_map_id'] = semantic_map.id
     coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
@@ -107,7 +107,7 @@ def ccc_semmap_init(analysis, semantic_map_id=None, per_am=200, method='tsne'):
         db.session.commit()
 
         semspace = SemanticSpace(semantic_map.embeddings)
-        coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None)
+        coordinates = semspace.generate2d(items, method=semantic_map.method, parameters=None, normalise=True)
         coordinates.index.name = 'item'
         coordinates['semantic_map_id'] = semantic_map.id
         coordinates.to_sql('coordinates', con=db.engine, if_exists='append')

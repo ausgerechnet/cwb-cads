@@ -2,7 +2,6 @@ import pytest
 from flask import url_for
 
 
-@pytest.mark.now
 def test_get_keyword(client, auth):
 
     auth_header = auth.login()
@@ -127,6 +126,7 @@ def test_delete_keyword(client, auth):
         assert keywords.status_code == 200
 
 
+@pytest.mark.now
 def test_keyword_semantic_map(client, auth):
 
     auth_header = auth.login()
