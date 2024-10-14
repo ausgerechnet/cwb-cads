@@ -415,7 +415,8 @@ def test_constellation_collocation(client, auth):
                                   json={
                                       'focus_discourseme_id': union_id,
                                       'p': 'lemma',
-                                      'window': 10
+                                      'window': 10,
+                                      'include_negative': True
                                   },
                                   headers=auth_header)
         assert collocation.status_code == 200
@@ -446,7 +447,8 @@ def test_constellation_collocation(client, auth):
                                       'focus_discourseme_id': union_id,
                                       'p': 'lemma',
                                       'window': 10,
-                                      'marginals': 'global'
+                                      'marginals': 'global',
+                                      'include_negative': True
                                   },
                                   headers=auth_header)
         assert collocation.status_code == 200
@@ -465,7 +467,8 @@ def test_constellation_collocation(client, auth):
                                   json={
                                       'focus_discourseme_id': union_id,
                                       'p': 'lemma',
-                                      'window': 10
+                                      'window': 10,
+                                      'include_negative': True
                                   },
                                   headers=auth_header)
         assert collocation.status_code == 200

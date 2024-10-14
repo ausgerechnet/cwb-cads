@@ -470,6 +470,7 @@ class ConstellationCollocationIn(CollocationIn):
 
     focus_discourseme_id = Integer(required=True)
     filter_discourseme_ids = List(Integer(), load_default=[], required=False)
+    include_negative = Boolean(required=False, load_default=False)
 
 
 class ConstellationKeywordIn(Schema):
@@ -871,6 +872,9 @@ def create_collocation(id, description_id, json_data):
     # marginals
     marginals = json_data.get('marginals', 'global')
 
+    # include items with E11 > O11?
+    include_negative = json_data.get('include_negative', False)
+
     # semantic map
     semantic_map_id = json_data.get('semantic_map_id', None)
     semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
@@ -915,7 +919,7 @@ def create_collocation(id, description_id, json_data):
     db.session.add(collocation)
     db.session.commit()
 
-    get_or_create_counts(collocation, remove_focus_cpos=False)
+    get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
     set_collocation_discourseme_scores(collocation,
                                        [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
                                        overlap=description.overlap)
