@@ -48,7 +48,7 @@
 - [x] scores: do not return items with negative evidence
 - [ ] scores: sigmoid / tangens scaling vs. linear scaling
 - [x] semantic map: normalise to [-1, 1]^2
-- [ ] scores / semantic map: remove items of focus discourseme in collocation analyses
+- [x] scores / semantic map: remove items of focus discourseme in collocation analyses
 - [ ] speed up constellation concordance retrieval (discourseme range retrieval / sorting)
 - [ ] corpora settings
 - [ ] projects for discoursemes / constellations

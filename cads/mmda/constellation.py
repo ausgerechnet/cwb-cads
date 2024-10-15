@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from itertools import chain
+
 from apiflask import APIBlueprint, Schema  # , abort
 from apiflask.fields import Boolean, Integer, List, Nested, String
 from apiflask.validators import OneOf
@@ -964,7 +966,6 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
     TODO also return ranks (to ease frontend pagination)?
-    TODO filter out focus discourseme (traditional) or all discoursemes (correction of marginals needed!) or None?
     """
 
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -983,22 +984,21 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-    # print(discourseme_scores.keys())
-    # discourseme_scores['']
 
-    # TODO anti-joins
-    # unigram_items = CollocationDiscoursemeUnigramItem.query.filter_by(
-    #     collocation_id=collocation.id,
-    #     constellation_description_id=description_id
-    # )
-    # blacklist = CollocationItem.query.filter(
-    #     CollocationItem.collocation_id == collocation.id,
-    #     CollocationItem.item.in_([f.item for f in unigram_items])
-    # )
+    focus_query_id = collocation.query_id
+    focus_discourseme_description = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
+    focus_unigrams = [i for i in chain.from_iterable(
+        [a.split(" ") for a in focus_discourseme_description.breakdown(collocation.p).index]
+    )]
+
+    blacklist = CollocationItem.query.filter(
+        CollocationItem.collocation_id == collocation.id,
+        CollocationItem.item.in_(focus_unigrams)
+    )
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
         CollocationItemScore.measure == sort_by,
-        # ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
+        ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
     )
 
     # order
@@ -1018,6 +1018,7 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
 
     # coordinates
     coordinates = list()
+    discourseme_coordinates = []
     if collocation.semantic_map:
         # make sure there's coordinates for all requested items and discourseme items
         requested_items = [item['item'] for item in items]

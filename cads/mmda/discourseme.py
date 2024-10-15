@@ -22,7 +22,7 @@ from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..database import Breakdown, Corpus, Query, User, get_or_create
 from ..users import auth
-from .database import (CollocationDiscoursemeItem, Discourseme, Constellation,
+from .database import (CollocationDiscoursemeItem, Constellation, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem)
 
