@@ -62,7 +62,7 @@ def import_discoursemes(glob_in, p='lemma', col_surface='surface', col_name='nam
         df = read_csv(path, sep="\t")
         df = df.rename({col_surface: 'surface'}, axis=1)
         discoursemes = list()
-        constellation_name = path.split("/")[-1].split(".")[0]
+
         for name, items in df.groupby(col_name):
 
             discourseme = get_or_create(Discourseme, user_id=user.id, name=name)
@@ -75,9 +75,12 @@ def import_discoursemes(glob_in, p='lemma', col_surface='surface', col_name='nam
             items['p'] = p
             items.to_sql("discourseme_template_items", con=db.engine, if_exists='append', index=False)
 
-        constellation = get_or_create(Constellation, user_id=user.id, name=constellation_name)
-        [constellation.discoursemes.append(discourseme) for discourseme in discoursemes]
-        db.session.add(discourseme)
+        if create_constellation:
+
+            constellation_name = path.split("/")[-1].split(".")[0]
+            constellation = get_or_create(Constellation, user_id=user.id, name=constellation_name)
+            [constellation.discoursemes.append(discourseme) for discourseme in discoursemes]
+            db.session.add(discourseme)
 
     db.session.commit()
 
@@ -655,9 +658,10 @@ def description_patch_remove(id, description_id, json_data):
 ################
 @bp.cli.command('import')
 @click.option('--path_in', default='discoursemes.tsv')
-def import_discoursemes_cmd(path_in):
+@click.option('--no_constellation', is_flag=True, default=False)
+def import_discoursemes_cmd(path_in, no_constellation):
 
-    import_discoursemes(path_in, username='admin')
+    import_discoursemes(path_in, username='admin', create_constellation=not no_constellation)
 
 
 @bp.cli.command('export')
