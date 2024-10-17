@@ -80,7 +80,7 @@ def ccc_query(query, return_df=True):
 
     elif return_df:
         current_app.logger.debug("ccc_query :: getting matches from database")
-        matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend']).set_index(['match', 'matchend'])
+        matches_df = DataFrame([vars(s) for s in query.matches], columns=['match', 'matchend', 'contextid']).set_index(['match', 'matchend'])
         current_app.logger.debug(f"ccc_query :: got {len(matches_df)} matches from database")
     else:
         current_app.logger.debug("ccc_query :: matches exist in database")

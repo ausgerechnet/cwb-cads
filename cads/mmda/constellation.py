@@ -4,10 +4,11 @@
 from itertools import chain
 
 from apiflask import APIBlueprint, Schema  # , abort
-from apiflask.fields import Boolean, Integer, List, Nested, String
+from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
+from itertools import combinations
 from pandas import DataFrame, read_sql
 
 from .. import db
@@ -36,6 +37,13 @@ from .discourseme import (DiscoursemeCoordinatesIn, DiscoursemeCoordinatesOut,
                           discourseme_template_to_description)
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
+
+
+def pairwise_intersections(dict_of_sets):
+
+    nt = lambda a, b: len(dict_of_sets[a].intersection(dict_of_sets[b]))
+    res = dict([(t, nt(*t)) for t in combinations(dict_of_sets.keys(), 2)])
+    return res
 
 
 def get_discourseme_coordinates(semantic_map, discourseme_descriptions, p=None):
@@ -525,6 +533,14 @@ class ConstellationKeywordItemsOut(KeywordItemsOut):
     discourseme_coordinates = Nested(DiscoursemeCoordinatesOut(many=True), required=True, dump_default=[])
 
 
+class ConstellationAssociationsOut(Schema):
+
+    node = Integer(required=True)
+    candidate = Integer(required=True)
+    measure = String(required=True)
+    score = Float(required=True)
+
+
 #################
 # API endpoints #
 #################
@@ -800,6 +816,7 @@ def patch_description_remove(id, description_id, json_data):
 
 
 # CONCORDANCE
+##############
 @bp.get("/<id>/description/<description_id>/concordance/")
 @bp.input(ConcordanceIn, location='query')
 @bp.input({'focus_discourseme_id': Integer(required=True)}, location='query', arg_name='query_focus')
@@ -854,6 +871,7 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
 
 
 # COLLOCATION
+##############
 @bp.post("/<id>/description/<description_id>/collocation/")
 @bp.input(ConstellationCollocationIn)
 @bp.output(ConstellationCollocationOut)
@@ -1079,6 +1097,7 @@ def associate_discoursemes(id, description_id, collocation_id):
 
 
 # KEYWORD
+##########
 @bp.post("/<id>/description/<description_id>/keyword/")
 @bp.input(ConstellationKeywordIn)
 @bp.output(KeywordOut)
@@ -1262,6 +1281,7 @@ def associate_discoursemes_keyword(id, description_id, keyword_id):
 
 
 # SEMANTIC MAP
+###############
 @bp.get("/<id>/description/<description_id>/semantic_map/<semantic_map_id>/coordinates/")
 @bp.output(DiscoursemeCoordinatesOut(many=True))
 @bp.auth_required(auth)
@@ -1301,3 +1321,40 @@ def set_coordinates(id, description_id, semantic_map_id, json_data):
     discourseme_coordinates = get_discourseme_coordinates(semantic_map, description.discourseme_descriptions)
 
     return [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates], 200
+
+
+# ASSOCIATIONS
+###############
+@bp.get("/<id>/description/<description_id>/associations")
+@bp.output(ConstellationAssociationsOut(many=True))
+@bp.auth_required(auth)
+def get_constellation_associations(id, description_id):
+    """Get pairwise association scores for discoursemes in constellation, based on s-attribute.
+
+    """
+
+    description = db.get_or_404(ConstellationDescription, description_id)
+
+    context_ids = dict()
+    for discourseme_description in description.discourseme_descriptions:
+        matches_df = ccc_query(discourseme_description._query)
+        context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
+
+    current_app.logger.debug('get constellation associations :: calculating co-occurrences')
+    N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))
+    records = list()
+    for pair, f in pairwise_intersections(context_ids).items():
+        pair = sorted(pair)
+        f1 = len(context_ids[pair[0]])
+        f2 = len(context_ids[pair[1]])
+        records.append({'node': pair[0], 'candidate': pair[1], 'f': f, 'f1': f1, 'f2': f2, 'N': N})
+
+    current_app.logger.debug('get constellation associations :: calculating co-occurrences')
+    counts = DataFrame(records)
+    counts['node'] = counts['node'].astype(int)
+    counts['candidate'] = counts['candidate'].astype(int)
+    counts = counts.set_index(['node', 'candidate'])
+    scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = scores.melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
+
+    return scores.to_dict(orient='records'), 200

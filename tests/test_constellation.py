@@ -376,7 +376,7 @@ def test_constellation_concordance_filter(client, auth):
 #         df = concat(dfs)
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -1293,3 +1293,54 @@ def test_discourseme_deletion(client, auth):
 
         client.delete(url_for('mmda.discourseme.delete_discourseme', id=tmp_disc.json['id']),
                       headers=auth_header)
+
+
+@pytest.mark.now
+def test_associations(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  content_type='application/json',
+                                  headers=auth_header).json
+
+        tmp_disc = client.post(url_for('mmda.discourseme.create'),
+                               json={
+                                   'name': 'Modalverben',
+                                   'comment': 'Testdiskursem das gelöscht wird',
+                                   'template': [
+                                       {'surface': 'können', 'p': 'lemma'}
+                                   ],
+                                  },
+                               content_type='application/json',
+                               headers=auth_header)
+
+        assert tmp_disc.status_code == 200
+
+        # constellation
+        constellation = client.post(url_for('mmda.constellation.create'),
+                                    json={
+                                        'name': 'factions',
+                                        'comment': 'union and FDP',
+                                        'discourseme_ids': [tmp_disc.json['id']] + [discourseme['id'] for discourseme in discoursemes[0:2]]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        associations = client.get(url_for('mmda.constellation.get_constellation_associations',
+                                          id=constellation.json['id'], description_id=description.json['id']),
+                                  headers=auth_header)
+
+        assert associations.status_code == 200
+
+        assert all(v in associations.json[0].keys() for v in ['measure', 'score', 'node', 'candidate'])

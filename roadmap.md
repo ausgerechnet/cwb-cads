@@ -16,15 +16,19 @@
 - [ ] semantic map: there should be the possibility to hide items that belong to the unigram breakdown of a discourseme (especially the focus discourseme).
 - [ ] constellation view: collocation parameters (*window size*, *context break*, *secondary*, *sort by*, *sort order*) should be separated from concordance parameters (*sort by offset*, *sort order*, *primary*). note that collocation parameters are always also considered in concordancing.
 - [ ] constellation view: filter item (and filter discourseme) should be accessible via clicking. this should directly filter concordance lines and provide the option to start a "secondary" collocation analysis.
+- [ ] constellation association view: associations between discoursemes in a constellation (`GET /mmda/constellation/<id>/description/<description_id>/associations`) should be visualised (triangular matrix per measure; force-directed layout)
 
 # Misc
 
-- [ ] overlapping segmentation annotation (LaTeX / Quarto)
-- [ ] update manuals
+- [ ] UI with modes: CADS, MMDA, spheroscope
+- [ ] overlapping segmentation annotation (Frontend / LaTeX / Quarto)
+- [ ] update backend manuals
+- [ ] create vignette
 
-## Backend
 
-### Major features
+# Backend
+
+## Major features
 - [x] query
 - [x] breakdown
 - [x] concordance
@@ -36,14 +40,14 @@
 - [x] semantic maps
 - [x] second-order collocation analysis
 - [x] meta distribution
-- [ ] pairwise associations of discoursemes (triangular matrix)
+- [x] pairwise associations of discoursemes
 - [ ] usage fluctuation analysis
 - [ ] quantitative feedback for collocation / keyword discourseme categorisation
   + how many items have been categorised?
   + how many concordance lines contain at least one of them
 - [ ] anchored queries [spheroscope]
 
-### Minor features
+## Minor features
 - [ ] scores: indicate relevance (relevant, irrelevant)
 - [x] scores: do not return items with negative evidence
 - [ ] scores: sigmoid / tangens scaling vs. linear scaling
@@ -71,7 +75,7 @@
 - [ ] speed up supcorpus queries
 - [ ] constellation/collocation: return one object with items categorised to discoursemes
 
-### review 2024-07-17
+## review 2024-07-17
 - [x] constellation: enforce min of one filter discourseme?
 - [x] constellation: if no name → name of filter discourseme
 - [ ] several queries for one discourseme?
@@ -83,7 +87,7 @@
 - [ ] scores formatted: 3 leading digits
 - [x] only return items with E11 < O11
 
-### review 2024-08-05
+## review 2024-08-05
 - [x] wrongly indexed s-atts in corpora (e.g. GERMAPARL\_1949\_2021 on obelix)
 - [x] save wordlists permanently
 - [x] get keyword analyses loading time: replace `len(items)`
@@ -111,10 +115,10 @@
 - [ ] example meta data creation
 - [ ] example subcorpus creation
 
-### review 2024-09-03
+## review 2024-09-03
 - [ ] GET `/mmda/constellation/{id}/description/{description_id}/collocation/` doesn't yield all info
 
-### nice to have
+## nice to have
 - Concordance: primary / secondary vs. give all
 - DiscoursemeTemplate: p + surface vs. cqp_query | two lists
 - DiscoursemeTemplatePreview
