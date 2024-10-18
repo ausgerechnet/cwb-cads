@@ -1,4 +1,8 @@
 # cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies 
+![Build](https://github.com/ausgerechnet/cwb-cads/actions/workflows/backend-test.yml/badge.svg?branch=main)
+![License](https://img.shields.io/github/license/ausgerechnet/cwb-cads?style=flat&color=lightgray&labelColor=gray)
+[![Imports: association-measures](https://img.shields.io/badge/imports-association--measures-%231674b1?style=flat&labelColor=gray)](https://github.com/fau-klue/pandas-association-measures)
+[![Imports: cwb-ccc](https://img.shields.io/badge/imports-cwb--ccc-%231674b1?style=flat&labelColor=gray)](https://github.com/ausgerechnet/cwb-ccc)
 
 - implemented in Python/APIFlask
   + JWT authorisation
