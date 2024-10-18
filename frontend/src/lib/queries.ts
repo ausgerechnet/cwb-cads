@@ -1,6 +1,7 @@
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-import { apiClient, queryClient, schemas } from '@/rest-client'
+import { queryClient } from '@/lib/query-client'
+import { apiClient, schemas } from '@/rest-client'
 import { arraysContainEqualItems } from './arrays-contain-equal-items'
 
 type SortBy =
@@ -944,9 +945,10 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
   },
 }
 
-// ================== COLLOCATION ANALYSIS ==================
-
-export const collocationItemsById = (
+// TODO: If the collocationId is unique, maybe one can omit the constellationId and the descriptionId?
+export const constellationCollocationItems = (
+  constellationId: number,
+  descriptionId: number,
   collocationId: number,
   {
     sortOrder,
@@ -962,7 +964,9 @@ export const collocationItemsById = (
 ) =>
   queryOptions({
     queryKey: [
-      'collocation-items',
+      'constellation-collocation-items',
+      constellationId,
+      descriptionId,
       collocationId,
       sortOrder,
       sortBy,
@@ -970,16 +974,22 @@ export const collocationItemsById = (
       pageNumber,
     ],
     queryFn: ({ signal }) =>
-      apiClient.getCollocationIditems({
-        params: { id: collocationId.toString() },
-        queries: {
-          sort_order: sortOrder,
-          sort_by: sortBy,
-          page_size: pageSize,
-          page_number: pageNumber,
+      apiClient.getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems(
+        {
+          params: {
+            id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+            collocation_id: collocationId.toString(),
+          },
+          queries: {
+            sort_order: sortOrder,
+            sort_by: sortBy,
+            page_size: pageSize,
+            page_number: pageNumber,
+          },
+          signal,
         },
-        signal,
-      }),
+      ),
   })
 
 // ==================== KEYWORD ANALYSIS ====================

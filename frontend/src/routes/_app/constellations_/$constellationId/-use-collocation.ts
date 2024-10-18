@@ -1,7 +1,7 @@
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 import { useQuery } from '@tanstack/react-query'
 import {
-  collocationItemsById,
+  constellationCollocationItems,
   constellationCollocation,
 } from '@/lib/queries.ts'
 
@@ -48,27 +48,38 @@ export function useCollocation(
     isLoading: isLoadingItems,
     error: errorConstellation,
   } = useQuery({
-    ...collocationItemsById(collocation?.id as number, {
-      sortBy: ccSortBy,
-      sortOrder: ccSortOrder,
-      pageSize: ccPageSize,
-      pageNumber: ccPageNumber,
-    }),
-    enabled: collocation?.id !== undefined,
+    ...constellationCollocationItems(
+      constellationId,
+      descriptionId as number,
+      collocation?.id as number,
+      {
+        sortBy: ccSortBy,
+        sortOrder: ccSortOrder,
+        pageSize: ccPageSize,
+        pageNumber: ccPageNumber,
+      },
+    ),
+    enabled: collocation?.id !== undefined && descriptionId !== undefined,
   })
   const {
     data: collocationItemsMap,
     isLoading: isLoadingItemsMap,
     error: errorConstellationMap,
   } = useQuery({
-    ...collocationItemsById(collocation?.id as number, {
-      sortBy: ccSortBy,
-      sortOrder: ccSortOrder,
-      pageSize: 300,
-      pageNumber: 1,
-    }),
-    enabled: collocation?.id !== undefined,
+    ...constellationCollocationItems(
+      constellationId,
+      descriptionId as number,
+      collocation?.id as number,
+      {
+        sortBy: ccSortBy,
+        sortOrder: ccSortOrder,
+        pageSize: 300,
+        pageNumber: 1,
+      },
+    ),
+    enabled: collocation?.id !== undefined && descriptionId !== undefined,
   })
+
   const isLoading =
     isLoadingItems || isLoadingConstellation || isLoadingItemsMap
 

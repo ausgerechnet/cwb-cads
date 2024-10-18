@@ -5,7 +5,7 @@
 - [ ] concordance KWIC view doesn't show MWUs as keywords, only first token
 - [ ] concordance sorting doesn't work as expected
 - [ ] I think there's a general confusion between the items in the discourseme description (which are CQP queries, or p/surface pairs) and the items on the (unigram) breakdown -- which should be highlighted in the semantic map.
-- [ ] collocation items: after selecting a corpus and a focus discourseme, the frontend asks for collocation analyses via `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/`, but then does not use `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/<id>/items` but `GET /collocation/<id>/items` instead. this endpoint does return the same items, but no discourseme scores (or coordinates).
+- [x] collocation items: after selecting a corpus and a focus discourseme, the frontend asks for collocation analyses via `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/`, but then does not use `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/<id>/items` but `GET /collocation/<id>/items` instead. this endpoint does return the same items, but no discourseme scores (or coordinates).
 
 ## Features
 
