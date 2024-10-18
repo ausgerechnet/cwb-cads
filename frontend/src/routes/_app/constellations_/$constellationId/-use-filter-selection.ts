@@ -139,7 +139,7 @@ export function useFilterSelection(
     ccPageSize,
     setFilter,
     p: defaultTo(p, corpus?.p_atts),
-    primary: defaultTo(primary, corpus?.p_atts, 'word'),
+    primary: defaultTo([primary, 'word'], corpus?.p_atts),
     secondary: defaultTo(secondary, corpus?.p_atts),
     s: defaultTo(s, corpus?.s_atts),
     pAttributes,
@@ -148,15 +148,15 @@ export function useFilterSelection(
   }
 }
 
-function defaultTo<T>(
-  value: T,
-  validValues: T[] | undefined,
-  preferredValue?: T,
-): T | undefined {
-  if (validValues === undefined) return value
-  if (validValues.includes(value)) return value
-  if (preferredValue !== undefined && validValues.includes(preferredValue)) {
-    return preferredValue
+function defaultTo<T>(value: T | T[], validValues: T[] | undefined): T {
+  if (!Array.isArray(value)) {
+    value = [value]
   }
+  for (const v of value) {
+    if (validValues === undefined) return v
+    if (validValues.includes(v)) return v
+  }
+  if (validValues === undefined || validValues.length === 0)
+    throw new Error('Invalid arguments passed to defaultTo')
   return validValues[0]
 }

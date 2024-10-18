@@ -40,7 +40,7 @@ import {
 import { cn } from '@/lib/utils.ts'
 import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
-import { ConstellationFilter } from './-constellation-filter'
+import { ConstellationCollocationFilter } from './-constellation-filter'
 import { Collocation } from './-constellation-collocation'
 import { SemanticMap } from './-semantic-map'
 import { useDescription } from './-use-description'
@@ -223,7 +223,7 @@ function ConstellationDetail() {
       )}
       {corpusId !== undefined && (
         <>
-          <ConstellationFilter
+          <ConstellationCollocationFilter
             className={cn(
               'sticky top-14 bg-background',
               showsSemanticMap &&

@@ -29,6 +29,7 @@ import { Pagination } from '@/components/pagination.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 import { useDescription } from '@/routes/_app/constellations_/$constellationId/-use-description'
+import { ConstellationConcordanceFilter } from '@/routes/_app/constellations_/$constellationId/-constellation-filter'
 
 const emptyArray = [] as const
 
@@ -103,6 +104,8 @@ export function ConstellationConcordanceLines({
   return (
     <div className={className}>
       <ErrorMessage className="col-span-full" error={error} />
+
+      <ConstellationConcordanceFilter />
 
       <div className="relative col-span-full flex flex-col gap-4">
         <div className="max-w-full rounded-md border">
