@@ -33,7 +33,7 @@ const measureOrder = [
 ] as const
 
 const measureMap: Record<(typeof measureOrder)[number], string> = {
-  conservative_log_ratio: 'Conservative Log Ratio',
+  conservative_log_ratio: 'Cons. Log Ratio',
   O11: 'O11',
   E11: 'E11',
   ipm: 'ipm',
@@ -45,8 +45,8 @@ const measureMap: Record<(typeof measureOrder)[number], string> = {
   log_ratio: 'Log Ratio',
   min_sensitivity: 'Min Sensitivity',
   liddell: 'Liddell',
-  mutual_information: 'Mutual Information',
-  local_mutual_information: 'Local Mutual Information',
+  mutual_information: 'Mutual Info.',
+  local_mutual_information: 'Local Mutual Info.',
 }
 
 export function Collocation({
@@ -83,26 +83,31 @@ export function Collocation({
           {isLoading && (
             <Repeat count={ccPageSize}>
               <TableRow>
-                <TableCell colSpan={measureOrder.length + 1}>
+                <TableCell colSpan={measureOrder.length + 1} className="py-1">
                   <Skeleton className="h-4 w-full" />
                 </TableCell>
               </TableRow>
             </Repeat>
           )}
           {(collocationItems?.items ?? []).map(({ item, scores = [] }) => (
-            <TableRow key={item} className={cn(isLoading && 'animate-pulse')}>
-              <TableCell>
+            <TableRow
+              key={item}
+              className={cn(isLoading && 'animate-pulse', 'py-0')}
+            >
+              <TableCell className="py-1">
                 <Button
                   onClick={() => {
                     setFilter('ccFilterItem', item)
                     setFilter('clFilterItem', item)
                   }}
+                  variant="secondary"
+                  size="sm"
                 >
                   {item}
                 </Button>
               </TableCell>
               {measureOrder.map((measure) => (
-                <TableCell key={measure}>
+                <TableCell key={measure} className="py-1">
                   {scores.find((s) => s.measure === measure)?.score ?? 'N/A'}
                 </TableCell>
               ))}
