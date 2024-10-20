@@ -32,6 +32,23 @@ const measureOrder = [
   'local_mutual_information',
 ] as const
 
+const measureMap: Record<(typeof measureOrder)[number], string> = {
+  conservative_log_ratio: 'Conservative Log Ratio',
+  O11: 'O11',
+  E11: 'E11',
+  ipm: 'ipm',
+  log_likelihood: 'Log Likelihood',
+  z_score: 'Z Score',
+  t_score: 'T Score',
+  simple_ll: 'Simple LL',
+  dice: 'dice',
+  log_ratio: 'Log Ratio',
+  min_sensitivity: 'Min Sensitivity',
+  liddell: 'Liddell',
+  mutual_information: 'Mutual Information',
+  local_mutual_information: 'Local Mutual Information',
+}
+
 export function Collocation({
   constellationId,
   descriptionId,
@@ -58,7 +75,7 @@ export function Collocation({
           <TableRow>
             <TableHead>Item</TableHead>
             {measureOrder.map((measure) => (
-              <TableHead key={measure}>{measure}</TableHead>
+              <TableHead key={measure}>{measureMap[measure]}</TableHead>
             ))}
           </TableRow>
         </TableHeader>

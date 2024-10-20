@@ -33,6 +33,7 @@ export function ConstellationCollocationFilter({
     windowSize,
     clFilterItem,
     ccFilterItem,
+    ccSortOrder,
     s,
     secondary,
     setFilter,
@@ -155,7 +156,31 @@ export function ConstellationCollocationFilter({
           </SelectContent>
         </Select>
       </div>
-      <div>TODO: ccSortOrder!</div>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Sort Order</span>
+        <Select
+          value={ccSortOrder}
+          onValueChange={(value) =>
+            setFilter(
+              'ccSortOrder',
+              FilterSchema.shape.ccSortOrder.parse(value),
+            )
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sort Order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {['ascending', 'descending'].map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
 }
