@@ -24,7 +24,6 @@ import { useFilterSelection } from '@/routes/_app/constellations_/$constellation
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@/components/ui/card'
 import { Headline3, Muted, Small } from '@/components/ui/typography'
-import { CorpusSelect } from '@/components/select-corpus'
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
@@ -33,7 +32,6 @@ import { Label } from '@/components/ui/label'
 import {
   addConstellationDiscourseme,
   constellationById,
-  corpusList,
   removeConstellationDiscourseme,
   discoursemesList,
 } from '@/lib/queries.ts'
@@ -44,6 +42,7 @@ import { ConstellationCollocationFilter } from './-constellation-filter'
 import { Collocation } from './-constellation-collocation'
 import { SemanticMap } from './-semantic-map'
 import { useDescription } from './-use-description'
+import { SelectSubcorpus } from '@/components/select-subcorpus'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations/$constellationId',
@@ -63,6 +62,7 @@ function ConstellationDetail() {
 
   const {
     corpusId,
+    subcorpusId,
     isConcordanceVisible = true,
     focusDiscourseme,
   } = Route.useSearch()
@@ -72,9 +72,9 @@ function ConstellationDetail() {
     corpusId,
   )
 
-  // TODO: combine these two
+  // TODO: combine these two // or use the filter hook
   const setSelection = (
-    key: 'corpusId' | 'focusDiscourseme',
+    key: 'corpusId' | 'focusDiscourseme' | 'subcorpusId',
     value: number | undefined,
   ) =>
     navigate({
@@ -95,7 +95,6 @@ function ConstellationDetail() {
     error: errorAddDiscourseme,
   } = useMutation(addConstellationDiscourseme)
   const { data: discoursemes = [] } = useQuery(discoursemesList)
-  const { data: corpora } = useSuspenseQuery(corpusList)
 
   const [isEditMode, setIsEditMode] = useState(false)
 
@@ -195,11 +194,14 @@ function ConstellationDetail() {
               </Card>
             </Link>
           </div>
-          <CorpusSelect
+          <SelectSubcorpus
             className="mt-4"
-            corpora={corpora}
-            onChange={(corpusId) => setSelection('corpusId', corpusId)}
+            onChange={(corpusId, subcorpusId) => {
+              void setSelection('corpusId', corpusId)
+              void setSelection('subcorpusId', subcorpusId)
+            }}
             corpusId={corpusId}
+            subcorpusId={subcorpusId}
           />
           <Label>
             Focus Discourseme:

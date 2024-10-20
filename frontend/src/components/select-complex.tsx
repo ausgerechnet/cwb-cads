@@ -17,14 +17,14 @@ import {
 } from '@/components/ui/command'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-type Item = {
-  id: number | undefined
+type Item<IdType> = {
+  id: IdType | undefined
   name: string
   searchValue: string
   renderValue?: ReactNode
 }
 
-export function ComplexSelect({
+export function ComplexSelect<IdType extends string | number>({
   items,
   itemId,
   onChange,
@@ -34,12 +34,12 @@ export function ComplexSelect({
   emptyMessage = 'No items found.',
   className,
 }: {
-  items: Item[]
+  items: Item<IdType>[]
   placeholder?: string
   selectMessage?: string
   emptyMessage?: string
-  itemId?: number
-  onChange?: (itemId: number | undefined) => void
+  itemId?: IdType
+  onChange?: (itemId: IdType | undefined) => void
   disabled?: boolean
   className?: string
 }) {
