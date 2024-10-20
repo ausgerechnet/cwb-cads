@@ -3,9 +3,9 @@ import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
-import { logIn } from '@/lib/queries'
+import { logIn, sessionQueryOptions } from '@/lib/queries'
 import { required_error } from '@/lib/strings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { ErrorMessage } from '@/components/error-message'
+import { useEffect } from 'react'
 
 export const Route = createLazyFileRoute('/login')({
   component: Login,
@@ -47,11 +48,25 @@ function Login() {
     ...logIn,
     onSuccess: (...args) => {
       logIn?.onSuccess?.(...args)
-      navigate({
+      void navigate({
         to: redirect || '/queries',
       })
     },
   })
+
+  const isLoggedIn =
+    useQuery({
+      ...sessionQueryOptions,
+      refetchInterval: 10_000,
+    })?.data !== undefined
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      void navigate({
+        to: redirect || '/queries',
+      })
+    }
+  }, [isLoggedIn, navigate, redirect])
 
   const onSubmit = (values: Credentials) => {
     if (isPending) return
