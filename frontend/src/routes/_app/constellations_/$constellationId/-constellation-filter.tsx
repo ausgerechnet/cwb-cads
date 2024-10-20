@@ -17,6 +17,7 @@ import {
   useFilterSelection,
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { ButtonTooltip } from '@/components/button-tooltip'
+import { SortByOffset } from '@/components/sort-by-offset'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationCollocationFilter({
@@ -206,16 +207,13 @@ export function ConstellationConcordanceFilter({
   } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
 
   return (
-    <div className={cn('z-10 mb-8 grid grid-cols-8 gap-2', className)}>
+    <div className={cn('z-10 mb-8 flex gap-2', className)}>
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">Sort By Offset {clSortByOffset}</span>
-        <Slider
+        <SortByOffset
+          value={clSortByOffset ?? 0}
+          onChange={(newValue) => setFilter('clSortByOffset', newValue)}
           disabled={!isSortable}
-          defaultValue={[clSortByOffset ?? 0]}
-          onValueChange={([newValue]) => setFilter('clSortByOffset', newValue)}
-          min={-5}
-          max={5}
-          className="my-auto"
         />
       </div>
 
