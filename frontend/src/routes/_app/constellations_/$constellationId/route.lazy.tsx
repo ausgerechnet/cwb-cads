@@ -117,7 +117,7 @@ function ConstellationDetail() {
   return (
     <AppPageFrame
       title={showsSemanticMap ? undefined : 'Constellation'}
-      classNameContainer={cn('flex-grow', showsSemanticMap && 'p-0')}
+      classNameContainer={cn('flex-grow pb-0', showsSemanticMap && 'p-0')}
       classNameContent={cn('relative', showsSemanticMap && 'p-0')}
     >
       <ErrorMessage error={errorDescription} />
