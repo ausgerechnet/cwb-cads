@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { z } from 'zod'
-import { Link, useSearch } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import {
   AlertCircle,
   ArrowLeftIcon,
@@ -68,10 +68,9 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
     collocationItemsMap,
     isLoading,
     error: errorCollocation,
-  } = useCollocation(constellationId, description?.id, description?.corpus_id)
+  } = useCollocation(constellationId, description?.id)
   const sortBy = useFilterSelection(
     '/_app/constellations/$constellationId',
-    description?.corpus_id,
   ).ccSortBy
 
   const words = useMemo(() => {
@@ -146,14 +145,10 @@ function ConstellationDiscoursemesEditor({
 }: {
   constellationId: number
 }) {
-  const { corpusId, focusDiscourseme } = useSearch({
-    from: '/_app/constellations/$constellationId',
-  })
-  if (corpusId === undefined) throw new Error('corpusId is undefined')
-  const { s } = useFilterSelection(
+  const { s, corpusId, focusDiscourseme } = useFilterSelection(
     '/_app/constellations/$constellationId',
-    corpusId,
   )
+  if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
   const {
     data: { discoursemes },
@@ -172,7 +167,6 @@ function ConstellationDiscoursemesEditor({
   const itemCount = useCollocation(
     constellationId,
     constellationDescription?.id,
-    corpusId,
   ).collocationItemsMap?.items.length
   const constellationDescriptionId = constellationDescription?.id
   const {
@@ -342,18 +336,13 @@ function AddDescriptionItem({
     isPending: isAddingItem,
     error: errorAddItem,
   } = useMutation(addDescriptionItem)
-  const { corpusId } = useSearch({
-    from: '/_app/constellations/$constellationId',
-  })
   const { secondary } = useFilterSelection(
     '/_app/constellations/$constellationId',
-    corpusId,
   )
   const { description } = useDescription()
   const { collocationItemsMap } = useCollocation(
     constellationId,
     description?.id,
-    description?.corpus_id,
   )
   const collocationItems = useMemo(
     () =>

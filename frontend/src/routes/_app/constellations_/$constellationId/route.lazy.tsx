@@ -61,28 +61,12 @@ function ConstellationDetail() {
   const constellationId = parseInt(Route.useParams().constellationId)
 
   const {
+    setFilter,
     corpusId,
     subcorpusId,
-    isConcordanceVisible = true,
+    isConcordanceVisible,
     focusDiscourseme,
-  } = Route.useSearch()
-
-  const { setFilter } = useFilterSelection(
-    '/_app/constellations/$constellationId',
-    corpusId,
-  )
-
-  // TODO: combine these two // or use the filter hook
-  const setSelection = (
-    key: 'corpusId' | 'focusDiscourseme' | 'subcorpusId',
-    value: number | undefined,
-  ) =>
-    navigate({
-      to: '/constellations/$constellationId',
-      params: { constellationId: constellationId.toString() },
-      search: (s) => ({ ...s, [key]: value }),
-      replace: true,
-    })
+  } = useFilterSelection('/_app/constellations/$constellationId')
 
   const {
     data: { comment, name, discoursemes: constellationDiscoursemes = [] },
@@ -197,8 +181,8 @@ function ConstellationDetail() {
           <SelectSubcorpus
             className="mt-4"
             onChange={(corpusId, subcorpusId) => {
-              void setSelection('corpusId', corpusId)
-              void setSelection('subcorpusId', subcorpusId)
+              void setFilter('corpusId', corpusId)
+              void setFilter('subcorpusId', subcorpusId)
             }}
             corpusId={corpusId}
             subcorpusId={subcorpusId}
@@ -211,7 +195,7 @@ function ConstellationDetail() {
                 discoursemeId={focusDiscourseme}
                 onChange={(discoursemeId) => {
                   void setFilter('ccPageNumber', 1)
-                  void setSelection('focusDiscourseme', discoursemeId)
+                  void setFilter('focusDiscourseme', discoursemeId)
                 }}
                 disabled={isLoadingDescription}
                 className="w-full"
@@ -239,7 +223,6 @@ function ConstellationDetail() {
             <Collocation
               constellationId={constellationId}
               descriptionId={description?.id}
-              corpusId={corpusId}
             />
           )}
           <Drawer

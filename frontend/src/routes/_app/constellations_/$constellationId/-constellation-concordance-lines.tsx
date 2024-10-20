@@ -70,7 +70,7 @@ export function ConstellationConcordanceLines({
     clFilterItemPAtt,
     focusDiscourseme,
     setFilter,
-  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
+  } = useFilterSelection('/_app/constellations/$constellationId')
   const descriptionId = useDescription()?.description?.id
 
   const {

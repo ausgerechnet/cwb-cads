@@ -1,14 +1,13 @@
-import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 import { useQuery } from '@tanstack/react-query'
+
 import { constellationDescriptionFor } from '@/lib/queries.ts'
+import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 import { Route } from '@/routes/_app/constellations_/$constellationId/route.lazy.tsx'
 
 export function useDescription() {
   const constellationId = parseInt(Route.useParams().constellationId)
-  const { corpusId } = Route.useSearch()
-  const { secondary, s } = useFilterSelection(
+  const { secondary, s, corpusId, subcorpusId } = useFilterSelection(
     '/_app/constellations/$constellationId',
-    corpusId,
   )
   const {
     data: description,
@@ -18,7 +17,7 @@ export function useDescription() {
     ...constellationDescriptionFor({
       constellationId,
       corpusId: corpusId!,
-      subcorpusId: undefined,
+      subcorpusId: subcorpusId,
       s,
       matchStrategy: 'longest',
     }),

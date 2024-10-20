@@ -52,6 +52,7 @@ export const FilterSchema = z.object({
   // TODO: probably should be here, because it's fixed for queries for example
   corpusId: z.number().optional().catch(undefined),
   subcorpusId: z.number().optional().catch(undefined),
+  focusDiscourseme: z.number().optional().catch(undefined),
   isConcordanceVisible: z.boolean().optional().catch(true),
 })
 
@@ -62,7 +63,6 @@ export function useFilterSelection(
   path:
     | '/_app/constellations/$constellationId'
     | '/_app/constellations/$constellationId/semantic-map',
-  corpusId?: number,
 ) {
   const {
     windowSize = 3,
@@ -78,6 +78,8 @@ export function useFilterSelection(
     primary,
     secondary,
     isConcordanceVisible = true,
+    corpusId,
+    subcorpusId,
     ...search
   } = useSearch({ from: path, strict: true })
 
@@ -130,6 +132,8 @@ export function useFilterSelection(
 
   return {
     ...search,
+    corpusId,
+    subcorpusId,
     isSortable,
     windowSize,
     clSortByOffset: isSortable ? clSortByOffset : undefined,

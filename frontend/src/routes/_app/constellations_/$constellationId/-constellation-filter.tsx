@@ -1,4 +1,3 @@
-import { useSearch } from '@tanstack/react-router'
 import { FilterIcon } from 'lucide-react'
 
 import {
@@ -25,10 +24,6 @@ export function ConstellationCollocationFilter({
 }: {
   className?: string
 }) {
-  const searchParams = useSearch({
-    from: '/_app/constellations/$constellationId',
-  })
-  const corpusId = searchParams.corpusId
   const {
     isSortable,
     windowSize,
@@ -41,10 +36,10 @@ export function ConstellationCollocationFilter({
     pAttributes,
     contextBreakList,
     ccSortBy,
-  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
+  } = useFilterSelection('/_app/constellations/$constellationId')
 
   return (
-    <div className={cn('z-10 mb-8 grid grid-cols-8 gap-2', className)}>
+    <div className={cn('z-10 mb-8 flex gap-2', className)}>
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">Window Size {windowSize}</span>
         <Slider
@@ -191,10 +186,6 @@ export function ConstellationConcordanceFilter({
 }: {
   className?: string
 }) {
-  const searchParams = useSearch({
-    from: '/_app/constellations/$constellationId',
-  })
-  const corpusId = searchParams.corpusId
   const {
     isSortable,
     clSortByOffset,
@@ -204,7 +195,7 @@ export function ConstellationConcordanceFilter({
     primary,
     setFilter,
     pAttributes,
-  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
+  } = useFilterSelection('/_app/constellations/$constellationId')
 
   return (
     <div className={cn('z-10 mb-8 flex gap-2', className)}>

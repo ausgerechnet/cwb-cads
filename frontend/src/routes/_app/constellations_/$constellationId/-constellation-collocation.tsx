@@ -52,20 +52,16 @@ const measureMap: Record<(typeof measureOrder)[number], string> = {
 export function Collocation({
   constellationId,
   descriptionId,
-  corpusId,
 }: {
   constellationId: number
-  corpusId?: number
   descriptionId?: number
 }) {
   const { setFilter, ccPageSize, ccPageNumber } = useFilterSelection(
     '/_app/constellations/$constellationId',
-    corpusId,
   )
   const { error, isLoading, collocationItems } = useCollocation(
     constellationId,
     descriptionId,
-    corpusId,
   )
   return (
     <div>

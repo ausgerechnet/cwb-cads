@@ -8,7 +8,6 @@ import {
 export function useCollocation(
   constellationId: number,
   descriptionId?: number,
-  corpusId?: number,
 ) {
   const {
     ccFilterItem,
@@ -20,7 +19,7 @@ export function useCollocation(
     ccSortBy,
     ccSortOrder,
     ccPageNumber,
-  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
+  } = useFilterSelection('/_app/constellations/$constellationId')
   const {
     data: collocation,
     isLoading: isLoadingConstellation,
