@@ -157,7 +157,7 @@ class CollocationIn(Schema):
     # filtering for second-order collocation
     filter_item = String(required=False, metadata={'nullable': True})
     filter_item_p_att = String(required=False, load_default='lemma')
-    filter_overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
+    filter_overlap = String(required=False, load_default='partial', validate=OneOf(['partial', 'full', 'match', 'matchend']))
 
 
 # Output
