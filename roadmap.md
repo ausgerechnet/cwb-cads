@@ -74,6 +74,7 @@
 - [x] more than one filter discourseme → second-order collocation
 - [ ] speed up supcorpus queries
 - [ ] constellation/collocation: return one object with items categorised to discoursemes
+- [ ] speed up collocation/items: do not return discourseme scores?
 
 ## review 2024-07-17
 - [x] constellation: enforce min of one filter discourseme?
