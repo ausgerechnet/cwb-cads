@@ -29,6 +29,7 @@ import { Pagination } from '@/components/pagination.tsx'
 import { Skeleton } from '@/components/ui/skeleton.tsx'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 import { useDescription } from '@/routes/_app/constellations_/$constellationId/-use-description'
+import { ConstellationConcordanceFilter } from '@/routes/_app/constellations_/$constellationId/-constellation-filter'
 
 const emptyArray = [] as const
 
@@ -45,11 +46,15 @@ export function ConstellationConcordanceLines({
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
+  // TODO: use a hook that handles default values etc. useFilterSelection()
   const searchParams = useSearch({
     from: '/_app/constellations/$constellationId',
   })
   const pAttributes = corpus?.p_atts ?? emptyArray
-  const primary = searchParams.primary ?? pAttributes[0]
+  const primary =
+    searchParams.primary ??
+    pAttributes.find((a) => a === 'word') ??
+    pAttributes[0]
 
   // Remember a few values between renders: this helps rendering a proper skeleton
   // thus avoiding flicker
@@ -65,7 +70,7 @@ export function ConstellationConcordanceLines({
     clFilterItemPAtt,
     focusDiscourseme,
     setFilter,
-  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
+  } = useFilterSelection('/_app/constellations/$constellationId')
   const descriptionId = useDescription()?.description?.id
 
   const {
@@ -99,6 +104,8 @@ export function ConstellationConcordanceLines({
   return (
     <div className={className}>
       <ErrorMessage className="col-span-full" error={error} />
+
+      <ConstellationConcordanceFilter />
 
       <div className="relative col-span-full flex flex-col gap-4">
         <div className="max-w-full rounded-md border">

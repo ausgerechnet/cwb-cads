@@ -4,6 +4,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table.tsx'
@@ -31,58 +32,78 @@ const measureOrder = [
   'local_mutual_information',
 ] as const
 
+const measureMap: Record<(typeof measureOrder)[number], string> = {
+  conservative_log_ratio: 'Cons. Log Ratio',
+  O11: 'O11',
+  E11: 'E11',
+  ipm: 'ipm',
+  log_likelihood: 'Log Likelihood',
+  z_score: 'Z Score',
+  t_score: 'T Score',
+  simple_ll: 'Simple LL',
+  dice: 'dice',
+  log_ratio: 'Log Ratio',
+  min_sensitivity: 'Min Sensitivity',
+  liddell: 'Liddell',
+  mutual_information: 'Mutual Info.',
+  local_mutual_information: 'Local Mutual Info.',
+}
+
 export function Collocation({
   constellationId,
   descriptionId,
-  corpusId,
 }: {
   constellationId: number
-  corpusId?: number
   descriptionId?: number
 }) {
   const { setFilter, ccPageSize, ccPageNumber } = useFilterSelection(
     '/_app/constellations/$constellationId',
-    corpusId,
   )
   const { error, isLoading, collocationItems } = useCollocation(
     constellationId,
     descriptionId,
-    corpusId,
   )
   return (
     <div>
       <ErrorMessage error={error} />
       <Table>
         <TableHeader>
-          <TableCell>Item</TableCell>
-          {measureOrder.map((measure) => (
-            <TableCell key={measure}>{measure}</TableCell>
-          ))}
+          <TableRow>
+            <TableHead>Item</TableHead>
+            {measureOrder.map((measure) => (
+              <TableHead key={measure}>{measureMap[measure]}</TableHead>
+            ))}
+          </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading && (
             <Repeat count={ccPageSize}>
               <TableRow>
-                <TableCell colSpan={measureOrder.length + 1}>
+                <TableCell colSpan={measureOrder.length + 1} className="py-1">
                   <Skeleton className="h-4 w-full" />
                 </TableCell>
               </TableRow>
             </Repeat>
           )}
           {(collocationItems?.items ?? []).map(({ item, scores = [] }) => (
-            <TableRow key={item} className={cn(isLoading && 'animate-pulse')}>
-              <TableCell>
+            <TableRow
+              key={item}
+              className={cn(isLoading && 'animate-pulse', 'py-0')}
+            >
+              <TableCell className="py-1">
                 <Button
                   onClick={() => {
                     setFilter('ccFilterItem', item)
                     setFilter('clFilterItem', item)
                   }}
+                  variant="secondary"
+                  size="sm"
                 >
                   {item}
                 </Button>
               </TableCell>
               {measureOrder.map((measure) => (
-                <TableCell key={measure}>
+                <TableCell key={measure} className="py-1">
                   {scores.find((s) => s.measure === measure)?.score ?? 'N/A'}
                 </TableCell>
               ))}

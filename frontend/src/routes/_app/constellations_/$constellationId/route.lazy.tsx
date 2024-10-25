@@ -24,7 +24,6 @@ import { useFilterSelection } from '@/routes/_app/constellations_/$constellation
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@/components/ui/card'
 import { Headline3, Muted, Small } from '@/components/ui/typography'
-import { CorpusSelect } from '@/components/select-corpus'
 import { Button } from '@/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
@@ -33,17 +32,17 @@ import { Label } from '@/components/ui/label'
 import {
   addConstellationDiscourseme,
   constellationById,
-  corpusList,
   removeConstellationDiscourseme,
   discoursemesList,
 } from '@/lib/queries.ts'
 import { cn } from '@/lib/utils.ts'
 import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
-import { ConstellationFilter } from './-constellation-filter'
+import { ConstellationCollocationFilter } from './-constellation-filter'
 import { Collocation } from './-constellation-collocation'
 import { SemanticMap } from './-semantic-map'
 import { useDescription } from './-use-description'
+import { SelectSubcorpus } from '@/components/select-subcorpus'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations/$constellationId',
@@ -62,27 +61,12 @@ function ConstellationDetail() {
   const constellationId = parseInt(Route.useParams().constellationId)
 
   const {
+    setFilter,
     corpusId,
-    isConcordanceVisible = true,
+    subcorpusId,
+    isConcordanceVisible,
     focusDiscourseme,
-  } = Route.useSearch()
-
-  const { setFilter } = useFilterSelection(
-    '/_app/constellations/$constellationId',
-    corpusId,
-  )
-
-  // TODO: combine these two
-  const setSelection = (
-    key: 'corpusId' | 'focusDiscourseme',
-    value: number | undefined,
-  ) =>
-    navigate({
-      to: '/constellations/$constellationId',
-      params: { constellationId: constellationId.toString() },
-      search: (s) => ({ ...s, [key]: value }),
-      replace: true,
-    })
+  } = useFilterSelection('/_app/constellations/$constellationId')
 
   const {
     data: { comment, name, discoursemes: constellationDiscoursemes = [] },
@@ -95,7 +79,6 @@ function ConstellationDetail() {
     error: errorAddDiscourseme,
   } = useMutation(addConstellationDiscourseme)
   const { data: discoursemes = [] } = useQuery(discoursemesList)
-  const { data: corpora } = useSuspenseQuery(corpusList)
 
   const [isEditMode, setIsEditMode] = useState(false)
 
@@ -118,7 +101,7 @@ function ConstellationDetail() {
   return (
     <AppPageFrame
       title={showsSemanticMap ? undefined : 'Constellation'}
-      classNameContainer={cn('flex-grow', showsSemanticMap && 'p-0')}
+      classNameContainer={cn('flex-grow pb-0', showsSemanticMap && 'p-0')}
       classNameContent={cn('relative', showsSemanticMap && 'p-0')}
     >
       <ErrorMessage error={errorDescription} />
@@ -195,11 +178,14 @@ function ConstellationDetail() {
               </Card>
             </Link>
           </div>
-          <CorpusSelect
+          <SelectSubcorpus
             className="mt-4"
-            corpora={corpora}
-            onChange={(corpusId) => setSelection('corpusId', corpusId)}
+            onChange={(corpusId, subcorpusId) => {
+              void setFilter('corpusId', corpusId)
+              void setFilter('subcorpusId', subcorpusId)
+            }}
             corpusId={corpusId}
+            subcorpusId={subcorpusId}
           />
           <Label>
             Focus Discourseme:
@@ -209,7 +195,7 @@ function ConstellationDetail() {
                 discoursemeId={focusDiscourseme}
                 onChange={(discoursemeId) => {
                   void setFilter('ccPageNumber', 1)
-                  void setSelection('focusDiscourseme', discoursemeId)
+                  void setFilter('focusDiscourseme', discoursemeId)
                 }}
                 disabled={isLoadingDescription}
                 className="w-full"
@@ -223,7 +209,7 @@ function ConstellationDetail() {
       )}
       {corpusId !== undefined && (
         <>
-          <ConstellationFilter
+          <ConstellationCollocationFilter
             className={cn(
               'sticky top-14 bg-background',
               showsSemanticMap &&
@@ -237,7 +223,6 @@ function ConstellationDetail() {
             <Collocation
               constellationId={constellationId}
               descriptionId={description?.id}
-              corpusId={corpusId}
             />
           )}
           <Drawer

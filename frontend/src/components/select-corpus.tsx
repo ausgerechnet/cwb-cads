@@ -32,17 +32,15 @@ export function CorpusSelect({
         searchValue: 'no_empty_nothing',
         renderValue: <span className="italic">No corpus</span>,
       },
-      ...corpora
-        .filter(({ id }) => id !== undefined)
-        .map((corpus) => ({
-          id: corpus.id as number,
-          name: corpus.name ?? '',
-          searchValue: `${corpus?.cwb_id ?? corpus?.nqr_cqp ?? ''} ${
-            corpus.name ?? ''
-          } ${corpus.description ?? ''}`
-            .toLowerCase()
-            .replace(/\s+/g, '_'),
-        })),
+      ...corpora.map((corpus) => ({
+        id: corpus.id,
+        name: corpus.name ?? '',
+        searchValue: `${corpus?.cwb_id ?? corpus?.nqr_cqp ?? ''} ${
+          corpus.name ?? ''
+        } ${corpus.description ?? ''}`
+          .toLowerCase()
+          .replace(/\s+/g, '_'),
+      })),
     ],
     [corpora],
   )

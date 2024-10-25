@@ -18,6 +18,9 @@ export default defineConfig({
     globals: true,
     setupFiles: './src/tests/vitest.setup.ts',
   },
+  optimizeDeps: {
+    exclude: ['idb-keyval'],
+  },
   server: {
     proxy: {
       '/api': {

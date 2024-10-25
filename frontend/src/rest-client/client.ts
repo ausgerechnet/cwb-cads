@@ -1,16 +1,25 @@
-import { QueryClient } from '@tanstack/react-query'
+import { get, set, del } from 'idb-keyval'
+import {
+  PersistedClient,
+  Persister,
+} from '@tanstack/react-query-persist-client'
+import { router } from '@/lib/router'
 
 import { createApiClient } from './__generated__client'
-import { router } from '@/router'
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 10_000,
-      refetchOnWindowFocus: true,
+export function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
+  return {
+    persistClient: async (client: PersistedClient) => {
+      await set(idbValidKey, client)
     },
-  },
-})
+    restoreClient: async () => {
+      return await get<PersistedClient>(idbValidKey)
+    },
+    removeClient: async () => {
+      await del(idbValidKey)
+    },
+  } satisfies Persister
+}
 
 export const apiClient = createApiClient(import.meta.env.VITE_API_URL || '/api')
 
@@ -53,7 +62,6 @@ async function updateAuthToken() {
       refresh_token: refreshToken,
     })
     console.warn('Token refreshed')
-    // TODO: API should return both tokens or fail.
     access_token && localStorage.setItem('access-token', access_token)
     refresh_token && localStorage.setItem('refresh-token', refresh_token)
     return true

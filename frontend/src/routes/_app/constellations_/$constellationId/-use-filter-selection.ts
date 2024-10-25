@@ -11,7 +11,7 @@ export const FilterSchema = z.object({
   primary: z.string().optional(),
   secondary: z.string().optional().catch(undefined),
   clSortOrder: z
-    .enum(['ascending', 'descending', 'random'] as const)
+    .enum(['ascending', 'descending', 'random', 'first'] as const)
     .optional()
     .catch(undefined),
   clSortByOffset: z.number().int().optional().catch(undefined),
@@ -52,6 +52,7 @@ export const FilterSchema = z.object({
   // TODO: probably should be here, because it's fixed for queries for example
   corpusId: z.number().optional().catch(undefined),
   subcorpusId: z.number().optional().catch(undefined),
+  focusDiscourseme: z.number().optional().catch(undefined),
   isConcordanceVisible: z.boolean().optional().catch(true),
 })
 
@@ -62,21 +63,23 @@ export function useFilterSelection(
   path:
     | '/_app/constellations/$constellationId'
     | '/_app/constellations/$constellationId/semantic-map',
-  corpusId?: number,
 ) {
   const {
     windowSize = 3,
     clSortByOffset = 0,
-    clSortOrder = 'descending',
+    clSortOrder = 'random',
     clPageIndex = 0,
     clPageSize = 5,
     ccSortBy = 'conservative_log_ratio',
     ccPageSize = 5,
+    ccSortOrder = 'ascending',
     p,
     s,
     primary,
     secondary,
     isConcordanceVisible = true,
+    corpusId,
+    subcorpusId,
     ...search
   } = useSearch({ from: path, strict: true })
 
@@ -111,6 +114,10 @@ export function useFilterSelection(
     if (p !== undefined && !pAtts.includes(p)) {
       setFilter('p', pAtts[0])
     }
+    /*
+      TODO: Check whether that's required after all since the return
+       handles this check
+    */
     if (primary !== undefined && !pAtts.includes(primary)) {
       setFilter('primary', pAtts[0])
     }
@@ -121,19 +128,24 @@ export function useFilterSelection(
 
   const pAttributes = useMemo(() => corpus?.p_atts ?? [], [corpus?.p_atts])
   const contextBreakList = useMemo(() => corpus?.s_atts ?? [], [corpus?.s_atts])
+  const isSortable = clSortOrder !== 'first' && clSortOrder !== 'random'
 
   return {
     ...search,
+    corpusId,
+    subcorpusId,
+    isSortable,
     windowSize,
-    clSortByOffset,
+    clSortByOffset: isSortable ? clSortByOffset : undefined,
     clSortOrder,
     clPageIndex,
     clPageSize,
-    ccSortBy,
+    ccSortBy: isSortable ? ccSortBy : undefined,
     ccPageSize,
+    ccSortOrder,
     setFilter,
     p: defaultTo(p, corpus?.p_atts),
-    primary: defaultTo(primary, corpus?.p_atts),
+    primary: defaultTo([primary, 'word'], corpus?.p_atts),
     secondary: defaultTo(secondary, corpus?.p_atts),
     s: defaultTo(s, corpus?.s_atts),
     pAttributes,
@@ -142,8 +154,15 @@ export function useFilterSelection(
   }
 }
 
-function defaultTo<T>(value: T, validValues: T[] | undefined): T | undefined {
-  if (validValues === undefined) return value
-  if (validValues.includes(value)) return value
+function defaultTo<T>(value: T | T[], validValues: T[] | undefined): T {
+  if (!Array.isArray(value)) {
+    value = [value]
+  }
+  for (const v of value) {
+    if (validValues === undefined) return v
+    if (validValues.includes(v)) return v
+  }
+  if (validValues === undefined || validValues.length === 0)
+    throw new Error('Invalid arguments passed to defaultTo')
   return validValues[0]
 }

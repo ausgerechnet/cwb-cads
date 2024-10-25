@@ -1,4 +1,3 @@
-import { useSearch } from '@tanstack/react-router'
 import { FilterIcon } from 'lucide-react'
 
 import {
@@ -17,30 +16,30 @@ import {
   useFilterSelection,
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { ButtonTooltip } from '@/components/button-tooltip'
+import { SortByOffset } from '@/components/sort-by-offset'
 
 // TODO: Unify this with -query-filter.tsx
-export function ConstellationFilter({ className }: { className?: string }) {
-  const searchParams = useSearch({
-    from: '/_app/constellations/$constellationId',
-  })
-  const corpusId = searchParams.corpusId
+export function ConstellationCollocationFilter({
+  className,
+}: {
+  className?: string
+}) {
   const {
+    isSortable,
     windowSize,
-    clSortByOffset,
-    clSortOrder,
     clFilterItem,
     ccFilterItem,
+    ccSortOrder,
     s,
     secondary,
-    primary,
     setFilter,
     pAttributes,
     contextBreakList,
     ccSortBy,
-  } = useFilterSelection('/_app/constellations/$constellationId', corpusId)
+  } = useFilterSelection('/_app/constellations/$constellationId')
 
   return (
-    <div className={cn('z-10 mb-8 grid grid-cols-8 gap-2', className)}>
+    <div className={cn('z-10 mb-8 flex gap-2', className)}>
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">Window Size {windowSize}</span>
         <Slider
@@ -50,42 +49,6 @@ export function ConstellationFilter({ className }: { className?: string }) {
           max={24}
           className="my-auto"
         />
-      </div>
-      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Sort By Offset {clSortByOffset}</span>
-        <Slider
-          defaultValue={[clSortByOffset]}
-          onValueChange={([newValue]) => setFilter('clSortByOffset', newValue)}
-          min={-5}
-          max={5}
-          className="my-auto"
-        />
-      </div>
-
-      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Sort Order</span>
-        <Select
-          value={clSortOrder}
-          onValueChange={(value) =>
-            setFilter(
-              'clSortOrder',
-              FilterSchema.shape.clSortOrder.parse(value),
-            )
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sort Order" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {['ascending', 'descending', 'random'].map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
@@ -99,27 +62,6 @@ export function ConstellationFilter({ className }: { className?: string }) {
               {contextBreakList.map((contextBreak) => (
                 <SelectItem key={contextBreak} value={contextBreak}>
                   {contextBreak}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Primary</span>
-        <Select
-          value={primary}
-          onValueChange={(value) => setFilter('primary', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Primary" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {pAttributes.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -150,7 +92,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">
-          Filter Item
+          Filter Item TODO: cc/cl
           {ccFilterItem !== clFilterItem && (
             <ButtonTooltip
               size="sm"
@@ -175,6 +117,7 @@ export function ConstellationFilter({ className }: { className?: string }) {
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">Sort by</span>
         <Select
+          disabled={!isSortable}
           value={ccSortBy}
           onValueChange={(value) =>
             setFilter('ccSortBy', FilterSchema.shape.ccSortBy.parse(value))
@@ -208,6 +151,132 @@ export function ConstellationFilter({ className }: { className?: string }) {
             </SelectGroup>
           </SelectContent>
         </Select>
+      </div>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Sort Order</span>
+        <Select
+          value={ccSortOrder}
+          onValueChange={(value) =>
+            setFilter(
+              'ccSortOrder',
+              FilterSchema.shape.ccSortOrder.parse(value),
+            )
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sort Order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {['ascending', 'descending'].map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  )
+}
+
+export function ConstellationConcordanceFilter({
+  className,
+}: {
+  className?: string
+}) {
+  const {
+    isSortable,
+    clSortByOffset,
+    clSortOrder,
+    clFilterItem,
+    ccFilterItem,
+    primary,
+    setFilter,
+    pAttributes,
+  } = useFilterSelection('/_app/constellations/$constellationId')
+
+  return (
+    <div className={cn('z-10 mb-8 flex gap-2', className)}>
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Sort By Offset {clSortByOffset}</span>
+        <SortByOffset
+          value={clSortByOffset ?? 0}
+          onChange={(newValue) => setFilter('clSortByOffset', newValue)}
+          disabled={!isSortable}
+        />
+      </div>
+
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Sort Order</span>
+        <Select
+          value={clSortOrder}
+          onValueChange={(value) =>
+            setFilter(
+              'clSortOrder',
+              FilterSchema.shape.clSortOrder.parse(value),
+            )
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sort Order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {['ascending', 'descending', 'random', 'first'].map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Primary</span>
+        <Select
+          value={primary}
+          onValueChange={(value) => setFilter('primary', value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Primary" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {pAttributes.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">
+          Filter Item TODO: cl/cc
+          {ccFilterItem !== clFilterItem && (
+            <ButtonTooltip
+              size="sm"
+              onClick={() => setFilter('ccFilterItem', clFilterItem)}
+              className="ml-2 h-auto py-1 text-xs"
+              variant="secondary"
+              tooltip="Create new collocation analysis with this filter item"
+            >
+              <FilterIcon className="h-3 w-3" />
+            </ButtonTooltip>
+          )}
+        </span>
+        <Input
+          defaultValue={clFilterItem}
+          key={clFilterItem}
+          onChange={(event) =>
+            setFilter('clFilterItem', event.target.value ?? '')
+          }
+        />
       </div>
     </div>
   )
