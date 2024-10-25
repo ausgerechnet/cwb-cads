@@ -1,4 +1,4 @@
-cwb-ccc @ git+https://github.com/ausgerechnet/cwb-ccc@v0.12.2
+cwb-ccc @ git+https://github.com/ausgerechnet/cwb-ccc@v0.12.3
 semmap @ git+https://github.com/ausgerechnet/semmap@master
 APIFlask==2.1.1
 Flask==3.0.2
