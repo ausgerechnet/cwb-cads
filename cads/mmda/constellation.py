@@ -978,9 +978,10 @@ def get_all_collocation(id, description_id):
 
 @bp.get("/<id>/description/<description_id>/collocation/<collocation_id>/items")
 @bp.input(CollocationItemsIn, location='query')
+@bp.input({'hide_focus': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
 @bp.output(ConstellationCollocationItemsOut)
 @bp.auth_required(auth)
-def get_collocation_items(id, description_id, collocation_id, query_data):
+def get_collocation_items(id, description_id, collocation_id, query_data, query_hide):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
     TODO also return ranks (to ease frontend pagination)?
@@ -988,6 +989,8 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
 
     description = db.get_or_404(ConstellationDescription, description_id)
     collocation = db.get_or_404(Collocation, collocation_id)
+
+    hide_focus = query_hide.get("hide_focus", True)
 
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
@@ -1003,20 +1006,23 @@ def get_collocation_items(id, description_id, collocation_id, query_data):
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
-    focus_query_id = collocation.query_id
-    focus_discourseme_description = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
-    focus_unigrams = [i for i in chain.from_iterable(
-        [a.split(" ") for a in focus_discourseme_description.breakdown(collocation.p).index]
-    )]
+    blacklist = []
+    if hide_focus:
+        focus_query_id = collocation.query_id
+        focus_discourseme_description = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
+        focus_unigrams = [i for i in chain.from_iterable(
+            [a.split(" ") for a in focus_discourseme_description.breakdown(collocation.p).index]
+        )]
+        blacklist_focus = CollocationItem.query.filter(
+            CollocationItem.collocation_id == collocation.id,
+            CollocationItem.item.in_(focus_unigrams)
+        )
+        blacklist += [b.id for b in blacklist_focus]
 
-    blacklist = CollocationItem.query.filter(
-        CollocationItem.collocation_id == collocation.id,
-        CollocationItem.item.in_(focus_unigrams)
-    )
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
         CollocationItemScore.measure == sort_by,
-        ~ CollocationItemScore.collocation_item_id.in_([b.id for b in blacklist])
+        ~ CollocationItemScore.collocation_item_id.in_(blacklist)
     )
 
     # order
