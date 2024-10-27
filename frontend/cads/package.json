@@ -8,11 +8,9 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "format": "prettier --write .",
+    "format": "prettier --write ./src",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "generate-client": "openapi-zod-client https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/openapi.json --export-schemas --export-types --with-alias --output ./src/rest-client/__generated__client.ts",
-    "postgenerate-client": "prettier --write ./src/rest-client/__generated__client.ts",
     "generate-component": "npx shadcn-ui@latest add"
   },
   "dependencies": {
@@ -54,8 +52,6 @@
     "jsdom": "^23.2.0",
     "openapi-zod-client": "^1.15.1",
     "postcss": "^8.4.33",
-    "prettier": "3.1.1",
-    "prettier-plugin-tailwindcss": "0.5.11",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.4",
     "vite": "^5.0.8",

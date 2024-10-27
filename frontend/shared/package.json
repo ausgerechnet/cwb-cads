@@ -4,6 +4,7 @@
   "scripts": {
     "generate-client": "openapi-zod-client https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/openapi.json --export-schemas --export-types --with-alias --output ./api-client/__generated__client.ts",
     "postgenerate-client": "prettier --write ./api-client/__generated__client.ts",
+    "format": "prettier --write .",
     "test": "echo \"Error: no test specified\""
   },
   "devDependencies": {
