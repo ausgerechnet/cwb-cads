@@ -65,7 +65,7 @@ export function useFilterSelection(
     | '/_app/constellations/$constellationId/semantic-map',
 ) {
   const {
-    windowSize = 3,
+    windowSize = 10,
     clSortByOffset = 0,
     clSortOrder = 'random',
     clPageIndex = 0,
