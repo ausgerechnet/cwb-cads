@@ -5,7 +5,7 @@ import { Loader2Icon, ShuffleIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { corpusById, shuffleQueryConcordances } from '@/lib/queries'
-import { Slider } from '@/components/ui/slider'
+import { Slider } from '@cads/shared/components/ui/slider'
 import {
   Select,
   SelectContent,
@@ -13,8 +13,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
+} from '@cads/shared/components/ui/select'
+import { Button } from '@cads/shared/components/ui/button'
 
 const emptyArray = [] as const
 

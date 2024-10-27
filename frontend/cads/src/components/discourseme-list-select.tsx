@@ -5,8 +5,8 @@ import { z } from 'zod'
 
 import { discoursemesList } from '@/lib/queries'
 import { schemas } from '@/rest-client'
-import { Small } from './ui/typography'
-import { Button } from './ui/button'
+import { Small } from '@cads/shared/components/ui/typography'
+import { Button } from '@cads/shared/components/ui/button'
 import { DiscoursemeSelect } from './select-discourseme'
 
 export function DiscoursemeListSelect({

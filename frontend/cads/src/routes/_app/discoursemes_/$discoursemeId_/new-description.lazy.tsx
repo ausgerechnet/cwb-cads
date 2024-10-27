@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui/card'
+import { Card } from '@cads/shared/components/ui/card'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
@@ -15,9 +15,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Button } from '@/components/ui/button'
-import { ItemsInput } from '@/components/ui/items-input'
+} from '@cads/shared/components/ui/form'
+import { Button } from '@cads/shared/components/ui/button'
+import { ItemsInput } from '@cads/shared/components/ui/items-input'
 import {
   Select,
   SelectContent,
@@ -25,7 +25,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@cads/shared/components/ui/select'
 import { schemas } from '@/rest-client'
 import {
   addDiscoursemeDescription,
@@ -37,7 +37,7 @@ import { ErrorMessage } from '@/components/error-message'
 import { CorpusSelect } from '@/components/select-corpus'
 import { useMemo } from 'react'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
-import { Large } from '@/components/ui/typography'
+import { Large } from '@cads/shared/components/ui/typography'
 
 export const Route = createLazyFileRoute(
   '/_app/discoursemes/$discoursemeId/new-description',

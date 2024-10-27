@@ -8,8 +8,8 @@ import { schemas } from '@/rest-client'
 import { subcorporaList } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Skeleton } from '@/components/ui/skeleton'
-import { buttonVariants } from '@/components/ui/button'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 import { DataTable, SortButton } from '@/components/data-table'
 
 export const Route = createLazyFileRoute('/_app/subcorpora')({

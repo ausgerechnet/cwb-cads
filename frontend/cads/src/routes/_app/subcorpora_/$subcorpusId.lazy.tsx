@@ -4,8 +4,8 @@ import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { subcorporaList } from '@/lib/queries'
 import { cn } from '@/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Large, Paragraph, Small } from '@/components/ui/typography'
-import { buttonVariants } from '@/components/ui/button'
+import { Large, Paragraph, Small } from '@cads/shared/components/ui/typography'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 
 export const Route = createLazyFileRoute('/_app/subcorpora/$subcorpusId')({
   component: SubcorpusDetail,

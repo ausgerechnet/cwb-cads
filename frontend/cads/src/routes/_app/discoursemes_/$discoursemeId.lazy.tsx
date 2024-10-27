@@ -9,8 +9,8 @@ import {
   discoursemeDescriptionsById,
 } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Large, Paragraph } from '@/components/ui/typography'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Large, Paragraph } from '@cads/shared/components/ui/typography'
+import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@/lib/utils'
 import { z } from 'zod'
 import { schemas } from '@/rest-client'

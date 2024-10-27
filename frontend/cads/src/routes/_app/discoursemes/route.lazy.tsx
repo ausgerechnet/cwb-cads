@@ -14,14 +14,14 @@ import { z } from 'zod'
 import { cn } from '@/lib/utils'
 import { deleteDiscourseme, discoursemesList } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Large } from '@/components/ui/typography'
-import { buttonVariants } from '@/components/ui/button'
+import { Large } from '@cads/shared/components/ui/typography'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 import { DataTable, SortButton } from '@/components/data-table'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
+} from '@cads/shared/components/ui/popover'
 import { ButtonAlert } from '@/components/button-alert'
 import { ReactNode } from 'react'
 

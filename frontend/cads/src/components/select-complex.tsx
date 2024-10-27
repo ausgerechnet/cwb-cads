@@ -6,16 +6,16 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { Button } from '@/components/ui/button'
+} from '@cads/shared/components/ui/popover'
+import { Button } from '@cads/shared/components/ui/button'
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@/components/ui/command'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '@cads/shared/components/ui/command'
+import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
 
 type Item<IdType> = {
   id: IdType | undefined

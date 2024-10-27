@@ -14,13 +14,13 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { deleteQuery, queriesList } from '@/lib/queries'
 import { schemas } from '@/rest-client'
-import { buttonVariants } from '@/components/ui/button'
-import { Large } from '@/components/ui/typography'
+import { buttonVariants } from '@cads/shared/components/ui/button'
+import { Large } from '@cads/shared/components/ui/typography'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
+} from '@cads/shared/components/ui/popover'
 import { DefaultErrorComponent } from '@/components/default-error-component'
 import { DataTable, SortButton } from '@/components/data-table'
 import { ButtonAlert } from '@/components/button-alert'

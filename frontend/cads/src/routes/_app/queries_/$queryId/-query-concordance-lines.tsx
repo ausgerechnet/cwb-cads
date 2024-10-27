@@ -15,18 +15,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@cads/shared/components/ui/table'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@cads/shared/components/ui/tooltip'
 import { ButtonTooltip } from '@/components/button-tooltip'
 import { ErrorMessage } from '@/components/error-message'
 import { Repeat } from '@/components/repeat'
 import { Pagination } from '@/components/pagination'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
 
 const emptyArray = [] as const
 

@@ -21,9 +21,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '@cads/shared/components/ui/table'
 import { PaginationForTable } from '@/components/pagination'
-import { Button } from '@/components/ui/button'
+import { Button } from '@cads/shared/components/ui/button'
 import { safeJsonParse } from '@/lib/safe-json-parse'
 
 const DEFAULT_PAGE_SIZE = 10

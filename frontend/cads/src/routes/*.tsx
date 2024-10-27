@@ -1,4 +1,4 @@
-import { Headline1 } from '@/components/ui/typography'
+import { Headline1 } from '@cads/shared/components/ui/typography'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/*')({

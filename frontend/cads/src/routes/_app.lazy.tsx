@@ -21,15 +21,15 @@ import { useQuery } from '@tanstack/react-query'
 
 import { usersList } from '@/lib/queries'
 import { cn } from '@/lib/utils'
-import { navigationMenuTriggerStyle } from '@/components/ui/navigation-menu'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Button } from '@/components/ui/button'
+import { navigationMenuTriggerStyle } from '@cads/shared/components/ui/navigation-menu'
+import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
+import { Button } from '@cads/shared/components/ui/button'
 import {
   TooltipProvider,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@cads/shared/components/ui/tooltip'
 
 export const Route = createLazyFileRoute('/_app')({
   component: () => <App />,

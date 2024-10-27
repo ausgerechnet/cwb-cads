@@ -7,10 +7,10 @@ import {
   SelectGroup,
   SelectItem,
   SelectValue,
-} from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
+} from '@cads/shared/components/ui/select'
+import { Slider } from '@cads/shared/components/ui/slider'
 import { cn } from '@/lib/utils'
-import { Input } from '@/components/ui/input'
+import { Input } from '@cads/shared/components/ui/input'
 import {
   FilterSchema,
   useFilterSelection,

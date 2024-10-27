@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { getColorForNumber } from '@/lib/get-color-for-number'
 import { useTheme } from '@/components/theme-provider'
-import { Button } from '@/components/ui/button'
+import { Button } from '@cads/shared/components/ui/button'
 import { LocateIcon } from 'lucide-react'
 import { clamp } from '@/lib/clamp'
 

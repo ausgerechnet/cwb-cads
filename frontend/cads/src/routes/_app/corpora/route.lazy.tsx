@@ -6,10 +6,10 @@ import { EyeIcon } from 'lucide-react'
 
 import { corpusList } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { DataTable, SortButton } from '@/components/data-table'
 import { schemas } from '@/rest-client'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export const Route = createLazyFileRoute('/_app/corpora')({

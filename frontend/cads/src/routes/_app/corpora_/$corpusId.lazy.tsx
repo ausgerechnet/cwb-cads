@@ -3,7 +3,7 @@ import { createLazyFileRoute } from '@tanstack/react-router'
 
 import { corpusById } from '@/lib/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Large, Paragraph, Small } from '@/components/ui/typography'
+import { Large, Paragraph, Small } from '@cads/shared/components/ui/typography'
 
 export const Route = createLazyFileRoute('/_app/corpora/$corpusId')({
   component: CorpusDetail,

@@ -15,8 +15,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { ItemsInput } from '@/components/ui/items-input'
+} from '@cads/shared/components/ui/form'
+import { ItemsInput } from '@cads/shared/components/ui/items-input'
 import {
   Select,
   SelectContent,
@@ -24,11 +24,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
+} from '@cads/shared/components/ui/select'
+import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { CorpusSelect } from '@/components/select-corpus'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Checkbox } from '@cads/shared/components/ui/checkbox'
 
 const InputAssisted = z.object({
   corpus_id: z.number({ required_error }).int(),

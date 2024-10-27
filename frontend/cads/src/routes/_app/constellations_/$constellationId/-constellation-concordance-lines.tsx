@@ -15,18 +15,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table.tsx'
+} from '@cads/shared/components/ui/table.tsx'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip.tsx'
+} from '@cads/shared/components/ui/tooltip.tsx'
 import { ButtonTooltip } from '@/components/button-tooltip.tsx'
 import { ErrorMessage } from '@/components/error-message.tsx'
 import { Repeat } from '@/components/repeat.tsx'
 import { Pagination } from '@/components/pagination.tsx'
-import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { Skeleton } from '@cads/shared/components/ui/skeleton.tsx'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 import { useDescription } from '@/routes/_app/constellations_/$constellationId/-use-description'
 import { ConstellationConcordanceFilter } from '@/routes/_app/constellations_/$constellationId/-constellation-filter'

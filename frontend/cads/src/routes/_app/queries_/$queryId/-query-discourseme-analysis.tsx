@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2Icon } from 'lucide-react'
 
 import { addDiscoursemeDescription, discoursemesList } from '@/lib/queries'
-import { Headline3 } from '@/components/ui/typography'
+import { Headline3 } from '@cads/shared/components/ui/typography'
 import {
   Form,
   FormControl,
@@ -15,10 +15,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@cads/shared/components/ui/form'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
-import { Button } from '@/components/ui/button'
+import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import {
   Select,
@@ -27,9 +27,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { ItemsInput } from '@/components/ui/items-input'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+} from '@cads/shared/components/ui/select'
+import { ItemsInput } from '@cads/shared/components/ui/items-input'
+import { Dialog, DialogContent } from '@cads/shared/components/ui/dialog'
 import { useNavigate } from '@tanstack/react-router'
 
 // The automatically generated DiscoursemeDescriptionIn does not support .extend()

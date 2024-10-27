@@ -14,19 +14,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@cads/shared/components/ui/form'
 import { CorpusSelect } from '@/components/select-corpus'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Card } from '@/components/ui/card'
+import { Card } from '@cads/shared/components/ui/card'
 import {
   corpusList,
   createKeywordAnalysis,
   subcorporaList,
 } from '@/lib/queries'
 import { schemas } from '@/rest-client'
-import { Button } from '@/components/ui/button'
+import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
-import { Large } from '@/components/ui/typography'
+import { Large } from '@cads/shared/components/ui/typography'
 import {
   Select,
   SelectContent,
@@ -34,7 +34,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@cads/shared/components/ui/select'
 
 const emptyArray: never[] = []
 

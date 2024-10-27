@@ -19,8 +19,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { buttonVariants } from '@/components/ui/button'
+} from '@cads/shared/components/ui/popover'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 import { ButtonAlert } from '@/components/button-alert'
 
 export const Route = createLazyFileRoute('/_app/constellations')({

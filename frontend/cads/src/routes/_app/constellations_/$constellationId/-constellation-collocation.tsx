@@ -7,11 +7,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table.tsx'
-import { Button } from '@/components/ui/button.tsx'
+} from '@cads/shared/components/ui/table.tsx'
+import { Button } from '@cads/shared/components/ui/button.tsx'
 import { Pagination } from '@/components/pagination.tsx'
 import { Repeat } from '@/components/repeat.tsx'
-import { Skeleton } from '@/components/ui/skeleton.tsx'
+import { Skeleton } from '@cads/shared/components/ui/skeleton.tsx'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation.ts'
 

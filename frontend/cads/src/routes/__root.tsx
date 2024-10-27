@@ -14,8 +14,8 @@ import { MenuLink } from '@/components/menu-link'
 import {
   NavigationMenuItem,
   NavigationMenuList,
-} from '@/components/ui/navigation-menu'
-import { Toaster } from '@/components/ui/sonner'
+} from '@cads/shared/components/ui/navigation-menu'
+import { Toaster } from '@cads/shared/components/ui/sonner'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient

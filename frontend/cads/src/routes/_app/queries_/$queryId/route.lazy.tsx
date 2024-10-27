@@ -10,9 +10,13 @@ import { AlertCircle } from 'lucide-react'
 import { corpusById, queryBreakdownForP, queryById } from '@/lib/queries'
 import { errorString } from '@/lib/error-string'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Headline3, Large } from '@/components/ui/typography'
-import { Card } from '@/components/ui/card'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@cads/shared/components/ui/alert'
+import { Headline3, Large } from '@cads/shared/components/ui/typography'
+import { Card } from '@cads/shared/components/ui/card'
 import { Drawer } from '@/components/drawer'
 import { ConcordanceLines } from './-query-concordance-lines'
 import { QueryFrequencyBreakdown } from './-query-frequency-breakdown'

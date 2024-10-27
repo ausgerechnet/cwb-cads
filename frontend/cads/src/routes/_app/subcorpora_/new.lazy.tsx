@@ -22,11 +22,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Button } from '@/components/ui/button'
+} from '@cads/shared/components/ui/form'
+import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Input } from '@cads/shared/components/ui/input'
 import {
   Select,
   SelectGroup,
@@ -34,11 +34,11 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-} from '@/components/ui/select'
+} from '@cads/shared/components/ui/select'
 import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
 import { schemas } from '@/rest-client'
-import { Small } from '@/components/ui/typography'
-import { Card } from '@/components/ui/card'
+import { Small } from '@cads/shared/components/ui/typography'
+import { Card } from '@cads/shared/components/ui/card'
 import { formatNumber } from '@/lib/format-number'
 
 export const Route = createLazyFileRoute('/_app/subcorpora/new')({

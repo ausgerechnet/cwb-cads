@@ -26,18 +26,22 @@ import {
   createDiscoursemeForConstellationDescription,
   corpusById,
 } from '@/lib/queries'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
 import { ErrorMessage } from '@/components/error-message'
 import { DiscoursemeSelect } from '@/components/select-discourseme'
 import { ComplexSelect } from '@/components/select-complex'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@cads/shared/components/ui/dialog'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@cads/shared/components/ui/tooltip'
 import {
   Form,
   FormControl,
@@ -45,9 +49,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { ItemsInput } from '@/components/ui/items-input'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+} from '@cads/shared/components/ui/form'
+import { ItemsInput } from '@cads/shared/components/ui/items-input'
+import { Alert, AlertDescription } from '@cads/shared/components/ui/alert'
 import { required_error } from '@/lib/strings'
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
@@ -57,8 +61,8 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '@cads/shared/components/ui/collapsible'
+import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
 
 const COORDINATES_SCALE_FACTOR = 40
 

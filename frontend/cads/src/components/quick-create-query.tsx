@@ -2,9 +2,18 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from '@cads/shared/components/ui/dialog'
+import { Button } from '@cads/shared/components/ui/button'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@cads/shared/components/ui/tabs'
 import { QueryFormCQP } from '@/components/query-form-cqp'
 import { QueryFormAssisted } from '@/components/query-form-assisted'
 import {
@@ -12,7 +21,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from '@cads/shared/components/ui/tooltip'
 
 export function QuickCreateQuery({
   onSuccess,

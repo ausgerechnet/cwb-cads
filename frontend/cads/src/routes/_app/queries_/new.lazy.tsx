@@ -1,9 +1,14 @@
 import { createLazyRoute, useNavigate } from '@tanstack/react-router'
 
-import { Card } from '@/components/ui/card'
-import { Headline1 } from '@/components/ui/typography'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Card } from '@cads/shared/components/ui/card'
+import { Headline1 } from '@cads/shared/components/ui/typography'
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@cads/shared/components/ui/tabs'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { QueryFormCQP } from '@/components/query-form-cqp'
 import { QueryFormAssisted } from '@/components/query-form-assisted'
 

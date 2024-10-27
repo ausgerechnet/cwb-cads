@@ -7,9 +7,9 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { logIn, sessionQueryOptions } from '@/lib/queries'
 import { required_error } from '@/lib/strings'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Headline1 } from '@/components/ui/typography'
+import { Button } from '@cads/shared/components/ui/button'
+import { Input } from '@cads/shared/components/ui/input'
+import { Headline1 } from '@cads/shared/components/ui/typography'
 import {
   Form,
   FormControl,
@@ -17,7 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
+} from '@cads/shared/components/ui/form'
 import { ErrorMessage } from '@/components/error-message'
 import { useEffect } from 'react'
 
