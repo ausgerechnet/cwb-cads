@@ -44,5 +44,8 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4"
+  },
+  "peerDependencies": {
+    "@tanstack/react-router": "^1.14.6"
   }
 }

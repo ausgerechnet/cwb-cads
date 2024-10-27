@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { schemas } from '@/rest-client'
 import { usersList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { DataTable, SortButton } from '@/components/data-table'
+import { DataTable, SortButton } from '../../../../shared/components/data-table'
 
 export const Route = createFileRoute('/_app/admin')({
   component: Admin,

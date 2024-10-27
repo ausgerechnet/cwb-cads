@@ -16,7 +16,10 @@ import { deleteDiscourseme, discoursemesList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Large } from '@cads/shared/components/ui/typography'
 import { buttonVariants } from '@cads/shared/components/ui/button'
-import { DataTable, SortButton } from '@/components/data-table'
+import {
+  DataTable,
+  SortButton,
+} from '../../../../../shared/components/data-table'
 import {
   Popover,
   PopoverContent,

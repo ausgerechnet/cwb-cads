@@ -22,7 +22,10 @@ import {
   PopoverTrigger,
 } from '@cads/shared/components/ui/popover'
 import { DefaultErrorComponent } from '@/components/default-error-component'
-import { DataTable, SortButton } from '@/components/data-table'
+import {
+  DataTable,
+  SortButton,
+} from '../../../../../shared/components/data-table'
 import { ButtonAlert } from '@/components/button-alert'
 import { QueriesLayout } from './-queries-layout'
 

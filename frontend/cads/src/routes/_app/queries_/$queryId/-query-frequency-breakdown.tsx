@@ -15,7 +15,10 @@ import {
   SelectTrigger,
 } from '@cads/shared/components/ui/select'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
-import { DataTable, SortButton } from '@/components/data-table'
+import {
+  DataTable,
+  SortButton,
+} from '../../../../../../shared/components/data-table'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Headline3 } from '@cads/shared/components/ui/typography'
 

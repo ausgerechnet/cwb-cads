@@ -13,7 +13,6 @@ import {
 } from '@tanstack/react-table'
 import { z } from 'zod'
 
-import { cn } from '@cads/shared/lib/utils'
 import {
   Table,
   TableBody,
@@ -21,10 +20,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table'
-import { PaginationForTable } from '@cads/shared/components/pagination'
-import { Button } from '@cads/shared/components/ui/button'
-import { safeJsonParse } from '@cads/shared/lib/safe-json-parse'
+} from './ui/table'
+import { Button } from './ui/button'
+import { PaginationForTable } from './pagination'
+import { safeJsonParse } from '../lib/safe-json-parse'
+import { cn } from '../lib/utils'
 
 const DEFAULT_PAGE_SIZE = 10
 const parsePagination = z
@@ -84,6 +84,8 @@ export function DataTable<RowData>({
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     autoResetPageIndex: false,
+    // eslint-disable-next-line
+    // @ts-ignore
     initialState,
   })
   const sorting = table.getState().sorting
@@ -92,7 +94,11 @@ export function DataTable<RowData>({
   useEffect(() => {
     void navigate({
       replace: true,
+      // eslint-disable-next-line
+      // @ts-ignore
       params: (p) => p,
+      // eslint-disable-next-line
+      // @ts-ignore
       search: (search) => ({
         ...search,
         [pageIndexParamName]: pageIndex,

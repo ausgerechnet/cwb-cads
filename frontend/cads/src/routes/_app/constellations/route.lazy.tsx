@@ -14,7 +14,10 @@ import { schemas } from '@/rest-client'
 import { constellationList, deleteConstellation } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { DataTable, SortButton } from '@/components/data-table'
+import {
+  DataTable,
+  SortButton,
+} from '../../../../../shared/components/data-table'
 import {
   Popover,
   PopoverContent,
