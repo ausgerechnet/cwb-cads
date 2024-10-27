@@ -1,10 +1,10 @@
 import { createRouter } from '@tanstack/react-router'
-import { routeTree } from '@/routeTree.gen'
+import { routeTree } from '@cads/cads/src/routeTree.gen'
 
-import { DefaultErrorComponent } from '@/components/default-error-component'
-import { DefaultPendingComponent } from '@/components/default-pending-component'
+import { DefaultErrorComponent } from '@cads/cads/src/components/default-error-component'
+import { DefaultPendingComponent } from '@cads/cads/src/components/default-pending-component'
 
-import { queryClient } from '@/lib/query-client'
+import { queryClient } from './query-client'
 
 export const router = createRouter({
   routeTree,

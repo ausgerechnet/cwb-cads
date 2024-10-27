@@ -3,7 +3,7 @@ import {
   PersistedClient,
   Persister,
 } from '@tanstack/react-query-persist-client'
-import { router } from '@/lib/router'
+import { router } from '@/router'
 
 import { createApiClient } from '@cads/shared/api-client/__generated__client'
 

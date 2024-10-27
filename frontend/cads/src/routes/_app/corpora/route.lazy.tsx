@@ -4,13 +4,13 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { EyeIcon } from 'lucide-react'
 
-import { corpusList } from '@/lib/queries'
+import { corpusList } from '@/queries/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { DataTable, SortButton } from '@/components/data-table'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@cads/shared/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 
 export const Route = createLazyFileRoute('/_app/corpora')({
   component: CorporaOverview,

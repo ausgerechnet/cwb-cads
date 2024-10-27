@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { queriesList } from '@/lib/queries'
+import { queriesList } from '@/queries/queries'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { QueriesLayout } from './-queries-layout'
 

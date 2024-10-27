@@ -1,4 +1,4 @@
-import { corpusList, subcorporaList } from '@/lib/queries'
+import { corpusList, subcorporaList } from '@/queries/queries'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/keyword-analysis/new')({

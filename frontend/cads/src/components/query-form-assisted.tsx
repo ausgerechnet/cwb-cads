@@ -5,9 +5,9 @@ import { Loader2 } from 'lucide-react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
-import { required_error } from '@/lib/strings'
-import { corpusList, createQueryAssisted, subcorpusOf } from '@/lib/queries'
-import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
+import { required_error } from '@cads/shared/lib/strings'
+import { corpusList, createQueryAssisted, subcorpusOf } from '@/queries/queries'
+import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
 import {
   Form,
   FormControl,

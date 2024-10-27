@@ -1,11 +1,11 @@
 import * as d3 from 'd3'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { getColorForNumber } from '@/lib/get-color-for-number'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { useTheme } from '@/components/theme-provider'
 import { Button } from '@cads/shared/components/ui/button'
 import { LocateIcon } from 'lucide-react'
-import { clamp } from '@/lib/clamp'
+import { clamp } from '@cads/shared/lib/clamp'
 
 export type Word = {
   id: string

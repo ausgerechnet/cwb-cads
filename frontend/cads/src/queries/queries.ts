@@ -1,8 +1,8 @@
 import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
-import { queryClient } from '@/lib/query-client'
+import { queryClient } from '@/query-client'
 import { apiClient, schemas } from '@/rest-client'
-import { arraysContainEqualItems } from './arrays-contain-equal-items'
+import { arraysContainEqualItems } from '@cads/shared/lib/arrays-contain-equal-items'
 
 type SortBy =
   | 'conservative_log_ratio'

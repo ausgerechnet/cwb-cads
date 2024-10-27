@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react'
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 import { Button } from '@cads/shared/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 
 export function Drawer({
   children,

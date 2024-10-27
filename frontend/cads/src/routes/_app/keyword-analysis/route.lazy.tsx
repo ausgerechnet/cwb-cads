@@ -7,12 +7,12 @@ import { EyeIcon, PlusIcon } from 'lucide-react'
 
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Large } from '@cads/shared/components/ui/typography'
-import { cn } from '@/lib/utils'
-import { corpusById, keywordAnalysesList, subcorpusOf } from '@/lib/queries'
+import { cn } from '@cads/shared/lib/utils'
+import { corpusById, keywordAnalysesList, subcorpusOf } from '@/queries/queries'
 import { DataTable, SortButton } from '@/components/data-table'
 import { schemas } from '@/rest-client'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
-import { formatNumber } from '@/lib/format-number'
+import { formatNumber } from '@cads/shared/lib/format-number'
 import { KeywordAnalysisLayout } from './-keyword-analysis-layout'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis')({

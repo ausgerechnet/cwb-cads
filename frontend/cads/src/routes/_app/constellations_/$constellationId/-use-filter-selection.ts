@@ -2,7 +2,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo } from 'react'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
-import { corpusById } from '@/lib/queries.ts'
+import { corpusById } from '@/queries/queries.ts'
 
 export const FilterSchema = z.object({
   pAtt: z.string().optional(),

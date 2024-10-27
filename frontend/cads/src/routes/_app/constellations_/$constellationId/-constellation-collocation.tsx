@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils.ts'
+import { cn } from '@cads/shared/lib/utils.ts'
 import { ErrorMessage } from '@/components/error-message.tsx'
 import {
   Table,

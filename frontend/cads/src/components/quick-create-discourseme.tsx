@@ -14,7 +14,7 @@ import {
   Tooltip,
 } from '@cads/shared/components/ui/tooltip'
 import { Plus } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 
 export function QuickCreateDiscourseme({
   className,

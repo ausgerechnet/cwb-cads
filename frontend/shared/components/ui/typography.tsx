@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 
 type TypographyProps = {
   children: React.ReactNode

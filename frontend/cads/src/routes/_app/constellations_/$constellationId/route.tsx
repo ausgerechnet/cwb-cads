@@ -3,7 +3,7 @@ import {
   constellationDescriptionsById,
   corpusList,
   discoursemesList,
-} from '@/lib/queries.ts'
+} from '@/queries/queries.ts'
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { FilterSchema } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'

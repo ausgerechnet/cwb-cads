@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
-import { required_error } from '@/lib/strings'
-import { corpusList, createQueryCQP, subcorpusOf } from '@/lib/queries'
+import { required_error } from '@cads/shared/lib/strings'
+import { corpusList, createQueryCQP, subcorpusOf } from '@/queries/queries'
 import {
   Form,
   FormControl,
@@ -27,7 +27,7 @@ import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'
 import { Textarea } from '@cads/shared/components/ui/textarea'
 import { CorpusSelect } from '@/components/select-corpus'
-import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
+import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
 
 const InputCQP = z.object({
   corpus_id: z.number({ required_error }).int(),

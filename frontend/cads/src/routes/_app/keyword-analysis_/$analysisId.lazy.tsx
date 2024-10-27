@@ -1,7 +1,7 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { keywordAnalysisById } from '@/lib/queries'
+import { keywordAnalysisById } from '@/queries/queries'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis/$analysisId')({
   component: KeywordAnalysis,

@@ -7,8 +7,8 @@ import {
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { AlertCircle } from 'lucide-react'
 
-import { corpusById, queryBreakdownForP, queryById } from '@/lib/queries'
-import { errorString } from '@/lib/error-string'
+import { corpusById, queryBreakdownForP, queryById } from '@/queries/queries'
+import { errorString } from '@cads/shared/lib/error-string'
 import { AppPageFrame } from '@/components/app-page-frame'
 import {
   Alert,

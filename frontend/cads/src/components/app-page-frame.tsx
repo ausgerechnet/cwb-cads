@@ -4,7 +4,7 @@ import { Link } from '@tanstack/react-router'
 
 import { Headline1 } from '@cads/shared/components/ui/typography'
 import { buttonVariants } from '@cads/shared/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 
 export function AppPageFrame({
   title,

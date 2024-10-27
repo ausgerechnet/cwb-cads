@@ -5,7 +5,7 @@ import {
   discoursemesList,
   // queryBreakdownsQueryOptions,
   queryById,
-} from '@/lib/queries'
+} from '@/queries/queries'
 import { z } from 'zod'
 
 export const Route = createFileRoute('/_app/queries/$queryId')({

@@ -5,9 +5,9 @@ import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
-import { cn } from '@/lib/utils'
-import { corpusById, queryConcordances, queryById } from '@/lib/queries'
-import { formatNumber } from '@/lib/format-number'
+import { cn } from '@cads/shared/lib/utils'
+import { corpusById, queryConcordances, queryById } from '@/queries/queries'
+import { formatNumber } from '@cads/shared/lib/format-number'
 import {
   Table,
   TableBody,

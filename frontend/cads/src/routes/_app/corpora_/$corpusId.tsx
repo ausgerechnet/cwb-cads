@@ -1,4 +1,4 @@
-import { corpusById } from '@/lib/queries'
+import { corpusById } from '@/queries/queries'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/corpora/$corpusId')({

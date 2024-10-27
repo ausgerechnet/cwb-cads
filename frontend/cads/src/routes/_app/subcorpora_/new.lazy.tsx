@@ -12,7 +12,7 @@ import {
   corpusList,
   corpusMetaFrequencies,
   createSubcorpus,
-} from '@/lib/queries'
+} from '@/queries/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { CorpusSelect } from '@/components/select-corpus'
 import {
@@ -35,11 +35,11 @@ import {
   SelectValue,
   SelectContent,
 } from '@cads/shared/components/ui/select'
-import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
+import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
 import { schemas } from '@/rest-client'
 import { Small } from '@cads/shared/components/ui/typography'
 import { Card } from '@cads/shared/components/ui/card'
-import { formatNumber } from '@/lib/format-number'
+import { formatNumber } from '@cads/shared/lib/format-number'
 
 export const Route = createLazyFileRoute('/_app/subcorpora/new')({
   component: SubcorpusNew,

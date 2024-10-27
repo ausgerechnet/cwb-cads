@@ -3,8 +3,8 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Loader2Icon, ShuffleIcon } from 'lucide-react'
 
-import { cn } from '@/lib/utils'
-import { corpusById, shuffleQueryConcordances } from '@/lib/queries'
+import { cn } from '@cads/shared/lib/utils'
+import { corpusById, shuffleQueryConcordances } from '@/queries/queries'
 import { Slider } from '@cads/shared/components/ui/slider'
 import {
   Select,
@@ -64,8 +64,13 @@ export function QueryFilter({
     return (paramName: string, value: string | number) => {
       clearTimeout(timeoutMap[paramName])
       timeoutMap[paramName] = setTimeout(() => {
-        navigate({
+        void navigate({
+          // TODO: Use properly typed params
+          // eslint-disable-next-line
+          // @ts-ignore
           params: (p) => p,
+          // eslint-disable-next-line
+          // @ts-ignore
           search: (s) => ({ ...s, [paramName]: value }),
           replace: true,
         })
@@ -164,8 +169,13 @@ export function QueryFilter({
         <Select
           value={primary}
           onValueChange={(value) => {
-            navigate({
+            void navigate({
+              // TODO: Use properly typed params
+              // eslint-disable-next-line
+              // @ts-ignore
               params: (p) => p,
+              // eslint-disable-next-line
+              // @ts-ignore
               search: (s) => ({ ...s, primary: value }),
               replace: true,
             })

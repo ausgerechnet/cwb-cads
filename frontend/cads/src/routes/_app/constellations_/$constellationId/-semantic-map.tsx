@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 import {
   addConstellationDiscourseme,
   constellationById,
@@ -25,7 +25,7 @@ import {
   removeDescriptionItem,
   createDiscoursemeForConstellationDescription,
   corpusById,
-} from '@/lib/queries'
+} from '@/queries/queries'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
 import { ErrorMessage } from '@/components/error-message'
@@ -52,11 +52,11 @@ import {
 } from '@cads/shared/components/ui/form'
 import { ItemsInput } from '@cads/shared/components/ui/items-input'
 import { Alert, AlertDescription } from '@cads/shared/components/ui/alert'
-import { required_error } from '@/lib/strings'
+import { required_error } from '@cads/shared/lib/strings'
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
-import { getColorForNumber } from '@/lib/get-color-for-number'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import {
   Collapsible,
   CollapsibleContent,

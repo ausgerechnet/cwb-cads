@@ -20,7 +20,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] },
+    "paths": {
+      "@/*": ["./src/*"],
+      "@cads/shared/lib/utils": ["../shared/utils"],
+    },
   },
   "references": [
     { "path": "./tsconfig.node.json" },

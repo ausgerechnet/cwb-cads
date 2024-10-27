@@ -13,7 +13,7 @@ import {
 } from '@tanstack/react-table'
 import { z } from 'zod'
 
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 import {
   Table,
   TableBody,
@@ -24,7 +24,7 @@ import {
 } from '@cads/shared/components/ui/table'
 import { PaginationForTable } from '@/components/pagination'
 import { Button } from '@cads/shared/components/ui/button'
-import { safeJsonParse } from '@/lib/safe-json-parse'
+import { safeJsonParse } from '@cads/shared/lib/safe-json-parse'
 
 const DEFAULT_PAGE_SIZE = 10
 const parsePagination = z

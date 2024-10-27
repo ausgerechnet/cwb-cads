@@ -32,11 +32,11 @@ import {
   corpusList,
   discoursemeById,
   subcorpusOf,
-} from '@/lib/queries'
+} from '@/queries/queries'
 import { ErrorMessage } from '@/components/error-message'
 import { CorpusSelect } from '@/components/select-corpus'
 import { useMemo } from 'react'
-import { useFormFieldDependency } from '@/lib/use-form-field-dependency'
+import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
 import { Large } from '@cads/shared/components/ui/typography'
 
 export const Route = createLazyFileRoute(

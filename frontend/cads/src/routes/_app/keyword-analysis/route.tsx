@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { keywordAnalysesList } from '@/lib/queries'
+import { keywordAnalysesList } from '@/queries/queries'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
 import { KeywordAnalysisLayout } from './-keyword-analysis-layout'
 

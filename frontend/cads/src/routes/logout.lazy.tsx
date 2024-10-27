@@ -3,7 +3,7 @@ import { Link, createLazyFileRoute } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
-import { logOut } from '@/lib/queries'
+import { logOut } from '@/queries/queries'
 import { Headline1, Large } from '@cads/shared/components/ui/typography'
 import {
   Alert,

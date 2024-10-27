@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import { discoursemesList, createConstellation } from '@/lib/queries'
+import { discoursemesList, createConstellation } from '@/queries/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import {
   Form,

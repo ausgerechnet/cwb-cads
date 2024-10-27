@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 import { Button } from '@cads/shared/components/ui/button'
 
 export function SortByOffset({

@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@cads/shared/components/ui/select'
 import { Slider } from '@cads/shared/components/ui/slider'
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 import { Input } from '@cads/shared/components/ui/input'
 import {
   FilterSchema,

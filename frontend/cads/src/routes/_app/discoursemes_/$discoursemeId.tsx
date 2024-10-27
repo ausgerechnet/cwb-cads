@@ -3,7 +3,7 @@ import {
   corpusList,
   discoursemeById,
   discoursemeDescriptionsById,
-} from '@/lib/queries'
+} from '@/queries/queries'
 
 export const Route = createFileRoute('/_app/discoursemes/$discoursemeId')({
   loader: ({ context: { queryClient }, params: { discoursemeId } }) =>

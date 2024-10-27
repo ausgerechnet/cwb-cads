@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { corpusList, subcorporaList } from '@/lib/queries'
+import { corpusList, subcorporaList } from '@/queries/queries'
 import { ComplexSelect } from '@/components/select-complex'
 import { ErrorMessage } from '@/components/error-message'
 

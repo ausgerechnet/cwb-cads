@@ -1,7 +1,7 @@
 import { type Table } from '@tanstack/table-core'
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 
-import { cn } from '@/lib/utils'
+import { cn } from '@cads/shared/lib/utils'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import { Select } from '@cads/shared/components/ui/select'
 import {
@@ -11,7 +11,7 @@ import {
   SelectTrigger,
 } from '@cads/shared/components/ui/select'
 import { Small } from '@cads/shared/components/ui/typography'
-import { formatNumber } from '@/lib/format-number'
+import { formatNumber } from '@cads/shared/lib/format-number'
 
 export function PaginationForTable<T>({ table }: { table: Table<T> }) {
   const { pageIndex, pageSize } = table.getState().pagination

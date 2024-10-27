@@ -11,8 +11,8 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import { constellationList, deleteConstellation } from '@/lib/queries'
-import { cn } from '@/lib/utils'
+import { constellationList, deleteConstellation } from '@/queries/queries'
+import { cn } from '@cads/shared/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { DataTable, SortButton } from '@/components/data-table'
 import {
