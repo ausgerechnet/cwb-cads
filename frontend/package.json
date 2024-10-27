@@ -2,14 +2,16 @@
   "name": "frontend",
   "version": "1.0.0",
   "scripts": {
-    "dev": "npm run dev --workspace cads",
-    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspace @cads/cads",
+    "build": "npm run build --workspace @cads/cads",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "format": "npm run format --workspaces",
-    "typecheck": "npm run typecheck --workspaces"
+    "typecheck": "npm run typecheck --workspaces",
+    "generate-client": "npm run generate-client --workspace shared"
   },
   "workspaces": [
+    "shared/",
     "cads/"
   ]
 }

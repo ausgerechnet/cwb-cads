@@ -5,7 +5,7 @@ import {
 } from '@tanstack/react-query-persist-client'
 import { router } from '@/lib/router'
 
-import { createApiClient } from './__generated__client'
+import { createApiClient } from '@cads/shared/api-client/__generated__client'
 
 export function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
   return {

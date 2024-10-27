@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [react(), TanStackRouterVite()],
   resolve: {
     alias: {
+      '@cads/shared': path.resolve(__dirname, '../shared'),
       '@': path.resolve(__dirname, './src'),
     },
   },

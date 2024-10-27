@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 
 # Exception to rule from the root .gitignore
-!src/lib/
+!cads/src/lib/

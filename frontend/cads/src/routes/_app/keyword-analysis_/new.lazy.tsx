@@ -115,7 +115,7 @@ function KeywordAnalysisNew() {
                         corpusId={field.value}
                         onChange={(...args) => {
                           field.onChange(...args)
-                          form.setValue('subcorpus_id', undefined)
+                          form.setValue('subcorpus_id', null)
                         }}
                       />
                     </FormControl>
@@ -186,7 +186,7 @@ function KeywordAnalysisNew() {
                         corpusId={field.value}
                         onChange={(...args) => {
                           field.onChange(...args)
-                          form.setValue('subcorpus_id_reference', undefined)
+                          form.setValue('subcorpus_id_reference', null)
                         }}
                       />
                     </FormControl>
