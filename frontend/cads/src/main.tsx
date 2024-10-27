@@ -5,8 +5,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 
 import { createIDBPersister } from '@/rest-client'
 import { ThemeProvider } from '@/components/theme-provider'
-
-import { queryClient } from './query-client'
+import { queryClient } from '@cads/shared/queries'
 import { router } from './router'
 
 import '@cads/shared/index.css'
