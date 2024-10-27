@@ -7,7 +7,7 @@ import {
   deleteDiscoursemeDescription,
   discoursemeById,
   discoursemeDescriptionsById,
-} from '@/queries/queries'
+} from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Large, Paragraph } from '@cads/shared/components/ui/typography'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'

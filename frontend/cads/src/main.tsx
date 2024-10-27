@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { RouterProvider } from '@tanstack/react-router'
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 
-import { createIDBPersister } from '@/rest-client/client'
+import { createIDBPersister } from '@/rest-client'
 import { ThemeProvider } from '@/components/theme-provider'
 
 import { queryClient } from './query-client'

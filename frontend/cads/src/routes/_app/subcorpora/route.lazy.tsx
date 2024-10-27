@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { EyeIcon } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
-import { subcorporaList } from '@/queries/queries'
+import { subcorporaList } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'

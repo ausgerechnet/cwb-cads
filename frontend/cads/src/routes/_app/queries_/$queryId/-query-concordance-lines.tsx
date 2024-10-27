@@ -6,7 +6,7 @@ import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
 import { cn } from '@cads/shared/lib/utils'
-import { corpusById, queryConcordances, queryById } from '@/queries/queries'
+import { corpusById, queryConcordances, queryById } from '@cads/shared/queries'
 import { formatNumber } from '@cads/shared/lib/format-number'
 import {
   Table,

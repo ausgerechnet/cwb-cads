@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "module": "ESNext",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {

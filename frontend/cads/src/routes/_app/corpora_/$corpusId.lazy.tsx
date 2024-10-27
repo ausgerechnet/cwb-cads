@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createLazyFileRoute } from '@tanstack/react-router'
 
-import { corpusById } from '@/queries/queries'
+import { corpusById } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Large, Paragraph, Small } from '@cads/shared/components/ui/typography'
 

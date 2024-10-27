@@ -1,4 +1,4 @@
-import { usersList } from '@/queries/queries'
+import { usersList } from '@cads/shared/queries'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app')({

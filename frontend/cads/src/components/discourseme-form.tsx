@@ -6,7 +6,7 @@ import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 import { required_error } from '@cads/shared/lib/strings'
-import { createDiscourseme } from '@/queries/queries'
+import { createDiscourseme } from '@cads/shared/queries'
 import {
   Form,
   FormField,

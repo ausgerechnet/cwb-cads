@@ -8,7 +8,11 @@ import { EyeIcon, PlusIcon } from 'lucide-react'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Large } from '@cads/shared/components/ui/typography'
 import { cn } from '@cads/shared/lib/utils'
-import { corpusById, keywordAnalysesList, subcorpusOf } from '@/queries/queries'
+import {
+  corpusById,
+  keywordAnalysesList,
+  subcorpusOf,
+} from '@cads/shared/queries'
 import { DataTable, SortButton } from '@/components/data-table'
 import { schemas } from '@/rest-client'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'

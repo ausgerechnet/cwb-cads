@@ -22,7 +22,7 @@ import {
   corpusList,
   createKeywordAnalysis,
   subcorporaList,
-} from '@/queries/queries'
+} from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
 import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@/components/error-message'

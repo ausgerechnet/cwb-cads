@@ -25,7 +25,7 @@ import {
   removeDescriptionItem,
   createDiscoursemeForConstellationDescription,
   corpusById,
-} from '@/queries/queries'
+} from '@cads/shared/queries'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
 import { ErrorMessage } from '@/components/error-message'

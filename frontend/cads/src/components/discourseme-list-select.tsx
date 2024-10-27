@@ -3,7 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { z } from 'zod'
 
-import { discoursemesList } from '@/queries/queries'
+import { discoursemesList } from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
 import { Small } from '@cads/shared/components/ui/typography'
 import { Button } from '@cads/shared/components/ui/button'

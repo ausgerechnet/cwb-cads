@@ -12,7 +12,7 @@ import {
   corpusList,
   corpusMetaFrequencies,
   createSubcorpus,
-} from '@/queries/queries'
+} from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { CorpusSelect } from '@/components/select-corpus'
 import {

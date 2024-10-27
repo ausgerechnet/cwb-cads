@@ -4,7 +4,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Loader2Icon, ShuffleIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
-import { corpusById, shuffleQueryConcordances } from '@/queries/queries'
+import { corpusById, shuffleQueryConcordances } from '@cads/shared/queries'
 import { Slider } from '@cads/shared/components/ui/slider'
 import {
   Select,

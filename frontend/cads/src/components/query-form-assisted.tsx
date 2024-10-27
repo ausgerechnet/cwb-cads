@@ -6,7 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
 import { required_error } from '@cads/shared/lib/strings'
-import { corpusList, createQueryAssisted, subcorpusOf } from '@/queries/queries'
+import {
+  corpusList,
+  createQueryAssisted,
+  subcorpusOf,
+} from '@cads/shared/queries'
 import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
 import {
   Form,

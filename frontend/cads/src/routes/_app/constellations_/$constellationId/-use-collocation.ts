@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   constellationCollocationItems,
   constellationCollocation,
-} from '@/queries/queries.ts'
+} from '@cads/shared/queries'
 
 export function useCollocation(
   constellationId: number,

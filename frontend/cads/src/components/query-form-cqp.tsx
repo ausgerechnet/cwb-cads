@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
 import { required_error } from '@cads/shared/lib/strings'
-import { corpusList, createQueryCQP, subcorpusOf } from '@/queries/queries'
+import { corpusList, createQueryCQP, subcorpusOf } from '@cads/shared/queries'
 import {
   Form,
   FormControl,

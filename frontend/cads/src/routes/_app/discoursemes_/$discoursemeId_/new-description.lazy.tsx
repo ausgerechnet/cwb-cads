@@ -32,7 +32,7 @@ import {
   corpusList,
   discoursemeById,
   subcorpusOf,
-} from '@/queries/queries'
+} from '@cads/shared/queries'
 import { ErrorMessage } from '@/components/error-message'
 import { CorpusSelect } from '@/components/select-corpus'
 import { useMemo } from 'react'

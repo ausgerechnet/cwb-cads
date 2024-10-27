@@ -1,4 +1,4 @@
-import { keywordAnalysisById } from '@/queries/queries'
+import { keywordAnalysisById } from '@cads/shared/queries'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_app/keyword-analysis/$analysisId')({

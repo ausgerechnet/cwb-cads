@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 
-import { logIn, sessionQueryOptions } from '@/queries/queries'
+import { logIn, sessionQueryOptions } from '@cads/shared/queries'
 import { required_error } from '@cads/shared/lib/strings'
 import { Button } from '@cads/shared/components/ui/button'
 import { Input } from '@cads/shared/components/ui/input'

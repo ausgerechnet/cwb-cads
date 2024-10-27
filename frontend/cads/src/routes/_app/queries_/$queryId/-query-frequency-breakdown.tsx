@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
 
-import { corpusById, queryBreakdownForP, queryById } from '@/queries/queries'
+import { corpusById, queryBreakdownForP, queryById } from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
 import {
   Select,

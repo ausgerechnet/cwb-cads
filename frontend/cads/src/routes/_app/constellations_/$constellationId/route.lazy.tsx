@@ -34,7 +34,7 @@ import {
   constellationById,
   removeConstellationDiscourseme,
   discoursemesList,
-} from '@/queries/queries.ts'
+} from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils.ts'
 import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'

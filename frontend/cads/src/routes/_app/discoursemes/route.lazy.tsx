@@ -12,7 +12,7 @@ import { schemas } from '@/rest-client'
 import { z } from 'zod'
 
 import { cn } from '@cads/shared/lib/utils'
-import { deleteDiscourseme, discoursemesList } from '@/queries/queries'
+import { deleteDiscourseme, discoursemesList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Large } from '@cads/shared/components/ui/typography'
 import { buttonVariants } from '@cads/shared/components/ui/button'

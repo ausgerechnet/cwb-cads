@@ -12,7 +12,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 
 import { cn } from '@cads/shared/lib/utils'
-import { deleteQuery, queriesList } from '@/queries/queries'
+import { deleteQuery, queriesList } from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Large } from '@cads/shared/components/ui/typography'

@@ -4,7 +4,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import { usersList } from '@/queries/queries'
+import { usersList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { DataTable, SortButton } from '@/components/data-table'
 

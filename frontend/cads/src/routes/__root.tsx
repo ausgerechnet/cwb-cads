@@ -8,7 +8,7 @@ import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { Home, Info, User, ScrollText } from 'lucide-react'
 
-import { usersList } from '@/queries/queries'
+import { usersList } from '@cads/shared/queries'
 import { ModeToggle } from '@/components/mode-toggle'
 import { MenuLink } from '@/components/menu-link'
 import {

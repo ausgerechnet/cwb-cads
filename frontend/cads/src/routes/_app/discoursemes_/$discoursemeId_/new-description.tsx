@@ -3,7 +3,7 @@ import {
   corpusList,
   discoursemeById,
   discoursemeDescriptionsById,
-} from '@/queries/queries'
+} from '@cads/shared/queries'
 
 export const Route = createFileRoute(
   '/_app/discoursemes/$discoursemeId/new-description',

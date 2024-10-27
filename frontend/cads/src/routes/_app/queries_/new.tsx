@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
-import { corpusList, discoursemesList } from '@/queries/queries'
+import { corpusList, discoursemesList } from '@cads/shared/queries'
 
 const FormMode = z.enum(['cqp', 'assisted']).optional()
 

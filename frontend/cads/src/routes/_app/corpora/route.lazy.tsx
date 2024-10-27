@@ -4,7 +4,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { EyeIcon } from 'lucide-react'
 
-import { corpusList } from '@/queries/queries'
+import { corpusList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { DataTable, SortButton } from '@/components/data-table'

@@ -6,7 +6,10 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2Icon } from 'lucide-react'
 
-import { addDiscoursemeDescription, discoursemesList } from '@/queries/queries'
+import {
+  addDiscoursemeDescription,
+  discoursemesList,
+} from '@cads/shared/queries'
 import { Headline3 } from '@cads/shared/components/ui/typography'
 import {
   Form,

@@ -4,8 +4,8 @@ import {
   Persister,
 } from '@tanstack/react-query-persist-client'
 import { router } from '@/router'
-
-import { createApiClient } from '@cads/shared/api-client/__generated__client'
+export { schemas } from '@cads/shared/api-client'
+import { apiClient } from '@cads/shared/api-client'
 
 export function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
   return {
@@ -20,8 +20,6 @@ export function createIDBPersister(idbValidKey: IDBValidKey = 'reactQuery') {
     },
   } satisfies Persister
 }
-
-export const apiClient = createApiClient(import.meta.env.VITE_API_URL || '/api')
 
 apiClient.axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('access-token')

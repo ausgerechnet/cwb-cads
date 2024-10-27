@@ -19,7 +19,7 @@ import {
 import { Outlet, createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 
-import { usersList } from '@/queries/queries'
+import { usersList } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
 import { navigationMenuTriggerStyle } from '@cads/shared/components/ui/navigation-menu'
 import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
