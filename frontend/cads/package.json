@@ -32,7 +32,6 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@faker-js/faker": "^8.4.1",
     "@tanstack/eslint-plugin-query": "^5.17.7",
     "@tanstack/react-query-devtools": "^5.59.16",
     "@tanstack/router-vite-plugin": "^1.14.1",
