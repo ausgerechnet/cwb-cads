@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
-import { Home, Info, User, ScrollText } from 'lucide-react'
+import { Home, User, ScrollText } from 'lucide-react'
 
 import { usersList } from '@cads/shared/queries'
 import { ModeToggle } from '@cads/shared/components/mode-toggle'
@@ -43,24 +43,18 @@ function RootComponent() {
       <header className="bg-background ring-muted sticky top-0 z-10 box-border p-2 ring-1">
         <NavigationMenu>
           <NavigationMenuList>
-            <NavigationMenuItem>
+            <NavigationMenuItem className="mr-auto">
               <MenuLink to="/" activeOptions={{ exact: true }}>
                 <Home className="mr-2 h-4 w-4" />
-                Mixed Methods Discourse Analysis
-              </MenuLink>
-            </NavigationMenuItem>
-            <NavigationMenuItem className="flex-grow justify-end">
-              <MenuLink to="/vignette">
-                <Info className="mr-2 h-4 w-4" />
-                Vignette
+                Home
               </MenuLink>
             </NavigationMenuItem>
             {isLoggedIn && (
               <>
                 <NavigationMenuItem>
-                  <MenuLink to="/queries" highlight>
+                  <MenuLink to="/start" highlight>
                     <ScrollText className="mr-2 h-4 w-4" />
-                    Analysis
+                    Start
                   </MenuLink>
                 </NavigationMenuItem>
                 <NavigationMenuItem>

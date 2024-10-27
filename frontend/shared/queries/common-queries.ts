@@ -256,6 +256,7 @@ export const logIn: MutationOptions<
 export const usersList = queryOptions({
   queryKey: ['all-users'],
   queryFn: ({ signal }) => apiClient.getUser({ signal }),
+  staleTime: 0,
 })
 
 export const logOut: MutationOptions = {

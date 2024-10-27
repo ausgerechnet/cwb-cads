@@ -6,20 +6,9 @@ import {
   useEffect,
   useCallback,
 } from 'react'
-import {
-  CrownIcon,
-  ArrowLeftToLineIcon,
-  BookIcon,
-  BookCopyIcon,
-  FormInputIcon,
-  WholeWordIcon,
-  MessageSquareIcon,
-  MessagesSquareIcon,
-} from 'lucide-react'
+import { ArrowLeftToLineIcon, BookIcon } from 'lucide-react'
 import { Outlet, createLazyFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
 
-import { usersList } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
 import { navigationMenuTriggerStyle } from '@cads/shared/components/ui/navigation-menu'
 import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
@@ -36,10 +25,6 @@ export const Route = createLazyFileRoute('/_app')({
 })
 
 function App() {
-  // TODO: Endpoint does not return user role right now.
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const isAdmin = useQuery(usersList)?.data?.username === 'admin'
   const [isSmall, setIsSmall] = useState(
     localStorage.getItem('small-menu') === 'true',
   )
@@ -74,29 +59,9 @@ function App() {
       <div className="border-r-1 border-r-muted sticky top-14 z-20 h-[calc(100svh-3.5rem)] border-r">
         <ScrollArea className="h-full">
           <nav className="flex h-full min-h-[calc(100svh-3.75rem)] flex-col gap-0.5 p-2">
-            <AppMenuLink to="/corpora" icon={BookIcon}>
-              Corpora
+            <AppMenuLink to="/start" icon={BookIcon}>
+              Start
             </AppMenuLink>
-            <AppMenuLink to="/subcorpora" icon={BookCopyIcon}>
-              Subcorpora
-            </AppMenuLink>
-            <AppMenuLink to="/queries" icon={FormInputIcon}>
-              Queries
-            </AppMenuLink>
-            <AppMenuLink to="/keyword-analysis" icon={WholeWordIcon}>
-              Keyword Analysis
-            </AppMenuLink>
-            <AppMenuLink to="/discoursemes" icon={MessageSquareIcon}>
-              Discoursemes
-            </AppMenuLink>
-            <AppMenuLink to="/constellations" icon={MessagesSquareIcon}>
-              Constellations
-            </AppMenuLink>
-            {isAdmin && (
-              <AppMenuLink to="/admin" icon={CrownIcon}>
-                Admin
-              </AppMenuLink>
-            )}
             <TooltipProvider disableHoverableContent={!isSmall}>
               <Tooltip open={!isSmall ? false : undefined}>
                 <TooltipTrigger asChild>
@@ -154,7 +119,7 @@ function AppMenuLink({
   const isSmall = localStorage.getItem('small-menu') === 'true'
   return (
     <TooltipProvider disableHoverableContent={!isSmall}>
-      <Tooltip open={isSmall === false ? false : undefined}>
+      <Tooltip open={!isSmall ? false : undefined}>
         <TooltipTrigger asChild>
           <Link
             preloadDelay={250}

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "npm run dev --workspace @cads/cads",
-    "build": "npm run build --workspace @cads/cads",
+    "dev:spheroscope": "npm run dev --workspace @cads/spheroscope",
+    "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "format": "npm run format --workspaces",
@@ -13,7 +14,8 @@
   },
   "workspaces": [
     "shared/",
-    "cads/"
+    "cads/",
+    "spheroscope/"
   ],
   "dependencies": {
     "prettier": "^3.3.3",

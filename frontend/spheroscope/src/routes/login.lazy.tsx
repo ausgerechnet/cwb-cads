@@ -49,7 +49,7 @@ function Login() {
     onSuccess: (...args) => {
       logIn?.onSuccess?.(...args)
       void navigate({
-        to: redirect || '/queries',
+        to: redirect || '/start',
       })
     },
   })
@@ -63,7 +63,7 @@ function Login() {
   useEffect(() => {
     if (isLoggedIn) {
       void navigate({
-        to: redirect || '/queries',
+        to: redirect || '/start',
       })
     }
   }, [isLoggedIn, navigate, redirect])
