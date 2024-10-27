@@ -1,244 +1,244 @@
-import { makeApi, Zodios, type ZodiosOptions } from "@zodios/core";
-import { z } from "zod";
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
+import { z } from 'zod'
 
 type BreakdownOut = {
-  id: number;
-  items: Array<BreakdownItemsOut>;
-  p: string;
-  query_id: number;
-};
+  id: number
+  items: Array<BreakdownItemsOut>
+  p: string
+  query_id: number
+}
 type BreakdownItemsOut = {
-  breakdown_id: number;
-  freq: number;
-  id: number;
-  ipm: number;
-  item: string;
-  nr_tokens: number;
-};
+  breakdown_id: number
+  freq: number
+  id: number
+  ipm: number
+  item: string
+  nr_tokens: number
+}
 type CollocationItemOut = {
-  item: string;
-  raw_scores: Array<CollocationScoreOut>;
-  scores: Array<CollocationScoreOut>;
-};
+  item: string
+  raw_scores: Array<CollocationScoreOut>
+  scores: Array<CollocationScoreOut>
+}
 type CollocationScoreOut = {
-  measure: string;
-  score: number;
-};
+  measure: string
+  score: number
+}
 type CollocationItemsOut = {
-  coordinates: Array<CoordinatesOut>;
-  id: number;
-  items: Array<CollocationItemOut>;
-  nr_items: number;
-  page_count: number;
-  page_number: number;
-  page_size: number;
-  sort_by: string;
-};
+  coordinates: Array<CoordinatesOut>
+  id: number
+  items: Array<CollocationItemOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
+}
 type CoordinatesOut = {
-  item: string;
-  semantic_map_id: number;
-  x: number;
-  x_user: number | null;
-  y: number;
-  y_user: number | null;
-};
+  item: string
+  semantic_map_id: number
+  x: number
+  x_user: number | null
+  y: number
+  y_user: number | null
+}
 type ConcordanceLineOut = {
-  discourseme_ranges: Array<DiscoursemeRangeOut>;
-  match_id: number;
-  structural: {};
-  tokens: Array<TokenOut>;
-};
+  discourseme_ranges: Array<DiscoursemeRangeOut>
+  match_id: number
+  structural: {}
+  tokens: Array<TokenOut>
+}
 type DiscoursemeRangeOut = {
-  discourseme_id: number;
-  end: number;
-  start: number;
-};
+  discourseme_id: number
+  end: number
+  start: number
+}
 type TokenOut = {
-  cpos: number;
-  is_filter_item: boolean;
-  offset: number;
-  out_of_window: boolean;
-  primary: string;
-  secondary: string;
-};
+  cpos: number
+  is_filter_item: boolean
+  offset: number
+  out_of_window: boolean
+  primary: string
+  secondary: string
+}
 type ConcordanceOut = {
-  lines: Array<ConcordanceLineOut>;
-  nr_lines: number;
-  page_count: number;
-  page_number: number;
-  page_size: number;
-};
+  lines: Array<ConcordanceLineOut>
+  nr_lines: number
+  page_count: number
+  page_number: number
+  page_size: number
+}
 type ConstellationCollocationItemsOut = {
-  coordinates: Array<CoordinatesOut>;
-  discourseme_coordinates: Array<DiscoursemeCoordinatesOut>;
-  discourseme_scores: Array<DiscoursemeScoresOut>;
-  id: number;
-  items: Array<CollocationItemOut>;
-  nr_items: number;
-  page_count: number;
-  page_number: number;
-  page_size: number;
-  sort_by: string;
-};
+  coordinates: Array<CoordinatesOut>
+  discourseme_coordinates: Array<DiscoursemeCoordinatesOut>
+  discourseme_scores: Array<DiscoursemeScoresOut>
+  id: number
+  items: Array<CollocationItemOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
+}
 type DiscoursemeCoordinatesOut = {
-  discourseme_id: number;
-  semantic_map_id: number;
-  x: number;
-  x_user: number | null;
-  y: number;
-  y_user: number | null;
-};
+  discourseme_id: number
+  semantic_map_id: number
+  x: number
+  x_user: number | null
+  y: number
+  y_user: number | null
+}
 type DiscoursemeScoresOut = {
-  discourseme_id: number;
-  global_scores: Array<CollocationScoreOut>;
-  item_scores: Array<CollocationItemOut>;
-  unigram_item_scores: Array<CollocationItemOut>;
-};
+  discourseme_id: number
+  global_scores: Array<CollocationScoreOut>
+  item_scores: Array<CollocationItemOut>
+  unigram_item_scores: Array<CollocationItemOut>
+}
 type ConstellationDescriptionOut = {
-  corpus_id: number;
-  discourseme_descriptions: Array<DiscoursemeDescriptionOut>;
-  id: number;
-  match_strategy: string;
-  s: string;
-  semantic_map_id: number | null;
-  subcorpus_id: number | null;
-};
+  corpus_id: number
+  discourseme_descriptions: Array<DiscoursemeDescriptionOut>
+  id: number
+  match_strategy: string
+  s: string
+  semantic_map_id: number | null
+  subcorpus_id: number | null
+}
 type DiscoursemeDescriptionOut = {
-  corpus_id: number;
-  discourseme_id: number;
-  id: number;
-  items: Array<DiscoursemeItem>;
-  match_strategy: string;
-  query_id: number;
-  s: string;
-  subcorpus_id: number | null;
-};
+  corpus_id: number
+  discourseme_id: number
+  id: number
+  items: Array<DiscoursemeItem>
+  match_strategy: string
+  query_id: number
+  s: string
+  subcorpus_id: number | null
+}
 type DiscoursemeItem = Partial<{
-  cqp_query: string | null;
-  p: string | null;
-  surface: string | null;
-}>;
+  cqp_query: string | null
+  p: string | null
+  surface: string | null
+}>
 type ConstellationDescriptionOutUpdate = Partial<{
-  corpus_id: number;
-  discourseme_descriptions: Array<DiscoursemeDescriptionOut>;
-  id: number;
-  match_strategy: string;
-  s: string;
-  semantic_map_id: number | null;
-  subcorpus_id: number | null;
-}>;
+  corpus_id: number
+  discourseme_descriptions: Array<DiscoursemeDescriptionOut>
+  id: number
+  match_strategy: string
+  s: string
+  semantic_map_id: number | null
+  subcorpus_id: number | null
+}>
 type ConstellationKeywordItemsOut = {
-  coordinates: Array<CoordinatesOut>;
-  discourseme_coordinates: Array<DiscoursemeCoordinatesOut>;
-  discourseme_scores: Array<DiscoursemeScoresOut>;
-  id: number;
-  items: Array<KeywordItemOut>;
-  nr_items: number;
-  page_count: number;
-  page_number: number;
-  page_size: number;
-  sort_by: string;
-};
+  coordinates: Array<CoordinatesOut>
+  discourseme_coordinates: Array<DiscoursemeCoordinatesOut>
+  discourseme_scores: Array<DiscoursemeScoresOut>
+  id: number
+  items: Array<KeywordItemOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
+}
 type KeywordItemOut = {
-  item: string;
-  raw_scores: Array<KeywordScoreOut>;
-  scores: Array<KeywordScoreOut>;
-};
+  item: string
+  raw_scores: Array<KeywordScoreOut>
+  scores: Array<KeywordScoreOut>
+}
 type KeywordScoreOut = {
-  measure: string;
-  score: number;
-};
+  measure: string
+  score: number
+}
 type ConstellationOut = {
-  comment: string | null;
-  discoursemes: Array<DiscoursemeOut>;
-  id: number;
-  name: string | null;
-};
+  comment: string | null
+  discoursemes: Array<DiscoursemeOut>
+  id: number
+  name: string | null
+}
 type DiscoursemeOut = {
-  comment: string | null;
-  id: number;
-  name: string | null;
-  template: Array<DiscoursemeItem>;
-};
+  comment: string | null
+  id: number
+  name: string | null
+  template: Array<DiscoursemeItem>
+}
 type DiscoursemeDescriptionIn = {
-  corpus_id: number;
-  items?: (Array<DiscoursemeItem> | null) | undefined;
-  match_strategy?: ("longest" | "shortest" | "standard") | undefined;
-  s?: string | undefined;
-  subcorpus_id?: (number | null) | undefined;
-};
+  corpus_id: number
+  items?: (Array<DiscoursemeItem> | null) | undefined
+  match_strategy?: ('longest' | 'shortest' | 'standard') | undefined
+  s?: string | undefined
+  subcorpus_id?: (number | null) | undefined
+}
 type DiscoursemeIn = Partial<{
-  comment: string | null;
-  name: string | null;
-  template: Array<DiscoursemeItem> | null;
-}>;
+  comment: string | null
+  name: string | null
+  template: Array<DiscoursemeItem> | null
+}>
 type DiscoursemeInUpdate = Partial<{
-  comment: string | null;
-  name: string | null;
-  template: Array<DiscoursemeItem> | null;
-}>;
+  comment: string | null
+  name: string | null
+  template: Array<DiscoursemeItem> | null
+}>
 type KeywordItemsOut = {
-  coordinates: Array<CoordinatesOut>;
-  id: number;
-  items: Array<KeywordItemOut>;
-  nr_items: number;
-  page_count: number;
-  page_number: number;
-  page_size: number;
-  sort_by: string;
-};
+  coordinates: Array<CoordinatesOut>
+  id: number
+  items: Array<KeywordItemOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
+}
 type MetaOut = {
-  annotations: Array<AnnotationsOut>;
-  level: string;
-};
+  annotations: Array<AnnotationsOut>
+  level: string
+}
 type AnnotationsOut = {
-  key: string;
-  value_type: "datetime" | "numeric" | "boolean" | "unicode";
-};
+  key: string
+  value_type: 'datetime' | 'numeric' | 'boolean' | 'unicode'
+}
 type SlotQueryIn = {
-  corpus_id: number;
-  corrections?: Array<AnchorCorrection> | undefined;
-  cqp_query?: string | undefined;
-  match_strategy?: ("longest" | "shortest" | "standard") | undefined;
-  name?: string | undefined;
-  slots?: Array<AnchorSlot> | undefined;
-};
+  corpus_id: number
+  corrections?: Array<AnchorCorrection> | undefined
+  cqp_query?: string | undefined
+  match_strategy?: ('longest' | 'shortest' | 'standard') | undefined
+  name?: string | undefined
+  slots?: Array<AnchorSlot> | undefined
+}
 type AnchorCorrection = Partial<{
-  anchor: string;
-  correction: number;
-}>;
+  anchor: string
+  correction: number
+}>
 type AnchorSlot = Partial<{
-  end: string;
-  slot: string;
-  start: string;
-}>;
+  end: string
+  slot: string
+  start: string
+}>
 type SlotQueryOut = Partial<{
-  corpus_id: number;
-  corrections: Array<AnchorCorrection>;
-  cqp_query: string;
-  id: number;
-  match_strategy: "longest" | "shortest" | "standard";
-  name: string;
-  slots: Array<AnchorSlot>;
-}>;
+  corpus_id: number
+  corrections: Array<AnchorCorrection>
+  cqp_query: string
+  id: number
+  match_strategy: 'longest' | 'shortest' | 'standard'
+  name: string
+  slots: Array<AnchorSlot>
+}>
 type SubCorpusOut = {
-  corpus: CorpusOut;
-  description: string | null;
-  id: number;
-  name: string | null;
-  nqr_cqp: string | null;
-};
+  corpus: CorpusOut
+  description: string | null
+  id: number
+  name: string | null
+  nqr_cqp: string | null
+}
 type CorpusOut = {
-  cwb_id: string;
-  description: string | null;
-  id: number;
-  language: string | null;
-  name: string | null;
-  p_atts: Array<string>;
-  register: string | null;
-  s_annotations: Array<string>;
-  s_atts: Array<string>;
-};
+  cwb_id: string
+  description: string | null
+  id: number
+  language: string | null
+  name: string | null
+  p_atts: Array<string>
+  register: string | null
+  s_annotations: Array<string>
+  s_atts: Array<string>
+}
 
 const CollocationOut = z
   .object({
@@ -251,11 +251,11 @@ const CollocationOut = z
     semantic_map_id: z.number().int().nullable(),
     window: z.number().int(),
   })
-  .passthrough();
+  .passthrough()
 const HTTPError = z
   .object({ detail: z.object({}).partial().passthrough(), message: z.string() })
   .partial()
-  .passthrough();
+  .passthrough()
 const CoordinatesOut: z.ZodType<CoordinatesOut> = z
   .object({
     item: z.string(),
@@ -265,17 +265,17 @@ const CoordinatesOut: z.ZodType<CoordinatesOut> = z
     y: z.number(),
     y_user: z.number().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const CollocationScoreOut: z.ZodType<CollocationScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
-  .passthrough();
+  .passthrough()
 const CollocationItemOut: z.ZodType<CollocationItemOut> = z
   .object({
     item: z.string(),
     raw_scores: z.array(CollocationScoreOut),
     scores: z.array(CollocationScoreOut),
   })
-  .passthrough();
+  .passthrough()
 const CollocationItemsOut: z.ZodType<CollocationItemsOut> = z
   .object({
     coordinates: z.array(CoordinatesOut),
@@ -287,13 +287,13 @@ const CollocationItemsOut: z.ZodType<CollocationItemsOut> = z
     page_size: z.number().int(),
     sort_by: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const ValidationError = z
   .object({
     detail: z
       .object({
-        "<location>": z
-          .object({ "<field_name>": z.array(z.string()) })
+        '<location>': z
+          .object({ '<field_name>': z.array(z.string()) })
           .partial()
           .passthrough(),
       })
@@ -302,10 +302,10 @@ const ValidationError = z
     message: z.string(),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const SemanticMapOut = z
   .object({ id: z.number().int(), method: z.string(), p: z.string() })
-  .passthrough();
+  .passthrough()
 const CorpusOut: z.ZodType<CorpusOut> = z
   .object({
     cwb_id: z.string(),
@@ -318,30 +318,30 @@ const CorpusOut: z.ZodType<CorpusOut> = z
     s_annotations: z.array(z.string()),
     s_atts: z.array(z.string()),
   })
-  .passthrough();
+  .passthrough()
 const AnnotationsOut: z.ZodType<AnnotationsOut> = z
   .object({
     key: z.string(),
-    value_type: z.enum(["datetime", "numeric", "boolean", "unicode"]),
+    value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
-  .passthrough();
+  .passthrough()
 const MetaOut: z.ZodType<MetaOut> = z
   .object({ annotations: z.array(AnnotationsOut), level: z.string() })
-  .passthrough();
+  .passthrough()
 const MetaIn = z
   .object({
     key: z.string(),
     level: z.string(),
-    value_type: z.enum(["datetime", "numeric", "boolean", "unicode"]),
+    value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
-  .passthrough();
+  .passthrough()
 const MetaFrequenciesOut = z
   .object({
     nr_spans: z.number().int(),
     nr_tokens: z.number().int(),
     value: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
   .object({
     corpus: CorpusOut,
@@ -350,7 +350,7 @@ const SubCorpusOut: z.ZodType<SubCorpusOut> = z
     name: z.string().nullable(),
     nqr_cqp: z.string().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const SubCorpusIn = z
   .object({
     create_nqr: z.boolean().optional().default(true),
@@ -362,7 +362,7 @@ const SubCorpusIn = z
     values_numeric: z.array(z.number()).nullish(),
     values_unicode: z.array(z.string()).nullish(),
   })
-  .passthrough();
+  .passthrough()
 const KeywordOut = z
   .object({
     corpus_id: z.number().int(),
@@ -381,31 +381,31 @@ const KeywordOut = z
     subcorpus_name: z.string().nullable(),
     subcorpus_name_reference: z.string().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const KeywordIn = z
   .object({
     corpus_id: z.number().int(),
     corpus_id_reference: z.number().int(),
     min_freq: z.number().int().optional().default(3),
-    p: z.string().optional().default("lemma"),
-    p_reference: z.string().optional().default("lemma"),
+    p: z.string().optional().default('lemma'),
+    p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish().default(null),
     semantic_map_init: z.boolean().optional().default(true),
     sub_vs_rest: z.boolean().optional().default(true),
     subcorpus_id: z.number().int().nullish().default(null),
     subcorpus_id_reference: z.number().int().nullish().default(null),
   })
-  .passthrough();
+  .passthrough()
 const KeywordScoreOut: z.ZodType<KeywordScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
-  .passthrough();
+  .passthrough()
 const KeywordItemOut: z.ZodType<KeywordItemOut> = z
   .object({
     item: z.string(),
     raw_scores: z.array(KeywordScoreOut),
     scores: z.array(KeywordScoreOut),
   })
-  .passthrough();
+  .passthrough()
 const KeywordItemsOut: z.ZodType<KeywordItemsOut> = z
   .object({
     coordinates: z.array(CoordinatesOut),
@@ -417,7 +417,7 @@ const KeywordItemsOut: z.ZodType<KeywordItemsOut> = z
     page_size: z.number().int(),
     sort_by: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const DiscoursemeItem: z.ZodType<DiscoursemeItem> = z
   .object({
     cqp_query: z.string().nullable(),
@@ -425,7 +425,7 @@ const DiscoursemeItem: z.ZodType<DiscoursemeItem> = z
     surface: z.string().nullable(),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
   .object({
     comment: z.string().nullable(),
@@ -433,7 +433,7 @@ const DiscoursemeOut: z.ZodType<DiscoursemeOut> = z
     name: z.string().nullable(),
     template: z.array(DiscoursemeItem),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationOut: z.ZodType<ConstellationOut> = z
   .object({
     comment: z.string().nullable(),
@@ -441,7 +441,7 @@ const ConstellationOut: z.ZodType<ConstellationOut> = z
     id: z.number().int(),
     name: z.string().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationIn = z
   .object({
     comment: z.string().nullable(),
@@ -449,7 +449,7 @@ const ConstellationIn = z
     name: z.string().nullable(),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const ConstellationInUpdate = z
   .object({
     comment: z.string().nullable(),
@@ -457,7 +457,7 @@ const ConstellationInUpdate = z
     name: z.string().nullable(),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
   .object({
     corpus_id: z.number().int(),
@@ -469,7 +469,7 @@ const DiscoursemeDescriptionOut: z.ZodType<DiscoursemeDescriptionOut> = z
     s: z.string(),
     subcorpus_id: z.number().int().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
   .object({
     corpus_id: z.number().int(),
@@ -480,29 +480,29 @@ const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
     semantic_map_id: z.number().int().nullable(),
     subcorpus_id: z.number().int().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationDescriptionIn = z
   .object({
     corpus_id: z.number().int(),
     match_strategy: z
-      .enum(["longest", "shortest", "standard"])
+      .enum(['longest', 'shortest', 'standard'])
       .optional()
-      .default("longest"),
+      .default('longest'),
     overlap: z
-      .enum(["partial", "full", "match", "matchend"])
+      .enum(['partial', 'full', 'match', 'matchend'])
       .optional()
-      .default("partial"),
+      .default('partial'),
     s: z.string().optional(),
     semantic_map_id: z.number().int().nullish().default(null),
     subcorpus_id: z.number().int().optional(),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationDiscoursemeDescriptionIn = z
   .object({
     discourseme_description_ids: z.array(z.number().int()).default([]),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUpdate> =
   z
     .object({
@@ -515,7 +515,7 @@ const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUp
       subcorpus_id: z.number().int().nullable(),
     })
     .partial()
-    .passthrough();
+    .passthrough()
 const ConstellationCollocationOut = z
   .object({
     filter_discourseme_ids: z.array(z.number().int()),
@@ -529,26 +529,26 @@ const ConstellationCollocationOut = z
     semantic_map_id: z.number().int().nullable(),
     window: z.number().int(),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationCollocationIn = z
   .object({
     filter_discourseme_ids: z.array(z.number().int()).optional().default([]),
     filter_item: z.string().nullish(),
-    filter_item_p_att: z.string().optional().default("lemma"),
+    filter_item_p_att: z.string().optional().default('lemma'),
     filter_overlap: z
-      .enum(["partial", "full", "match", "matchend"])
+      .enum(['partial', 'full', 'match', 'matchend'])
       .optional()
-      .default("partial"),
+      .default('partial'),
     focus_discourseme_id: z.number().int(),
     include_negative: z.boolean().optional().default(false),
-    marginals: z.enum(["local", "global"]).optional().default("local"),
+    marginals: z.enum(['local', 'global']).optional().default('local'),
     p: z.string(),
     s_break: z.string().optional(),
     semantic_map_id: z.number().int().nullish().default(null),
     semantic_map_init: z.boolean().optional().default(true),
     window: z.number().int().optional().default(10),
   })
-  .passthrough();
+  .passthrough()
 const DiscoursemeCoordinatesOut: z.ZodType<DiscoursemeCoordinatesOut> = z
   .object({
     discourseme_id: z.number().int(),
@@ -558,7 +558,7 @@ const DiscoursemeCoordinatesOut: z.ZodType<DiscoursemeCoordinatesOut> = z
     y: z.number(),
     y_user: z.number().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const DiscoursemeScoresOut: z.ZodType<DiscoursemeScoresOut> = z
   .object({
     discourseme_id: z.number().int(),
@@ -566,7 +566,7 @@ const DiscoursemeScoresOut: z.ZodType<DiscoursemeScoresOut> = z
     item_scores: z.array(CollocationItemOut),
     unigram_item_scores: z.array(CollocationItemOut),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationCollocationItemsOut: z.ZodType<ConstellationCollocationItemsOut> =
   z
     .object({
@@ -581,14 +581,14 @@ const ConstellationCollocationItemsOut: z.ZodType<ConstellationCollocationItemsO
       page_size: z.number().int(),
       sort_by: z.string(),
     })
-    .passthrough();
+    .passthrough()
 const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
   .object({
     discourseme_id: z.number().int(),
     end: z.number().int(),
     start: z.number().int(),
   })
-  .passthrough();
+  .passthrough()
 const TokenOut: z.ZodType<TokenOut> = z
   .object({
     cpos: z.number().int(),
@@ -598,7 +598,7 @@ const TokenOut: z.ZodType<TokenOut> = z
     primary: z.string(),
     secondary: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
   .object({
     discourseme_ranges: z.array(DiscoursemeRangeOut),
@@ -606,7 +606,7 @@ const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
     structural: z.object({}).partial().passthrough(),
     tokens: z.array(TokenOut),
   })
-  .passthrough();
+  .passthrough()
 const ConcordanceOut: z.ZodType<ConcordanceOut> = z
   .object({
     lines: z.array(ConcordanceLineOut),
@@ -615,18 +615,18 @@ const ConcordanceOut: z.ZodType<ConcordanceOut> = z
     page_number: z.number().int(),
     page_size: z.number().int(),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationKeywordIn = z
   .object({
     corpus_id_reference: z.number().int(),
     min_freq: z.number().int().optional().default(3),
-    p: z.string().optional().default("lemma"),
-    p_reference: z.string().optional().default("lemma"),
+    p: z.string().optional().default('lemma'),
+    p_reference: z.string().optional().default('lemma'),
     semantic_map_id: z.number().int().nullish().default(null),
     sub_vs_rest: z.boolean().optional().default(true),
     subcorpus_id_reference: z.number().int().nullish().default(null),
   })
-  .passthrough();
+  .passthrough()
 const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
   .object({
     coordinates: z.array(CoordinatesOut),
@@ -640,14 +640,14 @@ const ConstellationKeywordItemsOut: z.ZodType<ConstellationKeywordItemsOut> = z
     page_size: z.number().int(),
     sort_by: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const DiscoursemeCoordinatesIn = z
   .object({
     discourseme_id: z.number().int(),
     x_user: z.number().nullable(),
     y_user: z.number().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
   .object({
     comment: z.string().nullable(),
@@ -655,7 +655,7 @@ const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
     template: z.array(DiscoursemeItem).nullable().default([]),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
   .object({
     comment: z.string().nullable(),
@@ -663,19 +663,19 @@ const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
     template: z.array(DiscoursemeItem).nullable().default([]),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const DiscoursemeDescriptionIn: z.ZodType<DiscoursemeDescriptionIn> = z
   .object({
     corpus_id: z.number().int(),
     items: z.array(DiscoursemeItem).nullish().default([]),
     match_strategy: z
-      .enum(["longest", "shortest", "standard"])
+      .enum(['longest', 'shortest', 'standard'])
       .optional()
-      .default("longest"),
+      .default('longest'),
     s: z.string().optional(),
     subcorpus_id: z.number().int().nullish(),
   })
-  .passthrough();
+  .passthrough()
 const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
   .object({
     breakdown_id: z.number().int(),
@@ -685,7 +685,7 @@ const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
     item: z.string(),
     nr_tokens: z.number().int(),
   })
-  .passthrough();
+  .passthrough()
 const BreakdownOut: z.ZodType<BreakdownOut> = z
   .object({
     id: z.number().int(),
@@ -693,7 +693,7 @@ const BreakdownOut: z.ZodType<BreakdownOut> = z
     p: z.string(),
     query_id: z.number().int(),
   })
-  .passthrough();
+  .passthrough()
 const DiscoursemeDescriptionSimilarOut = z
   .object({
     freq: z.number().int(),
@@ -701,7 +701,7 @@ const DiscoursemeDescriptionSimilarOut = z
     similarity: z.number(),
     surface: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const QueryOut = z
   .object({
     corpus_id: z.number().int(),
@@ -713,16 +713,16 @@ const QueryOut = z
     subcorpus_id: z.number().int().nullable(),
     subcorpus_name: z.string().nullable(),
   })
-  .passthrough();
+  .passthrough()
 const QueryIn = z
   .object({
     corpus_id: z.number().int(),
     cqp_query: z.string(),
-    match_strategy: z.enum(["longest", "shortest", "standard"]).optional(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().nullish(),
   })
-  .passthrough();
+  .passthrough()
 const QueryAssistedIn = z
   .object({
     corpus_id: z.number().int(),
@@ -730,12 +730,12 @@ const QueryAssistedIn = z
     ignore_case: z.boolean().optional(),
     ignore_diacritics: z.boolean().optional(),
     items: z.array(z.string()),
-    match_strategy: z.enum(["longest", "shortest", "standard"]).optional(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     p: z.string(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().nullish(),
   })
-  .passthrough();
+  .passthrough()
 const QueryMetaOut = z
   .object({
     frequency: z.number().int(),
@@ -745,55 +745,55 @@ const QueryMetaOut = z
     nr_tokens: z.number().int(),
     value: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const SemanticMapIn = z
   .object({
     collocation_ids: z.array(z.number().int()).default([]),
     keyword_ids: z.array(z.number().int()).default([]),
-    method: z.enum(["tsne", "umap"]).default("tsne"),
+    method: z.enum(['tsne', 'umap']).default('tsne'),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const CoordinatesIn = z
   .object({
     item: z.string(),
     x_user: z.number().nullish().default(null),
     y_user: z.number().nullish().default(null),
   })
-  .passthrough();
+  .passthrough()
 const AnchorCorrection: z.ZodType<AnchorCorrection> = z
   .object({ anchor: z.string(), correction: z.number().int() })
   .partial()
-  .passthrough();
+  .passthrough()
 const AnchorSlot: z.ZodType<AnchorSlot> = z
   .object({ end: z.string(), slot: z.string(), start: z.string() })
   .partial()
-  .passthrough();
+  .passthrough()
 const SlotQueryOut: z.ZodType<SlotQueryOut> = z
   .object({
     corpus_id: z.number().int(),
     corrections: z.array(AnchorCorrection),
     cqp_query: z.string(),
     id: z.number().int(),
-    match_strategy: z.enum(["longest", "shortest", "standard"]),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']),
     name: z.string(),
     slots: z.array(AnchorSlot),
   })
   .partial()
-  .passthrough();
+  .passthrough()
 const SlotQueryIn: z.ZodType<SlotQueryIn> = z
   .object({
     corpus_id: z.number().int(),
     corrections: z.array(AnchorCorrection).optional(),
     cqp_query: z.string().optional(),
-    match_strategy: z.enum(["longest", "shortest", "standard"]).optional(),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     name: z.string().optional(),
     slots: z.array(AnchorSlot).optional(),
   })
-  .passthrough();
+  .passthrough()
 const UserOut = z
   .object({ id: z.number().int(), username: z.string() })
-  .passthrough();
+  .passthrough()
 const UserRegister = z
   .object({
     confirm_password: z.string(),
@@ -803,23 +803,21 @@ const UserRegister = z
     password: z.string(),
     username: z.string(),
   })
-  .passthrough();
+  .passthrough()
 const UserIn = z
   .object({ password: z.string(), username: z.string() })
-  .passthrough();
+  .passthrough()
 const HTTPTokenOut = z
   .object({ access_token: z.string(), refresh_token: z.string() })
-  .passthrough();
-const HTTPRefreshTokenIn = z
-  .object({ refresh_token: z.string() })
-  .passthrough();
+  .passthrough()
+const HTTPRefreshTokenIn = z.object({ refresh_token: z.string() }).passthrough()
 const UserUpdate = z
   .object({
     confirm_password: z.string(),
     new_password: z.string(),
     old_password: z.string(),
   })
-  .passthrough();
+  .passthrough()
 
 export const schemas = {
   CollocationOut,
@@ -886,21 +884,21 @@ export const schemas = {
   HTTPTokenOut,
   HTTPRefreshTokenIn,
   UserUpdate,
-};
+}
 
 const endpoints = makeApi([
   {
-    method: "get",
-    path: "/",
-    alias: "get",
-    requestFormat: "json",
+    method: 'get',
+    path: '/',
+    alias: 'get',
+    requestFormat: 'json',
     response: z.unknown(),
   },
   {
-    method: "get",
-    path: "/collocation/",
-    alias: "getCollocation",
-    requestFormat: "json",
+    method: 'get',
+    path: '/collocation/',
+    alias: 'getCollocation',
+    requestFormat: 'json',
     response: z.array(CollocationOut),
     errors: [
       {
@@ -911,14 +909,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "delete",
-    path: "/collocation/:id/",
-    alias: "deleteCollocationId",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/collocation/:id/',
+    alias: 'deleteCollocationId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -937,14 +935,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/collocation/:id/",
-    alias: "getCollocationId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/collocation/:id/',
+    alias: 'getCollocationId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -963,56 +961,56 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/collocation/:id/items",
-    alias: "getCollocationIditems",
-    requestFormat: "json",
+    method: 'get',
+    path: '/collocation/:id/items',
+    alias: 'getCollocationIditems',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "sort_order",
-        type: "Query",
+        name: 'sort_order',
+        type: 'Query',
         schema: z
-          .enum(["ascending", "descending"])
+          .enum(['ascending', 'descending'])
           .optional()
-          .default("descending"),
+          .default('descending'),
       },
       {
-        name: "sort_by",
-        type: "Query",
+        name: 'sort_by',
+        type: 'Query',
         schema: z
           .enum([
-            "conservative_log_ratio",
-            "O11",
-            "E11",
-            "ipm",
-            "ipm_expected",
-            "log_likelihood",
-            "z_score",
-            "t_score",
-            "simple_ll",
-            "dice",
-            "log_ratio",
-            "min_sensitivity",
-            "liddell",
-            "mutual_information",
-            "local_mutual_information",
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
           ])
           .optional()
-          .default("conservative_log_ratio"),
+          .default('conservative_log_ratio'),
       },
       {
-        name: "page_size",
-        type: "Query",
+        name: 'page_size',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "page_number",
-        type: "Query",
+        name: 'page_number',
+        type: 'Query',
         schema: z.number().int().optional().default(1),
       },
     ],
@@ -1036,25 +1034,25 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/collocation/:id/semantic-map/",
-    alias: "postCollocationIdsemanticMap",
-    requestFormat: "json",
+    method: 'post',
+    path: '/collocation/:id/semantic-map/',
+    alias: 'postCollocationIdsemanticMap',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "semantic_map_id",
-        type: "Query",
+        name: 'semantic_map_id',
+        type: 'Query',
         schema: z.number().int().nullish().default(null),
       },
       {
-        name: "method",
-        type: "Query",
-        schema: z.enum(["tsne", "umap"]).optional().default("tsne"),
+        name: 'method',
+        type: 'Query',
+        schema: z.enum(['tsne', 'umap']).optional().default('tsne'),
       },
     ],
     response: SemanticMapOut,
@@ -1077,10 +1075,10 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/corpus/",
-    alias: "getCorpus",
-    requestFormat: "json",
+    method: 'get',
+    path: '/corpus/',
+    alias: 'getCorpus',
+    requestFormat: 'json',
     response: z.array(CorpusOut),
     errors: [
       {
@@ -1091,14 +1089,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/corpus/:id",
-    alias: "getCorpusId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/corpus/:id',
+    alias: 'getCorpusId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1117,14 +1115,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/corpus/:id/meta/",
-    alias: "getCorpusIdmeta",
-    requestFormat: "json",
+    method: 'get',
+    path: '/corpus/:id/meta/',
+    alias: 'getCorpusIdmeta',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1143,19 +1141,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "put",
-    path: "/corpus/:id/meta/",
-    alias: "putCorpusIdmeta",
-    requestFormat: "json",
+    method: 'put',
+    path: '/corpus/:id/meta/',
+    alias: 'putCorpusIdmeta',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: MetaIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1179,24 +1177,24 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/corpus/:id/meta/frequencies",
-    alias: "getCorpusIdmetafrequencies",
-    requestFormat: "json",
+    method: 'get',
+    path: '/corpus/:id/meta/frequencies',
+    alias: 'getCorpusIdmetafrequencies',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "level",
-        type: "Query",
+        name: 'level',
+        type: 'Query',
         schema: z.string(),
       },
       {
-        name: "key",
-        type: "Query",
+        name: 'key',
+        type: 'Query',
         schema: z.string(),
       },
     ],
@@ -1220,14 +1218,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/corpus/:id/subcorpus/",
-    alias: "getCorpusIdsubcorpus",
-    requestFormat: "json",
+    method: 'get',
+    path: '/corpus/:id/subcorpus/',
+    alias: 'getCorpusIdsubcorpus',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1246,19 +1244,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "put",
-    path: "/corpus/:id/subcorpus/",
-    alias: "putCorpusIdsubcorpus",
-    requestFormat: "json",
+    method: 'put',
+    path: '/corpus/:id/subcorpus/',
+    alias: 'putCorpusIdsubcorpus',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: SubCorpusIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1282,19 +1280,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/corpus/:id/subcorpus/:subcorpus_id",
-    alias: "getCorpusIdsubcorpusSubcorpus_id",
-    requestFormat: "json",
+    method: 'get',
+    path: '/corpus/:id/subcorpus/:subcorpus_id',
+    alias: 'getCorpusIdsubcorpusSubcorpus_id',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "subcorpus_id",
-        type: "Path",
+        name: 'subcorpus_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1313,17 +1311,17 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/hello",
-    alias: "getHello",
-    requestFormat: "json",
+    method: 'get',
+    path: '/hello',
+    alias: 'getHello',
+    requestFormat: 'json',
     response: z.unknown(),
   },
   {
-    method: "get",
-    path: "/keyword/",
-    alias: "getKeyword",
-    requestFormat: "json",
+    method: 'get',
+    path: '/keyword/',
+    alias: 'getKeyword',
+    requestFormat: 'json',
     response: z.array(KeywordOut),
     errors: [
       {
@@ -1334,14 +1332,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/keyword/",
-    alias: "postKeyword",
-    requestFormat: "json",
+    method: 'post',
+    path: '/keyword/',
+    alias: 'postKeyword',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: KeywordIn,
       },
     ],
@@ -1360,14 +1358,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "delete",
-    path: "/keyword/:id/",
-    alias: "deleteKeywordId",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/keyword/:id/',
+    alias: 'deleteKeywordId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1386,14 +1384,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/keyword/:id/",
-    alias: "getKeywordId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/keyword/:id/',
+    alias: 'getKeywordId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1412,56 +1410,56 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/keyword/:id/items",
-    alias: "getKeywordIditems",
-    requestFormat: "json",
+    method: 'get',
+    path: '/keyword/:id/items',
+    alias: 'getKeywordIditems',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "sort_order",
-        type: "Query",
+        name: 'sort_order',
+        type: 'Query',
         schema: z
-          .enum(["ascending", "descending"])
+          .enum(['ascending', 'descending'])
           .optional()
-          .default("descending"),
+          .default('descending'),
       },
       {
-        name: "sort_by",
-        type: "Query",
+        name: 'sort_by',
+        type: 'Query',
         schema: z
           .enum([
-            "conservative_log_ratio",
-            "O11",
-            "E11",
-            "ipm",
-            "ipm_expected",
-            "log_likelihood",
-            "z_score",
-            "t_score",
-            "simple_ll",
-            "dice",
-            "log_ratio",
-            "min_sensitivity",
-            "liddell",
-            "mutual_information",
-            "local_mutual_information",
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
           ])
           .optional()
-          .default("conservative_log_ratio"),
+          .default('conservative_log_ratio'),
       },
       {
-        name: "page_size",
-        type: "Query",
+        name: 'page_size',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "page_number",
-        type: "Query",
+        name: 'page_number',
+        type: 'Query',
         schema: z.number().int().optional().default(1),
       },
     ],
@@ -1485,25 +1483,25 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/keyword/:id/semantic-map/",
-    alias: "postKeywordIdsemanticMap",
-    requestFormat: "json",
+    method: 'post',
+    path: '/keyword/:id/semantic-map/',
+    alias: 'postKeywordIdsemanticMap',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "semantic_map_id",
-        type: "Query",
+        name: 'semantic_map_id',
+        type: 'Query',
         schema: z.number().int().nullish().default(null),
       },
       {
-        name: "method",
-        type: "Query",
-        schema: z.enum(["tsne", "umap"]).optional().default("tsne"),
+        name: 'method',
+        type: 'Query',
+        schema: z.enum(['tsne', 'umap']).optional().default('tsne'),
       },
     ],
     response: KeywordOut,
@@ -1526,10 +1524,10 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/",
-    alias: "getMmdaconstellation",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/constellation/',
+    alias: 'getMmdaconstellation',
+    requestFormat: 'json',
     response: z.array(ConstellationOut),
     errors: [
       {
@@ -1540,14 +1538,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/mmda/constellation/",
-    alias: "postMmdaconstellation",
-    requestFormat: "json",
+    method: 'post',
+    path: '/mmda/constellation/',
+    alias: 'postMmdaconstellation',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationIn,
       },
     ],
@@ -1566,14 +1564,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "delete",
-    path: "/mmda/constellation/:id",
-    alias: "deleteMmdaconstellationId",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/mmda/constellation/:id',
+    alias: 'deleteMmdaconstellationId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1592,14 +1590,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id",
-    alias: "getMmdaconstellationId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/constellation/:id',
+    alias: 'getMmdaconstellationId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1618,19 +1616,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/constellation/:id",
-    alias: "patchMmdaconstellationId",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/constellation/:id',
+    alias: 'patchMmdaconstellationId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationInUpdate,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1654,19 +1652,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/constellation/:id/add-discourseme",
-    alias: "patchMmdaconstellationIdaddDiscourseme",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/constellation/:id/add-discourseme',
+    alias: 'patchMmdaconstellationIdaddDiscourseme',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationInUpdate,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1690,14 +1688,14 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/",
-    alias: "getMmdaconstellationIddescription",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/',
+    alias: 'getMmdaconstellationIddescription',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1716,19 +1714,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/mmda/constellation/:id/description/",
-    alias: "postMmdaconstellationIddescription",
-    requestFormat: "json",
+    method: 'post',
+    path: '/mmda/constellation/:id/description/',
+    alias: 'postMmdaconstellationIddescription',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationDescriptionIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1752,19 +1750,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "delete",
-    path: "/mmda/constellation/:id/description/:description_id/",
-    alias: "deleteMmdaconstellationIddescriptionDescription_id",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/mmda/constellation/:id/description/:description_id/',
+    alias: 'deleteMmdaconstellationIddescriptionDescription_id',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1783,19 +1781,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/:description_id/",
-    alias: "getMmdaconstellationIddescriptionDescription_id",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/',
+    alias: 'getMmdaconstellationIddescriptionDescription_id',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1814,24 +1812,24 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/constellation/:id/description/:description_id/add-discourseme",
-    alias: "patchMmdaconstellationIddescriptionDescription_idaddDiscourseme",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/constellation/:id/description/:description_id/add-discourseme',
+    alias: 'patchMmdaconstellationIddescriptionDescription_idaddDiscourseme',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationDiscoursemeDescriptionIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1855,19 +1853,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/:description_id/collocation/",
-    alias: "getMmdaconstellationIddescriptionDescription_idcollocation",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/',
+    alias: 'getMmdaconstellationIddescriptionDescription_idcollocation',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1886,24 +1884,24 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/mmda/constellation/:id/description/:description_id/collocation/",
-    alias: "postMmdaconstellationIddescriptionDescription_idcollocation",
-    requestFormat: "json",
+    method: 'post',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/',
+    alias: 'postMmdaconstellationIddescriptionDescription_idcollocation',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationCollocationIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1927,25 +1925,25 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "put",
-    path: "/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/auto-associate",
+    method: 'put',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/auto-associate',
     alias:
-      "putMmdaconstellationIddescriptionDescription_idcollocationCollocation_idautoAssociate",
-    requestFormat: "json",
+      'putMmdaconstellationIddescriptionDescription_idcollocationCollocation_idautoAssociate',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "collocation_id",
-        type: "Path",
+        name: 'collocation_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -1964,68 +1962,68 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/items",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/items',
     alias:
-      "getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems",
+      'getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems',
     description: `TODO also return ranks (to ease frontend pagination)?`,
-    requestFormat: "json",
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "collocation_id",
-        type: "Path",
+        name: 'collocation_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "sort_order",
-        type: "Query",
+        name: 'sort_order',
+        type: 'Query',
         schema: z
-          .enum(["ascending", "descending"])
+          .enum(['ascending', 'descending'])
           .optional()
-          .default("descending"),
+          .default('descending'),
       },
       {
-        name: "sort_by",
-        type: "Query",
+        name: 'sort_by',
+        type: 'Query',
         schema: z
           .enum([
-            "conservative_log_ratio",
-            "O11",
-            "E11",
-            "ipm",
-            "ipm_expected",
-            "log_likelihood",
-            "z_score",
-            "t_score",
-            "simple_ll",
-            "dice",
-            "log_ratio",
-            "min_sensitivity",
-            "liddell",
-            "mutual_information",
-            "local_mutual_information",
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
           ])
           .optional()
-          .default("conservative_log_ratio"),
+          .default('conservative_log_ratio'),
       },
       {
-        name: "page_size",
-        type: "Query",
+        name: 'page_size',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "page_number",
-        type: "Query",
+        name: 'page_number',
+        type: 'Query',
         schema: z.number().int().optional().default(1),
       },
     ],
@@ -2049,107 +2047,107 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/:description_id/concordance/",
-    alias: "getMmdaconstellationIddescriptionDescription_idconcordance",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/concordance/',
+    alias: 'getMmdaconstellationIddescriptionDescription_idconcordance',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "filter_discourseme_ids",
-        type: "Query",
+        name: 'filter_discourseme_ids',
+        type: 'Query',
         schema: z.array(z.number().int()).optional().default([]),
       },
       {
-        name: "focus_discourseme_id",
-        type: "Query",
+        name: 'focus_discourseme_id',
+        type: 'Query',
         schema: z.number().int(),
       },
       {
-        name: "window",
-        type: "Query",
+        name: 'window',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "extended_window",
-        type: "Query",
+        name: 'extended_window',
+        type: 'Query',
         schema: z.number().int().optional().default(50),
       },
       {
-        name: "context_break",
-        type: "Query",
+        name: 'context_break',
+        type: 'Query',
         schema: z.string().nullish().default(null),
       },
       {
-        name: "primary",
-        type: "Query",
-        schema: z.string().optional().default("word"),
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
       },
       {
-        name: "secondary",
-        type: "Query",
-        schema: z.string().optional().default("lemma"),
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
       },
       {
-        name: "page_size",
-        type: "Query",
+        name: 'page_size',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "page_number",
-        type: "Query",
+        name: 'page_number',
+        type: 'Query',
         schema: z.number().int().optional().default(1),
       },
       {
-        name: "sort_order",
-        type: "Query",
+        name: 'sort_order',
+        type: 'Query',
         schema: z
-          .enum(["first", "random", "ascending", "descending"])
+          .enum(['first', 'random', 'ascending', 'descending'])
           .optional()
-          .default("random"),
+          .default('random'),
       },
       {
-        name: "sort_by_offset",
-        type: "Query",
+        name: 'sort_by_offset',
+        type: 'Query',
         schema: z.number().int().optional().default(0),
       },
       {
-        name: "sort_by_p_att",
-        type: "Query",
+        name: 'sort_by_p_att',
+        type: 'Query',
         schema: z.string().nullish().default(null),
       },
       {
-        name: "sort_by_s_att",
-        type: "Query",
+        name: 'sort_by_s_att',
+        type: 'Query',
         schema: z.string().nullish().default(null),
       },
       {
-        name: "filter_item",
-        type: "Query",
+        name: 'filter_item',
+        type: 'Query',
         schema: z.string().nullish(),
       },
       {
-        name: "filter_item_p_att",
-        type: "Query",
-        schema: z.string().optional().default("lemma"),
+        name: 'filter_item_p_att',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
       },
       {
-        name: "filter_query_ids",
-        type: "Query",
+        name: 'filter_query_ids',
+        type: 'Query',
         schema: z.array(z.number().int()).optional().default([]),
       },
       {
-        name: "highlight_query_ids",
-        type: "Query",
+        name: 'highlight_query_ids',
+        type: 'Query',
         schema: z.array(z.number().int()).optional().default([]),
       },
     ],
@@ -2173,19 +2171,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/:description_id/keyword/",
-    alias: "getMmdaconstellationIddescriptionDescription_idkeyword",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/',
+    alias: 'getMmdaconstellationIddescriptionDescription_idkeyword',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2204,24 +2202,24 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "post",
-    path: "/mmda/constellation/:id/description/:description_id/keyword/",
-    alias: "postMmdaconstellationIddescriptionDescription_idkeyword",
-    requestFormat: "json",
+    method: 'post',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/',
+    alias: 'postMmdaconstellationIddescriptionDescription_idkeyword',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationKeywordIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2245,25 +2243,25 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "put",
-    path: "/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/auto-associate",
+    method: 'put',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/auto-associate',
     alias:
-      "putMmdaconstellationIddescriptionDescription_idkeywordKeyword_idautoAssociate",
-    requestFormat: "json",
+      'putMmdaconstellationIddescriptionDescription_idkeywordKeyword_idautoAssociate',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "keyword_id",
-        type: "Path",
+        name: 'keyword_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2282,69 +2280,69 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/items",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/items',
     alias:
-      "getMmdaconstellationIddescriptionDescription_idkeywordKeyword_iditems",
+      'getMmdaconstellationIddescriptionDescription_idkeywordKeyword_iditems',
     description: `TODO find the bug: why are there duplicated measures?!
 TODO also return ranks (to ease frontend pagination)?`,
-    requestFormat: "json",
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "keyword_id",
-        type: "Path",
+        name: 'keyword_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "sort_order",
-        type: "Query",
+        name: 'sort_order',
+        type: 'Query',
         schema: z
-          .enum(["ascending", "descending"])
+          .enum(['ascending', 'descending'])
           .optional()
-          .default("descending"),
+          .default('descending'),
       },
       {
-        name: "sort_by",
-        type: "Query",
+        name: 'sort_by',
+        type: 'Query',
         schema: z
           .enum([
-            "conservative_log_ratio",
-            "O11",
-            "E11",
-            "ipm",
-            "ipm_expected",
-            "log_likelihood",
-            "z_score",
-            "t_score",
-            "simple_ll",
-            "dice",
-            "log_ratio",
-            "min_sensitivity",
-            "liddell",
-            "mutual_information",
-            "local_mutual_information",
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
           ])
           .optional()
-          .default("conservative_log_ratio"),
+          .default('conservative_log_ratio'),
       },
       {
-        name: "page_size",
-        type: "Query",
+        name: 'page_size',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "page_number",
-        type: "Query",
+        name: 'page_number',
+        type: 'Query',
         schema: z.number().int().optional().default(1),
       },
     ],
@@ -2368,24 +2366,24 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/constellation/:id/description/:description_id/remove-discourseme",
-    alias: "patchMmdaconstellationIddescriptionDescription_idremoveDiscourseme",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/constellation/:id/description/:description_id/remove-discourseme',
+    alias: 'patchMmdaconstellationIddescriptionDescription_idremoveDiscourseme',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationDiscoursemeDescriptionIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2409,25 +2407,25 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/",
+    method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/',
     alias:
-      "getMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates",
-    requestFormat: "json",
+      'getMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "semantic_map_id",
-        type: "Path",
+        name: 'semantic_map_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2446,30 +2444,30 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "put",
-    path: "/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/",
+    method: 'put',
+    path: '/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/',
     alias:
-      "putMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates",
-    requestFormat: "json",
+      'putMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: DiscoursemeCoordinatesIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "semantic_map_id",
-        type: "Path",
+        name: 'semantic_map_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2493,19 +2491,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/constellation/:id/remove-discourseme",
-    alias: "patchMmdaconstellationIdremoveDiscourseme",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/constellation/:id/remove-discourseme',
+    alias: 'patchMmdaconstellationIdremoveDiscourseme',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: ConstellationInUpdate,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2529,10 +2527,10 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/mmda/discourseme/",
-    alias: "getMmdadiscourseme",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/discourseme/',
+    alias: 'getMmdadiscourseme',
+    requestFormat: 'json',
     response: z.array(DiscoursemeOut),
     errors: [
       {
@@ -2543,14 +2541,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/mmda/discourseme/",
-    alias: "postMmdadiscourseme",
-    requestFormat: "json",
+    method: 'post',
+    path: '/mmda/discourseme/',
+    alias: 'postMmdadiscourseme',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: DiscoursemeIn,
       },
     ],
@@ -2569,14 +2567,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "delete",
-    path: "/mmda/discourseme/:id",
-    alias: "deleteMmdadiscoursemeId",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/mmda/discourseme/:id',
+    alias: 'deleteMmdadiscoursemeId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2595,14 +2593,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/mmda/discourseme/:id",
-    alias: "getMmdadiscoursemeId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/discourseme/:id',
+    alias: 'getMmdadiscoursemeId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2621,19 +2619,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/discourseme/:id",
-    alias: "patchMmdadiscoursemeId",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/discourseme/:id',
+    alias: 'patchMmdadiscoursemeId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: DiscoursemeInUpdate,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2657,14 +2655,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/mmda/discourseme/:id/description/",
-    alias: "getMmdadiscoursemeIddescription",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/discourseme/:id/description/',
+    alias: 'getMmdadiscoursemeIddescription',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2683,20 +2681,20 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/mmda/discourseme/:id/description/",
-    alias: "postMmdadiscoursemeIddescription",
+    method: 'post',
+    path: '/mmda/discourseme/:id/description/',
+    alias: 'postMmdadiscoursemeIddescription',
     description: `Will automatically create query (from provided items or template).`,
-    requestFormat: "json",
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: DiscoursemeDescriptionIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2720,19 +2718,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "delete",
-    path: "/mmda/discourseme/:id/description/:description_id/",
-    alias: "deleteMmdadiscoursemeIddescriptionDescription_id",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/mmda/discourseme/:id/description/:description_id/',
+    alias: 'deleteMmdadiscoursemeIddescriptionDescription_id',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2751,19 +2749,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/mmda/discourseme/:id/description/:description_id/",
-    alias: "getMmdadiscoursemeIddescriptionDescription_id",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/discourseme/:id/description/:description_id/',
+    alias: 'getMmdadiscoursemeIddescriptionDescription_id',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2782,24 +2780,24 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/discourseme/:id/description/:description_id/add-item",
-    alias: "patchMmdadiscoursemeIddescriptionDescription_idaddItem",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/discourseme/:id/description/:description_id/add-item',
+    alias: 'patchMmdadiscoursemeIddescriptionDescription_idaddItem',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: DiscoursemeItem,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2823,24 +2821,24 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/mmda/discourseme/:id/description/:description_id/breakdown",
-    alias: "getMmdadiscoursemeIddescriptionDescription_idbreakdown",
-    requestFormat: "json",
+    method: 'get',
+    path: '/mmda/discourseme/:id/description/:description_id/breakdown',
+    alias: 'getMmdadiscoursemeIddescriptionDescription_idbreakdown',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "p",
-        type: "Query",
+        name: 'p',
+        type: 'Query',
         schema: z.string(),
       },
     ],
@@ -2864,35 +2862,35 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/mmda/discourseme/:id/description/:description_id/breakdown/:breakdown_id/similar",
+    method: 'get',
+    path: '/mmda/discourseme/:id/description/:description_id/breakdown/:breakdown_id/similar',
     alias:
-      "getMmdadiscoursemeIddescriptionDescription_idbreakdownBreakdown_idsimilar",
-    requestFormat: "json",
+      'getMmdadiscoursemeIddescriptionDescription_idbreakdownBreakdown_idsimilar',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "breakdown_id",
-        type: "Path",
+        name: 'breakdown_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "number",
-        type: "Query",
+        name: 'number',
+        type: 'Query',
         schema: z.number().int().optional().default(200),
       },
       {
-        name: "min_freq",
-        type: "Query",
+        name: 'min_freq',
+        type: 'Query',
         schema: z.number().int().optional().default(2),
       },
     ],
@@ -2916,24 +2914,24 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "patch",
-    path: "/mmda/discourseme/:id/description/:description_id/remove-item",
-    alias: "patchMmdadiscoursemeIddescriptionDescription_idremoveItem",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/mmda/discourseme/:id/description/:description_id/remove-item',
+    alias: 'patchMmdadiscoursemeIddescriptionDescription_idremoveItem',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: DiscoursemeItem,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "description_id",
-        type: "Path",
+        name: 'description_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -2957,10 +2955,10 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/query/",
-    alias: "getQuery",
-    requestFormat: "json",
+    method: 'get',
+    path: '/query/',
+    alias: 'getQuery',
+    requestFormat: 'json',
     response: z.array(QueryOut),
     errors: [
       {
@@ -2971,19 +2969,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/query/",
-    alias: "postQuery",
-    requestFormat: "json",
+    method: 'post',
+    path: '/query/',
+    alias: 'postQuery',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: QueryIn,
       },
       {
-        name: "execute",
-        type: "Query",
+        name: 'execute',
+        type: 'Query',
         schema: z.boolean().optional().default(true),
       },
     ],
@@ -3002,14 +3000,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "delete",
-    path: "/query/:id",
-    alias: "deleteQueryId",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/query/:id',
+    alias: 'deleteQueryId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3028,14 +3026,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/query/:id",
-    alias: "getQueryId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/query/:id',
+    alias: 'getQueryId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3054,19 +3052,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/query/:query_id/breakdown",
-    alias: "getQueryQuery_idbreakdown",
-    requestFormat: "json",
+    method: 'get',
+    path: '/query/:query_id/breakdown',
+    alias: 'getQueryQuery_idbreakdown',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "query_id",
-        type: "Path",
+        name: 'query_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "p",
-        type: "Query",
+        name: 'p',
+        type: 'Query',
         schema: z.string(),
       },
     ],
@@ -3090,63 +3088,63 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/query/:query_id/collocation",
-    alias: "getQueryQuery_idcollocation",
-    requestFormat: "json",
+    method: 'get',
+    path: '/query/:query_id/collocation',
+    alias: 'getQueryQuery_idcollocation',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "query_id",
-        type: "Path",
+        name: 'query_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "semantic_map_id",
-        type: "Query",
+        name: 'semantic_map_id',
+        type: 'Query',
         schema: z.number().int().nullish().default(null),
       },
       {
-        name: "semantic_map_init",
-        type: "Query",
+        name: 'semantic_map_init',
+        type: 'Query',
         schema: z.boolean().optional().default(true),
       },
       {
-        name: "p",
-        type: "Query",
+        name: 'p',
+        type: 'Query',
         schema: z.string(),
       },
       {
-        name: "window",
-        type: "Query",
+        name: 'window',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "marginals",
-        type: "Query",
-        schema: z.enum(["local", "global"]).optional().default("local"),
+        name: 'marginals',
+        type: 'Query',
+        schema: z.enum(['local', 'global']).optional().default('local'),
       },
       {
-        name: "s_break",
-        type: "Query",
+        name: 's_break',
+        type: 'Query',
         schema: z.string().optional(),
       },
       {
-        name: "filter_item",
-        type: "Query",
+        name: 'filter_item',
+        type: 'Query',
         schema: z.string().nullish(),
       },
       {
-        name: "filter_item_p_att",
-        type: "Query",
-        schema: z.string().optional().default("lemma"),
+        name: 'filter_item_p_att',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
       },
       {
-        name: "filter_overlap",
-        type: "Query",
+        name: 'filter_overlap',
+        type: 'Query',
         schema: z
-          .enum(["partial", "full", "match", "matchend"])
+          .enum(['partial', 'full', 'match', 'matchend'])
           .optional()
-          .default("partial"),
+          .default('partial'),
       },
     ],
     response: CollocationOut,
@@ -3169,92 +3167,92 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/query/:query_id/concordance",
-    alias: "getQueryQuery_idconcordance",
-    requestFormat: "json",
+    method: 'get',
+    path: '/query/:query_id/concordance',
+    alias: 'getQueryQuery_idconcordance',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "query_id",
-        type: "Path",
+        name: 'query_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "window",
-        type: "Query",
+        name: 'window',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "extended_window",
-        type: "Query",
+        name: 'extended_window',
+        type: 'Query',
         schema: z.number().int().optional().default(50),
       },
       {
-        name: "context_break",
-        type: "Query",
+        name: 'context_break',
+        type: 'Query',
         schema: z.string().nullish().default(null),
       },
       {
-        name: "primary",
-        type: "Query",
-        schema: z.string().optional().default("word"),
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
       },
       {
-        name: "secondary",
-        type: "Query",
-        schema: z.string().optional().default("lemma"),
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
       },
       {
-        name: "page_size",
-        type: "Query",
+        name: 'page_size',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "page_number",
-        type: "Query",
+        name: 'page_number',
+        type: 'Query',
         schema: z.number().int().optional().default(1),
       },
       {
-        name: "sort_order",
-        type: "Query",
+        name: 'sort_order',
+        type: 'Query',
         schema: z
-          .enum(["first", "random", "ascending", "descending"])
+          .enum(['first', 'random', 'ascending', 'descending'])
           .optional()
-          .default("random"),
+          .default('random'),
       },
       {
-        name: "sort_by_offset",
-        type: "Query",
+        name: 'sort_by_offset',
+        type: 'Query',
         schema: z.number().int().optional().default(0),
       },
       {
-        name: "sort_by_p_att",
-        type: "Query",
+        name: 'sort_by_p_att',
+        type: 'Query',
         schema: z.string().nullish().default(null),
       },
       {
-        name: "sort_by_s_att",
-        type: "Query",
+        name: 'sort_by_s_att',
+        type: 'Query',
         schema: z.string().nullish().default(null),
       },
       {
-        name: "filter_item",
-        type: "Query",
+        name: 'filter_item',
+        type: 'Query',
         schema: z.string().nullish(),
       },
       {
-        name: "filter_item_p_att",
-        type: "Query",
-        schema: z.string().optional().default("lemma"),
+        name: 'filter_item_p_att',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
       },
       {
-        name: "filter_query_ids",
-        type: "Query",
+        name: 'filter_query_ids',
+        type: 'Query',
         schema: z.array(z.number().int()).optional().default([]),
       },
       {
-        name: "highlight_query_ids",
-        type: "Query",
+        name: 'highlight_query_ids',
+        type: 'Query',
         schema: z.array(z.number().int()).optional().default([]),
       },
     ],
@@ -3278,45 +3276,45 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/query/:query_id/concordance/:match_id",
-    alias: "getQueryQuery_idconcordanceMatch_id",
-    requestFormat: "json",
+    method: 'get',
+    path: '/query/:query_id/concordance/:match_id',
+    alias: 'getQueryQuery_idconcordanceMatch_id',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "query_id",
-        type: "Path",
+        name: 'query_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "match_id",
-        type: "Path",
+        name: 'match_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "window",
-        type: "Query",
+        name: 'window',
+        type: 'Query',
         schema: z.number().int().optional().default(10),
       },
       {
-        name: "extended_window",
-        type: "Query",
+        name: 'extended_window',
+        type: 'Query',
         schema: z.number().int().optional().default(50),
       },
       {
-        name: "extended_context_break",
-        type: "Query",
+        name: 'extended_context_break',
+        type: 'Query',
         schema: z.string().optional(),
       },
       {
-        name: "primary",
-        type: "Query",
-        schema: z.string().optional().default("word"),
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
       },
       {
-        name: "secondary",
-        type: "Query",
-        schema: z.string().optional().default("lemma"),
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
       },
     ],
     response: ConcordanceLineOut,
@@ -3339,14 +3337,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/query/:query_id/concordance/shuffle",
-    alias: "postQueryQuery_idconcordanceshuffle",
-    requestFormat: "json",
+    method: 'post',
+    path: '/query/:query_id/concordance/shuffle',
+    alias: 'postQueryQuery_idconcordanceshuffle',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "query_id",
-        type: "Path",
+        name: 'query_id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3365,30 +3363,30 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/query/:query_id/meta",
-    alias: "getQueryQuery_idmeta",
-    requestFormat: "json",
+    method: 'get',
+    path: '/query/:query_id/meta',
+    alias: 'getQueryQuery_idmeta',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "query_id",
-        type: "Path",
+        name: 'query_id',
+        type: 'Path',
         schema: z.string(),
       },
       {
-        name: "level",
-        type: "Query",
+        name: 'level',
+        type: 'Query',
         schema: z.string(),
       },
       {
-        name: "key",
-        type: "Query",
+        name: 'key',
+        type: 'Query',
         schema: z.string(),
       },
       {
-        name: "p",
-        type: "Query",
-        schema: z.string().optional().default("word"),
+        name: 'p',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
       },
     ],
     response: z.array(QueryMetaOut),
@@ -3411,19 +3409,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/query/assisted/",
-    alias: "postQueryassisted",
-    requestFormat: "json",
+    method: 'post',
+    path: '/query/assisted/',
+    alias: 'postQueryassisted',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: QueryAssistedIn,
       },
       {
-        name: "execute",
-        type: "Query",
+        name: 'execute',
+        type: 'Query',
         schema: z.boolean().optional().default(true),
       },
     ],
@@ -3442,14 +3440,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "put",
-    path: "/semantic-map/",
-    alias: "putSemanticMap",
-    requestFormat: "json",
+    method: 'put',
+    path: '/semantic-map/',
+    alias: 'putSemanticMap',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: SemanticMapIn,
       },
     ],
@@ -3468,14 +3466,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "delete",
-    path: "/semantic-map/:id",
-    alias: "deleteSemanticMapId",
-    requestFormat: "json",
+    method: 'delete',
+    path: '/semantic-map/:id',
+    alias: 'deleteSemanticMapId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3494,14 +3492,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/semantic-map/:id",
-    alias: "getSemanticMapId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/semantic-map/:id',
+    alias: 'getSemanticMapId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3520,14 +3518,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/semantic-map/:id/coordinates/",
-    alias: "getSemanticMapIdcoordinates",
-    requestFormat: "json",
+    method: 'get',
+    path: '/semantic-map/:id/coordinates/',
+    alias: 'getSemanticMapIdcoordinates',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3546,19 +3544,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "put",
-    path: "/semantic-map/:id/coordinates/",
-    alias: "putSemanticMapIdcoordinates",
-    requestFormat: "json",
+    method: 'put',
+    path: '/semantic-map/:id/coordinates/',
+    alias: 'putSemanticMapIdcoordinates',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: CoordinatesIn,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3582,10 +3580,10 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/spheroscope/slot-query/",
-    alias: "getSpheroscopeslotQuery",
-    requestFormat: "json",
+    method: 'get',
+    path: '/spheroscope/slot-query/',
+    alias: 'getSpheroscopeslotQuery',
+    requestFormat: 'json',
     response: z.array(SlotQueryOut),
     errors: [
       {
@@ -3596,14 +3594,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/spheroscope/slot-query/:id/execute",
-    alias: "postSpheroscopeslotQueryIdexecute",
-    requestFormat: "json",
+    method: 'post',
+    path: '/spheroscope/slot-query/:id/execute',
+    alias: 'postSpheroscopeslotQueryIdexecute',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3622,14 +3620,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/spheroscope/slot-query/create",
-    alias: "postSpheroscopeslotQuerycreate",
-    requestFormat: "json",
+    method: 'post',
+    path: '/spheroscope/slot-query/create',
+    alias: 'postSpheroscopeslotQuerycreate',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: SlotQueryIn,
       },
     ],
@@ -3648,10 +3646,10 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/user/",
-    alias: "getUser",
-    requestFormat: "json",
+    method: 'get',
+    path: '/user/',
+    alias: 'getUser',
+    requestFormat: 'json',
     response: z.array(UserOut),
     errors: [
       {
@@ -3662,14 +3660,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/user/",
-    alias: "postUser",
-    requestFormat: "json",
+    method: 'post',
+    path: '/user/',
+    alias: 'postUser',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: UserRegister,
       },
     ],
@@ -3688,14 +3686,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/user/:id",
-    alias: "getUserId",
-    requestFormat: "json",
+    method: 'get',
+    path: '/user/:id',
+    alias: 'getUserId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3714,19 +3712,19 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "patch",
-    path: "/user/:id",
-    alias: "patchUserId",
-    requestFormat: "json",
+    method: 'patch',
+    path: '/user/:id',
+    alias: 'patchUserId',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: UserUpdate,
       },
       {
-        name: "id",
-        type: "Path",
+        name: 'id',
+        type: 'Path',
         schema: z.string(),
       },
     ],
@@ -3750,10 +3748,10 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "get",
-    path: "/user/identify",
-    alias: "getUseridentify",
-    requestFormat: "json",
+    method: 'get',
+    path: '/user/identify',
+    alias: 'getUseridentify',
+    requestFormat: 'json',
     response: z.unknown(),
     errors: [
       {
@@ -3764,14 +3762,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/user/login",
-    alias: "postUserlogin",
-    requestFormat: "form-url",
+    method: 'post',
+    path: '/user/login',
+    alias: 'postUserlogin',
+    requestFormat: 'form-url',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: UserIn,
       },
     ],
@@ -3785,14 +3783,14 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
-    method: "post",
-    path: "/user/refresh",
-    alias: "postUserrefresh",
-    requestFormat: "json",
+    method: 'post',
+    path: '/user/refresh',
+    alias: 'postUserrefresh',
+    requestFormat: 'json',
     parameters: [
       {
-        name: "body",
-        type: "Body",
+        name: 'body',
+        type: 'Body',
         schema: z.object({ refresh_token: z.string() }).passthrough(),
       },
     ],
@@ -3805,10 +3803,10 @@ TODO also return ranks (to ease frontend pagination)?`,
       },
     ],
   },
-]);
+])
 
-export const api = new Zodios(endpoints);
+export const api = new Zodios(endpoints)
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
-  return new Zodios(baseUrl, endpoints, options);
+  return new Zodios(baseUrl, endpoints, options)
 }

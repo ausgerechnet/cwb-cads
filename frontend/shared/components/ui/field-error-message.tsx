@@ -13,7 +13,7 @@ export function FieldErrorMessage({
   return (
     <div
       className={cn(
-        'rounded-md border-2 border-destructive bg-destructive-foreground px-3 py-2 text-sm text-destructive dark:bg-destructive dark:text-destructive-foreground',
+        'border-destructive bg-destructive-foreground text-destructive dark:bg-destructive dark:text-destructive-foreground rounded-md border-2 px-3 py-2 text-sm',
         className,
       )}
     >

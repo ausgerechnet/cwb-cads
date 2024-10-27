@@ -82,7 +82,7 @@ export function ItemsInput({
       htmlFor={inputId}
       ref={setContainer}
       className={cn(
-        'peer flex min-h-10 w-full flex-wrap gap-x-2 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 has-[button:focus-visible]:ring-0',
+        'border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-within:ring-ring focus-visible:ring-ring peer flex min-h-10 w-full flex-wrap gap-x-2 rounded-md border px-3 py-1 text-sm focus-within:ring-2 focus-within:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 has-[button:focus-visible]:ring-0',
         className,
       )}
       onKeyDown={handleCursorKeys}
@@ -91,7 +91,7 @@ export function ItemsInput({
         <button
           key={item}
           tabIndex={-1}
-          className="my-1 flex items-center self-center rounded-xl bg-muted py-1 pl-1 pr-2 text-sm leading-none hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="bg-muted hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground focus-visible:ring-destructive focus-visible:ring-offset-background my-1 flex items-center self-center rounded-xl py-1 pl-1 pr-2 text-sm leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
           onClick={(event) =>
             removeItem(event.currentTarget as HTMLButtonElement, item)
           }

@@ -71,9 +71,9 @@ function App() {
 
   return (
     <main className="flex">
-      <div className="border-r-1 sticky top-14 z-20 h-[calc(100svh-3.5rem)] border-r border-r-muted">
+      <div className="border-r-1 border-r-muted sticky top-14 z-20 h-[calc(100svh-3.5rem)] border-r">
         <ScrollArea className="h-full">
-          <nav className="flex h-full min-h-[calc(100svh-3.75rem)] flex-col gap-0.5 p-2 ">
+          <nav className="flex h-full min-h-[calc(100svh-3.75rem)] flex-col gap-0.5 p-2">
             <AppMenuLink to="/corpora" icon={BookIcon}>
               Corpora
             </AppMenuLink>
@@ -115,7 +115,7 @@ function App() {
                     {!isSmall && (
                       <>
                         Collapse Menu
-                        <kbd className="border-1 ml-2 mr-0 rounded-sm border border-muted px-1 py-0.5 text-xs">
+                        <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
                           alt c
                         </kbd>
                       </>
@@ -124,7 +124,7 @@ function App() {
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   Expand Menu{' '}
-                  <kbd className="border-1 ml-2 mr-0 rounded-sm border border-muted px-1 py-0.5 text-xs">
+                  <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
                     alt c
                   </kbd>
                 </TooltipContent>

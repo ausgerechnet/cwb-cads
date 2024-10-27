@@ -26,7 +26,7 @@ export function Drawer({
   return (
     <div
       className={cn(
-        'sticky bottom-0 right-0 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 border-t-muted bg-background p-4 [box-shadow:0_-5px_10px_-10px_black]',
+        'border-t-muted bg-background sticky bottom-0 right-0 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 p-4 [box-shadow:0_-5px_10px_-10px_black]',
         className,
       )}
     >

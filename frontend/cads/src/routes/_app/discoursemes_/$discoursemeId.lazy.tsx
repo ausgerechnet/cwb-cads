@@ -41,7 +41,7 @@ function SingleDiscourseme() {
         },
       }}
     >
-      <Large className="bg-destructive p-2 text-destructive-foreground">
+      <Large className="bg-destructive text-destructive-foreground p-2">
         Todo: Prettier UI...
       </Large>
       {comment && <Large>{comment}</Large>}
@@ -76,7 +76,7 @@ function SingleDiscourseme() {
         <Description description={description} key={description.id!} />
       ))}
 
-      <div className="mono whitespace-pre rounded-md bg-muted p-2 text-sm leading-tight text-muted-foreground">
+      <div className="mono bg-muted text-muted-foreground whitespace-pre rounded-md p-2 text-sm leading-tight">
         {JSON.stringify(descriptions, null, 2)}
       </div>
     </AppPageFrame>
@@ -95,7 +95,7 @@ function Description({
     error: errorCorpus,
   } = useQuery(corpusById(description.corpus_id!))
   return (
-    <div className="my-1 bg-muted">
+    <div className="bg-muted my-1">
       {description.id} {isLoading ? 'Loading...' : `on Corpus "${data?.name}"`}
       <br />
       {description.items?.map((i) => i.surface).join(', ')}

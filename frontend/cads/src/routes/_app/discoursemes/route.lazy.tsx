@@ -76,7 +76,7 @@ function shortenArray<T>(array: T[], length: number): ReactNode {
   return (
     <>
       {array.slice(0, length).join(', ')},{' '}
-      <span className="rounded text-muted-foreground">
+      <span className="text-muted-foreground rounded">
         {array.length - length} more...
       </span>
     </>
@@ -147,7 +147,7 @@ function QuickActions({ discoursemeId }: { discoursemeId: string }) {
         <MoreVertical className="h-4 w-4" />
       </PopoverTrigger>
       <PopoverContent
-        className="flex flex-col gap-2 "
+        className="flex flex-col gap-2"
         onClick={(event) => event.stopPropagation()}
       >
         <Link

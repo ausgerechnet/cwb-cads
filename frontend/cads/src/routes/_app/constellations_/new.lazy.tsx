@@ -91,7 +91,7 @@ function NewConstellationForm() {
       <form onSubmit={form.handleSubmit((data) => mutate(data))}>
         <fieldset
           disabled={isPending}
-          className="flex flex-col gap-4 @container"
+          className="@container flex flex-col gap-4"
         >
           <FormField
             name="name"

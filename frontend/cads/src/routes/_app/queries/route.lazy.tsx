@@ -140,7 +140,7 @@ function QuickActions({ queryId }: { queryId: string }) {
         <MoreVertical className="h-4 w-4" />
       </PopoverTrigger>
       <PopoverContent
-        className="flex flex-col gap-2 "
+        className="flex flex-col gap-2"
         onClick={(event) => event.stopPropagation()}
       >
         <Link

@@ -40,7 +40,7 @@ function RootComponent() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 box-border bg-background p-2 ring-1 ring-muted">
+      <header className="bg-background ring-muted sticky top-0 z-10 box-border p-2 ring-1">
         <NavigationMenu>
           <NavigationMenuList>
             <NavigationMenuItem>

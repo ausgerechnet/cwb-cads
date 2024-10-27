@@ -124,7 +124,7 @@ export function DiscoursemeAnalysis({
                           discoursemeId={field.value}
                           onChange={field.onChange}
                         />
-                        <QuickCreateDiscourseme className="w-full @xs:w-8" />
+                        <QuickCreateDiscourseme className="@xs:w-8 w-full" />
                       </div>
                     </FormControl>
                     <FormMessage />

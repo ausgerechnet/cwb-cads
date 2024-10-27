@@ -15,7 +15,7 @@ function KeywordAnalysis() {
 
   return (
     <AppPageFrame title={`Keyword Analysis ${analysisId}`}>
-      <div className="whitespace-pre rounded-xl bg-muted p-4 font-mono text-muted-foreground">
+      <div className="bg-muted text-muted-foreground whitespace-pre rounded-xl p-4 font-mono">
         {JSON.stringify(analysisData, null, 2)}
       </div>
     </AppPageFrame>

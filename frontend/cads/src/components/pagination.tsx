@@ -56,7 +56,7 @@ export function Pagination({
   return (
     <div
       className={cn(
-        'sticky bottom-0 mx-[1px] grid grid-cols-[1fr_auto_1fr] bg-background/50 px-2 py-2 backdrop-blur-lg',
+        'bg-background/50 sticky bottom-0 mx-[1px] grid grid-cols-[1fr_auto_1fr] px-2 py-2 backdrop-blur-lg',
         className,
       )}
     >
@@ -81,7 +81,7 @@ export function Pagination({
                 key={i}
                 className={cn(
                   buttonVariants({ variant: 'ghost' }),
-                  'pointer-events-none min-w-8 px-2 font-mono text-muted-foreground',
+                  'text-muted-foreground pointer-events-none min-w-8 px-2 font-mono',
                 )}
               >
                 <MoreHorizontal className="mx-auto h-4 w-4 flex-grow" />

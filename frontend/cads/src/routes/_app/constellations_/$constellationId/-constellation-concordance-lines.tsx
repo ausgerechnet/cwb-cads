@@ -256,7 +256,7 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
             params={(p) => p}
             search={(s) => ({ ...s, clFilterItem: token.primary })}
             className={cn(
-              'cursor-pointer rounded-md hover:bg-muted hover:ring-2 hover:ring-muted',
+              'hover:bg-muted hover:ring-muted cursor-pointer rounded-md hover:ring-2',
               token.out_of_window && 'text-muted-foreground/70',
               token.is_filter_item && 'bg-primary/50',
               token.offset === 0 && 'font-bold',

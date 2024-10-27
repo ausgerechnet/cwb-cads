@@ -62,7 +62,7 @@ function SingleQuery() {
             Query {corpusName && `on ${corpusName}`}
           </Headline3>
 
-          <div className="whitespace-pre-line rounded-md bg-muted p-2 text-muted-foreground">
+          <div className="bg-muted text-muted-foreground whitespace-pre-line rounded-md p-2">
             {query?.cqp_query}
           </div>
         </Card>
@@ -84,9 +84,9 @@ function SingleQuery() {
       <QueryFilter
         queryId={queryId}
         corpusId={query.corpus_id!}
-        className="sticky top-14 bg-background"
+        className="bg-background sticky top-14"
       />
-      <div className="min-h-[150svh] rounded-xl bg-muted p-4 text-muted-foreground">
+      <div className="bg-muted text-muted-foreground min-h-[150svh] rounded-xl p-4">
         Placeholder: Collocation
       </div>
       <Drawer

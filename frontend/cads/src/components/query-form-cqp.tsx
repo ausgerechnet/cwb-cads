@@ -99,7 +99,7 @@ export function QueryFormCQP({
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <fieldset
             disabled={isDisabled}
-            className="grid max-w-3xl grid-cols-1 gap-3 @lg:grid-cols-2"
+            className="@lg:grid-cols-2 grid max-w-3xl grid-cols-1 gap-3"
           >
             <FormField
               control={form.control}

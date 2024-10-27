@@ -48,11 +48,11 @@ export function DiscoursemeListSelect({
       {selectedDiscoursemes.map((discourseme) => (
         <div
           key={discourseme.id}
-          className="flex gap-x-4 rounded-md border border-input py-2 pl-4 pr-1 ring-ring ring-offset-2 focus-within:ring-2"
+          className="border-input ring-ring flex gap-x-4 rounded-md border py-2 pl-4 pr-1 ring-offset-2 focus-within:ring-2"
         >
           <Small className="mx-0 my-auto flex-grow">
             {discourseme.name}
-            <span className="mt-1 block text-muted-foreground">
+            <span className="text-muted-foreground mt-1 block">
               {discourseme.comment}
             </span>
           </Small>

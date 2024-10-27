@@ -160,7 +160,7 @@ function ConstellationDetail() {
                 corpusId === undefined || focusDiscourseme === undefined
               }
             >
-              <Card className="mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 bg-muted p-4 text-center text-muted-foreground">
+              <Card className="bg-muted text-muted-foreground mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 p-4 text-center">
                 <div className="flex gap-3">
                   <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
                   <span>Semantic Map</span>
@@ -211,7 +211,7 @@ function ConstellationDetail() {
         <>
           <ConstellationCollocationFilter
             className={cn(
-              'sticky top-14 bg-background',
+              'bg-background sticky top-14',
               showsSemanticMap &&
                 'absolute left-10 right-5 top-10 rounded-xl p-2 shadow',
             )}
@@ -270,13 +270,13 @@ function DiscoursemeItem({
     <li
       key={discourseme.id}
       className={cn(
-        'flex gap-x-4 rounded-md border border-input py-2 pl-4 pr-1 ring-ring ring-offset-2 transition-all focus-within:ring-2',
+        'border-input ring-ring flex gap-x-4 rounded-md border py-2 pl-4 pr-1 ring-offset-2 transition-all focus-within:ring-2',
         !isEditable && 'border-transparent py-0 pl-0',
       )}
     >
       <Small className="mx-0 my-auto flex-grow">
         {discourseme.name}
-        <span className="mt-1 block text-muted-foreground">
+        <span className="text-muted-foreground mt-1 block">
           {discourseme.comment}
         </span>
       </Small>

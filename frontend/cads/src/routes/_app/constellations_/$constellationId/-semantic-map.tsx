@@ -117,7 +117,7 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
   ])
 
   return (
-    <div className="group/map flex-grow bg-muted">
+    <div className="group/map bg-muted flex-grow">
       <ErrorMessage error={errorCollocation} />
       <Link
         to="/constellations/$constellationId"
@@ -189,7 +189,7 @@ function ConstellationDiscoursemesEditor({
     error: errorRemoveItem,
   } = useMutation(removeDescriptionItem)
   return (
-    <div className="absolute bottom-24 right-4 top-48 flex w-96 flex-col overflow-hidden rounded-xl bg-background shadow-xl">
+    <div className="bg-background absolute bottom-24 right-4 top-48 flex w-96 flex-col overflow-hidden rounded-xl shadow-xl">
       <ErrorMessage error={errorDiscoursemes} />
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorRemoveItem} />
@@ -215,7 +215,7 @@ function ConstellationDiscoursemesEditor({
               >
                 <h4
                   className={cn(
-                    'sticky top-0 flex items-center border-t bg-background px-2 pt-2 font-bold',
+                    'bg-background sticky top-0 flex items-center border-t px-2 pt-2 font-bold',
                     `discourseme-${discoursemeDescription.discourseme_id}`,
                   )}
                 >
@@ -269,7 +269,7 @@ function ConstellationDiscoursemesEditor({
                     {discoursemeDescription.items.map((item) => (
                       <li
                         key={item.surface}
-                        className="group/description flex items-center rounded leading-tight hover:bg-muted"
+                        className="group/description hover:bg-muted flex items-center rounded leading-tight"
                       >
                         {item.surface}
                         <button
@@ -302,7 +302,7 @@ function ConstellationDiscoursemesEditor({
           ),
         )}
       </ScrollArea>
-      <div className="flex flex-col gap-1 border-t bg-muted p-2">
+      <div className="bg-muted flex flex-col gap-1 border-t p-2">
         <DiscoursemeSelect
           undefinedName="Select Discourseme to add to constellation"
           disabled={isPending}

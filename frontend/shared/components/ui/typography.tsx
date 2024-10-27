@@ -81,7 +81,7 @@ export function Small({ children, className }: TypographyProps) {
 
 export function Muted({ children, className }: TypographyProps) {
   return (
-    <small className={cn('text-sm text-muted-foreground', className)}>
+    <small className={cn('text-muted-foreground text-sm', className)}>
       {children}
     </small>
   )
