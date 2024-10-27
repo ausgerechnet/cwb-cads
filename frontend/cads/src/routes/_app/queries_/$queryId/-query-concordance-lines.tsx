@@ -24,9 +24,9 @@ import {
 } from '@cads/shared/components/ui/tooltip'
 import { ButtonTooltip } from '@/components/button-tooltip'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Repeat } from '@/components/repeat'
-import { Pagination } from '@/components/pagination'
+import { Pagination } from '@cads/shared/components/pagination'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Repeat } from '@/components/repeat'
 
 const emptyArray = [] as const
 

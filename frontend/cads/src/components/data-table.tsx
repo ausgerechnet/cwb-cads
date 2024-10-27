@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@cads/shared/components/ui/table'
-import { PaginationForTable } from '@/components/pagination'
+import { PaginationForTable } from '@cads/shared/components/pagination'
 import { Button } from '@cads/shared/components/ui/button'
 import { safeJsonParse } from '@cads/shared/lib/safe-json-parse'
 

@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { z } from 'zod'
 
-import { schemas } from '@/rest-client'
+import { schemas } from '@cads/shared/api-client'
 import { ComplexSelect } from '@cads/shared/components/select-complex'
 
 export function QuerySelect({

@@ -4,10 +4,10 @@ import { z } from 'zod'
 import { Link, useSearch } from '@tanstack/react-router'
 import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
-import { schemas } from '@/rest-client'
+import { schemas } from '@cads/shared/api-client'
 import { cn } from '@cads/shared/lib/utils.ts'
 import { corpusById, constellationConcordances } from '@cads/shared/queries'
-import { formatNumber } from '@cads/shared/lib/format-number.ts'
+import { formatNumber } from '@cads/shared/lib/format-number'
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table.tsx'
+} from '@cads/shared/components/ui/table'
 import {
   Tooltip,
   TooltipContent,
@@ -25,9 +25,9 @@ import {
 import { ButtonTooltip } from '@/components/button-tooltip.tsx'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Repeat } from '@/components/repeat.tsx'
-import { Pagination } from '@/components/pagination.tsx'
-import { Skeleton } from '@cads/shared/components/ui/skeleton.tsx'
-import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
+import { Pagination } from '@cads/shared/components/pagination'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { useDescription } from '@/routes/_app/constellations_/$constellationId/-use-description'
 import { ConstellationConcordanceFilter } from '@/routes/_app/constellations_/$constellationId/-constellation-filter'
 

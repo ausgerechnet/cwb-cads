@@ -9,7 +9,7 @@ import {
   TableRow,
 } from '@cads/shared/components/ui/table.tsx'
 import { Button } from '@cads/shared/components/ui/button.tsx'
-import { Pagination } from '@/components/pagination.tsx'
+import { Pagination } from '@cads/shared/components/pagination'
 import { Repeat } from '@/components/repeat.tsx'
 import { Skeleton } from '@cads/shared/components/ui/skeleton.tsx'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
