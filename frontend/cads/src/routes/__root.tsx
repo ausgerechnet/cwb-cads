@@ -9,7 +9,7 @@ import { QueryClient, useQuery } from '@tanstack/react-query'
 import { Home, Info, User, ScrollText } from 'lucide-react'
 
 import { usersList } from '@cads/shared/queries'
-import { ModeToggle } from '@/components/mode-toggle'
+import { ModeToggle } from '@cads/shared/components/mode-toggle'
 import { MenuLink } from '@/components/menu-link'
 import {
   NavigationMenuItem,
