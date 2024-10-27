@@ -8,7 +8,8 @@
     "lint": "npm run lint --workspaces",
     "format": "npm run format --workspaces",
     "typecheck": "npm run typecheck --workspaces",
-    "generate-client": "npm run generate-client --workspace shared"
+    "generate-client": "npm run generate-client --workspace shared",
+    "generate-component": "npm run generate-component --workspace shared"
   },
   "workspaces": [
     "shared/",

@@ -8,7 +8,7 @@ import { router } from '@/lib/router'
 import { createIDBPersister } from '@/rest-client/client'
 import { ThemeProvider } from '@/components/theme-provider'
 
-import './index.css'
+import '../../shared/index.css'
 
 const persister = createIDBPersister()
 

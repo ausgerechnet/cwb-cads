@@ -4,13 +4,15 @@
   "scripts": {
     "generate-client": "openapi-zod-client https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/openapi.json --export-schemas --export-types --with-alias --output ./api-client/__generated__client.ts",
     "postgenerate-client": "prettier --write ./api-client/__generated__client.ts",
+    "generate-component": "npx shadcn@latest add",
     "format": "prettier --write .",
     "test": "echo \"Error: no test specified\""
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
-    "openapi-zod-client": "^1.15.1"
+    "openapi-zod-client": "^1.15.1",
+    "tailwindcss": "^3.4.14"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -28,12 +30,16 @@
     "@radix-ui/react-switch": "^1.0.3",
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
+    "@tailwindcss/container-queries": "^0.1.1",
     "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "cmdk": "^0.2.0",
     "lucide-react": "^0.408.0",
     "next-themes": "^0.2.1",
     "react-hook-form": "^7.49.3",
     "sonner": "^1.4.0",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4"
   }
 }
