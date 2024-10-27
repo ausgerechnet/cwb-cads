@@ -1,0 +1,51 @@
+{
+  "name": "@cads/shared",
+  "version": "1.0.0",
+  "scripts": {
+    "generate-client": "openapi-zod-client https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/openapi.json --export-schemas --export-types --with-alias --output ./api-client/__generated__client.ts",
+    "postgenerate-client": "prettier --write ./api-client/__generated__client.ts",
+    "generate-component": "npx shadcn@latest add",
+    "format": "prettier --write .",
+    "test": "echo \"Error: no test specified\"",
+    "lint": "echo \"Error: no linter specified\""
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "openapi-zod-client": "^1.15.1",
+    "tailwindcss": "^3.4.14"
+  },
+  "dependencies": {
+    "@radix-ui/react-alert-dialog": "^1.0.5",
+    "@radix-ui/react-checkbox": "^1.0.4",
+    "@radix-ui/react-collapsible": "^1.1.0",
+    "@radix-ui/react-dialog": "^1.0.5",
+    "@radix-ui/react-dropdown-menu": "^2.0.6",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-navigation-menu": "^1.1.4",
+    "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-scroll-area": "^1.0.5",
+    "@radix-ui/react-select": "^2.0.0",
+    "@radix-ui/react-slider": "^1.1.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-switch": "^1.0.3",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "@radix-ui/react-tooltip": "^1.0.7",
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tanstack/react-query": "^5.59.16",
+    "@tanstack/react-table": "^8.11.7",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "cmdk": "^0.2.0",
+    "lucide-react": "^0.408.0",
+    "next-themes": "^0.2.1",
+    "react-hook-form": "^7.49.3",
+    "sonner": "^1.4.0",
+    "tailwind-merge": "^2.5.4",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.22.4"
+  },
+  "peerDependencies": {
+    "@tanstack/react-router": "^1.14.6"
+  }
+}
