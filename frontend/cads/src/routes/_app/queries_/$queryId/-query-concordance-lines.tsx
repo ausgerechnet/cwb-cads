@@ -46,7 +46,7 @@ export function ConcordanceLines({
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
-  const searchParams = useSearch({ from: '/_app/queries/$queryId' })
+  const searchParams = useSearch({ from: '/_app/queries_/$queryId' })
   const pAttributes = corpus?.p_atts ?? emptyArray
   const primary =
     searchParams.primary ??
@@ -140,6 +140,8 @@ export function ConcordanceLines({
           pageIndex={clPageIndex}
           setPageSize={(pageSize) => {
             void navigate({
+              to: '/queries/$queryId',
+              from: '/queries/$queryId',
               params: (p) => p,
               search: (s) => ({ ...s, clPageSize: pageSize }),
               replace: true,
@@ -147,6 +149,8 @@ export function ConcordanceLines({
           }}
           setPageIndex={(pageIndex) => {
             void navigate({
+              to: '/queries/$queryId',
+              from: '/queries/$queryId',
               params: (p) => p,
               search: (s) => ({ ...s, clPageIndex: pageIndex }),
               replace: true,
@@ -252,8 +256,10 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
         <TooltipTrigger asChild>
           <Link
             replace
-            params={(p) => p}
+            to="/queries/$queryId"
+            from="/queries/$queryId"
             search={(s) => ({ ...s, filterItem: token.primary })}
+            params={(p) => p}
             className={cn(
               'hover:bg-muted hover:ring-muted cursor-pointer rounded-md hover:ring-2',
               token.out_of_window && 'text-muted-foreground/70',

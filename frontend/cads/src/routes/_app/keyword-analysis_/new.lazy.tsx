@@ -38,7 +38,7 @@ import {
 
 const emptyArray: never[] = []
 
-export const Route = createLazyFileRoute('/_app/keyword-analysis/new')({
+export const Route = createLazyFileRoute('/_app/keyword-analysis_/new')({
   component: KeywordAnalysisNew,
   pendingComponent: LoaderKeywordAnalysisNew,
 })

@@ -45,7 +45,7 @@ import { useDescription } from './-use-description'
 import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
 
 export const Route = createLazyFileRoute(
-  '/_app/constellations/$constellationId',
+  '/_app/constellations_/$constellationId',
 )({
   component: ConstellationDetail,
 })
@@ -55,7 +55,7 @@ function ConstellationDetail() {
   const showsSemanticMap =
     useRouterState().matches.find(
       (match) =>
-        match.routeId === '/_app/constellations/$constellationId/semantic-map',
+        match.routeId === '/_app/constellations_/$constellationId/semantic-map',
     ) !== undefined
   const navigate = useNavigate()
   const constellationId = parseInt(Route.useParams().constellationId)
@@ -66,7 +66,7 @@ function ConstellationDetail() {
     subcorpusId,
     isConcordanceVisible,
     focusDiscourseme,
-  } = useFilterSelection('/_app/constellations/$constellationId')
+  } = useFilterSelection('/_app/constellations_/$constellationId')
 
   const {
     data: { comment, name, discoursemes: constellationDiscoursemes = [] },
@@ -233,6 +233,8 @@ function ConstellationDetail() {
             isVisible={isConcordanceVisible}
             onToggle={(isVisible) =>
               navigate({
+                to: '/constellations/$constellationId',
+                from: '/constellations/$constellationId',
                 params: (p) => p,
                 search: (s) => ({
                   ...s,

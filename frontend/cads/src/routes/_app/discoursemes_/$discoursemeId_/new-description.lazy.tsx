@@ -40,7 +40,7 @@ import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependen
 import { Large } from '@cads/shared/components/ui/typography'
 
 export const Route = createLazyFileRoute(
-  '/_app/discoursemes/$discoursemeId/new-description',
+  '/_app/discoursemes_/$discoursemeId_/new-description',
 )({
   component: DiscoursemeDescriptionNew,
 })

@@ -19,7 +19,7 @@ export function useCollocation(
     ccSortBy,
     ccSortOrder,
     ccPageNumber,
-  } = useFilterSelection('/_app/constellations/$constellationId')
+  } = useFilterSelection('/_app/constellations_/$constellationId')
   const {
     data: collocation,
     isLoading: isLoadingConstellation,

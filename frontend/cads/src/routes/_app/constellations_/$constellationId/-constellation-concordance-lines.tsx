@@ -48,7 +48,7 @@ export function ConstellationConcordanceLines({
 
   // TODO: use a hook that handles default values etc. useFilterSelection()
   const searchParams = useSearch({
-    from: '/_app/constellations/$constellationId',
+    from: '/_app/constellations_/$constellationId',
   })
   const pAttributes = corpus?.p_atts ?? emptyArray
   const primary =
@@ -70,7 +70,7 @@ export function ConstellationConcordanceLines({
     clFilterItemPAtt,
     focusDiscourseme,
     setFilter,
-  } = useFilterSelection('/_app/constellations/$constellationId')
+  } = useFilterSelection('/_app/constellations_/$constellationId')
   const descriptionId = useDescription()?.description?.id
 
   const {
@@ -253,6 +253,8 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
         <TooltipTrigger asChild>
           <Link
             replace
+            to="/constellations/$constellationId"
+            from="/constellations/$constellationId"
             params={(p) => p}
             search={(s) => ({ ...s, clFilterItem: token.primary })}
             className={cn(

@@ -3,9 +3,11 @@ import { AppPageFrame } from '@/components/app-page-frame'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { keywordAnalysisById } from '@cads/shared/queries'
 
-export const Route = createLazyFileRoute('/_app/keyword-analysis/$analysisId')({
-  component: KeywordAnalysis,
-})
+export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
+  {
+    component: KeywordAnalysis,
+  },
+)
 
 function KeywordAnalysis() {
   const analysisId = parseInt(Route.useParams().analysisId)

@@ -36,7 +36,7 @@ export function ConstellationCollocationFilter({
     pAttributes,
     contextBreakList,
     ccSortBy,
-  } = useFilterSelection('/_app/constellations/$constellationId')
+  } = useFilterSelection('/_app/constellations_/$constellationId')
 
   return (
     <div className={cn('z-10 mb-8 flex gap-2', className)}>
@@ -195,7 +195,7 @@ export function ConstellationConcordanceFilter({
     primary,
     setFilter,
     pAttributes,
-  } = useFilterSelection('/_app/constellations/$constellationId')
+  } = useFilterSelection('/_app/constellations_/$constellationId')
 
   return (
     <div className={cn('z-10 mb-8 flex gap-2', className)}>

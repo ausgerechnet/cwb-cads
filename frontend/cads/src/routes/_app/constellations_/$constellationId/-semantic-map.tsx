@@ -74,7 +74,7 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
     error: errorCollocation,
   } = useCollocation(constellationId, description?.id)
   const sortBy = useFilterSelection(
-    '/_app/constellations/$constellationId',
+    '/_app/constellations_/$constellationId',
   ).ccSortBy
 
   const words = useMemo(() => {
@@ -150,7 +150,7 @@ function ConstellationDiscoursemesEditor({
   constellationId: number
 }) {
   const { s, corpusId, focusDiscourseme } = useFilterSelection(
-    '/_app/constellations/$constellationId',
+    '/_app/constellations_/$constellationId',
   )
   if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
@@ -341,7 +341,7 @@ function AddDescriptionItem({
     error: errorAddItem,
   } = useMutation(addDescriptionItem)
   const { secondary } = useFilterSelection(
-    '/_app/constellations/$constellationId',
+    '/_app/constellations_/$constellationId',
   )
   const { description } = useDescription()
   const { collocationItemsMap } = useCollocation(

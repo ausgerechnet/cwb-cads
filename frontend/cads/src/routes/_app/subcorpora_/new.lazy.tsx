@@ -41,7 +41,7 @@ import { Small } from '@cads/shared/components/ui/typography'
 import { Card } from '@cads/shared/components/ui/card'
 import { formatNumber } from '@cads/shared/lib/format-number'
 
-export const Route = createLazyFileRoute('/_app/subcorpora/new')({
+export const Route = createLazyFileRoute('/_app/subcorpora_/new')({
   component: SubcorpusNew,
   pendingComponent: SubcorpusNewPending,
 })

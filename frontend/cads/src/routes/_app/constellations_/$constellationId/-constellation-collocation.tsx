@@ -57,7 +57,7 @@ export function Collocation({
   descriptionId?: number
 }) {
   const { setFilter, ccPageSize, ccPageNumber } = useFilterSelection(
-    '/_app/constellations/$constellationId',
+    '/_app/constellations_/$constellationId',
   )
   const { error, isLoading, collocationItems } = useCollocation(
     constellationId,

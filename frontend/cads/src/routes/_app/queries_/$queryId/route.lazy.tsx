@@ -23,7 +23,7 @@ import { QueryFrequencyBreakdown } from './-query-frequency-breakdown'
 import { QueryFilter } from './-query-filter'
 import { DiscoursemeAnalysis } from './-query-discourseme-analysis'
 
-export const Route = createLazyFileRoute('/_app/queries/$queryId')({
+export const Route = createLazyFileRoute('/_app/queries_/$queryId')({
   component: SingleQuery,
   errorComponent: SingleQueryError,
 })
@@ -45,7 +45,12 @@ function SingleQuery() {
   const navigate = useNavigate()
   const setSearch = (key: string, value: string | number | boolean) =>
     navigate({
+      // TODO: this should be nicely typed
+      // eslint-disable-next-line
+      // @ts-ignore
       params: (p: Record<string, string | number | boolean>) => p,
+      // eslint-disable-next-line
+      // @ts-ignore
       search: (s) => ({ ...s, [key]: value }),
     })
   const corpusName = query?.corpus_name

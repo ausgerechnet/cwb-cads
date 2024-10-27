@@ -8,7 +8,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { FilterSchema } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
 
-export const Route = createFileRoute('/_app/constellations/$constellationId')({
+export const Route = createFileRoute('/_app/constellations_/$constellationId')({
   validateSearch: FilterSchema.extend({
     focusDiscourseme: z.number().optional().catch(undefined),
   }),

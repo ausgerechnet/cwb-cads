@@ -10,10 +10,7 @@ import { cn } from '@cads/shared/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { buttonVariants } from '@cads/shared/components/ui/button'
-import {
-  DataTable,
-  SortButton,
-} from '../../../../../shared/components/data-table'
+import { DataTable, SortButton } from '@cads/shared/components/data-table'
 
 export const Route = createLazyFileRoute('/_app/subcorpora')({
   component: Subcorpora,

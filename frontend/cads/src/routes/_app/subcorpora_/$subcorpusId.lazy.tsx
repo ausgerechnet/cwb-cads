@@ -7,7 +7,7 @@ import { AppPageFrame } from '@/components/app-page-frame'
 import { Large, Paragraph, Small } from '@cads/shared/components/ui/typography'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 
-export const Route = createLazyFileRoute('/_app/subcorpora/$subcorpusId')({
+export const Route = createLazyFileRoute('/_app/subcorpora_/$subcorpusId')({
   component: SubcorpusDetail,
 })
 

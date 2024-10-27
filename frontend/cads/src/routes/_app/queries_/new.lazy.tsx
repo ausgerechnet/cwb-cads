@@ -12,7 +12,7 @@ import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { QueryFormCQP } from '@/components/query-form-cqp'
 import { QueryFormAssisted } from '@/components/query-form-assisted'
 
-export const Route = createLazyRoute('/_app/queries/new')({
+export const Route = createLazyRoute('/_app/queries_/new')({
   component: QueriesNew,
   pendingComponent: QueriesNewPending,
 })

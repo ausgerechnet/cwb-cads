@@ -8,7 +8,7 @@ import {
 } from '@cads/shared/queries'
 import { z } from 'zod'
 
-export const Route = createFileRoute('/_app/queries/$queryId')({
+export const Route = createFileRoute('/_app/queries_/$queryId')({
   validateSearch: z.object({
     pAtt: z.string().optional(),
     contextBreak: z.string().optional().catch(undefined),

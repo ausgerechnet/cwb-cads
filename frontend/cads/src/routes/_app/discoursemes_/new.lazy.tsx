@@ -3,7 +3,7 @@ import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@cads/shared/components/ui/card'
 import { DiscoursemeForm } from '@/components/discourseme-form'
 
-export const Route = createLazyFileRoute('/_app/discoursemes/new')({
+export const Route = createLazyFileRoute('/_app/discoursemes_/new')({
   component: DiscoursemesNew,
 })
 

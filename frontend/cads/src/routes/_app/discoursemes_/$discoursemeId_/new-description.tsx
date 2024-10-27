@@ -6,7 +6,7 @@ import {
 } from '@cads/shared/queries'
 
 export const Route = createFileRoute(
-  '/_app/discoursemes/$discoursemeId/new-description',
+  '/_app/discoursemes_/$discoursemeId_/new-description',
 )({
   loader: ({ context: { queryClient }, params: { discoursemeId } }) =>
     Promise.all([

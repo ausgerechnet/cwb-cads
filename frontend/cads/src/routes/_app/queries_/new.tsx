@@ -4,7 +4,7 @@ import { corpusList, discoursemesList } from '@cads/shared/queries'
 
 const FormMode = z.enum(['cqp', 'assisted']).optional()
 
-export const Route = createFileRoute('/_app/queries/new')({
+export const Route = createFileRoute('/_app/queries_/new')({
   validateSearch: z.object({
     formMode: FormMode,
   }),

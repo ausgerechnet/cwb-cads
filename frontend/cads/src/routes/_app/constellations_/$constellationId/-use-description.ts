@@ -7,7 +7,7 @@ import { Route } from '@/routes/_app/constellations_/$constellationId/route.lazy
 export function useDescription() {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { secondary, s, corpusId, subcorpusId } = useFilterSelection(
-    '/_app/constellations/$constellationId',
+    '/_app/constellations_/$constellationId',
   )
   const {
     data: description,

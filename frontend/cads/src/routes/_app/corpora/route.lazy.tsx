@@ -7,10 +7,7 @@ import { EyeIcon } from 'lucide-react'
 import { corpusList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
-import {
-  DataTable,
-  SortButton,
-} from '../../../../../shared/components/data-table'
+import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'

@@ -31,7 +31,7 @@ export function QueryFilter({
   const navigate = useNavigate()
 
   const searchParams = useSearch({
-    from: '/_app/queries/$queryId',
+    from: '/_app/queries_/$queryId',
   })
   const {
     windowSize = 3,

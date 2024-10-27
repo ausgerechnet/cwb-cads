@@ -16,7 +16,7 @@ import { z } from 'zod'
 import { schemas } from '@/rest-client'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 
-export const Route = createLazyFileRoute('/_app/discoursemes/$discoursemeId')({
+export const Route = createLazyFileRoute('/_app/discoursemes_/$discoursemeId')({
   component: SingleDiscourseme,
 })
 
@@ -37,6 +37,8 @@ function SingleDiscourseme() {
         label: 'New description',
         nav: {
           to: '/discoursemes/$discoursemeId/new-description',
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           params: { discoursemeId: discoursemeId.toString() },
         },
       }}

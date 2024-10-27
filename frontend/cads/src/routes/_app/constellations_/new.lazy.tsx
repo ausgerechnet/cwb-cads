@@ -23,7 +23,7 @@ import { Input } from '@cads/shared/components/ui/input'
 import { Card } from '@cads/shared/components/ui/card'
 import { DiscoursemeListSelect } from '@/components/discourseme-list-select'
 
-export const Route = createLazyFileRoute('/_app/constellations/new')({
+export const Route = createLazyFileRoute('/_app/constellations_/new')({
   component: NewConstellation,
 })
 

@@ -13,10 +13,7 @@ import {
   keywordAnalysesList,
   subcorpusOf,
 } from '@cads/shared/queries'
-import {
-  DataTable,
-  SortButton,
-} from '../../../../../shared/components/data-table'
+import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { schemas } from '@/rest-client'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { formatNumber } from '@cads/shared/lib/format-number'

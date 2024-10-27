@@ -61,8 +61,8 @@ type FilterSchema = z.infer<typeof FilterSchema>
 // TODO: also use this in query detail etc.
 export function useFilterSelection(
   path:
-    | '/_app/constellations/$constellationId'
-    | '/_app/constellations/$constellationId/semantic-map',
+    | '/_app/constellations_/$constellationId'
+    | '/_app/constellations_/$constellationId/semantic-map',
 ) {
   const {
     windowSize = 10,
@@ -92,7 +92,12 @@ export function useFilterSelection(
   const setFilter = useCallback(
     <K extends keyof FilterSchema>(key: K, value: FilterSchema[K]) => {
       void navigate({
+        // Todo: Pass `to` and `from` for proper type checking
+        // eslint-disable-next-line
+        // @ts-ignore
         search: (s) => ({ ...s, [key]: value }),
+        // eslint-disable-next-line
+        // @ts-ignore
         params: (p) => p,
         replace: true,
       })

@@ -15,15 +15,12 @@ import {
   SelectTrigger,
 } from '@cads/shared/components/ui/select'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
-import {
-  DataTable,
-  SortButton,
-} from '../../../../../../shared/components/data-table'
+import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Headline3 } from '@cads/shared/components/ui/typography'
 
 export function QueryFrequencyBreakdown({ queryId }: { queryId: number }) {
-  const { pAtt } = useSearch({ from: '/_app/queries/$queryId' })
+  const { pAtt } = useSearch({ from: '/_app/queries_/$queryId' })
   const { data: query, error: errorQuery } = useQuery(queryById(queryId))
   const { data: { p_atts: pAtts = [] } = {}, error: errorCorpus } = useQuery({
     ...corpusById(query?.corpus_id ?? -1),
@@ -56,7 +53,12 @@ export function QueryFrequencyBreakdown({ queryId }: { queryId: number }) {
   const handlePAttChange = (pAtt: string) => {
     navigate({
       replace: true,
+      // TODO: this should be nicely typed
+      // eslint-disable-next-line
+      // @ts-ignore
       params: (p) => p,
+      // eslint-disable-next-line
+      // @ts-ignore
       search: (s) => ({ ...s, pAtt: parsePAtt(pAtt) }),
     })
   }
