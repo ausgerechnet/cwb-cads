@@ -153,7 +153,11 @@ export function DataTable<RowData>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={cell.column.columnDef.meta?.className}
+                      className={
+                        pick(cell.column.columnDef.meta, 'className') as
+                          | undefined
+                          | string
+                      }
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -179,6 +183,13 @@ export function DataTable<RowData>({
       <PaginationForTable table={table} />
     </div>
   )
+}
+
+function pick(obj: unknown, key: string) {
+  if (typeof obj === 'object' && obj !== null) {
+    return (obj as Record<string, unknown>)[key]
+  }
+  return undefined
 }
 
 function useTableOverflowPrevention(
