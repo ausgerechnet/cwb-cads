@@ -28,9 +28,9 @@ import {
 } from '@cads/shared/queries'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import WordCloud, { Word } from '@/components/word-cloud'
-import { ErrorMessage } from '@/components/error-message'
-import { DiscoursemeSelect } from '@/components/select-discourseme'
-import { ComplexSelect } from '@/components/select-complex'
+import { ErrorMessage } from '@cads/shared/components/error-message'
+import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
+import { ComplexSelect } from '@cads/shared/components/select-complex'
 import {
   Dialog,
   DialogContent,

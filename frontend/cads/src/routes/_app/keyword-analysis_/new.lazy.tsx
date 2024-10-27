@@ -25,7 +25,7 @@ import {
 } from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
 import { Button } from '@cads/shared/components/ui/button'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Large } from '@cads/shared/components/ui/typography'
 import {
   Select,

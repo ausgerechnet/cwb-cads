@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { Loader2 } from 'lucide-react'
@@ -18,8 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@cads/shared/components/ui/form'
-import { ErrorMessage } from '@/components/error-message'
-import { useEffect } from 'react'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 
 export const Route = createLazyFileRoute('/login')({
   component: Login,

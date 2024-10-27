@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@cads/shared/components/ui/form'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Button } from '@cads/shared/components/ui/button'
 import { Input } from '@cads/shared/components/ui/input'
 import { Card } from '@cads/shared/components/ui/card'

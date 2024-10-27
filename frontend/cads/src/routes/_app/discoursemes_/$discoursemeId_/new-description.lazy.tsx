@@ -33,7 +33,7 @@ import {
   discoursemeById,
   subcorpusOf,
 } from '@cads/shared/queries'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { CorpusSelect } from '@/components/select-corpus'
 import { useMemo } from 'react'
 import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'

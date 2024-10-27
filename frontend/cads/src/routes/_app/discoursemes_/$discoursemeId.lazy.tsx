@@ -14,7 +14,7 @@ import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
 import { z } from 'zod'
 import { schemas } from '@/rest-client'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 
 export const Route = createLazyFileRoute('/_app/discoursemes/$discoursemeId')({
   component: SingleDiscourseme,

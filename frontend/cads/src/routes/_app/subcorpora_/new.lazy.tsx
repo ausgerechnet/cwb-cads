@@ -24,7 +24,7 @@ import {
   FormMessage,
 } from '@cads/shared/components/ui/form'
 import { Button } from '@cads/shared/components/ui/button'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { Input } from '@cads/shared/components/ui/input'
 import {

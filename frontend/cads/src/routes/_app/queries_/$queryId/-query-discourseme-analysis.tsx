@@ -19,10 +19,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@cads/shared/components/ui/form'
-import { DiscoursemeSelect } from '@/components/select-discourseme'
+import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
 import { Button } from '@cads/shared/components/ui/button'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Select,
   SelectContent,

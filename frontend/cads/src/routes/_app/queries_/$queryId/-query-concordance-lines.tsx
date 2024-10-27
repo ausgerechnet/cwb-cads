@@ -23,7 +23,7 @@ import {
   TooltipTrigger,
 } from '@cads/shared/components/ui/tooltip'
 import { ButtonTooltip } from '@/components/button-tooltip'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Repeat } from '@/components/repeat'
 import { Pagination } from '@/components/pagination'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'

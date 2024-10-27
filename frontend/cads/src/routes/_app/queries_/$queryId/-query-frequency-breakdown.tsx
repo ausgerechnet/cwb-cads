@@ -16,7 +16,7 @@ import {
 } from '@cads/shared/components/ui/select'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { DataTable, SortButton } from '@/components/data-table'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Headline3 } from '@cads/shared/components/ui/typography'
 
 export function QueryFrequencyBreakdown({ queryId }: { queryId: number }) {

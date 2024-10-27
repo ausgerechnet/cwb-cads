@@ -2,8 +2,8 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 import { corpusList, subcorporaList } from '@cads/shared/queries'
-import { ComplexSelect } from '@/components/select-complex'
-import { ErrorMessage } from '@/components/error-message'
+import { ComplexSelect } from './select-complex'
+import { ErrorMessage } from './error-message'
 
 /**
  * Select a corpus or subcorpus from a list of corpora and subcorpora.

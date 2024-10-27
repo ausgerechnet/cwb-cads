@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@cads/shared/components/ui/select'
 import { Button } from '@cads/shared/components/ui/button'
-import { ErrorMessage } from '@/components/error-message'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Textarea } from '@cads/shared/components/ui/textarea'
 import { CorpusSelect } from '@/components/select-corpus'
 import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'

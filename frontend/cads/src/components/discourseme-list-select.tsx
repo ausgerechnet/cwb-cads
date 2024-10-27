@@ -7,7 +7,7 @@ import { discoursemesList } from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
 import { Small } from '@cads/shared/components/ui/typography'
 import { Button } from '@cads/shared/components/ui/button'
-import { DiscoursemeSelect } from './select-discourseme'
+import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 
 export function DiscoursemeListSelect({
   discoursemeIds = [],

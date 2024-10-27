@@ -25,8 +25,8 @@ import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@cads/shared/components/ui/card'
 import { Headline3, Muted, Small } from '@cads/shared/components/ui/typography'
 import { Button } from '@cads/shared/components/ui/button'
-import { ErrorMessage } from '@/components/error-message'
-import { DiscoursemeSelect } from '@/components/select-discourseme'
+import { ErrorMessage } from '@cads/shared/components/error-message'
+import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { Drawer } from '@/components/drawer'
 import { Label } from '@cads/shared/components/ui/label'
 import {
@@ -42,7 +42,7 @@ import { ConstellationCollocationFilter } from './-constellation-filter'
 import { Collocation } from './-constellation-collocation'
 import { SemanticMap } from './-semantic-map'
 import { useDescription } from './-use-description'
-import { SelectSubcorpus } from '@/components/select-subcorpus'
+import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations/$constellationId',
