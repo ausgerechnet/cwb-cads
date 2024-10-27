@@ -129,7 +129,6 @@ export const queryConcordances = (
         },
         signal,
       }),
-    staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
 export const shuffleQueryConcordances: MutationOptions<
@@ -633,7 +632,6 @@ export const constellationConcordances = (
         },
         signal,
       }),
-    staleTime: 1_000 * 60 * 5, // 5 minutes
   })
 
 export const constellationCollocation = (
