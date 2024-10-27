@@ -5,7 +5,7 @@ import { Link, useSearch } from '@tanstack/react-router'
 import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@cads/shared/api-client'
-import { cn } from '@cads/shared/lib/utils.ts'
+import { cn } from '@cads/shared/lib/utils'
 import { corpusById, constellationConcordances } from '@cads/shared/queries'
 import { formatNumber } from '@cads/shared/lib/format-number'
 import {
@@ -21,10 +21,10 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@cads/shared/components/ui/tooltip.tsx'
-import { ButtonTooltip } from '@/components/button-tooltip.tsx'
+} from '@cads/shared/components/ui/tooltip'
+import { ButtonTooltip } from '@/components/button-tooltip'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Repeat } from '@/components/repeat.tsx'
+import { Repeat } from '@cads/shared/components/repeat'
 import { Pagination } from '@cads/shared/components/pagination'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'

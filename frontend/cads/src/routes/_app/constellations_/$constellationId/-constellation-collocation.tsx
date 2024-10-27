@@ -1,4 +1,4 @@
-import { cn } from '@cads/shared/lib/utils.ts'
+import { cn } from '@cads/shared/lib/utils'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Table,
@@ -7,13 +7,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table.tsx'
-import { Button } from '@cads/shared/components/ui/button.tsx'
+} from '@cads/shared/components/ui/table'
+import { Button } from '@cads/shared/components/ui/button'
 import { Pagination } from '@cads/shared/components/pagination'
-import { Repeat } from '@/components/repeat.tsx'
-import { Skeleton } from '@cads/shared/components/ui/skeleton.tsx'
-import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
-import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation.ts'
+import { Repeat } from '@cads/shared/components/repeat'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
+import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation'
 
 const measureOrder = [
   'conservative_log_ratio',
