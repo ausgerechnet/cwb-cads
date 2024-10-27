@@ -6,7 +6,8 @@
     "postgenerate-client": "prettier --write ./api-client/__generated__client.ts",
     "generate-component": "npx shadcn@latest add",
     "format": "prettier --write .",
-    "test": "echo \"Error: no test specified\""
+    "test": "echo \"Error: no test specified\"",
+    "lint": "echo \"Error: no linter specified\""
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
