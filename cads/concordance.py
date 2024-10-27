@@ -14,7 +14,10 @@ from . import db
 from .database import Concordance, ConcordanceLines, Matches
 
 
-def ccc2attributes(line, primary, secondary, s_show, window):
+def ccc2attributes(line, p_show, s_show, window):
+
+    if len(p_show) != 2:
+        raise NotImplementedError()
 
     match = line.name[0]
     contextid = line['contextid']
@@ -24,6 +27,10 @@ def ccc2attributes(line, primary, secondary, s_show, window):
 
     line = line['dict']
     tokens = list()
+
+    primary = p_show[0]
+    secondary = p_show[1]
+
     for cpos, offset, prim, sec in zip(line['cpos'], line['offset'], line[primary], line[secondary]):
         tokens.append({
             'cpos': cpos,
@@ -43,31 +50,39 @@ def ccc2attributes(line, primary, secondary, s_show, window):
     return row
 
 
-def sort_matches(query, sort_by, sort_offset=0):
+def sort_matches(query, sort_by_offset, sort_by_p_att, sort_by_s_att=None):
     """
 
     """
 
+    if sort_by_s_att:
+        raise NotImplementedError()
+
+    # retrieve from database if possible
     random_seed = query.random_seed
-    concordance = Concordance.query.filter_by(query_id=query.id, sort_by=sort_by, sort_offset=sort_offset, random_seed=random_seed).first()
+    concordance = Concordance.query.filter_by(query_id=query.id, sort_by=sort_by_p_att, sort_offset=sort_by_offset, random_seed=random_seed).first()
 
     if not concordance:
 
-        concordance = Concordance(query_id=query.id, sort_by=sort_by, sort_offset=sort_offset, random_seed=random_seed)
+        # create concordance
+        concordance = Concordance(query_id=query.id, sort_offset=sort_by_offset, sort_by=sort_by_p_att, random_seed=random_seed)
         db.session.add(concordance)
         db.session.commit()
 
-        if not sort_by:
+        # sort randomly
+        if not sort_by_p_att and not sort_by_s_att:
             sort_clause = f"sort {query.nqr_cqp} randomize {random_seed}"
 
         else:
-            if sort_offset > 0:
-                sort_clause = f"sort {query.nqr_cqp} by {sort_by} on matchend[{sort_offset}] .. match"
-            elif sort_offset < 0:
-                sort_clause = f"sort {query.nqr_cqp} by {sort_by} on match[{sort_offset}] .. matchend"
+            # sorting on p-attribute
+            if sort_by_offset > 0:
+                sort_clause = f"sort {query.nqr_cqp} by {sort_by_p_att} on matchend[{sort_by_offset}] .. match"
+            elif sort_by_offset < 0:
+                sort_clause = f"sort {query.nqr_cqp} by {sort_by_p_att} on match[{sort_by_offset}] .. matchend"
             else:
-                sort_clause = f"sort {query.nqr_cqp} by {sort_by} on match .. matchend"
+                sort_clause = f"sort {query.nqr_cqp} by {sort_by_p_att} on match .. matchend"
 
+        # get concordance from cwb-ccc
         subcorpus = SubCorpus(
             subcorpus_name=query.nqr_cqp,
             df_dump=None,
@@ -83,8 +98,9 @@ def sort_matches(query, sort_by, sort_offset=0):
         concordance_lines = cqp.Dump(query.nqr_cqp)
         cqp.__del__()
 
+        # and save to database
         concordance_lines = concordance_lines.reset_index()[['match']]
-        concordance_lines['contextid'] = concordance_lines['match'].apply(lambda x: subcorpus.cpos2sid(x + sort_offset, query.s))
+        concordance_lines['contextid'] = concordance_lines['match'].apply(lambda x: subcorpus.cpos2sid(x, query.s))
         concordance_lines['concordance_id'] = concordance.id
         concordance_lines.to_sql('concordance_lines', con=db.engine, if_exists='append', index=False)
 
@@ -92,59 +108,66 @@ def sort_matches(query, sort_by, sort_offset=0):
 
 
 def ccc_concordance(focus_query,
-                    primary, secondary,
-                    window, extended_window, context_break=None,
-                    filter_queries=dict(), highlight_queries=dict(),
-                    match_id=None, page_number=None, page_size=None,
-                    sort_by=None, sort_offset=0, sort_order='ascending', sort_by_s_att=None,
-                    overlap='partial'):
+                    p_show, s_show,
+                    window, context_break=None,
+                    extended_window=None, extended_context_break=None,
+                    highlight_queries=dict(),
+                    match_id=None,
+                    filter_queries=dict(), overlap='partial',
+                    page_number=None, page_size=None,
+                    sort_order='random',
+                    sort_by_offset=0, sort_by_p_att=None, sort_by_s_att=None):
     """Central concordance function.
 
     :param Query focus_query: focus in KWIC view
 
-    :param str primary: primary p-attribute to display
-    :param str secondary: secondary p-attribtue to display
-    :param int window: tokens outside of window will be marked "out of window" (also used for filtering)
-    :param int extended_window: maximum number of tokens
-    :param str context_break: return context until this s-attribute (or extended_window) (also used for filtering)
+    :param str p_show: positional attributes to show
+    :param str s_show: structural attributes to show
 
-    :param dict[Query] filter_queries: further queries that must match in context (defined by window and context_break & query.s)
+    :param int window: tokens outside of window will be marked "out of window" (also used for filtering)
+    :param str context_break: tokens in s-att instances other than the one at match will be marked "out of window" (also used for filtering)
+
+    :param int extended_window: maximum number of tokens to display
+    :param int extended_context_break: structural attribute to break extended context
+
     :param dict[Query] highlight_queries: queries to highlight in (extended) context
 
     :param int match_id: return specific match?
+
+    :param dict[Query] filter_queries: queries that must match in context (defined by window & context_break & query.s)
+    :param str overlap: which overlaps of discoursemes with context to consider when filtering (partial | full | match | matchend)
+
     :param int page_number: pagination page number
     :param int page_size: pagination page size
 
-    :param str sort_by: p-attribute to sort on
-    :param int sort_offset: offset of token resp. match (negative) or matchend (positive) to sort on
-    :param str sort_order: ascending / descending / random
+    :param str sort_order: ascending / descending (alphabetical order of attribute) or random / first / last (based on cpos)
+
+    :param int sort_by_offset: offset of token resp. to match (negative) or matchend (positive) to sort on
+    :param str sort_by_p_att: p-attribute to sort on
     :param str sort_by_s_att: s-attribute to sort on
 
-    :param str overlap: which concordance lines to consider when filtering (partial | full | match | matchend)
 
     """
 
     current_app.logger.debug("ccc_concordance :: enter")
 
-    # check parameters
-    if sort_order == 'random' and (sort_by or sort_by_s_att):
+    # CHECK PARAMETERS
+    if sort_order in ('random', 'first', 'last') and (sort_by_p_att or sort_by_s_att):
         # TODO 400
-        raise ValueError("ccc_concordance :: either get random or sorted concordance lines, not both")
+        raise ValueError(f"ccc_concordance :: cpos-based '{sort_order}' not compatible with sorting on attribute, use 'ascending' or 'descending' instead")
 
     if len(filter_queries) > 0 and match_id:
         # TODO 400
         raise ValueError("ccc_concordance :: cannot filter with specific match id")
 
-    if sort_by_s_att:
-        raise NotImplementedError("ccc_concordance :: cannot sort by s-att")
-
-    if sort_by and sort_by_s_att:
+    if sort_by_p_att and sort_by_s_att:
         raise NotImplementedError("ccc_concordance :: cannot sort by s-att and p-att")
 
-    # get s-attribute settings
-    s_show = focus_query.corpus.s_annotations
+    if sort_by_offset is None and (sort_by_p_att or sort_by_s_att):
+        # default to sorting on match if sorting
+        sort_by_offset = 0
 
-    # get specified match
+    # SELECT MATCHES
     if match_id:
         current_app.logger.debug(f"ccc_concordance :: getting match {match_id}")
         matches = Matches.query.filter_by(match=match_id, query_id=focus_query.id).all()
@@ -153,35 +176,43 @@ def ccc_concordance(focus_query,
 
     else:
 
+        # FILTERING
         from .query import filter_matches
-
-        # filtering
         matches = filter_matches(focus_query, filter_queries, window, overlap)
         if not matches:
             return
 
-        # sorting
+        # SORTING
         current_app.logger.debug("ccc_concordance :: sorting")
-        if sort_order != 'first':
-            concordance = sort_matches(focus_query, sort_by, sort_offset)
+        if sort_order == 'first':
+            pass
+        elif sort_order == 'last':
+            matches = matches.order_by(Matches.id.desc())
+        elif sort_order in ('random', 'ascending', 'descending'):
+            concordance = sort_matches(focus_query, sort_by_offset, sort_by_p_att, sort_by_s_att)
             matches = matches.join(
                 ConcordanceLines,
                 (ConcordanceLines.concordance_id == concordance.id) &
-                (ConcordanceLines.match == Matches.match) &
-                (ConcordanceLines.contextid == Matches.contextid)
+                (ConcordanceLines.match == Matches.match)  # &
+                # (ConcordanceLines.contextid == Matches.contextid)
             )
-        if sort_order == 'ascending':
-            matches = matches.order_by(ConcordanceLines.id)
-        elif sort_order == 'descending':
-            matches = matches.order_by(ConcordanceLines.id.desc())
+            if sort_order == 'ascending' or sort_order == 'random':
+                matches = matches.order_by(ConcordanceLines.id)
+            elif sort_order == 'descending':
+                matches = matches.order_by(ConcordanceLines.id.desc())
+        else:
+            raise ValueError()
 
+        # PAGINATION
         matches = matches.paginate(page=page_number, per_page=page_size)
         nr_lines = matches.total
         page_count = matches.pages
 
-    # actual concordancing
+    # RETRIEVE DATA FROM CWB-CCC
     current_app.logger.debug("ccc_concordance :: creating selected concordances")
-    df_dump = DataFrame([vars(s) for s in matches], columns=['match', 'matchend', 'contextid']).set_index(['match', 'matchend'])
+    df_dump = DataFrame(
+        [vars(s) for s in matches], columns=['match', 'matchend', 'contextid']
+    ).set_index(['match', 'matchend'])
     lines = SubCorpus(
         subcorpus_name=None,
         df_dump=df_dump,
@@ -196,13 +227,15 @@ def ccc_concordance(focus_query,
         context_break=context_break
     ).concordance(
         form='dict',
-        p_show=[primary, secondary],
+        p_show=p_show,
         s_show=s_show,
         order='asis'
     )
-    lines = lines.apply(lambda line: ccc2attributes(line, primary, secondary, s_show, window), axis=1)
 
-    # highlighting
+    # FORMATTING
+    lines = lines.apply(lambda line: ccc2attributes(line, p_show, s_show, window), axis=1)
+
+    # HIGHLIGHTING
     highlight_ranges = defaultdict(list)
     filter_item_cpos = set()
     for key, hq in highlight_queries.items():
@@ -241,45 +274,91 @@ def ccc_concordance(focus_query,
 ################
 
 # Input
-class ConcordanceIn(Schema):
-
-    window = Integer(required=False, load_default=10)
-    extended_window = Integer(required=False, load_default=50)
-    context_break = String(required=False, load_default=None)
-
-    primary = String(required=False, load_default='word')
-    secondary = String(required=False, load_default='lemma')
-
-    page_size = Integer(required=False, load_default=10)
-    page_number = Integer(required=False, load_default=1)
-
-    sort_order = String(required=False, load_default='random', validate=OneOf(['first', 'random', 'ascending', 'descending']))
-
-    sort_by_offset = Integer(required=False, load_default=0)
-    sort_by_p_att = String(required=False, load_default=None)
-    sort_by_s_att = String(required=False, load_default=None)
-
-    filter_item = String(required=False, metadata={'nullable': True})
-    filter_item_p_att = String(required=False, load_default='lemma')
-
-    filter_query_ids = List(Integer, required=False, load_default=[])
-    highlight_query_ids = List(Integer, required=False, load_default=[])
-
-
 class ConcordanceLineIn(Schema):
 
-    window = Integer(required=False, load_default=10)
-    extended_window = Integer(required=False, load_default=50)
-    extended_context_break = String(required=False)
+    window = Integer(
+        required=False, load_default=10,
+        metadata={'description': 'tokens outside of window will be marked "out of window" (also used for filtering)'}
+    )
+    context_break = String(
+        required=False, load_default=None,
+        metadata={'description': 'tokens in s-att instances other than the one at match will be marked "out of window" (also used for filtering)'}
+    )
 
-    primary = String(required=False, load_default='word')
-    secondary = String(required=False, load_default='lemma')
+    extended_window = Integer(
+        required=False, load_default=50,
+        metadata={'description': 'maximum number of tokens to display'}
+    )
+    extended_context_break = String(
+        required=False, load_default=None,
+        metadata={'description': 'structural attribute to break extended context'}
+    )
+
+    primary = String(
+        required=False, load_default='word',
+        metadata={'description': 'primary positional attribute'}
+
+    )
+    secondary = String(
+        required=False, load_default='lemma',
+        metadata={'description': 'secondary positional attribute'}
+    )
+
+    highlight_query_ids = List(
+        Integer, required=False, load_default=[],
+        metadata={'description': 'queries to highlight in (extended) context'}
+    )
+
+
+class ConcordanceIn(ConcordanceLineIn):
+
+    page_size = Integer(
+        required=False, load_default=10,
+        metadata={'description': 'page size'}
+    )
+    page_number = Integer(
+        required=False, load_default=1,
+        metadata={'description': 'page number'}
+    )
+
+    sort_order = String(
+        required=False, load_default='random', validate=OneOf(['random', 'first', 'last', 'ascending', 'descending']),
+        metadata={'description': 'sort on alphabetical order of attribute (ascending / descending) or based on cpos (random / first / last)'}
+    )
+
+    sort_by_offset = Integer(
+        required=False, load_default=None,
+        metadata={'description': 'offset of token resp. to match (negative) or matchend (positive) to sort on'}
+    )
+    sort_by_p_att = String(
+        required=False, load_default=None,
+        metadata={'description': 'p-attribute to sort on'}
+    )
+    sort_by_s_att = String(
+        required=False, load_default=None,
+        metadata={'description': 's-attribute to sort on'}
+    )
+
+    filter_item = String(
+        required=False,
+        metadata={'nullable': True,
+                  'description': 'item that must match in context (defined by window & context_break & query.s)'}
+    )
+    filter_item_p_att = String(
+        required=False, load_default='lemma',
+        metadata={'description': 'p-attribute to search filter-item on'}
+    )
+
+    filter_query_ids = List(
+        Integer, required=False, load_default=[],
+        metadata={'description': 'queries that must match in context (defined by window & context_break & query.s)'}
+    )
 
 
 # Output
-class DiscoursemeRangeOut(Schema):
+class DiscoursemeRangeOut(Schema):  # rename to 'RangeOut'
 
-    discourseme_id = Integer(required=True)
+    discourseme_id = Integer(required=True)  # rename to 'identifier' (→ query, discourseme, filter_item)
     start = Integer(required=True)
     end = Integer(required=True)
 
@@ -299,7 +378,7 @@ class ConcordanceLineOut(Schema):
     match_id = Integer(required=True)
     tokens = Nested(TokenOut(many=True), required=True, dump_default=[])
     structural = Dict(required=True, dump_default={})
-    discourseme_ranges = Nested(DiscoursemeRangeOut(many=True), required=True, dump_default=[])
+    discourseme_ranges = Nested(DiscoursemeRangeOut(many=True), required=True, dump_default=[])  # rename to 'ranges'
 
 
 class ConcordanceOut(Schema):

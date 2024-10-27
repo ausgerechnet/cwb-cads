@@ -836,6 +836,8 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
     primary = query_data.get('primary')
     secondary = query_data.get('secondary')
     extended_window = query_data.get('extended_window')
+    context_break = query_data.get('context_break')
+    extended_context_break = query_data.get('extended_context_break')
 
     # pagination
     page_size = query_data.get('page_size')
@@ -843,9 +845,9 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
 
     # sorting
     sort_order = query_data.get('sort_order')
-    sort_by = query_data.get('sort_by_p_att')
+    sort_by_offset = query_data.get('sort_by_offset')
+    sort_by_p_att = query_data.get('sort_by_p_att')
     sort_by_s_att = query_data.get('sort_by_s_att')
-    sort_offset = query_data.get('sort_by_offset')
 
     # filtering
     filter_discourseme_ids = query_filter.get('filter_discourseme_ids')
@@ -859,13 +861,20 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
     if filter_item:
         filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
 
+    # attributes to show
+    p_show = [primary, secondary]
+    s_show = focus_query.corpus.s_annotations
+
     concordance = ccc_concordance(focus_query,
-                                  primary, secondary,
-                                  window, extended_window, description.s,
-                                  filter_queries=filter_queries, highlight_queries=highlight_queries,
+                                  p_show, s_show,
+                                  window, context_break,
+                                  extended_window, extended_context_break,
+                                  highlight_queries=highlight_queries,
+                                  match_id=None,
+                                  filter_queries=filter_queries, overlap='partial',
                                   page_number=page_number, page_size=page_size,
-                                  sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order, sort_by_s_att=sort_by_s_att,
-                                  overlap=description.overlap)
+                                  sort_order=sort_order,
+                                  sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
 
     return ConcordanceOut().dump(concordance), 200
 
@@ -1347,7 +1356,7 @@ def get_constellation_associations(id, description_id):
         context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
 
     current_app.logger.debug('get constellation associations :: calculating co-occurrences')
-    N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))
+    N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))  # TODO: subcorpus size?
     records = list()
     for pair, f in pairwise_intersections(context_ids).items():
         pair = sorted(pair)

@@ -511,6 +511,7 @@ def concordance_lines(query_id, query_data):
     secondary = query_data.get('secondary')
     extended_window = query_data.get('extended_window')
     context_break = query_data.get('context_break')
+    extended_context_break = query_data.get('extended_context_break')
 
     # pagination
     page_size = query_data.get('page_size')
@@ -518,9 +519,9 @@ def concordance_lines(query_id, query_data):
 
     # sorting
     sort_order = query_data.get('sort_order')
-    sort_by = query_data.get('sort_by_p_att')
+    sort_by_p_att = query_data.get('sort_by_p_att')
     sort_by_s_att = query_data.get('sort_by_s_att')
-    sort_offset = query_data.get('sort_by_offset')
+    sort_by_offset = query_data.get('sort_by_offset')
 
     # filtering
     filter_item = query_data.get('filter_item')
@@ -539,12 +540,20 @@ def concordance_lines(query_id, query_data):
     # prepare highlight queries
     highlight_queries = {query_id: db.get_or_404(Query, query_id) for query_id in highlight_query_ids}
 
+    # attributes to show
+    p_show = [primary, secondary]
+    s_show = query.corpus.s_annotations
+
     concordance = ccc_concordance(query,
-                                  primary, secondary,
-                                  window, extended_window, context_break,
-                                  filter_queries=filter_queries, highlight_queries=highlight_queries,
+                                  p_show, s_show,
+                                  window, context_break,
+                                  extended_window, extended_context_break,
+                                  highlight_queries=highlight_queries,
+                                  match_id=None,
+                                  filter_queries=filter_queries, overlap='partial',
                                   page_number=page_number, page_size=page_size,
-                                  sort_by=sort_by, sort_offset=sort_offset, sort_order=sort_order, sort_by_s_att=sort_by_s_att)
+                                  sort_order=sort_order,
+                                  sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
 
     return ConcordanceOut().dump(concordance), 200
 
@@ -553,7 +562,7 @@ def concordance_lines(query_id, query_data):
 @bp.auth_required(auth)
 @bp.output(QueryOut)
 def concordance_shuffle(query_id):
-    """Shuffle concordance lines.
+    """Shuffle concordance lines. Changes the 'random' sort order that query matches will be displayed in.
 
     """
     query = db.get_or_404(Query, query_id)
@@ -575,18 +584,29 @@ def concordance_line(query_id, match_id, query_data):
     query = db.get_or_404(Query, query_id)
 
     # display options
-    extended_context_break = query_data.get('extended_context_break', query.corpus.s_default)
-    extended_window = query_data.get('extended_window')
     window = query_data.get('window')
+    context_break = query_data.get('context_break')
+    extended_window = query_data.get('extended_window')
+    extended_context_break = query_data.get('extended_context_break', query.corpus.s_default)
     primary = query_data.get('primary')
     secondary = query_data.get('secondary')
 
-    # TODO highlighting for constellations, also shuffle
+    # highlighting
+    highlight_query_ids = query_data.get('highlight_query_ids')
+
+    # prepare highlight queries
+    highlight_queries = {query_id: db.get_or_404(Query, query_id) for query_id in highlight_query_ids}
+
+    # attributes to show
+    p_show = [primary, secondary]
+    s_show = query.corpus.s_annotations
 
     concordance = ccc_concordance(query,
-                                  primary, secondary,
-                                  window, extended_window, context_break=extended_context_break,
-                                  match_id=match_id)
+                                  p_show, s_show,
+                                  window, context_break,
+                                  extended_window, extended_context_break,
+                                  highlight_queries,
+                                  match_id)
 
     return ConcordanceLineOut().dump(concordance['lines'][0]), 200
 

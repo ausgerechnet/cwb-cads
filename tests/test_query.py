@@ -296,42 +296,72 @@ def test_query_concordance_sort_complete(client, auth):
                             },
                             headers=auth_header)
 
-        # SORT BY CORPUS OCCURRENCE
+        # sort_order first
         lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
-                                   sort_by='text_date', sort_order='ascending', window=8),
+                                   sort_order='first', window=8),
                            headers=auth_header)
-
         assert lines.status_code == 200
 
         match_ids = list()
         for line in lines.json['lines']:
             match_ids.append(line['match_id'])
-        print(match_ids)
+        assert list(sorted(match_ids)) == match_ids
 
-        # SORT BY OFFSET -2 ASCENDING
+        # sort_order last
         lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
-                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=8),
+                                   sort_order='last', window=8),
                            headers=auth_header)
+        assert lines.status_code == 200
 
+        match_ids = list()
+        for line in lines.json['lines']:
+            match_ids.append(line['match_id'])
+        assert list(reversed(sorted(match_ids))) == match_ids
+
+        # sort_order random
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+                                   sort_order='random', window=8),
+                           headers=auth_header)
+        assert lines.status_code == 200
+
+        match_ids = list()
+        for line in lines.json['lines']:
+            match_ids.append(line['match_id'])
+        assert list(reversed(sorted(match_ids))) != match_ids
+        assert list(sorted(match_ids)) != match_ids
+
+        # sort_order ascending: on word / match
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+                                   sort_by_p_att='word', sort_by_offset=0, sort_order='ascending', window=8),
+                           headers=auth_header)
+        assert lines.status_code == 200
+
+        tokens = list()
+        for line in lines.json['lines']:
+            t = [t['primary'] for t in line['tokens'] if t['offset'] == 0][0]
+            tokens.append(t)
+        assert list(sorted(tokens)) == tokens
+
+        # sort_order ascending: on lemma / -2
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+                                   sort_by_p_att='lemma', sort_by_offset=-2, sort_order='ascending', window=8),
+                           headers=auth_header)
         assert lines.status_code == 200
 
         tokens = list()
         for line in lines.json['lines']:
             t = [t['primary'] for t in line['tokens'] if t['offset'] == -2][0]
             tokens.append(t)
-
         assert list(sorted(tokens)) == tokens
 
-        # SORT BY OFFSET -2 DESCENDING
+        # sort order descending: on word / -2
         lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
                                    sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=8),
                            headers=auth_header)
-
         assert lines.status_code == 200
 
         tokens = list()
         for line in lines.json['lines']:
             t = [t['primary'] for t in line['tokens'] if t['offset'] == -2][0]
             tokens.append(t)
-
         assert list(reversed(sorted(tokens))) == tokens
