@@ -95,7 +95,7 @@ To use any query, just import it from `@cads/shared/queries` and use it via the 
 
 * [useQuery](https://tanstack.com/query/latest/docs/framework/react/reference/useQuery): To run queries that merely fetch data. 
 * [useMutation](https://tanstack.com/query/v5/docs/framework/react/reference/useMutation): To run mutations, e.g. API calls that change data.
-* [useSuspenseQuery](https://tanstack.com/query/latest/docs/framework/react/reference/useSuspenseQuery): Like `useQuery`, but `data` is guaranteed to be defined. You should use this in conjunction with the [route's loader](https://tanstack.com/router/v1/docs/framework/react/guide/data-loading).
+* [useSuspenseQuery](https://tanstack.com/query/latest/docs/framework/react/reference/useSuspenseQuery): Like `useQuery`, but `data` is guaranteed to be defined. You should use this in conjunction with the [route's loader](https://tanstack.com/router/v1/docs/framework/react/guide/data-loading). (See the [route example below](#example-route).)
 
 #### Components
 
@@ -113,6 +113,24 @@ Shared React components are located in the `components` directory. They're gener
 #### Lib
 
 The `lib` directory contains small utility functions that are used in multiple places.
+
+A relevant exported function is `cn` from `@cads/shared/lib/utils`. It's a wrapper around [clsx](https://www.npmjs.com/package/clsx) and [tailwind-merge](https://www.npmjs.com/package/tailwind-merge), combining them into one handy function.
+
+`clsx` is a utility for joining class names together. It's especially useful when you want to conditionally apply classes based on a prop or a condition.
+
+`tailwind-merge` is a utility for merging tailwind classes together. This solves the problem of selectively removing classes that would be in conflict with each other.
+
+```tsx
+<span
+  className={
+    cn(
+      'text-red-500',
+      { 'font-bold text-blue-500': someCondition },
+      className
+    )
+  }
+>Hello, world!</span>
+```
 
 ### MMDA/Spheroscope Workspaces
 
@@ -136,7 +154,7 @@ Tipp: If you create components that are only used in a single route, keep them c
 
 To load data for a route, you can use the `loader` property of the route. This function is called before the route is rendered and can be used to fetch data. The route will not be rendered until the loader has resolved.
 
-It's a good idea to use the `QueryClient` to load the data. This way you can use `useSuspenseQuery` in your components to ensure that the data is immediately available. 
+It's a good idea to use the [QueryClient](https://tanstack.com/query/v5/docs/reference/QueryClient) to load the data. This way you can use [useSuspenseQuery](https://tanstack.com/query/latest/docs/framework/react/reference/useSuspenseQueries#usesuspensequeries) in your components to ensure that the data is immediately available. 
 
 ##### Search Params
 
