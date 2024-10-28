@@ -20,11 +20,11 @@
 
 ## Project setup
 
-1. Ensure that the correct node version is installed as specified in the `.nvmrc` file. If you use `nvm`, you can run: `nvm use` to switch to the correct version.
+1. Ensure that the correct [node.js](https://nodejs.org/) version is installed as specified in the `.nvmrc` file. If you use [nvm (node version manager)](https://github.com/nvm-sh/nvm), you can run: `nvm use` to switch to the correct version.
 2. Install the dependencies:
    ```bash
    npm install
-  ```
+   ```
 
 ## Tech Stack
 
