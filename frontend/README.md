@@ -45,13 +45,13 @@ Quick overview of the tech stack used in this project:
 
 ### Running the development server
 
-To start the development server, run:
+To start the CADS frontend development server, run:
 
 ```bash
 npm run dev
 ```
 
-To run the spheroscope frontend in production mode, run:
+To run the spheroscope frontend development server, run:
 
 ```bash
 npm run dev:spheroscope
