@@ -8,7 +8,7 @@ from apiflask.fields import Boolean, Dict, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import SubCorpus
 from flask import current_app
-from pandas import DataFrame
+from pandas import concat, DataFrame
 
 from . import db
 from .database import Concordance, ConcordanceLines, Matches
@@ -100,10 +100,20 @@ def sort_matches(query, sort_by_offset, sort_by_p_att, sort_by_s_att=None):
         concordance_lines = cqp.Dump(query.nqr_cqp)
         cqp.__del__()
 
-        # and save to database
+        # take care of context
         concordance_lines = concordance_lines.reset_index()[['match']]
         concordance_lines['contextid'] = concordance_lines['match'].apply(lambda x: subcorpus.cpos2sid(x, query.s))
+        if sort_by_offset is not None:
+            # move the lines where sort position is out of context to the top
+            concordance_lines['contextid_sort'] = concordance_lines['match'].apply(lambda x: subcorpus.cpos2sid(x + sort_by_offset, query.s))
+            concordance_lines['contextid_sort'] = concordance_lines['contextid_sort'] == concordance_lines['contextid']
+            concordance_lines = concat([
+                concordance_lines.loc[~ concordance_lines['contextid_sort']],
+                concordance_lines.loc[concordance_lines['contextid_sort']]
+            ]).drop('contextid_sort', axis=1)
         concordance_lines['concordance_id'] = concordance.id
+
+        # and save to database
         concordance_lines.to_sql('concordance_lines', con=db.engine, if_exists='append', index=False)
 
     return concordance
