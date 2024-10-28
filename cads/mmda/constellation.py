@@ -832,11 +832,13 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
     description = db.get_or_404(ConstellationDescription, description_id)
 
     # display options
-    window = query_data.get('window')
     primary = query_data.get('primary')
     secondary = query_data.get('secondary')
-    extended_window = query_data.get('extended_window')
+
+    window = query_data.get('window')
     context_break = query_data.get('context_break')
+
+    extended_window = query_data.get('extended_window')
     extended_context_break = query_data.get('extended_context_break')
 
     # pagination
@@ -864,6 +866,10 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
     # attributes to show
     p_show = [primary, secondary]
     s_show = focus_query.corpus.s_annotations
+
+    # break context at focus_query.s by default
+    if context_break is None:
+        context_break = focus_query.s
 
     concordance = ccc_concordance(focus_query,
                                   p_show, s_show,

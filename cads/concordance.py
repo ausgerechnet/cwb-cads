@@ -14,13 +14,15 @@ from . import db
 from .database import Concordance, ConcordanceLines, Matches
 
 
-def ccc2attributes(line, p_show, s_show, window):
+def ccc2attributes(line, p_show, s_show):
 
     if len(p_show) != 2:
         raise NotImplementedError()
 
     match = line.name[0]
     contextid = line['contextid']
+    context = line['context']
+    contextend = line['contextend']
     structural = dict()
     for s_att in s_show:
         structural[s_att] = line[s_att]
@@ -37,7 +39,7 @@ def ccc2attributes(line, p_show, s_show, window):
             'offset': offset,
             'primary': prim,
             'secondary': sec,
-            'out_of_window': False if abs(offset) <= window else True
+            'out_of_window': False if cpos >= context and cpos <= contextend else True
         })
 
     row = {
@@ -222,8 +224,9 @@ def ccc_concordance(focus_query,
         data_dir=current_app.config['CCC_DATA_DIR'],
         overwrite=False,
         lib_dir=None
-    ).set_context(
-        context=extended_window,
+    )
+    lines_in_context = lines.set_context(
+        context=window,
         context_break=context_break
     ).concordance(
         form='dict',
@@ -231,9 +234,19 @@ def ccc_concordance(focus_query,
         s_show=s_show,
         order='asis'
     )
+    lines_in_extended_context = lines.set_context(
+        context=extended_window,
+        context_break=extended_context_break
+    ).concordance(
+        form='dict',
+        p_show=p_show,
+        s_show=s_show,
+        order='asis'
+    )
+    lines = lines_in_extended_context.drop(['context', 'contextend'], axis=1).join(lines_in_context[['context', 'contextend']])
 
     # FORMATTING
-    lines = lines.apply(lambda line: ccc2attributes(line, p_show, s_show, window), axis=1)
+    lines = lines.apply(lambda line: ccc2attributes(line, p_show, s_show), axis=1)
 
     # HIGHLIGHTING
     highlight_ranges = defaultdict(list)
@@ -286,7 +299,7 @@ class ConcordanceLineIn(Schema):
     )
 
     extended_window = Integer(
-        required=False, load_default=50,
+        required=False, load_default=25,
         metadata={'description': 'maximum number of tokens to display'}
     )
     extended_context_break = String(
@@ -341,8 +354,7 @@ class ConcordanceIn(ConcordanceLineIn):
 
     filter_item = String(
         required=False,
-        metadata={'nullable': True,
-                  'description': 'item that must match in context (defined by window & context_break & query.s)'}
+        metadata={'description': 'item that must match in context (defined by window & context_break & query.s)'}
     )
     filter_item_p_att = String(
         required=False, load_default='lemma',
@@ -351,7 +363,7 @@ class ConcordanceIn(ConcordanceLineIn):
 
     filter_query_ids = List(
         Integer, required=False, load_default=[],
-        metadata={'description': 'queries that must match in context (defined by window & context_break & query.s)'}
+        metadata={'description': 'queries that must match in context (defined by window & context_break / query.s)'}
     )
 
 
