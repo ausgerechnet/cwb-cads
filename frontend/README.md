@@ -4,19 +4,19 @@
 * [Tech Stack](#tech-stack)
 * [Development](#development)
   * [Running the development server](#running-the-development-server)
-  * [Project structure](#project-structure)
-    * [Shared Workspace](#shared-workspace)
-      * [API Client](#api-client)
-      * [Queries](#queries)
-      * [Components](#components)
-      * [Lib](#lib)
-    * [MMDA/Spheroscope Workspaces](#mmdaspheroscope-workspaces)
-      * [Components](#components-1)
-      * [Routes](#routes)
-        * [Code Splitting](#code-splitting)
-        * [Data Loading](#data-loading)
-        * [Search Params](#search-params)
-          * [Example Route](#example-route)
+* [Project structure](#project-structure)
+  * [Shared Workspace](#shared-workspace)
+    * [API Client](#api-client)
+    * [Queries](#queries)
+    * [Components](#components)
+    * [Lib](#lib)
+  * [MMDA/Spheroscope Workspaces](#mmdaspheroscope-workspaces)
+    * [Components](#components-1)
+    * [Routes](#routes)
+      * [Code Splitting](#code-splitting)
+      * [Data Loading](#data-loading)
+      * [Search Params](#search-params)
+      * [Example Route](#example-route)
 
 ## Project setup
 
@@ -57,7 +57,7 @@ To run the spheroscope frontend in production mode, run:
 npm run dev:spheroscope
 ```
 
-### Project structure
+## Project structure
 
 The project is separated into three [npm workspaces](https://docs.npmjs.com/cli/v8/using-npm/workspaces):
 
@@ -65,11 +65,11 @@ The project is separated into three [npm workspaces](https://docs.npmjs.com/cli/
 * `mmda`: Contains the MMDA frontend.
 * `spheroscope`: Contains the Spheroscope frontend.
 
-#### Shared Workspace
+### Shared Workspace
 
 The shared workspace contains shared code between the two frontends.
  
-##### API Client
+#### API Client
 
 In `api-client` you can, unsurprisingly, find the API client.  
 It is automatically generated from the OpenAPI specification. Using [openapi-zod-client](https://github.com/astahmer/openapi-zod-client) it creates an [axios client](https://github.com/axios/axios) with type-safe request and response types that are validated during runtime with [zod](https://zod.dev). To run the generation, you can use the npm script `generate-client` either from the root directory or from the `shared` directory:
@@ -83,7 +83,7 @@ npm run generate-client
 By default, it uses `/api` as the base URL. To change it, you can set the environment variable `VITE_API_URL`.  
 The development servers automatically set up a proxy to the backend via `/api`. You can configure this in the respective `vite.config.ts` files.
 
-##### Queries
+#### Queries
 
 The API client is mostly used in conjunction with the excellent [Tanstack Query](https://tanstack.com/) library.
 
@@ -97,7 +97,7 @@ To use any query, just import it from `@cads/shared/queries` and use it via the 
 * [useMutation](https://tanstack.com/query/v5/docs/framework/react/reference/useMutation): To run mutations, e.g. API calls that change data.
 * [useSuspenseQuery](https://tanstack.com/query/latest/docs/framework/react/reference/useSuspenseQuery): Like `useQuery`, but `data` is guaranteed to be defined. You should use this in conjunction with the [route's loader](https://tanstack.com/router/v1/docs/framework/react/guide/data-loading).
 
-##### Components
+#### Components
 
 Shared React components are located in the `components` directory. They're generally split into two categories:
 
@@ -110,39 +110,39 @@ Shared React components are located in the `components` directory. They're gener
 * `components/`
   These are more complex components that might even contain business logic.
 
-##### Lib
+#### Lib
 
 The `lib` directory contains small utility functions that are used in multiple places.
 
-#### MMDA/Spheroscope Workspaces
+### MMDA/Spheroscope Workspaces
 
 These workspaces contain the respective frontend code. They're structured similarly.
 
-##### Components
+#### Components
 
 The `components` directory contains the React components that are specific to the respective frontend. Whenever you create a new component, consider whether it should be shared between the two frontends. If so, create it in the `shared` workspace.
 
-##### Routes
+#### Routes
 
 We're using [Tanstack Router](https://tanstack.com/router/v1) for routing. For maximum convenience we use [file based routing](https://tanstack.com/router/latest/docs/framework/react/guide/file-based-routing).
 
-###### Code Splitting
+##### Code Splitting
 
 If a route contains a lot of components or relies on heavy dependencies, you might want to lazy load this route. That can be done by using two files for that route. One named `route-name.tsx` and one `route-name.lazy.tsx`.
 
 Tipp: If you create components that are only used in a single route, keep them collocated with the route instead of putting them in the `components` directory.
 
-###### Data Loading
+##### Data Loading
 
 To load data for a route, you can use the `loader` property of the route. This function is called before the route is rendered and can be used to fetch data. The route will not be rendered until the loader has resolved.
 
 It's a good idea to use the `QueryClient` to load the data. This way you can use `useSuspenseQuery` in your components to ensure that the data is immediately available. 
 
-###### Search Params
+##### Search Params
 
 Router offers a way to validate search params. This ensures that the search params are completely typesafe. The best way to do this is to take advantage of the [zod](https://zod.dev) library. 
 
-####### Example Route
+##### Example Route
 
 `my-route.tsx`:
 
