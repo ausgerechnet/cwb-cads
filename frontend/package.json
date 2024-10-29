@@ -2,19 +2,19 @@
   "name": "frontend",
   "version": "1.0.0",
   "scripts": {
-    "dev": "npm run dev --workspace @cads/cads",
+    "dev": "npm run dev --workspace @cads/mmda",
     "dev:spheroscope": "npm run dev --workspace @cads/spheroscope",
-    "build": "npm run build --workspace @cads/cads --workspace @cads/spheroscope",
+    "build": "npm run build --workspace @cads/mmda --workspace @cads/spheroscope",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "format": "npm run format --workspaces",
-    "typecheck": "npm run typecheck --workspaces",
+    "typecheck": "npm run typecheck --workspace @cads/mmda --workspace @cads/spheroscope",
     "generate-client": "npm run generate-client --workspace shared",
     "generate-component": "npm run generate-component --workspace shared"
   },
   "workspaces": [
     "shared/",
-    "cads/",
+    "mmda/",
     "spheroscope/"
   ],
   "dependencies": {
