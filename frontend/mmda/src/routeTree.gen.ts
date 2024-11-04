@@ -15,6 +15,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as VignetteImport } from './routes/vignette'
 import { Route as LoginImport } from './routes/login'
+import { Route as ComponentsImport } from './routes/components_'
 import { Route as AppImport } from './routes/_app'
 import { Route as Import } from './routes/*'
 import { Route as IndexImport } from './routes/index'
@@ -64,6 +65,12 @@ const LoginRoute = LoginImport.update({
   path: '/login',
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
+
+const ComponentsRoute = ComponentsImport.update({
+  id: '/components_',
+  path: '/components',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const AppRoute = AppImport.update({
   id: '/_app',
@@ -274,6 +281,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof AppImport
+      parentRoute: typeof rootRoute
+    }
+    '/components_': {
+      id: '/components_'
+      path: '/components'
+      fullPath: '/components'
+      preLoaderRoute: typeof ComponentsImport
       parentRoute: typeof rootRoute
     }
     '/login': {
@@ -509,6 +523,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/*': typeof Route
   '': typeof AppRouteWithChildren
+  '/components': typeof ComponentsRoute
   '/login': typeof LoginRoute
   '/vignette': typeof VignetteRoute
   '/logout': typeof LogoutLazyRoute
@@ -538,6 +553,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/*': typeof Route
   '': typeof AppRouteWithChildren
+  '/components': typeof ComponentsRoute
   '/login': typeof LoginRoute
   '/vignette': typeof VignetteRoute
   '/logout': typeof LogoutLazyRoute
@@ -568,6 +584,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/*': typeof Route
   '/_app': typeof AppRouteWithChildren
+  '/components_': typeof ComponentsRoute
   '/login': typeof LoginRoute
   '/vignette': typeof VignetteRoute
   '/logout': typeof LogoutLazyRoute
@@ -599,6 +616,7 @@ export interface FileRouteTypes {
     | '/'
     | '/*'
     | ''
+    | '/components'
     | '/login'
     | '/vignette'
     | '/logout'
@@ -627,6 +645,7 @@ export interface FileRouteTypes {
     | '/'
     | '/*'
     | ''
+    | '/components'
     | '/login'
     | '/vignette'
     | '/logout'
@@ -655,6 +674,7 @@ export interface FileRouteTypes {
     | '/'
     | '/*'
     | '/_app'
+    | '/components_'
     | '/login'
     | '/vignette'
     | '/logout'
@@ -685,6 +705,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   Route: typeof Route
   AppRoute: typeof AppRouteWithChildren
+  ComponentsRoute: typeof ComponentsRoute
   LoginRoute: typeof LoginRoute
   VignetteRoute: typeof VignetteRoute
   LogoutLazyRoute: typeof LogoutLazyRoute
@@ -694,6 +715,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   Route: Route,
   AppRoute: AppRouteWithChildren,
+  ComponentsRoute: ComponentsRoute,
   LoginRoute: LoginRoute,
   VignetteRoute: VignetteRoute,
   LogoutLazyRoute: LogoutLazyRoute,
@@ -714,6 +736,7 @@ export const routeTree = rootRoute
         "/",
         "/*",
         "/_app",
+        "/components_",
         "/login",
         "/vignette",
         "/logout"
@@ -748,6 +771,9 @@ export const routeTree = rootRoute
         "/_app/discoursemes_/new",
         "/_app/discoursemes_/$discoursemeId_/new-description"
       ]
+    },
+    "/components_": {
+      "filePath": "components_.tsx"
     },
     "/login": {
       "filePath": "login.tsx"
