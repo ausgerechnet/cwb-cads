@@ -694,6 +694,7 @@ export const constellationCollocationItems = (
   },
 ) =>
   queryOptions({
+    retry: 0,
     queryKey: [
       'constellation-collocation-items',
       constellationId,
