@@ -20,7 +20,6 @@ import {
 } from 'lucide-react'
 import { z } from 'zod'
 
-import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@cads/shared/components/ui/card'
 import { Headline3, Muted, Small } from '@cads/shared/components/ui/typography'
@@ -36,13 +35,15 @@ import {
   discoursemesList,
 } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils.ts'
+import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
 import { schemas } from '@/rest-client'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationCollocationFilter } from './-constellation-filter'
 import { Collocation } from './-constellation-collocation'
 import { SemanticMap } from './-semantic-map'
 import { useDescription } from './-use-description'
-import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
+import { SemanticMapPreview } from './-semantic-map-preview'
+import { useFilterSelection } from './-use-filter-selection'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -160,13 +161,14 @@ function ConstellationDetail() {
                 corpusId === undefined || focusDiscourseme === undefined
               }
             >
-              <Card className="bg-muted text-muted-foreground mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 p-4 text-center">
-                <div className="flex gap-3">
+              <Card className="bg-muted text-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 p-4 text-center">
+                <SemanticMapPreview className="absolute h-full w-full" />
+                <div className="bg-muted/70 relative flex gap-3 rounded p-2">
                   <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
                   <span>Semantic Map</span>
                 </div>
                 {(corpusId === undefined || focusDiscourseme === undefined) && (
-                  <div className="flex flex-col gap-1 rounded bg-amber-200 p-2 text-amber-800">
+                  <div className="relative flex flex-col gap-1 rounded bg-amber-200 p-2 text-amber-800">
                     {corpusId === undefined && (
                       <div>Select a corpus to view the map</div>
                     )}{' '}
@@ -178,33 +180,39 @@ function ConstellationDetail() {
               </Card>
             </Link>
           </div>
-          <SelectSubcorpus
-            className="mt-4"
-            onChange={(corpusId, subcorpusId) => {
-              void setFilter('corpusId', corpusId)
-              void setFilter('subcorpusId', subcorpusId)
-            }}
-            corpusId={corpusId}
-            subcorpusId={subcorpusId}
-          />
-          <Label>
-            Focus Discourseme:
-            <div className="relative">
-              <DiscoursemeSelect
-                discoursemes={discoursemesInDescription}
-                discoursemeId={focusDiscourseme}
-                onChange={(discoursemeId) => {
-                  void setFilter('ccPageNumber', 1)
-                  void setFilter('focusDiscourseme', discoursemeId)
-                }}
-                disabled={isLoadingDescription}
-                className="w-full"
-              />
-              {isLoadingDescription && (
-                <Loader2Icon className="absolute left-1/2 top-2 animate-spin" />
-              )}
-            </div>
-          </Label>
+          <div className="mt-4 flex gap-1">
+            <Label>
+              Subcorpus
+              <div className="relative mt-1">
+                <SelectSubcorpus
+                  onChange={(corpusId, subcorpusId) => {
+                    void setFilter('corpusId', corpusId)
+                    void setFilter('subcorpusId', subcorpusId)
+                  }}
+                  corpusId={corpusId}
+                  subcorpusId={subcorpusId}
+                />
+              </div>
+            </Label>
+            <Label>
+              Focus Discourseme:
+              <div className="relative mt-1">
+                <DiscoursemeSelect
+                  discoursemes={discoursemesInDescription}
+                  discoursemeId={focusDiscourseme}
+                  onChange={(discoursemeId) => {
+                    void setFilter('ccPageNumber', 1)
+                    void setFilter('focusDiscourseme', discoursemeId)
+                  }}
+                  disabled={isLoadingDescription}
+                  className="w-full"
+                />
+                {isLoadingDescription && (
+                  <Loader2Icon className="absolute left-1/2 top-2 animate-spin" />
+                )}
+              </div>
+            </Label>
+          </div>
         </>
       )}
       {corpusId !== undefined && (
@@ -233,8 +241,7 @@ function ConstellationDetail() {
             isVisible={isConcordanceVisible}
             onToggle={(isVisible) =>
               navigate({
-                to: '/constellations/$constellationId',
-                from: '/constellations/$constellationId',
+                to: '',
                 params: (p) => p,
                 search: (s) => ({
                   ...s,
