@@ -1,9 +1,7 @@
 library(tidyverse)
-library(lubridate)
-library(ggrepel)
-library(httr2)
-library(jsonlite)
 library(magrittr)
+library(ggrepel)
+
 
 #' Align items and scores
 #' 

@@ -1,8 +1,4 @@
 library(tidyverse)
-library(lubridate)
-library(ggrepel)
-library(httr2)
-library(jsonlite)
 library(magrittr)
 library(xtable)
 
@@ -120,7 +116,7 @@ conc.kwic <- function(concordance){
 #' @param path.out output path (.tex)
 #' @param crop how many characters to display
 #' @returns 
-latex.lines <- function(conc.tbl, path.out, crop = 40){
+latex.lines <- function(conc.tbl, path.out, crop = 40, align = "crcl"){
   crop <- max(0, min(crop - max(str_length(conc.tbl$node))))
   conc.tbl |> 
     rowwise() |> 
@@ -128,6 +124,6 @@ latex.lines <- function(conc.tbl, path.out, crop = 40){
       left = str_sub(left, str_length(left) - min(crop, str_length(left)) + 1),
       right = str_sub(right, end = min(crop, min(crop, str_length(right))))
     ) |> 
-    xtable() |>
+    xtable(align = align) |>
     print(file = path.out, booktabs = TRUE)
 }
