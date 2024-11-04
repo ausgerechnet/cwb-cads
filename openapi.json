@@ -109,6 +109,12 @@
           "item": {
             "type": "string"
           },
+          "raw_scores": {
+            "items": {
+              "$ref": "#/components/schemas/CollocationScoreOut"
+            },
+            "type": "array"
+          },
           "scores": {
             "items": {
               "$ref": "#/components/schemas/CollocationScoreOut"
@@ -118,6 +124,7 @@
         },
         "required": [
           "item",
+          "raw_scores",
           "scores"
         ],
         "type": "object"
@@ -281,6 +288,29 @@
         ],
         "type": "object"
       },
+      "ConstellationAssociationsOut": {
+        "properties": {
+          "candidate": {
+            "type": "integer"
+          },
+          "measure": {
+            "type": "string"
+          },
+          "node": {
+            "type": "integer"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "candidate",
+          "measure",
+          "node",
+          "score"
+        ],
+        "type": "object"
+      },
       "ConstellationCollocationIn": {
         "properties": {
           "filter_discourseme_ids": {
@@ -310,6 +340,10 @@
           },
           "focus_discourseme_id": {
             "type": "integer"
+          },
+          "include_negative": {
+            "default": false,
+            "type": "boolean"
           },
           "marginals": {
             "default": "local",
@@ -1238,6 +1272,12 @@
           "item": {
             "type": "string"
           },
+          "raw_scores": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordScoreOut"
+            },
+            "type": "array"
+          },
           "scores": {
             "items": {
               "$ref": "#/components/schemas/KeywordScoreOut"
@@ -1247,6 +1287,7 @@
         },
         "required": [
           "item",
+          "raw_scores",
           "scores"
         ],
         "type": "object"
@@ -1943,7 +1984,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev8"
+    "version": "0.3.0.dev11"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3929,6 +3970,72 @@
         ]
       }
     },
+    "/mmda/constellation/{id}/description/{description_id}/associations": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConstellationAssociationsOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get pairwise association scores for discoursemes in constellation, based on s-attribute.",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      }
+    },
     "/mmda/constellation/{id}/description/{description_id}/collocation/": {
       "get": {
         "parameters": [
@@ -4146,7 +4253,7 @@
     },
     "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/items": {
       "get": {
-        "description": "TODO also return ranks (to ease frontend pagination)?\nTODO filter out focus discourseme (traditional) or all discoursemes (correction of marginals needed!) or None?",
+        "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
@@ -4170,6 +4277,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hide_focus",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
             }
           },
           {
@@ -4325,6 +4441,7 @@
             }
           },
           {
+            "description": "tokens outside of window will be marked \"out of window\" (also used for filtering)",
             "in": "query",
             "name": "window",
             "required": false,
@@ -4334,15 +4451,39 @@
             }
           },
           {
+            "description": "tokens in s-att instances other than the one at match will be marked \"out of window\" (also used for filtering)",
+            "in": "query",
+            "name": "context_break",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "maximum number of tokens to display",
             "in": "query",
             "name": "extended_window",
             "required": false,
             "schema": {
-              "default": 50,
+              "default": 25,
               "type": "integer"
             }
           },
           {
+            "description": "structural attribute to break extended context",
+            "in": "query",
+            "name": "extended_context_break",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "primary positional attribute",
             "in": "query",
             "name": "primary",
             "required": false,
@@ -4352,6 +4493,7 @@
             }
           },
           {
+            "description": "secondary positional attribute",
             "in": "query",
             "name": "secondary",
             "required": false,
@@ -4361,89 +4503,10 @@
             }
           },
           {
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 10,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_number",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_order",
-            "required": false,
-            "schema": {
-              "default": "random",
-              "enum": [
-                "first",
-                "random",
-                "ascending",
-                "descending"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by_offset",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by_p_att",
-            "required": false,
-            "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by_s_att",
-            "required": false,
-            "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_item",
-            "required": false,
-            "schema": {
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_item_p_att",
-            "required": false,
-            "schema": {
-              "default": "lemma",
-              "type": "string"
-            }
-          },
-          {
+            "description": "queries to highlight in (extended) context",
             "explode": true,
             "in": "query",
-            "name": "filter_query_ids",
+            "name": "highlight_query_ids",
             "required": false,
             "schema": {
               "default": [],
@@ -4455,9 +4518,99 @@
             "style": "form"
           },
           {
+            "description": "page size",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "page number",
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "sort on alphabetical order of attribute (ascending / descending) or based on cpos (random / first / last)",
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "random",
+              "enum": [
+                "random",
+                "first",
+                "last",
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "offset of token resp. to match (negative) or matchend (positive) to sort on",
+            "in": "query",
+            "name": "sort_by_offset",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "p-attribute to sort on",
+            "in": "query",
+            "name": "sort_by_p_att",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "s-attribute to sort on",
+            "in": "query",
+            "name": "sort_by_s_att",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "item that must match in context (defined by window & context_break & query.s)",
+            "in": "query",
+            "name": "filter_item",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "p-attribute to search filter-item on",
+            "in": "query",
+            "name": "filter_item_p_att",
+            "required": false,
+            "schema": {
+              "default": "lemma",
+              "type": "string"
+            }
+          },
+          {
+            "description": "queries that must match in context (defined by window & context_break / query.s)",
             "explode": true,
             "in": "query",
-            "name": "highlight_query_ids",
+            "name": "filter_query_ids",
             "required": false,
             "schema": {
               "default": [],
@@ -6580,6 +6733,7 @@
             }
           },
           {
+            "description": "tokens outside of window will be marked \"out of window\" (also used for filtering)",
             "in": "query",
             "name": "window",
             "required": false,
@@ -6589,15 +6743,39 @@
             }
           },
           {
+            "description": "tokens in s-att instances other than the one at match will be marked \"out of window\" (also used for filtering)",
+            "in": "query",
+            "name": "context_break",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "maximum number of tokens to display",
             "in": "query",
             "name": "extended_window",
             "required": false,
             "schema": {
-              "default": 50,
+              "default": 25,
               "type": "integer"
             }
           },
           {
+            "description": "structural attribute to break extended context",
+            "in": "query",
+            "name": "extended_context_break",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "primary positional attribute",
             "in": "query",
             "name": "primary",
             "required": false,
@@ -6607,6 +6785,7 @@
             }
           },
           {
+            "description": "secondary positional attribute",
             "in": "query",
             "name": "secondary",
             "required": false,
@@ -6616,89 +6795,10 @@
             }
           },
           {
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 10,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_number",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_order",
-            "required": false,
-            "schema": {
-              "default": "random",
-              "enum": [
-                "first",
-                "random",
-                "ascending",
-                "descending"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by_offset",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by_p_att",
-            "required": false,
-            "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by_s_att",
-            "required": false,
-            "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_item",
-            "required": false,
-            "schema": {
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_item_p_att",
-            "required": false,
-            "schema": {
-              "default": "lemma",
-              "type": "string"
-            }
-          },
-          {
+            "description": "queries to highlight in (extended) context",
             "explode": true,
             "in": "query",
-            "name": "filter_query_ids",
+            "name": "highlight_query_ids",
             "required": false,
             "schema": {
               "default": [],
@@ -6710,9 +6810,99 @@
             "style": "form"
           },
           {
+            "description": "page size",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "page number",
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "sort on alphabetical order of attribute (ascending / descending) or based on cpos (random / first / last)",
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "random",
+              "enum": [
+                "random",
+                "first",
+                "last",
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "offset of token resp. to match (negative) or matchend (positive) to sort on",
+            "in": "query",
+            "name": "sort_by_offset",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "p-attribute to sort on",
+            "in": "query",
+            "name": "sort_by_p_att",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "s-attribute to sort on",
+            "in": "query",
+            "name": "sort_by_s_att",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "item that must match in context (defined by window & context_break & query.s)",
+            "in": "query",
+            "name": "filter_item",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "p-attribute to search filter-item on",
+            "in": "query",
+            "name": "filter_item_p_att",
+            "required": false,
+            "schema": {
+              "default": "lemma",
+              "type": "string"
+            }
+          },
+          {
+            "description": "queries that must match in context (defined by window & context_break / query.s)",
             "explode": true,
             "in": "query",
-            "name": "highlight_query_ids",
+            "name": "filter_query_ids",
             "required": false,
             "schema": {
               "default": [],
@@ -6826,7 +7016,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Shuffle concordance lines.",
+        "summary": "Shuffle concordance lines. Changes the 'random' sort order that query matches will be displayed in.",
         "tags": [
           "Query"
         ]
@@ -6852,6 +7042,7 @@
             }
           },
           {
+            "description": "tokens outside of window will be marked \"out of window\" (also used for filtering)",
             "in": "query",
             "name": "window",
             "required": false,
@@ -6861,23 +7052,39 @@
             }
           },
           {
+            "description": "tokens in s-att instances other than the one at match will be marked \"out of window\" (also used for filtering)",
             "in": "query",
-            "name": "extended_window",
+            "name": "context_break",
             "required": false,
             "schema": {
-              "default": 50,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "extended_context_break",
-            "required": false,
-            "schema": {
+              "default": null,
+              "nullable": true,
               "type": "string"
             }
           },
           {
+            "description": "maximum number of tokens to display",
+            "in": "query",
+            "name": "extended_window",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "structural attribute to break extended context",
+            "in": "query",
+            "name": "extended_context_break",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "primary positional attribute",
             "in": "query",
             "name": "primary",
             "required": false,
@@ -6887,6 +7094,7 @@
             }
           },
           {
+            "description": "secondary positional attribute",
             "in": "query",
             "name": "secondary",
             "required": false,
@@ -6894,6 +7102,21 @@
               "default": "lemma",
               "type": "string"
             }
+          },
+          {
+            "description": "queries to highlight in (extended) context",
+            "explode": true,
+            "in": "query",
+            "name": "highlight_query_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -7825,7 +8048,7 @@
       "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"
     },
     {
-      "name": "Local",
+      "name": "Local Server",
       "url": "http://127.0.0.1:5000/"
     },
     {
