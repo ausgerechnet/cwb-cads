@@ -14,8 +14,8 @@
 - [ ] semantic map: moving items (and discoursemes) on the map should be possible.
 - [ ] semantic map: filtering concordance lines via selecting an item or a discourseme should be possible via clicking (as above).
 - [ ] semantic map: there should be the possibility to hide items that belong to the unigram breakdown of a discourseme (especially the focus discourseme).
-- [ ] constellation view: collocation parameters (*window size*, *context break*, *secondary*, *sort by*, *sort order*) should be separated from concordance parameters (*sort by offset*, *sort order*, *primary*). note that collocation parameters are always also considered in concordancing.
-- [ ] constellation view: filter item (and filter discourseme) should be accessible via clicking. this should directly filter concordance lines and provide the option to start a "secondary" collocation analysis.
+- [x] constellation view: collocation parameters (*window size*, *context break*, *secondary*, *sort by*, *sort order*) should be separated from concordance parameters (*sort by offset*, *sort order*, *primary*). note that collocation parameters are always also considered in concordancing.
+- [x] constellation view: filter item (and filter discourseme) should be accessible via clicking. this should directly filter concordance lines and provide the option to start a "secondary" collocation analysis.
 - [ ] constellation association view: associations between discoursemes in a constellation (`GET /mmda/constellation/<id>/description/<description_id>/associations`) should be visualised (triangular matrix per measure; force-directed layout)
 
 # Misc
