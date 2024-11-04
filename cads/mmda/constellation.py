@@ -187,6 +187,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
 def query_discourseme_cotext(collocation, df_cotext, discourseme_description, overlap='partial'):
     """ensure that CollocationDiscoursemeItems exist for discourseme description
 
+    TODO: if no matches in cotext, still create counts!
     """
 
     # only if scores don't exist
@@ -197,12 +198,9 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
         return
 
     focus_query = collocation._query
-    # s_query = focus_query.s
     corpus = focus_query.corpus
     subcorpus = focus_query.subcorpus
     p_description = collocation.p
-    # match_strategy = focus_query.match_strategy
-    # items = [cqp_escape(item.item) for item in discourseme_description.items]
 
     # get matches of discourseme in whole corpus and in subcorpus of cotext; three possibilities:
     # - no subcorpus
@@ -1106,14 +1104,6 @@ def associate_discoursemes(id, description_id, collocation_id):
 
     db.session.commit()
 
-    # counts = DataFrame([vars(s) for s in collocation.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
-    # for window in set(counts['window']):
-    #     current_app.logger.info(f'Updating collocation :: window {window}')
-    #     ccc_collocates(collocation, window)
-
-    # ccc_semmap_update(collocation)
-    # ccc_semmap_discoursemes(collocation)
-
     return {"id": int(id)}, 200
 
 
@@ -1225,20 +1215,7 @@ def get_keyword_items(id, description_id, keyword_id, query_data):
     # discourseme scores
     set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
     discourseme_scores = get_keyword_discourseme_scores(keyword_id, [d.id for d in description.discourseme_descriptions])
-    # for s in discourseme_scores:
-    #     s['item_scores'] = [KeywordItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-
-    # # from pprint import pprint
-    # for sc in discourseme_scores:
-    #     # pprint(sc['item_scores'])
-    #     for s in sc['item_scores']:
-    #         deduplicated_scores = list()
-    #         for t in s['scores']:
-    #             if t not in deduplicated_scores:
-    #                 deduplicated_scores.append(t)
-    #         s['scores'] = deduplicated_scores
-    #         print(len(s['scores']))
 
     # coordinates
     coordinates = list()
@@ -1287,7 +1264,6 @@ def associate_discoursemes_keyword(id, description_id, keyword_id):
         if len(set(discourseme_items).intersection(keyword_items)) > 0:
             if discourseme not in constellation.discoursemes:
                 constellation.discoursemes.append(discourseme)
-
     db.session.commit()
 
     # counts = DataFrame([vars(s) for s in keyword.items], columns=['item', 'window', 'f', 'f1', 'f2', 'N']).set_index('item')
