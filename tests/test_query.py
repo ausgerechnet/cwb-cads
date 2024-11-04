@@ -129,7 +129,7 @@ def test_query_concordance_sort(client, auth):
                             headers=auth_header)
 
         lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=10, page_number=2,
-                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=2),
+                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=10),
                            headers=auth_header)
 
         assert lines.status_code == 200
@@ -141,8 +141,8 @@ def test_query_concordance_sort(client, auth):
 
         assert list(sorted(tokens)) == tokens
 
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=50, page_number=2,
-                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=2),
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=10, page_number=2,
+                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=10),
                            headers=auth_header)
 
         assert lines.status_code == 200
@@ -169,8 +169,8 @@ def test_query_concordance_filter_sort(client, auth):
                             },
                             headers=auth_header)
 
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1, filter_item='Beifall',
-                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=8),
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=200, page_number=1, filter_item='Beifall',
+                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=10),
                            headers=auth_header)
 
         assert lines.status_code == 200
@@ -184,8 +184,8 @@ def test_query_concordance_filter_sort(client, auth):
 
         assert list(sorted(tokens)) == tokens
 
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1, filter_item='Beifall',
-                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=8),
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=200, page_number=1, filter_item='Beifall',
+                                   sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=10),
                            headers=auth_header)
 
         assert lines.status_code == 200
@@ -297,7 +297,7 @@ def test_query_concordance_sort_complete(client, auth):
                             headers=auth_header)
 
         # sort_order first
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=3,
                                    sort_order='first', window=8),
                            headers=auth_header)
         assert lines.status_code == 200
@@ -308,7 +308,7 @@ def test_query_concordance_sort_complete(client, auth):
         assert list(sorted(match_ids)) == match_ids
 
         # sort_order last
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=3,
                                    sort_order='last', window=8),
                            headers=auth_header)
         assert lines.status_code == 200
@@ -319,7 +319,7 @@ def test_query_concordance_sort_complete(client, auth):
         assert list(reversed(sorted(match_ids))) == match_ids
 
         # sort_order random
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=3,
                                    sort_order='random', window=8),
                            headers=auth_header)
         assert lines.status_code == 200
@@ -331,7 +331,7 @@ def test_query_concordance_sort_complete(client, auth):
         assert list(sorted(match_ids)) != match_ids
 
         # sort_order ascending: on word / match
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=3,
                                    sort_by_p_att='word', sort_by_offset=0, sort_order='ascending', window=8),
                            headers=auth_header)
         assert lines.status_code == 200
@@ -343,7 +343,7 @@ def test_query_concordance_sort_complete(client, auth):
         assert list(sorted(tokens)) == tokens
 
         # sort_order ascending: on lemma / -2
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=3,
                                    sort_by_p_att='lemma', sort_by_offset=-2, sort_order='ascending', window=8),
                            headers=auth_header)
         assert lines.status_code == 200
@@ -355,7 +355,7 @@ def test_query_concordance_sort_complete(client, auth):
         assert list(sorted(tokens)) == tokens
 
         # sort order descending: on word / -2
-        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=1,
+        lines = client.get(url_for('query.concordance_lines', query_id=query.json['id'], page_size=100, page_number=3,
                                    sort_by_p_att='word', sort_by_offset=-2, sort_order='descending', window=8),
                            headers=auth_header)
         assert lines.status_code == 200
