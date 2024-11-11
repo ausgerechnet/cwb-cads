@@ -28,6 +28,7 @@ export function ConstellationCollocationFilter({
     isSortable,
     windowSize,
     clFilterItem,
+    clFilterItemPAtt,
     ccFilterItem,
     ccFilterItemPAtt,
     ccSortOrder,
@@ -97,11 +98,14 @@ export function ConstellationCollocationFilter({
           {ccFilterItem !== clFilterItem && (
             <ButtonTooltip
               size="sm"
-              onClick={() => setFilter('ccFilterItem', clFilterItem)}
+              onClick={() => {
+                setFilter('ccFilterItem', clFilterItem)
+                setFilter('ccFilterItemPAtt', clFilterItemPAtt)
+              }}
               className="ml-2 h-auto px-2 py-1 text-xs"
               tooltip={
                 clFilterItem
-                  ? `Create new collocation analysis with filter item "${clFilterItem}"`
+                  ? `Create new collocation analysis with filter item "${clFilterItem}" on "${clFilterItemPAtt}"`
                   : 'Create new collocation analysis with empty filter item'
               }
             >
