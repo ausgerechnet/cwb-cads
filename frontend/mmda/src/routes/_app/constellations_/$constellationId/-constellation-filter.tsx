@@ -29,6 +29,7 @@ export function ConstellationCollocationFilter({
     windowSize,
     clFilterItem,
     ccFilterItem,
+    ccFilterItemPAtt,
     ccSortOrder,
     s,
     secondary,
@@ -92,7 +93,7 @@ export function ConstellationCollocationFilter({
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">
-          Filter Item
+          Filter Item {ccFilterItemPAtt && `(on ${ccFilterItemPAtt})`}
           {ccFilterItem !== clFilterItem && (
             <ButtonTooltip
               size="sm"
@@ -201,6 +202,7 @@ export function ConstellationConcordanceFilter({
     clSortByOffset,
     clSortOrder,
     clFilterItem,
+    clFilterItemPAtt,
     primary,
     setFilter,
     pAttributes,
@@ -265,11 +267,13 @@ export function ConstellationConcordanceFilter({
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Filter Item</span>
+        <span className="text-sm">
+          Filter Item {clFilterItemPAtt && `(on ${clFilterItemPAtt})`}
+        </span>
         <div className="flex flex-grow gap-1">
           <div className="bg-muted flex min-h-6 flex-grow items-center rounded px-2">
-            {clFilterItem}{' '}
-          </div>{' '}
+            {clFilterItem}
+          </div>
           {clFilterItem !== '' && (
             <Button
               variant="secondary"

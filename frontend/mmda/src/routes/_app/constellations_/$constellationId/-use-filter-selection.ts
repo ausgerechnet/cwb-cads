@@ -70,9 +70,13 @@ export function useFilterSelection(
     clSortOrder = 'random',
     clPageIndex = 0,
     clPageSize = 5,
+    clFilterItem,
+    clFilterItemPAtt,
     ccSortBy = 'conservative_log_ratio',
     ccPageSize = 5,
     ccSortOrder = 'ascending',
+    ccFilterItem,
+    ccFilterItemPAtt,
     p,
     s,
     primary,
@@ -119,16 +123,6 @@ export function useFilterSelection(
     if (p !== undefined && !pAtts.includes(p)) {
       setFilter('p', pAtts[0])
     }
-    /*
-      TODO: Check whether that's required after all since the return
-       handles this check
-    */
-    if (primary !== undefined && !pAtts.includes(primary)) {
-      setFilter('primary', pAtts[0])
-    }
-    if (secondary !== undefined && !pAtts.includes(secondary)) {
-      setFilter('secondary', pAtts[0])
-    }
   }, [secondary, primary, p, corpus?.p_atts, setFilter])
 
   const pAttributes = useMemo(() => corpus?.p_atts ?? [], [corpus?.p_atts])
@@ -145,9 +139,13 @@ export function useFilterSelection(
     clSortOrder,
     clPageIndex,
     clPageSize,
+    clFilterItem,
+    clFilterItemPAtt,
     ccSortBy: isSortable ? ccSortBy : undefined,
     ccPageSize,
     ccSortOrder,
+    ccFilterItem,
+    ccFilterItemPAtt,
     setFilter,
     p: defaultTo(p, corpus?.p_atts),
     primary: defaultTo([primary, 'word'], corpus?.p_atts),
