@@ -19,7 +19,7 @@ from ..collocation import (CollocationIn, CollocationItemOut,
 from ..concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
 from ..database import (Breakdown, Collocation, CollocationItem,
                         CollocationItemScore, Corpus, CotextLines, Keyword,
-                        KeywordItem, KeywordItemScore, SemanticMap,
+                        KeywordItem, KeywordItemScore, Query, SemanticMap,
                         get_or_create)
 from ..keyword import (KeywordItemOut, KeywordItemsIn, KeywordItemsOut,
                        KeywordOut, ccc_keywords)
@@ -991,7 +991,8 @@ def get_all_collocation(id, description_id):
 
 @bp.get("/<id>/description/<description_id>/collocation/<collocation_id>/items")
 @bp.input(CollocationItemsIn, location='query')
-@bp.input({'hide_focus': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
+@bp.input({'hide_focus': Boolean(required=False, load_default=True),
+           'hide_filter': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
 @bp.output(ConstellationCollocationItemsOut)
 @bp.auth_required(auth)
 def get_collocation_items(id, description_id, collocation_id, query_data, query_hide):
@@ -1004,6 +1005,7 @@ def get_collocation_items(id, description_id, collocation_id, query_data, query_
     collocation = db.get_or_404(Collocation, collocation_id)
 
     hide_focus = query_hide.get("hide_focus", True)
+    hide_filter = query_hide.get("hide_filter", True)
 
     page_size = query_data.pop('page_size')
     page_number = query_data.pop('page_number')
@@ -1019,9 +1021,9 @@ def get_collocation_items(id, description_id, collocation_id, query_data, query_
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
+    focus_query_id = collocation.query_id
     blacklist = []
     if hide_focus:
-        focus_query_id = collocation.query_id
         focus_discourseme_description = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
         focus_unigrams = [i for i in chain.from_iterable(
             [a.split(" ") for a in focus_discourseme_description.breakdown(collocation.p).index]
@@ -1031,6 +1033,20 @@ def get_collocation_items(id, description_id, collocation_id, query_data, query_
             CollocationItem.item.in_(focus_unigrams)
         )
         blacklist += [b.id for b in blacklist_focus]
+
+    focus_query = db.get_or_404(Query, focus_query_id)
+    if hide_filter and focus_query.filter_sequence is not None:
+        filter_query_ids = [int(x) for x in focus_query.filter_sequence.lstrip("Q-").split("-")[1:]]
+        filter_descriptions = [d for d in description.discourseme_descriptions if d.query_id in filter_query_ids]
+        for desc in filter_descriptions:
+            desc_unigrams = [i for i in chain.from_iterable(
+                [a.split(" ") for a in desc.breakdown(collocation.p).index]
+            )]
+            blacklist_desc = CollocationItem.query.filter(
+                CollocationItem.collocation_id == collocation.id,
+                CollocationItem.item.in_(desc_unigrams)
+            )
+            blacklist += [b.id for b in blacklist_desc]
 
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
