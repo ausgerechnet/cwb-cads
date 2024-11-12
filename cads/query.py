@@ -331,6 +331,7 @@ class QueryOut(Schema):
     match_strategy = String(required=True)
     cqp_query = String(required=True)
     random_seed = Integer(required=True)
+    number_matches = Integer(required=True)
 
 
 class QueryMetaOut(Schema):
