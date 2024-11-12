@@ -7,7 +7,7 @@ from ccc import Corpus as Crps
 from flask import Blueprint, current_app
 from flask_login import UserMixin
 from pandas import DataFrame
-from sqlalchemy.orm import object_session
+from sqlalchemy import text
 from werkzeug.security import generate_password_hash
 
 from . import db
@@ -310,7 +310,10 @@ class Query(db.Model):
 
     @property
     def number_matches(self):
-        return object_session(self).query(Matches.query_id == self.id).count()
+        sql_query = f"SELECT count(*) FROM matches WHERE query_id == {self.id};"
+        con = db.session.connection()
+        result = con.execute(text(sql_query))
+        return result.first()[0]
 
     @property
     def corpus_name(self):
@@ -499,7 +502,10 @@ class Collocation(db.Model):
 
     @property
     def nr_items(self):
-        return object_session(self).query(CollocationItem.collocation_id == self.id).count()
+        sql_query = f"SELECT count(*) FROM collocation_item WHERE collocation_id == {self.id};"
+        con = db.session.connection()
+        result = con.execute(text(sql_query))
+        return result.first()[0]
 
     @property
     def corpus(self):
@@ -592,7 +598,10 @@ class Keyword(db.Model):
 
     @property
     def nr_items(self):
-        return object_session(self).query(KeywordItem.keyword_id == self.id).count()
+        sql_query = f"SELECT count(*) FROM keyword_item WHERE keyword_id == {self.id};"
+        con = db.session.connection()
+        result = con.execute(text(sql_query))
+        return result.first()[0]
 
     @property
     def corpus(self):
