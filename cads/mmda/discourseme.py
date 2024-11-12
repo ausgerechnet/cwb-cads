@@ -367,7 +367,7 @@ def get_discoursemes():
 @bp.input(DiscoursemeIn)
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
-def create(json_data):
+def create_discourseme(json_data):
     """Create new discourseme.
 
     """
@@ -421,7 +421,7 @@ def delete_discourseme(id):
 @bp.input(DiscoursemeIn(partial=True))
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
-def patch(id, json_data):
+def patch_discourseme(id, json_data):
     """Patch discourseme.
 
     """
@@ -447,6 +447,20 @@ def patch(id, json_data):
 
     for attr, value in json_data.items():
         setattr(discourseme, attr, value)
+
+    return DiscoursemeOut().dump(discourseme), 200
+
+
+@bp.post('/<id>/template')
+@bp.output(DiscoursemeOut)
+@bp.auth_required(auth)
+def generate_template(id, json_data):
+    """Generate template from discourseme descriptions (NotImplemented)
+
+    """
+
+    discourseme = db.get_or_404(Discourseme, id)
+    discourseme.generate_template()
 
     return DiscoursemeOut().dump(discourseme), 200
 
