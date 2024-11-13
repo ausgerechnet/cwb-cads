@@ -376,7 +376,7 @@ def test_constellation_concordance_filter(client, auth):
 #         df = concat(dfs)
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -612,7 +612,7 @@ def test_constellation_collocation(client, auth):
         dfs = list()
         for i in range(len(coll.json['discourseme_scores'][1]['item_scores'])):
             item = coll.json['discourseme_scores'][1]['item_scores'][i]['item']
-            df = DataFrame(coll.json['discourseme_scores'][1]['item_scores'][i]['scores'])
+            df = DataFrame(coll.json['discourseme_scores'][1]['item_scores'][i]['raw_scores'])
             df['item'] = item
             df = df.pivot(index='item', columns='measure', values='score')
             dfs.append(df)
@@ -633,7 +633,7 @@ def test_constellation_collocation(client, auth):
         dfs = list()
         for i in range(len(coll.json['discourseme_scores'][1]['unigram_item_scores'])):
             item = coll.json['discourseme_scores'][1]['unigram_item_scores'][i]['item']
-            df = DataFrame(coll.json['discourseme_scores'][1]['unigram_item_scores'][i]['scores'])
+            df = DataFrame(coll.json['discourseme_scores'][1]['unigram_item_scores'][i]['raw_scores'])
             df['item'] = item
             df = df.pivot(index='item', columns='measure', values='score')
             dfs.append(df)
@@ -675,7 +675,7 @@ def test_constellation_collocation(client, auth):
         dfs = list()
         for i in range(len(coll_glob.json['discourseme_scores'][1]['item_scores'])):
             item = coll_glob.json['discourseme_scores'][1]['item_scores'][i]['item']
-            df = DataFrame(coll_glob.json['discourseme_scores'][1]['item_scores'][i]['scores'])
+            df = DataFrame(coll_glob.json['discourseme_scores'][1]['item_scores'][i]['raw_scores'])
             df['item'] = item
             df = df.pivot(index='item', columns='measure', values='score')
             dfs.append(df)
@@ -697,7 +697,7 @@ def test_constellation_collocation(client, auth):
         dfs = list()
         for i in range(len(coll_glob.json['discourseme_scores'][1]['unigram_item_scores'])):
             item = coll_glob.json['discourseme_scores'][1]['unigram_item_scores'][i]['item']
-            df = DataFrame(coll_glob.json['discourseme_scores'][1]['unigram_item_scores'][i]['scores'])
+            df = DataFrame(coll_glob.json['discourseme_scores'][1]['unigram_item_scores'][i]['raw_scores'])
             df['item'] = item
             df = df.pivot(index='item', columns='measure', values='score')
             dfs.append(df)
@@ -739,7 +739,7 @@ def test_constellation_collocation(client, auth):
         dfs = list()
         for i in range(len(coll_loc.json['discourseme_scores'][1]['item_scores'])):
             item = coll_loc.json['discourseme_scores'][1]['item_scores'][i]['item']
-            df = DataFrame(coll_loc.json['discourseme_scores'][1]['item_scores'][i]['scores'])
+            df = DataFrame(coll_loc.json['discourseme_scores'][1]['item_scores'][i]['raw_scores'])
             df['item'] = item
             df = df.pivot(index='item', columns='measure', values='score')
             dfs.append(df)
@@ -760,7 +760,7 @@ def test_constellation_collocation(client, auth):
         dfs = list()
         for i in range(len(coll_loc.json['discourseme_scores'][1]['unigram_item_scores'])):
             item = coll_loc.json['discourseme_scores'][1]['unigram_item_scores'][i]['item']
-            df = DataFrame(coll_loc.json['discourseme_scores'][1]['unigram_item_scores'][i]['scores'])
+            df = DataFrame(coll_loc.json['discourseme_scores'][1]['unigram_item_scores'][i]['raw_scores'])
             df['item'] = item
             df = df.pivot(index='item', columns='measure', values='score')
             dfs.append(df)
