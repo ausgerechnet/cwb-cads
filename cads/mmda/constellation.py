@@ -349,11 +349,16 @@ def get_collocation_discourseme_scores(collocation_id, discourseme_description_i
         unigram_item_scores = list()
         for item in _unigram_item_scores.keys():
             _scores = list()
+            _raw_scores = list()
             for measure in _unigram_item_scores[item].keys():
-                _scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
+                if measure in ['O12', 'O21', 'O22', 'E12', 'E21', 'E22', 'R1', 'R2', 'C1', 'C2', 'N']:
+                    _raw_scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
+                else:
+                    _scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
             unigram_item_scores.append({
                 'item': item,
-                'scores': _scores
+                'scores': _scores,
+                'raw_scores': _raw_scores
             })
 
         # global scores

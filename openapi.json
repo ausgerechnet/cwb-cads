@@ -1988,7 +1988,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev11"
+    "version": "0.3.0.dev13"
   },
   "openapi": "3.0.2",
   "paths": {

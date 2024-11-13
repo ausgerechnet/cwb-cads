@@ -223,6 +223,15 @@ class CollocationDiscoursemeItem(db.Model):
 
     scores = db.relationship("CollocationDiscoursemeItemScore", backref='collocation_discourseme_item', cascade='all, delete')
 
+    @property
+    def raw_scores(self):
+        return [
+            {'measure': 'O11', 'score': self.f},
+            {'measure': 'R1', 'score': self.f1},
+            {'measure': 'C1', 'score': self.f2},
+            {'measure': 'N', 'score': self.N}
+        ]
+
 
 class CollocationDiscoursemeItemScore(db.Model):
     """
@@ -259,6 +268,15 @@ class KeywordDiscoursemeItem(db.Model):
     N2 = db.Column(db.Integer)
 
     scores = db.relationship("KeywordDiscoursemeItemScore", backref='keyword_discourseme_item', cascade='all, delete')
+
+    @property
+    def raw_scores(self):
+        return [
+            {'measure': 'O11', 'score': self.f1},
+            {'measure': 'O21', 'score': self.f2},
+            {'measure': 'R1', 'score': self.N1},
+            {'measure': 'R2', 'score': self.N2}
+        ]
 
 
 class KeywordDiscoursemeItemScore(db.Model):
