@@ -13,21 +13,31 @@ from cfg import ProdConfig
 
 dictConfig({
     'version': 1,
-    'formatters': {'default': {
-        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
-    }},
-    'handlers': {'wsgi': {
-        'class': 'logging.handlers.RotatingFileHandler',
-        "formatter": "default",
-        "filename": os.path.join(dir_path, "instance", "mmda.log"),
-        "maxBytes": 1000000,
-        "backupCount": 10,
-        "delay": "True",
-        "level": "DEBUG"
-    }},
+    'formatters': {
+        'default': {
+            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+        }
+    },
+    'handlers': {
+        'wsgi': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            "formatter": "default",
+            "filename": os.path.join(dir_path, "instance", "mmda.log"),
+            "maxBytes": 10000000,
+            "backupCount": 10,
+            "delay": "True"
+        }
+    },
     'root': {
-        'level': 'DEBUG',
+        'level': 'INFO',
         'handlers': ['wsgi']
+    },
+    'loggers':{
+        'cads': {
+            'level': 'DEBUG',
+            'handlers': ['wsgi'],
+            'propagate': False
+        }
     }
 })
 
