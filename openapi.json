@@ -1610,6 +1610,9 @@
           "match_strategy": {
             "type": "string"
           },
+          "number_matches": {
+            "type": "integer"
+          },
           "random_seed": {
             "type": "integer"
           },
@@ -1628,6 +1631,7 @@
           "cqp_query",
           "id",
           "match_strategy",
+          "number_matches",
           "random_seed",
           "subcorpus_id",
           "subcorpus_name"
@@ -4290,6 +4294,15 @@
           },
           {
             "in": "query",
+            "name": "hide_filter",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
             "name": "sort_order",
             "required": false,
             "schema": {
@@ -6215,6 +6228,61 @@
           }
         ],
         "summary": "Patch discourseme description: remove item from description.",
+        "tags": [
+          "Mmda.Discourseme"
+        ]
+      }
+    },
+    "/mmda/discourseme/{id}/template": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Generate template from discourseme descriptions (NotImplemented)",
         "tags": [
           "Mmda.Discourseme"
         ]
