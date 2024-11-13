@@ -14,6 +14,7 @@
 - [ ] semantic map: moving items (and discoursemes) on the map should be possible.
 - [ ] semantic map: filtering concordance lines via selecting an item or a discourseme should be possible via clicking (as above).
 - [ ] semantic map: there should be the possibility to hide items that belong to the unigram breakdown of a discourseme (especially the focus discourseme).
+- [ ] adding items to the topic discourseme from semantic map in collocation analyses → pop-up warning / complete re-load?
 - [x] constellation view: collocation parameters (*window size*, *context break*, *secondary*, *sort by*, *sort order*) should be separated from concordance parameters (*sort by offset*, *sort order*, *primary*). note that collocation parameters are always also considered in concordancing.
 - [x] constellation view: filter item (and filter discourseme) should be accessible via clicking. this should directly filter concordance lines and provide the option to start a "secondary" collocation analysis.
 - [ ] constellation association view: associations between discoursemes in a constellation (`GET /mmda/constellation/<id>/description/<description_id>/associations`) should be visualised (triangular matrix per measure; force-directed layout)
@@ -47,77 +48,95 @@
   + how many concordance lines contain at least one of them
 - [ ] anchored queries [spheroscope]
 
+
 ## Minor features
-- [ ] scores: indicate relevance (relevant, irrelevant)
-- [x] scores: do not return items with negative evidence
-- [ ] scores: sigmoid / tangens scaling vs. linear scaling
-- [x] semantic map: normalise to [-1, 1]^2
-- [x] scores / semantic map: remove items of focus discourseme in collocation analyses
+
+### Performance
 - [ ] speed up constellation concordance retrieval (discourseme range retrieval / sorting)
-- [ ] corpora settings
+- [ ] speed up supcorpus queries
+- [ ] speed up collocation/items: do not return discourseme scores?
+
+### Multi-user
+- [ ] several queries for one discourseme?
+  + duplicate queries write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
+- [ ] user: discoursemes / constellations
+
+### Scores
+- [x] remove items of focus discourseme in collocation analyses
+- [x] do not return items with negative evidence
+
+- [ ] indicate relevance (relevant, irrelevant)
+- [ ] sigmoid / tangens scaling vs. linear scaling
+- [ ] formatted with three leading digits
+- [ ] resource: translate names of AMs
+- [ ] additional variable: scale to [0,1]
+
+- [ ] search for item on collocation table
+
+### Semantic Map
+- [x] semantic map: normalise coordinates to [-1, 1]^2
+
+### Default (corpora) settings
+- [ ] endpoint for displaying and setting default corpora settings
+
+### Projects
 - [ ] projects for discoursemes / constellations
-- [ ] semmap: function for adding items to the topic discourseme
-  + if one realises one of the collocates should actually be part of the topic discourseme, there should be a way to directly update the topic discourseme from within the semantic cloud
-- [ ] topic-item suggestion in analysis definition
-  + existing items in the corpus should be shown to the user (by frequency) = pre-check
-  + to limit memory usage
-    - the list should only contain items with a frequency above X (e.g. 3 ocurrences)
-    - and maybe a word-length of above Y (e.g. words longer than 3 letters)
+
+### Meta data
+- [x] meta from s-att
+- [ ] auto-init / show which is possible + if initialised?
+
+### Tests
+- [x] speed up deleting queries
+- [x] extend tests
+- [ ] example meta data creation
+- [ ] example subcorpus creation
+
+### Logging
+- [ ] improve logging: do not log cwb-ccc
+
+## Notes
 - [ ] concordancing
   + collocation analysis: KWIC on node
   + MMDA constellations: KWIC on one selected discourseme
   + [spheroscope]: KWIC on one selected slot (left adjusted)
     - alternatively: complete sentence / tweet
-- [x] speed up deleting queries
-- [x] extend tests
-- [x] meta from s-att
-- [x] more than one filter discourseme → second-order collocation
-- [ ] speed up supcorpus queries
+
 - [ ] constellation/collocation: return one object with items categorised to discoursemes
-- [ ] speed up collocation/items: do not return discourseme scores?
-
-## review 2024-07-17
-- [x] constellation: enforce min of one filter discourseme?
-- [x] constellation: if no name → name of filter discourseme
-- [ ] several queries for one discourseme?
-  + duplicate queries write NULL / additional column "is\_complete (alternatively: "error", "is\_loading", etc.)" instantanteously → if so: 409
-
-### review 2024-07-30
-- [ ] improve logging
-- [ ] search for item on collocation table
-- [ ] scores formatted: 3 leading digits
-- [x] only return items with E11 < O11
-
-## review 2024-08-05
-- [x] wrongly indexed s-atts in corpora (e.g. GERMAPARL\_1949\_2021 on obelix)
-- [x] save wordlists permanently
-- [x] get keyword analyses loading time: replace `len(items)`
-- [x] keyword details: target / reference (as strings)
-- [x] /corpus/{id}/subcorpus/{id}
-- [x] /query/ without discourseme / discourseme\_id / nqr\_cqp
-- [x] remove /query/execute
-- [x] breakdown rm TODO: pagination needed?
-- [x] concordance / lines / id → match\_id
-- [x] only return queries with NQR for now, do not return nqr\_cqp
-- [x] position discoursemes on semantic map
-- [x] get DiscoursemeUnigramItems from DiscoursemeItems
-- [x] deal with empty queries
-- [ ] meta data: auto-init / show which is possible + if initialised?
-- [ ] auto-associate discoursemes
-- [ ] empty discourseme descriptions possible → constellations with empty discoursemes
-- [ ] create discourseme in constellation description
-- [ ] user: discoursemes / constellations
-- [ ] txt: translate names of AMs
 - [ ] post collocation semantic-map mit json
-- [ ] all outputs (required = True)?
-- [ ] collocation → get query\_id + filter\_sequence
-- [ ] subcorpus: number spans / tokens 0 ?? text / faction
-- [ ] rm or rename query / concordance / discourseme ranges
-- [ ] example meta data creation
-- [ ] example subcorpus creation
 
-## review 2024-09-03
+- [ ] topic-item suggestion in analysis definition
+  + existing items in the corpus should be shown to the user (by frequency) = pre-check
+  + to limit memory usage
+    - the list should only contain items with a frequency above X (e.g. 3 ocurrences)
+    - and maybe a word-length of above Y (e.g. words longer than 3 letters)
+
+- [ ] auto-associate discoursemes
+
 - [ ] GET `/mmda/constellation/{id}/description/{description_id}/collocation/` doesn't yield all info
+
+- [ ] empty discourseme descriptions possible → constellations with empty discoursemes
+
+- [ ] create discourseme in constellation description
+
+- [ ] collocation → get query\_id + filter\_sequence
+
+- [ ] subcorpus: number spans / tokens 0 ?? text / faction
+
+- [ ] rm or rename query / concordance / discourseme ranges
+
+- [ ] queries vs surface items: save queries alongside description
+
+- [ ] discourseme visualisation in collocation analyses
+
+these discourseme unigram item ones can easily be removed from the map:
+- word list on analysis layer
+- MWUs on analysis layer
+
+these cannot be easily removed:
+- queries, e.g. [lemma="item" & pos="P"]
+- word lists on sth. else than analysis layer
+- MWUs on sth. else than analysis layer
 
 ## nice to have
 - Concordance: primary / secondary vs. give all
