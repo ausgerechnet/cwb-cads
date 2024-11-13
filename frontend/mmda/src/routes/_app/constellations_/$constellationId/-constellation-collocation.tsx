@@ -1,4 +1,5 @@
 import { cn } from '@cads/shared/lib/utils'
+import { Link } from '@tanstack/react-router'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Table,
@@ -8,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@cads/shared/components/ui/table'
-import { Button } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Pagination } from '@cads/shared/components/pagination'
 import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
@@ -56,7 +57,7 @@ export function Collocation({
   constellationId: number
   descriptionId?: number
 }) {
-  const { setFilter, ccPageSize, ccPageNumber } = useFilterSelection(
+  const { setFilter, ccPageSize, ccPageNumber, secondary } = useFilterSelection(
     '/_app/constellations_/$constellationId',
   )
   const { error, isLoading, collocationItems } = useCollocation(
@@ -91,16 +92,20 @@ export function Collocation({
               className={cn(isLoading && 'animate-pulse', 'py-0')}
             >
               <TableCell className="py-1">
-                <Button
-                  onClick={() => {
-                    setFilter('ccFilterItem', item)
-                    setFilter('clFilterItem', item)
-                  }}
-                  variant="secondary"
-                  size="sm"
+                <Link
+                  className={buttonVariants({ variant: 'secondary' })}
+                  to=""
+                  params={(p) => p}
+                  search={(s) => ({
+                    ...s,
+                    ccFilterItem: item,
+                    ccFilterItemPAtt: secondary,
+                    clFilterItem: item,
+                    clFilterItemPAtt: secondary,
+                  })}
                 >
                   {item}
-                </Button>
+                </Link>
               </TableCell>
               {measureOrder.map((measure) => (
                 <TableCell key={measure} className="py-1">

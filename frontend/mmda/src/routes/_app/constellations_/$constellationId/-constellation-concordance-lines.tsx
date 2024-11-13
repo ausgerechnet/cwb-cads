@@ -247,6 +247,9 @@ function ConcordanceLineRender({
 }
 
 function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
+  const { secondary } = useFilterSelection(
+    '/_app/constellations_/$constellationId',
+  )
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
@@ -256,7 +259,11 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
             to="/constellations/$constellationId"
             from="/constellations/$constellationId"
             params={(p) => p}
-            search={(s) => ({ ...s, clFilterItem: token.primary })}
+            search={(s) => ({
+              ...s,
+              clFilterItem: token.secondary,
+              clFilterItemPAtt: secondary,
+            })}
             className={cn(
               'hover:bg-muted hover:ring-muted cursor-pointer rounded-md hover:ring-2',
               token.out_of_window && 'text-muted-foreground/70',
