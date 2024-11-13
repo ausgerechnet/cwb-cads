@@ -20,7 +20,7 @@ def test_create_get_discourseme(client, auth):
 
     with client:
         client.get("/")
-        discourseme = client.post(url_for('mmda.discourseme.create'),
+        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
                                   json={
                                       'name': 'Modalverben',
                                       'comment': 'Testdiskursem mit vielen Treffern',
@@ -112,7 +112,7 @@ def test_discourseme_patch(client, auth):
         union = discoursemes[0]
         assert union['name'] == 'CDU/CSU'
         assert union['comment'] is None
-        union = client.patch(url_for('mmda.discourseme.patch', id=union['id']),
+        union = client.patch(url_for('mmda.discourseme.patch_discourseme', id=union['id']),
                              json={
                                  'name': 'Union for the winz',
                                  'comment': 'My first description'
@@ -124,7 +124,7 @@ def test_discourseme_patch(client, auth):
         assert union['comment'] == 'My first description'
 
         # patch template
-        union = client.patch(url_for('mmda.discourseme.patch', id=union['id']),
+        union = client.patch(url_for('mmda.discourseme.patch_discourseme', id=union['id']),
                              json={
                                  'template': [
                                      {'surface': 'CDU', 'p': 'lemma'}
@@ -205,7 +205,7 @@ def test_deletion(client, auth):
 
     with client:
         client.get("/")
-        discourseme = client.post(url_for('mmda.discourseme.create'),
+        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
                                   json={
                                       'name': 'Modalverben',
                                       'comment': 'Testdiskursem das gelöscht wird',

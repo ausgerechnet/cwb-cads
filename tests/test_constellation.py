@@ -1126,7 +1126,7 @@ def test_constellation_keyword_empty_queries(client, auth):
 
         # discourseme that is not in reference: "Bereicherung"
         # discourseme without matches: "Bereicherung2"
-        discourseme = client.post(url_for('mmda.discourseme.create'),
+        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
                                   json={
                                       'name': 'Bereicherung',
                                       'comment': 'Testdiskursem ohne Treffer in Referenz',
@@ -1191,7 +1191,7 @@ def test_constellation_collocation_empty_queries(client, auth):
 
         # discourseme that is not in reference: "Bereicherung"
         # discourseme without matches: "Bereicherung2"
-        discourseme = client.post(url_for('mmda.discourseme.create'),
+        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
                                   json={
                                       'name': 'Bereicherung',
                                       'comment': 'Testdiskursem ohne Treffer in Referenz',
@@ -1261,7 +1261,7 @@ def test_discourseme_deletion(client, auth):
                                   content_type='application/json',
                                   headers=auth_header).json
 
-        tmp_disc = client.post(url_for('mmda.discourseme.create'),
+        tmp_disc = client.post(url_for('mmda.discourseme.create_discourseme'),
                                json={
                                    'name': 'Modalverben',
                                    'comment': 'Testdiskursem das gelöscht wird',
@@ -1307,7 +1307,7 @@ def test_associations(client, auth):
                                   content_type='application/json',
                                   headers=auth_header).json
 
-        tmp_disc = client.post(url_for('mmda.discourseme.create'),
+        tmp_disc = client.post(url_for('mmda.discourseme.create_discourseme'),
                                json={
                                    'name': 'Modalverben',
                                    'comment': 'Testdiskursem das gelöscht wird',
