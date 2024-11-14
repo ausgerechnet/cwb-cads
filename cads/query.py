@@ -250,31 +250,47 @@ def filter_matches(focus_query, filter_queries, window, overlap):
 
 
 def iterative_query(focus_query, filter_queries, window, overlap='partial'):
-    """create a new query (and matches) based on filtered matches of focus query
+    """Create a new query (and corresponding matches) based on filtered matches of focus query. Retrieve if already exists.
 
+    TODO include in ccc_query
     """
 
-    # TODO retrieve if necessary
-    filter_sequence = "Q-" + "-".join([str(focus_query.id)] + [str(fq.id) for fq in filter_queries.values()])
+    filter_sequence = "S" + str(focus_query.s) + "W" + str(window) + "O" + overlap + \
+        "Q-" + "-".join([str(focus_query.id)] + [str(fq.id) for fq in filter_queries.values()])
 
-    matches = filter_matches(focus_query, filter_queries, window, overlap)
-
-    # create query
-    query = Query(
+    # get or create query
+    query = Query.query.filter_by(
         corpus_id=focus_query.corpus.id,
         subcorpus_id=focus_query.subcorpus_id,
         filter_sequence=filter_sequence,
         match_strategy=focus_query.match_strategy,
         s=focus_query.s,
         cqp_query=focus_query.cqp_query
-    )
-    db.session.add(query)
-    db.session.commit()
+    ).first()
 
-    # matches to database
-    df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
-    df_matches['query_id'] = query.id
-    df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
+    if not query:
+        query = Query(
+            corpus_id=focus_query.corpus.id,
+            subcorpus_id=focus_query.subcorpus_id,
+            filter_sequence=filter_sequence,
+            match_strategy=focus_query.match_strategy,
+            s=focus_query.s,
+            cqp_query=focus_query.cqp_query
+        )
+        db.session.add(query)
+        db.session.commit()
+
+    # get or create matches
+    matches = Matches.query.filter_by(
+        query_id=query.id
+    ).first()
+
+    if not matches:
+        # create matches
+        matches = filter_matches(focus_query, filter_queries, window, overlap)
+        df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
+        df_matches['query_id'] = query.id
+        df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
 
     return query
 
