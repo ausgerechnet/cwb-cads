@@ -53,11 +53,8 @@ def create_app(config=CONFIG):
 
     # init database connection
     if 'SQLALCHEMY_DATABASE_URI' not in app.config:
-        app.config.update(
-            SQLALCHEMY_DATABASE_URI="sqlite:///" + os.path.join(
-                app.instance_path, app.config['DB_NAME']
-            )
-        )
+        db_path = os.path.join(app.instance_path, app.config['DB_NAME'])
+        app.config.update(SQLALCHEMY_DATABASE_URI="sqlite:///" + db_path)
     app.logger.info("database URI: " + app.config['SQLALCHEMY_DATABASE_URI'])
 
     # init database
@@ -73,13 +70,14 @@ def create_app(config=CONFIG):
     # TODO increase timeout
     # connect_args={'timeout': 15}
 
-    # ensure FOREIGN KEY for sqlite3
     if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
-        def _fk_pragma_on_connect(dbapi_con, con_record):  # noqa
-            dbapi_con.execute('pragma foreign_keys=ON')
+        # ensure FOREIGN KEY and WAL mode for sqlite3
+        def _pragma_on_connect(dbapi_con, con_record):
+            dbapi_con.execute("PRAGMA foreign_keys=ON;")
+            dbapi_con.execute("PRAGMA journal_mode=WAL;")
         with app.app_context():
             from sqlalchemy import event
-            event.listen(db.engine, 'connect', _fk_pragma_on_connect)
+            event.listen(db.engine, 'connect', _pragma_on_connect)
 
     # say hello
     @app.get('/hello')
