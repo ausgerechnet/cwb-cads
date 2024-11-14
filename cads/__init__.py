@@ -49,7 +49,7 @@ def create_app(config=CONFIG):
     # if app.config['DEBUG']:
     #     logger = logging.getLogger('ccc')
     #     logger.addHandler(default_handler)
-    #     logger.setLevel(logging.WARNING)
+    #     logger.setLevel(logging.DEBUG)
 
     # init database connection
     if 'SQLALCHEMY_DATABASE_URI' not in app.config:
@@ -67,14 +67,14 @@ def create_app(config=CONFIG):
     # app.register_blueprint(spheroscope_database.bp)
     db.init_app(app)
 
-    # TODO increase timeout
-    # connect_args={'timeout': 15}
-
     if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
-        # ensure FOREIGN KEY and WAL mode for sqlite3
         def _pragma_on_connect(dbapi_con, con_record):
+            # ensure FOREIGN KEY constraints
             dbapi_con.execute("PRAGMA foreign_keys=ON;")
+            # ensure WAL mode
             dbapi_con.execute("PRAGMA journal_mode=WAL;")
+            # set timeout to 30s (in ms)
+            dbapi_con.execute("PRAGMA busy_timeout=30000;")
         with app.app_context():
             from sqlalchemy import event
             event.listen(db.engine, 'connect', _pragma_on_connect)
