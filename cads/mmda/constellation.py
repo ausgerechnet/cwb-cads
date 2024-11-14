@@ -40,7 +40,9 @@ bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
 
 def pairwise_intersections(dict_of_sets):
+    """calculates the length of pairwise intersections between the sets in the provided dict
 
+    """
     nt = lambda a, b: len(dict_of_sets[a].intersection(dict_of_sets[b]))
     res = dict([(t, nt(*t)) for t in combinations(dict_of_sets.keys(), 2)])
     return res
@@ -560,9 +562,12 @@ def create(json_data):
 
     discourseme_ids = json_data.get('discourseme_ids')
     discoursemes = [db.get_or_404(Discourseme, did) for did in discourseme_ids]
+
+    default_name = '-'.join([d.name.replace(" ", "-") for d in discoursemes])[:200]
+
     constellation = Constellation(
         user_id=auth.current_user.id,
-        name=json_data.get('name', '-'.join([d.name.replace(" ", "-") for d in discoursemes])[:200]),
+        name=json_data.get('name', default_name),
         comment=json_data.get('comment', None),
     )
     [constellation.discoursemes.append(discourseme) for discourseme in discoursemes]
@@ -897,7 +902,9 @@ def concordance_lines(id, description_id, query_data, query_focus, query_filter)
 @bp.output(ConstellationCollocationOut)
 @bp.auth_required(auth)
 def create_collocation(id, description_id, json_data):
-    """Create collocation analysis of constellation description.
+    """DEPRECATED. USE PUT INSTEAD.
+
+    Create collocation analysis of constellation description.
 
     """
 
@@ -927,14 +934,16 @@ def create_collocation(id, description_id, json_data):
     # select and categorise queries
     highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
     focus_query = highlight_queries[json_data['focus_discourseme_id']]
-
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
         filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+
+    # filter?
     if len(filter_queries) > 0:
         focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
         # we create a new discourseme description for the filtered focus discourseme here
-        discourseme_description = DiscoursemeDescription(
+        discourseme_description = get_or_create(
+            DiscoursemeDescription,
             discourseme_id=json_data['focus_discourseme_id'],
             corpus_id=description.corpus_id,
             subcorpus_id=description.subcorpus_id,
@@ -943,9 +952,9 @@ def create_collocation(id, description_id, json_data):
             match_strategy=description.match_strategy,
             query_id=focus_query.id
         )
-        description.discourseme_descriptions.append(discourseme_description)
-        db.session.add(discourseme_description)
-        db.session.commit()
+        # if discourseme_description not in description.discourseme_descriptions:
+        #     description.discourseme_descriptions.append(discourseme_description)
+        #     db.session.commit()
 
     # create collocation object
     collocation = Collocation(
@@ -966,6 +975,112 @@ def create_collocation(id, description_id, json_data):
     ccc_semmap_init(collocation, semantic_map_id)
     if description.semantic_map_id is None:
         description.semantic_map_id = collocation.semantic_map_id
+
+    collocation.focus_discourseme_id = json_data['focus_discourseme_id']
+    collocation.filter_discourseme_ids = json_data['filter_discourseme_ids']
+
+    return ConstellationCollocationOut().dump(collocation), 200
+
+
+@bp.put("/<id>/description/<description_id>/collocation/")
+@bp.input(ConstellationCollocationIn)
+@bp.output(ConstellationCollocationOut)
+@bp.auth_required(auth)
+def get_or_create_collocation(id, description_id, json_data):
+    """Get collocation analysis of constellation description; create if necessary.
+
+    """
+
+    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
+    description = db.get_or_404(ConstellationDescription, description_id)
+
+    # context options
+    window = json_data.get('window')
+    p = json_data.get('p')
+    s = description.s
+
+    # marginals
+    marginals = json_data.get('marginals', 'global')
+
+    # include items with E11 > O11?
+    include_negative = json_data.get('include_negative', False)
+
+    # semantic map
+    semantic_map_id = json_data.get('semantic_map_id', None)
+    semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
+
+    # filtering
+    filter_discourseme_ids = json_data.get('filter_discourseme_ids')
+    filter_item = json_data.get('filter_item')
+    filter_item_p_att = json_data.get('filter_item_p_att')
+
+    # select and categorise queries
+    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
+    focus_query = highlight_queries[json_data['focus_discourseme_id']]
+    filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
+    if filter_item:
+        filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+
+    # filter?
+    if len(filter_queries) > 0:
+        current_app.logger.debug("second-order collocation mode")
+        focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
+        discourseme_description = get_or_create(
+            DiscoursemeDescription,
+            discourseme_id=json_data['focus_discourseme_id'],
+            corpus_id=description.corpus_id,
+            subcorpus_id=description.subcorpus_id,
+            s=description.s,
+            filter_sequence=focus_query.filter_sequence,
+            match_strategy=description.match_strategy,
+            query_id=focus_query.id
+        )
+        # if discourseme_description not in description.discourseme_descriptions:
+        #     description.discourseme_descriptions.append(discourseme_description)
+        #     db.session.commit()
+
+    if semantic_map_id is None:
+        collocation = Collocation.query.filter_by(
+            query_id=focus_query.id,
+            p=p,
+            s_break=s,
+            window=window,
+            marginals=marginals
+        ).first()
+    else:
+        collocation = Collocation.query.filter_by(
+            semantic_map_id=semantic_map_id,
+            query_id=focus_query.id,
+            p=p,
+            s_break=s,
+            window=window,
+            marginals=marginals
+        ).first()
+
+    if not collocation:
+        current_app.logger.debug("collocation object does not exist, creating new one")
+        # create collocation object
+        collocation = Collocation(
+            semantic_map_id=semantic_map_id,
+            query_id=focus_query.id,
+            p=p,
+            s_break=s,
+            window=window,
+            marginals=marginals
+        )
+        db.session.add(collocation)
+        db.session.commit()
+
+        get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+        set_collocation_discourseme_scores(collocation,
+                                           [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
+                                           overlap=description.overlap)
+        ccc_semmap_init(collocation, semantic_map_id)
+        if description.semantic_map_id is None:
+            description.semantic_map_id = collocation.semantic_map_id
+
+    else:
+        current_app.logger.debug("collocation object already exists")
 
     collocation.focus_discourseme_id = json_data['focus_discourseme_id']
     collocation.filter_discourseme_ids = json_data['filter_discourseme_ids']

@@ -377,6 +377,76 @@ def test_constellation_concordance_filter(client, auth):
 
 
 @pytest.mark.now
+def test_constellation_collocation_put(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get some discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  headers=auth_header)
+        assert discoursemes.status_code == 200
+        union_id = discoursemes.json[0]['id']
+
+        # create constellation
+        constellation = client.post(url_for('mmda.constellation.create'),
+                                    json={
+                                        'name': 'CDU',
+                                        'comment': 'Test Constellation HD',
+                                        'discourseme_ids': [disc['id'] for disc in discoursemes.json]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        # collocation in whole corpus
+        description = client.post(url_for('mmda.constellation.create_description', id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1,
+                                      's': 'text',
+                                      'overlap': 'full'
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        collocation = client.put(url_for('mmda.constellation.get_or_create_collocation',
+                                         id=constellation.json['id'],
+                                         description_id=description.json['id']),
+                                 json={
+                                     'focus_discourseme_id': union_id,
+                                     'p': 'lemma',
+                                     'window': 10,
+                                     'include_negative': True
+                                 },
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+
+        collocation = client.put(url_for('mmda.constellation.get_or_create_collocation',
+                                         id=constellation.json['id'],
+                                         description_id=description.json['id']),
+                                 json={
+                                     'focus_discourseme_id': union_id,
+                                     'p': 'lemma',
+                                     'window': 10,
+                                     'include_negative': True
+                                 },
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+
+        collocation = client.put(url_for('mmda.constellation.get_or_create_collocation',
+                                         id=constellation.json['id'],
+                                         description_id=description.json['id']),
+                                 json={
+                                     'focus_discourseme_id': union_id,
+                                     'p': 'lemma',
+                                     'window': 10,
+                                     'include_negative': True
+                                 },
+                                 headers=auth_header)
+        assert collocation.status_code == 200
+
+
+# @pytest.mark.now
 def test_constellation_collocation(client, auth):
 
     auth_header = auth.login()
@@ -1295,7 +1365,7 @@ def test_discourseme_deletion(client, auth):
                       headers=auth_header)
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_associations(client, auth):
 
     auth_header = auth.login()
