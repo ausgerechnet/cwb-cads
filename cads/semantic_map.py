@@ -47,7 +47,7 @@ def ccc_semmap(analyses, embeddings, per_am=200, method='tsne', blacklist_items=
     coordinates['semantic_map_id'] = semantic_map.id
     coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
     db.session.commit()
-    current_app.logger.debug('ccc_semmap :: ... done')
+    current_app.logger.debug('ccc_semmap :: ... exit')
 
     return semantic_map
 
@@ -74,6 +74,8 @@ def ccc_semmap_update(semantic_map, items):
         db.session.commit()
     else:
         current_app.logger.debug('ccc_semmap_update :: all requested items already have coordinates')
+
+    current_app.logger.debug('ccc_semmap_update :: exit')
 
 
 def ccc_semmap_init(analysis, semantic_map_id=None, per_am=200, method='tsne'):
