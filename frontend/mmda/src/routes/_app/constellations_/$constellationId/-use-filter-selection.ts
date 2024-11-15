@@ -74,7 +74,7 @@ export function useFilterSelection(
     clFilterItemPAtt,
     ccSortBy = 'conservative_log_ratio',
     ccPageSize = 5,
-    ccSortOrder = 'ascending',
+    ccSortOrder = 'descending',
     ccFilterItem,
     ccFilterItemPAtt,
     p,
@@ -96,12 +96,8 @@ export function useFilterSelection(
   const setFilter = useCallback(
     <K extends keyof FilterSchema>(key: K, value: FilterSchema[K]) => {
       void navigate({
-        // Todo: Pass `to` and `from` for proper type checking
-        // eslint-disable-next-line
-        // @ts-ignore
+        to: '',
         search: (s) => ({ ...s, [key]: value }),
-        // eslint-disable-next-line
-        // @ts-ignore
         params: (p) => p,
         replace: true,
       })
