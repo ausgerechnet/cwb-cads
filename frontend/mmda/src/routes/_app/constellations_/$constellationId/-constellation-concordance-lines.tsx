@@ -180,8 +180,12 @@ function ConcordanceLineRender({
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
-  const keywordIndex =
-    tokens.findIndex(({ offset = NaN }) => offset === 0) ?? emptyArray
+  const keywordIndexes = tokens.reduce((indexList, { offset }, index) => {
+    if (offset === 0) {
+      indexList.push(index)
+    }
+    return indexList
+  }, [])
   const preTokens =
     tokens.filter(({ offset = NaN }) => offset < 0) ?? emptyArray
   const postTokens =
@@ -220,8 +224,10 @@ function ConcordanceLineRender({
           <TokenRender key={i} token={token} />
         ))}
       </TableCell>
-      <TableCell className="mx-auto flex w-max items-center whitespace-nowrap px-1 text-center">
-        <TokenRender token={tokens[keywordIndex]} />
+      <TableCell className="mx-auto flex w-max items-center gap-1 whitespace-nowrap px-1 text-center">
+        {keywordIndexes.map((keywordIndex) => (
+          <TokenRender token={tokens[keywordIndex]} key={keywordIndex} />
+        ))}
       </TableCell>
       <TableCell className="w-auto items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap px-0 pl-1 text-left">
         {postTokens.map((token, i) => (
