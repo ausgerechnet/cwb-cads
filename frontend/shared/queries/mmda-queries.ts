@@ -314,6 +314,7 @@ export const constellationConcordances = (
     pageNumber: page_number,
     sortOrder: sort_order,
     sortByOffset: sort_by_offset,
+    sortByPAtt: sort_by_p_att,
   }: {
     window?: number
     primary?: string
@@ -325,6 +326,7 @@ export const constellationConcordances = (
     pageNumber?: number
     sortOrder?: 'ascending' | 'descending' | 'random' | 'first'
     sortByOffset?: number
+    sortByPAtt?: string
   } = {},
 ) =>
   queryOptions({
@@ -343,6 +345,7 @@ export const constellationConcordances = (
       page_number,
       sort_order,
       sort_by_offset,
+      sort_by_p_att,
     ],
     queryFn: ({ signal }) =>
       apiClient.getMmdaconstellationIddescriptionDescription_idconcordance({
@@ -361,7 +364,12 @@ export const constellationConcordances = (
           page_size,
           page_number,
           sort_order,
-          sort_by_offset,
+          ...(sort_order === 'descending' || sort_order === 'ascending'
+            ? {
+                sort_by_offset,
+                sort_by_p_att,
+              }
+            : {}),
         },
         signal,
       }),

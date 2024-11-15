@@ -51,6 +51,7 @@ export function ConstellationConcordanceLines({
     from: '/_app/constellations_/$constellationId',
   })
   const pAttributes = corpus?.p_atts ?? emptyArray
+  // TODO: why not from hook?!
   const primary =
     searchParams.primary ??
     pAttributes.find((a) => a === 'word') ??
@@ -92,6 +93,7 @@ export function ConstellationConcordanceLines({
         pageNumber: clPageIndex + 1,
         sortOrder: clSortOrder,
         sortByOffset: clSortByOffset,
+        sortByPAtt: secondary,
       },
     ),
     enabled: focusDiscourseme !== undefined && descriptionId !== undefined,
