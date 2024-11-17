@@ -30,6 +30,7 @@ import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { useDescription } from '@/routes/_app/constellations_/$constellationId/-use-description'
 import { ConstellationConcordanceFilter } from '@/routes/_app/constellations_/$constellationId/-constellation-filter'
+import { Ellipsis } from '@cads/shared/components/ellipsis'
 
 const emptyArray = [] as const
 
@@ -221,20 +222,24 @@ function ConcordanceLineRender({
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className="w-auto overflow-hidden overflow-ellipsis whitespace-nowrap pr-1 text-right [direction:rtl]">
-        {preTokens.map((token, i) => (
-          <TokenRender key={i} token={token} />
-        ))}
+      <TableCell className="w-auto overflow-hidden whitespace-nowrap pr-1">
+        <Ellipsis direction="rtl">
+          {preTokens.map((token, i) => (
+            <TokenRender key={i} token={token} />
+          ))}
+        </Ellipsis>
       </TableCell>
       <TableCell className="mx-auto flex w-max items-center gap-1 whitespace-nowrap px-1 text-center">
         {keywordIndexes.map((keywordIndex) => (
           <TokenRender token={tokens[keywordIndex]} key={keywordIndex} />
         ))}
       </TableCell>
-      <TableCell className="w-auto items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap px-0 pl-1 text-left">
-        {postTokens.map((token, i) => (
-          <TokenRender key={i} token={token} />
-        ))}
+      <TableCell className="w-auto overflow-hidden whitespace-nowrap pr-1">
+        <Ellipsis direction="ltr">
+          {postTokens.map((token, i) => (
+            <TokenRender key={i} token={token} />
+          ))}
+        </Ellipsis>
       </TableCell>
       <TableCell className="flex w-max items-center py-0">
         <ButtonTooltip
@@ -264,8 +269,7 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
         <TooltipTrigger asChild>
           <Link
             replace
-            to="/constellations/$constellationId"
-            from="/constellations/$constellationId"
+            to=""
             params={(p) => p}
             search={(s) => ({
               ...s,
@@ -273,7 +277,7 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
               clFilterItemPAtt: secondary,
             })}
             className={cn(
-              'hover:bg-muted hover:ring-muted cursor-pointer rounded-md hover:ring-2',
+              'hover:bg-muted hover:ring-muted cursor-pointer rounded-md px-0.5 hover:ring-2',
               token.out_of_window && 'text-muted-foreground/70',
               token.is_filter_item && 'bg-primary/50',
               token.offset === 0 && 'font-bold',
