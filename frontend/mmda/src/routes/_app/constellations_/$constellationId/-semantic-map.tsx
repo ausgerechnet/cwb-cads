@@ -18,11 +18,9 @@ import { cn } from '@cads/shared/lib/utils'
 import {
   addConstellationDiscourseme,
   constellationById,
-  constellationDescriptionFor,
   removeConstellationDiscourseme,
   discoursemesList,
   addDescriptionItem,
-  removeDescriptionItem,
   createDiscoursemeForConstellationDescription,
   corpusById,
 } from '@cads/shared/queries'
@@ -143,30 +141,22 @@ function ConstellationDiscoursemesEditor({
 }: {
   constellationId: number
 }) {
-  const { s, corpusId, focusDiscourseme } = useFilterSelection(
+  const { corpusId, focusDiscourseme } = useFilterSelection(
     '/_app/constellations_/$constellationId',
   )
   if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
   const {
     data: { discoursemes },
+    error: errorDiscoursemes,
   } = useSuspenseQuery(constellationById(constellationId))
-  const { breakdowns } = useDescription()
   const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)
-  const { data: constellationDescription, error: errorDiscoursemes } = useQuery(
-    constellationDescriptionFor({
-      constellationId,
-      // TODO
-      corpusId,
-      subcorpusId: null,
-      matchStrategy: 'longest',
-      s,
-    }),
-  )
-  const itemCount = useCollocation(
+  const { description: constellationDescription } = useDescription()
+  const { collocationItemsMap } = useCollocation(
     constellationId,
     constellationDescription?.id,
-  ).collocationItemsMap?.items.length
+  )
+  const itemCount = collocationItemsMap?.items.length
   const constellationDescriptionId = constellationDescription?.id
   const {
     mutate: addDiscourseme,
@@ -195,20 +185,24 @@ function ConstellationDiscoursemesEditor({
         </div>
       )}
       <ScrollArea className="flex-grow">
-        {constellationDescription?.discourseme_descriptions.map(
-          (discoursemeDescription) => {
-            const items =
-              breakdowns?.find(
-                ({ discoursemeId }) =>
-                  discoursemeId === discoursemeDescription.discourseme_id,
-              )?.items ?? []
+        {collocationItemsMap?.discourseme_scores.map(
+          ({
+            discourseme_id: discoursemeId,
+            unigram_item_scores: unigramItemScores,
+          }) => {
+            const discoursemeDescriptionId =
+              constellationDescription?.discourseme_descriptions.find(
+                (dd) => dd.discourseme_id === discoursemeId,
+              )?.id
+            if (discoursemeDescriptionId === undefined)
+              throw new Error('Discourseme description not found')
             return (
-              <Collapsible key={discoursemeDescription.id}>
+              <Collapsible key={discoursemeId}>
                 <div className="flex w-96 flex-col">
                   <h4
                     className={cn(
                       'bg-background sticky top-0 flex items-center border-t px-2 pt-2 font-bold',
-                      `discourseme-${discoursemeDescription.discourseme_id}`,
+                      `discourseme-${discoursemeId}`,
                     )}
                   >
                     <CollapsibleTrigger asChild>
@@ -219,22 +213,17 @@ function ConstellationDiscoursemesEditor({
                         <span
                           className="aspect-square w-5 rounded-full"
                           style={{
-                            backgroundColor: getColorForNumber(
-                              discoursemeDescription.id,
-                            ),
+                            backgroundColor: getColorForNumber(discoursemeId),
                           }}
                         />
                         {
-                          discoursemes.find(
-                            ({ id }) =>
-                              id === discoursemeDescription.discourseme_id,
-                          )?.name
+                          discoursemes.find(({ id }) => id === discoursemeId)
+                            ?.name
                         }
                         <span className="muted-foreground">
-                          {items.length} items
+                          {unigramItemScores.length} items
                         </span>
-                        {focusDiscourseme ===
-                          discoursemeDescription.discourseme_id && (
+                        {focusDiscourseme === discoursemeId && (
                           <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
                             Focus Discourseme
                           </span>
@@ -246,10 +235,7 @@ function ConstellationDiscoursemesEditor({
                       size="icon"
                       disabled={isRemovingDiscourseme}
                       onClick={() =>
-                        removeDiscourseme({
-                          constellationId,
-                          discoursemeId: discoursemeDescription.discourseme_id,
-                        })
+                        removeDiscourseme({ constellationId, discoursemeId })
                       }
                     >
                       <Trash2Icon className="h-4 w-4" />
@@ -258,9 +244,9 @@ function ConstellationDiscoursemesEditor({
                   </h4>
                   <CollapsibleContent>
                     <ul className="px-2">
-                      {items.map(({ item, id }) => (
+                      {unigramItemScores.map(({ item }) => (
                         <li
-                          key={id}
+                          key={item}
                           className="group/description hover:bg-muted flex items-center justify-between rounded leading-tight"
                         >
                           {item}
@@ -269,8 +255,8 @@ function ConstellationDiscoursemesEditor({
                     </ul>
                     <AddDescriptionItem
                       constellationId={constellationId}
-                      discoursemeId={discoursemeDescription.discourseme_id}
-                      discoursemeDescriptionId={discoursemeDescription.id}
+                      discoursemeId={discoursemeId}
+                      discoursemeDescriptionId={discoursemeDescriptionId}
                     />
                   </CollapsibleContent>
                 </div>
