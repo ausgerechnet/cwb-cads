@@ -182,6 +182,30 @@ export const removeDescriptionItem: MutationOptions<
     )
   },
 }
+
+export const discoursemeDescriptionBreakdown = (
+  discoursemeId: number,
+  descriptionId: number,
+  pAttribute: string,
+) =>
+  queryOptions({
+    queryKey: [
+      'discourseme-description-breakdown',
+      discoursemeId,
+      descriptionId,
+      pAttribute,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.getMmdadiscoursemeIddescriptionDescription_idbreakdown({
+        signal,
+        params: {
+          id: discoursemeId.toString(),
+          description_id: descriptionId.toString(),
+        },
+        queries: { p: pAttribute },
+      }),
+  })
+
 // =================== CONSTELLATIONS ====================
 
 export const constellationList = queryOptions({

@@ -183,12 +183,15 @@ function ConcordanceLineRender({
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
-  const keywordIndexes = tokens.reduce((indexList, { offset }, index) => {
-    if (offset === 0) {
-      indexList.push(index)
-    }
-    return indexList
-  }, [])
+  const keywordIndexes = tokens.reduce<number[]>(
+    (indexList, { offset }, index) => {
+      if (offset === 0) {
+        indexList.push(index)
+      }
+      return indexList
+    },
+    [],
+  )
   const preTokens =
     tokens.filter(({ offset = NaN }) => offset < 0) ?? emptyArray
   const postTokens =

@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import { corpusById } from '@cads/shared/queries'
@@ -46,7 +46,6 @@ export const FilterSchema = z.object({
     .catch(undefined),
   ccFilterItem: z.string().optional().catch(undefined),
   ccFilterItemPAtt: z.string().optional().catch(undefined),
-  p: z.string().optional().catch(undefined),
   // semanticBreak: z.string().optional().catch(undefined),
   semanticMapId: z.number().optional().catch(undefined),
   // TODO: probably should be here, because it's fixed for queries for example
@@ -77,7 +76,6 @@ export function useFilterSelection(
     ccSortOrder = 'descending',
     ccFilterItem,
     ccFilterItemPAtt,
-    p,
     s,
     primary,
     secondary,
@@ -105,22 +103,6 @@ export function useFilterSelection(
     [navigate],
   )
 
-  useEffect(() => {
-    const sAtts = corpus?.s_atts
-    if (!sAtts) return
-    if (!sAtts.includes(s!)) {
-      setFilter('s', sAtts[0])
-    }
-  }, [corpus?.s_atts, s, setFilter])
-
-  useEffect(() => {
-    const pAtts = corpus?.p_atts
-    if (!pAtts) return
-    if (p !== undefined && !pAtts.includes(p)) {
-      setFilter('p', pAtts[0])
-    }
-  }, [secondary, primary, p, corpus?.p_atts, setFilter])
-
   const pAttributes = useMemo(() => corpus?.p_atts ?? [], [corpus?.p_atts])
   const contextBreakList = useMemo(() => corpus?.s_atts ?? [], [corpus?.s_atts])
   const isSortable = clSortOrder !== 'first' && clSortOrder !== 'random'
@@ -143,7 +125,6 @@ export function useFilterSelection(
     ccFilterItem,
     ccFilterItemPAtt,
     setFilter,
-    p: defaultTo(p, corpus?.p_atts),
     primary: defaultTo([primary, 'word'], corpus?.p_atts),
     secondary: defaultTo(secondary, corpus?.p_atts),
     s: defaultTo(s, corpus?.s_atts),
