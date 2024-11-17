@@ -9,10 +9,10 @@ export function ErrorMessage({
   error,
   className,
 }: {
-  error: Error | null
+  error: Error | null | undefined
   className?: string
 }) {
-  if (error === null) {
+  if (error === null || error === undefined) {
     return null
   }
   // eslint-disable-next-line @typescript-eslint/no-ts-ignore
