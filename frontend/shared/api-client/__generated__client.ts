@@ -516,6 +516,14 @@ const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUp
     })
     .partial()
     .passthrough()
+const ConstellationAssociationsOut = z
+  .object({
+    candidate: z.number().int(),
+    measure: z.string(),
+    node: z.number().int(),
+    score: z.number(),
+  })
+  .passthrough()
 const ConstellationCollocationOut = z
   .object({
     filter_discourseme_ids: z.array(z.number().int()),
@@ -709,6 +717,7 @@ const QueryOut = z
     cqp_query: z.string(),
     id: z.number().int(),
     match_strategy: z.string(),
+    number_matches: z.number().int(),
     random_seed: z.number().int(),
     subcorpus_id: z.number().int().nullable(),
     subcorpus_name: z.string().nullable(),
@@ -850,6 +859,7 @@ export const schemas = {
   ConstellationDescriptionIn,
   ConstellationDiscoursemeDescriptionIn,
   ConstellationDescriptionOutUpdate,
+  ConstellationAssociationsOut,
   ConstellationCollocationOut,
   ConstellationCollocationIn,
   DiscoursemeCoordinatesOut,
@@ -1854,6 +1864,37 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
+    path: '/mmda/constellation/:id/description/:description_id/associations',
+    alias: 'getMmdaconstellationIddescriptionDescription_idassociations',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(ConstellationAssociationsOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/mmda/constellation/:id/description/:description_id/collocation/',
     alias: 'getMmdaconstellationIddescriptionDescription_idcollocation',
     requestFormat: 'json',
@@ -1887,6 +1928,48 @@ const endpoints = makeApi([
     method: 'post',
     path: '/mmda/constellation/:id/description/:description_id/collocation/',
     alias: 'postMmdaconstellationIddescriptionDescription_idcollocation',
+    description: `Create collocation analysis of constellation description.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationCollocationIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationCollocationOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:id/description/:description_id/collocation/',
+    alias: 'putMmdaconstellationIddescriptionDescription_idcollocation',
     requestFormat: 'json',
     parameters: [
       {
@@ -1985,6 +2068,16 @@ const endpoints = makeApi([
         schema: z.string(),
       },
       {
+        name: 'hide_focus',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+      {
+        name: 'hide_filter',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+      {
         name: 'sort_order',
         type: 'Query',
         schema: z
@@ -2078,12 +2171,17 @@ const endpoints = makeApi([
         schema: z.number().int().optional().default(10),
       },
       {
-        name: 'extended_window',
+        name: 'context_break',
         type: 'Query',
-        schema: z.number().int().optional().default(50),
+        schema: z.string().nullish().default(null),
       },
       {
-        name: 'context_break',
+        name: 'extended_window',
+        type: 'Query',
+        schema: z.number().int().optional().default(25),
+      },
+      {
+        name: 'extended_context_break',
         type: 'Query',
         schema: z.string().nullish().default(null),
       },
@@ -2096,6 +2194,11 @@ const endpoints = makeApi([
         name: 'secondary',
         type: 'Query',
         schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'highlight_query_ids',
+        type: 'Query',
+        schema: z.array(z.number().int()).optional().default([]),
       },
       {
         name: 'page_size',
@@ -2111,14 +2214,14 @@ const endpoints = makeApi([
         name: 'sort_order',
         type: 'Query',
         schema: z
-          .enum(['first', 'random', 'ascending', 'descending'])
+          .enum(['random', 'first', 'last', 'ascending', 'descending'])
           .optional()
           .default('random'),
       },
       {
         name: 'sort_by_offset',
         type: 'Query',
-        schema: z.number().int().optional().default(0),
+        schema: z.number().int().nullish().default(null),
       },
       {
         name: 'sort_by_p_att',
@@ -2133,7 +2236,7 @@ const endpoints = makeApi([
       {
         name: 'filter_item',
         type: 'Query',
-        schema: z.string().nullish(),
+        schema: z.string().optional(),
       },
       {
         name: 'filter_item_p_att',
@@ -2142,11 +2245,6 @@ const endpoints = makeApi([
       },
       {
         name: 'filter_query_ids',
-        type: 'Query',
-        schema: z.array(z.number().int()).optional().default([]),
-      },
-      {
-        name: 'highlight_query_ids',
         type: 'Query',
         schema: z.array(z.number().int()).optional().default([]),
       },
@@ -2955,6 +3053,32 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
+    method: 'post',
+    path: '/mmda/discourseme/:id/template',
+    alias: 'postMmdadiscoursemeIdtemplate',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
     method: 'get',
     path: '/query/',
     alias: 'getQuery',
@@ -3183,12 +3307,17 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: z.number().int().optional().default(10),
       },
       {
-        name: 'extended_window',
+        name: 'context_break',
         type: 'Query',
-        schema: z.number().int().optional().default(50),
+        schema: z.string().nullish().default(null),
       },
       {
-        name: 'context_break',
+        name: 'extended_window',
+        type: 'Query',
+        schema: z.number().int().optional().default(25),
+      },
+      {
+        name: 'extended_context_break',
         type: 'Query',
         schema: z.string().nullish().default(null),
       },
@@ -3201,6 +3330,11 @@ TODO also return ranks (to ease frontend pagination)?`,
         name: 'secondary',
         type: 'Query',
         schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'highlight_query_ids',
+        type: 'Query',
+        schema: z.array(z.number().int()).optional().default([]),
       },
       {
         name: 'page_size',
@@ -3216,14 +3350,14 @@ TODO also return ranks (to ease frontend pagination)?`,
         name: 'sort_order',
         type: 'Query',
         schema: z
-          .enum(['first', 'random', 'ascending', 'descending'])
+          .enum(['random', 'first', 'last', 'ascending', 'descending'])
           .optional()
           .default('random'),
       },
       {
         name: 'sort_by_offset',
         type: 'Query',
-        schema: z.number().int().optional().default(0),
+        schema: z.number().int().nullish().default(null),
       },
       {
         name: 'sort_by_p_att',
@@ -3238,7 +3372,7 @@ TODO also return ranks (to ease frontend pagination)?`,
       {
         name: 'filter_item',
         type: 'Query',
-        schema: z.string().nullish(),
+        schema: z.string().optional(),
       },
       {
         name: 'filter_item_p_att',
@@ -3247,11 +3381,6 @@ TODO also return ranks (to ease frontend pagination)?`,
       },
       {
         name: 'filter_query_ids',
-        type: 'Query',
-        schema: z.array(z.number().int()).optional().default([]),
-      },
-      {
-        name: 'highlight_query_ids',
         type: 'Query',
         schema: z.array(z.number().int()).optional().default([]),
       },
@@ -3297,14 +3426,19 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: z.number().int().optional().default(10),
       },
       {
+        name: 'context_break',
+        type: 'Query',
+        schema: z.string().nullish().default(null),
+      },
+      {
         name: 'extended_window',
         type: 'Query',
-        schema: z.number().int().optional().default(50),
+        schema: z.number().int().optional().default(25),
       },
       {
         name: 'extended_context_break',
         type: 'Query',
-        schema: z.string().optional(),
+        schema: z.string().nullish().default(null),
       },
       {
         name: 'primary',
@@ -3315,6 +3449,11 @@ TODO also return ranks (to ease frontend pagination)?`,
         name: 'secondary',
         type: 'Query',
         schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'highlight_query_ids',
+        type: 'Query',
+        schema: z.array(z.number().int()).optional().default([]),
       },
     ],
     response: ConcordanceLineOut,
