@@ -22,7 +22,7 @@ export function Ellipsis({
       container.querySelectorAll('& > *:not(.ellipsis)'),
     )
     childElements.forEach((child) => {
-      child.style.display = null
+      child.style.display = ''
     })
     ellipsis.style.display = 'none'
     let childrenWidth = childElements.reduce(
@@ -34,7 +34,7 @@ export function Ellipsis({
     }
     if (childrenWidth <= width) return
 
-    ellipsis.style.display = null
+    ellipsis.style.display = ''
     childrenWidth += ellipsis.offsetWidth
     while (childrenWidth > width) {
       const child = childElements.pop()
@@ -73,7 +73,7 @@ function useElementSize<T extends HTMLDivElement>() {
     const element = elementRef.current
     if (!element) return
     function handleResize() {
-      setWidth(element.offsetWidth)
+      if (element) setWidth(element.offsetWidth)
     }
     const observer = new ResizeObserver(handleResize)
     observer.observe(element)
