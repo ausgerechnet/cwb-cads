@@ -122,7 +122,10 @@ export function Pagination({
         <Small>Items per Page</Small>
         <Select
           value={pageSize.toString()}
-          onValueChange={(newValue) => setPageSize(parseInt(newValue))}
+          onValueChange={(newValue) => {
+            setPageIndex(0)
+            setPageSize(parseInt(newValue))
+          }}
         >
           <SelectTrigger>{pageSize}</SelectTrigger>
           <SelectContent>
