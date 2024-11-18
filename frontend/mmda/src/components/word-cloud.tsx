@@ -1,11 +1,14 @@
 import * as d3 from 'd3'
 import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { useMutation } from '@tanstack/react-query'
+import { LocateIcon } from 'lucide-react'
+
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { useTheme } from '@cads/shared/components/theme-provider'
 import { Button } from '@cads/shared/components/ui/button'
-import { LocateIcon } from 'lucide-react'
 import { clamp } from '@cads/shared/lib/clamp'
+import { putSemanticMapCoordinates } from '@cads/shared/queries'
 
 export type Word = {
   id: string
@@ -24,10 +27,19 @@ export type Word = {
 const fontSizeMin = 6
 const fontSizeMax = 24
 
-export default function WordCloud({ words }: { words: Word[] }) {
+export default function WordCloud({
+  words,
+  semanticMapId,
+  size,
+}: {
+  words: Word[]
+  semanticMapId: number
+  size: number
+}) {
   const svgRef = useRef<SVGSVGElement>(null)
   const navigate = useNavigate()
   const { theme } = useTheme()
+  const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
 
   useEffect(() => {
     const isDarkMode = theme === 'dark'
@@ -48,29 +60,8 @@ export default function WordCloud({ words }: { words: Word[] }) {
         bubbles.reduce((acc, bubble) => acc + bubble.x, 0) / bubbles.length
       const y =
         bubbles.reduce((acc, bubble) => acc + bubble.y, 0) / bubbles.length
-      return {
-        id,
-        x,
-        y,
-        originX: x,
-        originY: y,
-        bubbles,
-      }
+      return { id, x, y, originX: x, originY: y, bubbles }
     })
-
-    // const discoursemeLinks = discoursemeData
-    //   .map(({ id: discoursemeId, x, y, bubbles }) =>
-    //     bubbles.map((bubble) => ({
-    //       source: discoursemeId,
-    //       sourceX: x,
-    //       sourceY: y,
-    //       target: bubble.id,
-    //       targetX: bubble.x,
-    //       targetY: bubble.y,
-    //       targetBubble: bubble,
-    //     })),
-    //   )
-    //   .flat()
 
     const drag = d3.drag<SVGCircleElement, Word>()
 
@@ -80,34 +71,44 @@ export default function WordCloud({ words }: { words: Word[] }) {
 
     const simulation = d3.forceSimulation().alphaDecay(0.001)
 
-    // let discoursemeAnchor: d3.Selection<
-    //   SVGCircleElement | d3.BaseType,
-    //   {
-    //     id: string
-    //     x: number
-    //     y: number
-    //     originX: number
-    //     originY: number
-    //     bubbles: Word[]
-    //   },
-    //   SVGCircleElement | d3.BaseType,
-    //   unknown
-    // >
-    //
-    // let discoursemeLink: d3.Selection<
-    //   SVGLineElement | d3.BaseType,
-    //   {
-    //     source: string
-    //     sourceX: number
-    //     sourceY: number
-    //     target: string
-    //     targetX: number
-    //     targetY: number
-    //     targetBubble: Word
-    //   },
-    //   SVGLineElement | d3.BaseType,
-    //   unknown
-    // >
+    let svgWidth = svgRef.current?.clientWidth ?? 0
+    let svgHeight = svgRef.current?.clientHeight ?? 0
+
+    const miniMap = container.append('g')
+
+    // background
+    miniMap
+      .append('rect')
+      .attr('class', 'fill-bg')
+      // .attr('x', -size / 2)
+      // .attr('y', -size / 2)
+      .attr('width', size)
+      .attr('height', size)
+
+    const miniMapViewport = miniMap
+      .append('rect')
+      .attr('class', 'fill-white/5 stroke-white stroke-[10px] outline-white')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+
+    // word dots on minimap
+    miniMap
+      .selectAll('.mini-map-word')
+      .data(wordData)
+      .join('circle')
+      .attr('class', 'fill-white/25')
+      .attr('r', 50)
+      .attr('cx', (d) => d.x + size / 2)
+      .attr('cy', (d) => d.y + size / 2)
+
+    const boundary = container
+      .append('rect')
+      .attr('class', 'dark:fill-white/5 fill-black/[2%]')
+      .attr('rx', 20)
+      .attr('width', size)
+      .attr('height', size)
+      .attr('x', -size / 2)
+      .attr('y', -size / 2)
 
     const originLine = container
       .selectAll('.origin-line')
@@ -131,6 +132,9 @@ export default function WordCloud({ words }: { words: Word[] }) {
       .attr('class', 'text-group')
       .attr('x', (d) => d.x)
       .attr('y', (d) => d.y)
+      .on('click', (...args) => {
+        console.log('clicked on', args)
+      })
 
     textGroup
       .append('rect')
@@ -214,89 +218,16 @@ export default function WordCloud({ words }: { words: Word[] }) {
 
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
 
-    // Custom force to repel overlapping rectangles
-    // function forceRectangles() {
-    //   let nodes
-    //   let strength = 1
-    //
-    //   function force(alpha) {
-    //     for (let i = 0; i < nodes.length; ++i) {
-    //       for (let j = i + 1; j < nodes.length; ++j) {
-    //         const nodeA = nodes[i]
-    //         const nodeB = nodes[j]
-    //
-    //         const dx = nodeB.x - nodeA.x
-    //         const dy = nodeB.y - nodeA.y
-    //
-    //         const k = (1 / (transformationState.k ?? 1)) * 2
-    //         const widthA = nodeA.width * k
-    //         const heightA = nodeA.height * k
-    //         const widthB = nodeB.width * k
-    //         const heightB = nodeB.height * k
-    //
-    //         const minDistanceX = (widthA + widthB) / 2
-    //         const minDistanceY = (heightA + heightB) / 2
-    //
-    //         if (Math.abs(dx) < minDistanceX && Math.abs(dy) < minDistanceY) {
-    //           const overlapX = minDistanceX - Math.abs(dx)
-    //           const overlapY = minDistanceY - Math.abs(dy)
-    //
-    //           if (overlapX > 0 && overlapY > 0) {
-    //             const moveX = (overlapX / 2) * strength * Math.min(1, alpha * 2)
-    //             const moveY = (overlapY / 2) * strength * Math.min(1, alpha * 2)
-    //
-    //             if (dx > 0) {
-    //               nodeA.x -= moveX
-    //               nodeB.x += moveX
-    //             } else {
-    //               nodeA.x += moveX
-    //               nodeB.x -= moveX
-    //             }
-    //
-    //             if (dy > 0) {
-    //               nodeA.y -= moveY
-    //               nodeB.y += moveY
-    //             } else {
-    //               nodeA.y += moveY
-    //               nodeB.y -= moveY
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    //
-    //   force.initialize = function (newNodes) {
-    //     nodes = newNodes
-    //   }
-    //
-    //   force.strength = function (newStrength: number) {
-    //     strength = newStrength
-    //   }
-    //
-    //   return force
-    // }
-
     simulation
       .nodes([...wordData, ...discoursemeData])
       .force(
         'collide',
-        // forceRectangles(),
         d3
           .forceCollide()
           // @ts-expect-error TODO: type later
           .radius((d) => d.width)
           .strength(1),
       )
-      // This forces discoursemes together
-      // .force(
-      //   'link',
-      //   d3
-      //     .forceLink(discoursemeLinks)
-      //     // @ts-expect-error TODO: type later
-      //     .id((d) => d.id)
-      //     .distance(30),
-      // )
       .force('origin', originForce)
       .on('tick', () => {
         originLine
@@ -325,42 +256,40 @@ export default function WordCloud({ words }: { words: Word[] }) {
             }
             return `cursor-grab`
           })
-
-        // discoursemeLink
-        //   .data(discoursemeLinks)
-        //   .attr('x2', (d) => d.targetBubble.x)
-        //   .attr('y2', (d) => d.targetBubble.y)
       })
 
-    function render() {
-      // Renders the discourseme connection lines ans central bubble
-      // discoursemeAnchor?.remove()
-      // discoursemeAnchor = container
-      //   .selectAll('.discourseme-anchor')
-      //   .data(discoursemeData)
-      //   .join('circle')
-      //   .attr('cx', (d) => d.originX)
-      //   .attr('cy', (d) => d.originY)
-      //   .attr('r', 2)
-      //   .attr('fill', 'yellow')
-      //   // @ts-expect-error TODO: type later
-      //   .attr('transform', transformationState)
-      //
-      // discoursemeLink?.remove()
-      // discoursemeLink = container
-      //   .selectAll('.discourseme-link')
-      //   .data(discoursemeLinks)
-      //   .join('line')
-      //   .attr('x1', (d) => d.sourceX)
-      //   .attr('y1', (d) => d.sourceY)
-      //   .attr('x2', (d) => d.targetX)
-      //   .attr('y2', (d) => d.targetY)
-      //   .attr('stroke', 'yellow')
-      //   .attr('stroke-width', 1)
-      //   // @ts-expect-error TODO: type later
-      //   .attr('transform', transformationState)
+    function handleResize() {
+      svgWidth = svgRef.current?.clientWidth ?? 0
+      svgHeight = svgRef.current?.clientHeight ?? 0
+      const baseScale = Math.min(svgWidth, svgHeight) / size
+      zoom.scaleExtent([baseScale, baseScale * 5])
+      const translationFactor = 0.6
+      zoom.translateExtent([
+        [-size * translationFactor, -size * translationFactor],
+        // TODO: 1.4 is a magic number; a few UI elements overlap the svg, measure the safely visible area and use that as a reference
+        [size * translationFactor * 1.4, size * translationFactor],
+      ])
+      render()
+    }
 
+    function render() {
       const k = transformationState.k
+
+      miniMap.attr('transform', `translate(24, ${svgHeight - 350}) scale(0.1)`)
+      miniMapViewport
+        .attr('width', svgWidth)
+        .attr('height', svgHeight)
+        .attr('x', -transformationState.x + size / 2)
+        .attr('y', -transformationState.y + size / 2)
+        .attr(
+          'transform-origin',
+          `${size - svgWidth / 2} ${size - svgHeight / 2}`,
+        )
+        .attr('transform', `scale(${1 / k})`)
+
+      // @ts-expect-error TODO: type later
+      boundary.attr('transform', transformationState)
+
       originLine
         // @ts-expect-error TODO: type later
         .attr('transform', transformationState)
@@ -398,11 +327,11 @@ export default function WordCloud({ words }: { words: Word[] }) {
         // @ts-expect-error TODO: type later
         ?.radius((d) => (d.width + 5) / k)
     }
-    render()
     setTimeout(render, 1_000)
 
+    const zoom = d3.zoom()
     // @ts-expect-error TODO: type later
-    svg.call(d3.zoom().scaleExtent([0.25, 10]).on('zoom', zoomed))
+    svg.call(zoom.scaleExtent([0.25, 10]).on('zoom', zoomed))
 
     function zoomed({ transform }: { transform: d3.ZoomTransform }) {
       transformationState = transform
@@ -431,52 +360,8 @@ export default function WordCloud({ words }: { words: Word[] }) {
         .attr('y', (d.y = event.y))
     }
 
-    // function groupToDiscourseme(itemAId: string, itemBId: string) {
-    //   const bubbleA = bubbleData.find((d) => d.id === itemAId)
-    //   const bubbleB = bubbleData.find((d) => d.id === itemBId)
-    //   if (!bubbleA || !bubbleB) {
-    //     console.warn('could not find bubbles', itemAId, itemBId)
-    //     return
-    //   }
-    //   let discoursemeId: number | undefined =
-    //     bubbleA.discoursemes?.[0] ?? bubbleB.discoursemes?.[0]
-    //   let discoursemeDatum = discoursemeData.find((d) => d.id === discoursemeId)
-    //   if (!discoursemeId || !discoursemeDatum) {
-    //     discoursemeId = Math.ceil(Math.random() * 1_000_000) + 1_000_000
-    //     discoursemeDatum = {
-    //       id: discoursemeId,
-    //       x: (bubbleA.originX + bubbleB.originX) / 2,
-    //       y: (bubbleA.originY + bubbleB.originY) / 2,
-    //       originX: (bubbleA.originX + bubbleB.originX) / 2,
-    //       originY: (bubbleA.originY + bubbleB.originY) / 2,
-    //       bubbles: [],
-    //     }
-    //     discoursemeData.push(discoursemeDatum)
-    //   } // eslint-disable-next-line no-extra-semi
-    //   ;[bubbleA, bubbleB].forEach((bubble) => {
-    //     if (bubble.discoursemes?.includes(discoursemeId!)) return
-    //     bubble.discoursemes = [...(bubble.discoursemes ?? []), discoursemeId!]
-    //     discoursemeLinks.push({
-    //       source: discoursemeDatum!.id,
-    //       sourceX: discoursemeDatum!.originX,
-    //       sourceY: discoursemeDatum!.originY,
-    //       target: bubble.id,
-    //       targetX: bubble.x,
-    //       targetY: bubble.y,
-    //       targetBubble: bubble,
-    //     })
-    //     if (discoursemeDatum!.bubbles.includes(bubble)) {
-    //       discoursemeDatum!.bubbles.push(bubble)
-    //     }
-    //   })
-    //
-    //   simulation.nodes([...bubbleData, ...discoursemeData])
-    //
-    //   render()
-    // }
-
     // @ts-expect-error TODO: type later
-    function dragEnded(event) {
+    function dragEnded(event, wordData: Word) {
       simulation.alphaTarget(0.3).restart()
       event.subject.fx = null
       event.subject.fy = null
@@ -485,13 +370,21 @@ export default function WordCloud({ words }: { words: Word[] }) {
       simulation.force('collide')?.strength?.(1)
       // @ts-expect-error TODO: type later
       simulation.force('link')?.strength?.(1)
+      wordData.originX = wordData.x = event.x
+      wordData.originY = wordData.y = event.y
+      const newX = (event.x / size) * 2
+      const newY = (event.y / size) * 2
+
+      // TODO: Update via API
+      console.log(newX, newY)
+      updateCoordinates({
+        semanticMapId,
+        item: wordData.word,
+        x_user: newX,
+        y_user: newY,
+      })
+
       homeStrength = 1
-      //
-      // const dragId = event.subject.id
-      // const dropId = hoveredBubbleId !== dragId ? hoveredBubbleId : null
-      // if (dropId) {
-      //   groupToDiscourseme(dragId, dropId)
-      // }
     }
 
     // This value feels like a hack
@@ -522,11 +415,8 @@ export default function WordCloud({ words }: { words: Word[] }) {
     document.querySelector('#center-map')?.addEventListener('click', centerView)
 
     function centerView() {
-      const svg = d3.select(svgRef.current)
-      const width = svgRef.current?.clientWidth ?? 0
-      const height = svgRef.current?.clientHeight ?? 0
-      const centerX = width / 2
-      const centerY = height / 2
+      const centerX = svgWidth / 2
+      const centerY = svgHeight / 2
 
       const zoomTransform = d3.zoomIdentity.translate(centerX, centerY).scale(1)
 
@@ -537,17 +427,20 @@ export default function WordCloud({ words }: { words: Word[] }) {
 
     centerView()
 
+    window.addEventListener('resize', handleResize)
+    handleResize()
+
     return () => {
-      // bubble.remove()
+      miniMap.remove()
+      boundary.remove()
       originLine.remove()
       textGroup.remove()
       document
         .querySelector('#center-map')
         ?.removeEventListener('click', centerView)
-      // discoursemeAnchor.remove()
-      // discoursemeLink.remove()
+      window.removeEventListener('resize', handleResize)
     }
-  }, [words, navigate, theme])
+  }, [words, navigate, theme, size, updateCoordinates, semanticMapId])
 
   return (
     <>

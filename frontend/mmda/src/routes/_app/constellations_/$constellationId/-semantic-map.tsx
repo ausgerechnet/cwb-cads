@@ -62,7 +62,7 @@ import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 
-const COORDINATES_SCALE_FACTOR = 40
+const COORDINATES_SCALE_FACTOR = 1_000 // Coordinates range from -1 to 1 in both axes
 
 export function SemanticMap({ constellationId }: { constellationId: number }) {
   const { description } = useDescription()
@@ -105,7 +105,6 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
     collocationItemsMap?.coordinates,
     collocationItemsMap?.items,
     description?.discourseme_descriptions,
-    sortBy,
   ])
 
   return (
@@ -130,7 +129,13 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
         </div>
       )}
       <div className="bg-muted">
-        <WordCloud words={words} />
+        {semantic_map_id !== undefined && semantic_map_id !== null && (
+          <WordCloud
+            words={words}
+            size={COORDINATES_SCALE_FACTOR * 2}
+            semanticMapId={semantic_map_id}
+          />
+        )}
       </div>
     </div>
   )

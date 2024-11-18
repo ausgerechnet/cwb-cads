@@ -296,3 +296,19 @@ export const createKeywordAnalysis: MutationOptions<
     void queryClient.invalidateQueries(keywordAnalysesList)
   },
 }
+
+// ==================== SEMANTIC MAP ====================
+
+export const putSemanticMapCoordinates: MutationOptions<
+  z.infer<typeof schemas.CoordinatesOut>[],
+  Error,
+  z.infer<typeof schemas.CoordinatesIn> & { semanticMapId: number }
+> = {
+  mutationFn: ({ semanticMapId, ...body }) =>
+    apiClient.put('/semantic-map/:id/coordinates/', body, {
+      params: { id: semanticMapId.toString() },
+    }),
+  onSuccess: () => {
+    // TODO: should not invalidate anything, but update the cache; requires more information though
+  },
+}

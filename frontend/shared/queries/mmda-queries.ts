@@ -437,7 +437,7 @@ export const constellationCollocation = (
       focusDiscoursemeId,
     ],
     staleTime: 1_000 * 60 * 5, // 5 minutes
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       const collocationAnalyses =
         await apiClient.getMmdaconstellationIddescriptionDescription_idcollocation(
           {
@@ -445,6 +445,7 @@ export const constellationCollocation = (
               id: constellationId.toString(),
               description_id: descriptionId.toString(),
             },
+            signal,
           },
         )
       const matchingAnalysis = collocationAnalyses.find(
@@ -458,6 +459,7 @@ export const constellationCollocation = (
           analysis.window === window,
       )
       if (matchingAnalysis) return matchingAnalysis
+      console.warn('Could not find matching analysis!!!')
       return apiClient.postMmdaconstellationIddescriptionDescription_idcollocation(
         {
           filter_item: filterItem,
