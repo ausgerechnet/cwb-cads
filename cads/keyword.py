@@ -157,6 +157,7 @@ class KeywordItemOut(Schema):
     item = String(required=True)
     scores = Nested(KeywordScoreOut(many=True), required=True)
     raw_scores = Nested(KeywordScoreOut(many=True), required=True)
+    scaled_scores = Nested(KeywordScoreOut(many=True), required=True)
 
 
 class KeywordItemsOut(Schema):

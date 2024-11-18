@@ -1,5 +1,6 @@
 from flask import url_for
 import pytest
+from pprint import pprint
 
 
 def test_create_query(client, auth):
@@ -281,7 +282,6 @@ def test_query_collocation(client, auth):
         assert collocation_items.json['items'][0]['item'] == 'Hornung'
 
 
-@pytest.mark.now
 def test_query_concordance_sort_complete(client, auth):
 
     auth_header = auth.login()
@@ -365,3 +365,38 @@ def test_query_concordance_sort_complete(client, auth):
             t = [t['primary'] for t in line['tokens'] if t['offset'] == -2][0]
             tokens.append(t)
         assert list(reversed(sorted(tokens))) == tokens
+
+
+@pytest.mark.now
+def test_query_collocation_scores(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '"CDU" "/" "CSU" | "CDU" | "CSU" | "CDU" "/" "CSU-Fraktion"',
+                                's': 's'
+                            },
+                            headers=auth_header)
+
+        assert query.status_code == 200
+
+        collocation = client.get(url_for('query.get_collocation',
+                                         query_id=query.json['id'],
+                                         p='word',
+                                         window=10,
+                                         page_size=10, page_number=1,
+                                         sort_by='conservative_log_ratio'),
+                                 headers=auth_header)
+
+        assert collocation.status_code == 200
+
+        collocation_items = client.get(url_for('collocation.get_collocation_items', id=collocation.json['id']),
+                                       headers=auth_header)
+
+        assert collocation_items.status_code == 200
+
+        assert 'scaled_scores' in collocation_items.json['items'][0]

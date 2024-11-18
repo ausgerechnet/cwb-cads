@@ -201,6 +201,7 @@ class CollocationItemOut(Schema):
     item = String(required=True)
     scores = Nested(CollocationScoreOut(many=True), required=True)
     raw_scores = Nested(CollocationScoreOut(many=True), required=True)
+    scaled_scores = Nested(CollocationScoreOut(many=True), required=True)
 
 
 class CollocationItemsOut(Schema):
