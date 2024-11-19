@@ -71,10 +71,10 @@ def create_app(config=CONFIG):
         def _pragma_on_connect(dbapi_con, con_record):
             # ensure FOREIGN KEY constraints
             dbapi_con.execute("PRAGMA foreign_keys=ON;")
-            # ensure WAL mode
-            dbapi_con.execute("PRAGMA journal_mode=WAL;")
-            # set timeout to 30s (in ms)
-            dbapi_con.execute("PRAGMA busy_timeout=30000;")
+            # # ensure WAL mode
+            # dbapi_con.execute("PRAGMA journal_mode=WAL;")
+            # # set timeout to 30s (in ms)
+            # dbapi_con.execute("PRAGMA busy_timeout=30000;")
         with app.app_context():
             from sqlalchemy import event
             event.listen(db.engine, 'connect', _pragma_on_connect)
