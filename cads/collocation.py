@@ -6,7 +6,7 @@ from apiflask.fields import Boolean, Float, Integer, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
-from pandas import DataFrame, read_sql
+from pandas import DataFrame, read_sql, to_numeric
 
 from . import db
 from .database import (Collocation, CollocationItem, CollocationItemScore,
@@ -74,7 +74,8 @@ def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=F
 
     # add marginals
     f2 = corpus.marginals(f.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
-    counts = f.join(f2).fillna(0, downcast='infer')
+    counts = f.join(f2)
+    counts['f2'] = to_numeric(counts['f2'].fillna(0), downcast='integer')
     counts['f1'] = len(df_cooc)
     counts['N'] = corpus.size()
 

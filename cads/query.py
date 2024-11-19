@@ -9,7 +9,7 @@ from apiflask.validators import OneOf
 from ccc.collocates import dump2cooc
 from ccc.utils import format_cqp_query
 from flask import current_app
-from pandas import DataFrame, read_sql
+from pandas import DataFrame, read_sql, to_numeric
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
@@ -683,8 +683,12 @@ def get_meta(query_id, query_data):
 
     df_meta = df_meta.set_index('value').\
         join(df_texts.set_index('value'), how='outer').\
-        join(df_tokens.set_index('value'), how='outer').\
-        fillna(0, downcast='infer').sort_values(by='frequency', ascending=False)
+        join(df_tokens.set_index('value'), how='outer')
+
+    df_meta['nr_texts'] = to_numeric(df_meta['nr_texts'].fillna(0), downcast='integer')
+    df_meta['nr_tokens'] = to_numeric(df_meta['nr_tokens'].fillna(0), downcast='integer')
+
+    df_meta = df_meta.sort_values(by='frequency', ascending=False)
 
     df_meta['ipm'] = round(df_meta['frequency'] / df_meta['nr_tokens'] * 10 ** 6, 6)
 

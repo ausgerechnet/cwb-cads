@@ -7,7 +7,7 @@ from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
 from numpy import array_split
-from pandas import DataFrame
+from pandas import DataFrame, to_numeric
 
 from . import db
 from .database import Keyword, KeywordItem, KeywordItemScore
@@ -42,10 +42,10 @@ def ccc_keywords(keyword, include_negative=False):
     # combine frequency lists
     current_app.logger.debug('ccc_keywords :: combining frequency lists')
     counts = target.join(reference, how='outer')
+    counts['f2'] = to_numeric(counts['f2'].fillna(0), downcast='integer')
     counts = counts.loc[counts['f1'] > keyword.min_freq]
     counts['N1'] = corpus.size()
     counts['N2'] = corpus_reference.size()
-    counts = counts.fillna(0, downcast='infer')
 
     # sub vs rest correction
     if sub_vs_rest['sub_vs_rest']:

@@ -9,7 +9,7 @@ from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
 from itertools import combinations
-from pandas import DataFrame, read_sql
+from pandas import DataFrame, read_sql, to_numeric
 
 from .. import db
 from ..breakdown import ccc_breakdown
@@ -155,7 +155,8 @@ def query_discourseme_corpora(keyword, discourseme_description):
         reference_breakdown = reference_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1).reset_index().set_index('item')
 
     # combine
-    discourseme_counts = target_breakdown.join(reference_breakdown).fillna(0, downcast='infer')
+    discourseme_counts = target_breakdown.join(reference_breakdown)
+    discourseme_counts['f2'] = to_numeric(discourseme_counts['f2'].fillna(0), downcast='integer')
     if len(discourseme_counts) == 0:
         return
     discourseme_counts['discourseme_description_id'] = discourseme_description.id
@@ -279,14 +280,15 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
     # CollocationDiscoursemeItem
     current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus item counts')
     df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
-    df['f'] = 0 if 'f' not in df.columns else df['f']  # empty queries
+    df['f'] = 0 if 'f' not in df.columns else to_numeric(df['f'].fillna(0), downcast='integer')  # empty queries
+    df['f2'] = to_numeric(df['f2'].fillna(0), downcast='integer')
     df['discourseme_description_id'] = discourseme_description.id
     df['collocation_id'] = collocation.id
     df['f1'] = len(df_cotext)
     df['N'] = corpus.size()
 
     current_app.logger.debug('query_discourseme_cotext :: .. saving item counts and scoring')
-    counts = df.reset_index().fillna(0, downcast='infer')[['collocation_id', 'discourseme_description_id', 'item', 'f', 'f1', 'f2', 'N']]
+    counts = df.reset_index()[['collocation_id', 'discourseme_description_id', 'item', 'f', 'f1', 'f2', 'N']]
     counts.to_sql('collocation_discourseme_item', con=db.engine, if_exists='append', index=False)
     counts_from_sql = CollocationDiscoursemeItem.query.filter_by(collocation_id=collocation.id,
                                                                  discourseme_description_id=discourseme_description.id)
