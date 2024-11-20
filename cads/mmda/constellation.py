@@ -1050,7 +1050,7 @@ def get_or_create_collocation(id, description_id, json_data):
             s_break=s,
             window=window,
             marginals=marginals
-        ).first()
+        ).order_by(Collocation.id.desc()).first()
     else:
         collocation = Collocation.query.filter_by(
             semantic_map_id=semantic_map_id,
@@ -1059,7 +1059,7 @@ def get_or_create_collocation(id, description_id, json_data):
             s_break=s,
             window=window,
             marginals=marginals
-        ).last()
+        ).order_by(Collocation.id.desc()).first()
 
     if not collocation:
         current_app.logger.debug("collocation object does not exist, creating new one")
