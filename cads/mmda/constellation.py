@@ -1055,7 +1055,7 @@ def get_or_create_collocation(id, description_id, json_data):
             s_break=s,
             window=window,
             marginals=marginals
-        ).first()
+        ).last()
 
     if not collocation:
         current_app.logger.debug("collocation object does not exist, creating new one")
@@ -1071,16 +1071,16 @@ def get_or_create_collocation(id, description_id, json_data):
         db.session.add(collocation)
         db.session.commit()
 
-        get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
-        set_collocation_discourseme_scores(collocation,
-                                           [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
-                                           overlap=description.overlap)
-        ccc_semmap_init(collocation, semantic_map_id)
-        if description.semantic_map_id is None:
-            description.semantic_map_id = collocation.semantic_map_id
-
     else:
         current_app.logger.debug("collocation object already exists")
+
+    get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+    set_collocation_discourseme_scores(collocation,
+                                       [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
+                                       overlap=description.overlap)
+    ccc_semmap_init(collocation, semantic_map_id)
+    if description.semantic_map_id is None:
+        description.semantic_map_id = collocation.semantic_map_id
 
     collocation.focus_discourseme_id = json_data['focus_discourseme_id']
     collocation.filter_discourseme_ids = json_data['filter_discourseme_ids']
