@@ -25,7 +25,7 @@
 - [ ] overlapping segmentation annotation (Frontend / LaTeX / Quarto)
 - [ ] update backend manuals
 - [ ] create vignette
-
+- [ ] upload a correctly indexed germaparl (with `text_` s-attributes)
 
 # Backend
 
