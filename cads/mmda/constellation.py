@@ -910,6 +910,8 @@ def create_collocation(id, description_id, json_data):
 
     """
 
+    current_app.logger.warning("deprecated call to POST .../collocation/")
+
     # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
 
