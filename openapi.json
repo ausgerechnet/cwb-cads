@@ -2002,7 +2002,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev16"
+    "version": "0.3.0.dev17"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -4783,6 +4783,170 @@
         ]
       }
     },
+    "/mmda/constellation/{id}/description/{description_id}/discourseme-description": {
+      "post": {
+        "description": "(1) create a discourseme with provided template items\n(2) create a suitable description in the constellation description corpus\n(3) link discourseme to constellation\n(4) link discourseme description and constellation description",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "convenience function for creating a new discourseme incl. description during an analysis (e.g. drag & drop on semantic map)",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      },
+      "put": {
+        "description": "# does discourseme already exist\n# is discourseme already linked to constellation\n# does discourseme description already exist\n# is item already in discourseme description\n# is discourseme description already linked to constellation description",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "same as corresponding POST but will only create if discourseme with the same name does not exist",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      }
+    },
     "/mmda/constellation/{id}/description/{description_id}/keyword/": {
       "get": {
         "parameters": [
@@ -5000,7 +5164,7 @@
     },
     "/mmda/constellation/{id}/description/{description_id}/keyword/{keyword_id}/items": {
       "get": {
-        "description": "TODO find the bug: why are there duplicated measures?!\nTODO also return ranks (to ease frontend pagination)?",
+        "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
@@ -8211,7 +8375,7 @@
       "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"
     },
     {
-      "name": "Local",
+      "name": "Local Server",
       "url": "http://127.0.0.1:5000/"
     },
     {
