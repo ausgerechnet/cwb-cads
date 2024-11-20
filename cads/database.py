@@ -500,6 +500,8 @@ class Collocation(db.Model):
 
     items = db.relationship('CollocationItem', backref='collocation', passive_deletes=True, cascade='all, delete')
 
+    measure_ranges = dict()
+
     @property
     def nr_items(self):
         sql_query = f"SELECT count(*) FROM collocation_item WHERE collocation_id == {self.id};"
@@ -514,9 +516,9 @@ class Collocation(db.Model):
     def get_measure_range(self, measure):
 
         if measure not in self.measure_ranges.keys():
-            items = KeywordItemScore.query.filter_by(keyword_id=self.id, measure=measure)
-            measure_min = items.order_by(KeywordItemScore.score).first().score
-            measure_max = items.order_by(KeywordItemScore.score.desc()).first().score
+            items = CollocationItemScore.query.filter_by(collocation_id=self.id, measure=measure)
+            measure_min = items.order_by(CollocationItemScore.score).first().score
+            measure_max = items.order_by(CollocationItemScore.score.desc()).first().score
             self.measure_ranges.update({measure: {'min': measure_min, 'max': measure_max}})
 
         return self.measure_ranges[measure]
