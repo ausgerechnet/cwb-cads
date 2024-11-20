@@ -547,6 +547,7 @@ class CollocationItem(db.Model):
 
     @property
     def raw_scores(self):
+
         O11 = self.f
         O12 = self.f1 - O11
         O21 = self.f2 - O11
@@ -556,6 +557,7 @@ class CollocationItem(db.Model):
         C1 = O11 + O21
         C2 = O12 + O22
         N = R1 + R2
+
         return [
             {'measure': 'O11', 'score': O11},
             {'measure': 'O12', 'score': O12},
@@ -759,6 +761,7 @@ class KeywordItem(db.Model):
 
     @property
     def raw_scores(self):
+
         O11 = self.f1
         O12 = self.N1 - O11
         O21 = self.f2
@@ -768,6 +771,7 @@ class KeywordItem(db.Model):
         C1 = O11 + O21
         C2 = O12 + O22
         N = R1 + R2
+
         return [
             {'measure': 'O11', 'score': O11},
             {'measure': 'O12', 'score': O12},
@@ -800,7 +804,7 @@ class KeywordItem(db.Model):
 
         return [
             {'measure': measure, 'score': self.scale_measure(measure)} for measure in [
-                'O11', 'E11', 'ipm', 'ipm_reference', 'ipm_expected'
+                'O11', 'E11', 'ipm', 'ipm_reference', 'ipm_expected',
                 'conservative_log_ratio',
                 'log_likelihood',
                 'dice',

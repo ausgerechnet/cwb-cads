@@ -1322,7 +1322,6 @@ def get_all_keyword(id, description_id):
 def get_keyword_items(id, description_id, keyword_id, query_data):
     """Get scored items and discourseme scores of constellation keyword analysis.
 
-    TODO find the bug: why are there duplicated measures?!
     TODO also return ranks (to ease frontend pagination)?
     """
 
