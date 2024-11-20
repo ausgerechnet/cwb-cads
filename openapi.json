@@ -2002,7 +2002,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev15"
+    "version": "0.3.0.dev16"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -8211,7 +8211,7 @@
       "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"
     },
     {
-      "name": "Local Server",
+      "name": "Local",
       "url": "http://127.0.0.1:5000/"
     },
     {
