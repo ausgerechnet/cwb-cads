@@ -511,6 +511,16 @@ class Collocation(db.Model):
     def corpus(self):
         return self._query.corpus
 
+    def get_measure_range(self, measure):
+
+        if measure not in self.measure_ranges.keys():
+            items = KeywordItemScore.query.filter_by(keyword_id=self.id, measure=measure)
+            measure_min = items.order_by(KeywordItemScore.score).first().score
+            measure_max = items.order_by(KeywordItemScore.score.desc()).first().score
+            self.measure_ranges.update({measure: {'min': measure_min, 'max': measure_max}})
+
+        return self.measure_ranges[measure]
+
     def top_items(self, per_am=200):
         """Return top items of collocation analysis.
 
@@ -572,9 +582,8 @@ class CollocationItem(db.Model):
 
     def scale_measure(self, measure='conservative_log_ratio'):
 
-        measure_max = CollocationItemScore.query.filter_by(
-            collocation_id=self.collocation_id, measure=measure
-        ).order_by(CollocationItemScore.score.desc()).first().score
+        measure_max = self.collocation.get_measure_range(measure)['max']
+
         measure = CollocationItemScore.query.filter_by(
             collocation_id=self.collocation_id, measure=measure, collocation_item_id=self.id
         ).first().score
@@ -641,6 +650,8 @@ class Keyword(db.Model):
 
     items = db.relationship('KeywordItem', backref='keyword', passive_deletes=True, cascade='all, delete')
 
+    measure_ranges = dict()     # will be populated by get_measure_range
+
     @property
     def nr_items(self):
         sql_query = f"SELECT count(*) FROM keyword_item WHERE keyword_id == {self.id};"
@@ -688,17 +699,25 @@ class Keyword(db.Model):
     def N2(self):
         return self.items[0].N2
 
+    def get_measure_range(self, measure):
+
+        if measure not in self.measure_ranges.keys():
+            items = KeywordItemScore.query.filter_by(keyword_id=self.id, measure=measure)
+            measure_min = items.order_by(KeywordItemScore.score).first().score
+            measure_max = items.order_by(KeywordItemScore.score.desc()).first().score
+            self.measure_ranges.update({measure: {'min': measure_min, 'max': measure_max}})
+
+        return self.measure_ranges[measure]
+
     def top_items(self, per_am=200):
         """Return top items of keyword analysis.
 
         """
         from .utils import AMS_DICT
         keyword_item_ids = set()
-        for am in AMS_DICT.keys():
-            scores = KeywordItemScore.query.filter(
-                KeywordItemScore.keyword_id == self.id,
-                KeywordItemScore.measure == am
-            ).order_by(KeywordItemScore.score.desc()).paginate(page=1, per_page=per_am)
+        for measure in AMS_DICT.keys():
+            items = KeywordItemScore.query.filter_by(keyword_id=self.id, measure=measure)
+            scores = items.order_by(KeywordItemScore.score.desc()).paginate(page=1, per_page=per_am)
             keyword_item_ids.update({s.keyword_item_id for s in scores})
         keyword_items = KeywordItem.query.filter(KeywordItem.id.in_(keyword_item_ids))
         return [item.item for item in keyword_items if ((item.f1 / item.N1) > (item.f2/item.N2))]
@@ -786,9 +805,8 @@ class KeywordItem(db.Model):
 
     def scale_measure(self, measure='conservative_log_ratio'):
 
-        measure_max = KeywordItemScore.query.filter_by(
-            keyword_id=self.keyword_id, measure=measure
-        ).order_by(KeywordItemScore.score.desc()).first().score
+        measure_max = self.keyword.get_measure_range(measure)['max']
+
         measure = KeywordItemScore.query.filter_by(
             keyword_id=self.keyword_id, measure=measure, keyword_item_id=self.id
         ).first().score
