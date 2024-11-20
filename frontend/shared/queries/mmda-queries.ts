@@ -438,29 +438,7 @@ export const constellationCollocation = (
     ],
     staleTime: 1_000 * 60 * 5, // 5 minutes
     queryFn: async ({ signal }) => {
-      const collocationAnalyses =
-        await apiClient.getMmdaconstellationIddescriptionDescription_idcollocation(
-          {
-            params: {
-              id: constellationId.toString(),
-              description_id: descriptionId.toString(),
-            },
-            signal,
-          },
-        )
-      const matchingAnalysis = collocationAnalyses.find(
-        (analysis) =>
-          analysis.filter_item === filterItem &&
-          analysis.filter_item_p_att === filterItemPAttribute &&
-          analysis.focus_discourseme_id === focusDiscoursemeId &&
-          analysis.p === p &&
-          analysis.s_break === sBreak &&
-          (analysis.semantic_map_id ?? null) === (semanticMapId ?? null) &&
-          analysis.window === window,
-      )
-      if (matchingAnalysis) return matchingAnalysis
-      console.warn('Could not find matching analysis!!!')
-      return apiClient.postMmdaconstellationIddescriptionDescription_idcollocation(
+      return apiClient.putMmdaconstellationIddescriptionDescription_idcollocation(
         {
           filter_item: filterItem,
           filter_item_p_att: filterItemPAttribute,
@@ -476,6 +454,7 @@ export const constellationCollocation = (
             id: constellationId.toString(),
             description_id: descriptionId.toString(),
           },
+          signal,
         },
       )
     },
