@@ -75,33 +75,33 @@ latex.line <- function(concordance, disc.colours, number = 1){
 #' 
 #' @param concordance concordance object as returned by cwb-cads
 #' @returns concordance as KWIC tibble
-conc.kwic <- function(concordance){
+conc.kwic <- function(concordance, disc.colours = NULL){
 
-  structural <- concordance |> 
-    extract2("lines") |> 
-    select(starts_with("structural")) |> 
-    extract2("structural")
-  
-  conc.lines <- concordance |> extract2("lines") 
+  structural <- concordance |> extract2("lines") |> select(starts_with("structural")) |> extract2("structural")
+  conc.lines <- concordance |> extract2("lines")
+
   conc.lines.df <- tibble(left = c(), node = c(), right = c(), disc_ranges = c())
   for (i in 1:nrow(conc.lines)){
     
-    tokens <- conc.lines |> 
-      slice(i) |> 
-      pull(tokens) |> 
-      extract2(1)
+    tokens <- conc.lines |> slice(i) |> pull(tokens) |> extract2(1)
     
-    disc.ranges <- conc.lines |> 
-      slice(i) |> 
-      pull(discourseme_ranges)
-    
-    left <- tokens |> filter(offset < 0) |> pull(primary) |> str_flatten(" ")
+    left <- tokens |> filter(offset < 0, !out_of_window)
     node <- tokens |> filter(offset == 0) |> pull(primary) |> str_flatten(" ")
-    right <- tokens |> filter(offset > 0) |> pull(primary) |> str_flatten(" ")
-    
+    right <- tokens |> filter(offset > 0, !out_of_window)
+
+    if (!is.null(disc.colours)){
+      disc.ranges <- conc.lines |> slice(i) |> pull(discourseme_ranges) |> extract2(1) |> left_join(disc.colours, by = "discourseme_id")
+      left <- latex_line_colours(tokens |> filter(offset < 0), disc.ranges)
+      right <- latex_line_colours(tokens |> filter(offset > 0), disc.ranges)
+    }
+    else{
+      left <- left |> pull(primary) |> str_flatten(" ")
+      right <- right |> pull(primary) |> str_flatten(" ")
+    }
+
     conc.lines.df <- rbind(
       conc.lines.df,
-      tibble(left = left, node = node, right = right, disc_ranges = as.character(disc.ranges))
+      tibble(left = left, node = node, right = right)
     )
   }
 
@@ -116,14 +116,19 @@ conc.kwic <- function(concordance){
 #' @param path.out output path (.tex)
 #' @param crop how many characters to display
 #' @returns 
-latex.lines <- function(conc.tbl, path.out, crop = 40, align = "crcl"){
-  crop <- max(0, min(crop - max(str_length(conc.tbl$node))))
+latex.lines <- function(conc.tbl, path.out, nr.char = 100, align = "crcl", caption = "", label = "tab:"){
+  crop <- as.integer(max(0, min(nr.char - max(str_length(conc.tbl$node)))) / 2)
   conc.tbl |> 
     rowwise() |> 
     mutate(
       left = str_sub(left, str_length(left) - min(crop, str_length(left)) + 1),
       right = str_sub(right, end = min(crop, min(crop, str_length(right))))
     ) |> 
-    xtable(align = align) |>
-    print(file = path.out, booktabs = TRUE)
+    mutate(
+      left = paste0("\\texttt{", left, "}"),
+      node = paste0("\\texttt{", node, "}"),
+      right = paste0("\\texttt{", right, "}")
+    ) |> 
+    xtable(align = align, caption = caption, label = label) |>
+    print(file = path.out, booktabs = TRUE, size = "footnotesize", sanitize.text.function = identity)
 }

@@ -38,15 +38,12 @@ discoursemes.scores.formatter <- function(scores, ids){
 #' 
 #' @param collocation.items collocation object as returned by cwb-cads
 #' @returns a flat tibble with all scores
-collocation.map <- function(collocation.items){
+collocation.map <- function(collocation.items, parse.discoursemes=TRUE){
   
   coordinates <- collocation.items |> 
     extract2("coordinates") |> 
     distinct()
-  discoursemes.coordinates <- collocation.items |> 
-    extract2("discourseme_coordinates") |> 
-    distinct()
-  
+
   items.ids <- collocation.items |> 
     extract2("items") |>
     extract2("item")
@@ -56,54 +53,68 @@ collocation.map <- function(collocation.items){
   items.raw.scores <- collocation.items |>
     extract2("items") |>
     extract2("raw_scores")
-  
-  discoursemes.ids <- collocation.items |> 
-    extract2("discourseme_scores") |> 
-    extract2("discourseme_id")
-  discoursemes.global.scores <- collocation.items |> 
-    extract2("discourseme_scores") |> 
-    extract2("global_scores")
-  
-  discoursemes.items.scores <- collocation.items |> 
-    extract2("discourseme_scores") |> 
-    extract2("item_scores")
-  discoursemes.unigram.items.scores <- collocation.items |> 
-    extract2("discourseme_scores") |> 
-    extract2("unigram_item_scores")
-  
-  # actual data
+  items.scaled.scores <- collocation.items |>
+    extract2("items") |>
+    extract2("scaled_scores")
+
+  # format scores
   items.scores <- items.scores.formatter(items.scores, items.ids)
   items.raw.scores <- items.scores.formatter(items.raw.scores, items.ids)
-  discoursemes.global.scores <- items.scores.formatter(discoursemes.global.scores, discoursemes.ids)
-  discoursemes.items.scores <- discoursemes.scores.formatter(discoursemes.items.scores, discoursemes.ids)
-  discoursemes.unigram.items.scores <- discoursemes.scores.formatter(discoursemes.unigram.items.scores, discoursemes.ids)
+  items.scaled.scores <- items.scores.formatter(items.scaled.scores, items.ids)
   
-  # create maps
-  items.map <- items.scores |> 
-    # filter(! item %in% (discoursemes.unigram.items.scores |> pull(item))) |> 
+  items <- items.scores |>
+    left_join(items.raw.scores, suffix = c("", "_raw"), by = "item") |> 
+    left_join(items.scaled.scores, suffix = c("", "_scaled"), by = "item")
+
+  # create map
+  map <- items |> 
     left_join(coordinates, by = "item") |> 
     mutate(discourseme_id = NA) |> 
     mutate(source = "items")
   
-  discoursemes.items.map <- discoursemes.items.scores |> 
-    left_join(coordinates, by = "item", relationship = "many-to-many") |> 
-    mutate(source = "discoursemes_items")
-  
-  discoursemes.unigram.items.map <- discoursemes.unigram.items.scores |> 
-    left_join(coordinates, by = "item", relationship = "many-to-many") |> 
-    mutate(source = "discoursemes_unigram_items")
-  
-  discoursemes.global.map <- discoursemes.global.scores |> 
-    left_join(discoursemes.coordinates, by = "discourseme_id", relationship = "many-to-many") |> 
-    mutate(item = NA, source = "discoursemes")
-  
-  # combine
-  map <- bind_rows(
-    items.map, 
-    discoursemes.global.map,
-    discoursemes.items.map,
-    discoursemes.unigram.items.map
-  )
-  
+  if (parse.discoursemes){
+    discoursemes.coordinates <- collocation.items |> 
+      extract2("discourseme_coordinates") |> 
+      distinct()
+    
+    discoursemes.ids <- collocation.items |> 
+      extract2("discourseme_scores") |> 
+      extract2("discourseme_id")
+    discoursemes.global.scores <- collocation.items |> 
+      extract2("discourseme_scores") |> 
+      extract2("global_scores")
+    
+    discoursemes.items.scores <- collocation.items |> 
+      extract2("discourseme_scores") |> 
+      extract2("item_scores")
+    discoursemes.unigram.items.scores <- collocation.items |> 
+      extract2("discourseme_scores") |> 
+      extract2("unigram_item_scores")
+    
+    discoursemes.global.scores <- items.scores.formatter(discoursemes.global.scores, discoursemes.ids)
+    discoursemes.items.scores <- discoursemes.scores.formatter(discoursemes.items.scores, discoursemes.ids)
+    discoursemes.unigram.items.scores <- discoursemes.scores.formatter(discoursemes.unigram.items.scores, discoursemes.ids)
+    
+    discoursemes.items.map <- discoursemes.items.scores |> 
+      left_join(coordinates, by = "item", relationship = "many-to-many") |> 
+      mutate(source = "discoursemes_items")
+    
+    discoursemes.unigram.items.map <- discoursemes.unigram.items.scores |> 
+      left_join(coordinates, by = "item", relationship = "many-to-many") |> 
+      mutate(source = "discoursemes_unigram_items")
+    
+    discoursemes.global.map <- discoursemes.global.scores |> 
+      left_join(discoursemes.coordinates, by = "discourseme_id", relationship = "many-to-many") |> 
+      mutate(item = NA, source = "discoursemes")
+    
+    # map <- map |> filter(! item %in% (discoursemes.unigram.items.scores |> pull(item)))
+    
+    map <- bind_rows(
+      map, 
+      discoursemes.global.map,
+      discoursemes.items.map,
+      discoursemes.unigram.items.map
+    )
+  }
   return(map)
 }
