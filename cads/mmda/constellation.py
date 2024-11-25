@@ -435,6 +435,8 @@ def get_collocation_discourseme_scores_2(collocation_id, discourseme_description
         # discourseme items
         discourseme_items = CollocationDiscoursemeItem.query.filter_by(collocation_id=collocation_id, discourseme_description_id=discourseme_description_id)
         df_discourseme_items = DataFrame([CollocationItemOut().dump(discourseme_item) for discourseme_item in discourseme_items])
+        if len(df_discourseme_items) == 0:
+            continue
         df_discourseme_items = expand_scores_dataframe(df_discourseme_items)
         df_discourseme_items['discourseme_id'] = discourseme_id
         df_discourseme_items['source'] = 'discourseme_items'
