@@ -8,7 +8,7 @@ from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
-from pandas import DataFrame, read_sql, to_numeric
+from pandas import concat, DataFrame, merge, read_sql, to_numeric
 
 from .. import db
 from ..breakdown import ccc_breakdown
@@ -36,6 +36,43 @@ from .discourseme import (DiscoursemeCoordinatesIn, DiscoursemeCoordinatesOut,
                           discourseme_template_to_description)
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
+
+
+def expand_scores_dataframe(df):
+    """Expands a DataFrame with columns ['item', 'scores', 'raw_scores', 'scaled_scores'], where the score columns are lists of dictionaries,
+    into a flat DataFrame with one column per measure.
+
+    """
+    # Initialize an empty list to hold the expanded rows
+    expanded_rows = []
+
+    for _, row in df.iterrows():
+        # Create a dictionary for the expanded row
+        expanded_row = {'item': row['item']}
+
+        # Extract and add measures from 'scores'
+        for score_dict in row['scores']:
+            expanded_row[score_dict['measure']] = score_dict['score']
+
+        # Extract and add measures from 'raw_scores'
+        for raw_score_dict in row['raw_scores']:
+            expanded_row[raw_score_dict['measure']] = raw_score_dict['score']
+
+        # Extract and add measures from 'raw_scores'
+        if 'scaled_scores' in df.columns:
+            for scaled_score_dict in row['scaled_scores']:
+                expanded_row[scaled_score_dict['measure'] + "_scaled"] = scaled_score_dict['score']
+
+        # Append the expanded row to the list
+        expanded_rows.append(expanded_row)
+
+    # Create a DataFrame from the expanded rows
+    expanded_df = DataFrame(expanded_rows)
+
+    # Fill missing values with NaN or 0 if needed
+    expanded_df.fillna(0, inplace=True)
+
+    return expanded_df
 
 
 def pairwise_intersections(dict_of_sets):
@@ -80,6 +117,7 @@ def get_discourseme_coordinates(semantic_map, discourseme_descriptions, p=None):
             if len(item_coordinates) == 0:
                 mean = {'x': 0, 'y': 0}
             else:
+                # TODO check this syntax, use fillna instead
                 item_coordinates.loc[~ item_coordinates['x_user'].isna(), 'x'] = item_coordinates['x_user']
                 item_coordinates.loc[~ item_coordinates['y_user'].isna(), 'y'] = item_coordinates['y_user']
                 mean = item_coordinates[['x', 'y']].mean(axis=0)
@@ -380,6 +418,54 @@ def get_collocation_discourseme_scores(collocation_id, discourseme_description_i
     return discourseme_scores
 
 
+def get_collocation_discourseme_scores_2(collocation_id, discourseme_description_ids):
+    """get discourseme scores for collocation analysis
+
+    """
+
+    global_scores = list()
+    unigram_item_scores = list()
+    item_scores = list()
+    for discourseme_description_id in discourseme_description_ids:
+
+        discourseme_description = db.get_or_404(DiscoursemeDescription, discourseme_description_id)
+        discourseme_id = discourseme_description.discourseme_id
+        discourseme = db.get_or_404(Discourseme, discourseme_id)
+
+        # discourseme items
+        discourseme_items = CollocationDiscoursemeItem.query.filter_by(collocation_id=collocation_id, discourseme_description_id=discourseme_description_id)
+        df_discourseme_items = DataFrame([CollocationItemOut().dump(discourseme_item) for discourseme_item in discourseme_items])
+        df_discourseme_items = expand_scores_dataframe(df_discourseme_items)
+        df_discourseme_items['discourseme_id'] = discourseme_id
+        df_discourseme_items['source'] = 'discourseme_items'
+        item_scores.append(df_discourseme_items)
+
+        # discourseme unigram items
+        df_discourseme_unigram_items = df_discourseme_items.copy()
+        df_discourseme_unigram_items = df_discourseme_unigram_items.rename({'O11': 'f', 'R1': 'f1', 'C1': 'f2', 'N': 'N'}, axis=1)
+        df_discourseme_unigram_items['item'] = df_discourseme_unigram_items['item'].str.split()
+        df_discourseme_unigram_items = df_discourseme_unigram_items.explode('item')
+        df_discourseme_unigram_items = df_discourseme_unigram_items.groupby('item').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
+        df_unigram_item_scores = measures.score(df_discourseme_unigram_items, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
+        df_unigram_item_scores['discourseme_id'] = discourseme_id
+        df_unigram_item_scores['source'] = 'discourseme_unigram_items'
+        unigram_item_scores.append(df_unigram_item_scores)
+
+        # global discourseme scores
+        df_discourseme_global_scores = df_discourseme_items.rename({'O11': 'f', 'R1': 'f1', 'C1': 'f2', 'N': 'N'}, axis=1)
+        df_discourseme_global_scores = df_discourseme_global_scores.groupby('discourseme_id').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
+        df_global_scores = measures.score(df_discourseme_global_scores, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
+        df_global_scores['item'] = discourseme.name
+        df_global_scores['source'] = 'discoursemes'
+        global_scores.append(df_global_scores)
+
+    return {
+        'item_scores': concat(item_scores),
+        'unigram_item_scores': concat(unigram_item_scores),
+        'global_scores': concat(global_scores)
+    }
+
+
 def set_keyword_discourseme_scores(keyword, discourseme_descriptions):
     """ensure that KeywordDiscoursemeItems exist for each discourseme description
 
@@ -547,6 +633,28 @@ class ConstellationAssociationsOut(Schema):
     candidate = Integer(required=True)
     measure = String(required=True)
     score = Float(required=True)
+
+
+class MapItemOut(Schema):
+
+    item = String(required=True)
+    discourseme_id = Integer(required=True, metadata={'nullable': True})
+    source = String(required=True)
+    x = Float(required=True)
+    y = Float(required=True)
+    score = Float(required=True)
+    scaled_score = Float(required=True)
+
+
+class ConstellationCollocationMapOut(Schema):
+
+    id = Integer(required=True)
+    sort_by = String(required=True)
+    nr_items = Integer(required=True)
+    page_size = Integer(required=True)
+    page_number = Integer(required=True)
+    page_count = Integer(required=True)
+    map = Nested(MapItemOut(many=True))
 
 
 #################
@@ -1345,6 +1453,126 @@ def get_collocation_items(id, description_id, collocation_id, query_data, query_
     return ConstellationCollocationItemsOut().dump(collocation_items), 200
 
 
+@bp.get("/<id>/description/<description_id>/collocation/<collocation_id>/map")
+@bp.input(CollocationItemsIn, location='query')
+@bp.output(ConstellationCollocationMapOut)
+@bp.auth_required(auth)
+def get_collocation_map(id, description_id, collocation_id, query_data):
+    """Get scored items and discourseme scores of constellation collocation analysis.
+
+    TODO also return ranks (to ease frontend pagination)?
+    """
+
+    description = db.get_or_404(ConstellationDescription, description_id)
+    collocation = db.get_or_404(Collocation, collocation_id)
+
+    page_size = query_data.pop('page_size')
+    page_number = query_data.pop('page_number')
+    sort_order = query_data.pop('sort_order')
+    sort_by = query_data.pop('sort_by')
+
+    # discourseme scores (set here to use for creating blacklist if necessary)
+    set_collocation_discourseme_scores(
+        collocation,
+        [desc for desc in description.discourseme_descriptions],
+        overlap=description.overlap
+    )
+
+    # filter out all items that are included in any discourseme unigram breakdown
+    blacklist = []
+    for desc in description.discourseme_descriptions:
+        desc_unigrams = [i for i in chain.from_iterable(
+            [a.split(" ") for a in desc.breakdown(collocation.p).index]
+        )]
+        blacklist_desc = CollocationItem.query.filter(
+            CollocationItem.collocation_id == collocation.id,
+            CollocationItem.item.in_(desc_unigrams)
+        )
+        blacklist += [b.id for b in blacklist_desc]
+
+    # retrieve scores (without blacklist)
+    scores = CollocationItemScore.query.filter(
+        CollocationItemScore.collocation_id == collocation.id,
+        CollocationItemScore.measure == sort_by,
+        ~ CollocationItemScore.collocation_item_id.in_(blacklist)
+    )
+
+    # order
+    if sort_order == 'ascending':
+        scores = scores.order_by(CollocationItemScore.score)
+    elif sort_order == 'descending':
+        scores = scores.order_by(CollocationItemScore.score.desc())
+
+    # pagination
+    scores = scores.paginate(page=page_number, per_page=page_size)
+    nr_items = scores.total
+    page_count = scores.pages
+
+    # format
+    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
+    df_scores = DataFrame([CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']])
+    df_scores = expand_scores_dataframe(df_scores)
+    df_scores['discourseme_id'] = None
+    df_scores['source'] = 'items'
+
+    # combine
+    discourseme_scores = get_collocation_discourseme_scores_2(
+        collocation_id,
+        [desc.id for desc in description.discourseme_descriptions]
+    )
+    df_discourseme_item_scores = discourseme_scores['item_scores']
+    df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
+    df_discourseme_global_scores = discourseme_scores['global_scores']
+
+    max_disc_score = max([
+        df_discourseme_item_scores[sort_by].max(),
+        df_discourseme_unigram_item_scores[sort_by].max(),
+        df_discourseme_global_scores[sort_by].max(),
+    ])
+    df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
+    df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
+    df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
+
+    # coordinates
+    if collocation.semantic_map:
+
+        # make sure there's coordinates for all requested items
+        requested_items = list(df_scores['item'].values)
+        requested_items += list(df_discourseme_item_scores['item'].values)
+        requested_items += list(df_discourseme_unigram_item_scores['item'])
+        ccc_semmap_update(collocation.semantic_map, list(set(requested_items)))
+        coordinates = DataFrame(
+            [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
+        )
+        df_scores = merge(df_scores, coordinates, on='item', how='left')
+        df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
+        df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
+
+        # discourseme coordinates
+        discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
+        discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
+        df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
+
+    df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
+    df['x_user'] = df['x_user'].fillna(df['x'])
+    df['y_user'] = df['y_user'].fillna(df['y'])
+    df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
+    df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
+    df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+
+    collocation_map = {
+        'id': collocation.id,
+        'sort_by': sort_by,
+        'nr_items': nr_items,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count,
+        'map': [MapItemOut().dump(d) for d in df.to_dict(orient='records')]
+    }
+
+    return ConstellationCollocationMapOut().dump(collocation_map), 200
+
+
 @bp.put('/<id>/description/<description_id>/collocation/<collocation_id>/auto-associate')
 @bp.auth_required(auth)
 def associate_discoursemes(id, description_id, collocation_id):
@@ -1597,7 +1825,7 @@ def get_constellation_associations(id, description_id):
         matches_df = ccc_query(discourseme_description._query)
         context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
 
-    current_app.logger.debug('get constellation associations :: calculating co-occurrences')
+    current_app.logger.debug('get constellation associations :: counting co-occurrences')
     N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))  # TODO: subcorpus size?
     records = list()
     for pair, f in pairwise_intersections(context_ids).items():
@@ -1606,7 +1834,7 @@ def get_constellation_associations(id, description_id):
         f2 = len(context_ids[pair[1]])
         records.append({'node': pair[0], 'candidate': pair[1], 'f': f, 'f1': f1, 'f2': f2, 'N': N})
 
-    current_app.logger.debug('get constellation associations :: calculating co-occurrences')
+    current_app.logger.debug('get constellation associations :: calculating scores')
     counts = DataFrame(records)
     counts['node'] = counts['node'].astype(int)
     counts['candidate'] = counts['candidate'].astype(int)

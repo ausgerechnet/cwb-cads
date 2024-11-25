@@ -205,6 +205,7 @@ class ConstellationDescription(db.Model):
 ###############
 # COLLOCATION #
 ###############
+
 class CollocationDiscoursemeItem(db.Model):
     """
 
@@ -225,11 +226,27 @@ class CollocationDiscoursemeItem(db.Model):
 
     @property
     def raw_scores(self):
+
+        O11 = self.f
+        O12 = self.f1 - O11
+        O21 = self.f2 - O11
+        O22 = self.N - O11 - O12 - O21
+        R1 = O11 + O12
+        R2 = O21 + O22
+        C1 = O11 + O21
+        C2 = O12 + O22
+        N = R1 + R2
+
         return [
-            {'measure': 'O11', 'score': self.f},
-            {'measure': 'R1', 'score': self.f1},
-            {'measure': 'C1', 'score': self.f2},
-            {'measure': 'N', 'score': self.N}
+            {'measure': 'O11', 'score': O11},
+            {'measure': 'O12', 'score': O12},
+            {'measure': 'O21', 'score': O21},
+            {'measure': 'O22', 'score': O22},
+            {'measure': 'R1', 'score': R1},
+            {'measure': 'R2', 'score': R2},
+            {'measure': 'C1', 'score': C1},
+            {'measure': 'C2', 'score': C2},
+            {'measure': 'N', 'score': N}
         ]
 
 
@@ -271,11 +288,27 @@ class KeywordDiscoursemeItem(db.Model):
 
     @property
     def raw_scores(self):
+
+        O11 = self.f1
+        O12 = self.N1 - O11
+        O21 = self.f2
+        O22 = self.N2 - O21
+        R1 = O11 + O12
+        R2 = O21 + O22
+        C1 = O11 + O21
+        C2 = O12 + O22
+        N = R1 + R2
+
         return [
-            {'measure': 'O11', 'score': self.f1},
-            {'measure': 'O21', 'score': self.f2},
-            {'measure': 'R1', 'score': self.N1},
-            {'measure': 'R2', 'score': self.N2}
+            {'measure': 'O11', 'score': O11},
+            {'measure': 'O12', 'score': O12},
+            {'measure': 'O21', 'score': O21},
+            {'measure': 'O22', 'score': O22},
+            {'measure': 'R1', 'score': R1},
+            {'measure': 'R2', 'score': R2},
+            {'measure': 'C1', 'score': C1},
+            {'measure': 'C2', 'score': C2},
+            {'measure': 'N', 'score': N}
         ]
 
 
