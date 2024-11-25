@@ -69,12 +69,14 @@
 - [ ] sigmoid / tangens scaling vs. linear scaling
 - [ ] formatted with three leading digits
 - [ ] resource: translate names of AMs
-- [ ] additional variable: scale to [0,1]
+- [x] additional variable: scale to [0,1]
 
 - [ ] search for item on collocation table
 
 ### Semantic Map
 - [x] semantic map: normalise coordinates to [-1, 1]^2
+- [x] consolidated score table at constellation / collocation / items
+- [ ] discourseme colouring
 
 ### Default (corpora) settings
 - [ ] endpoint for displaying and setting default corpora settings
@@ -93,7 +95,7 @@
 - [ ] example subcorpus creation
 
 ### Logging
-- [ ] improve logging: do not log cwb-ccc
+- [x] improve logging: do not log cwb-ccc
 
 ## Notes
 - [ ] concordancing
@@ -113,11 +115,9 @@
 
 - [ ] auto-associate discoursemes
 
-- [ ] GET `/mmda/constellation/{id}/description/{description_id}/collocation/` doesn't yield all info
-
 - [ ] empty discourseme descriptions possible → constellations with empty discoursemes
 
-- [ ] create discourseme in constellation description
+- [x] create discourseme in constellation description
 
 - [ ] collocation → get query\_id + filter\_sequence
 
@@ -151,3 +151,6 @@ these cannot be easily removed:
 - [ ] click.echo instead of logging for CLI commands
 - [ ] stop words (language specific / user-defined) / POS filtering
 - [ ] race conditions gdbm [spheroscope]
+- [ ] PUT for constellation / keyword analyses
+- [ ] PUT for queries (creation, collocation, etc.)?
+
