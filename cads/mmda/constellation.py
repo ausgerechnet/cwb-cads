@@ -1481,14 +1481,15 @@ def get_collocation_map(id, description_id, collocation_id, query_data):
     # filter out all items that are included in any discourseme unigram breakdown
     blacklist = []
     for desc in description.discourseme_descriptions:
-        desc_unigrams = [i for i in chain.from_iterable(
-            [a.split(" ") for a in desc.breakdown(collocation.p).index]
-        )]
-        blacklist_desc = CollocationItem.query.filter(
-            CollocationItem.collocation_id == collocation.id,
-            CollocationItem.item.in_(desc_unigrams)
-        )
-        blacklist += [b.id for b in blacklist_desc]
+        if desc.breakdown(collocation.p) is not None:
+            desc_unigrams = [i for i in chain.from_iterable(
+                [a.split(" ") for a in desc.breakdown(collocation.p).index]
+            )]
+            blacklist_desc = CollocationItem.query.filter(
+                CollocationItem.collocation_id == collocation.id,
+                CollocationItem.item.in_(desc_unigrams)
+            )
+            blacklist += [b.id for b in blacklist_desc]
 
     # retrieve scores (without blacklist)
     scores = CollocationItemScore.query.filter(
