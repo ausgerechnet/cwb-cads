@@ -445,6 +445,43 @@
         ],
         "type": "object"
       },
+      "ConstellationCollocationMapOut": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "map": {
+            "items": {
+              "$ref": "#/components/schemas/MapItemOut"
+            },
+            "type": "array"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "sort_by": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by"
+        ],
+        "type": "object"
+      },
       "ConstellationCollocationOut": {
         "properties": {
           "filter_discourseme_ids": {
@@ -1438,6 +1475,42 @@
         ],
         "type": "object"
       },
+      "MapItemOut": {
+        "properties": {
+          "discourseme_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "scaled_score": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          },
+          "source": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "discourseme_id",
+          "item",
+          "scaled_score",
+          "score",
+          "source",
+          "x",
+          "y"
+        ],
+        "type": "object"
+      },
       "MetaFrequenciesOut": {
         "properties": {
           "nr_spans": {
@@ -2002,7 +2075,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev17"
+    "version": "0.3.0.dev18"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -4460,6 +4533,145 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConstellationCollocationItemsOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get scored items and discourseme scores of constellation collocation analysis.",
+        "tags": [
+          "Mmda.Constellation"
+        ]
+      }
+    },
+    "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/map": {
+      "get": {
+        "description": "TODO also return ranks (to ease frontend pagination)?",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collocation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "descending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "conservative_log_ratio",
+              "enum": [
+                "conservative_log_ratio",
+                "O11",
+                "E11",
+                "ipm",
+                "ipm_expected",
+                "log_likelihood",
+                "z_score",
+                "t_score",
+                "simple_ll",
+                "dice",
+                "log_ratio",
+                "min_sensitivity",
+                "liddell",
+                "mutual_information",
+                "local_mutual_information"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationCollocationMapOut"
                 }
               }
             },
