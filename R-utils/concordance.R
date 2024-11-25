@@ -3,6 +3,33 @@ library(magrittr)
 library(xtable)
 
 
+.latex.colours <- c(
+  "red",
+  "green",
+  "blue",
+  "cyan",
+  "magenta",
+  "yellow",
+  "black",
+  "gray",
+  "white",
+  "darkgray",
+  "lightgray",
+  "brown",
+  "lime",
+  "olive",
+  "orange",
+  "pink",
+  "purple",
+  "teal",
+  "violet"
+)
+
+.disc.colours <- tibble(
+  discourseme_id = 1:length(.latex.colours),
+  colour = .latex.colours
+)
+
 #' Create LaTeX string with ranges highlighted by (nested) colour boxes
 #' 
 #' @param line the concordance line
@@ -63,7 +90,7 @@ latex_line_colours <- function(line, ranges) {
 #' @param disc.colours dataframe which maps from discourseme_id to colour
 #' @param number which concordance line to create
 #' @returns line `number` formatted in LaTeX
-latex.line <- function(concordance, disc.colours, number = 1){
+latex.line <- function(concordance, number = 1, disc.colours = .disc.colours){
   conc.lines <- concordance |> extract2("lines")
   conc.line <- conc.lines |> slice(number)
   disc.ranges <- conc.line |> pull(discourseme_ranges) |> extract2(1) |> left_join(disc.colours, by = "discourseme_id")
