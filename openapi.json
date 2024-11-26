@@ -445,43 +445,6 @@
         ],
         "type": "object"
       },
-      "ConstellationCollocationMapOut": {
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "map": {
-            "items": {
-              "$ref": "#/components/schemas/MapItemOut"
-            },
-            "type": "array"
-          },
-          "nr_items": {
-            "type": "integer"
-          },
-          "page_count": {
-            "type": "integer"
-          },
-          "page_number": {
-            "type": "integer"
-          },
-          "page_size": {
-            "type": "integer"
-          },
-          "sort_by": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "nr_items",
-          "page_count",
-          "page_number",
-          "page_size",
-          "sort_by"
-        ],
-        "type": "object"
-      },
       "ConstellationCollocationOut": {
         "properties": {
           "filter_discourseme_ids": {
@@ -785,6 +748,79 @@
           "discourseme_scores",
           "id",
           "items",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by"
+        ],
+        "type": "object"
+      },
+      "ConstellationMapItemOut": {
+        "properties": {
+          "discourseme_id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "item": {
+            "type": "string"
+          },
+          "scaled_score": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          },
+          "source": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "discourseme_id",
+          "item",
+          "scaled_score",
+          "score",
+          "source",
+          "x",
+          "y"
+        ],
+        "type": "object"
+      },
+      "ConstellationMapOut": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "map": {
+            "items": {
+              "$ref": "#/components/schemas/ConstellationMapItemOut"
+            },
+            "type": "array"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "sort_by": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
           "nr_items",
           "page_count",
           "page_number",
@@ -1475,42 +1511,6 @@
         ],
         "type": "object"
       },
-      "MapItemOut": {
-        "properties": {
-          "discourseme_id": {
-            "nullable": true,
-            "type": "integer"
-          },
-          "item": {
-            "type": "string"
-          },
-          "scaled_score": {
-            "type": "number"
-          },
-          "score": {
-            "type": "number"
-          },
-          "source": {
-            "type": "string"
-          },
-          "x": {
-            "type": "number"
-          },
-          "y": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "discourseme_id",
-          "item",
-          "scaled_score",
-          "score",
-          "source",
-          "x",
-          "y"
-        ],
-        "type": "object"
-      },
       "MetaFrequenciesOut": {
         "properties": {
           "nr_spans": {
@@ -2075,7 +2075,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev18"
+    "version": "0.3.0.dev19"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3475,12 +3475,12 @@
         ]
       }
     },
-    "/mmda/constellation/{id}": {
+    "/mmda/constellation/{constellation_id}": {
       "delete": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3531,7 +3531,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3584,7 +3584,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3653,12 +3653,12 @@
         ]
       }
     },
-    "/mmda/constellation/{id}/add-discourseme": {
+    "/mmda/constellation/{constellation_id}/add-discourseme": {
       "patch": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3727,12 +3727,12 @@
         ]
       }
     },
-    "/mmda/constellation/{id}/description/": {
+    "/mmda/constellation/{constellation_id}/description/": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3781,14 +3781,14 @@
         ],
         "summary": "Get all descriptions of this constellation.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       },
       "post": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3853,16 +3853,16 @@
         ],
         "summary": "Create description of constellation in corpus. Makes sure individual discourseme descriptions exist.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/": {
       "delete": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3914,14 +3914,14 @@
         ],
         "summary": "Delete constellation description.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       },
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -3975,16 +3975,16 @@
         ],
         "summary": "Get constellation description.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/add-discourseme": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/add-discourseme": {
       "patch": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4057,16 +4057,16 @@
         ],
         "summary": "Patch constellation description: add discourseme description.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/associations": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/associations/": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4123,16 +4123,16 @@
         ],
         "summary": "Get pairwise association scores for discoursemes in constellation, based on s-attribute.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/collocation/": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/collocation/": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4189,7 +4189,7 @@
         ],
         "summary": "Get all collocation analyses of constellation description.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Collocation"
         ]
       },
       "post": {
@@ -4197,7 +4197,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4270,14 +4270,14 @@
         ],
         "summary": "DEPRECATED. USE PUT INSTEAD.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Collocation"
         ]
       },
       "put": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4350,16 +4350,16 @@
         ],
         "summary": "Get collocation analysis of constellation description; create if necessary.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Collocation"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/auto-associate": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/collocation/{collocation_id}/auto-associate": {
       "put": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4419,17 +4419,17 @@
         ],
         "summary": "Automatically associate discoursemes that occur in the top collocational profile with this constellation.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Collocation"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/items": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/collocation/{collocation_id}/items": {
       "get": {
         "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4576,17 +4576,17 @@
         ],
         "summary": "Get scored items and discourseme scores of constellation collocation analysis.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Collocation"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/collocation/{collocation_id}/map": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/collocation/{collocation_id}/map": {
       "get": {
         "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4671,7 +4671,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConstellationCollocationMapOut"
+                  "$ref": "#/components/schemas/ConstellationMapOut"
                 }
               }
             },
@@ -4715,16 +4715,16 @@
         ],
         "summary": "Get scored items and discourseme scores of constellation collocation analysis.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Collocation"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/concordance/": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/concordance/": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -4991,17 +4991,17 @@
         ],
         "summary": "Get concordance lines of constellation in corpus.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/discourseme-description": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/discourseme-description": {
       "post": {
         "description": "(1) create a discourseme with provided template items\n(2) create a suitable description in the constellation description corpus\n(3) link discourseme to constellation\n(4) link discourseme description and constellation description",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5074,7 +5074,7 @@
         ],
         "summary": "convenience function for creating a new discourseme incl. description during an analysis (e.g. drag & drop on semantic map)",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       },
       "put": {
@@ -5082,7 +5082,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5155,16 +5155,16 @@
         ],
         "summary": "same as corresponding POST but will only create if discourseme with the same name does not exist",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/keyword/": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/keyword/": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5221,14 +5221,14 @@
         ],
         "summary": "Get all keyword analyses featuring this constellation. (Not implemented.)",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Keyword"
         ]
       },
       "post": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5301,16 +5301,16 @@
         ],
         "summary": "Create keyword analysis for constellation description.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Keyword"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/keyword/{keyword_id}/auto-associate": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/keyword/{keyword_id}/auto-associate": {
       "put": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5370,17 +5370,17 @@
         ],
         "summary": "Automatically associate discoursemes that occur in the top keyword profile with this constellation.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Keyword"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/keyword/{keyword_id}/items": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/keyword/{keyword_id}/items": {
       "get": {
         "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5509,16 +5509,155 @@
         ],
         "summary": "Get scored items and discourseme scores of constellation keyword analysis.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Keyword"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/remove-discourseme": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/keyword/{keyword_id}/map": {
+      "get": {
+        "description": "TODO also return ranks (to ease frontend pagination)?",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "keyword_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "descending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "conservative_log_ratio",
+              "enum": [
+                "conservative_log_ratio",
+                "O11",
+                "E11",
+                "ipm",
+                "ipm_expected",
+                "log_likelihood",
+                "z_score",
+                "t_score",
+                "simple_ll",
+                "dice",
+                "log_ratio",
+                "min_sensitivity",
+                "liddell",
+                "mutual_information",
+                "local_mutual_information"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationMapOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get scored items and discourseme scores of constellation keyword analysis.",
+        "tags": [
+          "Mmda.Constellation.Description.Keyword"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/{description_id}/remove-discourseme": {
       "patch": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5591,16 +5730,16 @@
         ],
         "summary": "Patch constellation description: remove discourseme description.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description"
         ]
       }
     },
-    "/mmda/constellation/{id}/description/{description_id}/semantic_map/{semantic_map_id}/coordinates/": {
+    "/mmda/constellation/{constellation_id}/description/{description_id}/semantic-map/{semantic_map_id}/coordinates/": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5665,14 +5804,14 @@
         ],
         "summary": "Get discourseme coordinates.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Semantic-Map"
         ]
       },
       "put": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5756,16 +5895,16 @@
         ],
         "summary": "Set coordinates of a discourseme.",
         "tags": [
-          "Mmda.Constellation"
+          "Mmda.Constellation.Description.Semantic-Map"
         ]
       }
     },
-    "/mmda/constellation/{id}/remove-discourseme": {
+    "/mmda/constellation/{constellation_id}/remove-discourseme": {
       "patch": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "constellation_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5926,12 +6065,12 @@
         ]
       }
     },
-    "/mmda/discourseme/{id}": {
+    "/mmda/discourseme/{discourseme_id}": {
       "delete": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -5982,7 +6121,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6035,7 +6174,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6104,12 +6243,12 @@
         ]
       }
     },
-    "/mmda/discourseme/{id}/description/": {
+    "/mmda/discourseme/{discourseme_id}/description/": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6158,7 +6297,7 @@
         ],
         "summary": "Get all descriptions of discourseme.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       },
       "post": {
@@ -6166,7 +6305,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6231,16 +6370,16 @@
         ],
         "summary": "Create description of discourseme in corpus.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       }
     },
-    "/mmda/discourseme/{id}/description/{description_id}/": {
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/": {
       "delete": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6292,14 +6431,14 @@
         ],
         "summary": "Delete discourseme description.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       },
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6353,16 +6492,16 @@
         ],
         "summary": "Get details of description.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       }
     },
-    "/mmda/discourseme/{id}/description/{description_id}/add-item": {
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/add-item": {
       "patch": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6435,16 +6574,16 @@
         ],
         "summary": "Patch discourseme description: add item to description.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       }
     },
-    "/mmda/discourseme/{id}/description/{description_id}/breakdown": {
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/breakdown": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6516,16 +6655,16 @@
         ],
         "summary": "Get breakdown of discourseme description.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       }
     },
-    "/mmda/discourseme/{id}/description/{description_id}/breakdown/{breakdown_id}/similar": {
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/breakdown/{breakdown_id}/similar": {
       "get": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6618,16 +6757,16 @@
         ],
         "summary": "Get items most similar to the ones in discourseme breakdown.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       }
     },
-    "/mmda/discourseme/{id}/description/{description_id}/remove-item": {
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/remove-item": {
       "patch": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -6700,16 +6839,16 @@
         ],
         "summary": "Patch discourseme description: remove item from description.",
         "tags": [
-          "Mmda.Discourseme"
+          "Mmda.Discourseme.Description"
         ]
       }
     },
-    "/mmda/discourseme/{id}/template": {
+    "/mmda/discourseme/{discourseme_id}/template": {
       "post": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "discourseme_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -7855,7 +7994,7 @@
         ],
         "summary": "Create semantic map for all top items in the provided keyword and collocation analyses.",
         "tags": [
-          "Semantic_Map"
+          "Semantic-Map"
         ]
       }
     },
@@ -7908,7 +8047,7 @@
         ],
         "summary": "Delete semantic map.",
         "tags": [
-          "Semantic_Map"
+          "Semantic-Map"
         ]
       },
       "get": {
@@ -7961,7 +8100,7 @@
         ],
         "summary": "Get semantic map.",
         "tags": [
-          "Semantic_Map"
+          "Semantic-Map"
         ]
       }
     },
@@ -8019,7 +8158,7 @@
         ],
         "summary": "Get coordinates of semantic map.",
         "tags": [
-          "Semantic_Map"
+          "Semantic-Map"
         ]
       },
       "put": {
@@ -8094,7 +8233,7 @@
         ],
         "summary": "Set coordinates of an item.",
         "tags": [
-          "Semantic_Map"
+          "Semantic-Map"
         ]
       }
     },
@@ -8609,7 +8748,7 @@
       "name": "Collocation"
     },
     {
-      "name": "Semantic_Map"
+      "name": "Semantic-Map"
     },
     {
       "name": "Keyword"
@@ -8621,7 +8760,22 @@
       "name": "Mmda.Discourseme"
     },
     {
+      "name": "Mmda.Discourseme.Description"
+    },
+    {
       "name": "Mmda.Constellation"
+    },
+    {
+      "name": "Mmda.Constellation.Description"
+    },
+    {
+      "name": "Mmda.Constellation.Description.Keyword"
+    },
+    {
+      "name": "Mmda.Constellation.Description.Collocation"
+    },
+    {
+      "name": "Mmda.Constellation.Description.Semantic-Map"
     },
     {
       "name": "Spheroscope"

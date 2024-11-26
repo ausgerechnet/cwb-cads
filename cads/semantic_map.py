@@ -5,7 +5,6 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, List, String
 from apiflask.validators import OneOf
 from flask import current_app
-# from numpy.random import normal
 from pandas import DataFrame
 from semmap import SemanticSpace
 
@@ -13,7 +12,7 @@ from . import db
 from .database import Collocation, Coordinates, Keyword, SemanticMap
 from .users import auth
 
-bp = APIBlueprint('semantic_map', __name__, url_prefix='/semantic-map')
+bp = APIBlueprint('semantic-map', __name__, url_prefix='/semantic-map')
 
 
 def ccc_semmap(analyses, embeddings, per_am=200, method='tsne', blacklist_items=[]):

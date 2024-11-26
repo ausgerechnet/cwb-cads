@@ -8,7 +8,7 @@ from apiflask.fields import Boolean, Dict, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc import SubCorpus
 from flask import current_app
-from pandas import concat, DataFrame
+from pandas import DataFrame, concat
 
 from . import db
 from .database import Concordance, ConcordanceLines, Matches

@@ -7,13 +7,6 @@ from .. import db
 from ..breakdown import ccc_breakdown
 from ..database import Breakdown, Corpus, Query, SubCorpus, get_or_create
 
-# from ccc.utils import cqp_escape
-# from flask import Blueprint
-
-
-# bp = Blueprint('mmda-database', __name__, url_prefix='/mmda-database', cli_group='mmda-database')
-
-
 constellation_discourseme = db.Table(
     'constellation_discourseme',
     db.Column('constellation_id', db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE')),
@@ -117,7 +110,7 @@ class DiscoursemeDescription(db.Model):
     @property
     def create_query(self):
 
-        from .discourseme import description_items_to_query
+        from .discourseme_description import description_items_to_query
 
         # query
         query = description_items_to_query(
