@@ -167,7 +167,6 @@ def set_collocation_discourseme_scores(collocation, discourseme_descriptions, ov
 def get_collocation_discourseme_scores(collocation_id, discourseme_description_ids):
     """get discourseme scores for collocation analysis
 
-    TODO define more reasonable output format
     TODO: make tests compliant with paper
     """
 
