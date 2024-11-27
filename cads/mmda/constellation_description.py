@@ -89,6 +89,15 @@ class ConstellationDiscoursemeDescriptionIn(Schema):
     discourseme_description_ids = List(Integer(), required=False, load_default=[])
 
 
+class ConstellationMetaIn(Schema):
+
+    discourseme_description_ids = List(Integer(), required=False, load_default=[])
+    
+    # level = String(required=True)
+    # key = String(required=True)
+    # p = String(required=False, load_default='word')
+
+
 # OUTPUT
 class ConstellationDescriptionOut(Schema):
 
@@ -101,12 +110,32 @@ class ConstellationDescriptionOut(Schema):
     discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True), required=True, dump_default=[])
 
 
-class ConstellationAssociationsOut(Schema):
+class ConstellationAssociationItemOut(Schema):
 
     node = Integer(required=True)
     candidate = Integer(required=True)
     measure = String(required=True)
     score = Float(required=True)
+
+
+class ConstellationAssociationOut(Schema):
+
+    N = Integer(required=True)
+    s = String(required=True)
+    nr_pairs = Integer(required=True)
+    associations = Nested(ConstellationAssociationItemOut(many=True), required=True)
+
+
+class ConstellationMetaOut(Schema):
+
+    pass
+
+    # item = String(required=True)
+    # value = String(required=True)
+    # frequency = Integer(required=True)
+    # nr_tokens = Integer(required=True)
+    # nr_texts = Integer(required=True)
+    # ipm = Float(required=True)
 
 
 #################
@@ -441,7 +470,7 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
 # ASSOCIATIONS
 ###############
 @bp.get("/<description_id>/associations/")
-@bp.output(ConstellationAssociationsOut(many=True))
+@bp.output(ConstellationAssociationOut)
 @bp.auth_required(auth)
 def get_constellation_associations(constellation_id, description_id):
     """Get pairwise association scores for discoursemes in constellation, based on s-attribute.
@@ -458,7 +487,8 @@ def get_constellation_associations(constellation_id, description_id):
     current_app.logger.debug('get constellation associations :: counting co-occurrences')
     N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))  # TODO: subcorpus size?
     records = list()
-    for pair, f in pairwise_intersections(context_ids).items():
+    pairs = pairwise_intersections(context_ids)
+    for pair, f in pairs.items():
         pair = sorted(pair)
         f1 = len(context_ids[pair[0]])
         f2 = len(context_ids[pair[1]])
@@ -472,4 +502,11 @@ def get_constellation_associations(constellation_id, description_id):
     scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
     scores = scores.melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
 
-    return scores.to_dict(orient='records'), 200
+    association = dict(
+        N=N,
+        s=description.s,
+        nr_pairs=len(pairs.items()),
+        associations=scores.to_dict(orient='records')
+    )
+
+    return ConstellationAssociationOut().dump(association), 200
