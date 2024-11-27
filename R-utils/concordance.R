@@ -52,6 +52,9 @@ latex_line_colours <- function(line, ranges) {
   
   # define function to get all range colours for overlapping ranges
   get_all_range_colours <- function(pos, ranges) {
+    if (nrow(ranges) == 0){
+      return(NULL)
+    }
     colours <- c()
     for (i in 1:nrow(ranges)) {
       if (pos >= ranges$start[i] && pos <= ranges$end[i]) {
@@ -93,7 +96,13 @@ latex_line_colours <- function(line, ranges) {
 latex.line <- function(concordance, number = 1, disc.colours = .disc.colours){
   conc.lines <- concordance |> extract2("lines")
   conc.line <- conc.lines |> slice(number)
-  disc.ranges <- conc.line |> pull(discourseme_ranges) |> extract2(1) |> left_join(disc.colours, by = "discourseme_id")
+  disc.ranges <- conc.line |> pull(discourseme_ranges) |> extract2(1)
+  if (length(disc.ranges) > 0){
+    disc.ranges <- disc.ranges |> left_join(disc.colours, by = "discourseme_id")
+  }
+  else {
+    disc.ranges <- tibble(start = numeric(), end = numeric(), colour = numeric())
+  }
   tokens <- conc.line |> pull(tokens) |> extract2(1)
   latex_line_colours(tokens, disc.ranges)
 }
