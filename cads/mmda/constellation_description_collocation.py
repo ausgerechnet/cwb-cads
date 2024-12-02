@@ -75,7 +75,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
                 [{'surface': item.surface, 'p': item.p, 'cqp_query': item.cqp_query} for item in discourseme_description.items],
                 discourseme_description.corpus_id,
                 None,
-                discourseme_description.s_query,
+                discourseme_description.s,
                 discourseme_description.match_strategy
             )
         corpus_query = discourseme_description_global._query
@@ -313,6 +313,7 @@ class ConstellationMapItemOut(Schema):
 class ConstellationMapOut(Schema):
 
     id = Integer(required=True)
+    semantic_map_id = Integer(required=True)
     sort_by = String(required=True)
     nr_items = Integer(required=True)
     page_size = Integer(required=True)
@@ -430,7 +431,7 @@ def get_or_create_collocation(constellation_id, description_id, json_data):
     s = description.s
 
     # marginals
-    marginals = json_data.get('marginals', 'global')
+    marginals = json_data.get('marginals', 'local')
 
     # include items with E11 > O11?
     include_negative = json_data.get('include_negative', False)
@@ -759,6 +760,7 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
 
     collocation_map = {
         'id': collocation.id,
+        'semantic_map_id': collocation.semantic_map_id,
         'sort_by': sort_by,
         'nr_items': nr_items,
         'page_size': page_size,
@@ -772,22 +774,37 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
 
 @bp.put('/<collocation_id>/auto-associate')
 @bp.auth_required(auth)
+@bp.output(ConstellationCollocationOut)
 def associate_discoursemes(constellation_id, description_id, collocation_id):
     """Automatically associate discoursemes that occur in the top collocational profile with this constellation.
 
     """
 
     constellation = db.get_or_404(Constellation, constellation_id)
+    description = db.get_or_404(ConstellationDescription, description_id)
     collocation = db.get_or_404(Collocation, collocation_id)
     collocation_items = collocation.top_items()
-    discoursemes = Discourseme.query.all()
 
+    discoursemes = Discourseme.query.all()
     for discourseme in discoursemes:
+        current_app.logger.debug(f'associate_discoursemes :: discourseme "{discourseme.name}"?')
+        # TODO first query all discoursemes in corpus?
+        # here: just look at unigrams of item.surface in discourseme template
+        # TODO at least check if item.p is the same
         discourseme_items = [item.surface for item in discourseme.template]
+        discourseme_items = [unigram for item in discourseme_items for unigram in item.split(" ")]
         if len(set(discourseme_items).intersection(collocation_items)) > 0:
+            current_app.logger.debug(f'associate_discoursemes :: put discourseme "{discourseme.name}"')
             if discourseme not in constellation.discoursemes:
+                current_app.logger.debug(f'associate_discoursemes :: post discourseme "{discourseme.name}"')
                 constellation.discoursemes.append(discourseme)
+                discourseme_description = discourseme_template_to_description(
+                    discourseme, [], description.corpus_id, description.subcorpus_id, description.s, description.match_strategy
+                )
+                description.discourseme_descriptions.append(discourseme_description)
+            else:
+                current_app.logger.debug(f'associate_discoursemes :: discourseme "{discourseme.name}" already associated')
 
     db.session.commit()
 
-    return {"id": int(id)}, 200
+    return ConstellationCollocationOut().dump(collocation), 200
