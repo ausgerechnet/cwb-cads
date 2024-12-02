@@ -319,6 +319,14 @@ class Query(db.Model):
     def corpus_name(self):
         return self.corpus.name
 
+    def get_breakdown(self, p):
+        breakdown = [b for b in self.breakdowns if b.p == p]
+        if len(breakdown) == 1:
+            return breakdown[0]
+        else:
+            current_app.logger.warning("no unique breakdown found")
+            return None
+
 
 class Matches(db.Model):
     """Matches
@@ -352,6 +360,14 @@ class Breakdown(db.Model):
 
     items = db.relationship('BreakdownItems', backref='breakdown', passive_deletes=True, cascade='all, delete')
 
+    _nr_tokens = None
+
+    @property
+    def nr_tokens(self):
+        if self._nr_tokens is None:
+            self._nr_tokens = self._query.subcorpus.nr_tokens if self._query.subcorpus else self._query.corpus.nr_tokens
+        return self._nr_tokens
+
 
 class BreakdownItems(db.Model):
     """Breakdown Items
@@ -367,7 +383,7 @@ class BreakdownItems(db.Model):
 
     @property
     def nr_tokens(self):
-        return self.breakdown._query.subcorpus.nr_tokens if self.breakdown._query.subcorpus else self.breakdown._query.corpus.nr_tokens
+        return self.breakdown.nr_tokens
 
     @property
     def ipm(self):
@@ -526,17 +542,30 @@ class Collocation(db.Model):
     def top_items(self, per_am=200):
         """Return top items of collocation analysis.
 
+        Breakdown of nodes is included separately but excluded from the 200 per AM.
+
         """
         from .utils import AMS_DICT
+
+        focus_items = self._query.get_breakdown(self.p).items
+        focus_items_surface = [i.item for i in focus_items]
+        focus_items_collocation_item_ids = [i.id for i in self.items if i.item in focus_items_surface]
+
         collocation_item_ids = set()
         for am in AMS_DICT.keys():
             scores = CollocationItemScore.query.filter(
                 CollocationItemScore.collocation_id == self.id,
-                CollocationItemScore.measure == am
+                CollocationItemScore.measure == am,
+                ~ CollocationItemScore.collocation_item_id.in_(focus_items_collocation_item_ids)
             ).order_by(CollocationItemScore.score.desc()).paginate(page=1, per_page=per_am)
-            collocation_item_ids.update({s.collocation_item_id for s in scores})
+            disc_items_ids = {s.collocation_item_id for s in scores}
+            collocation_item_ids.update(disc_items_ids)
+
         collocation_items = CollocationItem.query.filter(CollocationItem.id.in_(collocation_item_ids))
-        return [item.item for item in collocation_items if ((item.f / item.f1) > ((item.f2 - item.f) / (item.N - item.f1)))]
+        top_items = [item.item for item in collocation_items if ((item.f / item.f1) > ((item.f2 - item.f) / (item.N - item.f1)))]
+        top_items.extend([i.item for i in focus_items])
+
+        return top_items
 
 
 class CollocationItem(db.Model):
