@@ -78,7 +78,7 @@ class ConstellationDescriptionIn(Schema):
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False)
 
-    semantic_map_id = Integer(required=False, load_default=None)
+    # semantic_map_id = Integer(required=False, load_default=None)
     s = String(required=False)
     match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
     overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
@@ -106,7 +106,7 @@ class ConstellationDescriptionOut(Schema):
     subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     s = String(required=True)
     match_strategy = String(required=True)
-    semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    # semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
     discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True), required=True, dump_default=[])
 
 
@@ -482,7 +482,10 @@ def get_constellation_associations(constellation_id, description_id):
     context_ids = dict()
     for discourseme_description in description.discourseme_descriptions:
         matches_df = ccc_query(discourseme_description._query)
-        context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
+        if len(matches_df) == 0:
+            context_ids[discourseme_description.discourseme.id] = set()
+        else:
+            context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
 
     current_app.logger.debug('get constellation associations :: counting co-occurrences')
     N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))  # TODO: subcorpus size?
@@ -500,6 +503,9 @@ def get_constellation_associations(constellation_id, description_id):
     counts['candidate'] = counts['candidate'].astype(int)
     counts = counts.set_index(['node', 'candidate'])
     scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+
+    # TODO
+    scores = scores.dropna()
     scores = scores.melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
 
     association = dict(
