@@ -239,7 +239,7 @@ def delete_description(constellation_id, description_id):
     return 'Deletion successful.', 200
 
 
-@bp.patch('/<description_id>/add-discourseme')
+@bp.patch('/<description_id>/add-descriptions')
 @bp.input(ConstellationDiscoursemeDescriptionIn)
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
@@ -259,7 +259,7 @@ def patch_description_add(constellation_id, description_id, json_data):
     return ConstellationDescriptionOut().dump(description), 200
 
 
-@bp.patch('/<description_id>/remove-discourseme')
+@bp.patch('/<description_id>/remove-descriptions')
 @bp.input(ConstellationDiscoursemeDescriptionIn)
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
@@ -275,6 +275,49 @@ def patch_description_remove(constellation_id, description_id, json_data):
     for desc in discourseme_descriptions:
         description.discourseme_descriptions.remove(desc)
     db.session.commit()
+
+    return ConstellationDescriptionOut().dump(description), 200
+
+
+@bp.patch('/<description_id>/add-discoursemes')
+@bp.input({'discourseme_ids': List(Integer, required=True)}, location='json')
+@bp.output(ConstellationDescriptionOut(partial=True))
+@bp.auth_required(auth)
+def patch_discourseme_add(constellation_id, description_id, json_data):
+    """convenience function for (1) adding discoursemes, (2) creating respective descriptions if necessary, and
+    (3) adding them to the constellation description
+
+    """
+
+    constellation = db.get_or_404(Constellation, constellation_id)
+    description = db.get_or_404(ConstellationDescription, description_id)
+    discourseme_ids = json_data.get("discourseme_ids")
+    for discourseme_id in discourseme_ids:
+
+        # link discourseme to constellation
+        discourseme = db.get_or_404(Discourseme, discourseme_id)
+        if discourseme not in constellation.discoursemes:
+            constellation.discoursemes.append(discourseme)
+            db.session.commit()
+
+        # link discourseme description to constellation description
+        desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
+                                                      corpus_id=description.corpus_id,
+                                                      subcorpus_id=description.subcorpus_id,
+                                                      filter_sequence=None,
+                                                      s=description.s,
+                                                      match_strategy=description.match_strategy).first()
+
+        if not desc:
+            # create discourseme description if necessary
+            desc = discourseme_template_to_description(
+                discourseme, [], description.corpus_id, description.subcorpus_id, description.s, description.match_strategy
+            )
+
+        if desc not in description.discourseme_descriptions:
+            # link discourseme_description to constellation description if necessary
+            description.discourseme_descriptions.append(desc)
+            db.session.commit()
 
     return ConstellationDescriptionOut().dump(description), 200
 
