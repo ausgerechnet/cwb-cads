@@ -320,12 +320,21 @@ class Query(db.Model):
         return self.corpus.name
 
     def get_breakdown(self, p):
-        breakdown = [b for b in self.breakdowns if b.p == p]
-        if len(breakdown) == 1:
-            return breakdown[0]
+
+        breakdowns = [b for b in self.breakdowns if b.p == p]
+
+        if len(breakdowns) == 0:
+            from .breakdown import ccc_breakdown
+            current_app.logger.debug("no breakdown found, creating")
+            breakdown = get_or_create(Breakdown, query_id=self.id, p=p)
+            ccc_breakdown(breakdown)
+            return breakdown
+        elif len(breakdowns) == 1:
+            current_app.logger.debug("found exactly one breakdown")
+            return breakdowns[0]
         else:
-            current_app.logger.warning("no unique breakdown found")
-            return None
+            current_app.logger.warning("no unique breakdown found, returning last")
+            return breakdowns[-1]
 
 
 class Matches(db.Model):
