@@ -288,4 +288,4 @@ def test_associations(client, auth):
 
         assert associations.status_code == 200
 
-        assert all(v in associations.json[0].keys() for v in ['measure', 'score', 'node', 'candidate'])
+        assert all(v in associations.json['associations'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])
