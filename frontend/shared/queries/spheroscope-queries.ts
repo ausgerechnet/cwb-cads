@@ -5,7 +5,8 @@ import { apiClient, schemas } from '../api-client'
 
 export const spheroscopeSlotQuery = queryOptions({
   queryKey: ['spheroscope-slot-query'],
-  queryFn: ({ signal }) => apiClient.getSpheroscopeslotQuery({ signal }),
+  queryFn: ({ signal }) =>
+    apiClient.get('/spheroscope/slot-query/', { signal }),
 })
 
 export const createSpheroscopeSlotQuery: MutationOptions<
@@ -13,7 +14,7 @@ export const createSpheroscopeSlotQuery: MutationOptions<
   Error,
   z.infer<typeof schemas.SlotQueryIn>
 > = {
-  mutationFn: (body) => apiClient.postSpheroscopeslotQuerycreate(body),
+  mutationFn: (body) => apiClient.post('/spheroscope/slot-query/create', body),
   onSuccess: () => {
     void queryClient.invalidateQueries(spheroscopeSlotQuery)
   },

@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import {
   constellationCollocationItems,
   constellationCollocation,
+  constellationCollocationVisualisation,
+  constellationCollocationMap,
 } from '@cads/shared/queries'
 
 export function useCollocation(
@@ -42,9 +44,10 @@ export function useCollocation(
       secondary !== undefined,
     // && filterItem !== undefined,
   })
+
   const {
     data: collocationItems,
-    isLoading: isLoadingItems,
+    isLoading: isLoadingItem,
     error: errorConstellation,
   } = useQuery({
     ...constellationCollocationItems(
@@ -60,34 +63,56 @@ export function useCollocation(
     ),
     enabled: collocation?.id !== undefined && descriptionId !== undefined,
   })
+
   const {
-    data: collocationItemsMap,
+    data: mapItems,
     isLoading: isLoadingItemsMap,
     error: errorConstellationMap,
   } = useQuery({
-    ...constellationCollocationItems(
+    ...constellationCollocationVisualisation(
       constellationId,
       descriptionId as number,
       collocation?.id as number,
       {
         sortBy: ccSortBy,
         sortOrder: ccSortOrder,
-        pageSize: 300,
-        pageNumber: 1,
       },
     ),
     enabled: collocation?.id !== undefined && descriptionId !== undefined,
   })
 
+  const {
+    data: mapData,
+    isLoading: isLoadingMap,
+    error: errorMap,
+  } = useQuery({
+    ...constellationCollocationMap(
+      constellationId,
+      descriptionId as number,
+      collocation?.id as number,
+      {
+        sortBy: ccSortBy,
+        sortOrder: ccSortOrder,
+      },
+    ),
+    enabled: collocation?.id !== undefined && descriptionId !== undefined,
+  })
+  // console.log('map data', mapData)
+
   const isLoading =
-    isLoadingItems || isLoadingConstellation || isLoadingItemsMap
+    isLoadingConstellation || isLoadingItemsMap || isLoadingItem || isLoadingMap
 
   return {
     isLoading,
     error:
-      errorCollocation ?? errorConstellation ?? errorConstellationMap ?? null,
+      errorCollocation ??
+      errorConstellationMap ??
+      errorMap ??
+      errorConstellation ??
+      null,
     collocation,
     collocationItems,
-    collocationItemsMap,
+    mapItems,
+    mapData,
   }
 }

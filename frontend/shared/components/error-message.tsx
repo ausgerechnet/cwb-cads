@@ -4,6 +4,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from '@cads/shared/components/ui/alert'
+import { cn } from '@cads/shared/lib/utils'
 
 export function ErrorMessage({
   error,
@@ -20,7 +21,7 @@ export function ErrorMessage({
   const responseMessage = error.response?.data?.message
   const message = responseMessage ?? error.message
   return (
-    <Alert variant="destructive" className={className}>
+    <Alert variant="destructive" className={cn('bg-destructive/5', className)}>
       <AlertCircle className="mr-2 h-4 w-4" />
       {/*
          If the error contained a Response with a message, omit the `error.name`.
@@ -31,7 +32,9 @@ export function ErrorMessage({
       ) : (
         <>
           <AlertTitle>{error.name}</AlertTitle>
-          <AlertDescription>{message}</AlertDescription>
+          <AlertDescription className="whitespace-pre-wrap">
+            {message}
+          </AlertDescription>
         </>
       )}
     </Alert>
