@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { Link } from '@tanstack/react-router'
 import {
@@ -17,15 +17,15 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@cads/shared/lib/utils'
 import {
   addConstellationDiscourseme,
-  constellationById,
   removeConstellationDiscourseme,
   discoursemesList,
   addDescriptionItem,
   createDiscoursemeForConstellationDescription,
   corpusById,
+  removeDescriptionItem,
 } from '@cads/shared/queries'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
-import WordCloud, { Word } from '@/components/word-cloud'
+import WordCloud from '@/components/word-cloud'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { ComplexSelect } from '@cads/shared/components/select-complex'
@@ -65,51 +65,59 @@ import { useFilterSelection } from './-use-filter-selection'
 const COORDINATES_SCALE_FACTOR = 1_000 // Coordinates range from -1 to 1 in both axes
 
 export function SemanticMap({ constellationId }: { constellationId: number }) {
+  const { secondary } = useFilterSelection(
+    '/_app/constellations_/$constellationId',
+  )
   const { description } = useDescription()
   const {
-    collocationItemsMap,
+    mapItems,
     isLoading,
     collocation: { semantic_map_id } = {},
     error: errorCollocation,
   } = useCollocation(constellationId, description?.id)
 
+  const { mutate: postNewDiscourseme, error: errorNewDiscourseme } =
+    useMutation({
+      ...createDiscoursemeForConstellationDescription,
+      onError: (...args) => {
+        createDiscoursemeForConstellationDescription.onError?.(...args)
+        toast.error('Failed to create discourseme')
+      },
+      onSuccess: (data, ...rest) => {
+        createDiscoursemeForConstellationDescription.onSuccess?.(data, ...rest)
+        toast.success('Discourseme created and attached')
+      },
+    })
+  const { mutate: addItem, error: errorAddItem } = useMutation({
+    ...addDescriptionItem,
+    onError: (...args) => {
+      addDescriptionItem.onError?.(...args)
+      toast.error('Failed to add surface to disourseme description')
+    },
+    onSuccess: (data, ...rest) => {
+      addDescriptionItem.onSuccess?.(data, ...rest)
+      toast.success('Surface successfully added')
+    },
+  })
+
   const words = useMemo(() => {
-    return (collocationItemsMap?.items ?? [])
-      .map((item): Word | null => {
-        const coordinates = collocationItemsMap?.coordinates.find(
-          (coordinates) => coordinates.item === item.item,
-        )
-        if (!coordinates) {
-          console.warn('No coordinates for item:', item)
-          return null
-        }
-        return {
-          discoursemes:
-            description?.discourseme_descriptions
-              .filter((dd) => dd.items.some((i) => i.surface === item.item))
-              .map((dd) => dd.id) ?? [],
-          id: item.item,
-          word: item.item,
-          x: (coordinates.x_user ?? coordinates.x) * COORDINATES_SCALE_FACTOR,
-          y: (coordinates.y_user ?? coordinates.y) * COORDINATES_SCALE_FACTOR,
-          originX:
-            (coordinates.x_user ?? coordinates.x) * COORDINATES_SCALE_FACTOR,
-          originY:
-            (coordinates.y_user ?? coordinates.y) * COORDINATES_SCALE_FACTOR,
-          significance: 0.5, // TODO: Will be replaced by a value from the backend
-          radius: 20,
-        }
-      })
-      .filter((w): w is Word => w !== null)
-  }, [
-    collocationItemsMap?.coordinates,
-    collocationItemsMap?.items,
-    description?.discourseme_descriptions,
-  ])
+    const words = mapItems?.map ?? []
+    return words.map(({ scaled_score, discourseme_id, x, y, ...w }) => ({
+      x: x * COORDINATES_SCALE_FACTOR,
+      y: y * COORDINATES_SCALE_FACTOR,
+      originX: x * COORDINATES_SCALE_FACTOR,
+      originY: y * COORDINATES_SCALE_FACTOR,
+      significance: scaled_score,
+      discoursemeId: discourseme_id ?? undefined,
+      ...w,
+    }))
+  }, [mapItems])
 
   return (
     <div className="group/map bg-muted flex-grow">
       <ErrorMessage error={errorCollocation} />
+      <ErrorMessage error={errorNewDiscourseme} />
+      <ErrorMessage error={errorAddItem} />
       <Link
         to="/constellations/$constellationId"
         from="/constellations/$constellationId/semantic-map"
@@ -129,13 +137,41 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
         </div>
       )}
       <div className="bg-muted">
-        {semantic_map_id !== undefined && semantic_map_id !== null && (
-          <WordCloud
-            words={words}
-            size={COORDINATES_SCALE_FACTOR * 2}
-            semanticMapId={semantic_map_id}
-          />
-        )}
+        {semantic_map_id !== undefined &&
+          semantic_map_id !== null &&
+          Boolean(mapItems) && (
+            <WordCloud
+              words={words}
+              size={COORDINATES_SCALE_FACTOR * 2}
+              semanticMapId={semantic_map_id}
+              onNewDiscourseme={(surfaces) => {
+                if (!description || !secondary) return
+                postNewDiscourseme({
+                  surfaces,
+                  constellationId,
+                  constellationDescriptionId: description.id,
+                  p: secondary,
+                })
+              }}
+              onUpdateDiscourseme={(discoursemeId, surface) => {
+                const descriptionId =
+                  description?.discourseme_descriptions.find(
+                    ({ id }) => id === discoursemeId,
+                  )?.id
+                if (descriptionId === undefined) {
+                  throw new Error(
+                    `No discourseme description found for discourseme id ${descriptionId}`,
+                  )
+                }
+                addItem({
+                  discoursemeId,
+                  descriptionId,
+                  surface,
+                  p: secondary!,
+                })
+              }}
+            />
+          )}
       </div>
     </div>
   )
@@ -146,22 +182,46 @@ function ConstellationDiscoursemesEditor({
 }: {
   constellationId: number
 }) {
-  const { corpusId, focusDiscourseme } = useFilterSelection(
+  const { corpusId, focusDiscourseme, secondary } = useFilterSelection(
     '/_app/constellations_/$constellationId',
   )
   if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
-  const {
-    data: { discoursemes },
-    error: errorDiscoursemes,
-  } = useSuspenseQuery(constellationById(constellationId))
   const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)
   const { description: constellationDescription } = useDescription()
-  const { collocationItemsMap } = useCollocation(
+  const { mapItems: collocationItemsMap } = useCollocation(
     constellationId,
     constellationDescription?.id,
   )
-  const itemCount = collocationItemsMap?.items.length
+  const discoursemeData = useMemo(() => {
+    const mapData = collocationItemsMap?.map
+    if (!mapData) {
+      return { discoursemes: [], itemCount: null }
+    }
+    const discoursemeItems = mapData.filter(
+      ({ source }) => source === 'discourseme_items',
+    )
+    const discoursemes = mapData
+      .filter(({ source }) => source === 'discoursemes')
+      .map((discourseme) => {
+        const descriptionId =
+          constellationDescription?.discourseme_descriptions.find(
+            ({ discourseme_id }) =>
+              discourseme_id === discourseme.discourseme_id,
+          )?.id
+        const items = discoursemeItems.filter(
+          ({ discourseme_id }) => discourseme_id === discourseme.discourseme_id,
+        )
+        return { ...discourseme, descriptionId, items }
+      })
+
+    return { discoursemes, itemCount: discoursemeItems.length }
+  }, [
+    collocationItemsMap?.map,
+    constellationDescription?.discourseme_descriptions,
+  ])
+  const { itemCount } = discoursemeData
+
   const constellationDescriptionId = constellationDescription?.id
   const {
     mutate: addDiscourseme,
@@ -173,11 +233,18 @@ function ConstellationDiscoursemesEditor({
     isPending: isRemovingDiscourseme,
     error: errorDeleteDiscourseme,
   } = useMutation(removeConstellationDiscourseme)
+  const {
+    mutate: removeItem,
+    isPending: isRemovingItem,
+    error: errorDeleteItem,
+  } = useMutation(removeDescriptionItem)
+
   return (
-    <div className="bg-background absolute bottom-24 right-4 top-48 flex w-96 flex-col overflow-hidden rounded-xl shadow-xl">
-      <ErrorMessage error={errorDiscoursemes} />
+    <div className="bg-background absolute bottom-24 right-4 top-48 flex max-w-96 flex-col overflow-hidden rounded-xl shadow-xl">
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorAddDiscourseme} />
+      <ErrorMessage error={errorDeleteItem} />
+
       <div className="flex justify-between p-2 pr-3">
         <span>
           <strong>Corpus:</strong> {corpusName ?? <>...</>}
@@ -190,20 +257,16 @@ function ConstellationDiscoursemesEditor({
         </div>
       )}
       <ScrollArea className="flex-grow">
-        {collocationItemsMap?.discourseme_scores.map(
-          ({
-            discourseme_id: discoursemeId,
-            unigram_item_scores: unigramItemScores,
-          }) => {
-            const discoursemeDescriptionId =
-              constellationDescription?.discourseme_descriptions.find(
-                (dd) => dd.discourseme_id === discoursemeId,
-              )?.id
-            if (discoursemeDescriptionId === undefined)
-              throw new Error('Discourseme description not found')
+        {discoursemeData.discoursemes.map(
+          ({ discourseme_id: discoursemeId, items, item, descriptionId }) => {
+            if (discoursemeId === null) {
+              throw new Error(
+                `Encountered item with source "description_items" that has no "discourseme_id": ${item}`,
+              )
+            }
             return (
               <Collapsible key={discoursemeId}>
-                <div className="flex w-96 flex-col">
+                <div className="flex flex-col">
                   <h4
                     className={cn(
                       'bg-background sticky top-0 flex items-center border-t px-2 pt-2 font-bold',
@@ -221,16 +284,13 @@ function ConstellationDiscoursemesEditor({
                             backgroundColor: getColorForNumber(discoursemeId),
                           }}
                         />
-                        {
-                          discoursemes.find(({ id }) => id === discoursemeId)
-                            ?.name
-                        }
+                        {item}
                         <span className="muted-foreground">
-                          {unigramItemScores.length} items
+                          {items.length} items
                         </span>
                         {focusDiscourseme === discoursemeId && (
                           <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
-                            Focus Discourseme
+                            Focus
                           </span>
                         )}
                       </Button>
@@ -249,19 +309,37 @@ function ConstellationDiscoursemesEditor({
                   </h4>
                   <CollapsibleContent>
                     <ul className="px-2">
-                      {unigramItemScores.map(({ item }) => (
+                      {/* TODO: sometimes items are duplicates. why? */}
+                      {items.map(({ item }, index) => (
                         <li
-                          key={item}
+                          key={item + index}
                           className="group/description hover:bg-muted flex items-center justify-between rounded leading-tight"
                         >
                           {item}
+                          <button
+                            className="ml-auto mr-1 opacity-0 group-hover/description:opacity-100"
+                            disabled={isRemovingItem}
+                            onClick={() => {
+                              if (descriptionId === undefined) {
+                                throw new Error('No descriptionId available')
+                              }
+                              removeItem({
+                                discoursemeId,
+                                descriptionId,
+                                p: secondary!,
+                                surface: item,
+                              })
+                            }}
+                          >
+                            <Trash2Icon className="m-2 h-4 w-4" />
+                          </button>
                         </li>
                       ))}
                     </ul>
                     <AddDescriptionItem
                       constellationId={constellationId}
                       discoursemeId={discoursemeId}
-                      discoursemeDescriptionId={discoursemeDescriptionId}
+                      discoursemeDescriptionId={descriptionId}
                     />
                   </CollapsibleContent>
                 </div>
@@ -276,19 +354,27 @@ function ConstellationDiscoursemesEditor({
           disabled={isPending}
           discoursemes={allDiscoursemes}
           onChange={(discoursemeId) => {
-            if (discoursemeId === undefined) return
+            if (
+              discoursemeId === undefined ||
+              constellationDescriptionId === undefined
+            ) {
+              return
+            }
             addDiscourseme({
               constellationId,
               discoursemeId,
+              descriptionId: constellationDescriptionId,
             })
           }}
         />
-        {constellationDescriptionId !== undefined && (
-          <AttachNewDiscourseme
-            constellationId={constellationId}
-            constellationDescriptionId={constellationDescriptionId}
-          />
-        )}
+        {constellationDescriptionId !== undefined &&
+          secondary !== undefined && (
+            <AttachNewDiscourseme
+              constellationId={constellationId}
+              constellationDescriptionId={constellationDescriptionId}
+              p={secondary}
+            />
+          )}
       </div>
     </div>
   )
@@ -312,17 +398,21 @@ function AddDescriptionItem({
     '/_app/constellations_/$constellationId',
   )
   const { description } = useDescription()
-  const { collocationItemsMap } = useCollocation(
+  const { mapItems: collocationItemsMap } = useCollocation(
     constellationId,
     description?.id,
   )
-  const collocationItems = useMemo(
+
+  const mapItems = useMemo(
     () =>
-      (collocationItemsMap?.items ?? []).map(({ item }, id) => ({
-        id,
-        name: item,
-        searchValue: item,
-      })),
+      (collocationItemsMap?.map ?? [])
+        .filter(({ source }) => source === 'items')
+        .map(({ item }) => ({
+          id: item,
+          name: item,
+          searchValue: item,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
     [collocationItemsMap],
   )
 
@@ -333,10 +423,10 @@ function AddDescriptionItem({
         className="m-2"
         selectMessage="Select description item to add"
         disabled={isAddingItem}
-        items={collocationItems}
-        onChange={(itemIndex) => {
-          if (itemIndex === undefined) return
-          const surface = collocationItemsMap?.items[itemIndex]?.item
+        items={mapItems}
+        onChange={(itemId) => {
+          if (itemId === undefined) return
+          const surface = mapItems.find(({ id }) => id === itemId)?.name
           if (surface === undefined || secondary === undefined) {
             console.warn('Could not add item, missing values', {
               surface,
@@ -344,7 +434,7 @@ function AddDescriptionItem({
             })
             return
           }
-          addItem({
+          return void addItem({
             discoursemeId,
             descriptionId: discoursemeDescriptionId,
             surface: surface,
@@ -366,10 +456,12 @@ function AttachNewDiscourseme({
   className,
   constellationId,
   constellationDescriptionId,
+  p,
 }: {
   className?: string
   constellationId: number
   constellationDescriptionId: number
+  p: string
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const {
@@ -397,6 +489,10 @@ function AttachNewDiscourseme({
     },
   })
 
+  useEffect(() => {
+    if (!isOpen) form.reset()
+  }, [isOpen, form])
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <TooltipProvider>
@@ -423,6 +519,7 @@ function AttachNewDiscourseme({
                 surfaces: discourseme.surfaces,
                 constellationId,
                 constellationDescriptionId,
+                p,
               }),
             )}
           >

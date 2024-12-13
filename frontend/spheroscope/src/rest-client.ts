@@ -56,9 +56,12 @@ async function updateAuthToken() {
   localStorage.removeItem('access-token')
   localStorage.removeItem('refresh-token')
   try {
-    const { access_token, refresh_token } = await apiClient.postUserrefresh({
-      refresh_token: refreshToken,
-    })
+    const { access_token, refresh_token } = await apiClient.post(
+      '/user/refresh',
+      {
+        refresh_token: refreshToken,
+      },
+    )
     console.warn('Token refreshed')
     access_token && localStorage.setItem('access-token', access_token)
     refresh_token && localStorage.setItem('refresh-token', refresh_token)

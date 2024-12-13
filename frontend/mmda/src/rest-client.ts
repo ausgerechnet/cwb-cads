@@ -29,6 +29,8 @@ apiClient.axios.interceptors.request.use((config) => {
   return config
 })
 
+let sharedAuthPromise: Promise<boolean> | null = null
+
 apiClient.axios.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -39,7 +41,14 @@ apiClient.axios.interceptors.response.use(
     const status = error?.response?.status
     if (status === 401 || status === 403) {
       console.warn('Token expired or invalid, trying to refresh')
-      await updateAuthToken()
+      // Only one refresh request at a time!
+      // If multiple requests fail at the same time, they will all wait for the same promise
+      if (!sharedAuthPromise) {
+        sharedAuthPromise = updateAuthToken()
+      }
+      await sharedAuthPromise
+      sharedAuthPromise = null
+
       router.invalidate()
     }
     return Promise.reject(error)
@@ -56,9 +65,10 @@ async function updateAuthToken() {
   localStorage.removeItem('access-token')
   localStorage.removeItem('refresh-token')
   try {
-    const { access_token, refresh_token } = await apiClient.postUserrefresh({
-      refresh_token: refreshToken,
-    })
+    const { access_token, refresh_token } = await apiClient.post(
+      '/user/refresh',
+      { refresh_token: refreshToken },
+    )
     console.warn('Token refreshed')
     access_token && localStorage.setItem('access-token', access_token)
     refresh_token && localStorage.setItem('refresh-token', refresh_token)

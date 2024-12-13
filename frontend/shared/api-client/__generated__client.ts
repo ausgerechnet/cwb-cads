@@ -18,6 +18,7 @@ type BreakdownItemsOut = {
 type CollocationItemOut = {
   item: string
   raw_scores: Array<CollocationScoreOut>
+  scaled_scores: Array<CollocationScoreOut>
   scores: Array<CollocationScoreOut>
 }
 type CollocationScoreOut = {
@@ -68,6 +69,18 @@ type ConcordanceOut = {
   page_number: number
   page_size: number
 }
+type ConstellationAssociationOut = {
+  N: number
+  associations: Array<ConstellationAssociationItemOut>
+  nr_pairs: number
+  s: string
+}
+type ConstellationAssociationItemOut = {
+  candidate: number
+  measure: string
+  node: number
+  score: number
+}
 type ConstellationCollocationItemsOut = {
   coordinates: Array<CoordinatesOut>
   discourseme_coordinates: Array<DiscoursemeCoordinatesOut>
@@ -100,7 +113,6 @@ type ConstellationDescriptionOut = {
   id: number
   match_strategy: string
   s: string
-  semantic_map_id: number | null
   subcorpus_id: number | null
 }
 type DiscoursemeDescriptionOut = {
@@ -124,7 +136,6 @@ type ConstellationDescriptionOutUpdate = Partial<{
   id: number
   match_strategy: string
   s: string
-  semantic_map_id: number | null
   subcorpus_id: number | null
 }>
 type ConstellationKeywordItemsOut = {
@@ -142,11 +153,31 @@ type ConstellationKeywordItemsOut = {
 type KeywordItemOut = {
   item: string
   raw_scores: Array<KeywordScoreOut>
+  scaled_scores: Array<KeywordScoreOut>
   scores: Array<KeywordScoreOut>
 }
 type KeywordScoreOut = {
   measure: string
   score: number
+}
+type ConstellationMapOut = {
+  id: number
+  map?: Array<ConstellationMapItemOut> | undefined
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  semantic_map_id: number
+  sort_by: string
+}
+type ConstellationMapItemOut = {
+  discourseme_id: number | null
+  item: string
+  scaled_score: number
+  score: number
+  source: string
+  x: number
+  y: number
 }
 type ConstellationOut = {
   comment: string | null
@@ -269,10 +300,12 @@ const CoordinatesOut: z.ZodType<CoordinatesOut> = z
 const CollocationScoreOut: z.ZodType<CollocationScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
   .passthrough()
+// @ts-ignore
 const CollocationItemOut: z.ZodType<CollocationItemOut> = z
   .object({
     item: z.string(),
     raw_scores: z.array(CollocationScoreOut),
+    scaled_scores: z.array(CollocationScoreOut).optional(),
     scores: z.array(CollocationScoreOut),
   })
   .passthrough()
@@ -399,10 +432,12 @@ const KeywordIn = z
 const KeywordScoreOut: z.ZodType<KeywordScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
   .passthrough()
+// @ts-ignore
 const KeywordItemOut: z.ZodType<KeywordItemOut> = z
   .object({
     item: z.string(),
     raw_scores: z.array(KeywordScoreOut),
+    scaled_scores: z.array(KeywordScoreOut).optional(),
     scores: z.array(KeywordScoreOut),
   })
   .passthrough()
@@ -477,7 +512,6 @@ const ConstellationDescriptionOut: z.ZodType<ConstellationDescriptionOut> = z
     id: z.number().int(),
     match_strategy: z.string(),
     s: z.string(),
-    semantic_map_id: z.number().int().nullable(),
     subcorpus_id: z.number().int().nullable(),
   })
   .passthrough()
@@ -493,7 +527,6 @@ const ConstellationDescriptionIn = z
       .optional()
       .default('partial'),
     s: z.string().optional(),
-    semantic_map_id: z.number().int().nullish().default(null),
     subcorpus_id: z.number().int().optional(),
   })
   .passthrough()
@@ -511,17 +544,28 @@ const ConstellationDescriptionOutUpdate: z.ZodType<ConstellationDescriptionOutUp
       id: z.number().int(),
       match_strategy: z.string(),
       s: z.string(),
-      semantic_map_id: z.number().int().nullable(),
       subcorpus_id: z.number().int().nullable(),
     })
     .partial()
     .passthrough()
-const ConstellationAssociationsOut = z
+const Generated = z
+  .object({ discourseme_ids: z.array(z.number().int()) })
+  .passthrough()
+const ConstellationAssociationItemOut: z.ZodType<ConstellationAssociationItemOut> =
+  z
+    .object({
+      candidate: z.number().int(),
+      measure: z.string(),
+      node: z.number().int(),
+      score: z.number(),
+    })
+    .passthrough()
+const ConstellationAssociationOut: z.ZodType<ConstellationAssociationOut> = z
   .object({
-    candidate: z.number().int(),
-    measure: z.string(),
-    node: z.number().int(),
-    score: z.number(),
+    N: z.number().int(),
+    associations: z.array(ConstellationAssociationItemOut),
+    nr_pairs: z.number().int(),
+    s: z.string(),
   })
   .passthrough()
 const ConstellationCollocationOut = z
@@ -590,6 +634,29 @@ const ConstellationCollocationItemsOut: z.ZodType<ConstellationCollocationItemsO
       sort_by: z.string(),
     })
     .passthrough()
+const ConstellationMapItemOut: z.ZodType<ConstellationMapItemOut> = z
+  .object({
+    discourseme_id: z.number().int().nullable(),
+    item: z.string(),
+    scaled_score: z.number(),
+    score: z.number(),
+    source: z.string(),
+    x: z.number(),
+    y: z.number(),
+  })
+  .passthrough()
+const ConstellationMapOut: z.ZodType<ConstellationMapOut> = z
+  .object({
+    id: z.number().int(),
+    map: z.array(ConstellationMapItemOut).optional(),
+    nr_items: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
+    semantic_map_id: z.number().int(),
+    sort_by: z.string(),
+  })
+  .passthrough()
 const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
   .object({
     discourseme_id: z.number().int(),
@@ -624,6 +691,14 @@ const ConcordanceOut: z.ZodType<ConcordanceOut> = z
     page_size: z.number().int(),
   })
   .passthrough()
+const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
+  .object({
+    comment: z.string().nullable(),
+    name: z.string().nullable(),
+    template: z.array(DiscoursemeItem).nullable().default([]),
+  })
+  .partial()
+  .passthrough()
 const ConstellationKeywordIn = z
   .object({
     corpus_id_reference: z.number().int(),
@@ -656,14 +731,7 @@ const DiscoursemeCoordinatesIn = z
     y_user: z.number().nullable(),
   })
   .passthrough()
-const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
-  .object({
-    comment: z.string().nullable(),
-    name: z.string().nullable(),
-    template: z.array(DiscoursemeItem).nullable().default([]),
-  })
-  .partial()
-  .passthrough()
+const ConstellationMetaOut = z.object({}).partial().passthrough()
 const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
   .object({
     comment: z.string().nullable(),
@@ -859,20 +927,25 @@ export const schemas = {
   ConstellationDescriptionIn,
   ConstellationDiscoursemeDescriptionIn,
   ConstellationDescriptionOutUpdate,
-  ConstellationAssociationsOut,
+  Generated,
+  ConstellationAssociationItemOut,
+  ConstellationAssociationOut,
   ConstellationCollocationOut,
   ConstellationCollocationIn,
   DiscoursemeCoordinatesOut,
   DiscoursemeScoresOut,
   ConstellationCollocationItemsOut,
+  ConstellationMapItemOut,
+  ConstellationMapOut,
   DiscoursemeRangeOut,
   TokenOut,
   ConcordanceLineOut,
   ConcordanceOut,
+  DiscoursemeIn,
   ConstellationKeywordIn,
   ConstellationKeywordItemsOut,
   DiscoursemeCoordinatesIn,
-  DiscoursemeIn,
+  ConstellationMetaOut,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
   BreakdownItemsOut,
@@ -900,14 +973,12 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/',
-    alias: 'get',
     requestFormat: 'json',
     response: z.unknown(),
   },
   {
     method: 'get',
     path: '/collocation/',
-    alias: 'getCollocation',
     requestFormat: 'json',
     response: z.array(CollocationOut),
     errors: [
@@ -921,7 +992,6 @@ const endpoints = makeApi([
   {
     method: 'delete',
     path: '/collocation/:id/',
-    alias: 'deleteCollocationId',
     requestFormat: 'json',
     parameters: [
       {
@@ -947,7 +1017,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/collocation/:id/',
-    alias: 'getCollocationId',
     requestFormat: 'json',
     parameters: [
       {
@@ -973,7 +1042,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/collocation/:id/items',
-    alias: 'getCollocationIditems',
     requestFormat: 'json',
     parameters: [
       {
@@ -1046,7 +1114,6 @@ const endpoints = makeApi([
   {
     method: 'post',
     path: '/collocation/:id/semantic-map/',
-    alias: 'postCollocationIdsemanticMap',
     requestFormat: 'json',
     parameters: [
       {
@@ -1087,7 +1154,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/corpus/',
-    alias: 'getCorpus',
     requestFormat: 'json',
     response: z.array(CorpusOut),
     errors: [
@@ -1101,7 +1167,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/corpus/:id',
-    alias: 'getCorpusId',
     requestFormat: 'json',
     parameters: [
       {
@@ -1127,7 +1192,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/corpus/:id/meta/',
-    alias: 'getCorpusIdmeta',
     requestFormat: 'json',
     parameters: [
       {
@@ -1153,7 +1217,6 @@ const endpoints = makeApi([
   {
     method: 'put',
     path: '/corpus/:id/meta/',
-    alias: 'putCorpusIdmeta',
     requestFormat: 'json',
     parameters: [
       {
@@ -1189,7 +1252,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/corpus/:id/meta/frequencies',
-    alias: 'getCorpusIdmetafrequencies',
     requestFormat: 'json',
     parameters: [
       {
@@ -1230,7 +1292,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/corpus/:id/subcorpus/',
-    alias: 'getCorpusIdsubcorpus',
     requestFormat: 'json',
     parameters: [
       {
@@ -1256,7 +1317,6 @@ const endpoints = makeApi([
   {
     method: 'put',
     path: '/corpus/:id/subcorpus/',
-    alias: 'putCorpusIdsubcorpus',
     requestFormat: 'json',
     parameters: [
       {
@@ -1292,7 +1352,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/corpus/:id/subcorpus/:subcorpus_id',
-    alias: 'getCorpusIdsubcorpusSubcorpus_id',
     requestFormat: 'json',
     parameters: [
       {
@@ -1323,14 +1382,12 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/hello',
-    alias: 'getHello',
     requestFormat: 'json',
     response: z.unknown(),
   },
   {
     method: 'get',
     path: '/keyword/',
-    alias: 'getKeyword',
     requestFormat: 'json',
     response: z.array(KeywordOut),
     errors: [
@@ -1344,7 +1401,6 @@ const endpoints = makeApi([
   {
     method: 'post',
     path: '/keyword/',
-    alias: 'postKeyword',
     requestFormat: 'json',
     parameters: [
       {
@@ -1370,7 +1426,6 @@ const endpoints = makeApi([
   {
     method: 'delete',
     path: '/keyword/:id/',
-    alias: 'deleteKeywordId',
     requestFormat: 'json',
     parameters: [
       {
@@ -1396,7 +1451,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/keyword/:id/',
-    alias: 'getKeywordId',
     requestFormat: 'json',
     parameters: [
       {
@@ -1422,7 +1476,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/keyword/:id/items',
-    alias: 'getKeywordIditems',
     requestFormat: 'json',
     parameters: [
       {
@@ -1495,7 +1548,6 @@ const endpoints = makeApi([
   {
     method: 'post',
     path: '/keyword/:id/semantic-map/',
-    alias: 'postKeywordIdsemanticMap',
     requestFormat: 'json',
     parameters: [
       {
@@ -1536,7 +1588,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/mmda/constellation/',
-    alias: 'getMmdaconstellation',
     requestFormat: 'json',
     response: z.array(ConstellationOut),
     errors: [
@@ -1550,7 +1601,6 @@ const endpoints = makeApi([
   {
     method: 'post',
     path: '/mmda/constellation/',
-    alias: 'postMmdaconstellation',
     requestFormat: 'json',
     parameters: [
       {
@@ -1575,12 +1625,11 @@ const endpoints = makeApi([
   },
   {
     method: 'delete',
-    path: '/mmda/constellation/:id',
-    alias: 'deleteMmdaconstellationId',
+    path: '/mmda/constellation/:constellation_id',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1601,12 +1650,11 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id',
-    alias: 'getMmdaconstellationId',
+    path: '/mmda/constellation/:constellation_id',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1627,8 +1675,7 @@ const endpoints = makeApi([
   },
   {
     method: 'patch',
-    path: '/mmda/constellation/:id',
-    alias: 'patchMmdaconstellationId',
+    path: '/mmda/constellation/:constellation_id',
     requestFormat: 'json',
     parameters: [
       {
@@ -1637,7 +1684,7 @@ const endpoints = makeApi([
         schema: ConstellationInUpdate,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1663,8 +1710,7 @@ const endpoints = makeApi([
   },
   {
     method: 'patch',
-    path: '/mmda/constellation/:id/add-discourseme',
-    alias: 'patchMmdaconstellationIdaddDiscourseme',
+    path: '/mmda/constellation/:constellation_id/add-discourseme',
     requestFormat: 'json',
     parameters: [
       {
@@ -1673,7 +1719,7 @@ const endpoints = makeApi([
         schema: ConstellationInUpdate,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1699,12 +1745,11 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/',
-    alias: 'getMmdaconstellationIddescription',
+    path: '/mmda/constellation/:constellation_id/description/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1725,8 +1770,7 @@ const endpoints = makeApi([
   },
   {
     method: 'post',
-    path: '/mmda/constellation/:id/description/',
-    alias: 'postMmdaconstellationIddescription',
+    path: '/mmda/constellation/:constellation_id/description/',
     requestFormat: 'json',
     parameters: [
       {
@@ -1735,7 +1779,7 @@ const endpoints = makeApi([
         schema: ConstellationDescriptionIn,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1761,12 +1805,11 @@ const endpoints = makeApi([
   },
   {
     method: 'delete',
-    path: '/mmda/constellation/:id/description/:description_id/',
-    alias: 'deleteMmdaconstellationIddescriptionDescription_id',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1792,12 +1835,11 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/',
-    alias: 'getMmdaconstellationIddescriptionDescription_id',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1823,8 +1865,7 @@ const endpoints = makeApi([
   },
   {
     method: 'patch',
-    path: '/mmda/constellation/:id/description/:description_id/add-discourseme',
-    alias: 'patchMmdaconstellationIddescriptionDescription_idaddDiscourseme',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/add-descriptions',
     requestFormat: 'json',
     parameters: [
       {
@@ -1833,7 +1874,48 @@ const endpoints = makeApi([
         schema: ConstellationDiscoursemeDescriptionIn,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionOutUpdate,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/add-discoursemes',
+    description: `(3) adding them to the constellation description`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: Generated,
+      },
+      {
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1864,12 +1946,11 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/associations',
-    alias: 'getMmdaconstellationIddescriptionDescription_idassociations',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/associations/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1879,7 +1960,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.array(ConstellationAssociationsOut),
+    response: ConstellationAssociationOut,
     errors: [
       {
         status: 401,
@@ -1895,12 +1976,11 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/collocation/',
-    alias: 'getMmdaconstellationIddescriptionDescription_idcollocation',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1926,8 +2006,7 @@ const endpoints = makeApi([
   },
   {
     method: 'post',
-    path: '/mmda/constellation/:id/description/:description_id/collocation/',
-    alias: 'postMmdaconstellationIddescriptionDescription_idcollocation',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/',
     description: `Create collocation analysis of constellation description.`,
     requestFormat: 'json',
     parameters: [
@@ -1937,7 +2016,7 @@ const endpoints = makeApi([
         schema: ConstellationCollocationIn,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -1968,8 +2047,7 @@ const endpoints = makeApi([
   },
   {
     method: 'put',
-    path: '/mmda/constellation/:id/description/:description_id/collocation/',
-    alias: 'putMmdaconstellationIddescriptionDescription_idcollocation',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/',
     requestFormat: 'json',
     parameters: [
       {
@@ -1978,7 +2056,7 @@ const endpoints = makeApi([
         schema: ConstellationCollocationIn,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2009,13 +2087,11 @@ const endpoints = makeApi([
   },
   {
     method: 'put',
-    path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/auto-associate',
-    alias:
-      'putMmdaconstellationIddescriptionDescription_idcollocationCollocation_idautoAssociate',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/:collocation_id/auto-associate',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2030,7 +2106,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.unknown(),
+    response: ConstellationCollocationOut,
     errors: [
       {
         status: 401,
@@ -2046,14 +2122,12 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/collocation/:collocation_id/items',
-    alias:
-      'getMmdaconstellationIddescriptionDescription_idcollocationCollocation_iditems',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/:collocation_id/items',
     description: `TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2141,12 +2215,94 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/concordance/',
-    alias: 'getMmdaconstellationIddescriptionDescription_idconcordance',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/:collocation_id/map',
+    description: `TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collocation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum([
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
+          ])
+          .optional()
+          .default('conservative_log_ratio'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+    ],
+    response: ConstellationMapOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/concordance/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2269,13 +2425,101 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/keyword/',
-    alias: 'getMmdaconstellationIddescriptionDescription_idkeyword',
+    method: 'post',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/discourseme-description',
+    description: `(1) create a discourseme with provided template items
+(2) create a suitable description in the constellation description corpus
+(3) link discourseme to constellation
+(4) link discourseme description and constellation description`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/discourseme-description',
+    description: `# does discourseme already exist
+# is discourseme already linked to constellation
+# does discourseme description already exist
+# is item already in discourseme description
+# is discourseme description already linked to constellation description`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2301,8 +2545,7 @@ const endpoints = makeApi([
   },
   {
     method: 'post',
-    path: '/mmda/constellation/:id/description/:description_id/keyword/',
-    alias: 'postMmdaconstellationIddescriptionDescription_idkeyword',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
     requestFormat: 'json',
     parameters: [
       {
@@ -2311,7 +2554,7 @@ const endpoints = makeApi([
         schema: ConstellationKeywordIn,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2342,13 +2585,11 @@ const endpoints = makeApi([
   },
   {
     method: 'put',
-    path: '/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/auto-associate',
-    alias:
-      'putMmdaconstellationIddescriptionDescription_idkeywordKeyword_idautoAssociate',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/auto-associate',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2379,15 +2620,12 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/keyword/:keyword_id/items',
-    alias:
-      'getMmdaconstellationIddescriptionDescription_idkeywordKeyword_iditems',
-    description: `TODO find the bug: why are there duplicated measures?!
-TODO also return ranks (to ease frontend pagination)?`,
+    path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/items',
+    description: `TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2464,9 +2702,91 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/map',
+    description: `TODO also return ranks (to ease frontend pagination)?`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'keyword_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum([
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
+          ])
+          .optional()
+          .default('conservative_log_ratio'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+    ],
+    response: ConstellationMapOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'patch',
-    path: '/mmda/constellation/:id/description/:description_id/remove-discourseme',
-    alias: 'patchMmdaconstellationIddescriptionDescription_idremoveDiscourseme',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/remove-descriptions',
     requestFormat: 'json',
     parameters: [
       {
@@ -2475,7 +2795,7 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: ConstellationDiscoursemeDescriptionIn,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2506,13 +2826,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'get',
-    path: '/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/',
-    alias:
-      'getMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/semantic-map/:semantic_map_id/coordinates/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2543,9 +2861,7 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'put',
-    path: '/mmda/constellation/:id/description/:description_id/semantic_map/:semantic_map_id/coordinates/',
-    alias:
-      'putMmdaconstellationIddescriptionDescription_idsemantic_mapSemantic_map_idcoordinates',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/semantic-map/:semantic_map_id/coordinates/',
     requestFormat: 'json',
     parameters: [
       {
@@ -2554,7 +2870,7 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: DiscoursemeCoordinatesIn,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2589,9 +2905,49 @@ TODO also return ranks (to ease frontend pagination)?`,
     ],
   },
   {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/:query_id/meta',
+    description: `for each key and each subset of provided discourseme-ids: number of occurrences`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'query_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'discourseme_description_ids',
+        type: 'Query',
+        schema: z.array(z.number().int()).optional().default([]),
+      },
+    ],
+    response: z.object({}).partial().passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'patch',
-    path: '/mmda/constellation/:id/remove-discourseme',
-    alias: 'patchMmdaconstellationIdremoveDiscourseme',
+    path: '/mmda/constellation/:constellation_id/remove-discourseme',
     requestFormat: 'json',
     parameters: [
       {
@@ -2600,7 +2956,7 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: ConstellationInUpdate,
       },
       {
-        name: 'id',
+        name: 'constellation_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2627,7 +2983,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/mmda/discourseme/',
-    alias: 'getMmdadiscourseme',
     requestFormat: 'json',
     response: z.array(DiscoursemeOut),
     errors: [
@@ -2641,7 +2996,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/mmda/discourseme/',
-    alias: 'postMmdadiscourseme',
     requestFormat: 'json',
     parameters: [
       {
@@ -2666,12 +3020,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'delete',
-    path: '/mmda/discourseme/:id',
-    alias: 'deleteMmdadiscoursemeId',
+    path: '/mmda/discourseme/:discourseme_id',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2692,12 +3045,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'get',
-    path: '/mmda/discourseme/:id',
-    alias: 'getMmdadiscoursemeId',
+    path: '/mmda/discourseme/:discourseme_id',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2718,8 +3070,7 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'patch',
-    path: '/mmda/discourseme/:id',
-    alias: 'patchMmdadiscoursemeId',
+    path: '/mmda/discourseme/:discourseme_id',
     requestFormat: 'json',
     parameters: [
       {
@@ -2728,7 +3079,7 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: DiscoursemeInUpdate,
       },
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2754,12 +3105,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'get',
-    path: '/mmda/discourseme/:id/description/',
-    alias: 'getMmdadiscoursemeIddescription',
+    path: '/mmda/discourseme/:discourseme_id/description/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2780,8 +3130,7 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'post',
-    path: '/mmda/discourseme/:id/description/',
-    alias: 'postMmdadiscoursemeIddescription',
+    path: '/mmda/discourseme/:discourseme_id/description/',
     description: `Will automatically create query (from provided items or template).`,
     requestFormat: 'json',
     parameters: [
@@ -2791,7 +3140,7 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: DiscoursemeDescriptionIn,
       },
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2817,12 +3166,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'delete',
-    path: '/mmda/discourseme/:id/description/:description_id/',
-    alias: 'deleteMmdadiscoursemeIddescriptionDescription_id',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2848,12 +3196,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'get',
-    path: '/mmda/discourseme/:id/description/:description_id/',
-    alias: 'getMmdadiscoursemeIddescriptionDescription_id',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2879,8 +3226,7 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'patch',
-    path: '/mmda/discourseme/:id/description/:description_id/add-item',
-    alias: 'patchMmdadiscoursemeIddescriptionDescription_idaddItem',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/add-item',
     requestFormat: 'json',
     parameters: [
       {
@@ -2889,7 +3235,7 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: DiscoursemeItem,
       },
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2920,12 +3266,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'get',
-    path: '/mmda/discourseme/:id/description/:description_id/breakdown',
-    alias: 'getMmdadiscoursemeIddescriptionDescription_idbreakdown',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/breakdown',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -2961,13 +3306,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'get',
-    path: '/mmda/discourseme/:id/description/:description_id/breakdown/:breakdown_id/similar',
-    alias:
-      'getMmdadiscoursemeIddescriptionDescription_idbreakdownBreakdown_idsimilar',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/breakdown/:breakdown_id/similar',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -3013,8 +3356,7 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'patch',
-    path: '/mmda/discourseme/:id/description/:description_id/remove-item',
-    alias: 'patchMmdadiscoursemeIddescriptionDescription_idremoveItem',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/remove-item',
     requestFormat: 'json',
     parameters: [
       {
@@ -3023,7 +3365,7 @@ TODO also return ranks (to ease frontend pagination)?`,
         schema: DiscoursemeItem,
       },
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -3054,12 +3396,11 @@ TODO also return ranks (to ease frontend pagination)?`,
   },
   {
     method: 'post',
-    path: '/mmda/discourseme/:id/template',
-    alias: 'postMmdadiscoursemeIdtemplate',
+    path: '/mmda/discourseme/:discourseme_id/template',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'discourseme_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -3081,7 +3422,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/query/',
-    alias: 'getQuery',
     requestFormat: 'json',
     response: z.array(QueryOut),
     errors: [
@@ -3095,7 +3435,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/query/',
-    alias: 'postQuery',
     requestFormat: 'json',
     parameters: [
       {
@@ -3126,7 +3465,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'delete',
     path: '/query/:id',
-    alias: 'deleteQueryId',
     requestFormat: 'json',
     parameters: [
       {
@@ -3152,7 +3490,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/query/:id',
-    alias: 'getQueryId',
     requestFormat: 'json',
     parameters: [
       {
@@ -3178,7 +3515,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/query/:query_id/breakdown',
-    alias: 'getQueryQuery_idbreakdown',
     requestFormat: 'json',
     parameters: [
       {
@@ -3214,7 +3550,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/query/:query_id/collocation',
-    alias: 'getQueryQuery_idcollocation',
     requestFormat: 'json',
     parameters: [
       {
@@ -3293,7 +3628,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/query/:query_id/concordance',
-    alias: 'getQueryQuery_idconcordance',
     requestFormat: 'json',
     parameters: [
       {
@@ -3407,7 +3741,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/query/:query_id/concordance/:match_id',
-    alias: 'getQueryQuery_idconcordanceMatch_id',
     requestFormat: 'json',
     parameters: [
       {
@@ -3478,7 +3811,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/query/:query_id/concordance/shuffle',
-    alias: 'postQueryQuery_idconcordanceshuffle',
     requestFormat: 'json',
     parameters: [
       {
@@ -3504,7 +3836,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/query/:query_id/meta',
-    alias: 'getQueryQuery_idmeta',
     requestFormat: 'json',
     parameters: [
       {
@@ -3550,7 +3881,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/query/assisted/',
-    alias: 'postQueryassisted',
     requestFormat: 'json',
     parameters: [
       {
@@ -3581,7 +3911,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'put',
     path: '/semantic-map/',
-    alias: 'putSemanticMap',
     requestFormat: 'json',
     parameters: [
       {
@@ -3607,7 +3936,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'delete',
     path: '/semantic-map/:id',
-    alias: 'deleteSemanticMapId',
     requestFormat: 'json',
     parameters: [
       {
@@ -3633,7 +3961,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/semantic-map/:id',
-    alias: 'getSemanticMapId',
     requestFormat: 'json',
     parameters: [
       {
@@ -3659,7 +3986,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/semantic-map/:id/coordinates/',
-    alias: 'getSemanticMapIdcoordinates',
     requestFormat: 'json',
     parameters: [
       {
@@ -3685,7 +4011,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'put',
     path: '/semantic-map/:id/coordinates/',
-    alias: 'putSemanticMapIdcoordinates',
     requestFormat: 'json',
     parameters: [
       {
@@ -3721,7 +4046,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/spheroscope/slot-query/',
-    alias: 'getSpheroscopeslotQuery',
     requestFormat: 'json',
     response: z.array(SlotQueryOut),
     errors: [
@@ -3735,7 +4059,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/spheroscope/slot-query/:id/execute',
-    alias: 'postSpheroscopeslotQueryIdexecute',
     requestFormat: 'json',
     parameters: [
       {
@@ -3761,7 +4084,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/spheroscope/slot-query/create',
-    alias: 'postSpheroscopeslotQuerycreate',
     requestFormat: 'json',
     parameters: [
       {
@@ -3787,7 +4109,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/user/',
-    alias: 'getUser',
     requestFormat: 'json',
     response: z.array(UserOut),
     errors: [
@@ -3801,7 +4122,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/user/',
-    alias: 'postUser',
     requestFormat: 'json',
     parameters: [
       {
@@ -3827,7 +4147,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/user/:id',
-    alias: 'getUserId',
     requestFormat: 'json',
     parameters: [
       {
@@ -3853,7 +4172,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'patch',
     path: '/user/:id',
-    alias: 'patchUserId',
     requestFormat: 'json',
     parameters: [
       {
@@ -3889,7 +4207,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'get',
     path: '/user/identify',
-    alias: 'getUseridentify',
     requestFormat: 'json',
     response: z.unknown(),
     errors: [
@@ -3903,7 +4220,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/user/login',
-    alias: 'postUserlogin',
     requestFormat: 'form-url',
     parameters: [
       {
@@ -3924,7 +4240,6 @@ TODO also return ranks (to ease frontend pagination)?`,
   {
     method: 'post',
     path: '/user/refresh',
-    alias: 'postUserrefresh',
     requestFormat: 'json',
     parameters: [
       {

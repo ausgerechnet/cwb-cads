@@ -142,12 +142,13 @@ function ConstellationDetail() {
                   className="mt-1"
                   discoursemes={nonSelectedDiscoursemes}
                   disabled={isPending}
-                  onChange={(discoursemeId) =>
+                  onChange={(discoursemeId) => {
                     addDiscourseme({
                       discoursemeId: discoursemeId as number,
                       constellationId,
+                      descriptionId: description?.id as number,
                     })
-                  }
+                  }}
                 />
               )}
               <ErrorMessage error={errorAddDiscourseme} className="mt-2" />

@@ -6,7 +6,7 @@ import { apiClient, schemas } from '../api-client'
 // ==================== QUERIES ====================
 export const queriesList = queryOptions({
   queryKey: ['queries'],
-  queryFn: ({ signal }) => apiClient.getQuery({ signal }),
+  queryFn: ({ signal }) => apiClient.get('/query/', { signal }),
   placeholderData: [],
 })
 
@@ -14,7 +14,7 @@ export const queryById = (queryId: number) =>
   queryOptions({
     queryKey: ['query', queryId],
     queryFn: ({ signal }) =>
-      apiClient.getQueryId({ params: { id: String(queryId) }, signal }),
+      apiClient.get('/query/:id', { params: { id: String(queryId) }, signal }),
   })
 
 export const createQueryCQP: MutationOptions<
@@ -22,7 +22,8 @@ export const createQueryCQP: MutationOptions<
   Error,
   z.infer<typeof schemas.QueryIn>
 > = {
-  mutationFn: (body) => apiClient.postQuery(body),
+  // @ts-expect-error - TS has issues with excessively nested generics
+  mutationFn: (body) => apiClient.post('/query/', body),
   onSuccess: () => {
     void queryClient.invalidateQueries(queriesList)
   },
@@ -33,7 +34,7 @@ export const createQueryAssisted: MutationOptions<
   Error,
   z.infer<typeof schemas.QueryAssistedIn>
 > = {
-  mutationFn: (body) => apiClient.postQueryassisted(body),
+  mutationFn: (body) => apiClient.post('/query/assisted/', body),
   onSuccess: () => {
     void queryClient.invalidateQueries(queriesList)
   },
@@ -41,7 +42,7 @@ export const createQueryAssisted: MutationOptions<
 
 export const deleteQuery: MutationOptions<unknown, Error, string> = {
   mutationFn: (queryId: string) =>
-    apiClient.deleteQueryId(undefined, { params: { id: queryId } }),
+    apiClient.delete('/query/:id', undefined, { params: { id: queryId } }),
   onSuccess: () => {
     void queryClient.invalidateQueries(queriesList)
   },
@@ -51,7 +52,7 @@ export const queryBreakdownForP = (queryId: number, p: string) =>
   queryOptions({
     queryKey: ['query-breakdown', queryId, p],
     queryFn: async () =>
-      apiClient.getQueryQuery_idbreakdown({
+      apiClient.get('/query/:query_id/breakdown', {
         queries: { p },
         params: { query_id: String(queryId) },
       }),
@@ -96,7 +97,7 @@ export const queryConcordances = (
       sort_by_offset,
     ],
     queryFn: ({ signal }) =>
-      apiClient.getQueryQuery_idconcordance({
+      apiClient.get('/query/:query_id/concordance', {
         params: { query_id: String(queryId) },
         queries: {
           window,
@@ -119,7 +120,7 @@ export const shuffleQueryConcordances: MutationOptions<
   number
 > = {
   mutationFn: (queryId) =>
-    apiClient.postQueryQuery_idconcordanceshuffle(undefined, {
+    apiClient.post('/query/:query_id/concordance/shuffle', undefined, {
       params: { query_id: String(queryId) },
     }),
   onSuccess: (data) => {
@@ -137,23 +138,26 @@ export const corpusById = (corpusId: number) =>
   queryOptions({
     queryKey: ['corpus', corpusId],
     queryFn: ({ signal }) =>
-      apiClient.getCorpusId({ params: { id: String(corpusId) }, signal }),
+      apiClient.get('/corpus/:id', {
+        params: { id: String(corpusId) },
+        signal,
+      }),
   })
 
 export const corpusList = queryOptions({
   queryKey: ['corpora'],
-  queryFn: ({ signal }) => apiClient.getCorpus({ signal }),
+  queryFn: ({ signal }) => apiClient.get('/corpus/', { signal }),
 })
 
 export const subcorporaList = queryOptions({
   queryKey: ['subcorpora'],
   queryFn: async ({ signal }) => {
-    const corpora = await apiClient.getCorpus({ signal })
+    const corpora = await apiClient.get('/corpus/', { signal })
     return (
       await Promise.all(
         corpora.map(
           async (corpus) =>
-            apiClient.getCorpusIdsubcorpus({
+            apiClient.get('/corpus/:id/subcorpus/', {
               params: { id: corpus.id?.toString() ?? '' },
             }),
           signal,
@@ -167,7 +171,7 @@ export const subcorpusOf = (corpusId: number) =>
   queryOptions({
     queryKey: ['subcorpora', corpusId],
     queryFn: ({ signal }) =>
-      apiClient.getCorpusIdsubcorpus({
+      apiClient.get('/corpus/:id/subcorpus/', {
         params: { id: corpusId.toString() },
         signal,
       }),
@@ -179,7 +183,7 @@ export const createSubcorpus: MutationOptions<
   z.infer<typeof schemas.SubCorpusIn> & { corpus_id: number }
 > = {
   mutationFn: async ({ corpus_id, ...args }) =>
-    apiClient.putCorpusIdsubcorpus(args, {
+    apiClient.put('/corpus/:id/subcorpus/', args, {
       params: { id: corpus_id.toString() },
     }),
   onSuccess: (data) => {
@@ -212,14 +216,15 @@ export const corpusMetaFrequencies = (
       try {
         return await getFrequencies()
       } catch (error) {
-        await apiClient.putCorpusIdmeta(
+        await apiClient.put(
+          '/corpus/:id/meta/',
           { level, key, value_type: createAsIfNotExists },
           { params: { id: corpusId.toString() } },
         )
         return await getFrequencies()
       }
       function getFrequencies() {
-        return apiClient.getCorpusIdmetafrequencies({
+        return apiClient.get('/corpus/:id/meta/frequencies', {
           params: { id: corpusId.toString() },
           queries: { level, key },
           signal,
@@ -232,7 +237,7 @@ export const corpusMetaFrequencies = (
 
 export const sessionQueryOptions = queryOptions({
   queryKey: ['session'],
-  queryFn: ({ signal }) => apiClient.getUseridentify({ signal }),
+  queryFn: ({ signal }) => apiClient.get('/user/identify', { signal }),
   retry: 1,
 })
 
@@ -241,7 +246,7 @@ export const logIn: MutationOptions<
   Error,
   z.infer<typeof schemas.UserIn>
 > = {
-  mutationFn: (credentials) => apiClient.postUserlogin(credentials),
+  mutationFn: (credentials) => apiClient.post('/user/login', credentials),
   onSuccess: ({ access_token, refresh_token }) => {
     if (access_token) {
       localStorage.setItem('access-token', access_token)
@@ -255,7 +260,7 @@ export const logIn: MutationOptions<
 
 export const usersList = queryOptions({
   queryKey: ['all-users'],
-  queryFn: ({ signal }) => apiClient.getUser({ signal }),
+  queryFn: ({ signal }) => apiClient.get('/user/', { signal }),
   staleTime: 0,
 })
 
@@ -273,14 +278,14 @@ export const logOut: MutationOptions = {
 
 export const keywordAnalysesList = queryOptions({
   queryKey: ['keyword-analyses-list'],
-  queryFn: ({ signal }) => apiClient.getKeyword({ signal }),
+  queryFn: ({ signal }) => apiClient.get('/keyword/', { signal }),
 })
 
 export const keywordAnalysisById = (keywordAnalysisId: number) =>
   queryOptions({
     queryKey: ['keyword-analysis', keywordAnalysisId],
     queryFn: ({ signal }) =>
-      apiClient.getKeywordId({
+      apiClient.get('/keyword/:id/', {
         params: { id: keywordAnalysisId.toString() },
         signal,
       }),
@@ -291,7 +296,7 @@ export const createKeywordAnalysis: MutationOptions<
   Error,
   z.infer<typeof schemas.KeywordIn>
 > = {
-  mutationFn: (body) => apiClient.postKeyword(body),
+  mutationFn: (body) => apiClient.post('/keyword/', body),
   onSettled: () => {
     void queryClient.invalidateQueries(keywordAnalysesList)
   },
