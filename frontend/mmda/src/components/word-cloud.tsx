@@ -583,6 +583,7 @@ export default function WordCloud({
     handleResize()
 
     return () => {
+      simulation.stop()
       miniMap.remove()
       boundary.remove()
       originLine.remove()
