@@ -4,7 +4,6 @@ import {
   constellationCollocationItems,
   constellationCollocation,
   constellationCollocationVisualisation,
-  constellationCollocationMap,
 } from '@cads/shared/queries'
 
 export function useCollocation(
@@ -81,38 +80,14 @@ export function useCollocation(
     enabled: collocation?.id !== undefined && descriptionId !== undefined,
   })
 
-  const {
-    data: mapData,
-    isLoading: isLoadingMap,
-    error: errorMap,
-  } = useQuery({
-    ...constellationCollocationMap(
-      constellationId,
-      descriptionId as number,
-      collocation?.id as number,
-      {
-        sortBy: ccSortBy,
-        sortOrder: ccSortOrder,
-      },
-    ),
-    enabled: collocation?.id !== undefined && descriptionId !== undefined,
-  })
-  // console.log('map data', mapData)
-
-  const isLoading =
-    isLoadingConstellation || isLoadingItemsMap || isLoadingItem || isLoadingMap
+  const isLoading = isLoadingConstellation || isLoadingItemsMap || isLoadingItem
 
   return {
     isLoading,
     error:
-      errorCollocation ??
-      errorConstellationMap ??
-      errorMap ??
-      errorConstellation ??
-      null,
+      errorCollocation ?? errorConstellationMap ?? errorConstellation ?? null,
     collocation,
     collocationItems,
     mapItems,
-    mapData,
   }
 }

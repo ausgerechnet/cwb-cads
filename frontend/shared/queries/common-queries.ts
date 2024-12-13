@@ -266,6 +266,7 @@ export const usersList = queryOptions({
   queryKey: ['all-users'],
   queryFn: ({ signal }) => apiClient.get('/user/', { signal }),
   staleTime: 0,
+  refetchOnWindowFocus: true,
 })
 
 export const logOut: MutationOptions = {

@@ -733,50 +733,6 @@ export const constellationCollocationItems = (
       ),
   })
 
-export const constellationCollocationMap = (
-  constellationId: number,
-  descriptionId: number,
-  collocationId: number,
-  {
-    sortOrder,
-    sortBy,
-  }: {
-    sortOrder?: 'ascending' | 'descending'
-    sortBy?: SortBy
-  },
-) =>
-  queryOptions({
-    retry: 0,
-    queryKey: [
-      'constellation-collocation-visualisation-items',
-      {
-        constellationId,
-        descriptionId,
-        collocationId,
-        sortOrder,
-        sortBy,
-      },
-    ],
-    queryFn: async ({ signal }) =>
-      apiClient.get(
-        '/mmda/constellation/:constellation_id/description/:description_id/collocation/:collocation_id/items',
-        {
-          params: {
-            constellation_id: constellationId.toString(),
-            description_id: descriptionId.toString(),
-            collocation_id: collocationId.toString(),
-          },
-          queries: {
-            sort_order: sortOrder,
-            sort_by: sortBy,
-            page_size: 300,
-            page_number: 1,
-          },
-          signal,
-        },
-      ),
-  })
-
 export const constellationCollocationVisualisation = (
   constellationId: number,
   descriptionId: number,
@@ -819,25 +775,4 @@ export const constellationCollocationVisualisation = (
           signal,
         },
       ),
-    select: (data) => {
-      // TODO: clean this up; check its uses, too, and simplify
-      // @ts-ignore
-      const dedupedItems = []
-      // @ts-ignore
-      data.map.forEach((d, index) => {
-        // @ts-ignore
-        const isDuplicate = !!data.map.find(
-          ({ source, item }, indexCheck) =>
-            index !== indexCheck && source === d.source && item === d.item,
-        )
-        if (!isDuplicate) {
-          dedupedItems.push(d)
-        } else {
-          console.warn('duplicate found!', d)
-        }
-      })
-      // @ts-ignore
-      data.map = dedupedItems
-      return data
-    },
   })

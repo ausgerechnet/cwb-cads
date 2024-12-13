@@ -198,9 +198,9 @@ function ConstellationDiscoursemesEditor({
     if (!mapData) {
       return { discoursemes: [], itemCount: null }
     }
-    const discoursemeItems = mapData.filter(
-      ({ source }) => source === 'discourseme_items',
-    )
+    const discoursemeItems = mapData
+      .filter(({ source }) => source === 'discourseme_items')
+      .toSorted((a, b) => a.item.localeCompare(b.item))
     const discoursemes = mapData
       .filter(({ source }) => source === 'discoursemes')
       .map((discourseme) => {
@@ -310,12 +310,15 @@ function ConstellationDiscoursemesEditor({
                   <CollapsibleContent>
                     <ul className="px-2">
                       {/* TODO: sometimes items are duplicates. why? */}
-                      {items.map(({ item }, index) => (
+                      {items.map(({ item, discourseme_id, source }, index) => (
                         <li
-                          key={item + index}
+                          key={`${item} ${discourseme_id}` + index}
                           className="group/description hover:bg-muted flex items-center justify-between rounded leading-tight"
                         >
-                          {item}
+                          {item}{' '}
+                          <span className="ml-1 block text-sm opacity-50">
+                            {source}
+                          </span>
                           <button
                             className="ml-auto mr-1 opacity-0 group-hover/description:opacity-100"
                             disabled={isRemovingItem}
@@ -336,11 +339,13 @@ function ConstellationDiscoursemesEditor({
                         </li>
                       ))}
                     </ul>
-                    <AddDescriptionItem
-                      constellationId={constellationId}
-                      discoursemeId={discoursemeId}
-                      discoursemeDescriptionId={descriptionId}
-                    />
+                    {descriptionId !== undefined && (
+                      <AddDescriptionItem
+                        constellationId={constellationId}
+                        discoursemeId={discoursemeId}
+                        discoursemeDescriptionId={descriptionId}
+                      />
+                    )}
                   </CollapsibleContent>
                 </div>
               </Collapsible>
