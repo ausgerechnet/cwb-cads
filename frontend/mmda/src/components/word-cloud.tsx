@@ -48,6 +48,7 @@ export default function WordCloud({
   ) => void
 }) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const simulationRef = useRef<d3.Simulation>(null)
   const navigate = useNavigate()
   const { theme } = useTheme()
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
@@ -76,7 +77,10 @@ export default function WordCloud({
 
     const container = svg.select('g')
 
-    const simulation = d3.forceSimulation().alphaDecay(0.001)
+    // Re-use simulation instead of re-creating it
+    const simulation =
+      simulationRef.current ?? d3.forceSimulation().alphaDecay(0.001)
+    simulationRef.current = simulation
 
     let svgWidth = svgRef.current?.clientWidth ?? 0
     let svgHeight = svgRef.current?.clientHeight ?? 0
