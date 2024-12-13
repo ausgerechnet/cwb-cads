@@ -1,22 +1,64 @@
 name	surface
-Klimawandel	Klima(wandel|(ver)?änderung|wechsel|krise|katastrophe|notstand|lüge)
+Klimawandel	Klimawandel
+Klimawandel	Klimaveränderung
+Klimawandel	Klimaänderung
+Klimawandel	Klimawechsel
+Klimawandel	Klimakrise
+Klimawandel	Klimakatastrophe
+Klimawandel	Klimanotstand
+Klimawandel	Klimalüge
 Klimawandel	global Erwärmung
-Ursachen	Treibhausgas(emission)?
-Atomkraft	(Kern|Atom|Nuklear)(kraft|energie)(werk)?
-Kampf	Kampf|Bekämpfung|aufhalten
-Wetter	Sturm|(Extrem)?[Ww]etter(ereignis)|Naturkatastrophe|Wetterextrem
-Anpassung	[Bb]ewältig(en|ung)|(Anpassungs?)?([Mm]aßnahme)?
-Ausbau	Ausbau|ausbauen|Förderung
+Ursachen	Treibhausgas
+Ursachen	Treibhausgasemission
+Atomkraft	Kernkraft
+Atomkraft	Kernenergie
+Atomkraft	Kernkraftwerk
+Atomkraft	Atomkraft
+Atomkraft	Atomenergie
+Atomkraft	Atomkraftwerk
+Atomkraft	Nuklearkraft
+Atomkraft	Nuklearenergie
+Atomkraft	Nuklearkraftwerk
+Kampf	Kampf
+Kampf	Bekämpfung
+Kampf	aufhalten
+Kampf	bekämpfen
+Wetter	Sturm
+Wetter	Wetterereignis
+Wetter	Wetter
+Wetter	Extremwetter
+Wetter	Extremwetterereignis
+Wetter	Naturkatastrophe
+Wetter	Wetterextrem
+Anpassung	Bewältigung
+Anpassung	bewältigen
+Anpassung	Anpassung
+Anpassung	Anpassungsmaßnahme
+Anpassung	Maßnahme
+Ausbau	Ausbau
+Ausbau	ausbauen
+Ausbau	Förderung
 Ausbau	Steigerung die Anteil
-Ausstieg	Ausstieg|aussteigen
-Erneuerbare Energien	erneuerbar|regenerativ Energie
-Erneuerbare Energien	(Wind|Sonnen)energie
-(fossile) Rohstoffe	fossil Energie|Brennstoff
-(fossile) Rohstoffe	(Braun|Stein)?[Kk]ohle
-(fossile) Rohstoffe	Erd(gas|öl)
+Ausstieg	Ausstieg
+Ausstieg	aussteigen
+Erneuerbare Energien	erneuerbar Energie
+Erneuerbare Energien	regnerativ Energie
+Erneuerbare Energien	Windenergie
+Erneuerbare Energien	Sonnenenergie
+(fossile) Rohstoffe	fossil Energie
+(fossile) Rohstoffe	Brennstoff
+(fossile) Rohstoffe	Kohle
+(fossile) Rohstoffe	Braunkohle
+(fossile) Rohstoffe	Steinkohle
+(fossile) Rohstoffe	Erdgas
+(fossile) Rohstoffe	Erdöl
 (fossile) Rohstoffe	Mineralöl
-(fossile) Rohstoffe	Gas|Öl
-Mangel	Armut|Hunger|Dürre|Ressourcenknappheit
+(fossile) Rohstoffe	Gas
+(fossile) Rohstoffe	Öl
+Mangel	Armut
+Mangel	Hunger
+Mangel	Dürre
+Mangel	Ressourcenknappheit
 Verursacher	menschengemacht
 Verursacher	Mitverursacher
 Verursacher	Hauptverursacher
