@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery } from '@tanstack/react-query'
 
-import { logIn, sessionQueryOptions } from '@cads/shared/queries'
+import { logIn, userIdentify } from '@cads/shared/queries'
 import { required_error } from '@cads/shared/lib/strings'
 import { Button } from '@cads/shared/components/ui/button'
 import { Input } from '@cads/shared/components/ui/input'
@@ -56,7 +56,7 @@ function Login() {
 
   const isLoggedIn =
     useQuery({
-      ...sessionQueryOptions,
+      ...userIdentify,
       refetchInterval: 10_000,
     })?.data !== undefined
 

@@ -8,7 +8,7 @@ import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { Home, Info, User, ScrollText } from 'lucide-react'
 
-import { usersList } from '@cads/shared/queries'
+import { userIdentify } from '@cads/shared/queries'
 import { ModeToggle } from '@cads/shared/components/mode-toggle'
 import { MenuLink } from '@/components/menu-link'
 import {
@@ -34,7 +34,7 @@ const Devtools =
       )
 
 function RootComponent() {
-  const { data, isLoading, error } = useQuery(usersList)
+  const { data, isLoading, error } = useQuery(userIdentify)
 
   const isLoggedIn = Boolean(data && !isLoading && !error)
 

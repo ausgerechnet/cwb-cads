@@ -235,10 +235,14 @@ export const corpusMetaFrequencies = (
 
 // ==================== USERS ====================
 
-export const sessionQueryOptions = queryOptions({
+export const userIdentify = queryOptions({
   queryKey: ['session'],
   queryFn: ({ signal }) => apiClient.get('/user/identify', { signal }),
   retry: 1,
+  staleTime: 0,
+  gcTime: 0,
+  refetchOnWindowFocus: true,
+  refetchInterval: 60_000,
 })
 
 export const logIn: MutationOptions<
@@ -254,7 +258,7 @@ export const logIn: MutationOptions<
     if (refresh_token) {
       localStorage.setItem('refresh-token', refresh_token)
     }
-    void queryClient.invalidateQueries(sessionQueryOptions)
+    void queryClient.invalidateQueries(userIdentify)
   },
 }
 
@@ -270,8 +274,8 @@ export const logOut: MutationOptions = {
     localStorage.removeItem('refresh-token')
   },
   onSuccess: () => {
-    queryClient.setQueryData(sessionQueryOptions.queryKey, null)
-    void queryClient.invalidateQueries(sessionQueryOptions)
+    queryClient.setQueryData(userIdentify.queryKey, null)
+    void queryClient.invalidateQueries(userIdentify)
   },
 }
 // ==================== KEYWORD ANALYSIS ====================
