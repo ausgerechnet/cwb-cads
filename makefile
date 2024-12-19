@@ -74,6 +74,9 @@ run:
 run_frontend:
 	make nvm CMD="npm run dev"
 
+spheroscope:
+	make nvm CMD="npm run dev:spheroscope"
+
 ########
 # TEST #
 ########
