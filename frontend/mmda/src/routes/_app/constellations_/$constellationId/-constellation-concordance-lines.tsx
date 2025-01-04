@@ -1,4 +1,4 @@
-import { Fragment, useRef } from 'react'
+import { Fragment, useRef, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useSearch } from '@tanstack/react-router'
@@ -31,6 +31,7 @@ import { useFilterSelection } from '@/routes/_app/constellations_/$constellation
 import { useDescription } from '@/routes/_app/constellations_/$constellationId/-use-description'
 import { ConstellationConcordanceFilter } from '@/routes/_app/constellations_/$constellationId/-constellation-filter'
 import { Ellipsis } from '@cads/shared/components/ellipsis'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 
 const emptyArray = [] as const
 
@@ -179,23 +180,27 @@ function MetaValue({ value }: { value: unknown }) {
 }
 
 function ConcordanceLineRender({
-  concordanceLine: { match_id, tokens = [], structural = {} },
+  concordanceLine: {
+    match_id,
+    tokens = [],
+    structural = {},
+    discourseme_ranges,
+  },
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
-  const keywordIndexes = tokens.reduce<number[]>(
-    (indexList, { offset }, index) => {
-      if (offset === 0) {
-        indexList.push(index)
-      }
-      return indexList
-    },
-    [],
+  const { secondary } = useFilterSelection(
+    '/_app/constellations_/$constellationId',
   )
-  const preTokens =
-    tokens.filter(({ offset = NaN }) => offset < 0) ?? emptyArray
-  const postTokens =
-    tokens.filter(({ offset = NaN }) => offset > 0) ?? emptyArray
+  const { preTokens, postTokens, midTokens } = useMemo(
+    () => ({
+      preTokens: tokens.filter(({ offset = NaN }) => offset < 0) ?? emptyArray,
+      midTokens:
+        tokens.filter(({ offset = NaN }) => offset === 0) ?? emptyArray,
+      postTokens: tokens.filter(({ offset = NaN }) => offset > 0) ?? emptyArray,
+    }),
+    [tokens],
+  )
 
   const meta = Object.entries(structural)
   const isExpanded = false
@@ -227,21 +232,27 @@ function ConcordanceLineRender({
       </TableCell>
       <TableCell className="w-auto overflow-hidden whitespace-nowrap pr-1">
         <Ellipsis direction="rtl">
-          {preTokens.map((token, i) => (
-            <TokenRender key={i} token={token} />
-          ))}
+          <TokenLine
+            tokens={preTokens}
+            discoursemeRanges={discourseme_ranges}
+            secondary={secondary}
+          />
         </Ellipsis>
       </TableCell>
       <TableCell className="mx-auto flex w-max items-center gap-1 whitespace-nowrap px-1 text-center">
-        {keywordIndexes.map((keywordIndex) => (
-          <TokenRender token={tokens[keywordIndex]} key={keywordIndex} />
-        ))}
+        <TokenLine
+          tokens={midTokens}
+          discoursemeRanges={discourseme_ranges}
+          secondary={secondary}
+        />
       </TableCell>
       <TableCell className="w-auto overflow-hidden whitespace-nowrap pr-1">
         <Ellipsis direction="ltr">
-          {postTokens.map((token, i) => (
-            <TokenRender key={i} token={token} />
-          ))}
+          <TokenLine
+            tokens={postTokens}
+            discoursemeRanges={discourseme_ranges}
+            secondary={secondary}
+          />
         </Ellipsis>
       </TableCell>
       <TableCell className="flex w-max items-center py-0">
@@ -262,10 +273,94 @@ function ConcordanceLineRender({
   )
 }
 
-function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
-  const { secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
+export function TokenLine({
+  tokens,
+  secondary,
+  discoursemeRanges,
+}: {
+  tokens: z.infer<typeof schemas.TokenOut>[]
+  discoursemeRanges: z.infer<typeof schemas.DiscoursemeRangeOut>[]
+  secondary?: string
+}) {
+  const tokenData = useMemo(() => {
+    const tokenData: [
+      (typeof tokens)[number],
+      {
+        discoursemeId: number
+        isStart: boolean
+        isEnd: boolean
+        offset?: number
+      }[],
+    ][] = []
+    let tokenOffsets: { id: number; offset: number }[] = []
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]
+      const { cpos } = token
+      const tokenDiscoursemes = discoursemeRanges
+        .filter(({ start, end }) => start <= cpos && end >= cpos)
+        .map(({ discourseme_id, start, end }) => ({
+          discoursemeId: discourseme_id,
+          isStart: start === cpos,
+          isEnd: end === cpos,
+        }))
+      const activeDiscoursemeIds = tokenDiscoursemes.map(
+        ({ discoursemeId }) => discoursemeId,
+      )
+      tokenOffsets = tokenOffsets.filter(({ id }) =>
+        activeDiscoursemeIds.includes(id),
+      )
+      const tokenDiscoursemesWithOffset = tokenDiscoursemes.map(
+        ({ discoursemeId, ...d }) => {
+          let newOffset = tokenOffsets.find(
+            ({ id }) => discoursemeId === id,
+          )?.offset
+          if (newOffset === undefined) {
+            newOffset = 0
+            while (tokenOffsets.some(({ offset }) => offset === newOffset)) {
+              newOffset += 2
+            }
+            tokenOffsets.push({ offset: newOffset, id: discoursemeId })
+          }
+          return {
+            discoursemeId,
+            offset: newOffset,
+            ...d,
+          }
+        },
+      )
+      tokenData.push([token, tokenDiscoursemesWithOffset])
+    }
+    return tokenData
+  }, [discoursemeRanges, tokens])
+
+  return (
+    <div className="flex">
+      {tokenData.map(([token, discoursemes]) => (
+        <TokenRender
+          key={token.cpos}
+          token={token}
+          discoursemes={discoursemes}
+          secondary={secondary}
+        />
+      ))}
+    </div>
   )
+}
+
+function TokenRender({
+  token,
+  discoursemes: discoursemes = [],
+  secondary,
+}: {
+  token: z.infer<typeof schemas.TokenOut>
+  discoursemes: {
+    discoursemeId: number
+    isStart: boolean
+    isEnd: boolean
+    offset?: number
+  }[]
+  secondary?: string
+}) {
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
@@ -280,13 +375,32 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
               clFilterItemPAtt: secondary,
             })}
             className={cn(
-              'hover:bg-muted hover:ring-muted cursor-pointer rounded-md px-0.5 hover:ring-2',
+              'hover:bg-muted hover:ring-muted relative cursor-pointer rounded-md px-0.5 hover:ring-2',
               token.out_of_window && 'text-muted-foreground/70',
               token.is_filter_item && 'bg-primary/50',
               token.offset === 0 && 'font-bold',
             )}
           >
-            {token.primary}{' '}
+            {discoursemes.map(
+              ({ discoursemeId, isStart, isEnd, offset = 0 }) => (
+                <span
+                  key={discoursemeId}
+                  data-x={`${isStart ? 'start' : ''}${isEnd ? 'end' : ''}`}
+                  className={cn(
+                    'absolute inset-0 border-y',
+                    isStart && 'rounded-l-md border-l',
+                    isEnd && 'rounded-r-md border-r',
+                  )}
+                  style={{
+                    borderColor: getColorForNumber(discoursemeId),
+                    backgroundColor: getColorForNumber(discoursemeId, 0.2),
+                    top: -offset,
+                    bottom: -offset,
+                  }}
+                />
+              ),
+            )}
+            <span className="relative">{token.primary} </span>
           </Link>
         </TooltipTrigger>
         <TooltipContent>{token.secondary}</TooltipContent>
