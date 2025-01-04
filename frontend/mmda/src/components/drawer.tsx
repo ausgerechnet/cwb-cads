@@ -43,11 +43,11 @@ export function Drawer({
       </Button>
       <div
         className={cn(
-          'grid transition-all',
-          isVisible ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] opacity-20',
+          'overflow-hidden transition-all',
+          isVisible ? 'h-auto' : 'h-0 opacity-0',
         )}
       >
-        <div className="overflow-hidden">{children}</div>
+        {children}
       </div>
     </div>
   )
