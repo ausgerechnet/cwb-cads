@@ -57,6 +57,10 @@ export default function WordCloud({
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
 
   useEffect(() => {
+    const [initialZoom, initialX, initialY] = location.hash
+      .slice(1)
+      .split(':')
+      .map(Number)
     const isDarkMode = theme === 'dark'
 
     // TODO: ensure that words and discoursemes have universally(!) unique identifiers
@@ -402,6 +406,10 @@ export default function WordCloud({
       return (k - scaleRange[0]) / (scaleRange[1] - scaleRange[0])
     }
 
+    function getScaleFromNormalized(kNormalized: number) {
+      return kNormalized * (scaleRange[1] - scaleRange[0]) + scaleRange[0]
+    }
+
     function handleResize() {
       svgWidth = svgRef.current?.clientWidth ?? 0
       svgHeight = svgRef.current?.clientHeight ?? 0
@@ -623,11 +631,22 @@ export default function WordCloud({
       svg.call(d3.zoom().transform, zoomTransform)
       zoomed({ transform: zoomTransform })
     }
-
-    centerView()
-
     window.addEventListener('resize', handleResize)
     handleResize()
+
+    if (
+      initialZoom !== undefined &&
+      initialX !== undefined &&
+      initialY !== undefined
+    ) {
+      const zoomTransform = d3.zoomIdentity
+        .translate(initialX, initialY)
+        .scale(getScaleFromNormalized(initialZoom))
+      svg.call(d3.zoom().transform, zoomTransform)
+      zoomed({ transform: zoomTransform })
+    } else {
+      centerView()
+    }
 
     return () => {
       simulation.stop()
