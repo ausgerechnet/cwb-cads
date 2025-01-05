@@ -334,7 +334,7 @@ export function TokenLine({
   }, [discoursemeRanges, tokens])
 
   return (
-    <div className="flex">
+    <>
       {tokenData.map(([token, discoursemes]) => (
         <TokenRender
           key={token.cpos}
@@ -343,7 +343,7 @@ export function TokenLine({
           secondary={secondary}
         />
       ))}
-    </div>
+    </>
   )
 }
 
