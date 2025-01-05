@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { z } from 'zod'
 import { Link } from '@tanstack/react-router'
 import {
@@ -8,6 +14,7 @@ import {
   Loader2Icon,
   Plus,
   Trash2Icon,
+  XIcon,
 } from 'lucide-react'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -64,7 +71,13 @@ import { useFilterSelection } from './-use-filter-selection'
 
 const COORDINATES_SCALE_FACTOR = 1_000 // Coordinates range from -1 to 1 in both axes
 
-export function SemanticMap({ constellationId }: { constellationId: number }) {
+export function SemanticMap({
+  constellationId,
+  children,
+}: {
+  constellationId: number
+  children: ReactNode
+}) {
   const { secondary } = useFilterSelection(
     '/_app/constellations_/$constellationId',
   )
@@ -102,6 +115,7 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
 
   const words = useMemo(() => {
     const words = mapItems?.map ?? []
+    console.log('recreate words')
     return words.map(({ scaled_score, discourseme_id, x, y, ...w }) => ({
       x: x * COORDINATES_SCALE_FACTOR,
       y: y * COORDINATES_SCALE_FACTOR,
@@ -113,78 +127,93 @@ export function SemanticMap({ constellationId }: { constellationId: number }) {
     }))
   }, [mapItems])
 
+  const onNewDiscourseme = useCallback(
+    (surfaces: string[]) => {
+      if (!description || !secondary) return
+      postNewDiscourseme({
+        surfaces,
+        constellationId,
+        constellationDescriptionId: description.id,
+        p: secondary,
+      })
+    },
+    [constellationId, description, postNewDiscourseme, secondary],
+  )
+
+  const onUpdateDiscourseme = useCallback(
+    (discoursemeId: number, surface: string) => {
+      const descriptionId = description?.discourseme_descriptions.find(
+        ({ id }) => id === discoursemeId,
+      )?.id
+      if (descriptionId === undefined) {
+        throw new Error(
+          `No discourseme description found for discourseme id ${descriptionId}`,
+        )
+      }
+      addItem({
+        discoursemeId,
+        descriptionId,
+        surface,
+        p: secondary!,
+      })
+    },
+    [addItem, description?.discourseme_descriptions, secondary],
+  )
+
   return (
-    <div className="group/map bg-muted flex-grow">
-      <ErrorMessage error={errorCollocation} />
-      <ErrorMessage error={errorNewDiscourseme} />
-      <ErrorMessage error={errorAddItem} />
-      <Link
-        to="/constellations/$constellationId"
-        from="/constellations/$constellationId/semantic-map"
-        params={{ constellationId: constellationId.toString() }}
-        search={(s) => s}
-        className={cn(
-          buttonVariants({ variant: 'link' }),
-          'top-42 absolute right-2 z-10 px-2',
+    <div className="group/map bg-muted grid h-[calc(100svh-3.5rem)] flex-grow grid-cols-[1rem_1fr_25rem_1rem] grid-rows-[1rem_auto_1fr_4rem] gap-5 overflow-hidden">
+      {semantic_map_id !== undefined &&
+        semantic_map_id !== null &&
+        Boolean(mapItems) && (
+          <WordCloud
+            className="col-start-2 row-start-3 self-stretch justify-self-stretch"
+            words={words}
+            size={COORDINATES_SCALE_FACTOR * 2}
+            semanticMapId={semantic_map_id}
+            onNewDiscourseme={onNewDiscourseme}
+            onUpdateDiscourseme={onUpdateDiscourseme}
+          />
         )}
-      >
-        <ArrowLeftIcon />
-      </Link>
-      <ConstellationDiscoursemesEditor constellationId={constellationId} />
+      <div className="col-span-2 col-start-2 row-start-2 flex gap-5">
+        {children}
+
+        <Link
+          to="/constellations/$constellationId"
+          from="/constellations/$constellationId/semantic-map"
+          params={{ constellationId: constellationId.toString() }}
+          search={(s) => s}
+          className={cn(buttonVariants({ variant: 'link' }), 'shrink px-2')}
+        >
+          <ArrowLeftIcon />
+        </Link>
+      </div>
+      <ConstellationDiscoursemesEditor
+        constellationId={constellationId}
+        className="relative col-start-3 row-start-3"
+      />
       {isLoading && (
         <div className="-transform-x-1/2 -transform-y-1/2 absolute left-1/2 top-1/2">
           <Loader2Icon className="h-6 w-6 animate-spin" />
         </div>
       )}
-      <div className="bg-muted">
-        {semantic_map_id !== undefined &&
-          semantic_map_id !== null &&
-          Boolean(mapItems) && (
-            <WordCloud
-              words={words}
-              size={COORDINATES_SCALE_FACTOR * 2}
-              semanticMapId={semantic_map_id}
-              onNewDiscourseme={(surfaces) => {
-                if (!description || !secondary) return
-                postNewDiscourseme({
-                  surfaces,
-                  constellationId,
-                  constellationDescriptionId: description.id,
-                  p: secondary,
-                })
-              }}
-              onUpdateDiscourseme={(discoursemeId, surface) => {
-                const descriptionId =
-                  description?.discourseme_descriptions.find(
-                    ({ id }) => id === discoursemeId,
-                  )?.id
-                if (descriptionId === undefined) {
-                  throw new Error(
-                    `No discourseme description found for discourseme id ${descriptionId}`,
-                  )
-                }
-                addItem({
-                  discoursemeId,
-                  descriptionId,
-                  surface,
-                  p: secondary!,
-                })
-              }}
-            />
-          )}
+      <div className="col-start-2 row-start-3 self-start justify-self-start">
+        <ErrorMessage error={errorCollocation} />
+        <ErrorMessage error={errorNewDiscourseme} />
+        <ErrorMessage error={errorAddItem} />
       </div>
     </div>
   )
 }
 
 function ConstellationDiscoursemesEditor({
+  className,
   constellationId,
 }: {
+  className?: string
   constellationId: number
 }) {
-  const { corpusId, focusDiscourseme, secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
+  const { corpusId, focusDiscourseme, filterDiscoursemeIds, secondary } =
+    useFilterSelection('/_app/constellations_/$constellationId')
   if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
   const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)
@@ -240,7 +269,12 @@ function ConstellationDiscoursemesEditor({
   } = useMutation(removeDescriptionItem)
 
   return (
-    <div className="bg-background absolute bottom-24 right-4 top-48 flex max-w-96 flex-col overflow-hidden rounded-xl shadow-xl">
+    <div
+      className={cn(
+        'bg-background flex flex-col overflow-hidden rounded-xl shadow-xl',
+        className,
+      )}
+    >
       <ErrorMessage error={errorDeleteDiscourseme} />
       <ErrorMessage error={errorAddDiscourseme} />
       <ErrorMessage error={errorDeleteItem} />
@@ -291,6 +325,22 @@ function ConstellationDiscoursemesEditor({
                         {focusDiscourseme === discoursemeId && (
                           <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
                             Focus
+                          </span>
+                        )}
+                        {filterDiscoursemeIds.includes(discoursemeId) && (
+                          <span className="inline-flex items-center gap-0.5 rounded-xl bg-blue-100 px-2 py-0.5 text-sm text-blue-800 has-[a:hover]:bg-blue-200 dark:bg-blue-700 dark:text-blue-100 has-[a:hover]:dark:bg-blue-900">
+                            Filter
+                            <Link
+                              className="hover:cursor-pointer"
+                              to=""
+                              params={(p) => p}
+                              search={(s) => ({
+                                ...s,
+                                filterDiscoursemeIds: [],
+                              })}
+                            >
+                              <XIcon className="h-4 w-4" />
+                            </Link>
                           </span>
                         )}
                       </Button>

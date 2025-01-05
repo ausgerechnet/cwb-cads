@@ -41,9 +41,9 @@ export function ConstellationCollocationFilter({
   } = useFilterSelection('/_app/constellations_/$constellationId')
 
   return (
-    <div className={cn('z-10 mb-8 flex gap-2', className)}>
+    <div className={cn('bg-background z-10 flex gap-2', className)}>
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Window Size {windowSize}</span>
+        <span className="text-xs">Window Size {windowSize}</span>
         <Slider
           defaultValue={[windowSize]}
           onValueChange={([newValue]) => setFilter('windowSize', newValue)}
@@ -54,7 +54,7 @@ export function ConstellationCollocationFilter({
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Context Break</span>
+        <span className="text-xs">Context Break</span>
         <Select value={s} onValueChange={(value) => setFilter('s', value)}>
           <SelectTrigger>
             <SelectValue placeholder="Context Break" />
@@ -72,7 +72,7 @@ export function ConstellationCollocationFilter({
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Secondary</span>
+        <span className="text-xs">Secondary</span>
         <Select
           value={secondary}
           onValueChange={(value) => setFilter('secondary', value)}
@@ -93,7 +93,7 @@ export function ConstellationCollocationFilter({
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">
+        <span className="text-xs">
           Filter Item {ccFilterItemPAtt && `(on ${ccFilterItemPAtt})`}
           {ccFilterItem !== clFilterItem && (
             <ButtonTooltip
@@ -117,7 +117,7 @@ export function ConstellationCollocationFilter({
           <div className="bg-muted flex flex-grow items-center self-stretch rounded px-2">
             {ccFilterItem}
           </div>
-          {ccFilterItem !== '' && (
+          {Boolean(ccFilterItem) && (
             <Button
               variant="secondary"
               size="icon"
@@ -130,7 +130,7 @@ export function ConstellationCollocationFilter({
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Sort by</span>
+        <span className="text-xs">Sort by</span>
         <Select
           disabled={!isSortable}
           value={ccSortBy}
@@ -168,7 +168,7 @@ export function ConstellationCollocationFilter({
         </Select>
       </div>
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-sm">Sort Order</span>
+        <span className="text-xs">Sort Order</span>
         <Select
           value={ccSortOrder}
           onValueChange={(value) =>

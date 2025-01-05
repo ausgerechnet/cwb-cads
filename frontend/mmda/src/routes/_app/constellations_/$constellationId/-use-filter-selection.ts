@@ -10,6 +10,7 @@ export const FilterSchema = z.object({
   windowSize: z.number().positive().min(2).int().optional().catch(undefined),
   primary: z.string().optional(),
   secondary: z.string().optional().catch(undefined),
+  filterDiscoursemeIds: z.number().int().array().optional().catch([]),
   clSortOrder: z
     .enum(['ascending', 'descending', 'random', 'first'] as const)
     .optional()
@@ -76,6 +77,7 @@ export function useFilterSelection(
     ccSortOrder = 'descending',
     ccFilterItem,
     ccFilterItemPAtt,
+    filterDiscoursemeIds = [],
     s,
     primary,
     secondary,
@@ -124,6 +126,7 @@ export function useFilterSelection(
     ccSortOrder,
     ccFilterItem: ccFilterItem || undefined,
     ccFilterItemPAtt,
+    filterDiscoursemeIds,
     setFilter,
     primary: defaultTo([primary, 'word'], corpus?.p_atts),
     secondary: defaultTo(secondary, corpus?.p_atts),

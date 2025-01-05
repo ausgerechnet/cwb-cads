@@ -124,8 +124,9 @@ function QuickActions({
         onClick={(event) => event.stopPropagation()}
       >
         <Link
-          to="/constellations/$constellationId"
+          to=""
           params={{ constellationId: String(constellationId) }}
+          search={(s) => s}
           className={cn(
             buttonVariants({ variant: 'outline', size: 'sm' }),
             'w-full',

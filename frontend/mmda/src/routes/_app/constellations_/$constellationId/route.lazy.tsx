@@ -8,7 +8,6 @@ import {
 import {
   createLazyFileRoute,
   Link,
-  useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
 import {
@@ -58,7 +57,6 @@ function ConstellationDetail() {
       (match) =>
         match.routeId === '/_app/constellations_/$constellationId/semantic-map',
     ) !== undefined
-  const navigate = useNavigate()
   const constellationId = parseInt(Route.useParams().constellationId)
 
   const {
@@ -218,16 +216,14 @@ function ConstellationDetail() {
       )}
       {corpusId !== undefined && (
         <>
-          <ConstellationCollocationFilter
-            className={cn(
-              'bg-background sticky top-14',
-              showsSemanticMap &&
-                'absolute left-10 right-5 top-10 rounded-xl p-2 shadow',
-            )}
-          />
-          {showsSemanticMap && (
-            <SemanticMap constellationId={constellationId} />
+          {showsSemanticMap ? (
+            <SemanticMap constellationId={constellationId}>
+              <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
+            </SemanticMap>
+          ) : (
+            <ConstellationCollocationFilter className="sticky top-14 mb-8" />
           )}
+
           {focusDiscourseme !== undefined && !showsSemanticMap && (
             <Collocation
               constellationId={constellationId}
@@ -241,15 +237,7 @@ function ConstellationDetail() {
             )}
             isVisible={isConcordanceVisible}
             onToggle={(isVisible) =>
-              navigate({
-                to: '',
-                params: (p) => p,
-                search: (s) => ({
-                  ...s,
-                  isConcordanceVisible: isVisible,
-                }),
-                replace: true,
-              })
+              setFilter('isConcordanceVisible', isVisible)
             }
           >
             <ConstellationConcordanceLines

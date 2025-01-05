@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import * as d3 from 'd3'
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { LocateIcon } from 'lucide-react'
@@ -12,6 +12,7 @@ import { useTheme } from '@cads/shared/components/theme-provider'
 import { Button } from '@cads/shared/components/ui/button'
 import { clamp } from '@cads/shared/lib/clamp'
 import { putSemanticMapCoordinates } from '@cads/shared/queries'
+import { cn } from '@cads/shared/lib/utils'
 
 export type Word = {
   id: string
@@ -31,13 +32,17 @@ export type Word = {
 const fontSizeMin = 6
 const fontSizeMax = 24
 
-export default function WordCloud({
+export default memo(WordCloud)
+
+function WordCloud({
+  className,
   words,
   semanticMapId,
   size,
   onNewDiscourseme,
   onUpdateDiscourseme,
 }: {
+  className?: string
   words: Omit<Word, 'radius' | 'id'>[]
   semanticMapId: number
   size: number
@@ -47,6 +52,26 @@ export default function WordCloud({
     surface: string,
   ) => void
 }) {
+  console.log('render Word Cloud')
+  useEffect(() => {
+    console.log('classname changed', className)
+  }, [className])
+  useEffect(() => {
+    console.log('words changed', words)
+  }, [words])
+  useEffect(() => {
+    console.log('semanticMapId changed', semanticMapId)
+  }, [semanticMapId])
+  useEffect(() => {
+    console.log('size changed', size)
+  }, [size])
+  useEffect(() => {
+    console.log('onNewDiscourseme changed', onNewDiscourseme)
+  }, [onNewDiscourseme])
+  useEffect(() => {
+    console.log('onUpdateDiscourseme changed', onUpdateDiscourseme)
+  }, [onUpdateDiscourseme])
+
   const svgRef = useRef<SVGSVGElement>(null)
   const simulationRef = useRef<d3.Simulation>(null)
   const navigate = useNavigate()
@@ -159,14 +184,29 @@ export default function WordCloud({
       .attr('x', (d) => d.x)
       .attr('y', (d) => d.y)
       .on('click', (_, d) => {
-        if (d.source !== 'items') return
+        // TODO pass responsibility upwards the Virtual DOM
         // update search params:
-        navigate({
-          to: '',
-          search: (s) => ({ ...s, clFilterItem: d.item }),
-          params: (p) => p,
-          replace: true,
-        })
+        if (d.source === 'discoursemes') {
+          navigate({
+            to: '',
+            search: (s) => ({ ...s, filterDiscoursemeIds: [d.discoursemeId] }),
+            params: (p) => p,
+            replace: true,
+          })
+        }
+        if (d.source === 'items') {
+          navigate({
+            to: '',
+            // TODO: patt must come from higher up
+            search: (s) => ({
+              ...s,
+              clFilterItem: d.item,
+              clFilterItemPAtt: 'lemma',
+            }),
+            params: (p) => p,
+            replace: true,
+          })
+        }
       })
 
     textGroup
@@ -381,8 +421,7 @@ export default function WordCloud({
       const translationFactor = 0.6
       zoom.translateExtent([
         [-size * translationFactor, -size * translationFactor],
-        // TODO: 1.4 is a magic number; a few UI elements overlap the svg, measure the safely visible area and use that as a reference
-        // TODO: Better idea: let the SVG overflow and let a parent element clip it
+        // TODO: 1.4 is a magic number, used in an old solution to avoid UI overlap; we can now just use the SVG dimensions as a reference
         [size * translationFactor * 1.4, size * translationFactor],
       ])
       render()
@@ -610,7 +649,7 @@ export default function WordCloud({
 
   return (
     <>
-      <svg ref={svgRef} className="h-[calc(100svh-3.5rem)] w-full">
+      <svg ref={svgRef} className={cn('rleative overflow-visible', className)}>
         <g>
           <rect fill="transparent" width="100%" height="100%" />
         </g>

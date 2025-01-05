@@ -415,6 +415,7 @@ export const constellationCollocation = (
     focusDiscoursemeId,
     filterItem,
     filterItemPAttribute,
+    filterDiscoursemeIds = [],
     marginals = 'local',
     p,
     sBreak,
@@ -429,6 +430,7 @@ export const constellationCollocation = (
     sBreak: string
     semanticMapId?: number
     window: number
+    filterDiscoursemeIds?: number[]
   },
 ) =>
   queryOptions({
@@ -439,6 +441,7 @@ export const constellationCollocation = (
         descriptionId,
         filterItem,
         filterItemPAttribute,
+        filterDiscoursemeIds,
         marginals,
         p,
         sBreak,
@@ -455,6 +458,7 @@ export const constellationCollocation = (
           filter_item: filterItem,
           filter_item_p_att: filterItemPAttribute,
           focus_discourseme_id: focusDiscoursemeId,
+          filter_discourseme_ids: filterDiscoursemeIds,
           marginals,
           p,
           s_break: sBreak,
