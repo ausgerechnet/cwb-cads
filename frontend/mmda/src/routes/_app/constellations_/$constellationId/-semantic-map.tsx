@@ -115,7 +115,6 @@ export function SemanticMap({
 
   const words = useMemo(() => {
     const words = mapItems?.map ?? []
-    console.log('recreate words')
     return words.map(({ scaled_score, discourseme_id, x, y, ...w }) => ({
       x: x * COORDINATES_SCALE_FACTOR,
       y: y * COORDINATES_SCALE_FACTOR,
@@ -174,18 +173,21 @@ export function SemanticMap({
             onUpdateDiscourseme={onUpdateDiscourseme}
           />
         )}
-      <div className="col-span-2 col-start-2 row-start-2 flex gap-5">
-        {children}
-
+      <div className="col-span-2 col-start-2 row-start-2 flex gap-3">
         <Link
           to="/constellations/$constellationId"
           from="/constellations/$constellationId/semantic-map"
           params={{ constellationId: constellationId.toString() }}
           search={(s) => s}
-          className={cn(buttonVariants({ variant: 'link' }), 'shrink px-2')}
+          className={cn(
+            buttonVariants({ variant: 'default' }),
+            'h-full shrink self-stretch justify-self-stretch px-2',
+          )}
         >
           <ArrowLeftIcon />
         </Link>
+
+        {children}
       </div>
       <ConstellationDiscoursemesEditor
         constellationId={constellationId}
