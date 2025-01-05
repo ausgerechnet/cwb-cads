@@ -289,13 +289,24 @@ export default function WordCloud({
 
     const miniMap = container.append('g')
 
-    miniMap.attr('mask', 'url(#highlight-mask)')
-    // background
-    miniMap
+    const miniMapBackground = miniMap.append('g')
+
+    // minimap base background
+    miniMapBackground
       .append('rect')
-      .attr('class', 'fill-bg')
+      .attr('class', 'fill-gray-900')
+      .attr('rx', 75)
       .attr('width', size)
       .attr('height', size)
+
+    // minimap background with mask to highlight the viewport
+    miniMapBackground
+      .append('rect')
+      .attr('class', 'fill-gray-800')
+      .attr('rx', 75)
+      .attr('width', size)
+      .attr('height', size)
+      .attr('mask', 'url(#highlight-mask)')
 
     // get the #highlight-mask mask and add a rect to it
     const miniMapViewport = svg
@@ -428,7 +439,10 @@ export default function WordCloud({
       }
       updateHash(kNormalized, transformationState.x, transformationState.y)
 
-      miniMap.attr('transform', `scale(0.1)`)
+      miniMap.attr(
+        'class',
+        'translate-x-1 translate-y-1 scale-[.07] opacity-[.97]',
+      )
       miniMapViewport
         .attr('width', svgWidth / k)
         .attr('height', svgHeight / k)
@@ -639,13 +653,10 @@ export default function WordCloud({
   ])
 
   return (
-    <>
+    <div className={cn('relative', className)}>
       <svg
         ref={svgRef}
-        className={cn(
-          'rleative overflow-visible rounded-md outline outline-1 outline-white/10',
-          className,
-        )}
+        className="absolute h-full w-full overflow-visible rounded-md outline outline-1 outline-white/5"
       >
         <defs>
           <mask id="highlight-mask">
@@ -667,13 +678,13 @@ export default function WordCloud({
         <g></g>
       </svg>
       <Button
-        className="absolute bottom-20 left-10 shadow"
+        className="absolute bottom-1 left-1 shadow"
         id="center-map"
         variant="outline"
         size="icon"
       >
         <LocateIcon />
       </Button>
-    </>
+    </div>
   )
 }
