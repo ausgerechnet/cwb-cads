@@ -14,8 +14,9 @@ module.exports = {
     'src/routeTree.gen.ts',
   ],
   parser: '@typescript-eslint/parser',
-  plugins: ['react-refresh'],
+  plugins: ['eslint-plugin-react-compiler', 'react-refresh'],
   rules: {
+    'react-compiler/react-compiler': 'error',
     'react-refresh/only-export-components': [
       'warn',
       { allowConstantExport: true },
