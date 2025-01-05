@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import * as d3 from 'd3'
-import { memo, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { LocateIcon } from 'lucide-react'
@@ -32,9 +32,7 @@ export type Word = {
 const fontSizeMin = 6
 const fontSizeMax = 24
 
-export default memo(WordCloud)
-
-function WordCloud({
+export default function WordCloud({
   className,
   words,
   semanticMapId,
@@ -52,26 +50,6 @@ function WordCloud({
     surface: string,
   ) => void
 }) {
-  console.log('render Word Cloud')
-  useEffect(() => {
-    console.log('classname changed', className)
-  }, [className])
-  useEffect(() => {
-    console.log('words changed', words)
-  }, [words])
-  useEffect(() => {
-    console.log('semanticMapId changed', semanticMapId)
-  }, [semanticMapId])
-  useEffect(() => {
-    console.log('size changed', size)
-  }, [size])
-  useEffect(() => {
-    console.log('onNewDiscourseme changed', onNewDiscourseme)
-  }, [onNewDiscourseme])
-  useEffect(() => {
-    console.log('onUpdateDiscourseme changed', onUpdateDiscourseme)
-  }, [onUpdateDiscourseme])
-
   const svgRef = useRef<SVGSVGElement>(null)
   const simulationRef = useRef<d3.Simulation>(null)
   const navigate = useNavigate()
@@ -110,47 +88,11 @@ function WordCloud({
     let svgWidth = svgRef.current?.clientWidth ?? 0
     let svgHeight = svgRef.current?.clientHeight ?? 0
 
-    const miniMap = container.append('g')
-
     let hoveredElement: {
       id: number
       source: 'discourseme' | 'item'
       item: string
     } | null = null
-
-    // background
-    miniMap
-      .append('rect')
-      .attr('class', 'fill-bg')
-      // .attr('x', -size / 2)
-      // .attr('y', -size / 2)
-      .attr('width', size)
-      .attr('height', size)
-
-    const miniMapViewport = miniMap
-      .append('rect')
-      .attr('class', 'fill-white/5 stroke-white stroke-[10px] outline-white')
-      .attr('width', svgWidth)
-      .attr('height', svgHeight)
-
-    // word dots on minimap
-    miniMap
-      .selectAll('.mini-map-word')
-      .data(wordData)
-      .join('circle')
-      .attr('class', (d) =>
-        // @ts-expect-error TODO: type later
-        d.discoursemeId === undefined ? 'fill-white/30' : 'opacity-90',
-      )
-      .attr('fill', (d) => {
-        // TODO: handle multiple discoursemes
-        if (d.discoursemeId === undefined) return null
-        return getColorForNumber(d.discoursemeId)
-      })
-      // @ts-expect-error TODO: type later
-      .attr('r', (d) => (d.discoursemeId === undefined ? 20 : 40))
-      .attr('cx', (d) => d.x + size / 2)
-      .attr('cy', (d) => d.y + size / 2)
 
     const boundary = container
       .append('rect')
@@ -345,6 +287,44 @@ function WordCloud({
       }
     })
 
+    const miniMap = container.append('g')
+
+    miniMap.attr('mask', 'url(#highlight-mask)')
+    // background
+    miniMap
+      .append('rect')
+      .attr('class', 'fill-bg')
+      .attr('width', size)
+      .attr('height', size)
+
+    // get the #highlight-mask mask and add a rect to it
+    const miniMapViewport = svg
+      .select('#highlight-mask')
+      .append('rect')
+      .attr('class', 'fill-white')
+      .attr('width', svgWidth)
+      .attr('height', svgHeight)
+      .attr('mask', 'url(#mini-map-mask)')
+
+    // word dots on minimap
+    miniMap
+      .selectAll('.mini-map-word')
+      .data(wordData)
+      .join('circle')
+      .attr('class', (d) =>
+        // @ts-expect-error TODO: type later
+        d.discoursemeId === undefined ? 'fill-white/30' : 'opacity-90',
+      )
+      .attr('fill', (d) => {
+        // TODO: handle multiple discoursemes
+        if (d.discoursemeId === undefined) return null
+        return getColorForNumber(d.discoursemeId)
+      })
+      // @ts-expect-error TODO: type later
+      .attr('r', (d) => (d.discoursemeId === undefined ? 20 : 40))
+      .attr('cx', (d) => d.x + size / 2)
+      .attr('cy', (d) => d.y + size / 2)
+
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
 
     simulation
@@ -418,13 +398,25 @@ function WordCloud({
       scaleRange[0] = baseScale
       scaleRange[1] = baseScale * 5
       zoom.scaleExtent(scaleRange)
-      const translationFactor = 0.6
+      const translationFactor = 0.5
       zoom.translateExtent([
         [-size * translationFactor, -size * translationFactor],
-        // TODO: 1.4 is a magic number, used in an old solution to avoid UI overlap; we can now just use the SVG dimensions as a reference
-        [size * translationFactor * 1.4, size * translationFactor],
+        [size * translationFactor, size * translationFactor],
       ])
       render()
+    }
+
+    let timeoutHash: number | null = null
+    function updateHash(kNormalized: number, x: number, y: number) {
+      clearTimeout(timeoutHash)
+      function format(n: number) {
+        return (Math.round(n * 100) / 100).toString()
+      }
+      timeoutHash = setTimeout(
+        () =>
+          (location.hash = `${format(kNormalized)}:${Math.floor(x)}:${Math.floor(y)}`),
+        50,
+      )
     }
 
     function render() {
@@ -434,18 +426,14 @@ function WordCloud({
       if (kNormalized < 0.2) {
         minimumSignificance = 0.2
       }
+      updateHash(kNormalized, transformationState.x, transformationState.y)
 
-      miniMap.attr('transform', `translate(24, ${svgHeight - 350}) scale(0.1)`)
+      miniMap.attr('transform', `scale(0.1)`)
       miniMapViewport
-        .attr('width', svgWidth)
-        .attr('height', svgHeight)
-        .attr('x', -transformationState.x + size / 2)
-        .attr('y', -transformationState.y + size / 2)
-        .attr(
-          'transform-origin',
-          `${size - svgWidth / 2} ${size - svgHeight / 2}`,
-        )
-        .attr('transform', `scale(${1 / k})`)
+        .attr('width', svgWidth / k)
+        .attr('height', svgHeight / k)
+        .attr('x', -transformationState.x / k + size / 2)
+        .attr('y', -transformationState.y / k + size / 2)
 
       // @ts-expect-error TODO: type later
       boundary.attr('transform', transformationState)
@@ -613,7 +601,9 @@ function WordCloud({
       const centerX = svgWidth / 2
       const centerY = svgHeight / 2
 
-      const zoomTransform = d3.zoomIdentity.translate(centerX, centerY).scale(1)
+      const zoomTransform = d3.zoomIdentity
+        .translate(centerX, centerY)
+        .scale(scaleRange[0])
 
       // @ts-expect-error TODO: type later
       svg.call(d3.zoom().transform, zoomTransform)
@@ -628,6 +618,7 @@ function WordCloud({
     return () => {
       simulation.stop()
       miniMap.remove()
+      miniMapViewport.remove()
       boundary.remove()
       originLine.remove()
       textGroup.remove()
@@ -649,10 +640,31 @@ function WordCloud({
 
   return (
     <>
-      <svg ref={svgRef} className={cn('rleative overflow-visible', className)}>
-        <g>
-          <rect fill="transparent" width="100%" height="100%" />
-        </g>
+      <svg
+        ref={svgRef}
+        className={cn(
+          'rleative overflow-visible rounded-md outline outline-1 outline-white/10',
+          className,
+        )}
+      >
+        <defs>
+          <mask id="highlight-mask">
+            <rect x="0" y="0" width={size} height={size} fill="#555" />
+          </mask>
+          <mask id="mini-map-mask">
+            <rect width={size} height={size} fill="white" />
+          </mask>
+        </defs>
+        {/* This rect merely serves as a "grabbing" area */}
+        <rect
+          fill="transparent"
+          opacity={0.1}
+          width="150%"
+          height="150%"
+          x="-25%"
+          y="-25%"
+        />
+        <g></g>
       </svg>
       <Button
         className="absolute bottom-20 left-10 shadow"
