@@ -74,26 +74,39 @@ function App() {
       <div className="border-r-1 border-r-muted sticky top-14 z-20 h-[calc(100svh-3.5rem)] border-r">
         <ScrollArea className="h-full">
           <nav className="flex h-full min-h-[calc(100svh-3.75rem)] flex-col gap-0.5 p-2">
-            <AppMenuLink to="/corpora" icon={BookIcon}>
+            <AppMenuLink to="/corpora" icon={BookIcon} isSmall={isSmall}>
+              {' '}
               Corpora
             </AppMenuLink>
-            <AppMenuLink to="/subcorpora" icon={BookCopyIcon}>
+            <AppMenuLink to="/subcorpora" icon={BookCopyIcon} isSmall={isSmall}>
               Subcorpora
             </AppMenuLink>
-            <AppMenuLink to="/queries" icon={FormInputIcon}>
+            <AppMenuLink to="/queries" icon={FormInputIcon} isSmall={isSmall}>
               Queries
             </AppMenuLink>
-            <AppMenuLink to="/keyword-analysis" icon={WholeWordIcon}>
+            <AppMenuLink
+              to="/keyword-analysis"
+              icon={WholeWordIcon}
+              isSmall={isSmall}
+            >
               Keyword Analysis
             </AppMenuLink>
-            <AppMenuLink to="/discoursemes" icon={MessageSquareIcon}>
+            <AppMenuLink
+              to="/discoursemes"
+              icon={MessageSquareIcon}
+              isSmall={isSmall}
+            >
               Discoursemes
             </AppMenuLink>
-            <AppMenuLink to="/constellations" icon={MessagesSquareIcon}>
+            <AppMenuLink
+              to="/constellations"
+              icon={MessagesSquareIcon}
+              isSmall={isSmall}
+            >
               Constellations
             </AppMenuLink>
             {isAdmin && (
-              <AppMenuLink to="/admin" icon={CrownIcon}>
+              <AppMenuLink to="/admin" icon={CrownIcon} isSmall={isSmall}>
                 Admin
               </AppMenuLink>
             )}
@@ -146,12 +159,13 @@ function AppMenuLink({
   activeProps,
   icon: Icon,
   children,
+  isSmall = false,
   ...props
 }: ComponentProps<typeof Link> & {
   children: ReactNode
   icon: JSXElementConstructor<{ className?: string }>
+  isSmall?: boolean
 }) {
-  const isSmall = localStorage.getItem('small-menu') === 'true'
   return (
     <TooltipProvider disableHoverableContent={!isSmall}>
       <Tooltip open={isSmall === false ? false : undefined}>
