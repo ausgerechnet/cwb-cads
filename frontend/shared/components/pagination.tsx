@@ -14,6 +14,7 @@ import { Small } from '@cads/shared/components/ui/typography'
 import { formatNumber } from '@cads/shared/lib/format-number'
 
 export function PaginationForTable<T>({ table }: { table: Table<T> }) {
+  'use no memo'
   const { pageIndex, pageSize } = table.getState().pagination
   const pageCount = table.getPageCount()
   const totalRows = table.getCoreRowModel().rows.length

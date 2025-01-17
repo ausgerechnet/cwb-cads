@@ -1,3 +1,4 @@
+'use no memo'
 import { useEffect, useMemo } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
 import { ReactNode, useNavigate } from '@tanstack/react-router'
