@@ -334,6 +334,7 @@ function ConstellationDiscoursemesEditor({
                         <DiscoursemeName
                           discoursemeId={discoursemeId}
                           item={item}
+                          key={item}
                         />
                         <span className="muted-foreground">
                           {items.length} items
@@ -456,10 +457,12 @@ function DiscoursemeName({
   discoursemeId: number
   item: string
 }) {
-  const { mutate: patchDiscourseme } = useMutation({
+  const [currentValue, setCurrentValue] = useState(item)
+  const { mutate: patchDiscourseme, isPending } = useMutation({
     ...updateDiscourseme,
     onSuccess: (...args) => {
       updateDiscourseme.onSuccess?.(...args)
+      setCurrentValue(args[0].name ?? item)
       toast.success('Discourseme renamed')
     },
     onError: (...args) => {
@@ -468,6 +471,7 @@ function DiscoursemeName({
     },
   })
   const renameDiscourseme = function (discoursemeId: number, name: string) {
+    if (name === currentValue || !item) return
     patchDiscourseme({ discoursemeId, discoursemePatch: { name } })
   }
 
@@ -488,10 +492,13 @@ function DiscoursemeName({
         type="text"
         defaultValue={item}
         name="discoursemeName"
-        onBlur={(e) => renameDiscourseme(discoursemeId, e.target.value)}
+        onBlur={(e) => {
+          renameDiscourseme(discoursemeId, e.target.value)
+        }}
+        disabled={isPending}
         autoComplete="off"
         autoSave="off"
-        className="outline-muted-foreground left-2 w-auto rounded border-none bg-transparent outline-none outline-0 outline-offset-1 hover:bg-black/25 focus:ring-0 focus-visible:bg-black/25 focus-visible:outline-1"
+        className="outline-muted-foreground left-2 w-auto rounded border-none bg-transparent outline-none outline-0 outline-offset-1 hover:bg-white focus:ring-0 focus-visible:bg-white focus-visible:outline-1 disabled:opacity-50 dark:hover:bg-black/25 dark:focus-visible:bg-black/25"
         classNameLabel="-my-1 p-1 -mx-1 min-w-[3ch]"
         required
       />
