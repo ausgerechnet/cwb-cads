@@ -64,7 +64,6 @@ export function Collocation({
     constellationId,
     descriptionId,
   )
-  console.log('collocation Items', collocationItems)
   return (
     <div>
       <ErrorMessage error={error} />
