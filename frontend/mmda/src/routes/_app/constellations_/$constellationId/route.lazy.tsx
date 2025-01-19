@@ -97,6 +97,9 @@ function ConstellationDetail() {
     return discoursemes.filter((d) => constellationIds.includes(d.id))
   }, [description?.discourseme_descriptions, discoursemes])
 
+  const isMapAvailable =
+    corpusId !== undefined && focusDiscourseme !== undefined
+
   return (
     <AppPageFrame
       title={showsSemanticMap ? undefined : 'Constellation'}
@@ -156,13 +159,15 @@ function ConstellationDetail() {
               from="/constellations/$constellationId"
               params={{ constellationId: constellationId.toString() }}
               search={(s) => s}
-              disabled={
-                corpusId === undefined || focusDiscourseme === undefined
-              }
+              disabled={!isMapAvailable}
+              className={cn('transition-opacity focus-visible:outline-none', {
+                'opacity-50': !isMapAvailable,
+                'group/map-link': isMapAvailable,
+              })}
             >
-              <Card className="bg-muted text-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 p-4 text-center">
-                <SemanticMapPreview className="absolute h-full w-full" />
-                <div className="bg-muted/70 relative flex gap-3 rounded p-2">
+              <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
+                <SemanticMapPreview className="absolute h-full w-full scale-110 transition-all group-hover/map-link:scale-100 group-hover/map-link:opacity-75 group-focus-visible/map-link:scale-100" />
+                <div className="bg-muted/70 group-focus-visible/map-link:bg-muted/90 group-hover/map-link:bg-muted/90 transition-color relative flex gap-3 rounded p-2">
                   <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
                   <span>Semantic Map</span>
                 </div>
