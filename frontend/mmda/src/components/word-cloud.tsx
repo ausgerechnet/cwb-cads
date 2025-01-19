@@ -31,6 +31,8 @@ export type Word = {
 
 const fontSizeMin = 6
 const fontSizeMax = 24
+const discoursemeRadiusMin = 25
+const discoursemeRadiusMax = 125
 
 export default function WordCloud({
   className,
@@ -85,8 +87,7 @@ export default function WordCloud({
     const container = svg.select('g')
 
     // Re-use simulation instead of re-creating it
-    const simulation =
-      simulationRef.current ?? d3.forceSimulation().alphaDecay(0.001)
+    const simulation = simulationRef.current ?? d3.forceSimulation()
     simulationRef.current = simulation
 
     let svgWidth = svgRef.current?.clientWidth ?? 0
@@ -155,13 +156,7 @@ export default function WordCloud({
         }
       })
 
-    textGroup
-      .append('rect')
-      .attr(
-        'fill',
-        isDarkMode ? 'rgba(255 255 255 / 0.1%)' : 'rgba(0 0 0 / 0.1%)',
-      )
-      .attr('stroke', 'black')
+    textGroup.filter((d) => d.source !== 'discoursemes').append('rect')
 
     textGroup
       .append('circle')
@@ -191,7 +186,10 @@ export default function WordCloud({
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('lengthAdjust', 'spacingAndGlyphs')
-      .attr('font-size', (d) => {
+      .attr('font-size', function (d) {
+        if (d.source === 'discoursemes') {
+          10
+        }
         return d.significance * (fontSizeMax - fontSizeMin) + fontSizeMin
       })
       .text((d) => d.item)
@@ -205,11 +203,16 @@ export default function WordCloud({
       d.width = bbox.width + 10
       d.height = bbox.height + 4
 
-      // @ts-expect-error TODO: type later
       if (d.source === 'discoursemes') {
+        d3.select(this).select('text')
         d3.select(this)
           .select('circle')
-          .attr('r', 50)
+          .attr(
+            'r',
+            (d) =>
+              d.significance * (discoursemeRadiusMax - discoursemeRadiusMin) +
+              discoursemeRadiusMin,
+          )
           .attr('fill', 'white')
           .attr('cx', 0)
           .attr('cy', 0)
@@ -256,15 +259,6 @@ export default function WordCloud({
           .attr('height', d.height)
           .attr('rx', 3)
           .attr('ry', 3)
-          .attr('stroke-width', 1)
-          .attr('stroke', (d) => {
-            if (d.discoursemeId === undefined) return 'rgb(100 100 100)'
-            return getColorForNumber(d.discoursemeId)
-          })
-          .attr('fill', (d) => {
-            if (d.discoursemeId) return 'transparent'
-            return getColorForNumber(d.discoursemeId, 0.2)
-          })
           .call(
             drag
               .on('start', dragStarted)
@@ -298,7 +292,7 @@ export default function WordCloud({
     // minimap base background
     miniMapBackground
       .append('rect')
-      .attr('class', 'fill-gray-900')
+      .attr('class', 'fill-gray-900 stroke-foreground stroke-[.25rem]')
       .attr('rx', 75)
       .attr('width', size)
       .attr('height', size)
@@ -327,7 +321,6 @@ export default function WordCloud({
       .data(wordData)
       .join('circle')
       .attr('class', (d) =>
-        // @ts-expect-error TODO: type later
         d.discoursemeId === undefined ? 'fill-white/30' : 'opacity-90',
       )
       .attr('fill', (d) => {
@@ -335,7 +328,6 @@ export default function WordCloud({
         if (d.discoursemeId === undefined) return null
         return getColorForNumber(d.discoursemeId)
       })
-      // @ts-expect-error TODO: type later
       .attr('r', (d) => (d.discoursemeId === undefined ? 20 : 40))
       .attr('cx', (d) => d.x + size / 2)
       .attr('cy', (d) => d.y + size / 2)
@@ -343,23 +335,14 @@ export default function WordCloud({
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
 
     simulation
-      .nodes([...wordData, ...discoursemeData])
-      // .force(
-      //   'link',
-      //   d3
-      //     .forceLink(links)
-      //     .id((d) => d.id)
-      //     .distance(75),
-      // )
+      .nodes([...wordData])
       .force(
         'collide',
         d3
           .forceCollide()
-          // @ts-expect-error TODO: type later
           .radius(() => 0)
-          .strength(0.3),
+          .strength(0.2),
       )
-      // .force('charge', d3.forceManyBody())
       .force('origin', originForce)
       .on('tick', () => {
         originLine
@@ -377,26 +360,17 @@ export default function WordCloud({
           .attr('x', (d) => d.x)
           .attr('y', (d) => d.y)
           .attr('class', (d) => {
-            // @ts-expect-error TODO: type later
             const isDragging = !!d.isDragging
-            if (isDragging) {
-              return 'pointer-events-none animate-pulse cursor-grab'
-            }
-            return `cursor-grab`
+            return `${isDragging ? 'pointer-events-none animate-pulse' : ''} cursor-grab dark:fill-white/10 fill-black/10 hover:fill-primary/50 dark:hover:fill-primary/50`
           })
         textGroup
           .data(wordData)
           .select('circle')
           .attr('cx', (d) => d.x)
           .attr('cy', (d) => d.y)
-          // .attr('r', (d) => d.radius)
           .attr('class', (d) => {
-            // @ts-expect-error TODO: type later
             const isDragging = !!d.isDragging
-            if (isDragging) {
-              return 'pointer-events-none animate-pulse cursor-grab'
-            }
-            return `cursor-grab`
+            return `${isDragging ? 'pointer-events-none animate-pulse' : ''} cursor-grab opacity-60 hover:opacity-100 stroke-1 hover:stroke-2 transition-all`
           })
       })
 
@@ -433,7 +407,9 @@ export default function WordCloud({
       }
       timeoutHash = setTimeout(
         () =>
-          (location.hash = `${format(kNormalized)}:${Math.floor(x)}:${Math.floor(y)}`),
+          (location.hash = `${format(kNormalized)}:${Math.floor(x)}:${Math.floor(
+            y,
+          )}`),
         50,
       )
     }
@@ -457,16 +433,13 @@ export default function WordCloud({
         .attr('x', -transformationState.x / k + size / 2)
         .attr('y', -transformationState.y / k + size / 2)
 
-      // @ts-expect-error TODO: type later
       boundary.attr('transform', transformationState)
 
       originLine
-        // @ts-expect-error TODO: type later
         .attr('transform', transformationState)
         .attr('stroke-width', 1 / k)
 
       textGroup
-        // @ts-expect-error TODO: type later
         .attr('transform', transformationState)
         .attr('opacity', (d) => {
           if (d.source === 'items') {
@@ -479,6 +452,7 @@ export default function WordCloud({
 
       textGroup
         .select('text')
+        .filter((d) => d.source !== 'discoursemes')
         .attr(
           'font-size',
           (d) =>
@@ -501,26 +475,23 @@ export default function WordCloud({
           'transform',
           (d) => `translate(-${d.width / k}, -${d.height / k + 2 / k})`,
         )
-      // .attr('textLength', (d) => Math.max((d.radius * 2) / k - 20, 20))
 
       simulation.alpha(0.3).restart()
-      simulation
-        .force('collide')
-        // @ts-expect-error TODO: type later
-        ?.radius((d) => {
-          if (d.source === 'discourseme_items') {
-            console.log('0')
-            return 0
-          }
-          if (d.significance < minimumSignificance && d.source === 'items')
-            return 5
-          return (d.width + 5) / k
-        })
+      simulation.force('collide')?.radius((d) => {
+        switch (d.source) {
+          case 'discoursemes':
+            return (
+              d.significance * (discoursemeRadiusMax - discoursemeRadiusMin) +
+              discoursemeRadiusMin
+            )
+          default:
+            return d.significance < minimumSignificance ? 5 : (d.width + 5) / k
+        }
+      })
     }
     setTimeout(render, 1_000)
 
     const zoom = d3.zoom()
-    // @ts-expect-error TODO: type later
     svg.call(zoom.scaleExtent([0.25, 10]).on('zoom', zoomed))
 
     function zoomed({ transform }: { transform: d3.ZoomTransform }) {
@@ -592,26 +563,20 @@ export default function WordCloud({
       const nodes = simulation.nodes()
       for (let i = 0, n = nodes.length; i < n; ++i) {
         const node = nodes[i]
-        if (node.source === 'discourseme_items') continue
-        // @ts-expect-error TODO: type later
-        const distanceX = node.x - node.originX
-        // @ts-expect-error TODO: type later
-        const distanceY = node.y - node.originY
         // This would prevent discourseme items to be pulled back to their origin
-        // if (node.discoursemes?.length) continue
+        if (node.source === 'discourseme_items') continue
+        const distanceX = node.x - node.originX
+        const distanceY = node.y - node.originY
         const k =
           alpha *
           0.02 *
           homeStrength *
           // smaller strength for less significant items
-          // @ts-expect-error TODO: type later
           (node.significance * 0.8 + 0.2) *
           // increase strength on higher zoom levels
           clamp(transformationState.k, 0.5, 2)
 
-        // @ts-expect-error TODO: type later
         node.vx -= distanceX * k * 2
-        // @ts-expect-error TODO: type later
         node.vy -= distanceY * k * 2
       }
     }
@@ -679,21 +644,14 @@ export default function WordCloud({
       >
         <defs>
           <mask id="highlight-mask">
-            <rect x="0" y="0" width={size} height={size} fill="#555" />
+            <rect x="0" y="0" width={size} height={size} fill="black" />
           </mask>
           <mask id="mini-map-mask">
-            <rect width={size} height={size} fill="white" />
+            <rect width={size} height={size} fill="#fff" />
           </mask>
         </defs>
         {/* This rect merely serves as a "grabbing" area */}
-        <rect
-          fill="transparent"
-          opacity={0.1}
-          width="150%"
-          height="150%"
-          x="-25%"
-          y="-25%"
-        />
+        <rect fill="transparent" width="150%" height="150%" x="-25%" y="-25%" />
         <g></g>
       </svg>
       <Button
