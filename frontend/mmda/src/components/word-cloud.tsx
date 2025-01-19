@@ -76,10 +76,6 @@ export default function WordCloud({
         height: 10,
       }))
 
-    const discoursemeData = wordData
-      .filter((words) => words.source === 'discoursemes')
-      .map((d) => ({ ...d }))
-
     const drag = d3.drag<SVGCircleElement, Word>()
 
     const svg = d3.select(svgRef.current)
