@@ -25,6 +25,7 @@ export function useCollocation(
   const {
     data: collocation,
     isLoading: isLoadingConstellation,
+    isFetching: isFetchingConstellation,
     error: errorCollocation,
   } = useQuery({
     ...constellationCollocation(constellationId, descriptionId!, {
@@ -49,6 +50,7 @@ export function useCollocation(
   const {
     data: collocationItems,
     isLoading: isLoadingItem,
+    isFetching: isFetchingItem,
     error: errorConstellation,
   } = useQuery({
     ...constellationCollocationItems(
@@ -68,6 +70,7 @@ export function useCollocation(
   const {
     data: mapItems,
     isLoading: isLoadingItemsMap,
+    isFetching: isFetchingItemsMap,
     error: errorConstellationMap,
   } = useQuery({
     ...constellationCollocationVisualisation(
@@ -83,9 +86,12 @@ export function useCollocation(
   })
 
   const isLoading = isLoadingConstellation || isLoadingItemsMap || isLoadingItem
+  const isFetching =
+    isFetchingConstellation || isFetchingItemsMap || isFetchingItem
 
   return {
     isLoading,
+    isFetching,
     error:
       errorCollocation ?? errorConstellationMap ?? errorConstellation ?? null,
     collocation,

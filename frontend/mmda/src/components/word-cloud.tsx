@@ -530,7 +530,11 @@ export default function WordCloud({
       const newX = (event.x / size) * 2
       const newY = (event.y / size) * 2
 
-      if (word.source === 'items' && hoveredElement.id !== null) {
+      if (
+        word.source === 'items' &&
+        hoveredElement &&
+        hoveredElement.id !== null
+      ) {
         if (hoveredElement.source === 'discoursemes') {
           const discoursemeId = wordData.find(
             (w) => w.id === hoveredElement?.id,

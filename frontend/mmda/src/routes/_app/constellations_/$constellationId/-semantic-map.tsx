@@ -86,7 +86,7 @@ export function SemanticMap({
   const { description } = useDescription()
   const {
     mapItems,
-    isLoading,
+    isFetching,
     collocation: { semantic_map_id } = {},
     error: errorCollocation,
   } = useCollocation(constellationId, description?.id)
@@ -167,7 +167,12 @@ export function SemanticMap({
         semantic_map_id !== null &&
         Boolean(mapItems) && (
           <WordCloud
-            className="col-start-2 row-start-3 self-stretch justify-self-stretch"
+            className={cn(
+              'col-start-2 row-start-3 self-stretch justify-self-stretch',
+              {
+                'pointer-events-none opacity-50': isFetching,
+              },
+            )}
             words={words}
             size={COORDINATES_SCALE_FACTOR * 2}
             semanticMapId={semantic_map_id}
@@ -195,9 +200,12 @@ export function SemanticMap({
         constellationId={constellationId}
         className="relative col-start-3 row-start-3"
       />
-      {isLoading && (
-        <div className="-transform-x-1/2 -transform-y-1/2 absolute left-1/2 top-1/2">
-          <Loader2Icon className="h-6 w-6 animate-spin" />
+      {isFetching && (
+        <div className="bg-muted text-muted-foreground relative z-10 col-start-2 row-start-3 max-w-40 self-center justify-self-center rounded-2xl p-5 text-center shadow">
+          <div className="mx-auto inline-block">
+            <Loader2Icon className="h-24 w-24 animate-spin" strokeWidth={1} />
+          </div>
+          <p>This may take a while…</p>
         </div>
       )}
       <div className="col-start-2 row-start-3 self-start justify-self-start">
