@@ -132,8 +132,6 @@ export default function WordCloud({
       .data(wordData)
       .join('g')
       .attr('class', 'text-group')
-      .attr('x', (d) => d.x)
-      .attr('y', (d) => d.y)
       .on('click', (_, d) => {
         // TODO pass responsibility upwards the Virtual DOM
         // update search params:
@@ -173,8 +171,6 @@ export default function WordCloud({
     textGroup
       .append('text')
       .attr('class', 'pointer-events-none')
-      .attr('x', (d) => d.x)
-      .attr('y', (d) => d.y)
       .attr('opacity', (d) =>
         d?.discoursemeId === undefined ? 1 : d.significance * 0.4 + 0.6,
       )
@@ -192,7 +188,7 @@ export default function WordCloud({
       .attr('lengthAdjust', 'spacingAndGlyphs')
       .attr('font-size', function (d) {
         if (d.source === 'discoursemes') {
-          10
+          return 10
         }
         return d.significance * (fontSizeMax - fontSizeMin) + fontSizeMin
       })
@@ -206,17 +202,19 @@ export default function WordCloud({
       const bbox = textElement.getBBox()
       d.width = bbox.width + 10
       d.height = bbox.height + 4
+      const radius =
+        d.significance * (discoursemeRadiusMax - discoursemeRadiusMin) +
+        discoursemeRadiusMin
+      const scale = (radius * 2) / d.width
 
       if (d.source === 'discoursemes') {
-        d3.select(this).select('text')
+        d3.select(this)
+          .select('text')
+          .attr('font-size', 10 * scale)
+
         d3.select(this)
           .select('circle')
-          .attr(
-            'r',
-            (d) =>
-              d.significance * (discoursemeRadiusMax - discoursemeRadiusMin) +
-              discoursemeRadiusMin,
-          )
+          .attr('r', radius)
           .attr('fill', 'white')
           .attr('cx', 0)
           .attr('cy', 0)
@@ -254,7 +252,6 @@ export default function WordCloud({
           })
       }
 
-      // @ts-expect-error TODO: type later
       if (d.source === 'items') {
         d3.select(this)
           .select('rect')
@@ -448,20 +445,16 @@ export default function WordCloud({
         .attr('transform', transformationState)
         .attr('stroke-width', 1 / k)
 
-      textGroup
-        .attr('transform', transformationState)
-        .attr('opacity', (d) => {
-          if (d.source === 'items') {
-            return d.significance >= minimumSignificance ? 1 : 0.1
-          }
-          return 1
-        })
-        .attr('x', (d) => d.x)
-        .attr('y', (d) => d.y)
+      textGroup.attr('transform', transformationState).attr('opacity', (d) => {
+        if (d.source === 'items') {
+          return d.significance >= minimumSignificance ? 1 : 0.1
+        }
+        return 1
+      })
 
       textGroup
-        .select('text')
         .filter((d) => d.source !== 'discoursemes')
+        .select('text')
         .attr(
           'font-size',
           (d) =>
