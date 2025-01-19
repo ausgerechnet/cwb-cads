@@ -26,13 +26,13 @@ export function Drawer({
   return (
     <div
       className={cn(
-        'border-t-muted bg-background sticky bottom-0 right-0 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 p-4 [box-shadow:0_-5px_10px_-10px_black]',
+        'border-t-primary bg-background sticky bottom-0 right-0 mt-auto min-h-10 border border-b-0 border-l-0 border-r-0 p-4 [box-shadow:0_-5px_10px_-10px_black]',
         className,
       )}
     >
       <Button
         variant="outline"
-        className="absolute -top-3 left-1/2 h-auto -translate-x-1/2 rounded-full p-1"
+        className="border-primary absolute -top-3 left-1/2 h-auto -translate-x-1/2 rounded-full p-1"
         onClick={() => onToggle(!isVisible)}
       >
         {isVisible ? (
