@@ -202,9 +202,9 @@ export function SemanticMap({
         className="relative col-start-3 row-start-3"
       />
       {isFetching && (
-        <div className="bg-muted text-muted-foreground relative z-10 col-start-2 row-start-3 max-w-40 self-center justify-self-center rounded-2xl p-5 text-center shadow">
+        <div className="bg-muted text-muted-foreground relative z-10 col-start-2 row-start-3 max-w-40 self-center justify-self-center rounded-2xl p-5 text-center shadow-2xl">
           <div className="mx-auto inline-block">
-            <Loader2Icon className="h-24 w-24 animate-spin" strokeWidth={1} />
+            <Loader2Icon className="h-24 w-24 animate-spin" strokeWidth="1" />
           </div>
           <p>This may take a while…</p>
         </div>
