@@ -136,6 +136,7 @@ export function SemanticMap({
         constellationId,
         constellationDescriptionId: description.id,
         p: secondary,
+        name: surfaces.join(' ').substring(0, 25),
       })
     },
     [constellationId, description, postNewDiscourseme, secondary],
