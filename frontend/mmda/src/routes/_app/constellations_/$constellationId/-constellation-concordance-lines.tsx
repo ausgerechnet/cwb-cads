@@ -239,7 +239,7 @@ function ConcordanceLineRender({
           />
         </Ellipsis>
       </TableCell>
-      <TableCell className="mx-auto flex w-max items-center gap-1 whitespace-nowrap px-1 text-center">
+      <TableCell className="mx-auto flex w-max items-center whitespace-nowrap px-1 text-center">
         <TokenLine
           tokens={midTokens}
           discoursemeRanges={discourseme_ranges}
