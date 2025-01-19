@@ -41,7 +41,12 @@ export function ConstellationCollocationFilter({
   } = useFilterSelection('/_app/constellations_/$constellationId')
 
   return (
-    <div className={cn('bg-background z-10 flex gap-2', className)}>
+    <div
+      className={cn(
+        'bg-background z-10 grid grid-flow-col gap-2 [grid-auto-columns:1fr]',
+        className,
+      )}
+    >
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-xs">Window Size {windowSize}</span>
         <Slider
