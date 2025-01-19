@@ -30,6 +30,7 @@ import {
   createDiscoursemeForConstellationDescription,
   corpusById,
   removeDescriptionItem,
+  updateDiscourseme,
 } from '@cads/shared/queries'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import WordCloud from '@/components/word-cloud'
@@ -68,6 +69,7 @@ import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
+import { InputGrowable } from '@cads/shared/components/input-growable'
 
 const COORDINATES_SCALE_FACTOR = 1_000 // Coordinates range from -1 to 1 in both axes
 
@@ -173,7 +175,7 @@ export function SemanticMap({
             onUpdateDiscourseme={onUpdateDiscourseme}
           />
         )}
-      <div className="col-span-2 col-start-2 row-start-2 flex gap-3">
+      <div className="relative col-span-2 col-start-2 row-start-2 flex gap-3">
         <Link
           to="/constellations/$constellationId"
           from="/constellations/$constellationId/semantic-map"
@@ -305,7 +307,7 @@ function ConstellationDiscoursemesEditor({
                 <div className="flex flex-col">
                   <h4
                     className={cn(
-                      'bg-background sticky top-0 flex items-center border-t px-2 pt-2 font-bold',
+                      'bg-background sticky top-0 flex items-center border-t px-2 pt-1 font-bold',
                       `discourseme-${discoursemeId}`,
                     )}
                   >
@@ -320,7 +322,10 @@ function ConstellationDiscoursemesEditor({
                             backgroundColor: getColorForNumber(discoursemeId),
                           }}
                         />
-                        {item}
+                        <DiscoursemeName
+                          discoursemeId={discoursemeId}
+                          item={item}
+                        />
                         <span className="muted-foreground">
                           {items.length} items
                         </span>
@@ -354,6 +359,7 @@ function ConstellationDiscoursemesEditor({
                       onClick={() =>
                         removeDiscourseme({ constellationId, discoursemeId })
                       }
+                      className="hover:bg-destructive hover:text-destructive-foreground m-0 mb-0.5 h-auto w-10 self-stretch"
                     >
                       <Trash2Icon className="h-4 w-4" />
                       {/*  TODO: Handle case when this is the filter discourseme*/}
@@ -362,17 +368,14 @@ function ConstellationDiscoursemesEditor({
                   <CollapsibleContent>
                     <ul className="px-2">
                       {/* TODO: sometimes items are duplicates. why? */}
-                      {items.map(({ item, discourseme_id, source }, index) => (
+                      {items.map(({ item, discourseme_id }, index) => (
                         <li
                           key={`${item} ${discourseme_id}` + index}
-                          className="group/description hover:bg-muted flex items-center justify-between rounded leading-tight"
+                          className="group/description hover:bg-muted flex items-center justify-between rounded pl-1 leading-tight"
                         >
-                          {item}{' '}
-                          <span className="ml-1 block text-sm opacity-50">
-                            {source}
-                          </span>
+                          {item}
                           <button
-                            className="ml-auto mr-1 opacity-0 group-hover/description:opacity-100"
+                            className="hover:text-destructive-foreground hover:bg-destructive m-1 ml-auto mr-1 rounded opacity-0 group-hover/description:opacity-100"
                             disabled={isRemovingItem}
                             onClick={() => {
                               if (descriptionId === undefined) {
@@ -434,6 +437,56 @@ function ConstellationDiscoursemesEditor({
           )}
       </div>
     </div>
+  )
+}
+
+function DiscoursemeName({
+  discoursemeId,
+  item,
+}: {
+  discoursemeId: number
+  item: string
+}) {
+  const { mutate: patchDiscourseme } = useMutation({
+    ...updateDiscourseme,
+    onSuccess: (...args) => {
+      updateDiscourseme.onSuccess?.(...args)
+      toast.success('Discourseme renamed')
+    },
+    onError: (...args) => {
+      updateDiscourseme.onError?.(...args)
+      toast.error('Failed to rename discourseme')
+    },
+  })
+  const renameDiscourseme = function (discoursemeId: number, name: string) {
+    patchDiscourseme({ discoursemeId, discoursemePatch: { name } })
+  }
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        const newName = new FormData(e.target as HTMLFormElement).get(
+          'discoursemeName',
+        ) as string
+        renameDiscourseme(discoursemeId, newName)
+      }}
+      onClick={(e) => {
+        e.stopPropagation()
+      }}
+    >
+      <InputGrowable
+        type="text"
+        defaultValue={item}
+        name="discoursemeName"
+        onBlur={(e) => renameDiscourseme(discoursemeId, e.target.value)}
+        autoComplete="off"
+        autoSave="off"
+        className="outline-muted-foreground left-2 w-auto rounded border-none bg-transparent outline-none outline-0 outline-offset-1 hover:bg-black/25 focus:ring-0 focus-visible:bg-black/25 focus-visible:outline-1"
+        classNameLabel="-my-1 p-1 -mx-1 min-w-[3ch]"
+        required
+      />
+    </form>
   )
 }
 
