@@ -1,5 +1,6 @@
 import { Headline1, Headline2 } from '@cads/shared/components/ui/typography'
 import { Ellipsis } from '@cads/shared/components/ellipsis'
+import { InputGrowable } from '@cads/shared/components/input-growable'
 import { TokenLine } from '../routes/_app/constellations_/$constellationId/-constellation-concordance-lines'
 import WordCloud from './word-cloud'
 
@@ -330,6 +331,25 @@ export function ComponentOverview() {
           semanticMapId={0}
           size={2000}
           className="col-start-2 row-start-2 h-full w-full"
+        />
+      </div>
+
+      <Headline2 className="mb-4">Automatically Growing Input</Headline2>
+      <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
+        &lt;InputGrowable ... /&gt;
+      </code>
+      <div>
+        <InputGrowable
+          className="bg-background text-foreground"
+          classNameLabel="outline outline-1 outline-yellow-400"
+          defaultValue="Test"
+        />
+        <br />
+
+        <InputGrowable
+          className="bg-background text-foreground"
+          classNameLabel="outline outline-1 outline-yellow-400"
+          defaultValue=":-)"
         />
       </div>
     </div>
