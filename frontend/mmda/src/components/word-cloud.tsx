@@ -296,7 +296,10 @@ export default function WordCloud({
     // minimap base background
     miniMapBackground
       .append('rect')
-      .attr('class', 'fill-gray-900 stroke-foreground stroke-[.25rem]')
+      .attr(
+        'class',
+        'dark:fill-gray-900 fill-gray-400 stroke-foreground stroke-[.25rem]',
+      )
       .attr('rx', 75)
       .attr('width', size)
       .attr('height', size)
@@ -304,7 +307,7 @@ export default function WordCloud({
     // minimap background with mask to highlight the viewport
     miniMapBackground
       .append('rect')
-      .attr('class', 'fill-gray-800')
+      .attr('class', 'fill-gray-300 dark:fill-gray-800')
       .attr('rx', 75)
       .attr('width', size)
       .attr('height', size)
@@ -325,14 +328,16 @@ export default function WordCloud({
       .data(wordData)
       .join('circle')
       .attr('class', (d) =>
-        d.discoursemeId === undefined ? 'fill-white/30' : 'opacity-90',
+        d.discoursemeId === undefined
+          ? 'fill-black/40 dark:fill-white/30'
+          : 'opacity-90',
       )
       .attr('fill', (d) => {
         // TODO: handle multiple discoursemes
         if (d.discoursemeId === undefined) return null
         return getColorForNumber(d.discoursemeId)
       })
-      .attr('r', (d) => (d.discoursemeId === undefined ? 20 : 40))
+      .attr('r', (d) => (d.discoursemeId === undefined ? 20 : 60))
       .attr('cx', (d) => d.x + size / 2)
       .attr('cy', (d) => d.y + size / 2)
 
@@ -365,7 +370,7 @@ export default function WordCloud({
           .attr('y', (d) => d.y)
           .attr('class', (d) => {
             const isDragging = !!d.isDragging
-            return `${isDragging ? 'pointer-events-none animate-pulse' : ''} cursor-grab dark:fill-white/10 fill-black/10 hover:fill-primary/50 dark:hover:fill-primary/50`
+            return `${isDragging ? 'pointer-events-none animate-pulse' : ''} cursor-grab dark:fill-white/10 fill-black/5 hover:fill-primary/50 dark:hover:fill-primary/50`
           })
         textGroup
           .data(wordData)
@@ -648,7 +653,7 @@ export default function WordCloud({
     <div className={cn('relative', className)}>
       <svg
         ref={svgRef}
-        className="absolute h-full w-full overflow-visible rounded-md outline outline-1 outline-white/5"
+        className="absolute h-full w-full overflow-visible rounded-md outline outline-1 outline-black/10 dark:outline-white/5"
       >
         <defs>
           <mask id="highlight-mask">
