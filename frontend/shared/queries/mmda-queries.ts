@@ -58,6 +58,28 @@ export const deleteDiscourseme: MutationOptions<unknown, Error, string> = {
   },
 }
 
+export const updateDiscourseme: MutationOptions<
+  z.infer<typeof schemas.DiscoursemeOut>,
+  Error,
+  {
+    discoursemeId: number
+    discoursemePatch: z.infer<typeof schemas.DiscoursemeInUpdate>
+  }
+> = {
+  mutationFn: ({ discoursemeId, discoursemePatch }) =>
+    apiClient.patch('/mmda/discourseme/:discourseme_id', discoursemePatch, {
+      params: { discourseme_id: discoursemeId.toString() },
+    }),
+  onSuccess: (newDiscourseme) => {
+    // TODO: Update the cache instead of invalidating it as soon as backend is fixed
+    void queryClient.invalidateQueries(discoursemesList)
+    void queryClient.invalidateQueries(discoursemeById(newDiscourseme.id))
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-collocation-visualisation-map'],
+    })
+  },
+}
+
 export const discoursemeDescriptionsById = (discoursemeId: number) =>
   queryOptions({
     queryKey: ['discourseme-descriptions', discoursemeId],
@@ -154,7 +176,6 @@ export const removeDescriptionItem: MutationOptions<
   }
 > = {
   mutationFn({ discoursemeId, descriptionId, p, surface }) {
-    console.log('remove', { discoursemeId, descriptionId, p, surface })
     return apiClient.patch(
       '/mmda/discourseme/:discourseme_id/description/:description_id/remove-item',
       { p, surface },
