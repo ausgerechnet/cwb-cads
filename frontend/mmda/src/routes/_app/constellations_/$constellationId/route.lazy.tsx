@@ -232,7 +232,7 @@ function ConstellationDetail() {
           )}
           <Drawer
             className={cn(
-              'z-10',
+              'z-20',
               showsSemanticMap && 'absolute left-0 right-0 w-full',
             )}
             isVisible={isConcordanceVisible}
