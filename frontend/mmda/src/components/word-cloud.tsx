@@ -76,6 +76,14 @@ export default function WordCloud({
         height: 10,
       }))
 
+    const significanceValues = wordData
+      .filter((w) => w.source === 'items')
+      .map((w) => w.significance)
+      .sort((a, b) => b - a)
+    const topSignificanceValues =
+      significanceValues[Math.floor(significanceValues.length * 0.1)] +
+      Number.MIN_VALUE
+
     const drag = d3.drag<SVGCircleElement, Word>()
 
     const svg = d3.select(svgRef.current)
@@ -415,7 +423,7 @@ export default function WordCloud({
       const kNormalized = getNormalizedScale(k)
       let minimumSignificance = 0
       if (kNormalized < 0.2) {
-        minimumSignificance = 0.2
+        minimumSignificance = topSignificanceValues
       }
       updateHash(kNormalized, transformationState.x, transformationState.y)
 
