@@ -224,6 +224,8 @@ def patch_discourseme(discourseme_id, json_data):
     for attr, value in json_data.items():
         setattr(discourseme, attr, value)
 
+    db.session.commit()
+
     return DiscoursemeOut().dump(discourseme), 200
 
 
