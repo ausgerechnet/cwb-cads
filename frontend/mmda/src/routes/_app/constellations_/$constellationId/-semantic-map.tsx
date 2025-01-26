@@ -336,7 +336,7 @@ function ConstellationDiscoursemesEditor({
                           item={item}
                           key={item}
                         />
-                        <span className="muted-foreground">
+                        <span className="text-muted-foreground">
                           {items.length} items
                         </span>
                         {focusDiscourseme === discoursemeId && (
