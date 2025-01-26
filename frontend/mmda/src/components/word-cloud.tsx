@@ -341,6 +341,7 @@ export default function WordCloud({
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
 
     simulation
+      .alphaDecay(0.1)
       .nodes([...wordData])
       .force(
         'collide',
