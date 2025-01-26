@@ -578,8 +578,6 @@ export default function WordCloud({
           alpha *
           0.02 *
           homeStrength *
-          // smaller strength for less significant items
-          (node.significance * 0.8 + 0.2) *
           // increase strength on higher zoom levels
           clamp(transformationState.k, 0.5, 2)
 
