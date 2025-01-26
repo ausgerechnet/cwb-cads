@@ -129,8 +129,7 @@ export const deleteDiscoursemeDescription: MutationOptions<
   },
 }
 
-// TODO: backend: Isn't "p" unnecessary, because it's already a part of the description?
-// TODO: backend: I think the "discourseme_id" could be inferred from the description
+// TODO: backend: the "discourseme_id" could be inferred from the description
 export const addDescriptionItem: MutationOptions<
   z.infer<typeof schemas.DiscoursemeDescriptionOut>,
   Error,
@@ -163,8 +162,7 @@ export const addDescriptionItem: MutationOptions<
   },
 }
 
-// TODO: backend: Isn't "p" unnecessary, because it's already a part of the description?
-// TODO: backend: I think the "discourseme_id" could be inferred from the description
+// TODO: backend: I the "discourseme_id" could be inferred from the description
 export const removeDescriptionItem: MutationOptions<
   z.infer<typeof schemas.DiscoursemeDescriptionOut>,
   Error,
