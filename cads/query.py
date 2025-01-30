@@ -47,26 +47,9 @@ def ccc_query(query, return_df=True):
         else:
             corpus = query.corpus.ccc()
 
-        # process query to mangle library identifiers
-        mangled_query = query.cqp_query
-
-        # apply macro mangling
-        for mc in query.macro_calls:
-            m = mc.macro
-            pattern = fr"/{m.name}(\[{', ?'.join(m.valency * [r'[^,\s]+?'])}\])"
-            repl = fr"/{m.name}__{m.valency}__v{m.version}\1"
-            mangled_query = re.sub(pattern, repl, mangled_query)
-
-        # apply wordlist mangling
-        for wlc in query.wordlist_calls:
-            wl = wlc.wordlist
-            pattern = fr"\${wl.name}"
-            repl = fr"${wl.name}__v{wl.version}"
-            mangled_query = re.sub(pattern, repl, mangled_query)
-
         # query corpus
         current_app.logger.debug('ccc_query :: querying')
-        matches = corpus.query(cqp_query=mangled_query,
+        matches = corpus.query(cqp_query=query.mangled_query,
                                context_break=query.s,
                                match_strategy=query.match_strategy,
                                propagate_error=True)

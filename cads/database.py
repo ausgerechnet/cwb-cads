@@ -400,6 +400,33 @@ class Query(db.Model):
         db.session.commit()
 
     @property
+    def mangled_query(self):
+        """Preprocessed version of cqp_query with mangled identifiers.
+        When the query string contains references to macros or word lists from the library,
+        this is the only canonically executable version of the query.
+        TODO: deprecate unmangled, direct access to `self.cqp_query`, make this the default
+        """
+
+        # process query to mangle library identifiers
+        mangled_query = self.cqp_query
+
+        # apply macro mangling
+        for mc in self.macro_calls:
+            m = mc.macro
+            pattern = fr"/{m.name}(\[{', ?'.join(m.valency * [r'[^,\s]+?'])}\])"
+            repl = fr"/{m.name}__{m.valency}__v{m.version}\1"
+            mangled_query = re.sub(pattern, repl, mangled_query)
+
+        # apply wordlist mangling
+        for wlc in self.wordlist_calls:
+            wl = wlc.wordlist
+            pattern = fr"\${wl.name}"
+            repl = fr"${wl.name}__v{wl.version}"
+            mangled_query = re.sub(pattern, repl, mangled_query)
+
+        return mangled_query
+
+    @property
     def number_matches(self):
         sql_query = f"SELECT count(*) FROM matches WHERE query_id == {self.id};"
         con = db.session.connection()
