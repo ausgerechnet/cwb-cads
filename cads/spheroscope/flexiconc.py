@@ -3,15 +3,11 @@
 
 from functools import lru_cache
 
-from flask import current_app, request
-from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Integer, String, Date, Nested
-from apiflask.validators import OneOf
-import json
+from flask import current_app
+from apiflask import APIBlueprint, Schema
+from apiflask.fields import Integer, String, Boolean, Nested, Dict, List, Raw
 
-from cads.query import QueryOut
-from .database import QueryHistory, QueryHistoryEntry
-from ..database import Corpus, Query
+from ..database import Query
 from ..users import auth
 from .. import db
 
@@ -28,7 +24,7 @@ bp = APIBlueprint('flexiconc', __name__, url_prefix='/flexiconc')
 @lru_cache(maxsize=20)
 def get_flexiconc_session(query_id, user_id):
 
-    current_app.logger.debug(f"flexiconc :: initializing with concordances for {query_id} for {user_id}")
+    current_app.logger.debug(f"flexiconc :: initializing with concordances for query {query_id} for user {user_id}")
 
     query = Query.query.get(query_id)
     if not query:
@@ -45,6 +41,55 @@ def get_flexiconc_session(query_id, user_id):
 ################
 
 
+class AlgorithmOut(Schema):
+    algorithm_name = String(required=True)
+    args = Dict(required=True)
+
+
+class AlgorithmsOut(Schema):
+    ordering = Nested(AlgorithmOut, many=True)
+    grouping = Nested(AlgorithmOut, many=True)
+
+
+class ArgOut(Schema):
+    type = String()
+    description = String()
+    default = Raw()
+
+
+class ArgsSchemaOut(Schema):
+    required = List(String)
+    properties = Dict(String, Nested(ArgOut))
+
+
+class AlgorithmDetailsOut(Schema):
+    full_name = String()
+    algorithm_type = String()
+    function = String()
+    scope = String()
+    args_schema = Nested(ArgsSchemaOut)
+
+
+class TreeNodeOut(Schema):
+    id = Integer(required=True)
+    label = String(required=True)
+    node_type = String(required=True)
+    bookmarked = Boolean(required=True)
+    line_count = Integer()
+    children = Nested(lambda: TreeNodeOut(), many=True)
+    algorithms = Nested(AlgorithmsOut)
+
+
+class DetailedNodeOut(Schema):
+    id = Integer(required=True)
+    label = String(required=True)
+    node_type = String(required=True)
+    bookmarked = Boolean(required=True)
+    line_count = Integer()
+    algorithms = Nested(AlgorithmsOut)
+
+
+
 #################
 # API endpoints #
 #################
@@ -58,11 +103,42 @@ def get(query_id):
 
 
 @bp.get('/<query_id>/tree')
-# @bp.output()
+@bp.output(TreeNodeOut)
 @bp.auth_required(auth)
 def get_tree(query_id):
     
     query = db.get_or_404(Query, query_id)
     c = get_flexiconc_session(query.id, auth.current_user.id)
 
-    return "it worked?", 200
+    return TreeNodeOut().dump(c.root), 200
+
+
+@bp.get('/<query_id>/tree/<node_id>')
+@bp.output(TreeNodeOut)
+@bp.auth_required(auth)
+def get_node(query_id, node_id):
+
+    query = db.get_or_404(Query, query_id)
+    c = get_flexiconc_session(query.id, auth.current_user.id)
+
+    node = c.find_node_by_id(int(node_id))
+    if node:
+        return TreeNodeOut().dump(node), 200
+    else:
+        return f"No tree node with id {node_id}", 404
+
+
+@bp.get('/<query_id>/tree/<node_id>/available-algorithms')
+@bp.output(AlgorithmDetailsOut(many=True))
+@bp.auth_required(auth)
+def get_available(query_id, node_id):
+
+    query = db.get_or_404(Query, query_id)
+    c = get_flexiconc_session(query.id, auth.current_user.id)
+
+    node = c.find_node_by_id(int(node_id))
+    if node:
+        algos = list(node.available_algorithms().values())
+        return [AlgorithmDetailsOut().dump(a) for a in algos], 200
+    else:
+        return f"No tree node with id {node_id}", 404
