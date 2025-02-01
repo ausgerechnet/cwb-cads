@@ -135,7 +135,7 @@ export function ConstellationCollocationFilter({
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-xs">Sort by</span>
+        <span className="text-xs">Association Measure</span>
         <Select
           disabled={!isSortable}
           value={ccSortBy}
@@ -144,7 +144,7 @@ export function ConstellationCollocationFilter({
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="Sort by" />
+            <SelectValue placeholder="Association Measure" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
