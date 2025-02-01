@@ -27,11 +27,13 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { Drawer } from '@/components/drawer'
 import { Label } from '@cads/shared/components/ui/label'
+import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 import {
   addConstellationDiscourseme,
   constellationById,
   removeConstellationDiscourseme,
   discoursemesList,
+  constellationDescriptionAssociations,
 } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils.ts'
 import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
@@ -82,13 +84,13 @@ function ConstellationDetail() {
   const [isEditMode, setIsEditMode] = useState(false)
 
   const nonSelectedDiscoursemes = discoursemes.filter(
-        (discourseme) =>
-          !constellationDiscoursemes?.find(({ id }) => id === discourseme.id),
+    (discourseme) =>
+      !constellationDiscoursemes?.find(({ id }) => id === discourseme.id),
   )
 
-    const constellationIds = (description?.discourseme_descriptions ?? []).map(
-      (d) => d.discourseme_id,
-    )
+  const constellationIds = (description?.discourseme_descriptions ?? []).map(
+    (d) => d.discourseme_id,
+  )
   const discoursemesInDescription = discoursemes.filter((d) =>
     constellationIds.includes(d.id),
   )
@@ -107,7 +109,7 @@ function ConstellationDetail() {
         <>
           <Headline3 className="border-0">{name}</Headline3>
           {comment && <Muted>{comment}</Muted>}
-          <div className="mt-4 grid grid-cols-[2fr_1fr] gap-5">
+          <div className="mt-4 grid grid-cols-[3fr_1fr] gap-5">
             <Card className="mx-0 grid w-full grid-cols-1 grid-rows-[min-content_1fr] gap-x-4 gap-y-0 p-4">
               <div className="mb-2 flex place-items-center font-bold">
                 Discoursemes
@@ -180,6 +182,12 @@ function ConstellationDetail() {
               </Card>
             </Link>
           </div>
+          <Card className="my-4">
+            <DescriptionAssociation
+              constellationId={constellationId}
+              descriptionId={description?.id}
+            />
+          </Card>
           <div className="mt-4 flex gap-1">
             <Label>
               Subcorpus
@@ -298,5 +306,47 @@ function DiscoursemeItem({
       </Button>
       <ErrorMessage error={error} />
     </li>
+  )
+}
+
+function DescriptionAssociation({
+  className,
+  constellationId,
+  descriptionId,
+}: {
+  className?: string
+  constellationId: number | undefined
+  descriptionId: number | undefined
+}) {
+  const { data, isLoading, error } = useQuery({
+    ...constellationDescriptionAssociations(constellationId!, descriptionId!),
+    enabled: constellationId !== undefined && descriptionId !== undefined,
+  })
+  const { data: discoursemes, error: errorDiscoursemes } =
+    useQuery(discoursemesList)
+
+  if (isLoading || !data || discoursemes === undefined) {
+    return <Loader2Icon />
+  }
+  if (error || errorDiscoursemes) {
+    return (
+      <>
+        <ErrorMessage error={error} />
+        <ErrorMessage error={errorDiscoursemes} />
+      </>
+    )
+  }
+
+  const legendNameMap = discoursemes.reduce((acc, { id, name }) => {
+    acc.set(id, name ?? 'No Name Available')
+    return acc
+  }, new Map<number, string>())
+
+  return (
+    <AssociationMatrix
+      className={className}
+      legendNameMap={legendNameMap}
+      associations={data.associations}
+    />
   )
 }

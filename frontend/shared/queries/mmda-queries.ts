@@ -230,6 +230,29 @@ export const discoursemeDescriptionBreakdown = (
       ),
   })
 
+export const constellationDescriptionAssociations = (
+  constellationId: number,
+  descriptionId: number,
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-description-associations',
+      constellationId,
+      descriptionId,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/associations/',
+        {
+          signal,
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+          },
+        },
+      ),
+  })
+
 // =================== CONSTELLATIONS ====================
 
 export const constellationList = queryOptions({

@@ -3,6 +3,7 @@ import { Ellipsis } from '@cads/shared/components/ellipsis'
 import { InputGrowable } from '@cads/shared/components/input-growable'
 import { TokenLine } from '../routes/_app/constellations_/$constellationId/-constellation-concordance-lines'
 import WordCloud from './word-cloud'
+import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 
 export function ComponentOverview() {
   return (
@@ -352,6 +353,37 @@ export function ComponentOverview() {
           defaultValue=":-)"
         />
       </div>
+
+      <Headline2 className="mb-4">AssociationMatrix</Headline2>
+      <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
+        &lt;AssociationMatrix ... /&gt;
+      </code>
+      <AssociationMatrix
+        className="outline outline-1 outline-yellow-400"
+        legendNameMap={
+          new Map([
+            [0, 'Anchor'],
+            [1, 'Boatride'],
+            [2, 'Cruise'],
+          ])
+        }
+        associations={[
+          // measure 'something'
+          { node: 0, candidate: 1, score: 0.5, measure: 'something' },
+          { node: 0, candidate: 2, score: 0.3, measure: 'something' },
+          { node: 1, candidate: 2, score: 0.8, measure: 'something' },
+
+          // measure 'anything'
+          { node: 0, candidate: 1, score: -0.5, measure: 'anything' },
+          { node: 0, candidate: 2, score: 0.3, measure: 'anything' },
+          { node: 1, candidate: 2, score: 0.8, measure: 'anything' },
+
+          // measure 'everything'
+          { node: 0, candidate: 1, score: 1_000, measure: 'everything' },
+          { node: 0, candidate: 2, score: 250, measure: 'everything' },
+          { node: 1, candidate: 2, score: 0, measure: 'everything' },
+        ]}
+      />
     </div>
   )
 }
