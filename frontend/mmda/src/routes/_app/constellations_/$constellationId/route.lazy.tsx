@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   useMutation,
   useSuspenseQuery,
@@ -81,21 +81,17 @@ function ConstellationDetail() {
 
   const [isEditMode, setIsEditMode] = useState(false)
 
-  const nonSelectedDiscoursemes = useMemo(
-    () =>
-      discoursemes.filter(
+  const nonSelectedDiscoursemes = discoursemes.filter(
         (discourseme) =>
           !constellationDiscoursemes?.find(({ id }) => id === discourseme.id),
-      ),
-    [discoursemes, constellationDiscoursemes],
   )
 
-  const discoursemesInDescription = useMemo(() => {
     const constellationIds = (description?.discourseme_descriptions ?? []).map(
       (d) => d.discourseme_id,
     )
-    return discoursemes.filter((d) => constellationIds.includes(d.id))
-  }, [description?.discourseme_descriptions, discoursemes])
+  const discoursemesInDescription = discoursemes.filter((d) =>
+    constellationIds.includes(d.id),
+  )
 
   const isMapAvailable =
     corpusId !== undefined && focusDiscourseme !== undefined
