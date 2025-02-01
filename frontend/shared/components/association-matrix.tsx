@@ -115,8 +115,11 @@ function AssociationTable({
     measure: string
   }[]
 }) {
-  const rowIds = itemIds.map((i) => i)
-  const columnIds = itemIds.map((i) => i).toReversed()
+  const rowIds = itemIds.map((i) => i).slice(0, -1)
+  const columnIds = itemIds
+    .map((i) => i)
+    .toReversed()
+    .slice(0, -1)
 
   const minScore = associations.reduce(
     (acc, { score }) => Math.min(acc, score),
@@ -145,7 +148,7 @@ function AssociationTable({
         {columnIds.map((columnId) => (
           <tr key={columnId} className="col-span-full grid grid-cols-subgrid">
             <td>{legendNameMap?.get(columnId) ?? columnId}</td>
-            {itemIds.map((candidate) => {
+            {rowIds.map((candidate) => {
               const associationScore = associations.find(
                 (a) => a.node === candidate && a.candidate === columnId,
               )?.score
