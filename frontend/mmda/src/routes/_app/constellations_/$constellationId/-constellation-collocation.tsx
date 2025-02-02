@@ -98,8 +98,6 @@ export function Collocation({
                   params={(p) => p}
                   search={(s) => ({
                     ...s,
-                    ccFilterItem: item,
-                    ccFilterItemPAtt: secondary,
                     clFilterItem: item,
                     clFilterItemPAtt: secondary,
                   })}

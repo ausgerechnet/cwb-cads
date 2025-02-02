@@ -45,9 +45,6 @@ export const FilterSchema = z.object({
     ] as const)
     .optional()
     .catch(undefined),
-  ccFilterItem: z.string().optional().catch(undefined),
-  ccFilterItemPAtt: z.string().optional().catch(undefined),
-  // semanticBreak: z.string().optional().catch(undefined),
   semanticMapId: z.number().optional().catch(undefined),
   // TODO: probably should be here, because it's fixed for queries for example
   corpusId: z.number().optional().catch(undefined),
@@ -75,8 +72,6 @@ export function useFilterSelection(
     ccSortBy = 'conservative_log_ratio',
     ccPageSize = 5,
     ccSortOrder = 'descending',
-    ccFilterItem,
-    ccFilterItemPAtt,
     filterDiscoursemeIds = [],
     s,
     primary,
@@ -124,8 +119,6 @@ export function useFilterSelection(
     ccSortBy: isSortable ? ccSortBy : undefined,
     ccPageSize,
     ccSortOrder,
-    ccFilterItem: ccFilterItem || undefined,
-    ccFilterItemPAtt,
     filterDiscoursemeIds,
     setFilter,
     primary: defaultTo([primary, 'word'], corpus?.p_atts),

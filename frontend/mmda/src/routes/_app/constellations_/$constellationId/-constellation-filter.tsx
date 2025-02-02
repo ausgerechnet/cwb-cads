@@ -1,4 +1,4 @@
-import { FilterIcon, XIcon } from 'lucide-react'
+import { XIcon } from 'lucide-react'
 
 import {
   Select,
@@ -14,7 +14,6 @@ import {
   FilterSchema,
   useFilterSelection,
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
-import { ButtonTooltip } from '@/components/button-tooltip'
 import { SortByOffset } from '@/components/sort-by-offset'
 import { Button } from '@cads/shared/components/ui/button'
 
@@ -27,10 +26,6 @@ export function ConstellationCollocationFilter({
   const {
     isSortable,
     windowSize,
-    clFilterItem,
-    clFilterItemPAtt,
-    ccFilterItem,
-    ccFilterItemPAtt,
     ccSortOrder,
     s,
     secondary,
@@ -95,43 +90,6 @@ export function ConstellationCollocationFilter({
             </SelectGroup>
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-xs">
-          Filter Item {ccFilterItemPAtt && `(on ${ccFilterItemPAtt})`}
-          {ccFilterItem !== clFilterItem && (
-            <ButtonTooltip
-              size="sm"
-              onClick={() => {
-                setFilter('ccFilterItem', clFilterItem)
-                setFilter('ccFilterItemPAtt', clFilterItemPAtt)
-              }}
-              className="ml-2 h-auto px-2 py-1 text-xs"
-              tooltip={
-                clFilterItem
-                  ? `Create new collocation analysis with filter item "${clFilterItem}" on "${clFilterItemPAtt}"`
-                  : 'Create new collocation analysis with empty filter item'
-              }
-            >
-              <FilterIcon className="h-3 w-3" />
-            </ButtonTooltip>
-          )}
-        </span>
-        <div className="flex flex-grow gap-1">
-          <div className="bg-muted flex flex-grow items-center self-stretch rounded px-2">
-            {ccFilterItem}
-          </div>
-          {Boolean(ccFilterItem) && (
-            <Button
-              variant="secondary"
-              size="icon"
-              onClick={() => setFilter('ccFilterItem', '')}
-            >
-              <XIcon className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
       </div>
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
