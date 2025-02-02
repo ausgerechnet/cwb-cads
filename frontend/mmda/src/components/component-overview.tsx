@@ -1,15 +1,36 @@
+import { useState } from 'react'
 import { Headline1, Headline2 } from '@cads/shared/components/ui/typography'
 import { Ellipsis } from '@cads/shared/components/ellipsis'
 import { InputGrowable } from '@cads/shared/components/input-growable'
+import { AssociationMatrix } from '@cads/shared/components/association-matrix'
+import { SelectMulti } from '@cads/shared/components/select-multi'
 import { TokenLine } from '../routes/_app/constellations_/$constellationId/-constellation-concordance-lines'
 import WordCloud from './word-cloud'
-import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 
 export function ComponentOverview() {
+  const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
   return (
     <div className="p-2">
       <Headline1 className="mb-4">Component Overview goes here</Headline1>
-      <Headline2 className="mb-4">Ellipsis</Headline2>
+
+      <Headline2 className="mb-4">SelectMulti</Headline2>
+      <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
+        &lt;SelectMulti ... /&gt;
+      </code>
+      <SelectMulti
+        items={[
+          { id: 0, name: 'Aaron Aaronson' },
+          { id: 1, name: 'Berta Beispiel' },
+          { id: 2, name: 'Charlie Chaplin' },
+          { id: 3, name: 'Dora Datensatz' },
+          { id: 4, name: 'Emil Einfalt' },
+          { id: 5, name: 'Frieda Falsch' },
+        ]}
+        itemIds={multiSelectValue}
+        onChange={setMultiSelectValue}
+      />
+
+      <Headline2 className="my-4">Ellipsis</Headline2>
       <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
         &lt;Ellipsis&gt;...&lt;/Ellipsis&gt;
       </code>
@@ -62,7 +83,7 @@ export function ComponentOverview() {
         <div className="block whitespace-nowrap">Child 8</div>
       </Ellipsis>
 
-      <Headline2 className="mb-4">Token Line</Headline2>
+      <Headline2 className="my-4">Token Line</Headline2>
       <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
         &lt;TokenLine ... /&gt;
       </code>
