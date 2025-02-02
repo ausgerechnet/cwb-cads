@@ -129,7 +129,10 @@ function AssociationTable({
     (acc, { score }) => Math.max(acc, score),
     -Infinity,
   )
-  const mapScore = (score: number) => (score - minScore) / (maxScore - minScore)
+  const maxDeviation = Math.max(Math.abs(minScore), Math.abs(maxScore))
+
+  // maps score to a value between 0 and 1 with 0 being mapped onto 0.5, 0 onto - maxDeviation, and 1 onto maxDeviation
+  const mapScore = (score: number) => (score / maxDeviation + 1) / 2
 
   return (
     <table
@@ -159,15 +162,15 @@ function AssociationTable({
                   className={cn(
                     'font-xs p-1 text-right font-mono transition-colors duration-500',
                     {
-                      'text-black': mappedScore <= 0.5,
-                      'text-white': mappedScore > 0.5,
+                      'text-white': mappedScore <= 0.25 || mappedScore >= 0.75,
+                      'text-black': mappedScore > 0.25 && mappedScore < 0.75,
                     },
                   )}
                   style={{
                     backgroundColor:
                       associationScore === undefined
                         ? 'transparent'
-                        : d3.interpolateYlGnBu(mappedScore),
+                        : d3.interpolateSpectral(mappedScore),
                   }}
                 >
                   {associationScore === undefined
@@ -246,9 +249,11 @@ function AssociationGraph({
       .force(
         'link',
         d3
+          // @ts-ignore
           .forceLink(links)
           // @ts-expect-error
           .id((d) => d.id)
+          // @ts-ignore
           .distance((d) => d.distance)
           .strength(1),
       )
@@ -271,6 +276,7 @@ function AssociationGraph({
       .selectAll()
       .data(links)
       .join('line')
+      // @ts-ignore
       .attr('stroke-width', (d) => d.strokeWidth)
 
     const node = svg

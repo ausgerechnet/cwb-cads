@@ -182,12 +182,6 @@ function ConstellationDetail() {
               </Card>
             </Link>
           </div>
-          <Card className="my-4">
-            <DescriptionAssociation
-              constellationId={constellationId}
-              descriptionId={description?.id}
-            />
-          </Card>
           <div className="mt-4 flex gap-1">
             <Label>
               Subcorpus
@@ -221,6 +215,14 @@ function ConstellationDetail() {
               </div>
             </Label>
           </div>
+          {description?.id !== undefined && (
+            <Card className="my-4">
+              <DescriptionAssociation
+                constellationId={constellationId}
+                descriptionId={description.id}
+              />
+            </Card>
+          )}
         </>
       )}
       {corpusId !== undefined && (
@@ -316,17 +318,17 @@ function DescriptionAssociation({
 }: {
   className?: string
   constellationId: number | undefined
-  descriptionId: number | undefined
+  descriptionId: number
 }) {
   const { data, isLoading, error } = useQuery({
     ...constellationDescriptionAssociations(constellationId!, descriptionId!),
-    enabled: constellationId !== undefined && descriptionId !== undefined,
+    enabled: constellationId !== undefined,
   })
   const { data: discoursemes, error: errorDiscoursemes } =
     useQuery(discoursemesList)
 
   if (isLoading || !data || discoursemes === undefined) {
-    return <Loader2Icon />
+    return <Loader2Icon className="mx-auto my-5 animate-spin" />
   }
   if (error || errorDiscoursemes) {
     return (
