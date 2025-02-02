@@ -138,7 +138,16 @@ export default function WordCloud({
         if (d.source === 'discoursemes') {
           navigate({
             to: '',
-            search: (s) => ({ ...s, filterDiscoursemeIds: [d.discoursemeId] }),
+            search: (s) => {
+              const clFilterDiscoursemeIds = s.clFilterDiscoursemeIds.includes(
+                d.discoursemeId,
+              )
+                ? (s.clFilterDiscoursemeIds = s.clFilterDiscoursemeIds.filter(
+                    (id) => id !== d.discoursemeId,
+                  ))
+                : [d.discoursemeId, ...s.clFilterDiscoursemeIds]
+              return { ...s, clFilterDiscoursemeIds }
+            },
             params: (p) => p,
             replace: true,
           })

@@ -1,4 +1,5 @@
 import { XIcon } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 
 import {
   Select,
@@ -16,6 +17,9 @@ import {
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { SortByOffset } from '@/components/sort-by-offset'
 import { Button } from '@cads/shared/components/ui/button'
+import { SelectMulti } from '@cads/shared/components/select-multi'
+import { discoursemesList } from '@cads/shared/queries'
+import { useDescription } from './-use-description'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationCollocationFilter({
@@ -175,12 +179,17 @@ export function ConstellationConcordanceFilter({
     clFilterItem,
     clFilterItemPAtt,
     primary,
-    setFilter,
     pAttributes,
+    setFilter,
   } = useFilterSelection('/_app/constellations_/$constellationId')
 
   return (
-    <div className={cn('z-10 mb-8 flex gap-2', className)}>
+    <div className={cn('z-10 mb-8 grid grid-cols-6 gap-2', className)}>
+      <div className="col-span-2 flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-sm">Filter Discoursemes</span>
+        <FilterDiscoursemes />
+      </div>
+
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-sm">Sort By Offset {clSortByOffset}</span>
         <SortByOffset
@@ -256,5 +265,38 @@ export function ConstellationConcordanceFilter({
         </div>
       </div>
     </div>
+  )
+}
+
+function FilterDiscoursemes() {
+  const { setFilter, clFilterDiscoursemeIds } = useFilterSelection(
+    '/_app/constellations_/$constellationId',
+  )
+  const { description } = useDescription()
+  const {
+    data: allDiscoursemes = [],
+    isLoading,
+    error,
+  } = useQuery(discoursemesList)
+  const constellationIds = (description?.discourseme_descriptions ?? []).map(
+    (d) => d.discourseme_id,
+  )
+  const discoursemes = allDiscoursemes
+    .filter((d) => constellationIds.includes(d.id))
+    .map((d) => ({ id: d.id!, name: d.name! }))
+
+  return (
+    <SelectMulti
+      items={discoursemes}
+      itemIds={clFilterDiscoursemeIds}
+      selectMessage="Select a discourseme…"
+      emptyMessage="No discoursemes found…"
+      onChange={(ids) => setFilter('clFilterDiscoursemeIds', ids)}
+      disabled={isLoading || Boolean(error)}
+      className={cn(
+        isLoading && 'animate-pulse',
+        Boolean(error) && 'text-destructive-foreground',
+      )}
+    />
   )
 }

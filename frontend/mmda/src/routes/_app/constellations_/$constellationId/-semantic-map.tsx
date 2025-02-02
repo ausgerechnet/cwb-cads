@@ -225,7 +225,7 @@ function ConstellationDiscoursemesEditor({
   className?: string
   constellationId: number
 }) {
-  const { corpusId, focusDiscourseme, filterDiscoursemeIds, secondary } =
+  const { corpusId, focusDiscourseme, clFilterDiscoursemeIds, secondary } =
     useFilterSelection('/_app/constellations_/$constellationId')
   if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
@@ -344,7 +344,7 @@ function ConstellationDiscoursemesEditor({
                             Focus
                           </span>
                         )}
-                        {filterDiscoursemeIds.includes(discoursemeId) && (
+                        {clFilterDiscoursemeIds.includes(discoursemeId) && (
                           <span className="inline-flex items-center gap-0.5 rounded-xl bg-blue-100 px-2 py-0.5 text-sm text-blue-800 has-[a:hover]:bg-blue-200 dark:bg-blue-700 dark:text-blue-100 has-[a:hover]:dark:bg-blue-900">
                             Filter
                             <Link
@@ -353,7 +353,7 @@ function ConstellationDiscoursemesEditor({
                               params={(p) => p}
                               search={(s) => ({
                                 ...s,
-                                filterDiscoursemeIds: [],
+                                clFilterDiscoursemeIds: [],
                               })}
                             >
                               <XIcon className="h-4 w-4" />

@@ -15,7 +15,7 @@ export function useCollocation(
     s,
     windowSize,
     focusDiscourseme,
-    filterDiscoursemeIds,
+    ccFilterDiscoursemeIds,
     ccPageSize,
     ccSortBy,
     ccSortOrder,
@@ -32,7 +32,7 @@ export function useCollocation(
       p: secondary!,
       sBreak: s!,
       window: windowSize,
-      filterDiscoursemeIds,
+      filterDiscoursemeIds: ccFilterDiscoursemeIds,
     }),
     // keep previous data
     placeholderData: (p) => p,

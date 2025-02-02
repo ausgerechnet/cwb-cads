@@ -71,6 +71,7 @@ export function ConstellationConcordanceLines({
     clSortOrder,
     clFilterItem,
     clFilterItemPAtt,
+    clFilterDiscoursemeIds,
     focusDiscourseme,
     setFilter,
   } = useFilterSelection('/_app/constellations_/$constellationId')
@@ -96,6 +97,7 @@ export function ConstellationConcordanceLines({
         sortOrder: clSortOrder,
         sortByOffset: clSortByOffset,
         sortByPAtt: secondary,
+        filterDiscoursemeIds: clFilterDiscoursemeIds,
       },
     ),
     enabled: focusDiscourseme !== undefined && descriptionId !== undefined,
