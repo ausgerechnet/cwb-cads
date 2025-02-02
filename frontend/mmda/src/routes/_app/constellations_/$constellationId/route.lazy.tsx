@@ -229,7 +229,10 @@ function ConstellationDetail() {
         <>
           {showsSemanticMap ? (
             <SemanticMap constellationId={constellationId}>
-              <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
+              <ConstellationCollocationFilter
+                className="grow rounded-xl p-2 shadow"
+                hideSortOrder
+              />
             </SemanticMap>
           ) : (
             <ConstellationCollocationFilter className="sticky top-14 mb-8" />

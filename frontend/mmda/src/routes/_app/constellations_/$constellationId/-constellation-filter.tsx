@@ -20,8 +20,10 @@ import { Button } from '@cads/shared/components/ui/button'
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationCollocationFilter({
   className,
+  hideSortOrder = false,
 }: {
   className?: string
+  hideSortOrder?: boolean
 }) {
   const {
     isSortable,
@@ -130,31 +132,33 @@ export function ConstellationCollocationFilter({
           </SelectContent>
         </Select>
       </div>
-      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-xs">Sort Order</span>
-        <Select
-          value={ccSortOrder}
-          onValueChange={(value) =>
-            setFilter(
-              'ccSortOrder',
-              FilterSchema.shape.ccSortOrder.parse(value),
-            )
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sort Order" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {['ascending', 'descending'].map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
+      {!hideSortOrder && (
+        <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+          <span className="text-xs">Sort Order</span>
+          <Select
+            value={ccSortOrder}
+            onValueChange={(value) =>
+              setFilter(
+                'ccSortOrder',
+                FilterSchema.shape.ccSortOrder.parse(value),
+              )
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sort Order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {['ascending', 'descending'].map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   )
 }
