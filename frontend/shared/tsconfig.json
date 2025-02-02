@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
     "module": "ESNext",
+    "lib": ["ESNext", "DOM"],
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
