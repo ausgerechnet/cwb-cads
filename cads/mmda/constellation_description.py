@@ -487,6 +487,7 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
         filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+        highlight_queries['_FILTER'] = filter_queries['_FILTER']
 
     # attributes to show
     p_show = [primary, secondary]
@@ -563,43 +564,43 @@ def get_constellation_associations(constellation_id, description_id):
 
 # META
 #######
-@bp.get("/<query_id>/meta")
-@bp.input(ConstellationMetaIn, location='query')
-@bp.output(ConstellationMetaOut)
-@bp.auth_required(auth)
-def get_meta(constellation_id, description_id, query_data):
-    """Get meta distribution of discourseme constellation.
+# @bp.get("/<query_id>/meta")
+# @bp.input(ConstellationMetaIn, location='query')
+# @bp.output(ConstellationMetaOut)
+# @bp.auth_required(auth)
+# def get_meta(constellation_id, description_id, query_data):
+#     """Get meta distribution of discourseme constellation.
 
-    for each key and each subset of provided discourseme-ids: number of occurrences
-    """
+#     for each key and each subset of provided discourseme-ids: number of occurrences
+#     """
 
-    query = db.get_or_404(Query, query_id)
-    level = query_data.get('level')
-    key = query_data.get('key')
-    p = query_data.get('p', 'word')
+#     query = db.get_or_404(Query, query_id)
+#     level = query_data.get('level')
+#     key = query_data.get('key')
+#     p = query_data.get('p', 'word')
 
-    matches_df = ccc_query(query, return_df=True)
-    crps = query.corpus.ccc().subcorpus(df_dump=matches_df, overwrite=False)
-    df_meta = crps.concordance(p_show=[p], s_show=[f'{level}_{key}'], cut_off=None)[[p, f'{level}_{key}']].value_counts().reset_index()
-    df_meta.columns = ['item', 'value', 'frequency']
+#     matches_df = ccc_query(query, return_df=True)
+#     crps = query.corpus.ccc().subcorpus(df_dump=matches_df, overwrite=False)
+#     df_meta = crps.concordance(p_show=[p], s_show=[f'{level}_{key}'], cut_off=None)[[p, f'{level}_{key}']].value_counts().reset_index()
+#     df_meta.columns = ['item', 'value', 'frequency']
 
-    df_texts = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key))
-    df_texts.columns = ['value', 'nr_texts']
+#     df_texts = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key))
+#     df_texts.columns = ['value', 'nr_texts']
 
-    df_tokens = DataFrame.from_records(get_meta_number_tokens(query.corpus, level, key))
-    df_tokens.columns = ['value', 'nr_tokens']
+#     df_tokens = DataFrame.from_records(get_meta_number_tokens(query.corpus, level, key))
+#     df_tokens.columns = ['value', 'nr_tokens']
 
-    df_meta = df_meta.set_index('value').\
-        join(df_texts.set_index('value'), how='outer').\
-        join(df_tokens.set_index('value'), how='outer')
+#     df_meta = df_meta.set_index('value').\
+#         join(df_texts.set_index('value'), how='outer').\
+#         join(df_tokens.set_index('value'), how='outer')
 
-    df_meta['nr_texts'] = to_numeric(df_meta['nr_texts'].fillna(0), downcast='integer')
-    df_meta['nr_tokens'] = to_numeric(df_meta['nr_tokens'].fillna(0), downcast='integer')
+#     df_meta['nr_texts'] = to_numeric(df_meta['nr_texts'].fillna(0), downcast='integer')
+#     df_meta['nr_tokens'] = to_numeric(df_meta['nr_tokens'].fillna(0), downcast='integer')
 
-    df_meta = df_meta.sort_values(by='frequency', ascending=False)
+#     df_meta = df_meta.sort_values(by='frequency', ascending=False)
 
-    df_meta['ipm'] = round(df_meta['frequency'] / df_meta['nr_tokens'] * 10 ** 6, 6)
+#     df_meta['ipm'] = round(df_meta['frequency'] / df_meta['nr_tokens'] * 10 ** 6, 6)
 
-    meta = df_meta.reset_index().to_dict(orient='records')
+#     meta = df_meta.reset_index().to_dict(orient='records')
 
-    return [QueryMetaOut().dump(m) for m in meta], 200
+#     return [QueryMetaOut().dump(m) for m in meta], 200

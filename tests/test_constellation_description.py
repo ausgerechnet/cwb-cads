@@ -89,6 +89,7 @@ def test_constellation_concordance(client, auth):
             assert discoursemes[1]['id'] in discourseme_ids
 
 
+@pytest.mark.now
 def test_constellation_concordance_filter(client, auth):
 
     auth_header = auth.login()
@@ -134,8 +135,8 @@ def test_constellation_concordance_filter(client, auth):
         assert lines.status_code == 200
 
         for line in lines.json['lines']:
-            row = [t['secondary'] for t in line['tokens'] if not t['out_of_window']]
-            assert 'Zuruf' in row
+            assert True in [t['is_filter_item'] for t in line['tokens'] if not t['out_of_window']]
+            assert 'Zuruf' in [t['secondary'] for t in line['tokens'] if not t['out_of_window']]
 
         nr_zuruf = lines.json['nr_lines']
 
