@@ -10,7 +10,8 @@ export const FilterSchema = z.object({
   windowSize: z.number().positive().min(2).int().optional().catch(undefined),
   primary: z.string().optional(),
   secondary: z.string().optional().catch(undefined),
-  filterDiscoursemeIds: z.number().int().array().optional().catch([]),
+  clFilterDiscoursemeIds: z.number().int().array().optional().catch([]),
+  ccFilterDiscoursemeIds: z.number().int().array().optional().catch([]),
   clSortOrder: z
     .enum(['ascending', 'descending', 'random', 'first'] as const)
     .optional()
@@ -45,9 +46,6 @@ export const FilterSchema = z.object({
     ] as const)
     .optional()
     .catch(undefined),
-  ccFilterItem: z.string().optional().catch(undefined),
-  ccFilterItemPAtt: z.string().optional().catch(undefined),
-  // semanticBreak: z.string().optional().catch(undefined),
   semanticMapId: z.number().optional().catch(undefined),
   // TODO: probably should be here, because it's fixed for queries for example
   corpusId: z.number().optional().catch(undefined),
@@ -72,12 +70,11 @@ export function useFilterSelection(
     clPageSize = 5,
     clFilterItem,
     clFilterItemPAtt,
+    clFilterDiscoursemeIds = [],
     ccSortBy = 'conservative_log_ratio',
     ccPageSize = 5,
     ccSortOrder = 'descending',
-    ccFilterItem,
-    ccFilterItemPAtt,
-    filterDiscoursemeIds = [],
+    ccFilterDiscoursemeIds = [],
     s,
     primary,
     secondary,
@@ -121,12 +118,11 @@ export function useFilterSelection(
     clPageSize,
     clFilterItem: clFilterItem || undefined,
     clFilterItemPAtt,
+    clFilterDiscoursemeIds,
     ccSortBy: isSortable ? ccSortBy : undefined,
     ccPageSize,
     ccSortOrder,
-    ccFilterItem: ccFilterItem || undefined,
-    ccFilterItemPAtt,
-    filterDiscoursemeIds,
+    ccFilterDiscoursemeIds,
     setFilter,
     primary: defaultTo([primary, 'word'], corpus?.p_atts),
     secondary: defaultTo(secondary, corpus?.p_atts),

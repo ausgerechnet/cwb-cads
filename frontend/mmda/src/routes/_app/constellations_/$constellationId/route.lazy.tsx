@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   useMutation,
   useSuspenseQuery,
@@ -27,11 +27,13 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { Drawer } from '@/components/drawer'
 import { Label } from '@cads/shared/components/ui/label'
+import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 import {
   addConstellationDiscourseme,
   constellationById,
   removeConstellationDiscourseme,
   discoursemesList,
+  constellationDescriptionAssociations,
 } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils.ts'
 import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
@@ -81,21 +83,17 @@ function ConstellationDetail() {
 
   const [isEditMode, setIsEditMode] = useState(false)
 
-  const nonSelectedDiscoursemes = useMemo(
-    () =>
-      discoursemes.filter(
-        (discourseme) =>
-          !constellationDiscoursemes?.find(({ id }) => id === discourseme.id),
-      ),
-    [discoursemes, constellationDiscoursemes],
+  const nonSelectedDiscoursemes = discoursemes.filter(
+    (discourseme) =>
+      !constellationDiscoursemes?.find(({ id }) => id === discourseme.id),
   )
 
-  const discoursemesInDescription = useMemo(() => {
-    const constellationIds = (description?.discourseme_descriptions ?? []).map(
-      (d) => d.discourseme_id,
-    )
-    return discoursemes.filter((d) => constellationIds.includes(d.id))
-  }, [description?.discourseme_descriptions, discoursemes])
+  const constellationIds = (description?.discourseme_descriptions ?? []).map(
+    (d) => d.discourseme_id,
+  )
+  const discoursemesInDescription = discoursemes.filter((d) =>
+    constellationIds.includes(d.id),
+  )
 
   const isMapAvailable =
     corpusId !== undefined && focusDiscourseme !== undefined
@@ -111,7 +109,7 @@ function ConstellationDetail() {
         <>
           <Headline3 className="border-0">{name}</Headline3>
           {comment && <Muted>{comment}</Muted>}
-          <div className="mt-4 grid grid-cols-[2fr_1fr] gap-5">
+          <div className="mt-4 grid grid-cols-[3fr_1fr] gap-5">
             <Card className="mx-0 grid w-full grid-cols-1 grid-rows-[min-content_1fr] gap-x-4 gap-y-0 p-4">
               <div className="mb-2 flex place-items-center font-bold">
                 Discoursemes
@@ -217,13 +215,24 @@ function ConstellationDetail() {
               </div>
             </Label>
           </div>
+          {description?.id !== undefined && (
+            <Card className="my-4">
+              <DescriptionAssociation
+                constellationId={constellationId}
+                descriptionId={description.id}
+              />
+            </Card>
+          )}
         </>
       )}
       {corpusId !== undefined && (
         <>
           {showsSemanticMap ? (
             <SemanticMap constellationId={constellationId}>
-              <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
+              <ConstellationCollocationFilter
+                className="grow rounded-xl p-2 shadow"
+                hideSortOrder
+              />
             </SemanticMap>
           ) : (
             <ConstellationCollocationFilter className="sticky top-14 mb-8" />
@@ -302,5 +311,47 @@ function DiscoursemeItem({
       </Button>
       <ErrorMessage error={error} />
     </li>
+  )
+}
+
+function DescriptionAssociation({
+  className,
+  constellationId,
+  descriptionId,
+}: {
+  className?: string
+  constellationId: number | undefined
+  descriptionId: number
+}) {
+  const { data, isLoading, error } = useQuery({
+    ...constellationDescriptionAssociations(constellationId!, descriptionId!),
+    enabled: constellationId !== undefined,
+  })
+  const { data: discoursemes, error: errorDiscoursemes } =
+    useQuery(discoursemesList)
+
+  if (isLoading || !data || discoursemes === undefined) {
+    return <Loader2Icon className="mx-auto my-5 animate-spin" />
+  }
+  if (error || errorDiscoursemes) {
+    return (
+      <>
+        <ErrorMessage error={error} />
+        <ErrorMessage error={errorDiscoursemes} />
+      </>
+    )
+  }
+
+  const legendNameMap = discoursemes.reduce((acc, { id, name }) => {
+    acc.set(id, name ?? 'No Name Available')
+    return acc
+  }, new Map<number, string>())
+
+  return (
+    <AssociationMatrix
+      className={className}
+      legendNameMap={legendNameMap}
+      associations={data.associations}
+    />
   )
 }

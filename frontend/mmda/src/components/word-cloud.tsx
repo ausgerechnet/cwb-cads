@@ -138,7 +138,16 @@ export default function WordCloud({
         if (d.source === 'discoursemes') {
           navigate({
             to: '',
-            search: (s) => ({ ...s, filterDiscoursemeIds: [d.discoursemeId] }),
+            search: (s) => {
+              const clFilterDiscoursemeIds = s.clFilterDiscoursemeIds.includes(
+                d.discoursemeId,
+              )
+                ? (s.clFilterDiscoursemeIds = s.clFilterDiscoursemeIds.filter(
+                    (id) => id !== d.discoursemeId,
+                  ))
+                : [d.discoursemeId, ...s.clFilterDiscoursemeIds]
+              return { ...s, clFilterDiscoursemeIds }
+            },
             params: (p) => p,
             replace: true,
           })
@@ -341,6 +350,7 @@ export default function WordCloud({
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
 
     simulation
+      .alphaDecay(0.1)
       .nodes([...wordData])
       .force(
         'collide',
@@ -577,8 +587,6 @@ export default function WordCloud({
           alpha *
           0.02 *
           homeStrength *
-          // smaller strength for less significant items
-          (node.significance * 0.8 + 0.2) *
           // increase strength on higher zoom levels
           clamp(transformationState.k, 0.5, 2)
 

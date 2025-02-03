@@ -1,3 +1,4 @@
+import { CheckIcon } from 'lucide-react'
 import { cn } from '@cads/shared/lib/utils'
 import { Link } from '@tanstack/react-router'
 import { ErrorMessage } from '@cads/shared/components/error-message'
@@ -57,9 +58,8 @@ export function Collocation({
   constellationId: number
   descriptionId?: number
 }) {
-  const { setFilter, ccPageSize, ccPageNumber, secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
+  const { setFilter, ccPageSize, ccPageNumber, clFilterItem, secondary } =
+    useFilterSelection('/_app/constellations_/$constellationId')
   const { error, isLoading, collocationItems } = useCollocation(
     constellationId,
     descriptionId,
@@ -93,18 +93,20 @@ export function Collocation({
             >
               <TableCell className="py-1">
                 <Link
-                  className={buttonVariants({ variant: 'secondary' })}
+                  className={cn(
+                    buttonVariants({ variant: 'outline' }),
+                    'inline-flex h-auto gap-1 px-2 py-1 leading-none',
+                  )}
                   to=""
                   params={(p) => p}
                   search={(s) => ({
                     ...s,
-                    ccFilterItem: item,
-                    ccFilterItemPAtt: secondary,
                     clFilterItem: item,
                     clFilterItemPAtt: secondary,
                   })}
                 >
                   {item}
+                  {item === clFilterItem && <CheckIcon className="h-3 w-3" />}
                 </Link>
               </TableCell>
               {measureOrder.map((measure) => (

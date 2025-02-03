@@ -13,12 +13,12 @@ export function SortByOffset({
   disabled?: boolean
 }) {
   return (
-    <div className={cn('flex items-center', className)}>
+    <div className={cn('flex flex-grow items-center', className)}>
       {Offsets.map((offset) => (
         <Button
           key={offset}
           onClick={() => onChange(offset)}
-          className="flex-grow rounded-none p-1 text-sm first:rounded-bl-md first:rounded-tl-md last:rounded-br-md last:rounded-tr-md"
+          className="h-full flex-grow rounded-none p-1 text-sm first:rounded-bl-md first:rounded-tl-md last:rounded-br-md last:rounded-tr-md"
           disabled={disabled}
           variant={offset === value ? 'default' : 'secondary'}
           size="sm"

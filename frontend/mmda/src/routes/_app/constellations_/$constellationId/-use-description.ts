@@ -26,6 +26,7 @@ export function useDescription() {
   })
 
   return {
+    constellationId,
     description,
     isLoadingDescription,
     errorDescription,

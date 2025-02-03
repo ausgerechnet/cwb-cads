@@ -129,8 +129,7 @@ export const deleteDiscoursemeDescription: MutationOptions<
   },
 }
 
-// TODO: backend: Isn't "p" unnecessary, because it's already a part of the description?
-// TODO: backend: I think the "discourseme_id" could be inferred from the description
+// TODO: backend: the "discourseme_id" could be inferred from the description
 export const addDescriptionItem: MutationOptions<
   z.infer<typeof schemas.DiscoursemeDescriptionOut>,
   Error,
@@ -163,8 +162,7 @@ export const addDescriptionItem: MutationOptions<
   },
 }
 
-// TODO: backend: Isn't "p" unnecessary, because it's already a part of the description?
-// TODO: backend: I think the "discourseme_id" could be inferred from the description
+// TODO: backend: I the "discourseme_id" could be inferred from the description
 export const removeDescriptionItem: MutationOptions<
   z.infer<typeof schemas.DiscoursemeDescriptionOut>,
   Error,
@@ -228,6 +226,29 @@ export const discoursemeDescriptionBreakdown = (
             description_id: descriptionId.toString(),
           },
           queries: { p: pAttribute },
+        },
+      ),
+  })
+
+export const constellationDescriptionAssociations = (
+  constellationId: number,
+  descriptionId: number,
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-description-associations',
+      constellationId,
+      descriptionId,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/associations/',
+        {
+          signal,
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+          },
         },
       ),
   })
@@ -434,8 +455,6 @@ export const constellationCollocation = (
   descriptionId: number,
   {
     focusDiscoursemeId,
-    filterItem,
-    filterItemPAttribute,
     filterDiscoursemeIds = [],
     marginals = 'local',
     p,
@@ -444,8 +463,6 @@ export const constellationCollocation = (
     window,
   }: {
     focusDiscoursemeId: number
-    filterItem: string
-    filterItemPAttribute: string
     marginals?: 'local' | 'global'
     p: string
     sBreak: string
@@ -460,8 +477,6 @@ export const constellationCollocation = (
       {
         constellationId,
         descriptionId,
-        filterItem,
-        filterItemPAttribute,
         filterDiscoursemeIds,
         marginals,
         p,
@@ -476,8 +491,6 @@ export const constellationCollocation = (
       return apiClient.put(
         '/mmda/constellation/:constellation_id/description/:description_id/collocation/',
         {
-          filter_item: filterItem,
-          filter_item_p_att: filterItemPAttribute,
           focus_discourseme_id: focusDiscoursemeId,
           filter_discourseme_ids: filterDiscoursemeIds,
           marginals,
