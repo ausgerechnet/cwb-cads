@@ -29,6 +29,19 @@
 
 # Backend
 
+## Bugfixes
+
+- [ ] duplicated items in map endpoint, although they only appear once in the database [cannot reproduce]
+
+curl 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/mmda/constellation/1/description/17/collocation/66/map?sort_order=descending&page_size=300&page_number=1' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0' -H 'Accept: application/json, text/plain, */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br, zstd' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczODA3ODEzMCwianRpIjoiODA2ZDY1NzYtZDNiMS00ZTRjLWFlMTItYjMxNTUyNTgzM2UyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiJ9LCJuYmYiOjE3MzgwNzgxMzAsImNzcmYiOiIxZmU4Y2MzMi1lZjgxLTRiMzQtOTQ0MC0zODhkYWU3ZDQyZWQiLCJleHAiOjE3MzgwNzk5MzB9.D9b5tFL1CbegHclrl-IxF0QYXBLmaENFKKaFMjwg0cU' -H 'Origin: http://localhost:3000' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Referer: http://localhost:3000/' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: cross-site' -H 'Priority: u=0' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache'
+
+- [ ] filter concordance lnes such that all discoursemes are included [already implemented]
+
+- [ ] empty base items
+
+curl 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/mmda/constellation/1/description/1/collocation/' -X PUT -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0' -H 'Accept: application/json, text/plain, */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br, zstd' -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczNDUzMDIyNywianRpIjoiYTBmOTVkMjEtYWRiMC00NDU1LWEwNzEtMjkwYzkwOGI3NjkyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiJ9LCJuYmYiOjE3MzQ1MzAyMjcsImNzcmYiOiJhNGM1NjRjOS0wMzk3LTQ1YzctOTNhZi1jNTA2ZTA3YmZlMzAiLCJleHAiOjE3MzQ1MzIwMjd9.Xum6QpGBaOgnFnJ_Q1hqgjfZEc_hcfKZAH0tb2eX7p4' -H 'Origin: http://localhost:3000' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Referer: http://localhost:3000/' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: cross-site' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data-raw '{"filter_discourseme_ids":[],"filter_item_p_att":"lemma","filter_overlap":"partial","focus_discourseme_id":2,"include_negative":false,"marginals":"local","p":"lemma","s_break":"s","semantic_map_id":null,"semantic_map_init":true,"window":10}'
+
+
 ## Major features
 - [x] query
 - [x] breakdown
@@ -42,16 +55,19 @@
 - [x] second-order collocation analysis
 - [x] meta distribution
 - [x] pairwise associations of discoursemes
+- [ ] GERMAPARL1386 on dev server
 - [ ] usage fluctuation analysis
+  + provide endpoint and example
 - [ ] quantitative feedback for collocation / keyword discourseme categorisation
   + how many items have been categorised?
-  + how many concordance lines contain at least one of them
+  + how many concordance lines contain at least one of them?
 - [ ] anchored queries [spheroscope]
 
 
-## Minor features
+## Minor features and improvements
 
 ### Performance
+- [x] speed up deleting queries
 - [ ] speed up constellation concordance retrieval (discourseme range retrieval / sorting)
 - [ ] speed up supcorpus queries
 - [ ] speed up collocation/items: do not return discourseme scores?
@@ -89,10 +105,9 @@
 - [ ] auto-init / show which is possible + if initialised?
 
 ### Tests
-- [x] speed up deleting queries
-- [x] extend tests
-- [ ] example meta data creation
-- [ ] example subcorpus creation
+- [ ] different constellations on development server
+- [ ] meta data creation
+- [ ] subcorpus creation
 
 ### Logging
 - [x] improve logging: do not log cwb-ccc
@@ -104,7 +119,7 @@
   + [spheroscope]: KWIC on one selected slot (left adjusted)
     - alternatively: complete sentence / tweet
 
-- [ ] constellation/collocation: return one object with items categorised to discoursemes
+- [x] constellation/collocation: return one object with items categorised to discoursemes
 - [ ] post collocation semantic-map mit json
 
 - [ ] topic-item suggestion in analysis definition
@@ -153,4 +168,11 @@ these cannot be easily removed:
 - [ ] race conditions gdbm [spheroscope]
 - [ ] PUT for constellation / keyword analyses
 - [ ] PUT for queries (creation, collocation, etc.)?
+- [ ] JWT in cookies
 
+
+# OS / 12-2024
+
+- wie können discourseme description items queries sein?
+- Atomkraft entfernen, wenn Atomkraft|Energie in Template → Folgefehler?
+- doppelte Diskursem-Items nach Nutzung des PUT Endpunkts
