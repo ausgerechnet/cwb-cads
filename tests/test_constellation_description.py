@@ -89,7 +89,6 @@ def test_constellation_concordance(client, auth):
             assert discoursemes[1]['id'] in discourseme_ids
 
 
-@pytest.mark.now
 def test_constellation_concordance_filter(client, auth):
 
     auth_header = auth.login()
@@ -242,6 +241,7 @@ def test_discourseme_deletion(client, auth):
                       headers=auth_header)
 
 
+@pytest.mark.now
 def test_associations(client, auth):
 
     auth_header = auth.login()
@@ -289,4 +289,5 @@ def test_associations(client, auth):
 
         assert associations.status_code == 200
 
-        assert all(v in associations.json['associations'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])
+        assert all(v in associations.json['scores'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])
+        assert all(v in associations.json['scaled_scores'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])

@@ -123,7 +123,8 @@ class ConstellationAssociationOut(Schema):
     N = Integer(required=True)
     s = String(required=True)
     nr_pairs = Integer(required=True)
-    associations = Nested(ConstellationAssociationItemOut(many=True), required=True)
+    scores = Nested(ConstellationAssociationItemOut(many=True), required=True)
+    scaled_scores = Nested(ConstellationAssociationItemOut(many=True), required=True)
 
 
 class ConstellationMetaOut(Schema):
@@ -546,17 +547,28 @@ def get_constellation_associations(constellation_id, description_id):
     counts['node'] = counts['node'].astype(int)
     counts['candidate'] = counts['candidate'].astype(int)
     counts = counts.set_index(['node', 'candidate'])
-    scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
+    scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts))
 
-    # TODO
+    # TODO: why are there NAs?
     scores = scores.dropna()
-    scores = scores.melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
 
+    # scale scores
+    scaled_scores_dict = dict()
+    for sort_by in scores.columns:
+        scaled_scores_dict[sort_by] = scores[sort_by] / scores[sort_by].abs().max()
+    scaled_scores = DataFrame(index=scores.index, data=scaled_scores_dict)
+
+    # convert to long format
+    scores = scores.reset_index().melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
+    scaled_scores = scaled_scores.reset_index().melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
+
+    # create return object
     association = dict(
         N=N,
         s=description.s,
         nr_pairs=len(pairs.items()),
-        associations=scores.to_dict(orient='records')
+        scores=scores.to_dict(orient='records'),
+        scaled_scores=scaled_scores.to_dict(orient='records')
     )
 
     return ConstellationAssociationOut().dump(association), 200
