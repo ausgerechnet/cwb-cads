@@ -353,7 +353,9 @@ function ConstellationDiscoursemesEditor({
                               params={(p) => p}
                               search={(s) => ({
                                 ...s,
-                                clFilterDiscoursemeIds: [],
+                                clFilterDiscoursemeIds: (
+                                  s.clFilterDiscoursemeIds ?? []
+                                ).filter((id) => id !== discoursemeId),
                               })}
                             >
                               <XIcon className="h-4 w-4" />
