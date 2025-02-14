@@ -1,5 +1,10 @@
 import { ReactNode, useState } from 'react'
-import { Check, ChevronsUpDown, XIcon } from 'lucide-react'
+import {
+  CheckSquareIcon,
+  ChevronsUpDown,
+  SquareIcon,
+  XIcon,
+} from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import {
@@ -77,6 +82,7 @@ export function SelectMulti<IdType extends string | number>({
                   if (!item) return null
                   return (
                     <span
+                      key={itemId}
                       className="outline-muted-foreground hover:bg-destructive hover:text-destructive-foreground inline-flex h-auto gap-1 rounded-full py-1 pl-2 pr-1 text-sm leading-none outline outline-1"
                       tabIndex={0}
                       onClick={(e) => {
@@ -108,12 +114,11 @@ export function SelectMulti<IdType extends string | number>({
                     toggleItem(id!)
                   }}
                 >
-                  <Check
-                    className={cn(
-                      'mr-2 h-4 w-4',
-                      itemIds.includes(id) ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
+                  {itemIds.includes(id) ? (
+                    <SquareIcon className="mr-2 h-4 w-4 rounded-full" />
+                  ) : (
+                    <CheckSquareIcon className="mr-2 h-4 w-4 rounded-full" />
+                  )}
                   {typeof id === 'number' && (
                     <span
                       className="mr-2 aspect-square h-3 w-3 rounded-full"
