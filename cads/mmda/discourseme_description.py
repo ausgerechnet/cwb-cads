@@ -168,10 +168,10 @@ def discourseme_template_to_description(discourseme, items, corpus_id, subcorpus
     db.session.add(description)
     db.session.commit()
 
-    p_default = 'word'
+    p_default = 'word' # TODO
     for item in items:
         description.items.append(DiscoursemeDescriptionItems(discourseme_description_id=description.id,
-                                                             p=item.get('p', p_default),
+                                                             p=p_default if item['p'] is None else item['p'],
                                                              surface=item['surface']))
     db.session.commit()
 
