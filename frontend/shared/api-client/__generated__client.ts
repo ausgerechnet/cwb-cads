@@ -71,9 +71,10 @@ type ConcordanceOut = {
 }
 type ConstellationAssociationOut = {
   N: number
-  associations: Array<ConstellationAssociationItemOut>
   nr_pairs: number
   s: string
+  scaled_scores: Array<ConstellationAssociationItemOut>
+  scores: Array<ConstellationAssociationItemOut>
 }
 type ConstellationAssociationItemOut = {
   candidate: number
@@ -300,12 +301,11 @@ const CoordinatesOut: z.ZodType<CoordinatesOut> = z
 const CollocationScoreOut: z.ZodType<CollocationScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
   .passthrough()
-// @ts-ignore
 const CollocationItemOut: z.ZodType<CollocationItemOut> = z
   .object({
     item: z.string(),
     raw_scores: z.array(CollocationScoreOut),
-    scaled_scores: z.array(CollocationScoreOut).optional(),
+    scaled_scores: z.array(CollocationScoreOut),
     scores: z.array(CollocationScoreOut),
   })
   .passthrough()
@@ -432,12 +432,11 @@ const KeywordIn = z
 const KeywordScoreOut: z.ZodType<KeywordScoreOut> = z
   .object({ measure: z.string(), score: z.number() })
   .passthrough()
-// @ts-ignore
 const KeywordItemOut: z.ZodType<KeywordItemOut> = z
   .object({
     item: z.string(),
     raw_scores: z.array(KeywordScoreOut),
-    scaled_scores: z.array(KeywordScoreOut).optional(),
+    scaled_scores: z.array(KeywordScoreOut),
     scores: z.array(KeywordScoreOut),
   })
   .passthrough()
@@ -563,9 +562,10 @@ const ConstellationAssociationItemOut: z.ZodType<ConstellationAssociationItemOut
 const ConstellationAssociationOut: z.ZodType<ConstellationAssociationOut> = z
   .object({
     N: z.number().int(),
-    associations: z.array(ConstellationAssociationItemOut),
     nr_pairs: z.number().int(),
     s: z.string(),
+    scaled_scores: z.array(ConstellationAssociationItemOut),
+    scores: z.array(ConstellationAssociationItemOut),
   })
   .passthrough()
 const ConstellationCollocationOut = z
@@ -731,7 +731,6 @@ const DiscoursemeCoordinatesIn = z
     y_user: z.number().nullable(),
   })
   .passthrough()
-const ConstellationMetaOut = z.object({}).partial().passthrough()
 const DiscoursemeInUpdate: z.ZodType<DiscoursemeInUpdate> = z
   .object({
     comment: z.string().nullable(),
@@ -945,7 +944,6 @@ export const schemas = {
   ConstellationKeywordIn,
   ConstellationKeywordItemsOut,
   DiscoursemeCoordinatesIn,
-  ConstellationMetaOut,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
   BreakdownItemsOut,
@@ -2886,47 +2884,6 @@ const endpoints = makeApi([
       },
     ],
     response: z.array(DiscoursemeCoordinatesOut),
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/mmda/constellation/:constellation_id/description/:query_id/meta',
-    description: `for each key and each subset of provided discourseme-ids: number of occurrences`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'constellation_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'query_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'discourseme_description_ids',
-        type: 'Query',
-        schema: z.array(z.number().int()).optional().default([]),
-      },
-    ],
-    response: z.object({}).partial().passthrough(),
     errors: [
       {
         status: 401,
