@@ -52,19 +52,22 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
 
     """
 
+    p_default = 'word'  # TODO
+
     # create queries & wordlists
     queries = list()
     wordlists = defaultdict(list)
     for item in description_items:
+        p = p_default if item.p is None else item.p
         if item.is_query:
             queries.append(item.query)
         elif item.is_unigram and cqp_escape(item.surface) == item.surface:
-            wordlists[item.p].append(item.surface)
+            wordlists[p].append(item.surface)
         else:                   # MWU
             tokens = item.surface.split(" ")
             query = ""
             for token in tokens:
-                query += f'[{item.p}="{token}"]'
+                query += f'[{p}="{token}"]'
             queries.append(query)
 
     # define wordlists and append to queries
@@ -157,6 +160,8 @@ def discourseme_template_to_description(discourseme, items, corpus_id, subcorpus
             discourseme.generate_template()
         items = [{'surface': item.surface, 'p': item.p, 'cqp_query': item.cqp_query} for item in discourseme.template]
 
+    p_default = 'word'  # TODO
+
     # description
     description = DiscoursemeDescription(
         discourseme_id=discourseme.id,
@@ -168,10 +173,10 @@ def discourseme_template_to_description(discourseme, items, corpus_id, subcorpus
     db.session.add(description)
     db.session.commit()
 
-    p_default = 'word' # TODO
     for item in items:
+        p = p_default if item['p'] is None else item['p']
         description.items.append(DiscoursemeDescriptionItems(discourseme_description_id=description.id,
-                                                             p=p_default if item['p'] is None else item['p'],
+                                                             p=p,
                                                              surface=item['surface']))
     db.session.commit()
 
