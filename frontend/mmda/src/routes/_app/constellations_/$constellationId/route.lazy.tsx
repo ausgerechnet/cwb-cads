@@ -323,6 +323,7 @@ function DescriptionAssociation({
   constellationId: number | undefined
   descriptionId: number
 }) {
+  return null
   const { data, isLoading, error } = useQuery({
     ...constellationDescriptionAssociations(constellationId!, descriptionId!),
     enabled: constellationId !== undefined,
