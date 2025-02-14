@@ -1,6 +1,6 @@
-import { XIcon } from 'lucide-react'
+import { Fragment } from 'react'
+import { FilterIcon, XIcon } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
-
 import {
   Select,
   SelectTrigger,
@@ -16,10 +16,18 @@ import {
   useFilterSelection,
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { SortByOffset } from '@/components/sort-by-offset'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import { SelectMulti } from '@cads/shared/components/select-multi'
 import { discoursemesList } from '@cads/shared/queries'
 import { useDescription } from './-use-description'
+import { Link } from '@tanstack/react-router'
+import { DiscoursemeName } from '@/components/discourseme-name'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@cads/shared/components/ui/tooltip'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationCollocationFilter({
@@ -33,6 +41,8 @@ export function ConstellationCollocationFilter({
     isSortable,
     windowSize,
     ccSortOrder,
+    ccFilterDiscoursemeIds,
+    clFilterDiscoursemeIds,
     s,
     secondary,
     setFilter,
@@ -40,6 +50,9 @@ export function ConstellationCollocationFilter({
     contextBreakList,
     ccSortBy,
   } = useFilterSelection('/_app/constellations_/$constellationId')
+  const discoursemeFiltersDiffer =
+    ccFilterDiscoursemeIds.length !== clFilterDiscoursemeIds.length ||
+    ccFilterDiscoursemeIds.some((id) => !clFilterDiscoursemeIds.includes(id))
 
   return (
     <div
@@ -135,6 +148,62 @@ export function ConstellationCollocationFilter({
             </SelectGroup>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
+        <span className="text-xs">Filter Discoursemes</span>
+
+        <div className="flex gap-2">
+          <ul className="border-input my-0 flex min-h-10 grow flex-wrap gap-1 overflow-hidden overflow-ellipsis rounded-md border px-3 py-2">
+            {ccFilterDiscoursemeIds.map((id, index, { length }) => (
+              <li
+                key={id}
+                className="my-auto inline text-ellipsis text-xs leading-none"
+              >
+                <DiscoursemeName discoursemeId={id} />
+                {index < length - 1 && ', '}
+              </li>
+            ))}
+          </ul>
+
+          {discoursemeFiltersDiffer && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    className={cn(
+                      buttonVariants({
+                        variant: 'default',
+                        size: 'sm',
+                      }),
+                      'my-auto ml-auto',
+                    )}
+                    to=""
+                    search={(s) => ({
+                      ...s,
+                      ccFilterDiscoursemeIds: [
+                        ...(s.clFilterDiscoursemeIds ?? []),
+                      ],
+                    })}
+                    params={(p) => p}
+                  >
+                    <FilterIcon className="h-4 w-4" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Apply Filter Discoursemes from concordance lines:
+                  <br />
+                  {clFilterDiscoursemeIds.map((id, index, { length }) => (
+                    <Fragment key={id}>
+                      <DiscoursemeName discoursemeId={id} />
+                      {index < length - 1 && ', '}
+                    </Fragment>
+                  ))}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
       </div>
       {!hideSortOrder && (
         <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
