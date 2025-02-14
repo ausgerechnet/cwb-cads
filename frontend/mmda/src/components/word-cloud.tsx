@@ -3,7 +3,7 @@
 // @ts-nocheck
 import * as d3 from 'd3'
 import { useEffect, useRef } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { LocateIcon } from 'lucide-react'
 
@@ -57,12 +57,20 @@ export default function WordCloud({
   const navigate = useNavigate()
   const { theme } = useTheme()
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
+  const router = useRouter()
 
   useEffect(() => {
     const [initialZoom, initialX, initialY] = location.hash
       .slice(1)
       .split(':')
       .map(Number)
+
+    let filterDiscoursemeIds = (router?.latestLocation?.search
+      ?.clDiscoursemeItemIds ?? []) as number[]
+    let filterItem = (router?.latestLocation?.search?.clFilterItem ??
+      '') as string
+
+    // TODO: this doesn't handle theme === "system" properly yet!
     const isDarkMode = theme === 'dark'
 
     // TODO: ensure that words and discoursemes have universally(!) unique identifiers
@@ -139,13 +147,13 @@ export default function WordCloud({
           navigate({
             to: '',
             search: (s) => {
-              const clFilterDiscoursemeIds = s.clFilterDiscoursemeIds.includes(
-                d.discoursemeId,
-              )
-                ? (s.clFilterDiscoursemeIds = s.clFilterDiscoursemeIds.filter(
-                    (id) => id !== d.discoursemeId,
-                  ))
-                : [d.discoursemeId, ...s.clFilterDiscoursemeIds]
+              const currentFilterDiscoursemeIds = s.clFilterDiscoursemeIds ?? []
+              const clFilterDiscoursemeIds =
+                currentFilterDiscoursemeIds.includes(d.discoursemeId)
+                  ? currentFilterDiscoursemeIds.filter(
+                      (id) => id !== d.discoursemeId,
+                    )
+                  : [d.discoursemeId, ...currentFilterDiscoursemeIds]
               return { ...s, clFilterDiscoursemeIds }
             },
             params: (p) => p,
@@ -180,18 +188,7 @@ export default function WordCloud({
     textGroup
       .append('text')
       .attr('class', 'pointer-events-none')
-      .attr('opacity', (d) =>
-        d?.discoursemeId === undefined ? 1 : d.significance * 0.4 + 0.6,
-      )
-      .attr('fill', ({ discoursemeId }) => {
-        if (discoursemeId === undefined) return 'currentColor'
-        return getColorForNumber(
-          discoursemeId,
-          1,
-          undefined,
-          isDarkMode ? 0.8 : 0.3,
-        )
-      })
+      .attr('fill', 'currentColor')
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('lengthAdjust', 'spacingAndGlyphs')
@@ -227,14 +224,13 @@ export default function WordCloud({
           .attr('fill', 'white')
           .attr('cx', 0)
           .attr('cy', 0)
-          .attr('stroke-width', 1)
           .attr('stroke', (d) => {
             if (d.discoursemeId === undefined) return 'rgb(100 100 100)'
             return getColorForNumber(d.discoursemeId)
           })
           .attr('fill', (d) => {
             if (d.discoursemeId === undefined) return 'transparent'
-            return getColorForNumber(d.discoursemeId, 0.2)
+            return getColorForNumber(d.discoursemeId, 0.5)
           })
           .call(
             drag
@@ -339,7 +335,6 @@ export default function WordCloud({
           : 'opacity-90',
       )
       .attr('fill', (d) => {
-        // TODO: handle multiple discoursemes
         if (d.discoursemeId === undefined) return null
         return getColorForNumber(d.discoursemeId)
       })
@@ -376,8 +371,13 @@ export default function WordCloud({
           .attr('x', (d) => d.x)
           .attr('y', (d) => d.y)
           .attr('class', (d) => {
+            const isFilterItem = d.source === 'items' && d.item === filterItem
             const isDragging = !!d.isDragging
-            return `${isDragging ? 'pointer-events-none animate-pulse' : ''} cursor-grab dark:fill-white/10 fill-black/5 hover:fill-primary/50 dark:hover:fill-primary/50`
+            return cn(
+              `cursor-grab dark:fill-white/10 fill-black/5 hover:fill-primary/50 dark:hover:fill-primary/50`,
+              isDragging && 'pointer-events-none animate-pulse',
+              isFilterItem && 'stroke-primary',
+            )
           })
         textGroup
           .data(wordData)
@@ -385,8 +385,15 @@ export default function WordCloud({
           .attr('cx', (d) => d.x)
           .attr('cy', (d) => d.y)
           .attr('class', (d) => {
+            const isFilterDiscourseme =
+              d.source === 'discoursemes' &&
+              filterDiscoursemeIds.includes(d.discoursemeId)
             const isDragging = !!d.isDragging
-            return `${isDragging ? 'pointer-events-none animate-pulse' : ''} cursor-grab opacity-60 hover:opacity-100 stroke-1 hover:stroke-2 transition-all`
+            return cn(
+              `cursor-grab opacity-60 hover:bg-opacity-100 stroke-1 hover:stroke-2 transition-all`,
+              isDragging && 'pointer-events-none animate-pulse',
+              isFilterDiscourseme && 'opacity-70 stroke-2 stroke-primary',
+            )
           })
       })
 
@@ -595,6 +602,14 @@ export default function WordCloud({
       }
     }
 
+    const unsubscribeRouter = router.subscribe('onResolved', (event) => {
+      filterItem = event.toLocation.search.clFilterItem ?? ''
+      filterDiscoursemeIds = [
+        ...(event.toLocation.search.clFilterDiscoursemeIds ?? []),
+      ]
+      render()
+    })
+
     // TODO: add this event listener the 'react' way
     document.querySelector('#center-map')?.addEventListener('click', centerView)
 
@@ -638,8 +653,10 @@ export default function WordCloud({
         .querySelector('#center-map')
         ?.removeEventListener('click', centerView)
       window.removeEventListener('resize', handleResize)
+      unsubscribeRouter()
     }
   }, [
+    router,
     words,
     navigate,
     theme,
