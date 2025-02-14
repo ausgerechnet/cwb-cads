@@ -115,9 +115,9 @@ export function SelectMulti<IdType extends string | number>({
                   }}
                 >
                   {itemIds.includes(id) ? (
-                    <SquareIcon className="mr-2 h-4 w-4 rounded-full" />
-                  ) : (
                     <CheckSquareIcon className="mr-2 h-4 w-4 rounded-full" />
+                  ) : (
+                    <SquareIcon className="mr-2 h-4 w-4 rounded-full" />
                   )}
                   {typeof id === 'number' && (
                     <span
