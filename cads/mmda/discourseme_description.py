@@ -194,12 +194,12 @@ def discourseme_template_to_description(discourseme, items, corpus_id, subcorpus
 class DiscoursemeDescriptionIn(Schema):
 
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False, metadata={'nullable': True})
+    subcorpus_id = Integer(required=False, allow_none=True)
 
     s = String(required=False)
     match_strategy = String(required=False, load_default='longest', validate=OneOf(['longest', 'shortest', 'standard']))
 
-    items = Nested(DiscoursemeItem(many=True), required=False, metadata={'nullable': True}, load_default=[])
+    items = Nested(DiscoursemeItem(many=True), required=False, allow_none=True, load_default=[])
 
 
 class DiscoursemeDescriptionSimilarIn(Schema):
@@ -211,8 +211,8 @@ class DiscoursemeDescriptionSimilarIn(Schema):
 class DiscoursemeCoordinatesIn(Schema):
 
     discourseme_id = Integer(required=True)
-    x_user = Float(required=True, metadata={'nullable': True})
-    y_user = Float(required=True, metadata={'nullable': True})
+    x_user = Float(required=True, allow_none=True)
+    y_user = Float(required=True, allow_none=True)
 
 
 # OUTPUT
@@ -221,7 +221,7 @@ class DiscoursemeDescriptionOut(Schema):
     id = Integer(required=True)
     discourseme_id = Integer(required=True)
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    subcorpus_id = Integer(required=True, dump_default=None, allow_none=True)
     query_id = Integer(required=True)
     s = String(required=True)
     match_strategy = String(required=True)
@@ -250,8 +250,8 @@ class DiscoursemeCoordinatesOut(Schema):
     discourseme_id = Integer(required=True)
     x = Float(required=True)
     y = Float(required=True)
-    x_user = Float(required=True, dump_default=None, metadata={'nullable': True})
-    y_user = Float(required=True, dump_default=None, metadata={'nullable': True})
+    x_user = Float(required=True, dump_default=None, allow_none=True)
+    y_user = Float(required=True, dump_default=None, allow_none=True)
 
 
 #################

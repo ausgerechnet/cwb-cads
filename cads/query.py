@@ -303,7 +303,7 @@ def iterative_query(focus_query, filter_queries, window, overlap='partial'):
 class QueryIn(Schema):
 
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False, metadata={'nullable': True})
+    subcorpus_id = Integer(required=False, allow_none=True)
 
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
@@ -315,7 +315,7 @@ class QueryIn(Schema):
 class QueryAssistedIn(Schema):
 
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False, metadata={'nullable': True})
+    subcorpus_id = Integer(required=False, allow_none=True)
 
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
@@ -342,8 +342,8 @@ class QueryOut(Schema):
     id = Integer(required=True)
     corpus_id = Integer(required=True)
     corpus_name = String(required=True)
-    subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
-    subcorpus_name = String(required=True, dump_default=None, metadata={'nullable': True})
+    subcorpus_id = Integer(required=True, dump_default=None, allow_none=True)
+    subcorpus_name = String(required=True, dump_default=None, allow_none=True)
     match_strategy = String(required=True)
     cqp_query = String(required=True)
     random_seed = Integer(required=True)

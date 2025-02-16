@@ -103,10 +103,10 @@ class ConstellationDescriptionOut(Schema):
 
     id = Integer(required=True)
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    subcorpus_id = Integer(required=True, dump_default=None, allow_none=True)
     s = String(required=True)
     match_strategy = String(required=True)
-    # semantic_map_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
+    # semantic_map_id = Integer(required=True, dump_default=None, allow_none=True)
     discourseme_descriptions = Nested(DiscoursemeDescriptionOut(many=True), required=True, dump_default=[])
 
 

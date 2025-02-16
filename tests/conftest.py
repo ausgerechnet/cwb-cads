@@ -27,7 +27,7 @@ with app.app_context():
     import_library("tests/library/", corpus_id=1, username='admin')
 
 
-class AuthActions(object):
+class AuthActions:
 
     def __init__(self, client):
         self._client = client

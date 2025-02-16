@@ -36,9 +36,9 @@ class UserRegister(Schema):
     username = String(required=True)
     password = String(required=True)
     confirm_password = String(required=True)
-    first_name = String(required=False, metadata={'nullable': True})
-    last_name = String(required=False, metadata={'nullable': True})
-    email = String(required=False, metadata={'nullable': True})
+    first_name = String(required=False, allow_none=True)
+    last_name = String(required=False, allow_none=True)
+    email = String(required=False, allow_none=True)
 
 
 class UserIn(Schema):

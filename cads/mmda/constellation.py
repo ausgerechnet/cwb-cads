@@ -18,16 +18,16 @@ bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
 class ConstellationIn(Schema):
 
-    name = String(required=False, metadata={'nullable': True})
-    comment = String(required=False, metadata={'nullable': True})
+    name = String(required=False, allow_none=True)
+    comment = String(required=False, allow_none=True)
     discourseme_ids = List(Integer, required=False, load_default=[])
 
 
 class ConstellationOut(Schema):
 
     id = Integer(required=True)
-    name = String(required=True, metadata={'nullable': True})
-    comment = String(required=True, metadata={'nullable': True})
+    name = String(required=True, allow_none=True)
+    comment = String(required=True, allow_none=True)
     discoursemes = Nested(DiscoursemeOut(many=True), required=True, dump_default=[])
 
 

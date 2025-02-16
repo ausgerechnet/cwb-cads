@@ -147,7 +147,7 @@ def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=F
 # Input
 class CollocationIn(Schema):
 
-    semantic_map_id = Integer(required=False, load_default=None, metadata={'nullable': True})
+    semantic_map_id = Integer(required=False, load_default=None, allow_none=True)
     semantic_map_init = Boolean(required=False, load_default=True)
 
     p = String(required=True)
@@ -156,7 +156,7 @@ class CollocationIn(Schema):
     s_break = String(required=False)
 
     # filtering for second-order collocation
-    filter_item = String(required=False, metadata={'nullable': True})
+    filter_item = String(required=False, allow_none=True)
     filter_item_p_att = String(required=False, load_default='lemma')
     filter_overlap = String(required=False, load_default='partial', validate=OneOf(['partial', 'full', 'match', 'matchend']))
 
@@ -166,7 +166,7 @@ class CollocationOut(Schema):
 
     id = Integer(required=True)
 
-    semantic_map_id = Integer(required=True, metadata={'nullable': True}, dump_default=None)
+    semantic_map_id = Integer(required=True, allow_none=True, dump_default=None)
     query_id = Integer(required=True)
 
     p = String(required=True)

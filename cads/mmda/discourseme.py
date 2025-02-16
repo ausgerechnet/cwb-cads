@@ -102,25 +102,25 @@ class DiscoursemeItem(Schema):
 
     """
 
-    p = String(required=False, metadata={'nullable': True})
-    surface = String(required=False, metadata={'nullable': True})
-    cqp_query = String(required=False, metadata={'nullable': True})
+    p = String(required=False, allow_none=True)
+    surface = String(required=False, allow_none=True)
+    cqp_query = String(required=False, allow_none=True)
 
 
 # INPUT
 class DiscoursemeIn(Schema):
 
-    name = String(required=False, metadata={'nullable': True})
-    comment = String(required=False, metadata={'nullable': True})
-    template = Nested(DiscoursemeItem(many=True), required=False, metadata={'nullable': True}, load_default=[])
+    name = String(required=False, allow_none=True)
+    comment = String(required=False, allow_none=True)
+    template = Nested(DiscoursemeItem(many=True), required=False, allow_none=True, load_default=[])
 
 
 # OUTPUT
 class DiscoursemeOut(Schema):
 
     id = Integer(required=True)
-    name = String(required=True, dump_default=None, metadata={'nullable': True})
-    comment = String(required=True, dump_default=None, metadata={'nullable': True})
+    name = String(required=True, dump_default=None, allow_none=True)
+    comment = String(required=True, dump_default=None, allow_none=True)
     template = Nested(DiscoursemeItem(many=True), required=True, dump_default=[])
 
 
@@ -160,8 +160,8 @@ def create_discourseme(json_data):
     for item in template:
         db.session.add(DiscoursemeTemplateItems(
             discourseme_id=discourseme.id,
-            p=item['p'],
-            surface=item['surface']
+            p=item.get('p'),
+            surface=item.get('surface')
         ))
     db.session.commit()
 

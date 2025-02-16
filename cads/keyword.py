@@ -92,15 +92,15 @@ def ccc_keywords(keyword, include_negative=False):
 # Input
 class KeywordIn(Schema):
 
-    semantic_map_id = Integer(required=False, load_default=None, metadata={'nullable': True})
+    semantic_map_id = Integer(required=False, load_default=None, allow_none=True)
     semantic_map_init = Boolean(required=False, load_default=True)
 
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False, load_default=None, metadata={'nullable': True})
+    subcorpus_id = Integer(required=False, load_default=None, allow_none=True)
     p = String(required=False, load_default='lemma')
 
     corpus_id_reference = Integer(required=True)
-    subcorpus_id_reference = Integer(required=False, load_default=None, metadata={'nullable': True})
+    subcorpus_id_reference = Integer(required=False, load_default=None, allow_none=True)
     p_reference = String(required=False, load_default='lemma')
 
     sub_vs_rest = Boolean(required=False, load_default=True)
@@ -112,18 +112,18 @@ class KeywordOut(Schema):
 
     id = Integer(required=True)
 
-    semantic_map_id = Integer(required=True, metadata={'nullable': True})
+    semantic_map_id = Integer(required=True, allow_none=True)
 
     corpus_id = Integer(required=True)
     corpus_name = String(required=True)
-    subcorpus_id = Integer(required=True, dump_default=None, metadata={'nullable': True})
-    subcorpus_name = String(required=True, dump_default=None, metadata={'nullable': True})
+    subcorpus_id = Integer(required=True, dump_default=None, allow_none=True)
+    subcorpus_name = String(required=True, dump_default=None, allow_none=True)
     p = String(required=True)
 
     corpus_id_reference = Integer(required=True)
     corpus_name_reference = String(required=True)
-    subcorpus_id_reference = Integer(required=True, dump_default=None, metadata={'nullable': True})
-    subcorpus_name_reference = String(required=True, dump_default=None, metadata={'nullable': True})
+    subcorpus_id_reference = Integer(required=True, dump_default=None, allow_none=True)
+    subcorpus_name_reference = String(required=True, dump_default=None, allow_none=True)
     p_reference = String(required=True)
 
     sub_vs_rest = Boolean(required=True)

@@ -302,7 +302,7 @@ class ConstellationCollocationItemsOut(CollocationItemsOut):
 class ConstellationMapItemOut(Schema):
 
     item = String(required=True)
-    discourseme_id = Integer(required=True, metadata={'nullable': True})
+    discourseme_id = Integer(required=True, allow_none=True)
     source = String(required=True)
     x = Float(required=True)
     y = Float(required=True)

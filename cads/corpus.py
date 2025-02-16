@@ -389,10 +389,10 @@ class SubCorpusIn(Schema):
     level = String(required=True)
     key = String(required=True)
     name = String(required=True)
-    description = String(required=False, metadata={'nullable': True})
-    values_numeric = List(Float, required=False, metadata={'nullable': True})
-    values_unicode = List(String, required=False, metadata={'nullable': True})
-    value_boolean = Boolean(required=False, metadata={'nullable': True})
+    description = String(required=False, allow_none=True)
+    values_numeric = List(Float, required=False, allow_none=True)
+    values_unicode = List(String, required=False, allow_none=True)
+    value_boolean = Boolean(required=False, allow_none=True)
     create_nqr = Boolean(required=False, load_default=True)
 
 
@@ -414,10 +414,10 @@ class CorpusOut(Schema):
 
     id = Integer(required=True)
     cwb_id = String(required=True)
-    name = String(required=True, metadata={'nullable': True}, dump_default=None)
-    language = String(required=True, metadata={'nullable': True}, dump_default=None)
-    register = String(required=True, metadata={'nullable': True}, dump_default=None)
-    description = String(required=True, metadata={'nullable': True}, dump_default=None)
+    name = String(required=True, allow_none=True, dump_default=None)
+    language = String(required=True, allow_none=True, dump_default=None)
+    register = String(required=True, allow_none=True, dump_default=None)
+    description = String(required=True, allow_none=True, dump_default=None)
     s_atts = List(String, required=True, dump_default=[])
     p_atts = List(String, required=True, dump_default=[])
     s_annotations = List(String, required=True, dump_default=[])
@@ -427,9 +427,9 @@ class SubCorpusOut(Schema):
 
     id = Integer(required=True)
     corpus = Nested(CorpusOut, required=True)
-    name = String(required=True, dump_default=None, metadata={'nullable': True})
-    description = String(required=True, dump_default=None, metadata={'nullable': True})
-    nqr_cqp = String(required=True, dump_default=None, metadata={'nullable': True})
+    name = String(required=True, dump_default=None, allow_none=True)
+    description = String(required=True, dump_default=None, allow_none=True)
+    nqr_cqp = String(required=True, dump_default=None, allow_none=True)
 
 
 class AnnotationsOut(Schema):
