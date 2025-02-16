@@ -87,7 +87,7 @@ def test_discourseme_creation(client, auth):
                             json={
                                 'name': 'Union',
                                 'template': [
-                                    {'surface': 'CDU'},
+                                    {'surface': 'CDU', 'p': ''},
                                     {'surface': 'CSU'},
                                     {'surface': 'CDU/CSU'},
                                     {'surface': 'Union'}
