@@ -11,6 +11,7 @@ from flask import current_app
 from .. import db
 from ..database import Query
 
+from flexiconc import Concordance
 
 class SlotQuery(Query):
 
@@ -91,3 +92,58 @@ class QueryHistoryEntry(db.Model):
 
     parent = db.relationship("QueryHistory", back_populates="entries")
     query = db.relationship("Query")
+
+
+class FlexiConcSession(db.Model):
+
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+
+    created = db.Column(db.DateTime, default=datetime.utcnow)
+    tree = db.Column(db.String)
+
+    cqp_query = db.relationship("Query")
+    user = db.relationship("User")
+
+    _flexiconc = None
+
+    @property
+    def concordance(self):
+
+        if not self._flexiconc:
+            c = Concordance()
+            # TODO: work with actual concordance data frome the DB
+            c.retrieve_from_cwb(
+                query=self.cqp_query.mangled_query,
+                corpus=self.cqp_query.corpus.ccc()
+            )
+            
+            if self.tree:
+                # undump previous tree from DB
+                current_app.logger.debug(f"flexiconc :: using saved tree")
+                tree = json.loads(self.tree)
+                c.root = c._build_tree_from_data(tree)
+            else:
+                # dump fresh tree to DB
+                from .flexiconc import TreeNodeOut
+                current_app.logger.debug(f"flexiconc :: dumping initial tree")
+                self.tree = json.dumps(TreeNodeOut().dump(c.root))
+                db.session.commit()
+
+            self._flexiconc = c
+        
+        return self._flexiconc
+
+
+    def save_tree(self):
+        from .flexiconc import TreeNodeOut
+        self.tree = json.dumps(TreeNodeOut().dump(self.concordance.root))
+        db.session.merge(self)
+        db.session.commit()
+
+
+    def delete_tree(self):
+        self.tree = None
+        self._flexiconc = None
+        db.session.merge(self)
+        db.session.commit()
