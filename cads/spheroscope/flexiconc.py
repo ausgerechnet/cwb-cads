@@ -5,9 +5,10 @@ from functools import lru_cache
 import json
 
 from flask import current_app
-from apiflask import APIBlueprint, Schema
+from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Integer, String, Boolean, Nested, Dict, List, Raw
 
+from .database import FlexiConcSession
 from ..database import Query
 from ..users import auth
 from .. import db
@@ -43,16 +44,25 @@ def get_flexiconc_session(query_id, user_id):
 
     current_app.logger.debug(f"flexiconc :: initializing with concordances for query {query_id} for user {user_id}")
 
-    query = Query.query.get(query_id)
-    if not query:
-        raise ValueError(f"No query with id in database {query_id}")
+    session = FlexiConcSession.query.get((query_id, user_id))
+    if not session:
+        session = FlexiConcSession(
+            user_id=user_id,
+            query_id=query_id
+        )
+        db.session.add(session)
+        db.session.commit()
 
-    c = Concordance()
-    # TODO: work with actual concordance data frome the DB
-    c.retrieve_from_cwb(query=query.mangled_query, corpus=query.corpus.ccc())
-    # TODO: undump previous tree from DB/dump fresh tree to DB if null
+    return session
 
-    return c
+
+def session_or_404(query_id, user_id):
+    session = get_flexiconc_session(query_id, user_id)
+
+    if not session:
+        abort(404, message="specified query for user not found")
+    
+    return session
 
 
 ################
@@ -132,13 +142,19 @@ class AlgoFilterIn(Schema):
 @bp.auth_required(auth)
 def get_tree(query_id):
     
-    query = db.get_or_404(Query, query_id)
-    c = get_flexiconc_session(query.id, auth.current_user.id)
+    c = session_or_404(query_id, auth.current_user.id).concordance
 
     return TreeNodeOut().dump(c.root), 200
 
 
-# TODO: Endpoint for deleting/resetting the tree
+@bp.delete('/<query_id>/tree')
+@bp.auth_required(auth)
+def delete_tree(query_id):
+
+    session = session_or_404(query_id, auth.current_user.id)
+    session.delete_tree()
+
+    return "deleted session", 200
 
 
 @bp.get('/<query_id>/tree/<node_id>')
@@ -146,8 +162,7 @@ def get_tree(query_id):
 @bp.auth_required(auth)
 def get_node(query_id, node_id):
 
-    query = db.get_or_404(Query, query_id)
-    c = get_flexiconc_session(query.id, auth.current_user.id)
+    c = session_or_404(query_id, auth.current_user.id).concordance
 
     node = c.find_node_by_id(int(node_id))
     if node:
@@ -165,8 +180,7 @@ def get_node(query_id, node_id):
 @bp.auth_required(auth)
 def get_concordance(query_id, node_id):
 
-    query = db.get_or_404(Query, query_id)
-    c = get_flexiconc_session(query.id, auth.current_user.id)
+    c = session_or_404(query_id, auth.current_user.id).concordance
 
     node = c.find_node_by_id(int(node_id))
     if node:
@@ -183,13 +197,12 @@ def get_concordance(query_id, node_id):
 @bp.auth_required(auth)
 def bookmark_node(query_id, node_id, form_data):
 
-    query = db.get_or_404(Query, query_id)
-    c = get_flexiconc_session(query.id, auth.current_user.id)
-
+    c = session_or_404(query_id, auth.current_user.id).concordance
     node = c.find_node_by_id(int(node_id))
+
     if node:
         node.bookmarked = form_data['bookmarked']
-        return TreeNodeOut().dump(node), 200
+        return TreeNodeOut().dump(c.root), 200
     else:
         return f"No tree node with id {node_id}", 404
 
@@ -200,10 +213,9 @@ def bookmark_node(query_id, node_id, form_data):
 @bp.auth_required(auth)
 def get_available(query_id, node_id, query_data):
 
-    query = db.get_or_404(Query, query_id)
-    c = get_flexiconc_session(query.id, auth.current_user.id)
-
+    c = get_flexiconc_session(query_id, auth.current_user.id).concordance
     node = c.find_node_by_id(int(node_id))
+
     if node:
         algos = list(node.available_algorithms().values())
 
@@ -221,14 +233,14 @@ def get_available(query_id, node_id, query_data):
 @bp.auth_required(auth)
 def add_arrangement_node(query_id, node_id, json_data):
 
-    query = db.get_or_404(Query, query_id)
-    c = get_flexiconc_session(query.id, auth.current_user.id)
-
+    session = session_or_404(query_id, auth.current_user.id)
+    c = session.concordance
     node = c.find_node_by_id(int(node_id))
+
     if node:
         try:
             node.add_arrangement_node(ordering=[json_data])
-            # TODO: dump updated tree to DB
+            session.save_tree()
             return TreeNodeOut().dump(c.root), 200
         except Exception as e:
             print(e)
@@ -243,14 +255,14 @@ def add_arrangement_node(query_id, node_id, json_data):
 @bp.auth_required(auth)
 def add_subset_node(query_id, node_id, json_data):
 
-    query = db.get_or_404(Query, query_id)
-    c = get_flexiconc_session(query.id, auth.current_user.id)
-
+    session = session_or_404(query_id, auth.current_user.id)
+    c = session.concordance
     node = c.find_node_by_id(int(node_id))
+
     if node:
         try:
             node.add_subset_node(**json_data)
-            # TODO: dump updated tree to DB
+            session.save_tree()
             return TreeNodeOut().dump(c.root), 200
         except Exception as e:
             print(e)
