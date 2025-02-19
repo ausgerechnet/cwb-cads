@@ -111,6 +111,7 @@ class FlexiConcSession(db.Model):
     def concordance(self):
 
         if not self._flexiconc:
+            db.session.add(self)
             c = Concordance()
             # TODO: work with actual concordance data frome the DB
             c.retrieve_from_cwb(
@@ -128,6 +129,7 @@ class FlexiConcSession(db.Model):
                 from .flexiconc import TreeNodeOut
                 current_app.logger.debug(f"flexiconc :: dumping initial tree")
                 self.tree = json.dumps(TreeNodeOut().dump(c.root))
+                self.created = datetime.utcnow()                
                 db.session.commit()
 
             self._flexiconc = c
