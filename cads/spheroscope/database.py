@@ -5,6 +5,7 @@ import json
 import os
 from datetime import datetime
 
+from apiflask import abort
 from ccc.cqpy import cqpy_dump
 from flask import current_app
 
@@ -149,3 +150,11 @@ class FlexiConcSession(db.Model):
         self._flexiconc = None
         db.session.merge(self)
         db.session.commit()
+
+
+    def get_node(self, node_id):
+        c = self.concordance
+        node = c.find_node_by_id(node_id)
+        if not node:
+            abort(404, message=f"No tree node with id {node_id}")
+        return node
