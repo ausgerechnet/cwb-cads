@@ -46,12 +46,15 @@ def get_flexiconc_session(query_id, user_id):
 
     session = FlexiConcSession.query.get((query_id, user_id))
     if not session:
-        session = FlexiConcSession(
-            user_id=user_id,
-            query_id=query_id
-        )
-        db.session.add(session)
-        db.session.commit()
+        try:
+            session = FlexiConcSession(
+                user_id=user_id,
+                query_id=query_id
+            )
+            db.session.add(session)
+            db.session.commit()
+        except:
+            return None
 
     return session
 
@@ -162,13 +165,10 @@ def delete_tree(query_id):
 @bp.auth_required(auth)
 def get_node(query_id, node_id):
 
-    c = session_or_404(query_id, auth.current_user.id).concordance
+    s = session_or_404(query_id, auth.current_user.id)
+    node = s.get_node(int(node_id))
 
-    node = c.find_node_by_id(int(node_id))
-    if node:
-        return TreeNodeOut().dump(node), 200
-    else:
-        return f"No tree node with id {node_id}", 404
+    return TreeNodeOut().dump(node), 200
     
 
 @bp.delete('/<query_id>/tree/<node_id>')
@@ -176,19 +176,14 @@ def get_node(query_id, node_id):
 @bp.auth_required(auth)
 def delete_node(query_id, node_id):
 
-    session = session_or_404(query_id, auth.current_user.id)
-    c = session.concordance
+    s = session_or_404(query_id, auth.current_user.id)
+    node = s.get_node(int(node_id))
 
-    node = c.find_node_by_id(int(node_id))
-    if node:
+    siblings = node.parent.children
+    node.parent.children = tuple(n for n in siblings if n != node)
+    s.save_tree()
 
-        siblings = node.parent.children
-        node.parent.children = tuple(n for n in siblings if n != node)
-        session.save_tree()
-
-        return TreeNodeOut().dump(c.root), 200
-    else:
-        return f"No tree node with id {node_id}", 404
+    return TreeNodeOut().dump(s.concordance.root), 200
 
 
 # TODO: Endpoint for changing/patching algo parameters?
@@ -199,15 +194,12 @@ def delete_node(query_id, node_id):
 @bp.auth_required(auth)
 def get_concordance(query_id, node_id):
 
-    c = session_or_404(query_id, auth.current_user.id).concordance
+    s = session_or_404(query_id, auth.current_user.id)
+    node = s.get_node(int(node_id))
 
-    node = c.find_node_by_id(int(node_id))
-    if node:
-        # TODO: specify the output format for this endpoint
-        # TODO: return actual concordance lines?
-        return json.dumps(node.view()), 200     
-    else:
-        return f"No tree node with id {node_id}", 404 
+    # TODO: specify the output format for this endpoint
+    # TODO: return actual concordance lines?
+    return json.dumps(node.view()), 200
 
 
 @bp.post('/<query_id>/tree/<node_id>/bookmark')
@@ -216,14 +208,11 @@ def get_concordance(query_id, node_id):
 @bp.auth_required(auth)
 def bookmark_node(query_id, node_id, form_data):
 
-    c = session_or_404(query_id, auth.current_user.id).concordance
-    node = c.find_node_by_id(int(node_id))
-
-    if node:
-        node.bookmarked = form_data['bookmarked']
-        return TreeNodeOut().dump(c.root), 200
-    else:
-        return f"No tree node with id {node_id}", 404
+    s = session_or_404(query_id, auth.current_user.id)
+    node = s.get_node(int(node_id))
+    node.bookmarked = form_data['bookmarked']
+    
+    return TreeNodeOut().dump(s.concordance.root), 200
 
 
 @bp.get('/<query_id>/tree/<node_id>/available-algorithms')
@@ -232,18 +221,14 @@ def bookmark_node(query_id, node_id, form_data):
 @bp.auth_required(auth)
 def get_available(query_id, node_id, query_data):
 
-    c = get_flexiconc_session(query_id, auth.current_user.id).concordance
-    node = c.find_node_by_id(int(node_id))
+    s = session_or_404(query_id, auth.current_user.id)
+    node = s.get_node(int(node_id))
+    algos = list(node.available_algorithms().values())
 
-    if node:
-        algos = list(node.available_algorithms().values())
+    if 'algo_type' in query_data:
+        algos = [a for a in algos if a['algorithm_type'] == query_data['algo_type']]
 
-        if 'algo_type' in query_data:
-            algos = [a for a in algos if a['algorithm_type'] == query_data['algo_type']]
-
-        return [AlgorithmDetailsOut().dump(a) for a in algos], 200
-    else:
-        return f"No tree node with id {node_id}", 404
+    return [AlgorithmDetailsOut().dump(a) for a in algos], 200
 
 
 @bp.post('/<query_id>/tree/<node_id>/arrangement')
@@ -252,20 +237,15 @@ def get_available(query_id, node_id, query_data):
 @bp.auth_required(auth)
 def add_arrangement_node(query_id, node_id, json_data):
 
-    session = session_or_404(query_id, auth.current_user.id)
-    c = session.concordance
-    node = c.find_node_by_id(int(node_id))
-
-    if node:
-        try:
-            node.add_arrangement_node(ordering=[json_data])
-            session.save_tree()
-            return TreeNodeOut().dump(c.root), 200
-        except Exception as e:
-            print(e)
-            return str(type(e)) + ': ' + str(e), 422
-    else:
-        return f"No tree node with id {node_id}", 404
+    s = session_or_404(query_id, auth.current_user.id)
+    node = s.get_node(int(node_id))
+    try:
+        node.add_arrangement_node(ordering=[json_data])
+        s.save_tree()
+        return TreeNodeOut().dump(s.concordance.root), 200
+    except Exception as e:
+        print(e)
+        return str(type(e)) + ': ' + str(e), 422
 
 
 @bp.post('/<query_id>/tree/<node_id>/subset')
@@ -274,17 +254,12 @@ def add_arrangement_node(query_id, node_id, json_data):
 @bp.auth_required(auth)
 def add_subset_node(query_id, node_id, json_data):
 
-    session = session_or_404(query_id, auth.current_user.id)
-    c = session.concordance
-    node = c.find_node_by_id(int(node_id))
-
-    if node:
-        try:
-            node.add_subset_node(**json_data)
-            session.save_tree()
-            return TreeNodeOut().dump(c.root), 200
-        except Exception as e:
-            print(e)
-            return str(type(e)) + ': ' + str(e), 422
-    else:
-        return f"No tree node with id {node_id}", 404
+    s = session_or_404(query_id, auth.current_user.id)
+    node = s.get_node(int(node_id))
+    try:
+        node.add_subset_node(**json_data)
+        s.save_tree()
+        return TreeNodeOut().dump(s.concordance.root), 200
+    except Exception as e:
+        print(e)
+        return str(type(e)) + ': ' + str(e), 422
