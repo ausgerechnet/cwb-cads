@@ -171,7 +171,26 @@ def get_node(query_id, node_id):
         return f"No tree node with id {node_id}", 404
     
 
-# TODO: Endpoint for deleting an idividual node
+@bp.delete('/<query_id>/tree/<node_id>')
+@bp.output(TreeNodeOut)
+@bp.auth_required(auth)
+def delete_node(query_id, node_id):
+
+    session = session_or_404(query_id, auth.current_user.id)
+    c = session.concordance
+
+    node = c.find_node_by_id(int(node_id))
+    if node:
+
+        siblings = node.parent.children
+        node.parent.children = tuple(n for n in siblings if n != node)
+        session.save_tree()
+
+        return TreeNodeOut().dump(c.root), 200
+    else:
+        return f"No tree node with id {node_id}", 404
+
+
 # TODO: Endpoint for changing/patching algo parameters?
 
 
