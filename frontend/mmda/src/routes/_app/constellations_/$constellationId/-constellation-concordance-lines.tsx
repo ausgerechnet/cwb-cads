@@ -76,6 +76,7 @@ export function ConstellationConcordanceLines({
     setFilter,
   } = useFilterSelection('/_app/constellations_/$constellationId')
   const descriptionId = useDescription()?.description?.id
+  const enabled = focusDiscourseme !== undefined && descriptionId !== undefined
 
   const {
     data: concordanceLines,
@@ -100,7 +101,7 @@ export function ConstellationConcordanceLines({
         filterDiscoursemeIds: clFilterDiscoursemeIds,
       },
     ),
-    enabled: focusDiscourseme !== undefined && descriptionId !== undefined,
+    enabled,
   })
 
   pageCountRef.current =
@@ -113,54 +114,68 @@ export function ConstellationConcordanceLines({
 
       <ConstellationConcordanceFilter />
 
-      <div className="relative col-span-full flex flex-col gap-4">
-        <div className="max-w-full rounded-md border">
-          <Table
-            className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden"
-            isNarrow
-          >
-            <TableHeader className="col-span-full grid grid-cols-subgrid">
-              <TableRow className="col-span-full grid grid-cols-subgrid">
-                <TableHead className="flex items-center">ID</TableHead>
-                <TableHead className="flex items-center justify-end">
-                  Context
-                </TableHead>
-                <TableHead className="flex items-center justify-center">
-                  Keyword
-                </TableHead>
-                <TableHead className="flex items-center">Context</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-            <TableBody className="col-span-full grid grid-cols-subgrid">
-              {concordanceLines?.lines?.map((line) => (
-                <ConcordanceLineRender
-                  key={line.match_id}
-                  concordanceLine={line}
-                />
-              ))}
-              {isLoading && (
-                <Repeat count={clPageSize}>
-                  <TableRow className="col-span-full grid grid-cols-subgrid">
-                    <TableCell className="col-span-full">
-                      <Skeleton className="h-5" />
-                    </TableCell>
-                  </TableRow>
-                </Repeat>
-              )}
-            </TableBody>
-          </Table>
+      {!enabled && (
+        <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
+          No data available.
+          {focusDiscourseme === undefined && (
+            <>
+              <br />
+              Select a focus discourseme.
+            </>
+          )}
         </div>
-        <Pagination
-          className="col-span-full"
-          pageSize={clPageSize}
-          pageCount={pageCountRef.current}
-          totalRows={nrLinesRef.current}
-          pageIndex={clPageIndex}
-          setPageSize={(pageSize) => setFilter('clPageSize', pageSize)}
-          setPageIndex={(pageIndex) => setFilter('clPageIndex', pageIndex)}
-        />
-      </div>
+      )}
+
+      {enabled && (
+        <div className="relative col-span-full flex flex-col gap-4">
+          <div className="max-w-full rounded-md border">
+            <Table
+              className="grid w-full grid-cols-[min-content_1fr_max-content_1fr_min-content] overflow-hidden"
+              isNarrow
+            >
+              <TableHeader className="col-span-full grid grid-cols-subgrid">
+                <TableRow className="col-span-full grid grid-cols-subgrid">
+                  <TableHead className="flex items-center">ID</TableHead>
+                  <TableHead className="flex items-center justify-end">
+                    Context
+                  </TableHead>
+                  <TableHead className="flex items-center justify-center">
+                    Keyword
+                  </TableHead>
+                  <TableHead className="flex items-center">Context</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody className="col-span-full grid grid-cols-subgrid">
+                {concordanceLines?.lines?.map((line) => (
+                  <ConcordanceLineRender
+                    key={line.match_id}
+                    concordanceLine={line}
+                  />
+                ))}
+                {isLoading && (
+                  <Repeat count={clPageSize}>
+                    <TableRow className="col-span-full grid grid-cols-subgrid">
+                      <TableCell className="col-span-full">
+                        <Skeleton className="h-5" />
+                      </TableCell>
+                    </TableRow>
+                  </Repeat>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <Pagination
+            className="col-span-full"
+            pageSize={clPageSize}
+            pageCount={pageCountRef.current}
+            totalRows={nrLinesRef.current}
+            pageIndex={clPageIndex}
+            setPageSize={(pageSize) => setFilter('clPageSize', pageSize)}
+            setPageIndex={(pageIndex) => setFilter('clPageIndex', pageIndex)}
+          />
+        </div>
+      )}
     </div>
   )
 }
