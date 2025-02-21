@@ -38,7 +38,6 @@ export function ConstellationCollocationFilter({
   hideSortOrder?: boolean
 }) {
   const {
-    isSortable,
     windowSize,
     ccSortOrder,
     ccFilterDiscoursemeIds,
@@ -114,11 +113,11 @@ export function ConstellationCollocationFilter({
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-xs">Association Measure</span>
         <Select
-          disabled={!isSortable}
           value={ccSortBy}
-          onValueChange={(value) =>
-            setFilter('ccSortBy', FilterSchema.shape.ccSortBy.parse(value))
-          }
+          onValueChange={(value) => {
+            const sortBy = FilterSchema.shape.ccSortBy.parse(value)
+            setFilter('ccSortBy', sortBy)
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Association Measure" />

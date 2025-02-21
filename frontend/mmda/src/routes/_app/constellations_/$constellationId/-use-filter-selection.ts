@@ -129,7 +129,7 @@ export function useFilterSelection(
     clFilterItem: clFilterItem || undefined,
     clFilterItemPAtt,
     clFilterDiscoursemeIds,
-    ccSortBy: isSortable ? ccSortBy : undefined,
+    ccSortBy,
     ccPageSize,
     ccSortOrder,
     ccFilterDiscoursemeIds,

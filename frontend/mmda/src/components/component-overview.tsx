@@ -390,19 +390,73 @@ export function ComponentOverview() {
         }
         associations={[
           // measure 'something'
-          { node: 0, candidate: 1, score: 0.5, measure: 'something' },
-          { node: 0, candidate: 2, score: 0.3, measure: 'something' },
-          { node: 1, candidate: 2, score: 0.8, measure: 'something' },
+          {
+            node: 0,
+            candidate: 1,
+            score: 0.5,
+            scaledScore: 0.5,
+            measure: 'something',
+          },
+          {
+            node: 0,
+            candidate: 2,
+            score: 0.3,
+            scaledScore: 0.5,
+            measure: 'something',
+          },
+          {
+            node: 1,
+            candidate: 2,
+            score: 0.8,
+            scaledScore: 0.5,
+            measure: 'something',
+          },
 
           // measure 'anything'
-          { node: 0, candidate: 1, score: -0.5, measure: 'anything' },
-          { node: 0, candidate: 2, score: 0.3, measure: 'anything' },
-          { node: 1, candidate: 2, score: 0.8, measure: 'anything' },
+          {
+            node: 0,
+            candidate: 1,
+            score: -0.5,
+            scaledScore: 0.5,
+            measure: 'anything',
+          },
+          {
+            node: 0,
+            candidate: 2,
+            score: 0.3,
+            scaledScore: 0.5,
+            measure: 'anything',
+          },
+          {
+            node: 1,
+            candidate: 2,
+            score: 0.8,
+            scaledScore: 0.5,
+            measure: 'anything',
+          },
 
           // measure 'everything'
-          { node: 0, candidate: 1, score: 1_000, measure: 'everything' },
-          { node: 0, candidate: 2, score: 250, measure: 'everything' },
-          { node: 1, candidate: 2, score: 0, measure: 'everything' },
+          {
+            node: 0,
+            candidate: 1,
+            score: 1_000,
+            scaledScore: 0.5,
+            measure: 'everything',
+          },
+          {
+            node: 0,
+            candidate: 2,
+            score: 250,
+            scaledScore: 0.5,
+            measure: 'everything',
+          },
+          {
+            node: 1,
+            candidate: 2,
+            score: 0,
+            scaledScore: 0.5,
+            measure: 'everything',
+          },
         ]}
       />
     </div>

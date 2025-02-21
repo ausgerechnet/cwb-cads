@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { CheckIcon } from 'lucide-react'
-import { cn } from '@cads/shared/lib/utils'
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { cn } from '@cads/shared/lib/utils'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Table,
@@ -59,8 +59,15 @@ export function Collocation({
   constellationId: number
   descriptionId?: number
 }) {
-  const { setFilter, ccPageSize, ccPageNumber, clFilterItem, secondary } =
-    useFilterSelection('/_app/constellations_/$constellationId')
+  const {
+    setFilter,
+    ccPageSize,
+    ccPageNumber,
+    clFilterItem,
+    ccSortOrder,
+    ccSortBy,
+    secondary,
+  } = useFilterSelection('/_app/constellations_/$constellationId')
   const { error, isLoading, collocationItems } = useCollocation(
     constellationId,
     descriptionId,
@@ -87,9 +94,45 @@ export function Collocation({
         <TableHeader>
           <TableRow>
             <TableHead>Item</TableHead>
-            {measureOrder.map((measure) => (
-              <TableHead key={measure}>{measureMap[measure]}</TableHead>
-            ))}
+            {measureOrder.map((measure) => {
+              const isCurrent = ccSortBy === measure
+              return (
+                <TableHead key={measure} className="text-right">
+                  <Link
+                    className={cn(
+                      buttonVariants({ variant: 'ghost' }),
+                      '-mx-2 inline-flex h-auto gap-1 px-2 leading-none',
+                    )}
+                    to=""
+                    params={(p) => p}
+                    search={(s) => {
+                      if (isCurrent) {
+                        return {
+                          ...s,
+                          ccSortOrder:
+                            ccSortOrder === 'descending'
+                              ? 'ascending'
+                              : 'descending',
+                        }
+                      }
+                      return {
+                        ...s,
+                        ccSortBy: measure,
+                        ccSortOrder: 'ascending',
+                      }
+                    }}
+                  >
+                    {isCurrent && ccSortOrder === 'ascending' && (
+                      <ArrowDownIcon className="h-3 w-3" />
+                    )}
+                    {isCurrent && ccSortOrder === 'descending' && (
+                      <ArrowUpIcon className="h-3 w-3" />
+                    )}
+                    {measureMap[measure]}
+                  </Link>
+                </TableHead>
+              )
+            })}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -102,37 +145,41 @@ export function Collocation({
               </TableRow>
             </Repeat>
           )}
-          {(collocationItems?.items ?? []).map(({ item, scores = [] }) => (
-            <TableRow
-              key={item}
-              className={cn(isLoading && 'animate-pulse', 'py-0')}
-            >
-              <TableCell className="py-1">
-                <Link
-                  className={cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'inline-flex h-auto gap-1 px-2 py-1 leading-none',
-                  )}
-                  to=""
-                  params={(p) => p}
-                  search={(s) => ({
-                    ...s,
-                    clPageIndex: 0,
-                    clFilterItem: item,
-                    clFilterItemPAtt: secondary,
-                  })}
-                >
-                  {item}
-                  {item === clFilterItem && <CheckIcon className="h-3 w-3" />}
-                </Link>
-              </TableCell>
-              {measureOrder.map((measure) => (
-                <TableCell key={measure} className="py-1 text-right font-mono">
-                  {scores.find((s) => s.measure === measure)?.score ?? 'N/A'}
+          {!isLoading &&
+            (collocationItems?.items ?? []).map(({ item, scores = [] }) => (
+              <TableRow
+                key={item}
+                className={cn(isLoading && 'animate-pulse', 'py-0')}
+              >
+                <TableCell className="py-1">
+                  <Link
+                    className={cn(
+                      buttonVariants({ variant: 'outline' }),
+                      'inline-flex h-auto gap-1 px-2 py-1 leading-none',
+                    )}
+                    to=""
+                    params={(p) => p}
+                    search={(s) => ({
+                      ...s,
+                      clPageIndex: 0,
+                      clFilterItem: item,
+                      clFilterItemPAtt: secondary,
+                    })}
+                  >
+                    {item}
+                    {item === clFilterItem && <CheckIcon className="h-3 w-3" />}
+                  </Link>
                 </TableCell>
-              ))}
-            </TableRow>
-          ))}
+                {measureOrder.map((measure) => (
+                  <TableCell
+                    key={measure}
+                    className="py-1 text-right font-mono"
+                  >
+                    {scores.find((s) => s.measure === measure)?.score ?? 'N/A'}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
         </TableBody>
       </Table>
       <Pagination
