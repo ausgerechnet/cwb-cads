@@ -115,7 +115,7 @@ class ConstellationAssociationItemOut(Schema):
     node = Integer(required=True)
     candidate = Integer(required=True)
     measure = String(required=True)
-    score = Float(required=True)
+    score = Float(required=True, allow_none=True)
 
 
 class ConstellationAssociationOut(Schema):
