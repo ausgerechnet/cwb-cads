@@ -131,10 +131,12 @@ function AssociationTable({
       }}
     >
       <thead className="col-span-full grid grid-cols-subgrid">
-        <th></th>
-        {rowIds.map((rowId) => (
-          <th key={rowId}>{legendNameMap?.get(rowId) ?? rowId}</th>
-        ))}
+        <tr className="col-span-full grid grid-cols-subgrid">
+          <th></th>
+          {rowIds.map((rowId) => (
+            <th key={rowId}>{legendNameMap?.get(rowId) ?? rowId}</th>
+          ))}
+        </tr>
       </thead>
       <tbody className="col-span-full grid grid-cols-subgrid">
         {columnIds.map((columnId) => (
