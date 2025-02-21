@@ -577,11 +577,8 @@ export const addConstellationDiscourseme: MutationOptions<
       },
     ),
   onSuccess: (constellation) => {
-    const constellationId = constellation.id
-    if (constellationId === undefined) return
-    void queryClient.invalidateQueries(constellationById(constellationId))
     void queryClient.invalidateQueries({
-      queryKey: ['query-concordances', constellationId],
+      queryKey: ['query-concordances'],
     })
     void queryClient.invalidateQueries({
       queryKey: ['constellation-description'],
@@ -594,6 +591,12 @@ export const addConstellationDiscourseme: MutationOptions<
     })
     void queryClient.invalidateQueries({
       queryKey: ['constellation-collocation-visualisation-items'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-collocations'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation'],
     })
   },
 }

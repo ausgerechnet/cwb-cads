@@ -60,7 +60,12 @@ export function DiscoursemeSelect({
       disabled={disabled}
       items={searchableItems}
       itemId={discoursemeId}
-      onChange={onChange}
+      onChange={(val) => {
+        console.log('val', val)
+        if (onChange) {
+          onChange(val)
+        }
+      }}
       className={className}
     />
   )

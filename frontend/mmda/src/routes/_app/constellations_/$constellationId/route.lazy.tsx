@@ -138,7 +138,7 @@ function ConstellationDetail() {
               </div>
               {isEditMode && (
                 <DiscoursemeSelect
-                  className="mt-1"
+                  className="mt-2"
                   discoursemes={nonSelectedDiscoursemes}
                   disabled={isPending}
                   onChange={(discoursemeId) => {
@@ -275,18 +275,20 @@ function DiscoursemeItem({
   isEditable: boolean
 }) {
   const discoursemeId = discourseme.id
-  const { mutate, error } = useMutation(removeConstellationDiscourseme)
+  const { mutate: removeConstellationFromDiscourseme, error } = useMutation(
+    removeConstellationDiscourseme,
+  )
   const isMutating = useIsMutating(removeConstellationDiscourseme) > 0
 
   return (
     <li
       key={discourseme.id}
       className={cn(
-        'border-input ring-ring flex gap-x-4 rounded-md border py-2 pl-4 pr-1 ring-offset-2 transition-all focus-within:ring-2',
+        'border-input ring-ring flex gap-x-4 rounded-md border py-0 pl-4 pr-1 ring-offset-2 transition-all focus-within:ring-2',
         !isEditable && 'border-transparent py-0 pl-0',
       )}
     >
-      <Small className="mx-0 my-auto flex-grow">
+      <Small className="mx-0 my-auto flex flex-grow leading-none">
         {discourseme.name}
         <span className="text-muted-foreground mt-1 block">
           {discourseme.comment}
@@ -294,12 +296,14 @@ function DiscoursemeItem({
       </Small>
       <Button
         disabled={isMutating || !isEditable}
-        onClick={() => mutate({ discoursemeId, constellationId })}
+        onClick={() =>
+          removeConstellationFromDiscourseme({ discoursemeId, constellationId })
+        }
         variant="ghost"
         type="button"
         size="icon"
         className={cn(
-          'min-h-min min-w-min flex-shrink-0 self-center p-2 transition-all focus:ring-0 focus-visible:ring-0 focus-visible:ring-transparent',
+          'm-1 h-8 w-8 flex-shrink-0 self-center p-1 transition-all focus:ring-0 focus-visible:ring-0 focus-visible:ring-transparent',
           !isEditable && 'h-0 w-0 disabled:opacity-0',
         )}
       >
