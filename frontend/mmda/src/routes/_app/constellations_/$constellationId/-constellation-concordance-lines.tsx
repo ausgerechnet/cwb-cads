@@ -373,6 +373,7 @@ function TokenRender({
             params={(p) => p}
             search={(s) => ({
               ...s,
+              clPageIndex: 0,
               clFilterItem: token.secondary,
               clFilterItemPAtt: secondary,
             })}

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { CheckIcon } from 'lucide-react'
 import { cn } from '@cads/shared/lib/utils'
 import { Link } from '@tanstack/react-router'
@@ -64,6 +65,21 @@ export function Collocation({
     constellationId,
     descriptionId,
   )
+
+  const maxPageNumber = isLoading
+    ? ccPageNumber
+    : collocationItems?.page_count || 1
+  useEffect(() => {
+    if (
+      ccPageNumber !== undefined &&
+      maxPageNumber !== undefined &&
+      ccPageNumber > maxPageNumber
+    ) {
+      setFilter('ccPageNumber', maxPageNumber)
+    }
+  }, [ccPageNumber, maxPageNumber, setFilter])
+  const pageNumber = Math.min(ccPageNumber ?? 1, maxPageNumber ?? 1)
+
   return (
     <div>
       <ErrorMessage error={error} />
@@ -101,6 +117,7 @@ export function Collocation({
                   params={(p) => p}
                   search={(s) => ({
                     ...s,
+                    clPageIndex: 0,
                     clFilterItem: item,
                     clFilterItemPAtt: secondary,
                   })}
@@ -110,7 +127,7 @@ export function Collocation({
                 </Link>
               </TableCell>
               {measureOrder.map((measure) => (
-                <TableCell key={measure} className="py-1">
+                <TableCell key={measure} className="py-1 text-right font-mono">
                   {scores.find((s) => s.measure === measure)?.score ?? 'N/A'}
                 </TableCell>
               ))}
@@ -122,7 +139,7 @@ export function Collocation({
         totalRows={collocationItems?.nr_items ?? 0}
         setPageSize={(size) => setFilter('ccPageSize', size)}
         setPageIndex={(index) => setFilter('ccPageNumber', index + 1)}
-        pageIndex={(ccPageNumber ?? 1) - 1}
+        pageIndex={pageNumber - 1}
         pageCount={collocationItems?.page_count ?? 0}
         pageSize={ccPageSize}
       />

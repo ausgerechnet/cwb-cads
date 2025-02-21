@@ -63,6 +63,7 @@ function ConstellationDetail() {
 
   const {
     setFilter,
+    setFilters,
     corpusId,
     subcorpusId,
     isConcordanceVisible,
@@ -188,8 +189,10 @@ function ConstellationDetail() {
               <div className="relative mt-1">
                 <SelectSubcorpus
                   onChange={(corpusId, subcorpusId) => {
-                    void setFilter('corpusId', corpusId)
-                    void setFilter('subcorpusId', subcorpusId)
+                    void setFilters({
+                      corpusId: corpusId,
+                      subcorpusId: subcorpusId,
+                    })
                   }}
                   corpusId={corpusId}
                   subcorpusId={subcorpusId}
@@ -203,8 +206,10 @@ function ConstellationDetail() {
                   discoursemes={discoursemesInDescription}
                   discoursemeId={focusDiscourseme}
                   onChange={(discoursemeId) => {
-                    void setFilter('ccPageNumber', 1)
-                    void setFilter('focusDiscourseme', discoursemeId)
+                    void setFilters({
+                      ccPageNumber: 1,
+                      focusDiscourseme: discoursemeId,
+                    })
                   }}
                   disabled={isLoadingDescription}
                   className="w-full"

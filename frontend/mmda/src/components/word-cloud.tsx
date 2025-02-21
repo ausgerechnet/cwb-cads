@@ -154,7 +154,7 @@ export default function WordCloud({
                       (id) => id !== d.discoursemeId,
                     )
                   : [d.discoursemeId, ...currentFilterDiscoursemeIds]
-              return { ...s, clFilterDiscoursemeIds }
+              return { ...s, clPageIndex: 0, clFilterDiscoursemeIds }
             },
             params: (p) => p,
             replace: true,
@@ -166,6 +166,7 @@ export default function WordCloud({
             // TODO: patt must come from higher up
             search: (s) => ({
               ...s,
+              clPageIndex: 0,
               clFilterItem: d.item,
               clFilterItemPAtt: 'lemma',
             }),

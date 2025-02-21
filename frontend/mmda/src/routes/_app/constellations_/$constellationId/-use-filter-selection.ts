@@ -1,5 +1,5 @@
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import { corpusById } from '@cads/shared/queries'
@@ -90,17 +90,27 @@ export function useFilterSelection(
   })
 
   const navigate = useNavigate()
-  const setFilter = useCallback(
-    <K extends keyof FilterSchema>(key: K, value: FilterSchema[K]) => {
-      void navigate({
-        to: '',
-        search: (s) => ({ ...s, [key]: value }),
-        params: (p) => p,
-        replace: true,
-      })
-    },
-    [navigate],
-  )
+  const setFilter = <K extends keyof FilterSchema>(
+    key: K,
+    value: FilterSchema[K],
+  ) => {
+    void navigate({
+      to: '',
+      search: (s) => ({ ...s, [key]: value }),
+      params: (p) => p,
+      replace: true,
+    })
+  }
+  const setFilters = <K extends keyof FilterSchema>(
+    values: Record<K, FilterSchema[K]>,
+  ) => {
+    void navigate({
+      to: '',
+      search: (s) => ({ ...s, ...values }),
+      params: (p) => p,
+      replace: true,
+    })
+  }
 
   const pAttributes = useMemo(() => corpus?.p_atts ?? [], [corpus?.p_atts])
   const contextBreakList = useMemo(() => corpus?.s_atts ?? [], [corpus?.s_atts])
@@ -124,6 +134,7 @@ export function useFilterSelection(
     ccSortOrder,
     ccFilterDiscoursemeIds,
     setFilter,
+    setFilters,
     primary: defaultTo([primary, 'word'], corpus?.p_atts),
     secondary: defaultTo(secondary, corpus?.p_atts),
     s: defaultTo(s, corpus?.s_atts),

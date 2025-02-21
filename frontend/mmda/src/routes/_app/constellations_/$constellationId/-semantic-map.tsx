@@ -353,6 +353,7 @@ function ConstellationDiscoursemesEditor({
                               params={(p) => p}
                               search={(s) => ({
                                 ...s,
+                                clPageIndex: 0,
                                 clFilterDiscoursemeIds: (
                                   s.clFilterDiscoursemeIds ?? []
                                 ).filter((id) => id !== discoursemeId),
