@@ -19,6 +19,7 @@ export function AssociationMatrix({
     node: number
     candidate: number
     score: number
+    scaledScore?: number
     measure: string
   }[]
 }) {
@@ -112,6 +113,7 @@ function AssociationTable({
     node: number
     candidate: number
     score: number
+    scaledScore?: number
     measure: string
   }[]
 }) {
@@ -120,19 +122,6 @@ function AssociationTable({
     .map((i) => i)
     .toReversed()
     .slice(0, -1)
-
-  const minScore = associations.reduce(
-    (acc, { score }) => Math.min(acc, score),
-    Infinity,
-  )
-  const maxScore = associations.reduce(
-    (acc, { score }) => Math.max(acc, score),
-    -Infinity,
-  )
-  const maxDeviation = Math.max(Math.abs(minScore), Math.abs(maxScore))
-
-  // maps score to a value between 0 and 1 with 0 being mapped onto 0.5, 0 onto - maxDeviation, and 1 onto maxDeviation
-  const mapScore = (score: number) => (score / maxDeviation + 1) / 2
 
   return (
     <table
@@ -152,25 +141,25 @@ function AssociationTable({
           <tr key={columnId} className="col-span-full grid grid-cols-subgrid">
             <td>{legendNameMap?.get(columnId) ?? columnId}</td>
             {rowIds.map((candidate) => {
-              const associationScore = associations.find(
-                (a) => a.node === candidate && a.candidate === columnId,
-              )?.score
-              const mappedScore = mapScore(associationScore ?? 0)
+              const { score: associationScore, scaledScore } =
+                associations.find(
+                  (a) => a.node === candidate && a.candidate === columnId,
+                ) ?? {}
               return (
                 <td
                   key={candidate}
                   className={cn(
                     'font-xs p-1 text-right font-mono transition-colors duration-500',
                     {
-                      'text-white': mappedScore <= 0.25 || mappedScore >= 0.75,
-                      'text-black': mappedScore > 0.25 && mappedScore < 0.75,
+                      'text-white': scaledScore <= 0.25 || scaledScore >= 0.75,
+                      'text-black': scaledScore > 0.25 && scaledScore < 0.75,
                     },
                   )}
                   style={{
                     backgroundColor:
                       associationScore === undefined
                         ? 'transparent'
-                        : d3.interpolateSpectral(mappedScore),
+                        : d3.interpolateSpectral(scaledScore),
                   }}
                 >
                   {associationScore === undefined

@@ -323,10 +323,18 @@ function DescriptionAssociation({
   constellationId: number | undefined
   descriptionId: number
 }) {
-  return null
   const { data, isLoading, error } = useQuery({
     ...constellationDescriptionAssociations(constellationId!, descriptionId!),
     enabled: constellationId !== undefined,
+    select: (data) => {
+      // The two arrays `scores` and `scaled_scores` are parallel arrays
+      data.scores = data.scores.map((score, index) => ({
+        ...score,
+        // Normalize the scaled score to be between 0 and 1; that's what the visualization expects
+        scaledScore: (data.scaled_scores[index].score ?? 0) / 2 + 0.5,
+      }))
+      return data
+    },
   })
   const { data: discoursemes, error: errorDiscoursemes } =
     useQuery(discoursemesList)
@@ -352,7 +360,7 @@ function DescriptionAssociation({
     <AssociationMatrix
       className={className}
       legendNameMap={legendNameMap}
-      associations={data.associations}
+      associations={data.scores}
     />
   )
 }
