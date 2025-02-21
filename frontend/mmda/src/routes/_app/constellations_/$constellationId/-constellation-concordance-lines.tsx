@@ -157,7 +157,7 @@ export function ConstellationConcordanceLines({
                   <Repeat count={clPageSize}>
                     <TableRow className="col-span-full grid grid-cols-subgrid">
                       <TableCell className="col-span-full">
-                        <Skeleton className="h-5" />
+                        <Skeleton className="my-0.5 h-4" />
                       </TableCell>
                     </TableRow>
                   </Repeat>
