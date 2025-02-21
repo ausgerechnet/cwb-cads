@@ -246,8 +246,8 @@ function ConstellationDetail() {
           )}
           <Drawer
             className={cn(
-              'z-20',
-              showsSemanticMap && 'absolute left-0 right-0 w-full',
+              'z-20 -mx-2',
+              showsSemanticMap && 'absolute left-0 right-0 mx-0 w-full',
             )}
             isVisible={isConcordanceVisible}
             onToggle={(isVisible) =>
