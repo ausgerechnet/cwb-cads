@@ -153,8 +153,10 @@ export const addDescriptionItem: MutationOptions<
     )
   },
   onSettled() {
+    void queryClient.invalidateQueries({ queryKey: ['collocation-items'] })
+    void queryClient.invalidateQueries({ queryKey: ['constellation'] })
     void queryClient.invalidateQueries({
-      queryKey: ['constellation'],
+      queryKey: ['constellation-description-associations'],
     })
     void queryClient.invalidateQueries({
       queryKey: ['constellation-collocation-visualisation-map'],
@@ -193,6 +195,9 @@ export const removeDescriptionItem: MutationOptions<
     })
     void queryClient.invalidateQueries({
       queryKey: ['constellation-description'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-description-associations'],
     })
     void queryClient.invalidateQueries({
       queryKey: ['constellation-collocation-visualisation-map'],
