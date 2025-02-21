@@ -18,7 +18,7 @@ type BreakdownItemsOut = {
 type CollocationItemOut = {
   item: string
   raw_scores: Array<CollocationScoreOut>
-  scaled_scores: Array<CollocationScoreOut>
+  scaled_scores?: Array<CollocationScoreOut> | undefined
   scores: Array<CollocationScoreOut>
 }
 type CollocationScoreOut = {
@@ -305,7 +305,7 @@ const CollocationItemOut: z.ZodType<CollocationItemOut> = z
   .object({
     item: z.string(),
     raw_scores: z.array(CollocationScoreOut),
-    scaled_scores: z.array(CollocationScoreOut),
+    scaled_scores: z.array(CollocationScoreOut).optional(),
     scores: z.array(CollocationScoreOut),
   })
   .passthrough()
