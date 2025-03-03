@@ -133,6 +133,9 @@ def get_or_create_cotext(query, window, context_break, return_df=False):
     if not cotext:
 
         matches_df = ccc_query(query)
+        if len(matches_df) == 0:
+            current_app.logger.debug("get_or_create_context :: empty query")
+            return
 
         current_app.logger.debug("get_or_create_cotext :: creating from scratch")
         cotext = Cotext(query_id=query.id, context=window, context_break=context_break)
@@ -198,6 +201,10 @@ def filter_matches(focus_query, filter_queries, window, overlap):
     # get relevant cotext lines
     current_app.logger.debug("filter_matches :: getting cotext")
     cotext = get_or_create_cotext(focus_query, window, focus_query.s)
+    if cotext is None:
+        current_app.logger.error("filter_matches :: empty query to start with")
+        return
+
     current_app.logger.debug("filter_matches :: filtering cotext")
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
                                             CotextLines.offset <= window,

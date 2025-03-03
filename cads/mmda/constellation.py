@@ -169,7 +169,7 @@ def patch_constellation_remove(constellation_id, json_data):
         if discourseme in constellation.discoursemes:
             constellation.discoursemes.remove(discourseme)
         else:
-            current_app.logger.info('discourseme not in constellation')
+            current_app.logger.debug('discourseme not in constellation')
     db.session.commit()
 
     return ConstellationOut().dump(constellation), 200

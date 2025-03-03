@@ -156,6 +156,9 @@ def set_collocation_discourseme_scores(collocation, discourseme_descriptions, ov
 
     current_app.logger.debug(f'set_collocation_discourseme_scores :: getting context of query {focus_query.id}')
     cotext = get_or_create_cotext(focus_query, window, s_break, return_df=True)
+    if cotext is None:
+        current_app.logger.error('set_collocation_discourseme_scores :: empty cotext')
+        return
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
     df_cotext = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True).drop_duplicates(subset='cpos')
 
