@@ -288,6 +288,8 @@ def iterative_query(focus_query, filter_queries, window, overlap='partial'):
     if not matches:
         # create matches
         matches = filter_matches(focus_query, filter_queries, window, overlap)
+        if matches is None:
+            return
         df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
         df_matches['query_id'] = query.id
         df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
@@ -383,7 +385,7 @@ def create(json_data, query_data):
     if query_data['execute']:
         ret = ccc_query(query)
         if isinstance(ret, str):  # CQP error
-            return abort(400, ret)
+            return abort(406, ret)
 
     return QueryOut().dump(query), 200
 
@@ -423,7 +425,7 @@ def create_assisted(json_data, query_data):
     if query_data['execute']:
         ret = ccc_query(query)
         if isinstance(ret, str):  # CQP error
-            return abort(409, ret)
+            return abort(406, ret)
 
     return QueryOut().dump(query), 200
 
@@ -729,6 +731,8 @@ def get_collocation(query_id, query_data):
         filter_queries['_FILTER'] = get_or_create_query_item(query.corpus, filter_item, filter_item_p_att, query.s)
     if len(filter_queries) > 0:
         query = iterative_query(query, filter_queries, window, filter_overlap)
+        if query is None:
+            abort(406, 'empty iterative query')
 
     collocation = Collocation(
         query_id=query.id,
