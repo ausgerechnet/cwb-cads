@@ -77,7 +77,6 @@ def test_constellation_keyword(client, auth):
         assert int(scores['R2']) == 113820
 
 
-@pytest.mark.now
 def test_constellation_keyword_coordinates(client, auth):
 
     auth_header = auth.login()
@@ -223,7 +222,6 @@ def test_constellation_keyword_empty_queries(client, auth):
         assert keyword_items.status_code == 200
 
 
-@pytest.mark.now
 def test_constellation_keyword_map(client, auth):
 
     auth_header = auth.login()
@@ -277,3 +275,58 @@ def test_constellation_keyword_map(client, auth):
 
         assert kw_map.json['map'][0]['discourseme_id'] is None
         assert kw_map.json['map'][9]['discourseme_id'] is None
+
+
+@pytest.mark.now
+def test_constellation_keyword_scaled_scores(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  headers=auth_header)
+        assert discoursemes.status_code == 200
+        discoursemes = discoursemes.json[0:4]
+
+        # create constellation
+        constellation = client.post(url_for('mmda.constellation.create_constellation'),
+                                    json={
+                                        'name': 'CDU',
+                                        'comment': 'Test Constellation HD',
+                                        'discourseme_ids': [disc['id'] for disc in discoursemes]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        # create description
+        description = client.post(url_for('mmda.constellation.description.create_description', constellation_id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1,
+                                      'subcorpus_id': 1,
+                                      's': 'text'
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        # create keyword
+        keyword = client.post(url_for('mmda.constellation.description.keyword.create_keyword',
+                                      constellation_id=constellation.json['id'],
+                                      description_id=description.json['id']),
+                              json={
+                                  'corpus_id_reference': 1,
+                                  'p_reference': 'lemma'
+                              },
+                              headers=auth_header)
+        assert keyword.status_code == 200
+
+        keyword_items = client.get(url_for('mmda.constellation.description.keyword.get_keyword_items',
+                                           constellation_id=constellation.json['id'],
+                                           description_id=description.json['id'],
+                                           keyword_id=keyword.json['id']),
+                                   headers=auth_header)
+        assert keyword_items.status_code == 200
+        assert len(keyword_items.json['discourseme_scores']) == len(discoursemes)
+
+        assert 'scaled_scores' in keyword_items.json['items'][0]
