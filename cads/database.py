@@ -628,6 +628,9 @@ class CollocationItem(db.Model):
             collocation_id=self.collocation_id, measure=measure, collocation_item_id=self.id
         ).first().score
 
+        if measure_max == 0:
+            return measure
+
         if measure == 'log_likelihood':
             import numpy as np
             return np.log(measure) / np.log(measure_max)
@@ -850,6 +853,9 @@ class KeywordItem(db.Model):
         measure = KeywordItemScore.query.filter_by(
             keyword_id=self.keyword_id, measure=measure, keyword_item_id=self.id
         ).first().score
+
+        if measure_max == 0:
+            return measure
 
         if measure == 'log_likelihood':
             import numpy as np
