@@ -18,7 +18,7 @@ def test_discourseme_create_description(client, auth):
                                   headers=auth_header)
 
         assert description.status_code == 200
-        assert len(description.json['items']) == 5
+        assert len(description.json['items']) == 6
 
 
 def test_discourseme_get_breakdown(client, auth):
@@ -36,7 +36,7 @@ def test_discourseme_get_breakdown(client, auth):
                                   headers=auth_header)
 
         assert description.status_code == 200
-        assert len(description.json['items']) == 5
+        assert len(description.json['items']) == 6
 
         breakdown = client.get(url_for('mmda.discourseme.description.description_get_breakdown',
                                        discourseme_id=union['id'], description_id=description.json['id'], p='lemma'),
