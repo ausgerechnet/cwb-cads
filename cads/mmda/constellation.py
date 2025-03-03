@@ -3,11 +3,13 @@
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, List, Nested, String
+from flask import current_app
 
 from .. import db
 from ..users import auth
 from .database import Constellation, Discourseme
 from .discourseme import DiscoursemeOut
+
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -139,8 +141,9 @@ def patch_constellation_add(constellation_id, json_data):
     """Patch constellation: add discourseme(s).
 
     """
-    constellation = db.get_or_404(Constellation, id)
+    constellation = db.get_or_404(Constellation, constellation_id)
     discoursemes_ids = json_data.get('discourseme_ids', [])
+    print(discoursemes_ids)
     discoursemes = [db.get_or_404(Discourseme, did) for did in discoursemes_ids]
     for disc in discoursemes:
         constellation.discoursemes.append(disc)
@@ -163,7 +166,10 @@ def patch_constellation_remove(constellation_id, json_data):
     discoursemes = [db.get_or_404(Discourseme, did) for did in discoursemes_ids]
 
     for discourseme in discoursemes:
-        constellation.discoursemes.remove(discourseme)
+        if discourseme in constellation.discoursemes:
+            constellation.discoursemes.remove(discourseme)
+        else:
+            current_app.logger.info('discourseme not in constellation')
     db.session.commit()
 
     return ConstellationOut().dump(constellation), 200
