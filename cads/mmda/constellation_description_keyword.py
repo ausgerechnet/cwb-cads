@@ -237,6 +237,13 @@ def get_keyword_discourseme_scores_2(keyword_id, discourseme_description_ids):
         df_global_scores['source'] = 'discoursemes'
         global_scores.append(df_global_scores)
 
+    if len(item_scores) == 0:
+        return {
+            'item_scores': DataFrame(),
+            'unigram_item_scores': DataFrame(),
+            'global_scores': DataFrame()
+        }
+
     return {
         'item_scores': concat(item_scores),
         'unigram_item_scores': concat(unigram_item_scores),
@@ -476,42 +483,48 @@ def get_keyword_map(constellation_id, description_id, keyword_id, query_data):
     df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
     df_discourseme_global_scores = discourseme_scores['global_scores']
 
-    # scale
-    max_disc_score = max([
-        df_discourseme_item_scores[sort_by].max(),
-        df_discourseme_unigram_item_scores[sort_by].max(),
-        df_discourseme_global_scores[sort_by].max(),
-    ])
-    df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
-    df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
-    df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
+    if len(df_discourseme_item_scores) == 0:
+        # empty result
+        _map = []
+    else:
+        # scale
+        max_disc_score = max([
+            df_discourseme_item_scores[sort_by].max(),
+            df_discourseme_unigram_item_scores[sort_by].max(),
+            df_discourseme_global_scores[sort_by].max(),
+        ])
+        df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
+        df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
+        df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
 
-    # coordinates
-    if keyword.semantic_map:
+        # coordinates
+        if keyword.semantic_map:
 
-        # make sure there's coordinates for all requested items
-        requested_items = list(df_scores['item'].values)
-        requested_items += list(df_discourseme_item_scores['item'].values)
-        requested_items += list(df_discourseme_unigram_item_scores['item'])
-        ccc_semmap_update(keyword.semantic_map, list(set(requested_items)))
-        coordinates = DataFrame(
-            [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
-        )
-        df_scores = merge(df_scores, coordinates, on='item', how='left')
-        df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
-        df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
+            # make sure there's coordinates for all requested items
+            requested_items = list(df_scores['item'].values)
+            requested_items += list(df_discourseme_item_scores['item'].values)
+            requested_items += list(df_discourseme_unigram_item_scores['item'])
+            ccc_semmap_update(keyword.semantic_map, list(set(requested_items)))
+            coordinates = DataFrame(
+                [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
+            )
+            df_scores = merge(df_scores, coordinates, on='item', how='left')
+            df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
+            df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
 
-        # discourseme coordinates
-        discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions, keyword.p)
-        discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
-        df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
+            # discourseme coordinates
+            discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions, keyword.p)
+            discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
+            df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
 
-    df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
-    df['x_user'] = df['x_user'].fillna(df['x'])
-    df['y_user'] = df['y_user'].fillna(df['y'])
-    df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
-    df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
-    df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+        df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
+        df['x_user'] = df['x_user'].fillna(df['x'])
+        df['y_user'] = df['y_user'].fillna(df['y'])
+        df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
+        df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
+        df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+
+        _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
 
     keyword_map = {
         'id': keyword.id,
@@ -520,7 +533,7 @@ def get_keyword_map(constellation_id, description_id, keyword_id, query_data):
         'page_size': page_size,
         'page_number': page_number,
         'page_count': page_count,
-        'map': [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
+        'map': _map
     }
 
     return ConstellationMapOut().dump(keyword_map), 200
