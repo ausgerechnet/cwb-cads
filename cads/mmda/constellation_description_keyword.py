@@ -88,7 +88,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
 
     # combine
     discourseme_counts = target_breakdown.join(reference_breakdown)
-    discourseme_counts['f2'] = to_numeric(discourseme_counts['f2'].fillna(0), downcast='integer')
+    discourseme_counts['f2'] = to_numeric(discourseme_counts['f2'].astype(float).fillna(0), downcast='integer')
     if len(discourseme_counts) == 0:
         return
     discourseme_counts['discourseme_description_id'] = discourseme_description.id
@@ -518,8 +518,8 @@ def get_keyword_map(constellation_id, description_id, keyword_id, query_data):
             df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
 
         df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
-        df['x_user'] = df['x_user'].fillna(df['x'])
-        df['y_user'] = df['y_user'].fillna(df['y'])
+        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
+        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
         df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
         df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
         df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
