@@ -114,6 +114,8 @@ def ccc_semmap_init(analysis, semantic_map_id=None, per_am=200, method='tsne'):
         coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
         db.session.commit()
 
+    current_app.logger.debug('ccc_semmap_init :: done')
+
 
 # def ccc_semmap_discoursemes(collocation, sigma_wiggle=1):
 #     """update coordinates of items belonging to a discourseme
