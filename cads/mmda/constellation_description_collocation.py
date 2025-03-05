@@ -124,8 +124,8 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
     # CollocationDiscoursemeItem
     current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus item counts')
     df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
-    df['f'] = 0 if 'f' not in df.columns else to_numeric(df['f'].fillna(0), downcast='integer')  # empty queries
-    df['f2'] = to_numeric(df['f2'].fillna(0), downcast='integer')
+    df['f'] = 0 if 'f' not in df.columns else to_numeric(df['f'].astype(int).fillna(0), downcast='integer')  # empty queries
+    df['f2'] = to_numeric(df['f2'].astype(int).fillna(0), downcast='integer')
     df['discourseme_description_id'] = discourseme_description.id
     df['collocation_id'] = collocation.id
     df['f1'] = len(df_cotext)
@@ -767,8 +767,8 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
             df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
 
         df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
-        df['x_user'] = df['x_user'].fillna(df['x'])
-        df['y_user'] = df['y_user'].fillna(df['y'])
+        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
+        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
         df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
         df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
         df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
