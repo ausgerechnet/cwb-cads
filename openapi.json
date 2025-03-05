@@ -6633,6 +6633,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "update_discourseme",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
           }
         ],
         "requestBody": {
@@ -6897,6 +6906,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "update_discourseme",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
             }
           }
         ],

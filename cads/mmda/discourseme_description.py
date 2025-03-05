@@ -5,7 +5,7 @@ import os
 from collections import defaultdict
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, Nested, String
+from apiflask.fields import Boolean, Float, Integer, Nested, String
 from apiflask.validators import OneOf
 from ccc.cache import generate_idx
 from ccc.utils import cqp_escape
@@ -19,7 +19,7 @@ from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..database import Breakdown, Corpus, Query, get_or_create
 from ..users import auth
 from .database import (CollocationDiscoursemeItem, Discourseme,
-                       DiscoursemeDescription, DiscoursemeDescriptionItems,
+                       DiscoursemeDescription, DiscoursemeDescriptionItems, DiscoursemeTemplateItems,
                        KeywordDiscoursemeItem)
 from .discourseme import DiscoursemeItem
 
@@ -395,31 +395,36 @@ def description_get_similar(discourseme_id, description_id, breakdown_id, query_
 
 @bp.patch('/<description_id>/add-item')
 @bp.input(DiscoursemeItem)
+@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
-def description_patch_add(discourseme_id, description_id, json_data):
+def description_patch_add(discourseme_id, description_id, json_data, query_data):
     """Patch discourseme description: add item to description.
 
     """
 
-    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
+    discourseme = db.get_or_404(Discourseme, discourseme_id)  # TODO: needed?
     description = db.get_or_404(DiscoursemeDescription, description_id)
     p = json_data.get('p')
     surface = json_data.get('surface')
-    db_item = DiscoursemeDescriptionItems.query.filter_by(
-        discourseme_description_id=description.id,
-        p=p,
-        surface=surface
-    ).first()
+
+    # update discourseme template
+    if query_data['update_discourseme']:
+        current_app.logger.debug('updating discourseme template')
+        db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=p, surface=surface).first()
+        if db_item:
+            current_app.logger.debug(f'item {p}="{surface}" already in template')
+        else:
+            db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=p, surface=surface)
+            db.session.add(db_item)
+            db.session.commit()
+
+    # update discourseme description
+    db_item = DiscoursemeDescriptionItems.query.filter_by(discourseme_description_id=description.id, p=p, surface=surface).first()
     if db_item:
         current_app.logger.debug(f'item {p}="{surface}" already in description')
-
     else:
-        db_item = DiscoursemeDescriptionItems(
-            discourseme_description_id=description.id,
-            p=p,
-            surface=surface
-        )
+        db_item = DiscoursemeDescriptionItems(discourseme_description_id=description.id, p=p, surface=surface)
         db.session.add(db_item)
         db.session.commit()
         delete_description_children(description)
@@ -429,29 +434,36 @@ def description_patch_add(discourseme_id, description_id, json_data):
 
 @bp.patch('/<description_id>/remove-item')
 @bp.input(DiscoursemeItem)
+@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
-def description_patch_remove(discourseme_id, description_id, json_data):
+def description_patch_remove(discourseme_id, description_id, json_data, query_data):
     """Patch discourseme description: remove item from description.
 
     """
 
-    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
+    discourseme = db.get_or_404(Discourseme, discourseme_id)  # TODO: needed?
     description = db.get_or_404(DiscoursemeDescription, description_id)
     p = json_data.get('p')
     surface = json_data.get('surface')
-    db_item = DiscoursemeDescriptionItems.query.filter_by(
-        discourseme_description_id=description.id,
-        p=p,
-        surface=surface
-    ).first()
 
+    # update discourseme template
+    if query_data['update_discourseme']:
+        current_app.logger.debug('updating discourseme template')
+        db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=p, surface=surface).first()
+        if db_item:
+            current_app.logger.debug('item {p}="{surface}" item not in template')
+        else:
+            db.session.delete(db_item)
+            db.session.commit()
+
+    # update discourseme description
+    db_item = DiscoursemeDescriptionItems.query.filter_by(discourseme_description_id=description.id, p=p, surface=surface).first()
     if not db_item:
         return abort(404, 'no such item')
-
-    db.session.delete(db_item)
-    db.session.commit()
-
-    delete_description_children(description)
+    else:
+        db.session.delete(db_item)
+        db.session.commit()
+        delete_description_children(description)
 
     return DiscoursemeDescriptionOut().dump(description), 200
