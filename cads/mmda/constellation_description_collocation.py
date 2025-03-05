@@ -124,8 +124,8 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
     # CollocationDiscoursemeItem
     current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus item counts')
     df = corpus_matches_breakdown.join(subcorpus_matches_breakdown)
-    df['f'] = 0 if 'f' not in df.columns else to_numeric(df['f'].astype(int).fillna(0), downcast='integer')  # empty queries
-    df['f2'] = to_numeric(df['f2'].astype(int).fillna(0), downcast='integer')
+    df['f'] = 0 if 'f' not in df.columns else to_numeric(df['f'].astype(float).fillna(0), downcast='integer')  # empty queries
+    df['f2'] = to_numeric(df['f2'].astype(float).fillna(0), downcast='integer')
     df['discourseme_description_id'] = discourseme_description.id
     df['collocation_id'] = collocation.id
     df['f1'] = len(df_cotext)
