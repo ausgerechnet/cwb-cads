@@ -296,6 +296,22 @@ export const keywordAnalysisById = (keywordAnalysisId: number) =>
       }),
   })
 
+export const deleteKeywordAnalysis: MutationOptions<
+  z.infer<typeof schemas.KeywordOut>,
+  Error,
+  { analysisId: number }
+> = {
+  mutationFn: ({ analysisId }) =>
+    apiClient.delete('/keyword/:id/', undefined, {
+      params: { id: analysisId.toString() },
+    }),
+  onSettled: () => {
+    void queryClient.invalidateQueries(keywordAnalysesList)
+  },
+}
+
+
+
 export const createKeywordAnalysis: MutationOptions<
   z.infer<typeof schemas.KeywordOut>,
   Error,
