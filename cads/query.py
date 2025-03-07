@@ -548,7 +548,7 @@ def create_or_get_query(json_data, query_data):
 
     """
 
-    query = create_or_get_assisted(json_data, query_data)
+    query = get_or_create_assisted(json_data, query_data)
 
     if isinstance(query, str):
         return abort(406, query)
