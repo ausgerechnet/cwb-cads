@@ -4,7 +4,7 @@ import { queryClient } from './query-client'
 import { apiClient, schemas } from '../api-client'
 import { arraysContainEqualItems } from '../lib/arrays-contain-equal-items'
 
-type SortBy =
+export type SortBy =
   | 'conservative_log_ratio'
   | 'O11'
   | 'E11'
@@ -42,6 +42,7 @@ export const createDiscourseme: MutationOptions<
   Error,
   z.infer<typeof schemas.DiscoursemeIn>
 > = {
+  // @ts-expect-error - deeply nested types
   mutationFn: (body) => apiClient.post('/mmda/discourseme/', body),
   onSuccess: () => {
     void queryClient.invalidateQueries(discoursemesList)
@@ -560,23 +561,20 @@ export const addConstellationDiscourseme: MutationOptions<
   mutationFn: async ({
     constellationId,
     discoursemeId,
-    descriptionId,
   }: {
     constellationId: number
     discoursemeId: number
-    descriptionId: number
   }) =>
     apiClient.patch(
-      '/mmda/constellation/:constellation_id/description/:description_id/add-discoursemes',
+      '/mmda/constellation/:constellation_id/add-discourseme',
       { discourseme_ids: [discoursemeId] },
       {
         params: {
           constellation_id: constellationId.toString(),
-          description_id: descriptionId.toString(),
         },
       },
     ),
-  onSuccess: (constellation) => {
+  onSuccess: () => {
     void queryClient.invalidateQueries({
       queryKey: ['query-concordances'],
     })
