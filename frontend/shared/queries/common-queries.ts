@@ -2,6 +2,7 @@ import { queryOptions, MutationOptions } from '@tanstack/react-query'
 import { z } from 'zod'
 import { queryClient } from './query-client'
 import { apiClient, schemas } from '../api-client'
+import { SortBy } from './mmda-queries'
 
 // ==================== QUERIES ====================
 export const queriesList = queryOptions({
@@ -22,7 +23,6 @@ export const createQueryCQP: MutationOptions<
   Error,
   z.infer<typeof schemas.QueryIn>
 > = {
-  // @ts-expect-error - TS has issues with excessively nested generics
   mutationFn: (body) => apiClient.post('/query/', body),
   onSuccess: () => {
     void queryClient.invalidateQueries(queriesList)
@@ -297,7 +297,7 @@ export const keywordAnalysisById = (keywordAnalysisId: number) =>
   })
 
 export const deleteKeywordAnalysis: MutationOptions<
-  z.infer<typeof schemas.KeywordOut>,
+  unknown,
   Error,
   { analysisId: number }
 > = {
@@ -310,7 +310,43 @@ export const deleteKeywordAnalysis: MutationOptions<
   },
 }
 
-
+export const keywordAnalysisItemsById = (
+  keywordAnalysisId: number,
+  {
+    sortOrder = 'descending',
+    sortBy = 'conservative_log_ratio',
+    pageSize = 10,
+    pageNumber = 1,
+  }: {
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?: SortBy
+    pageSize?: number
+    pageNumber?: number
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'keyword-analysis-items',
+      keywordAnalysisId,
+      {
+        sortOrder,
+        sortBy,
+        pageSize,
+        pageNumber,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get('/keyword/:id/items', {
+        params: { id: keywordAnalysisId.toString() },
+        queries: {
+          sort_order: sortOrder,
+          sort_by: sortBy,
+          page_size: pageSize,
+          page_number: pageNumber,
+        },
+        signal,
+      }),
+  })
 
 export const createKeywordAnalysis: MutationOptions<
   z.infer<typeof schemas.KeywordOut>,

@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMutation, useSuspenseQueries } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,14 +14,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@cads/shared/components/ui/form'
-import { CorpusSelect } from '@/components/select-corpus'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@cads/shared/components/ui/card'
-import {
-  corpusList,
-  createKeywordAnalysis,
-  subcorporaList,
-} from '@cads/shared/queries'
+import { corpusList, createKeywordAnalysis } from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
 import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
@@ -35,12 +29,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@cads/shared/components/ui/select'
-
-const emptyArray: never[] = []
+import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/new')({
   component: KeywordAnalysisNew,
   pendingComponent: LoaderKeywordAnalysisNew,
+})
+
+const KeywordAnalysisInput = schemas.KeywordIn.omit({
+  corpus_id: true,
+  corpus_id_reference: true,
+  subcorpus_id_reference: true,
+  subcorpus_id: true,
+}).extend({
+  corpus: z.object({
+    corpusId: z.number(),
+    subcorpusId: z.number().optional(),
+  }),
+  corpus_reference: z.object({
+    corpusId: z.number(),
+    subcorpusId: z.number().optional(),
+  }),
 })
 
 function KeywordAnalysisNew() {
@@ -60,82 +69,57 @@ function KeywordAnalysisNew() {
       toast.error('Failed to create keyword analysis')
     },
   })
-  const [{ data: corpora }, { data: subcorpora }] = useSuspenseQueries({
-    queries: [corpusList, subcorporaList],
+
+  const form = useForm<z.infer<typeof KeywordAnalysisInput>>({
+    resolver: zodResolver(KeywordAnalysisInput),
   })
 
-  const form = useForm<z.infer<typeof schemas.KeywordIn>>({
-    resolver: zodResolver(schemas.KeywordIn),
-  })
-
-  const corpusId = form.watch('corpus_id')
-  const subcorporaForTarget = useMemo(
-    () => subcorpora.filter((subcorpus) => subcorpus?.corpus?.id === corpusId),
-    [corpusId, subcorpora],
-  )
-  const pListTarget = useMemo(
-    () => corpora.find((corpus) => corpus.id === corpusId)?.p_atts ?? [],
-    [corpora, corpusId],
-  )
-
-  const corpusIdReference = form.getValues('corpus_id_reference')
-  const subcorporaForReference = useMemo(
-    () =>
-      subcorpora.filter(
-        (subcorpus) => subcorpus?.corpus?.id === corpusIdReference,
-      ),
-    [corpusIdReference, subcorpora],
-  )
-  const pListReference = useMemo(
-    () =>
-      corpora.find((corpus) => corpus.id === corpusIdReference)?.p_atts ?? [],
-    [corpora, corpusIdReference],
-  )
+  // It's sufficient to get the p attributes from the corpus and not query the p attributes from the subcorpus, because every subcorpus should have the same p attributes as its parent corpus.
+  const { data: corpora } = useQuery(corpusList)
+  const corpusId = form.watch('corpus')?.corpusId
+  const pListTarget =
+    corpora?.find((corpus) => corpus.id === corpusId)?.p_atts ?? []
+  const corpusIdReference = form.getValues('corpus_reference')?.corpusId
+  const pListReference =
+    corpora?.find((corpus) => corpus.id === corpusIdReference)?.p_atts ?? []
 
   return (
     <AppPageFrame title="Create new Keyword Analysis">
       <Card className="max flex max-w-3xl flex-col p-4">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => mutate(data))}>
+          <form
+            onSubmit={form.handleSubmit(
+              ({ corpus, corpus_reference, ...data }) =>
+                mutate({
+                  corpus_id: corpus.corpusId,
+                  subcorpus_id: corpus.subcorpusId ?? null,
+                  corpus_id_reference: corpus_reference.corpusId,
+                  subcorpus_id_reference: corpus_reference.subcorpusId ?? null,
+                  ...data,
+                }),
+            )}
+          >
             <fieldset
               className="grid max-w-3xl grid-cols-2 gap-3"
               disabled={isPending}
             >
               <Large className="col-span-2">Target</Large>
+
               <FormField
                 control={form.control}
-                name="corpus_id"
+                name="corpus"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target Corpus</FormLabel>
+                    <FormLabel>Target Corpus or Subcorpus</FormLabel>
                     <FormControl>
-                      <CorpusSelect
+                      <SelectSubcorpus
                         className="w-full"
-                        corpora={corpora}
-                        corpusId={field.value}
-                        onChange={(...args) => {
-                          field.onChange(...args)
-                          form.setValue('subcorpus_id', null)
+                        corpusId={field.value?.corpusId}
+                        subcorpusId={field.value?.subcorpusId}
+                        onChange={(corpusId, subcorpusId) => {
+                          field.onChange({ corpusId, subcorpusId })
+                          form.setValue('p', '')
                         }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="subcorpus_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Subcorpus</FormLabel>
-                    <FormControl>
-                      <CorpusSelect
-                        className="w-full"
-                        corpora={subcorporaForTarget ?? emptyArray}
-                        corpusId={field.value ?? undefined}
-                        onChange={field.onChange}
-                        disabled={corpusId === undefined}
                       />
                     </FormControl>
                     <FormMessage />
@@ -172,41 +156,21 @@ function KeywordAnalysisNew() {
                   </FormItem>
                 )}
               />
-              <Large className="col-span-2">Reference</Large>
+              <Large className="col-span-full">Reference</Large>
               <FormField
                 control={form.control}
-                name="corpus_id_reference"
+                name="corpus_reference"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reference Corpus</FormLabel>
+                    <FormLabel>Reference Corpus or Subcorpus</FormLabel>
                     <FormControl>
-                      <CorpusSelect
+                      <SelectSubcorpus
                         className="w-full"
-                        corpora={corpora}
-                        corpusId={field.value}
-                        onChange={(...args) => {
-                          field.onChange(...args)
-                          form.setValue('subcorpus_id_reference', null)
+                        corpusId={field.value?.corpusId}
+                        subcorpusId={field.value?.subcorpusId}
+                        onChange={(corpusId, subcorpusId) => {
+                          field.onChange({ corpusId, subcorpusId })
                         }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="subcorpus_id_reference"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reference Subcorpus</FormLabel>
-                    <FormControl>
-                      <CorpusSelect
-                        className="w-full"
-                        corpora={subcorporaForReference ?? emptyArray}
-                        corpusId={field.value ?? undefined}
-                        onChange={field.onChange}
-                        disabled={corpusIdReference === undefined}
                       />
                     </FormControl>
                     <FormMessage />

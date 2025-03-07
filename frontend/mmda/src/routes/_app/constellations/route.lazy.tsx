@@ -34,9 +34,7 @@ function ConstellationOverview() {
     <AppPageFrame
       title="Constellations"
       cta={{
-        nav: {
-          to: '/constellations/new',
-        },
+        nav: { to: '/constellations/new' },
         label: 'Create Constellation',
       }}
     >
