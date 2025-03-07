@@ -1432,7 +1432,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: KeywordOut,
+    response: z.unknown(),
     errors: [
       {
         status: 401,
@@ -2231,6 +2231,16 @@ const endpoints = makeApi([
         name: 'collocation_id',
         type: 'Path',
         schema: z.string(),
+      },
+      {
+        name: 'hide_focus',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+      {
+        name: 'hide_filter',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
       },
       {
         name: 'sort_order',
@@ -3101,6 +3111,11 @@ const endpoints = makeApi([
         type: 'Path',
         schema: z.string(),
       },
+      {
+        name: 'update_discourseme',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
     ],
     response: DiscoursemeDescriptionOut,
     errors: [
@@ -3200,6 +3215,11 @@ const endpoints = makeApi([
         name: 'description_id',
         type: 'Path',
         schema: z.string(),
+      },
+      {
+        name: 'update_discourseme',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
       },
     ],
     response: DiscoursemeDescriptionOut,
@@ -3330,6 +3350,11 @@ const endpoints = makeApi([
         name: 'description_id',
         type: 'Path',
         schema: z.string(),
+      },
+      {
+        name: 'update_discourseme',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
       },
     ],
     response: DiscoursemeDescriptionOut,
