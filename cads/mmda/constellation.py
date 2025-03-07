@@ -10,7 +10,6 @@ from ..users import auth
 from .database import Constellation, Discourseme
 from .discourseme import DiscoursemeOut
 
-
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
 

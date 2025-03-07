@@ -16,7 +16,6 @@ from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from .collocation import CollocationIn, CollocationOut, get_or_create_counts
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
-from .corpus import get_meta_frequencies, get_meta_number_tokens
 from .database import (Breakdown, Collocation, Corpus, Cotext, CotextLines,
                        Matches, Query, get_or_create)
 from .semantic_map import ccc_semmap_init
@@ -304,6 +303,108 @@ def iterative_query(focus_query, filter_queries, window, overlap='partial'):
     return query
 
 
+def get_or_create_assisted(json_data, execute=True):
+
+    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    json_data['s'] = json_data.get('s', corpus.s_default)
+
+    items = json_data.pop('items')
+    p = json_data.pop('p')
+    escape = json_data.pop('escape', json_data.get('escape'))
+    ignore_diacritics = json_data.pop('ignore_diacritics', json_data.get('ignore_diacritics'))
+    ignore_case = json_data.pop('ignore_case', json_data.get('ignore_case'))
+    flags = ''
+    if ignore_case or ignore_diacritics:
+        flags = '%'
+        if ignore_case:
+            flags += 'c'
+        if ignore_diacritics:
+            flags += 'd'
+
+    json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
+
+    # TODO: need to filter on None-values
+    query = Query.query.filter_by(
+        corpus_id=json_data.get('corpus_id'),
+        # subcorpus_id=json_data.get('subcorpus_id'),
+        cqp_query=json_data.get('cqp_query'),
+        # match_strategy=json_data.get('match_strategy'),
+        # filter_sequence=None,
+        s=json_data.get('s')
+    ).first()
+
+    if query is None:
+
+        query = Query(**json_data)
+        db.session.add(query)
+        db.session.commit()
+
+        if execute:
+            ret = ccc_query(query)
+            if isinstance(ret, str):  # CQP error
+                return ret
+
+    return query
+
+
+def get_concordance_lines(query_id, query_data):
+
+    query = db.get_or_404(Query, query_id)
+    corpus = query.corpus
+
+    # display options
+    window = query_data.get('window')
+    primary = query_data.get('primary')
+    secondary = query_data.get('secondary')
+    extended_window = query_data.get('extended_window')
+    context_break = query_data.get('context_break')
+    extended_context_break = query_data.get('extended_context_break')
+
+    # pagination
+    page_size = query_data.get('page_size')
+    page_number = query_data.get('page_number')
+
+    # sorting
+    sort_order = query_data.get('sort_order')
+    sort_by_p_att = query_data.get('sort_by_p_att')
+    sort_by_s_att = query_data.get('sort_by_s_att')
+    sort_by_offset = query_data.get('sort_by_offset')
+
+    # filtering
+    filter_item = query_data.get('filter_item')
+    filter_item_p_att = query_data.get('filter_item_p_att')
+    filter_query_ids = query_data.get('filter_query_ids')
+
+    # highlighting
+    highlight_query_ids = query_data.get('highlight_query_ids')
+
+    # prepare filter queries
+    filter_queries = {query_id: db.get_or_404(Query, query_id) for query_id in filter_query_ids}
+    if filter_item:
+        fq = get_or_create_query_item(corpus, filter_item, filter_item_p_att, query.s)
+        filter_queries['_FILTER'] = fq
+
+    # prepare highlight queries
+    highlight_queries = {query_id: db.get_or_404(Query, query_id) for query_id in highlight_query_ids}
+
+    # attributes to show
+    p_show = [primary, secondary]
+    s_show = query.corpus.s_annotations
+
+    concordance = ccc_concordance(query,
+                                  p_show, s_show,
+                                  window, context_break,
+                                  extended_window, extended_context_break,
+                                  highlight_queries=highlight_queries,
+                                  match_id=None,
+                                  filter_queries=filter_queries, overlap='partial',
+                                  page_number=page_number, page_size=page_size,
+                                  sort_order=sort_order,
+                                  sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
+
+    return concordance
+
+
 ################
 # API schemata #
 ################
@@ -437,6 +538,24 @@ def create_assisted(json_data, query_data):
     return QueryOut().dump(query), 200
 
 
+@bp.put('/assisted/')
+@bp.input(QueryAssistedIn)
+@bp.input({'execute': Boolean(load_default=True)}, location='query')
+@bp.output(QueryOut)
+@bp.auth_required(auth)
+def create_or_get_query(json_data, query_data):
+    """Create new query in assisted mode, if it does not exist.
+
+    """
+
+    query = create_or_get_assisted(json_data, query_data)
+
+    if isinstance(query, str):
+        return abort(406, query)
+
+    return QueryOut().dump(query), 200
+
+
 @bp.get('/')
 @bp.output(QueryOut(many=True))
 @bp.auth_required(auth)
@@ -528,58 +647,7 @@ def concordance_lines(query_id, query_data):
 
     """
 
-    query = db.get_or_404(Query, query_id)
-    corpus = query.corpus
-
-    # display options
-    window = query_data.get('window')
-    primary = query_data.get('primary')
-    secondary = query_data.get('secondary')
-    extended_window = query_data.get('extended_window')
-    context_break = query_data.get('context_break')
-    extended_context_break = query_data.get('extended_context_break')
-
-    # pagination
-    page_size = query_data.get('page_size')
-    page_number = query_data.get('page_number')
-
-    # sorting
-    sort_order = query_data.get('sort_order')
-    sort_by_p_att = query_data.get('sort_by_p_att')
-    sort_by_s_att = query_data.get('sort_by_s_att')
-    sort_by_offset = query_data.get('sort_by_offset')
-
-    # filtering
-    filter_item = query_data.get('filter_item')
-    filter_item_p_att = query_data.get('filter_item_p_att')
-    filter_query_ids = query_data.get('filter_query_ids')
-
-    # highlighting
-    highlight_query_ids = query_data.get('highlight_query_ids')
-
-    # prepare filter queries
-    filter_queries = {query_id: db.get_or_404(Query, query_id) for query_id in filter_query_ids}
-    if filter_item:
-        fq = get_or_create_query_item(corpus, filter_item, filter_item_p_att, query.s)
-        filter_queries['_FILTER'] = fq
-
-    # prepare highlight queries
-    highlight_queries = {query_id: db.get_or_404(Query, query_id) for query_id in highlight_query_ids}
-
-    # attributes to show
-    p_show = [primary, secondary]
-    s_show = query.corpus.s_annotations
-
-    concordance = ccc_concordance(query,
-                                  p_show, s_show,
-                                  window, context_break,
-                                  extended_window, extended_context_break,
-                                  highlight_queries=highlight_queries,
-                                  match_id=None,
-                                  filter_queries=filter_queries, overlap='partial',
-                                  page_number=page_number, page_size=page_size,
-                                  sort_order=sort_order,
-                                  sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
+    concordance = get_concordance_lines(query_id, query_data)
 
     return ConcordanceOut().dump(concordance), 200
 
@@ -673,6 +741,8 @@ def get_meta(query_id, query_data):
     """Get meta distribution of query.
 
     """
+
+    from .corpus import get_meta_frequencies, get_meta_number_tokens
 
     query = db.get_or_404(Query, query_id)
     level = query_data.get('level')

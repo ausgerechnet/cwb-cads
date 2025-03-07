@@ -19,8 +19,8 @@ from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..database import Breakdown, Corpus, Query, get_or_create
 from ..users import auth
 from .database import (CollocationDiscoursemeItem, Discourseme,
-                       DiscoursemeDescription, DiscoursemeDescriptionItems, DiscoursemeTemplateItems,
-                       KeywordDiscoursemeItem)
+                       DiscoursemeDescription, DiscoursemeDescriptionItems,
+                       DiscoursemeTemplateItems, KeywordDiscoursemeItem)
 from .discourseme import DiscoursemeItem
 
 bp = APIBlueprint('description', __name__, url_prefix='/<discourseme_id>/description', cli_group='discourseme')

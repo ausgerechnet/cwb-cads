@@ -16,9 +16,12 @@ from pandas import DataFrame, read_csv, to_datetime
 from sqlalchemy import func
 
 from . import db
+from .concordance import ConcordanceIn, ConcordanceOut
 from .database import (Corpus, CorpusAttributes, Segmentation,
                        SegmentationAnnotation, SegmentationSpan,
                        SegmentationSpanAnnotation, SubCorpus)
+from .query import (QueryAssistedIn, get_concordance_lines,
+                    get_or_create_assisted)
 from .users import auth
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
@@ -617,6 +620,23 @@ def get_frequencies(id, query_data):
     freq = df_freq.reset_index().to_dict(orient='records')
 
     return [MetaFrequenciesOut().dump(f) for f in freq], 200
+
+
+@bp.get('/<id>/concordance')
+@bp.input(QueryAssistedIn)
+@bp.input(ConcordanceIn, location='query')
+@bp.output(ConcordanceOut)
+@bp.auth_required(auth)
+def concordance(id, json_data, query_data):
+
+    query = get_or_create_assisted(json_data, True)
+
+    if isinstance(query, str):
+        return abort(406, query)
+
+    concordance = get_concordance_lines(query.id, query_data)
+
+    return ConcordanceOut().dump(concordance), 200
 
 
 ################
