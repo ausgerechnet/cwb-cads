@@ -665,9 +665,11 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
 
 @bp.get("/<collocation_id>/map")
 @bp.input(CollocationItemsIn, location='query')
+@bp.input({'hide_focus': Boolean(required=False, load_default=True),
+           'hide_filter': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
 @bp.output(ConstellationMapOut)
 @bp.auth_required(auth)
-def get_collocation_map(constellation_id, description_id, collocation_id, query_data):
+def get_collocation_map(constellation_id, description_id, collocation_id, query_data, query_hide):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
     TODO also return ranks (to ease frontend pagination)?
