@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from itertools import chain
+from math import isnan
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
@@ -744,6 +745,8 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
             df_discourseme_unigram_item_scores[sort_by].max(),
             df_discourseme_global_scores[sort_by].max(),
         ])
+        if isnan(max_disc_score):
+            max_disc_score = 1
         df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
         df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
         df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
