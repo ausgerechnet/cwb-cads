@@ -260,9 +260,10 @@ class DiscoursemeCoordinatesOut(Schema):
 
 @bp.post('/')
 @bp.input(DiscoursemeDescriptionIn)
+@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
-def create_description(discourseme_id, json_data):
+def create_description(discourseme_id, json_data, query_data):
     """Create description of discourseme in corpus.
 
     Will automatically create query (from provided items or template).
@@ -282,6 +283,18 @@ def create_description(discourseme_id, json_data):
     items = json_data.get('items', [])  # will use discourseme template if not given
 
     description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
+
+    # update discourseme template
+    if query_data['update_discourseme']:
+        current_app.logger.debug('updating discourseme template')
+        for item in items:
+            db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=item['p'], surface=item['surface']).first()
+            if db_item:
+                current_app.logger.debug(f'item {item["p"]}="{item["surface"]}" already in template')
+            else:
+                db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=item['p'], surface=item['surface'])
+                db.session.add(db_item)
+                db.session.commit()
 
     return DiscoursemeDescriptionOut().dump(description), 200
 
