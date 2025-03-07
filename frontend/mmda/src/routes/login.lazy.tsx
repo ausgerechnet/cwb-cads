@@ -48,23 +48,20 @@ function Login() {
     ...logIn,
     onSuccess: (...args) => {
       logIn?.onSuccess?.(...args)
-      void navigate({
-        to: redirect || '/queries',
-      })
+      void navigate({ to: redirect || '/queries' })
     },
   })
 
-  const isLoggedIn =
+  const isLoggedIn = Boolean(
     useQuery({
       ...userIdentify,
       refetchInterval: 10_000,
-    })?.data !== undefined
+    }).data,
+  )
 
   useEffect(() => {
     if (isLoggedIn) {
-      void navigate({
-        to: redirect || '/queries',
-      })
+      void navigate({ to: redirect || '/queries' })
     }
   }, [isLoggedIn, navigate, redirect])
 

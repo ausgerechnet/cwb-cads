@@ -54,11 +54,12 @@ function Login() {
     },
   })
 
-  const isLoggedIn =
+  const isLoggedIn = Boolean(
     useQuery({
       ...userIdentify,
       refetchInterval: 10_000,
-    })?.data !== undefined
+    })?.data,
+  )
 
   useEffect(() => {
     if (isLoggedIn) {
