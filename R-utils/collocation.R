@@ -1,6 +1,7 @@
 library(tidyverse)
 library(magrittr)
 library(ggrepel)
+library(gespeR)
 
 
 #' Align items and scores
@@ -117,4 +118,46 @@ collocation.map <- function(collocation.items, parse.discoursemes=TRUE){
     )
   }
   return(map)
+}
+
+#' Calculate average overlap (RBO) between two profiles
+overlap.pairwise <- function(table1, table2, col_item = "item", col_score = "score", p = .95, k = 50){
+  
+  # create top-cut_off-list according to column1
+  left.list <- table1[, col_score]
+  names(left.list) <- table1[, col_item]
+  
+  right.list <- table2[, col_score]
+  names(right.list) <- table2[, col_item]
+  
+  # calculate rbo
+  value = rbo(left.list, right.list, p, k)
+  
+  return(value)
+}
+
+
+#' Create table of average overlaps
+#' 
+#' @param tbls list of tables
+#' @returns a tibble with all overlaps
+overlap.table <- function(tbls, col_item = "item", col_score = "score", col_group = "window", p = .95, k = 50){
+  
+  tbls <- tbls |> split(f = tbls[, col_group])
+  values <- c()
+  for (i in 2:length(tbls)){
+    value <- overlap.pairwise(tbls[[i-1]], 
+                              tbls[[i]],
+                              col_item = col_item,
+                              col_score = col_score,
+                              p = p,
+                              k = k)
+    values <- append(values, value)
+  }
+
+  g <- data.frame(names(tbls)[1:(length(tbls) - 1)], names(tbls)[2:length(tbls)], values)
+
+  names(g) <- c("left", "right", "overlap")
+  
+  return(g)
 }
