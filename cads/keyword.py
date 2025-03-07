@@ -204,7 +204,6 @@ def get_keyword(id):
 
 
 @bp.delete('/<id>/')
-@bp.output(KeywordOut)
 @bp.auth_required(auth)
 def delete_keyword(id):
     """Delete keyword analysis.
