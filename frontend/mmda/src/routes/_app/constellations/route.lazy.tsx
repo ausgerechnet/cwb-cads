@@ -82,19 +82,11 @@ const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
     id: 'actions',
     enableSorting: true,
     meta: { className: 'w-0' },
-    cell: ({ row }) => (
-      <QuickActions constellationId={row.original.id} key={row.original.id} />
-    ),
+    cell: ({ row }) => <QuickActions constellationId={row.original.id} />,
   },
 ]
 
-// TODO: queryId should never be undefined and in practice it is not.
-// The API spec should be updated to reflect this.
-function QuickActions({
-  constellationId,
-}: {
-  constellationId: number | undefined
-}) {
+function QuickActions({ constellationId }: { constellationId: number }) {
   const router = useRouter()
   const { mutate, isPending, isSuccess } = useMutation({
     ...deleteConstellation,
