@@ -80,7 +80,7 @@ type ConstellationAssociationItemOut = {
   candidate: number
   measure: string
   node: number
-  score: number
+  score: number | null
 }
 type ConstellationCollocationItemsOut = {
   coordinates: Array<CoordinatesOut>
@@ -556,7 +556,7 @@ const ConstellationAssociationItemOut: z.ZodType<ConstellationAssociationItemOut
       candidate: z.number().int(),
       measure: z.string(),
       node: z.number().int(),
-      score: z.number(),
+      score: z.number().nullable(),
     })
     .passthrough()
 const ConstellationAssociationOut: z.ZodType<ConstellationAssociationOut> = z
