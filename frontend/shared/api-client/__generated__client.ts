@@ -352,6 +352,53 @@ const CorpusOut: z.ZodType<CorpusOut> = z
     s_atts: z.array(z.string()),
   })
   .passthrough()
+const QueryAssistedIn = z
+  .object({
+    corpus_id: z.number().int(),
+    escape: z.boolean().optional(),
+    ignore_case: z.boolean().optional(),
+    ignore_diacritics: z.boolean().optional(),
+    items: z.array(z.string()),
+    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
+    p: z.string(),
+    s: z.string().optional(),
+    subcorpus_id: z.number().int().nullish(),
+  })
+  .passthrough()
+const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
+  .object({
+    discourseme_id: z.number().int(),
+    end: z.number().int(),
+    start: z.number().int(),
+  })
+  .passthrough()
+const TokenOut: z.ZodType<TokenOut> = z
+  .object({
+    cpos: z.number().int(),
+    is_filter_item: z.boolean(),
+    offset: z.number().int(),
+    out_of_window: z.boolean(),
+    primary: z.string(),
+    secondary: z.string(),
+  })
+  .passthrough()
+const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
+  .object({
+    discourseme_ranges: z.array(DiscoursemeRangeOut),
+    match_id: z.number().int(),
+    structural: z.object({}).partial().passthrough(),
+    tokens: z.array(TokenOut),
+  })
+  .passthrough()
+const ConcordanceOut: z.ZodType<ConcordanceOut> = z
+  .object({
+    lines: z.array(ConcordanceLineOut),
+    nr_lines: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
+  })
+  .passthrough()
 const AnnotationsOut: z.ZodType<AnnotationsOut> = z
   .object({
     key: z.string(),
@@ -657,40 +704,6 @@ const ConstellationMapOut: z.ZodType<ConstellationMapOut> = z
     sort_by: z.string(),
   })
   .passthrough()
-const DiscoursemeRangeOut: z.ZodType<DiscoursemeRangeOut> = z
-  .object({
-    discourseme_id: z.number().int(),
-    end: z.number().int(),
-    start: z.number().int(),
-  })
-  .passthrough()
-const TokenOut: z.ZodType<TokenOut> = z
-  .object({
-    cpos: z.number().int(),
-    is_filter_item: z.boolean(),
-    offset: z.number().int(),
-    out_of_window: z.boolean(),
-    primary: z.string(),
-    secondary: z.string(),
-  })
-  .passthrough()
-const ConcordanceLineOut: z.ZodType<ConcordanceLineOut> = z
-  .object({
-    discourseme_ranges: z.array(DiscoursemeRangeOut),
-    match_id: z.number().int(),
-    structural: z.object({}).partial().passthrough(),
-    tokens: z.array(TokenOut),
-  })
-  .passthrough()
-const ConcordanceOut: z.ZodType<ConcordanceOut> = z
-  .object({
-    lines: z.array(ConcordanceLineOut),
-    nr_lines: z.number().int(),
-    page_count: z.number().int(),
-    page_number: z.number().int(),
-    page_size: z.number().int(),
-  })
-  .passthrough()
 const DiscoursemeIn: z.ZodType<DiscoursemeIn> = z
   .object({
     comment: z.string().nullable(),
@@ -799,19 +812,6 @@ const QueryIn = z
     subcorpus_id: z.number().int().nullish(),
   })
   .passthrough()
-const QueryAssistedIn = z
-  .object({
-    corpus_id: z.number().int(),
-    escape: z.boolean().optional(),
-    ignore_case: z.boolean().optional(),
-    ignore_diacritics: z.boolean().optional(),
-    items: z.array(z.string()),
-    match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
-    p: z.string(),
-    s: z.string().optional(),
-    subcorpus_id: z.number().int().nullish(),
-  })
-  .passthrough()
 const QueryMetaOut = z
   .object({
     frequency: z.number().int(),
@@ -905,6 +905,11 @@ export const schemas = {
   ValidationError,
   SemanticMapOut,
   CorpusOut,
+  QueryAssistedIn,
+  DiscoursemeRangeOut,
+  TokenOut,
+  ConcordanceLineOut,
+  ConcordanceOut,
   AnnotationsOut,
   MetaOut,
   MetaIn,
@@ -936,10 +941,6 @@ export const schemas = {
   ConstellationCollocationItemsOut,
   ConstellationMapItemOut,
   ConstellationMapOut,
-  DiscoursemeRangeOut,
-  TokenOut,
-  ConcordanceLineOut,
-  ConcordanceOut,
   DiscoursemeIn,
   ConstellationKeywordIn,
   ConstellationKeywordItemsOut,
@@ -951,7 +952,6 @@ export const schemas = {
   DiscoursemeDescriptionSimilarOut,
   QueryOut,
   QueryIn,
-  QueryAssistedIn,
   QueryMetaOut,
   SemanticMapIn,
   CoordinatesIn,
@@ -1184,6 +1184,124 @@ const endpoints = makeApi([
         status: 404,
         description: `Not found`,
         schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/:id/concordance',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: QueryAssistedIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'window',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'context_break',
+        type: 'Query',
+        schema: z.string().nullish().default(null),
+      },
+      {
+        name: 'extended_window',
+        type: 'Query',
+        schema: z.number().int().optional().default(25),
+      },
+      {
+        name: 'extended_context_break',
+        type: 'Query',
+        schema: z.string().nullish().default(null),
+      },
+      {
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
+      },
+      {
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'highlight_query_ids',
+        type: 'Query',
+        schema: z.array(z.number().int()).optional().default([]),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['random', 'first', 'last', 'ascending', 'descending'])
+          .optional()
+          .default('random'),
+      },
+      {
+        name: 'sort_by_offset',
+        type: 'Query',
+        schema: z.number().int().nullish().default(null),
+      },
+      {
+        name: 'sort_by_p_att',
+        type: 'Query',
+        schema: z.string().nullish().default(null),
+      },
+      {
+        name: 'sort_by_s_att',
+        type: 'Query',
+        schema: z.string().nullish().default(null),
+      },
+      {
+        name: 'filter_item',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'filter_item_p_att',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'filter_query_ids',
+        type: 'Query',
+        schema: z.array(z.number().int()).optional().default([]),
+      },
+    ],
+    response: ConcordanceOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
       },
     ],
   },
@@ -3862,6 +3980,36 @@ const endpoints = makeApi([
   },
   {
     method: 'post',
+    path: '/query/assisted/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: QueryAssistedIn,
+      },
+      {
+        name: 'execute',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: QueryOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
     path: '/query/assisted/',
     requestFormat: 'json',
     parameters: [
