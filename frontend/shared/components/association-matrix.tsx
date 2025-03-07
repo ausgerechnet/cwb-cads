@@ -143,7 +143,7 @@ function AssociationTable({
           <tr key={columnId} className="col-span-full grid grid-cols-subgrid">
             <td>{legendNameMap?.get(columnId) ?? columnId}</td>
             {rowIds.map((candidate) => {
-              const { score: associationScore, scaledScore } =
+              const { score: associationScore, scaledScore = 0.5 } =
                 associations.find(
                   (a) => a.node === candidate && a.candidate === columnId,
                 ) ?? {}
