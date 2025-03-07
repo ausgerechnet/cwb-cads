@@ -8,6 +8,14 @@ import { useDebouncedValue } from '../lib/use-debounced-value'
 import { Button } from './ui/button'
 import { ComplexSelect } from './select-complex'
 
+type Association = {
+  node: number
+  candidate: number
+  score: number
+  scaledScore?: number
+  measure: string
+}
+
 export function AssociationMatrix({
   className,
   legendNameMap,
@@ -18,8 +26,8 @@ export function AssociationMatrix({
   associations: {
     node: number
     candidate: number
-    score: number
-    scaledScore?: number
+    score: number | null
+    scaledScore?: number | null
     measure: string
   }[]
 }) {
@@ -50,7 +58,9 @@ export function AssociationMatrix({
   const [measure, setMeasure] = useState<string>(measures[0]!)
   const [view, setView] = useState<'table' | 'graph'>('table')
 
-  const filteredAssociations = associations.filter((a) => a.measure === measure)
+  const filteredAssociations = associations
+    .filter((a) => a.measure === measure)
+    .filter((a): a is Association => a.score !== null && a.scaledScore !== null)
 
   return (
     <div className={cn('', className)}>
@@ -109,13 +119,7 @@ function AssociationTable({
 }: {
   itemIds: number[]
   legendNameMap?: Map<number, string>
-  associations: {
-    node: number
-    candidate: number
-    score: number
-    scaledScore?: number
-    measure: string
-  }[]
+  associations: Association[]
 }) {
   const rowIds = itemIds.map((i) => i).slice(0, -1)
   const columnIds = itemIds
@@ -184,12 +188,7 @@ function AssociationGraph({
 }: {
   itemIds: number[]
   legendNameMap?: Map<number, string>
-  associations: {
-    node: number
-    candidate: number
-    score: number
-    measure: string
-  }[]
+  associations: Association[]
 }) {
   const [cutOff, setCutOff] = useState(0.05)
   const deferredCutOff = useDebouncedValue(cutOff)
