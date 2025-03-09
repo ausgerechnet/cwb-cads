@@ -18,7 +18,7 @@ import {
 import { Headline3, Large } from '@cads/shared/components/ui/typography'
 import { Card } from '@cads/shared/components/ui/card'
 import { Drawer } from '@/components/drawer'
-import { ConcordanceLines } from './-query-concordance-lines'
+import { QueryConcordanceLines } from './-query-concordance-lines'
 import { QueryFrequencyBreakdown } from './-query-frequency-breakdown'
 import { QueryFilter } from './-query-filter'
 import { DiscoursemeAnalysis } from './-query-discourseme-analysis'
@@ -99,7 +99,7 @@ function SingleQuery() {
         onToggle={(isVisible) => setSearch('isConcordanceVisible', isVisible)}
         className="col-span-full"
       >
-        <ConcordanceLines queryId={queryId} className="col-span-full" />
+        <QueryConcordanceLines queryId={queryId} className="col-span-full" />
       </Drawer>
     </AppPageFrame>
   )

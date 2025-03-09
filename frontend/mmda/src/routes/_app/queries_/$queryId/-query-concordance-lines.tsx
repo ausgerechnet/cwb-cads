@@ -30,7 +30,7 @@ import { Repeat } from '@cads/shared/components/repeat'
 
 const emptyArray = [] as const
 
-export function ConcordanceLines({
+export function QueryConcordanceLines({
   queryId,
   className,
 }: {
@@ -140,8 +140,7 @@ export function ConcordanceLines({
           pageIndex={clPageIndex}
           setPageSize={(pageSize) => {
             void navigate({
-              to: '/queries/$queryId',
-              from: '/queries/$queryId',
+              to: '',
               params: (p) => p,
               search: (s) => ({ ...s, clPageSize: pageSize }),
               replace: true,
@@ -149,8 +148,7 @@ export function ConcordanceLines({
           }}
           setPageIndex={(pageIndex) => {
             void navigate({
-              to: '/queries/$queryId',
-              from: '/queries/$queryId',
+              to: '',
               params: (p) => p,
               search: (s) => ({ ...s, clPageIndex: pageIndex }),
               replace: true,
@@ -256,8 +254,7 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
         <TooltipTrigger asChild>
           <Link
             replace
-            to="/queries/$queryId"
-            from="/queries/$queryId"
+            to=""
             search={(s) => ({ ...s, filterItem: token.primary })}
             params={(p) => p}
             className={cn(

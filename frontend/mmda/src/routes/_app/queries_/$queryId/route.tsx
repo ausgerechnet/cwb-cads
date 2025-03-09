@@ -22,6 +22,7 @@ export const Route = createFileRoute('/_app/queries_/$queryId')({
     clSortByOffset: z.number().int().optional().catch(undefined),
     clPageSize: z.number().positive().int().optional().catch(undefined),
     clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
+    // TODO: This is mostly a duplicate. Prefix filterItem and filterItemPAtt with cl
     filterItem: z.string().optional().catch(undefined),
     filterItemPAtt: z.string().optional().catch(undefined),
     isConcordanceVisible: z.boolean().optional().catch(true),
