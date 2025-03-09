@@ -123,12 +123,10 @@ export const shuffleQueryConcordances: MutationOptions<
     apiClient.post('/query/:query_id/concordance/shuffle', undefined, {
       params: { query_id: String(queryId) },
     }),
-  onSuccess: (data) => {
-    const queryId =
-      // TODO: QueryOut should have more mandatory fields
-      data.query_id === undefined ? undefined : data.id
-    if (queryId === undefined) return
-    void queryClient.invalidateQueries(queryConcordances(queryId))
+  onSuccess: ({ id }) => {
+    void queryClient.invalidateQueries({
+      queryKey: ['query-concordances', id],
+    })
   },
 }
 
