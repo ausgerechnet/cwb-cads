@@ -40,6 +40,41 @@ export const createQueryAssisted: MutationOptions<
   },
 }
 
+export const getQueryAssisted = ({
+  corpusId,
+  subcorpusId = undefined,
+  p,
+  items,
+}: {
+  corpusId: number
+  subcorpusId?: number | null | undefined
+  p: string
+  items: string[]
+}) =>
+  queryOptions({
+    queryKey: [
+      'query-assisted',
+      {
+        corpusId,
+        subcorpusId,
+        p,
+        items,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.put(
+        '/query/assisted/',
+        {
+          corpus_id: corpusId,
+          subcorpus_id: subcorpusId,
+          p,
+          items,
+        },
+        { signal },
+      ),
+    retry: 0,
+  })
+
 export const deleteQuery: MutationOptions<unknown, Error, string> = {
   mutationFn: (queryId: string) =>
     apiClient.delete('/query/:id', undefined, { params: { id: queryId } }),
@@ -70,6 +105,7 @@ export const queryConcordances = (
     pageNumber: page_number,
     sortOrder: sort_order,
     sortByOffset: sort_by_offset,
+    contextBreak: context_break,
   }: {
     window?: number
     primary?: string
@@ -80,6 +116,7 @@ export const queryConcordances = (
     pageNumber?: number
     sortOrder?: 'ascending' | 'descending' | 'random'
     sortByOffset?: number
+    contextBreak?: string
   } = {},
 ) =>
   queryOptions({
@@ -95,6 +132,7 @@ export const queryConcordances = (
       page_number,
       sort_order,
       sort_by_offset,
+      context_break,
     ],
     queryFn: ({ signal }) =>
       apiClient.get('/query/:query_id/concordance', {
@@ -109,6 +147,7 @@ export const queryConcordances = (
           page_number,
           sort_order,
           sort_by_offset,
+          context_break,
         },
         signal,
       }),
@@ -229,6 +268,70 @@ export const corpusMetaFrequencies = (
         })
       }
     },
+  })
+
+export const corpusConcordances = (
+  corpusId: number,
+  {
+    window,
+    primary,
+    secondary,
+    filterItem: filter_item,
+    filterItemPAtt: filter_item_p_att,
+    pageSize: page_size,
+    pageNumber: page_number,
+    sortOrder: sort_order,
+    sortByOffset: sort_by_offset,
+  }: {
+    window?: number
+    primary?: string
+    secondary?: string
+    filterItem?: string
+    filterItemPAtt?: string
+    pageSize?: number
+    pageNumber?: number
+    sortOrder?: 'ascending' | 'descending' | 'random'
+    sortByOffset?: number
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'corpus-concordances',
+      corpusId,
+      {
+        window,
+        primary,
+        secondary,
+        filter_item,
+        filter_item_p_att,
+        page_size,
+        page_number,
+        sort_order,
+        sort_by_offset,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get('/corpus/:id/concordance', {
+        params: { id: corpusId.toString() },
+        body: {
+          corpus_id: corpusId,
+          items: [filter_item],
+          p: filter_item_p_att,
+        },
+        queries: {
+          window,
+          primary,
+          secondary,
+          filter_item,
+          filter_item_p_att,
+          page_size,
+          page_number,
+          sort_order,
+          sort_by_offset,
+        },
+        signal,
+        retry: 1,
+      }),
   })
 
 // ==================== USERS ====================

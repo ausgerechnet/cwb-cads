@@ -6,6 +6,13 @@ import { FilterSchema } from '../constellations_/$constellationId/-use-filter-se
 export const Route = createFileRoute('/_app/keyword-analysis_/$analysisId')({
   validateSearch: FilterSchema.extend({
     clIsVisible: z.boolean().optional().catch(true),
+    clCorpus: z.enum(['main', 'reference']).optional().catch('main'),
+    clSortOrder: z
+      .enum(['ascending', 'descending', 'random'])
+      .optional()
+      .catch('random'),
+    clContextBreak: z.string().optional(),
+    contextBreak: z.string().optional(),
   }),
   loader: ({ context: { queryClient }, params }) => {
     const analysisId = parseInt(params.analysisId)
