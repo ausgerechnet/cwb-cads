@@ -1,0 +1,39 @@
+---
+title: "cwb-cads slot queries"
+date: "December 18, 2024"
+author: Philipp Heinrich
+editor: source
+format:
+  html:
+    toc: true
+    toc-float: true
+    collapsed: false
+    smooth-scroll: false
+    number-sections: true
+    df-print: paged
+---
+
+# Setup
+
+```{r, message = FALSE}
+rm(list = ls())
+library(tidyverse)
+library(httr2)
+library(jsonlite)
+library(ggrepel)
+library(ggraph)
+library(tidygraph)
+url_api <- "http://127.0.0.1:5000"
+```
+
+- get API access token via `/user/login`
+```{r, message = FALSE}
+access.token <- str_interp("${url_api}/user/login") |> 
+  request() |> 
+  req_method("POST") |> 
+  req_body_form(password = 'mmda-admin', username = 'admin') |> 
+  req_perform() |>
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON() |>
+  magrittr::extract2("access_token")
+```
