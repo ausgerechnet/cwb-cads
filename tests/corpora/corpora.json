@@ -2,7 +2,7 @@
     {
         "name": "GermaParl (small test corpus)",
         "cwb_id": "GERMAPARL1386",
-        "embeddings": "tests/corpora/embeddings/deWiki-small.magnitude",
+        "embeddings": "tests/corpora/embeddings/germaparl.semmap",
         "language": "de",
         "register": "standard",
         "description": "Bundestag"

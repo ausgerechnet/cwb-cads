@@ -1,0 +1,9 @@
+{
+    "dim": 768,
+    "random_seed": 42,
+    "path_annoy": "tests/corpora/embeddings/germaparl.annoy",
+    "path_db": "tests/corpora/embeddings/germaparl.sqlite",
+    "metric": "angular",
+    "model_name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+    "n_trees": 5
+}
