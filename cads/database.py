@@ -490,6 +490,8 @@ class Coordinates(db.Model):
 
     """
 
+    __table_args__ = (db.UniqueConstraint('semantic_map_id', 'item'),)
+
     id = db.Column(db.Integer(), primary_key=True)
     modified = db.Column(db.DateTime, default=datetime.utcnow)
 

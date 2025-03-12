@@ -327,6 +327,8 @@ class DiscoursemeCoordinates(db.Model):
 
     """
 
+    __table_args__ = (db.UniqueConstraint('semantic_map_id', 'discourseme_id'),)
+
     id = db.Column(db.Integer, primary_key=True)
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
