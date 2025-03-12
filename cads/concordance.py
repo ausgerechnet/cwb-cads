@@ -192,7 +192,13 @@ def ccc_concordance(focus_query,
         from .query import filter_matches
         matches = filter_matches(focus_query, filter_queries, window, overlap)
         if not matches:
-            return
+            return {
+                'lines': [],
+                'nr_lines': 0,
+                'page_size': page_size,
+                'page_number': page_number,
+                'page_count': 0
+            }
 
         # SORTING
         current_app.logger.debug("ccc_concordance :: sorting")
@@ -282,10 +288,9 @@ def ccc_concordance(focus_query,
                 token['is_filter_item'] = True
 
     current_app.logger.debug("ccc_concordance :: exit")
-
     return {
         'lines': [ConcordanceLineOut().dump(line) for line in lines],
-        'nr_lines': nr_lines,
+        'nr_lines': nr_lines if nr_lines else 0,
         'page_size': page_size,
         'page_number': page_number,
         'page_count': page_count
