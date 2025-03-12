@@ -123,19 +123,17 @@ collocation.map <- function(collocation.items, parse.discoursemes=TRUE){
 #' Calculate average overlap (RBO) between two profiles
 overlap.pairwise <- function(table1, table2, col_item = "item", col_score = "score", p = .95, k = 50){
   
-  # create top-cut_off-list according to column1
-  left.list <- table1[, col_score]
-  names(left.list) <- table1[, col_item]
-  
-  right.list <- table2[, col_score]
-  names(right.list) <- table2[, col_item]
+  left.list <- table1 |> tibble() |> pull(col_score)
+  names(left.list) <- table1 |> tibble() |> pull(col_item)
+
+  right.list <- table2 |> tibble() |> pull(col_score)
+  names(right.list) <- table2 |> tibble() |> pull(col_item)
   
   # calculate rbo
-  value = rbo(left.list, right.list, p, k)
+  value <- rbo(left.list, right.list, p, k)
   
   return(value)
 }
-
 
 #' Create table of average overlaps
 #' 
