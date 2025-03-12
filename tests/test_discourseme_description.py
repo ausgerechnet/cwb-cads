@@ -2,7 +2,6 @@ from flask import url_for
 import pytest
 
 
-@pytest.mark.now
 def test_discourseme_create_description(client, auth):
 
     auth_header = auth.login()
@@ -94,35 +93,69 @@ def test_discourseme_patch_add_remove(client, auth):
         assert 'können' not in [item['surface'] for item in description.json['items']]
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_get_similar(client, auth):
 
     auth_header = auth.login()
 
     with client:
         client.get("/")
-        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'), headers=auth_header)
-        kanzler = discoursemes.json[2]
-        description = client.post(url_for('mmda.discourseme.description.create_description', discourseme_id=kanzler['id']),
+        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
+                                  json={
+                                      'name': 'Verben',
+                                      'comment': 'Testdiskursem',
+                                      'template': [
+                                          {'surface': 'gehen', 'p': 'lemma'},
+                                          {'surface': 'laufen', 'p': 'lemma'}
+                                      ],
+                                  },
+                                  content_type='application/json',
+                                  headers=auth_header)
+        assert discourseme.status_code == 200
+
+        description = client.post(url_for('mmda.discourseme.description.create_description', discourseme_id=discourseme.json['id']),
                                   content_type='application/json',
                                   json={'corpus_id': 1},
                                   headers=auth_header)
         assert description.status_code == 200
 
         breakdown = client.get(url_for('mmda.discourseme.description.description_get_breakdown',
-                                       discourseme_id=kanzler['id'], description_id=description.json['id'], p='lemma'),
+                                       discourseme_id=discourseme.json['id'], description_id=description.json['id'], p='lemma'),
                                content_type='application/json',
                                headers=auth_header)
         assert breakdown.status_code == 200
 
         similar = client.get(url_for('mmda.discourseme.description.description_get_similar',
-                                     discourseme_id=kanzler['id'], description_id=description.json['id'], breakdown_id=breakdown.json['id']),
+                                     discourseme_id=discourseme.json['id'], description_id=description.json['id'], breakdown_id=breakdown.json['id']),
                              content_type='application/json',
                              headers=auth_header)
 
         assert similar.status_code == 200
         assert len(similar.json) == 200
-        assert similar.json[0]['surface'] == 'Bundesregierung'
+        assert similar.json[0]['surface'] == 'gehen'
+
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'), headers=auth_header)
+        discourseme = discoursemes.json[2]
+        description = client.post(url_for('mmda.discourseme.description.create_description', discourseme_id=discourseme['id']),
+                                  content_type='application/json',
+                                  json={'corpus_id': 1},
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        breakdown = client.get(url_for('mmda.discourseme.description.description_get_breakdown',
+                                       discourseme_id=discourseme['id'], description_id=description.json['id'], p='lemma'),
+                               content_type='application/json',
+                               headers=auth_header)
+        assert breakdown.status_code == 200
+
+        similar = client.get(url_for('mmda.discourseme.description.description_get_similar',
+                                     discourseme_id=discourseme['id'], description_id=description.json['id'], breakdown_id=breakdown.json['id']),
+                             content_type='application/json',
+                             headers=auth_header)
+
+        assert similar.status_code == 200
+        assert len(similar.json) == 200
+        assert similar.json[1]['surface'] == "Bundesland"
 
 
 def test_deletion(client, auth):

@@ -11,7 +11,7 @@ from ccc.cache import generate_idx
 from ccc.utils import cqp_escape
 from flask import abort, current_app
 from pandas import DataFrame
-from pymagnitude import Magnitude
+from semmap import SemanticSpace
 
 from .. import db
 from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
@@ -205,7 +205,7 @@ class DiscoursemeDescriptionIn(Schema):
 class DiscoursemeDescriptionSimilarIn(Schema):
 
     number = Integer(required=False, load_default=200)
-    min_freq = Integer(required=False, load_default=2)
+    # min_freq = Integer(required=False, load_default=2)
 
 
 class DiscoursemeCoordinatesIn(Schema):
@@ -381,19 +381,18 @@ def description_get_similar(discourseme_id, description_id, breakdown_id, query_
     p = breakdown.p
 
     number = query_data.get('number')
-    min_freq = query_data.get('min_freq')
+    # min_freq = query_data.get('min_freq')
 
     df_breakdown = ccc_breakdown(breakdown)
     items = list(df_breakdown.index)
 
     # similar
-    embeddings = Magnitude(description.corpus.embeddings)
-    similar = embeddings.most_similar(positive=items, topn=number)
-    similar = DataFrame(index=[s[0] for s in similar], data={'similarity': [s[1] for s in similar]})
+    semspace = SemanticSpace(description.corpus.embeddings)
+    similar = semspace.most_similar(positive=items, n=number)
 
     # marginals
     freq_similar = description.corpus.ccc().marginals(similar.index, p_atts=[p])[['freq']]
-    freq_similar = freq_similar.loc[freq_similar['freq'] >= min_freq]  # drop hapaxes
+    # freq_similar = freq_similar.loc[freq_similar['freq'] >= min_freq]  # drop hapaxes
 
     # merge
     freq_similar = freq_similar.join(similar)
