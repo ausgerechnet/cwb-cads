@@ -24,7 +24,7 @@ export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
 )
 
 function KeywordAnalysis() {
-  const { clIsVisible = false, clCorpus = 'main' } = Route.useSearch()
+  const { clIsVisible = false, clCorpus = 'target' } = Route.useSearch()
   const { clFilterItem } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
   )
@@ -39,11 +39,11 @@ function KeywordAnalysis() {
   const { data: query, error: queryError } = useQuery({
     ...getQueryAssisted({
       corpusId:
-        clCorpus === 'main'
+        clCorpus === 'target'
           ? analysisData?.corpus_id
           : analysisData?.corpus_id_reference,
       subcorpusId:
-        clCorpus === 'main'
+        clCorpus === 'target'
           ? analysisData?.subcorpus_id
           : analysisData?.subcorpus_id_reference,
       p,
@@ -60,7 +60,7 @@ function KeywordAnalysis() {
     >
       {analysisData && (
         <dl className="mr-auto inline-grid grid-cols-[auto,auto] gap-x-2">
-          <dt>Corpus Name:</dt>
+          <dt>Target Corpus Name:</dt>
           <dd>
             {analysisData.corpus_name} on {analysisData.p}
           </dd>
@@ -90,7 +90,7 @@ function KeywordAnalysis() {
             <Select
               value={clCorpus}
               onValueChange={(clCorpus) => {
-                if (clCorpus !== 'main' && clCorpus !== 'reference') return
+                if (clCorpus !== 'target' && clCorpus !== 'reference') return
                 navigate({
                   to: '',
                   params: (p) => p,
@@ -102,8 +102,8 @@ function KeywordAnalysis() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="main">
-                  Main: {analysisData.corpus_name}
+                <SelectItem value="target">
+                  Target: {analysisData.corpus_name}
                 </SelectItem>
                 <SelectItem value="reference">
                   Reference: {analysisData.corpus_name_reference}
