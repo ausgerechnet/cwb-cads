@@ -127,13 +127,13 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                       }
                     }}
                   >
+                    {measureMap[measure]}
                     {isCurrent && ccSortOrder === 'ascending' && (
-                      <ArrowDownIcon className="h-3 w-3" />
-                    )}
-                    {isCurrent && ccSortOrder === 'descending' && (
                       <ArrowUpIcon className="h-3 w-3" />
                     )}
-                    {measureMap[measure]}
+                    {isCurrent && ccSortOrder === 'descending' && (
+                      <ArrowDownIcon className="h-3 w-3" />
+                    )}
                   </Link>
                 </TableHead>
               )
@@ -167,7 +167,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                     search={(s) => ({
                       ...s,
                       clPageIndex: 0,
-                      clFilterItem: item,
+                      clFilterItem: s.clFilterItem === item ? undefined : item,
                       clFilterItemPAtt: secondary,
                     })}
                   >
