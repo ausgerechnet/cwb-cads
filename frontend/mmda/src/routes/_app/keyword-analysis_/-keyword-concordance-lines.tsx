@@ -75,8 +75,6 @@ export function QueryConcordanceLines({
     clContextBreak,
   } = searchParams
 
-  console.log({ primary, secondary })
-
   const {
     data: concordanceLines,
     isLoading,

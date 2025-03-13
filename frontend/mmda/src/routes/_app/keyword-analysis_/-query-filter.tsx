@@ -63,7 +63,7 @@ export function QueryFilter({
   // Remember a few values between renders: this helps rendering a proper skeleton
   // thus avoiding flicker
   // TODO: maybe just remember the last concordanceLines and overlay a spinner?
-  const contextBreak = searchParams.contextBreak ?? contextBreakList[0]
+  const clContextBreak = searchParams.clContextBreak ?? contextBreakList[0]
 
   const setSearch = useMemo(() => {
     const timeoutMap: Record<string, ReturnType<typeof setTimeout>> = {}
@@ -131,8 +131,8 @@ export function QueryFilter({
       <div className="flex flex-grow flex-col gap-2 whitespace-nowrap">
         <span>Context Break</span>
         <Select
-          value={contextBreak}
-          onValueChange={(value) => setSearch('contextBreak', value)}
+          value={clContextBreak}
+          onValueChange={(value) => setSearch('clContextBreak', value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Context Break" />
