@@ -1,4 +1,4 @@
-import { Fragment, useRef } from 'react'
+import { Fragment, useMemo, useRef } from 'react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
@@ -27,6 +27,8 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Pagination } from '@cads/shared/components/pagination'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { Repeat } from '@cads/shared/components/repeat'
+import { Ellipsis } from '@cads/shared/components/ellipsis'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 
 const emptyArray = [] as const
 
@@ -126,6 +128,7 @@ export function QueryConcordanceLines({
                 <ConcordanceLineRender
                   key={line.match_id}
                   concordanceLine={line}
+                  secondary={secondary}
                 />
               ))}
               {isLoading && (
@@ -185,16 +188,26 @@ function MetaValue({ value }: { value: unknown }) {
 }
 
 function ConcordanceLineRender({
-  concordanceLine: { match_id, tokens = [], structural = {} },
+  concordanceLine: {
+    match_id,
+    tokens = [],
+    structural = {},
+    discourseme_ranges,
+  },
+  secondary,
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
+  secondary?: string
 }) {
-  const keywordIndex =
-    tokens.findIndex(({ offset = NaN }) => offset === 0) ?? emptyArray
-  const preTokens =
-    tokens.filter(({ offset = NaN }) => offset < 0) ?? emptyArray
-  const postTokens =
-    tokens.filter(({ offset = NaN }) => offset > 0) ?? emptyArray
+  const { preTokens, postTokens, midTokens } = useMemo(
+    () => ({
+      preTokens: tokens.filter(({ offset = NaN }) => offset < 0) ?? emptyArray,
+      midTokens:
+        tokens.filter(({ offset = NaN }) => offset === 0) ?? emptyArray,
+      postTokens: tokens.filter(({ offset = NaN }) => offset > 0) ?? emptyArray,
+    }),
+    [tokens],
+  )
 
   const meta = Object.entries(structural)
   const isExpanded = false
@@ -224,23 +237,35 @@ function ConcordanceLineRender({
           </Tooltip>
         </TooltipProvider>
       </TableCell>
-      <TableCell className="w-auto overflow-hidden overflow-ellipsis whitespace-nowrap pr-1 text-right [direction:rtl]">
-        {preTokens.map((token, i) => (
-          <TokenRender key={i} token={token} />
-        ))}
+      <TableCell className="w-auto overflow-hidden whitespace-nowrap pr-1">
+        <Ellipsis direction="rtl">
+          <TokenLine
+            tokens={preTokens}
+            discoursemeRanges={discourseme_ranges}
+            secondary={secondary}
+          />
+        </Ellipsis>
       </TableCell>
       <TableCell className="mx-auto flex w-max items-center whitespace-nowrap px-1 text-center">
-        <TokenRender token={tokens[keywordIndex]} />
+        <TokenLine
+          tokens={midTokens}
+          discoursemeRanges={discourseme_ranges}
+          secondary={secondary}
+        />
       </TableCell>
-      <TableCell className="w-auto items-center gap-1 overflow-hidden overflow-ellipsis whitespace-nowrap px-0 pl-1 text-left">
-        {postTokens.map((token, i) => (
-          <TokenRender key={i} token={token} />
-        ))}
+      <TableCell className="w-auto overflow-hidden whitespace-nowrap pr-1">
+        <Ellipsis direction="ltr">
+          <TokenLine
+            tokens={postTokens}
+            discoursemeRanges={discourseme_ranges}
+            secondary={secondary}
+          />
+        </Ellipsis>
       </TableCell>
       <TableCell className="flex w-max items-center py-0">
         <ButtonTooltip
           tooltip={isExpanded ? 'Collapse' : 'Expand'}
-          size="sm"
+          size="icon"
           variant="ghost"
           className="-mx-3 h-4"
         >
@@ -255,7 +280,94 @@ function ConcordanceLineRender({
   )
 }
 
-function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
+export function TokenLine({
+  tokens,
+  secondary,
+  discoursemeRanges,
+}: {
+  tokens: z.infer<typeof schemas.TokenOut>[]
+  discoursemeRanges: z.infer<typeof schemas.DiscoursemeRangeOut>[]
+  secondary?: string
+}) {
+  const tokenData = useMemo(() => {
+    const tokenData: [
+      (typeof tokens)[number],
+      {
+        discoursemeId: number
+        isStart: boolean
+        isEnd: boolean
+        offset?: number
+      }[],
+    ][] = []
+    let tokenOffsets: { id: number; offset: number }[] = []
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i]
+      const { cpos } = token
+      const tokenDiscoursemes = discoursemeRanges
+        .filter(({ start, end }) => start <= cpos && end >= cpos)
+        .map(({ discourseme_id, start, end }) => ({
+          discoursemeId: discourseme_id,
+          isStart: start === cpos,
+          isEnd: end === cpos,
+        }))
+      const activeDiscoursemeIds = tokenDiscoursemes.map(
+        ({ discoursemeId }) => discoursemeId,
+      )
+      tokenOffsets = tokenOffsets.filter(({ id }) =>
+        activeDiscoursemeIds.includes(id),
+      )
+      const tokenDiscoursemesWithOffset = tokenDiscoursemes.map(
+        ({ discoursemeId, ...d }) => {
+          let newOffset = tokenOffsets.find(
+            ({ id }) => discoursemeId === id,
+          )?.offset
+          if (newOffset === undefined) {
+            newOffset = 0
+            while (tokenOffsets.some(({ offset }) => offset === newOffset)) {
+              newOffset += 2
+            }
+            tokenOffsets.push({ offset: newOffset, id: discoursemeId })
+          }
+          return {
+            discoursemeId,
+            offset: newOffset,
+            ...d,
+          }
+        },
+      )
+      tokenData.push([token, tokenDiscoursemesWithOffset])
+    }
+    return tokenData
+  }, [discoursemeRanges, tokens])
+
+  return (
+    <>
+      {tokenData.map(([token, discoursemes]) => (
+        <TokenRender
+          key={token.cpos}
+          token={token}
+          discoursemes={discoursemes}
+          secondary={secondary}
+        />
+      ))}
+    </>
+  )
+}
+
+function TokenRender({
+  token,
+  discoursemes: discoursemes = [],
+  secondary,
+}: {
+  token: z.infer<typeof schemas.TokenOut>
+  discoursemes: {
+    discoursemeId: number
+    isStart: boolean
+    isEnd: boolean
+    offset?: number
+  }[]
+  secondary?: string
+}) {
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
@@ -263,16 +375,40 @@ function TokenRender({ token }: { token: z.infer<typeof schemas.TokenOut> }) {
           <Link
             replace
             to=""
-            search={(s) => ({ ...s, clFilterItem: token.primary })}
             params={(p) => p}
+            search={(s) => ({
+              ...s,
+              clPageIndex: 0,
+              clFilterItem: token.secondary,
+              clFilterItemPAtt: secondary,
+            })}
             className={cn(
-              'hover:bg-muted hover:ring-muted cursor-pointer rounded-md hover:ring-2',
+              'hover:bg-muted hover:ring-muted relative cursor-pointer rounded-md px-0.5 hover:ring-2',
               token.out_of_window && 'text-muted-foreground/70',
               token.is_filter_item && 'bg-primary/50',
               token.offset === 0 && 'font-bold',
             )}
           >
-            {token.primary}{' '}
+            {discoursemes.map(
+              ({ discoursemeId, isStart, isEnd, offset = 0 }) => (
+                <span
+                  key={discoursemeId}
+                  data-x={`${isStart ? 'start' : ''}${isEnd ? 'end' : ''}`}
+                  className={cn(
+                    'absolute inset-0 border-y',
+                    isStart && 'rounded-l-md border-l',
+                    isEnd && 'rounded-r-md border-r',
+                  )}
+                  style={{
+                    borderColor: getColorForNumber(discoursemeId),
+                    backgroundColor: getColorForNumber(discoursemeId, 0.2),
+                    top: -offset,
+                    bottom: -offset,
+                  }}
+                />
+              ),
+            )}
+            <span className="relative">{token.primary} </span>
           </Link>
         </TooltipTrigger>
         <TooltipContent>{token.secondary}</TooltipContent>
