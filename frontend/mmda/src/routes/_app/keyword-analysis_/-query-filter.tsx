@@ -47,8 +47,13 @@ export function QueryFilter({
   const pAttributes = corpus?.p_atts ?? emptyArray
   const primary =
     searchParams.primary ??
-    p ??
     pAttributes.find((a) => a === 'word') ??
+    pAttributes[0]
+
+  const secondary =
+    searchParams.secondary ??
+    pAttributes.find((a) => a === p) ??
+    pAttributes.find((a) => a === 'lemma') ??
     pAttributes[0]
 
   const { mutate: shuffle, isPending: isShuffling } = useMutation(
@@ -58,7 +63,6 @@ export function QueryFilter({
   // Remember a few values between renders: this helps rendering a proper skeleton
   // thus avoiding flicker
   // TODO: maybe just remember the last concordanceLines and overlay a spinner?
-  const secondary = searchParams.secondary ?? pAttributes[0]
   const contextBreak = searchParams.contextBreak ?? contextBreakList[0]
 
   const setSearch = useMemo(() => {

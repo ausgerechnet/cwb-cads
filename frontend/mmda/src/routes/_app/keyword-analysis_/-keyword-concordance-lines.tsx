@@ -53,17 +53,18 @@ export function QueryConcordanceLines({
     from: '/_app/keyword-analysis_/$analysisId',
   })
   const pAttributes = corpus?.p_atts ?? emptyArray
+  // TODO: duplicated across -query-filter.tsx and this file
   const primary =
     searchParams.primary ??
-    p ??
     // It seems sensible to default to 'word'
     pAttributes.find((p) => p === 'word') ??
     pAttributes[0]
+  const secondary =
+    searchParams.secondary ??
+    pAttributes.find((a) => a === p) ??
+    pAttributes.find((a) => a === 'lemma') ??
+    pAttributes[0]
 
-  // Remember a few values between renders: this helps rendering a proper skeleton
-  // thus avoiding flicker
-  // TODO: maybe just remember the last concordanceLines and overlay a spinner?
-  const secondary = searchParams.secondary ?? pAttributes[0]
   const {
     windowSize = 3,
     clPageSize = 10,
@@ -73,6 +74,8 @@ export function QueryConcordanceLines({
     clFilterItem,
     clContextBreak,
   } = searchParams
+
+  console.log({ primary, secondary })
 
   const {
     data: concordanceLines,
