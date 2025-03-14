@@ -1205,6 +1205,24 @@
         },
         "type": "object"
       },
+      "DiscoursemeItemsIn": {
+        "properties": {
+          "p": {
+            "nullable": true,
+            "type": "string"
+          },
+          "surface": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "surface"
+        ],
+        "type": "object"
+      },
       "DiscoursemeOut": {
         "properties": {
           "comment": {
@@ -2113,7 +2131,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev26"
+    "version": "0.3.0.dev27"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -6987,6 +7005,97 @@
         ]
       }
     },
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/add-items": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "discourseme_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "update_discourseme",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeItemsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch discourseme description: add item to description.",
+        "tags": [
+          "Mmda.Discourseme.Description"
+        ]
+      }
+    },
     "/mmda/discourseme/{discourseme_id}/description/{description_id}/breakdown": {
       "get": {
         "parameters": [
@@ -7106,11 +7215,12 @@
           },
           {
             "in": "query",
-            "name": "min_freq",
+            "name": "embeddings",
             "required": false,
             "schema": {
-              "default": 2,
-              "type": "integer"
+              "default": null,
+              "nullable": true,
+              "type": "string"
             }
           }
         ],
