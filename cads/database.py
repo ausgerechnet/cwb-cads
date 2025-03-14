@@ -6,6 +6,7 @@ from datetime import datetime
 from ccc import Corpus as Crps
 from flask import Blueprint, current_app
 from flask_login import UserMixin
+from numpy import log
 from pandas import DataFrame
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash
@@ -625,17 +626,13 @@ class CollocationItem(db.Model):
     def scale_measure(self, measure='conservative_log_ratio'):
 
         measure_max = self.collocation.get_measure_range(measure)['max']
-
-        measure = CollocationItemScore.query.filter_by(
-            collocation_id=self.collocation_id, measure=measure, collocation_item_id=self.id
-        ).first().score
+        measure = [s.score for s in self.scores if s.measure == measure][0]
 
         if measure_max == 0:
             return measure
 
         if measure == 'log_likelihood':
-            import numpy as np
-            return np.log(measure) / np.log(measure_max)
+            return log(measure) / log(measure_max)
 
         return measure / measure_max
 
@@ -851,10 +848,7 @@ class KeywordItem(db.Model):
     def scale_measure(self, measure='conservative_log_ratio'):
 
         measure_max = self.keyword.get_measure_range(measure)['max']
-
-        measure = KeywordItemScore.query.filter_by(
-            keyword_id=self.keyword_id, measure=measure, keyword_item_id=self.id
-        ).first().score
+        measure = [s.score for s in self.scores if s.measure == measure][0]
 
         if measure_max == 0:
             return measure
