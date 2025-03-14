@@ -1,4 +1,9 @@
-import { createLazyFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  createLazyFileRoute,
+  Link,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { XIcon } from 'lucide-react'
@@ -15,17 +20,25 @@ import {
 import { Label } from '@cads/shared/components/ui/label'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 
-import { useFilterSelection } from '../constellations_/$constellationId/-use-filter-selection'
+import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
 import { KeywordTable } from './-keywords'
 import { QueryFilter } from './-query-filter'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
-  { component: KeywordAnalysis },
+  {
+    component: KeywordAnalysis,
+  },
 )
 
 function KeywordAnalysis() {
+  // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
+  const showsSemanticMap =
+    useRouterState().matches.find(
+      (match) =>
+        match.routeId === '/_app/keyword-analysis_/$analysisId/semantic-map',
+    ) !== undefined
   const { clIsVisible = false, clCorpus = 'target' } = Route.useSearch()
   const { clFilterItem } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
@@ -60,21 +73,50 @@ function KeywordAnalysis() {
       classNameContent="flex flex-col"
       classNameContainer="min-h-full pb-0"
     >
-      {analysisData && (
-        <dl className="mr-auto inline-grid grid-cols-[auto,auto] gap-x-2">
-          <dt>Target Corpus Name:</dt>
-          <dd>
-            {analysisData.corpus_name} on {analysisData.p}
-          </dd>
-          <dt>Reference Corpus Name:</dt>
-          <dd>
-            {analysisData.corpus_name_reference} on {analysisData.p_reference}
-          </dd>
-          <dt>Number of Items:</dt>
-          <dd>{formatNumber(analysisData.nr_items)}</dd>
-        </dl>
+      {showsSemanticMap && (
+        <Link
+          to="/keyword-analysis/$analysisId"
+          from="/keyword-analysis/$analysisId/semantic-map"
+          params={(p) => p}
+          search={(s) => s}
+          className={buttonVariants({ variant: 'secondary' })}
+        >
+          Back to Keyword Analysis
+        </Link>
       )}
-      <KeywordTable analysisId={analysisId} />
+
+      {!showsSemanticMap && (
+        <>
+          {analysisData && (
+            <dl className="mr-auto inline-grid grid-cols-[auto,auto] gap-x-2">
+              <dt>Target Corpus Name:</dt>
+              <dd>
+                {analysisData.corpus_name} on {analysisData.p}
+              </dd>
+              <dt>Reference Corpus Name:</dt>
+              <dd>
+                {analysisData.corpus_name_reference} on{' '}
+                {analysisData.p_reference}
+              </dd>
+              <dt>Number of Items:</dt>
+              <dd>{formatNumber(analysisData.nr_items)}</dd>
+            </dl>
+          )}
+
+          <Link
+            to="/keyword-analysis/$analysisId/semantic-map"
+            from="/keyword-analysis/$analysisId"
+            params={(p) => p}
+            search={(s) => s}
+            className={buttonVariants({ variant: 'secondary' })}
+          >
+            Semantic Map
+          </Link>
+
+          <KeywordTable analysisId={analysisId} />
+        </>
+      )}
+
       <Drawer
         className="-mx-2 my-auto mb-0"
         isVisible={clIsVisible}
