@@ -6,8 +6,12 @@ import {
 } from '@tanstack/react-router'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import { XIcon } from 'lucide-react'
-import { getQueryAssisted, keywordAnalysisById } from '@cads/shared/queries'
+import { MapIcon, XIcon } from 'lucide-react'
+import {
+  getQueryAssisted,
+  keywordAnalysisById,
+  keywordAnalysisItemsById,
+} from '@cads/shared/queries'
 import { Drawer } from '@/components/drawer'
 import { formatNumber } from '@cads/shared/lib/format-number'
 import {
@@ -19,12 +23,14 @@ import {
 } from '@cads/shared/components/ui/select'
 import { Label } from '@cads/shared/components/ui/label'
 import { ErrorMessage } from '@cads/shared/components/error-message'
+import { buttonVariants } from '@cads/shared/components/ui/button'
+import { WordCloudPreview } from '@/components/word-cloud-preview'
+import { Card } from '@cads/shared/components/ui/card'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
 import { KeywordTable } from './-keywords'
 import { QueryFilter } from './-query-filter'
-import { buttonVariants } from '@cads/shared/components/ui/button'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
   {
@@ -39,6 +45,10 @@ function KeywordAnalysis() {
       (match) =>
         match.routeId === '/_app/keyword-analysis_/$analysisId/semantic-map',
     ) !== undefined
+
+  const { ccSortOrder, ccSortBy } = useFilterSelection(
+    '/_app/keyword-analysis_/$analysisId',
+  )
   const { clIsVisible = false, clCorpus = 'target' } = Route.useSearch()
   const { clFilterItem } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
@@ -67,6 +77,18 @@ function KeywordAnalysis() {
     enabled: clFilterItem !== undefined && analysisData !== undefined,
   })
 
+  const { data: mapItems, error: errorMapItems } = useQuery({
+    ...keywordAnalysisItemsById(analysisId, {
+      sortOrder: ccSortOrder,
+      sortBy: ccSortBy,
+      pageSize: 300,
+      pageNumber: 1,
+    }),
+    select: ({ coordinates }) => {
+      return coordinates
+    },
+  })
+
   return (
     <AppPageFrame
       title="Keyword Analysis"
@@ -87,31 +109,43 @@ function KeywordAnalysis() {
 
       {!showsSemanticMap && (
         <>
-          {analysisData && (
-            <dl className="mr-auto inline-grid grid-cols-[auto,auto] gap-x-2">
-              <dt>Target Corpus Name:</dt>
-              <dd>
-                {analysisData.corpus_name} on {analysisData.p}
-              </dd>
-              <dt>Reference Corpus Name:</dt>
-              <dd>
-                {analysisData.corpus_name_reference} on{' '}
-                {analysisData.p_reference}
-              </dd>
-              <dt>Number of Items:</dt>
-              <dd>{formatNumber(analysisData.nr_items)}</dd>
-            </dl>
-          )}
+          <div className="mb-8 flex gap-4">
+            {analysisData && (
+              <dl className="mr-auto inline-grid grid-cols-[auto,auto] content-start gap-x-2 gap-y-1">
+                <dt>Target Corpus Name:</dt>
+                <dd>
+                  {analysisData.corpus_name} on {analysisData.p}
+                </dd>
+                <dt>Reference Corpus Name:</dt>
+                <dd>
+                  {analysisData.corpus_name_reference} on{' '}
+                  {analysisData.p_reference}
+                </dd>
+                <dt>Number of Items:</dt>
+                <dd>{formatNumber(analysisData.nr_items)}</dd>
+              </dl>
+            )}
 
-          <Link
-            to="/keyword-analysis/$analysisId/semantic-map"
-            from="/keyword-analysis/$analysisId"
-            params={(p) => p}
-            search={(s) => s}
-            className={buttonVariants({ variant: 'secondary' })}
-          >
-            Semantic Map
-          </Link>
+            <Link
+              to="/keyword-analysis/$analysisId/semantic-map"
+              from="/keyword-analysis/$analysisId"
+              params={(p) => p}
+              search={(s) => s}
+              className="group/map-link block transition-opacity focus-visible:outline-none"
+            >
+              <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
+                <WordCloudPreview
+                  className="absolute h-full w-full scale-110 transition-all group-hover/map-link:scale-100 group-hover/map-link:opacity-75 group-focus-visible/map-link:scale-100"
+                  items={mapItems}
+                />
+                <div className="bg-muted/70 group-focus-visible/map-link:bg-muted/90 group-hover/map-link:bg-muted/90 transition-color relative flex gap-3 rounded p-2">
+                  <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
+                  <span>Semantic Map</span>
+                </div>
+                <ErrorMessage error={errorMapItems} />
+              </Card>
+            </Link>
+          </div>
 
           <KeywordTable analysisId={analysisId} />
         </>

@@ -7,7 +7,7 @@ type Item = {
   y: number
   item: string
   discourseme_id?: number | null
-  source: string
+  source?: string
 }
 
 const emptyArray: Item[] = [] as const
