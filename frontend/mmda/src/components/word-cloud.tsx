@@ -32,7 +32,8 @@ export type Word = {
 const fontSizeMin = 6
 const fontSizeMax = 24
 const discoursemeRadiusMin = 25
-const discoursemeRadiusMax = 125
+// const discoursemeRadiusMax = 125
+const discoursemeRadiusMax = 50
 
 export default function WordCloud({
   className,
@@ -44,7 +45,7 @@ export default function WordCloud({
 }: {
   className?: string
   words: Omit<Word, 'radius' | 'id'>[]
-  semanticMapId: number
+  semanticMapId?: number
   size: number
   onNewDiscourseme?: (surfaces: string[]) => void
   onUpdateDiscourseme?: (
@@ -573,12 +574,14 @@ export default function WordCloud({
         return
       }
 
-      updateCoordinates({
-        semanticMapId,
-        item: word.item,
-        x_user: newX,
-        y_user: newY,
-      })
+      if (semanticMapId === undefined) {
+        updateCoordinates({
+          semanticMapId,
+          item: word.item,
+          x_user: newX,
+          y_user: newY,
+        })
+      }
     }
 
     // This value feels like a hack

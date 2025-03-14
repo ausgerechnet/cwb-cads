@@ -124,6 +124,7 @@ export function ConstellationCollocationFilter({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
+              {/* TODO: extract! */}
               {[
                 'conservative_log_ratio',
                 'O11',

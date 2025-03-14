@@ -20,12 +20,15 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectGroup,
 } from '@cads/shared/components/ui/select'
 import { Label } from '@cads/shared/components/ui/label'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { WordCloudPreview } from '@/components/word-cloud-preview'
 import { Card } from '@cads/shared/components/ui/card'
+import WordCloud from '@/components/word-cloud'
+import { cn } from '@cads/shared/lib/utils'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
@@ -38,6 +41,41 @@ export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
   },
 )
 
+// TODO: Duplicate! extract!
+const measures = [
+  'conservative_log_ratio',
+  'O11',
+  'E11',
+  'ipm',
+  'log_likelihood',
+  'z_score',
+  't_score',
+  'simple_ll',
+  'dice',
+  'log_ratio',
+  'min_sensitivity',
+  'liddell',
+  'mutual_information',
+  'local_mutual_information',
+] as const
+
+const measureMap: Record<(typeof measures)[number], string> = {
+  conservative_log_ratio: 'Cons. Log Ratio',
+  O11: 'O11',
+  E11: 'E11',
+  ipm: 'ipm',
+  log_likelihood: 'Log Likelihood',
+  z_score: 'Z Score',
+  t_score: 'T Score',
+  simple_ll: 'Simple LL',
+  dice: 'dice',
+  log_ratio: 'Log Ratio',
+  min_sensitivity: 'Min Sensitivity',
+  liddell: 'Liddell',
+  mutual_information: 'Mutual Info.',
+  local_mutual_information: 'Local Mutual Info.',
+}
+
 function KeywordAnalysis() {
   // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
   const showsSemanticMap =
@@ -49,7 +87,11 @@ function KeywordAnalysis() {
   const { ccSortOrder, ccSortBy } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
   )
-  const { clIsVisible = false, clCorpus = 'target' } = Route.useSearch()
+  const {
+    clIsVisible = false,
+    clCorpus = 'target',
+    measure = 'conservative_log_ratio',
+  } = Route.useSearch()
   const { clFilterItem } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
   )
@@ -77,16 +119,35 @@ function KeywordAnalysis() {
     enabled: clFilterItem !== undefined && analysisData !== undefined,
   })
 
-  const { data: mapItems, error: errorMapItems } = useQuery({
+  const { data, error: errorMapItems } = useQuery({
     ...keywordAnalysisItemsById(analysisId, {
       sortOrder: ccSortOrder,
       sortBy: ccSortBy,
       pageSize: 300,
       pageNumber: 1,
     }),
-    select: ({ coordinates }) => {
-      return coordinates
-    },
+  })
+
+  const mapItems = data?.coordinates
+
+  const words = (data?.items ?? []).map(({ item, scaled_scores }) => {
+    let { x = 0, y = 0 } = data?.coordinates.find((c) => c.item === item) ?? {}
+    x *= 1_000
+    y *= 1_000
+    const score = scaled_scores.find((s) => s.measure === measure)?.score
+    if (score === undefined)
+      throw new Error(`Score not found for ${item} for measure ${measure}`)
+    return {
+      id: item,
+      x,
+      y,
+      originX: x,
+      originY: y,
+      source: 'items',
+      significance: score,
+      radius: score * 10,
+      item,
+    }
   })
 
   return (
@@ -96,15 +157,48 @@ function KeywordAnalysis() {
       classNameContainer="min-h-full pb-0"
     >
       {showsSemanticMap && (
-        <Link
-          to="/keyword-analysis/$analysisId"
-          from="/keyword-analysis/$analysisId/semantic-map"
-          params={(p) => p}
-          search={(s) => s}
-          className={buttonVariants({ variant: 'secondary' })}
-        >
-          Back to Keyword Analysis
-        </Link>
+        <div className="grid flex-grow grid-cols-[min-content_1fr] grid-rows-[min-content_1fr] gap-8">
+          <Link
+            to="/keyword-analysis/$analysisId"
+            from="/keyword-analysis/$analysisId/semantic-map"
+            params={(p) => p}
+            search={(s) => s}
+            className={cn(
+              buttonVariants({ variant: 'secondary' }),
+              'flex-shrink',
+            )}
+          >
+            Back to Keyword Analysis
+          </Link>
+          <label>
+            <Select
+              onValueChange={(measure) => {
+                navigate({
+                  to: '',
+                  params: (p) => p,
+                  search: (s) => ({ ...s, measure }),
+                })
+              }}
+              value={measure}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="No Query Layer Selected" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {measures.map((measure) => (
+                    <SelectItem key={measure} value={measure}>
+                      {measureMap[measure]}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </label>
+          <div className="relative col-span-2 block h-full w-full self-stretch justify-self-stretch overflow-hidden pb-4">
+            <WordCloud words={words} size={2_000} className="h-full w-full" />
+          </div>
+        </div>
       )}
 
       {!showsSemanticMap && (
