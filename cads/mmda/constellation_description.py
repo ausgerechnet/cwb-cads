@@ -499,7 +499,10 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
 
     else:
         if filter_item:
-            filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+            # TODO: speed up - this can take up to 10 minutes for highly frequent items
+            # only search for filter in context of focus
+            filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s,
+                                                                 focus_query=focus_query)
             highlight_queries['_FILTER'] = filter_queries['_FILTER']
 
         # attributes to show

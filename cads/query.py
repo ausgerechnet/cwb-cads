@@ -88,13 +88,18 @@ def ccc_query(query, return_df=True):
     return matches_df
 
 
-def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='longest'):
+def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='longest', focus_query=None):
     """get or create query for item in corpus
 
     """
 
     # TODO run only on subcorpus?
     current_app.logger.debug(f'get_or_create_query :: item "{item}" in corpus "{corpus.cwb_id}"')
+
+    if focus_query:
+        # TODO speed up for subcorpus queries on context of focus query
+        # NB context of focus is not saved as subcorpus
+        pass
 
     # try to retrieve
     cqp_query = format_cqp_query([item], p_query=p, s_query=s, escape=escape)
@@ -117,6 +122,50 @@ def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='lo
         db.session.add(query)
         db.session.commit()
         ccc_query(query, return_df=False)
+
+    return query
+
+
+def get_or_create_assisted(json_data, execute=True):
+
+    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    json_data['s'] = json_data.get('s', corpus.s_default)
+
+    items = json_data.pop('items')
+    p = json_data.pop('p')
+    escape = json_data.pop('escape', json_data.get('escape'))
+    ignore_diacritics = json_data.pop('ignore_diacritics', json_data.get('ignore_diacritics'))
+    ignore_case = json_data.pop('ignore_case', json_data.get('ignore_case'))
+    flags = ''
+    if ignore_case or ignore_diacritics:
+        flags = '%'
+        if ignore_case:
+            flags += 'c'
+        if ignore_diacritics:
+            flags += 'd'
+
+    json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
+
+    # TODO: need to filter on None-values
+    query = Query.query.filter_by(
+        corpus_id=json_data.get('corpus_id'),
+        # subcorpus_id=json_data.get('subcorpus_id'),
+        cqp_query=json_data.get('cqp_query'),
+        # match_strategy=json_data.get('match_strategy'),
+        # filter_sequence=None,
+        s=json_data.get('s')
+    ).first()
+
+    if query is None:
+
+        query = Query(**json_data)
+        db.session.add(query)
+        db.session.commit()
+
+        if execute:
+            ret = ccc_query(query)
+            if isinstance(ret, str):  # CQP error
+                return ret
 
     return query
 
@@ -299,50 +348,6 @@ def iterative_query(focus_query, filter_queries, window, overlap='partial'):
         df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
         df_matches['query_id'] = query.id
         df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
-
-    return query
-
-
-def get_or_create_assisted(json_data, execute=True):
-
-    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
-    json_data['s'] = json_data.get('s', corpus.s_default)
-
-    items = json_data.pop('items')
-    p = json_data.pop('p')
-    escape = json_data.pop('escape', json_data.get('escape'))
-    ignore_diacritics = json_data.pop('ignore_diacritics', json_data.get('ignore_diacritics'))
-    ignore_case = json_data.pop('ignore_case', json_data.get('ignore_case'))
-    flags = ''
-    if ignore_case or ignore_diacritics:
-        flags = '%'
-        if ignore_case:
-            flags += 'c'
-        if ignore_diacritics:
-            flags += 'd'
-
-    json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
-
-    # TODO: need to filter on None-values
-    query = Query.query.filter_by(
-        corpus_id=json_data.get('corpus_id'),
-        # subcorpus_id=json_data.get('subcorpus_id'),
-        cqp_query=json_data.get('cqp_query'),
-        # match_strategy=json_data.get('match_strategy'),
-        # filter_sequence=None,
-        s=json_data.get('s')
-    ).first()
-
-    if query is None:
-
-        query = Query(**json_data)
-        db.session.add(query)
-        db.session.commit()
-
-        if execute:
-            ret = ccc_query(query)
-            if isinstance(ret, str):  # CQP error
-                return ret
 
     return query
 
