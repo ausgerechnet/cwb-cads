@@ -485,29 +485,41 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
     # select and categorise queries
     highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
     focus_query = highlight_queries[query_focus['focus_discourseme_id']]
-    filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
-    if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
-        highlight_queries['_FILTER'] = filter_queries['_FILTER']
+    try:
+        filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
+    except KeyError:
+        # filtering for discourseme which are not part of constellation returns no concordance lines
+        concordance = {
+            'lines': [],
+            'nr_lines': 0,
+            'page_size': page_size,
+            'page_number': page_number,
+            'page_count': 0
+        }
 
-    # attributes to show
-    p_show = [primary, secondary]
-    s_show = focus_query.corpus.s_annotations
+    else:
+        if filter_item:
+            filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+            highlight_queries['_FILTER'] = filter_queries['_FILTER']
 
-    # break context at focus_query.s by default
-    if context_break is None:
-        context_break = focus_query.s
+        # attributes to show
+        p_show = [primary, secondary]
+        s_show = focus_query.corpus.s_annotations
 
-    concordance = ccc_concordance(focus_query,
-                                  p_show, s_show,
-                                  window, context_break,
-                                  extended_window, extended_context_break,
-                                  highlight_queries=highlight_queries,
-                                  match_id=None,
-                                  filter_queries=filter_queries, overlap='partial',
-                                  page_number=page_number, page_size=page_size,
-                                  sort_order=sort_order,
-                                  sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
+        # break context at focus_query.s by default
+        if context_break is None:
+            context_break = focus_query.s
+
+        concordance = ccc_concordance(focus_query,
+                                      p_show, s_show,
+                                      window, context_break,
+                                      extended_window, extended_context_break,
+                                      highlight_queries=highlight_queries,
+                                      match_id=None,
+                                      filter_queries=filter_queries, overlap='partial',
+                                      page_number=page_number, page_size=page_size,
+                                      sort_order=sort_order,
+                                      sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
 
     return ConcordanceOut().dump(concordance), 200
 
