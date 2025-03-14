@@ -6,6 +6,7 @@ import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 import { SelectMulti } from '@cads/shared/components/select-multi'
 import { TokenLine } from '../routes/_app/constellations_/$constellationId/-constellation-concordance-lines'
 import WordCloud from './word-cloud'
+import { WordCloudPreview } from './word-cloud-preview'
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
@@ -315,6 +316,40 @@ export function ComponentOverview() {
             },
           ]}
           secondary="meme"
+        />
+      </div>
+
+      <Headline2 className="mb-4">Word Cloud Preview</Headline2>
+      <div className="relative overflow-hidden outline outline-1 outline-yellow-300">
+        <WordCloudPreview
+          items={[
+            {
+              x: 0.5,
+              y: 0.5,
+              item: 'Hello',
+              source: 'keywords',
+            },
+            {
+              x: 0.5,
+              y: 0.5,
+              item: 'Hello', // Should be filtered out
+              source: 'keywords',
+            },
+            {
+              x: 0.25,
+              y: 0.75,
+              item: 'World',
+              source: 'keywords',
+            },
+            {
+              x: 0.2,
+              y: 0.2,
+              item: 'Whoop',
+              source: 'discoursemes',
+              discourseme_id: 1,
+            },
+          ]}
+          className="aspect-square h-96 max-w-full bg-white/5"
         />
       </div>
 
