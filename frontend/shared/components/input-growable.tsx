@@ -34,7 +34,7 @@ export const InputGrowable = function ({
     <label
       ref={labelRef}
       className={cn(
-        'relative inline-block min-w-[1ch] before:pointer-events-none before:opacity-0 before:content-[attr(data-input)]',
+        'relative inline-block min-w-[1ch] before:pointer-events-none before:whitespace-pre before:opacity-0 before:content-[attr(data-input)]',
         classNameLabel,
       )}
       data-input=""
