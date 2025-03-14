@@ -35,6 +35,7 @@ import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 
 const emptyArray = [] as const
 
+// TODO: Lots of duplication; Extract logic/Component
 export function ConstellationConcordanceLines({
   constellationId,
   corpusId,
@@ -151,6 +152,7 @@ export function ConstellationConcordanceLines({
                   <ConcordanceLineRender
                     key={line.match_id}
                     concordanceLine={line}
+                    secondary={secondary}
                   />
                 ))}
                 {isLoading && (
@@ -203,12 +205,11 @@ function ConcordanceLineRender({
     structural = {},
     discourseme_ranges,
   },
+  secondary,
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
+  secondary?: string
 }) {
-  const { secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
   const { preTokens, postTokens, midTokens } = useMemo(
     () => ({
       preTokens: tokens.filter(({ offset = NaN }) => offset < 0) ?? emptyArray,

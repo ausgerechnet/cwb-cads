@@ -114,14 +114,6 @@ const columns: ColumnDef<z.infer<typeof schemas.KeywordOut>>[] = [
     header: ({ column }) => <SortButton column={column}>ID</SortButton>,
   },
   {
-    accessorKey: 'sub_vs_rest',
-    enableSorting: true,
-    header: ({ column }) => (
-      <SortButton column={column}>Sub vs. Rest</SortButton>
-    ),
-    cell: ({ row }) => (row.original.sub_vs_rest ? 'Yes' : 'No'),
-  },
-  {
     id: 'target',
     header: 'Target',
     cell: ({ row }) => (

@@ -1,6 +1,7 @@
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
+import { createLazyFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { XIcon } from 'lucide-react'
 import { getQueryAssisted, keywordAnalysisById } from '@cads/shared/queries'
 import { Drawer } from '@/components/drawer'
 import { formatNumber } from '@cads/shared/lib/format-number'
@@ -18,13 +19,14 @@ import { useFilterSelection } from '../constellations_/$constellationId/-use-fil
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
 import { KeywordTable } from './-keywords'
 import { QueryFilter } from './-query-filter'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
   { component: KeywordAnalysis },
 )
 
 function KeywordAnalysis() {
-  const { clIsVisible = false, clCorpus = 'main' } = Route.useSearch()
+  const { clIsVisible = false, clCorpus = 'target' } = Route.useSearch()
   const { clFilterItem } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
   )
@@ -39,11 +41,11 @@ function KeywordAnalysis() {
   const { data: query, error: queryError } = useQuery({
     ...getQueryAssisted({
       corpusId:
-        clCorpus === 'main'
+        clCorpus === 'target'
           ? analysisData?.corpus_id
           : analysisData?.corpus_id_reference,
       subcorpusId:
-        clCorpus === 'main'
+        clCorpus === 'target'
           ? analysisData?.subcorpus_id
           : analysisData?.subcorpus_id_reference,
       p,
@@ -60,7 +62,7 @@ function KeywordAnalysis() {
     >
       {analysisData && (
         <dl className="mr-auto inline-grid grid-cols-[auto,auto] gap-x-2">
-          <dt>Corpus Name:</dt>
+          <dt>Target Corpus Name:</dt>
           <dd>
             {analysisData.corpus_name} on {analysisData.p}
           </dd>
@@ -90,7 +92,7 @@ function KeywordAnalysis() {
             <Select
               value={clCorpus}
               onValueChange={(clCorpus) => {
-                if (clCorpus !== 'main' && clCorpus !== 'reference') return
+                if (clCorpus !== 'target' && clCorpus !== 'reference') return
                 navigate({
                   to: '',
                   params: (p) => p,
@@ -102,8 +104,8 @@ function KeywordAnalysis() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="main">
-                  Main: {analysisData.corpus_name}
+                <SelectItem value="target">
+                  Target: {analysisData.corpus_name}
                 </SelectItem>
                 <SelectItem value="reference">
                   Reference: {analysisData.corpus_name_reference}
@@ -111,6 +113,36 @@ function KeywordAnalysis() {
               </SelectContent>
             </Select>
           </Label>
+
+          <Label className="mb-8 grid w-min shrink grow-0 flex-col gap-1 whitespace-nowrap">
+            <span className="text-muted-foreground text-xs">Filter Item</span>
+            <div className="flex flex-grow gap-1">
+              <div className="bg-muted flex min-h-10 flex-grow items-center rounded px-2">
+                {clFilterItem === undefined ? (
+                  <span className="text-muted-foreground text-xs italic">
+                    None
+                  </span>
+                ) : (
+                  <>{clFilterItem}</>
+                )}
+              </div>
+
+              {Boolean(clFilterItem) && (
+                <Link
+                  className={buttonVariants({
+                    variant: 'secondary',
+                    size: 'icon',
+                  })}
+                  to=""
+                  params={(p) => p}
+                  search={(s) => ({ ...s, clFilterItem: undefined })}
+                >
+                  <XIcon className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
+          </Label>
+
           {query && (
             <QueryFilter
               corpusId={query.corpus_id}
