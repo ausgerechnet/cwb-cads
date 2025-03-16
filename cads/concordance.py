@@ -191,7 +191,7 @@ def ccc_concordance(focus_query,
         # FILTERING
         from .query import filter_matches
         matches = filter_matches(focus_query, filter_queries, window, overlap)
-        if not matches:
+        if not matches.first():
             return {
                 'lines': [],
                 'nr_lines': 0,
@@ -231,6 +231,14 @@ def ccc_concordance(focus_query,
     df_dump = DataFrame(
         [vars(s) for s in matches], columns=['match', 'matchend', 'contextid']
     ).set_index(['match', 'matchend'])
+    if len(df_dump) == 0:
+        return {
+            'lines': [],
+            'nr_lines': 0,
+            'page_size': page_size,
+            'page_number': page_number,
+            'page_count': 0
+        }
     lines = SubCorpus(
         subcorpus_name=None,
         df_dump=df_dump,
