@@ -2131,7 +2131,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev27"
+    "version": "0.3.0.dev28"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -4844,6 +4844,15 @@
           },
           {
             "in": "query",
+            "name": "return_coordinates",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
             "name": "hide_focus",
             "required": false,
             "schema": {
@@ -4997,24 +5006,6 @@
             "required": true,
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "hide_focus",
-            "required": false,
-            "schema": {
-              "default": true,
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
-            "name": "hide_filter",
-            "required": false,
-            "schema": {
-              "default": true,
-              "type": "boolean"
             }
           },
           {

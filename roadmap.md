@@ -5,7 +5,8 @@
 - [ ] concordance KWIC view doesn't show MWUs as keywords, only first token
 - [ ] concordance sorting doesn't work as expected
 - [ ] I think there's a general confusion between the items in the discourseme description (which are CQP queries, or p/surface pairs) and the items on the (unigram) breakdown -- which should be highlighted in the semantic map.
-- [x] collocation items: after selecting a corpus and a focus discourseme, the frontend asks for collocation analyses via `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/`, but then does not use `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/<id>/items` but `GET /collocation/<id>/items` instead. this endpoint does return the same items, but no discourseme scores (or coordinates).
+- [x] collocation items: after selecting a corpus and a focus discourseme, the frontend asks for collocation analyses via `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/`, but then does not use `GET /mmda/constellation/<constellation_id>/description/<description_id>/collocation/<id>/items` but `GET /collocation/<id>/items` instead. this endpoint does return the same items, but no discourseme scores (or coordinates)
+- [ ] do not request /map/ and /items/ at the same time (at least when creating)
 
 ## Features
 
@@ -25,22 +26,23 @@
 - [ ] overlapping segmentation annotation (Frontend / LaTeX / Quarto)
 - [ ] update backend manuals
 - [ ] create vignette
-- [ ] upload a correctly indexed germaparl (with `text_` s-attributes)
+- LRC = 0 → do not display in map?
+
 
 # Backend
 
+## Resources
+- [ ] upload a correctly indexed germaparl (with `text_` s-attributes) GERMAPARL220
+- [ ] create meta data for test corpora
+
 ## Bugfixes
 
-- [ ] duplicated items in map endpoint, although they only appear once in the database [cannot reproduce]
-
-        curl 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/mmda/constellation/1/description/17/collocation/66/map?sort_order=descending&page_size=300&page_number=1' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:134.0) Gecko/20100101 Firefox/134.0' -H 'Accept: application/json, text/plain, */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br, zstd' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczODA3ODEzMCwianRpIjoiODA2ZDY1NzYtZDNiMS00ZTRjLWFlMTItYjMxNTUyNTgzM2UyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiJ9LCJuYmYiOjE3MzgwNzgxMzAsImNzcmYiOiIxZmU4Y2MzMi1lZjgxLTRiMzQtOTQ0MC0zODhkYWU3ZDQyZWQiLCJleHAiOjE3MzgwNzk5MzB9.D9b5tFL1CbegHclrl-IxF0QYXBLmaENFKKaFMjwg0cU' -H 'Origin: http://localhost:3000' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Referer: http://localhost:3000/' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: cross-site' -H 'Priority: u=0' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache'
-
-- [ ] filter concordance lnes such that all discoursemes are included [already implemented]
-
-- [ ] empty base items
-
-        curl 'https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/mmda/constellation/1/description/1/collocation/' -X PUT -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0' -H 'Accept: application/json, text/plain, */*' -H 'Accept-Language: en-US,en;q=0.5' -H 'Accept-Encoding: gzip, deflate, br, zstd' -H 'Content-Type: application/json' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczNDUzMDIyNywianRpIjoiYTBmOTVkMjEtYWRiMC00NDU1LWEwNzEtMjkwYzkwOGI3NjkyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6eyJpZCI6MSwidXNlcm5hbWUiOiJhZG1pbiJ9LCJuYmYiOjE3MzQ1MzAyMjcsImNzcmYiOiJhNGM1NjRjOS0wMzk3LTQ1YzctOTNhZi1jNTA2ZTA3YmZlMzAiLCJleHAiOjE3MzQ1MzIwMjd9.Xum6QpGBaOgnFnJ_Q1hqgjfZEc_hcfKZAH0tb2eX7p4' -H 'Origin: http://localhost:3000' -H 'DNT: 1' -H 'Connection: keep-alive' -H 'Referer: http://localhost:3000/' -H 'Sec-Fetch-Dest: empty' -H 'Sec-Fetch-Mode: cors' -H 'Sec-Fetch-Site: cross-site' -H 'Pragma: no-cache' -H 'Cache-Control: no-cache' --data-raw '{"filter_discourseme_ids":[],"filter_item_p_att":"lemma","filter_overlap":"partial","focus_discourseme_id":2,"include_negative":false,"marginals":"local","p":"lemma","s_break":"s","semantic_map_id":null,"semantic_map_init":true,"window":10}'
-
+- [x] duplicated items in map endpoint, although they only appear once in the database [cannot reproduce]
+- [x] filter concordance lines such that all discoursemes are included [already implemented]
+- [x] NaN in association scores → null
+- [x] return empty list of associations for constellations with only one discourseme
+- [x] duplicate coordinates (should be fixed when not creating coordinates during pagination)
+- [ ] too many query matches: 200 + message: display random selection (and mention number of actual lines)
 
 ## Major features
 - [x] query
@@ -55,7 +57,7 @@
 - [x] second-order collocation analysis
 - [x] meta distribution
 - [x] pairwise associations of discoursemes
-- [ ] GERMAPARL1386 on dev server
+- [x] GERMAPARL1386 on dev server
 - [ ] usage fluctuation analysis
   + provide endpoint and example
 - [ ] quantitative feedback for collocation / keyword discourseme categorisation
@@ -63,14 +65,15 @@
   + how many concordance lines contain at least one of them?
 - [ ] anchored queries [spheroscope]
 
-
 ## Minor features and improvements
 
 ### Performance
+- [x] speed up concordance retrieval
+- [x] do not create new coordinates when paginating on items
 - [x] speed up deleting queries
-- [ ] speed up constellation concordance retrieval (discourseme range retrieval / sorting)
+- [x] speed up constellation concordance retrieval (discourseme range retrieval / sorting)
 - [ ] speed up supcorpus queries
-- [ ] speed up collocation/items: do not return discourseme scores?
+- [x] speed up collocation/items: do not return discourseme scores?
 
 ### Multi-user
 - [ ] several queries for one discourseme?
