@@ -165,6 +165,7 @@ class Constellation(db.Model):
     comment = db.Column(db.Unicode, nullable=True)
 
     discoursemes = db.relationship("Discourseme", secondary=constellation_discourseme)
+    descriptions = db.RelationshipProperty("ConstellationDescription", backref="constellation", cascade='all, delete')
 
 
 class ConstellationDescription(db.Model):

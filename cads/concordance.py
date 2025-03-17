@@ -191,7 +191,7 @@ def ccc_concordance(focus_query,
         # FILTERING
         from .query import filter_matches
         matches = filter_matches(focus_query, filter_queries, window, overlap)
-        if not matches.first():
+        if matches is None or not matches.first():
             return {
                 'lines': [],
                 'nr_lines': 0,
