@@ -291,8 +291,9 @@ def test_associations(client, auth):
         assert all(v in associations.json['scores'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])
         assert all(v in associations.json['scaled_scores'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])
 
+        print(associations.json)
 
-@pytest.mark.now
+
 def test_associations_empty(client, auth):
 
     auth_header = auth.login()
@@ -333,3 +334,72 @@ def test_associations_empty(client, auth):
                                   headers=auth_header)
 
         assert associations.status_code == 200
+
+
+@pytest.mark.now
+def test_associations_nan(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        tmp_disc = client.post(url_for('mmda.discourseme.create_discourseme'),
+                               json={
+                                   'name': 'können',
+                                   'template': [
+                                       {'surface': 'können', 'p': 'lemma'}
+                                   ],
+                                  },
+                               content_type='application/json',
+                               headers=auth_header)
+
+        assert tmp_disc.status_code == 200
+
+        tmp_disc_2 = client.post(url_for('mmda.discourseme.create_discourseme'),
+                                 json={
+                                     'name': 'empty',
+                                     'template': [
+                                         {'surface': 'könsdanen', 'p': 'lemma'}
+                                     ],
+                                 },
+                                 content_type='application/json',
+                                 headers=auth_header)
+
+        assert tmp_disc_2.status_code == 200
+
+        tmp_disc_3 = client.post(url_for('mmda.discourseme.create_discourseme'),
+                                 json={
+                                     'name': 'hapax',
+                                     'template': [
+                                         {'surface': 'Kraftfahrt', 'p': 'lemma'}
+                                     ],
+                                 },
+                                 content_type='application/json',
+                                 headers=auth_header)
+
+        assert tmp_disc.status_code == 200
+
+        # constellation
+        constellation = client.post(url_for('mmda.constellation.create_constellation'),
+                                    json={
+                                        'name': 'test',
+                                        'comment': 'only modal verbs',
+                                        'discourseme_ids': [tmp_disc.json['id'], tmp_disc_2.json['id'], tmp_disc_3.json['id']]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        description = client.post(url_for('mmda.constellation.description.create_description', constellation_id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        associations = client.get(url_for('mmda.constellation.description.get_constellation_associations',
+                                          constellation_id=constellation.json['id'], description_id=description.json['id']),
+                                  headers=auth_header)
+
+        assert associations.status_code == 200
+
+        assert associations.json['scaled_scores'][0]['score'] is None
