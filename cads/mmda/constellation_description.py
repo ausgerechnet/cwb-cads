@@ -560,7 +560,6 @@ def get_constellation_associations(constellation_id, description_id):
         pairs = pairwise_intersections(context_ids)
         for pair, f in pairs.items():
             pair = sorted(pair)
-            print(pair)
             f1 = len(context_ids[pair[0]])
             f2 = len(context_ids[pair[1]])
             records.append({'node': pair[0], 'candidate': pair[1], 'f': f, 'f1': f1, 'f2': f2, 'N': N})

@@ -8,7 +8,8 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from association_measures import measures
 from flask import current_app
-from pandas import DataFrame, concat, merge, read_sql, to_numeric
+from pandas import DataFrame, concat, merge, to_numeric
+from sqlalchemy import select
 
 from .. import db
 from ..breakdown import ccc_breakdown
@@ -33,7 +34,7 @@ from .discourseme_description import (DiscoursemeCoordinatesOut,
 bp = APIBlueprint('collocation', __name__, url_prefix='/<description_id>/collocation')
 
 
-def query_discourseme_cotext(collocation, df_cotext, discourseme_description, overlap='partial'):
+def query_discourseme_cotext(collocation, cotext_id, window, discourseme_description, f1, overlap='partial'):
     """ensure that CollocationDiscoursemeItems exist for discourseme description
 
     TODO: if no matches in cotext, still create counts
@@ -98,31 +99,52 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
     current_app.logger.debug(
         f'query_discourseme_cotext :: .. getting matches of discourseme "{discourseme_description.discourseme.name}" in context'
     )
+    cotext_subquery = select(CotextLines.cpos).filter(
+        CotextLines.cotext_id == cotext_id,
+        CotextLines.offset <= window,
+        CotextLines.offset >= -window,
+    ).scalar_subquery()
     if overlap == 'partial':
-        # corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos']) | corpus_matches_df['matchend'].isin(df_cotext['cpos'])
-        subcorpus_matches = Matches.query.filter(
+        subcorpus_matches = db.session.query(Matches).filter(
             Matches.query_id == corpus_query.id,
-            Matches.match.in_(df_cotext['cpos']) | Matches.matchend.in_(df_cotext['cpos'])
+            Matches.match.in_(cotext_subquery) | Matches.matchend.in_(cotext_subquery)
         )
+        # corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos']) | corpus_matches_df['matchend'].isin(df_cotext['cpos'])
+        # subcorpus_matches = Matches.query.filter(
+        #     Matches.query_id == corpus_query.id,
+        #     Matches.match.in_(df_cotext['cpos']) | Matches.matchend.in_(df_cotext['cpos'])
+        # )
     elif overlap == 'full':
         # TODO: this does not ensure that match and matchend are both in the same context_region!
+        subcorpus_matches = db.session.query(Matches).filter(
+            Matches.query_id == corpus_query.id,
+            Matches.match.in_(cotext_subquery) & Matches.matchend.in_(cotext_subquery)
+        )
         # corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos']) & corpus_matches_df['matchend'].isin(df_cotext['cpos'])
-        subcorpus_matches = Matches.query.filter(
-            Matches.query_id == corpus_query.id,
-            Matches.match.in_(df_cotext['cpos']) & Matches.matchend.in_(df_cotext['cpos'])
-        )
+        # subcorpus_matches = Matches.query.filter(
+        #     Matches.query_id == corpus_query.id,
+        #     Matches.match.in_(df_cotext['cpos']) & Matches.matchend.in_(df_cotext['cpos'])
+        # )
     elif overlap == 'match':
+        subcorpus_matches = db.session.query(Matches).filter(
+            Matches.query_id == corpus_query.id,
+            Matches.match.in_(cotext_subquery)
+        )
         # corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos'])
-        subcorpus_matches = Matches.query.filter(
-            Matches.query_id == corpus_query.id,
-            Matches.match.in_(df_cotext['cpos'])
-        )
+        # subcorpus_matches = Matches.query.filter(
+        #     Matches.query_id == corpus_query.id,
+        #     Matches.match.in_(df_cotext['cpos'])
+        # )
     elif overlap == 'matchend':
-        # corpus_matches_df['in_context'] = corpus_matches_df['matchend'].isin(df_cotext['cpos'])
-        subcorpus_matches = Matches.query.filter(
+        subcorpus_matches = db.session.query(Matches).filter(
             Matches.query_id == corpus_query.id,
-            Matches.matchend.in_(df_cotext['cpos'])
+            Matches.matchend.in_(cotext_subquery)
         )
+        # corpus_matches_df['in_context'] = corpus_matches_df['matchend'].isin(df_cotext['cpos'])
+        # subcorpus_matches = Matches.query.filter(
+        #     Matches.query_id == corpus_query.id,
+        #     Matches.matchend.in_(df_cotext['cpos'])
+        # )
     else:
         raise ValueError("overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
@@ -159,7 +181,7 @@ def query_discourseme_cotext(collocation, df_cotext, discourseme_description, ov
     df['f2'] = to_numeric(df['f2'].astype(float).fillna(0), downcast='integer')
     df['discourseme_description_id'] = discourseme_description.id
     df['collocation_id'] = collocation.id
-    df['f1'] = len(df_cotext)
+    df['f1'] = f1
     df['N'] = corpus.size()
 
     current_app.logger.debug('query_discourseme_cotext :: .. saving item counts and scoring')
@@ -190,12 +212,19 @@ def set_collocation_discourseme_scores(collocation, discourseme_descriptions, ov
     if cotext is None:
         current_app.logger.error('set_collocation_discourseme_scores :: empty cotext')
         return
-    cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
-    df_cotext = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True).drop_duplicates(subset='cpos')
+    # cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
+    # df_cotext = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True).drop_duplicates(subset='cpos')
+
+    # size of cotext
+    f1 = db.session.query(db.func.count(db.func.distinct(CotextLines.cpos))).filter(
+        CotextLines.cotext_id == cotext.id,
+        CotextLines.offset <= window,
+        CotextLines.offset >= -window,
+    ).scalar()
 
     current_app.logger.debug('set_collocation_discourseme_scores :: looping through descriptions')
     for discourseme_description in discourseme_descriptions:
-        query_discourseme_cotext(collocation, df_cotext, discourseme_description, overlap=overlap)
+        query_discourseme_cotext(collocation, cotext.id, window, discourseme_description, f1, overlap=overlap)
 
 
 def get_collocation_discourseme_scores(collocation_id, discourseme_description_ids):
