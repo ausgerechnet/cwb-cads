@@ -538,52 +538,63 @@ def get_constellation_associations(constellation_id, description_id):
     """
 
     description = db.get_or_404(ConstellationDescription, description_id)
-
-    context_ids = dict()
-    for discourseme_description in description.discourseme_descriptions:
-        matches_df = ccc_query(discourseme_description._query)
-        if len(matches_df) == 0:
-            context_ids[discourseme_description.discourseme.id] = set()
-        else:
-            context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
-
-    current_app.logger.debug('get constellation associations :: counting co-occurrences')
     N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))  # TODO: subcorpus size?
-    records = list()
-    pairs = pairwise_intersections(context_ids)
-    for pair, f in pairs.items():
-        pair = sorted(pair)
-        f1 = len(context_ids[pair[0]])
-        f2 = len(context_ids[pair[1]])
-        records.append({'node': pair[0], 'candidate': pair[1], 'f': f, 'f1': f1, 'f2': f2, 'N': N})
 
-    current_app.logger.debug('get constellation associations :: calculating scores')
-    counts = DataFrame(records)
-    counts['node'] = counts['node'].astype(int)
-    counts['candidate'] = counts['candidate'].astype(int)
-    counts = counts.set_index(['node', 'candidate'])
-    scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts))
+    if len(description.discourseme_descriptions) < 2:
+        scores = dict()
+        scaled_scores = dict()
+        nr_pairs = 0
 
-    # TODO: why are there NAs?
-    scores = scores.dropna()
+    else:
+        context_ids = dict()
+        for discourseme_description in description.discourseme_descriptions:
+            matches_df = ccc_query(discourseme_description._query)
+            if len(matches_df) == 0:
+                context_ids[discourseme_description.discourseme.id] = set()
+            else:
+                context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
 
-    # scale scores
-    scaled_scores_dict = dict()
-    for sort_by in scores.columns:
-        scaled_scores_dict[sort_by] = scores[sort_by] / scores[sort_by].abs().max()
-    scaled_scores = DataFrame(index=scores.index, data=scaled_scores_dict)
+        current_app.logger.debug('get constellation associations :: counting co-occurrences')
 
-    # convert to long format
-    scores = scores.reset_index().melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
-    scaled_scores = scaled_scores.reset_index().melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
+        records = list()
+        pairs = pairwise_intersections(context_ids)
+        for pair, f in pairs.items():
+            pair = sorted(pair)
+            f1 = len(context_ids[pair[0]])
+            f2 = len(context_ids[pair[1]])
+            records.append({'node': pair[0], 'candidate': pair[1], 'f': f, 'f1': f1, 'f2': f2, 'N': N})
+
+        current_app.logger.debug('get constellation associations :: calculating scores')
+        counts = DataFrame(records)
+        counts['node'] = counts['node'].astype(int)
+        counts['candidate'] = counts['candidate'].astype(int)
+        counts = counts.set_index(['node', 'candidate'])
+        scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts))
+
+        # TODO: why are there NAs?
+        scores = scores.dropna()
+
+        # scale scores
+        scaled_scores_dict = dict()
+        for sort_by in scores.columns:
+            scaled_scores_dict[sort_by] = scores[sort_by] / scores[sort_by].abs().max()
+        scaled_scores = DataFrame(index=scores.index, data=scaled_scores_dict)
+
+        # convert to long format
+        scores = scores.reset_index().melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
+        scaled_scores = scaled_scores.reset_index().melt(id_vars=['node', 'candidate'], var_name='measure', value_name='score')
+
+        scores = scores.to_dict(orient='records')
+        scaled_scores = scaled_scores.to_dict(orient='records')
+        nr_pairs = len(pairs.items())
 
     # create return object
     association = dict(
         N=N,
         s=description.s,
-        nr_pairs=len(pairs.items()),
-        scores=scores.to_dict(orient='records'),
-        scaled_scores=scaled_scores.to_dict(orient='records')
+        nr_pairs=nr_pairs,
+        scores=scores,
+        scaled_scores=scaled_scores
     )
 
     return ConstellationAssociationOut().dump(association), 200
