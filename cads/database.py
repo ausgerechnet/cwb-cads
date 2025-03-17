@@ -429,7 +429,7 @@ class ConcordanceLines(db.Model):
 
     concordance_id = db.Column(db.Integer, db.ForeignKey('concordance.id', ondelete='CASCADE'), index=True)
 
-    match = db.Column(db.Integer)  # , db.ForeignKey('matches.id', ondelete='CASCADE'))
+    match = db.Column(db.Integer, index=True)  # , db.ForeignKey('matches.id', ondelete='CASCADE'))
     contextid = db.Column(db.Integer)
 
 
