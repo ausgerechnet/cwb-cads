@@ -587,9 +587,10 @@ def get_all_collocation(constellation_id, description_id):
 @bp.input(CollocationItemsIn, location='query')
 @bp.input({'hide_focus': Boolean(required=False, load_default=True),
            'hide_filter': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
+@bp.input({'return_coordinates': Boolean(required=False, load_default=False)}, location='query', arg_name='query_coord')
 @bp.output(ConstellationCollocationItemsOut)
 @bp.auth_required(auth)
-def get_collocation_items(constellation_id, description_id, collocation_id, query_data, query_hide):
+def get_collocation_items(constellation_id, description_id, collocation_id, query_data, query_hide, query_coord):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
     TODO also return ranks (to ease frontend pagination)?
@@ -664,9 +665,9 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
     items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
 
     # coordinates
-    coordinates = list()
+    coordinates = []
     discourseme_coordinates = []
-    if collocation.semantic_map:
+    if collocation.semantic_map and query_coord['return_coordinates']:
         # make sure there's coordinates for all requested items and discourseme items
         requested_items = [item['item'] for item in items]
         for discourseme_score in discourseme_scores:
@@ -696,11 +697,11 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
 
 @bp.get("/<collocation_id>/map")
 @bp.input(CollocationItemsIn, location='query')
-@bp.input({'hide_focus': Boolean(required=False, load_default=True),
-           'hide_filter': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
+# @bp.input({'hide_focus': Boolean(required=False, load_default=True),
+#            'hide_filter': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
 @bp.output(ConstellationMapOut)
 @bp.auth_required(auth)
-def get_collocation_map(constellation_id, description_id, collocation_id, query_data, query_hide):
+def get_collocation_map(constellation_id, description_id, collocation_id, query_data):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
     TODO also return ranks (to ease frontend pagination)?

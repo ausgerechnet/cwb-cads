@@ -867,7 +867,7 @@ def test_constellation_collocation_coordinates(client, auth):
                                                constellation_id=constellation.json['id'],
                                                description_id=description.json['id'],
                                                collocation_id=collocation.json['id'],
-                                               page_size=10, sort_by='O11'),
+                                               page_size=10, sort_by='O11', return_coordinates=True),
                                        headers=auth_header)
         assert collocation_items.status_code == 200
 
