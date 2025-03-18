@@ -147,14 +147,24 @@ def get_or_create_assisted(json_data, execute=True):
     json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
 
     # TODO: need to filter on None-values
-    query = Query.query.filter_by(
-        corpus_id=json_data.get('corpus_id'),
-        # subcorpus_id=json_data.get('subcorpus_id'),
-        cqp_query=json_data.get('cqp_query'),
-        # match_strategy=json_data.get('match_strategy'),
-        # filter_sequence=None,
-        s=json_data.get('s')
-    ).first()
+    subcorpus_id = json_data.get('subcorpus_id')
+    if subcorpus_id is None:
+        query = Query.query.filter_by(
+            corpus_id=json_data.get('corpus_id'),
+            cqp_query=json_data.get('cqp_query'),
+            # match_strategy=json_data.get('match_strategy'),
+            # filter_sequence=None,
+            s=json_data.get('s')
+        ).first()
+    else:
+        query = Query.query.filter_by(
+            corpus_id=json_data.get('corpus_id'),
+            subcorpus_id=subcorpus_id,
+            cqp_query=json_data.get('cqp_query'),
+            # match_strategy=json_data.get('match_strategy'),
+            # filter_sequence=None,
+            s=json_data.get('s')
+        ).first()
 
     if query is None:
 

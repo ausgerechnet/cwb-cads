@@ -95,7 +95,7 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
 
     # query name
     name = generate_idx([
-        corpus.cwb_id, subcorpus.nqr_cqp if subcorpus else None, cqp_query, s_query, match_strategy
+        corpus.cwb_id, subcorpus.id if subcorpus else None, cqp_query, s_query, match_strategy
     ], prefix="Q_")
 
     # init corpus / CQP
