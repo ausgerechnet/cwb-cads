@@ -16,7 +16,7 @@ export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
   return (
     <div className="p-2">
-      <Headline1 className="my-4">Component Overview goes here</Headline1>
+      <Headline1 className="my-4">Component Overview</Headline1>
 
       <Headline2 className="my-4">SelectMulti</Headline2>
       <Code> &lt;SelectMulti ... /&gt;</Code>
@@ -367,21 +367,21 @@ export function ComponentOverview() {
               significance: 0.5,
             },
             {
-              x: -900,
-              y: -900,
+              x: -0.9,
+              y: -0.9,
               item: 'World',
               source: 'items',
-              originX: -900,
-              originY: -900,
+              originX: -0.9,
+              originY: -0.9,
               significance: 0.2,
             },
             {
-              x: 900,
-              y: 900,
+              x: 0.9,
+              y: 0.9,
               item: '!',
               source: 'items',
-              originX: 900,
-              originY: 900,
+              originX: 0.9,
+              originY: 0.9,
               significance: 0.1,
             },
           ]}
