@@ -7,7 +7,7 @@ from math import isnan
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from association_measures import measures
-from flask import current_app
+from flask import abort, current_app
 from pandas import DataFrame, concat, merge, to_numeric
 from sqlalchemy import select
 
@@ -469,7 +469,11 @@ def create_collocation(constellation_id, description_id, json_data):
     db.session.add(collocation)
     db.session.commit()
 
-    get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+    ret = get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+    if isinstance(ret, bool):
+        if not ret:
+            current_app.logger.error("collocation analysis based on empty cotext")
+            abort(406, 'empty cotext')
     set_collocation_discourseme_scores(collocation,
                                        [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
                                        overlap=description.overlap)
@@ -575,11 +579,17 @@ def get_or_create_collocation(constellation_id, description_id, json_data):
     else:
         current_app.logger.debug("collocation object already exists")
 
-    get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
-    set_collocation_discourseme_scores(collocation,
-                                       [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
-                                       overlap=description.overlap)
-    ccc_semmap_init(collocation, semantic_map_id)
+    ret = get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+    if isinstance(ret, bool):
+        if not ret:
+            current_app.logger.error("collocation analysis based on empty cotext")
+            abort(406, 'empty cotext')
+    else:
+        set_collocation_discourseme_scores(collocation,
+                                           [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
+                                           overlap=description.overlap)
+        ccc_semmap_init(collocation, semantic_map_id)
+
     if description.semantic_map_id is None:
         description.semantic_map_id = collocation.semantic_map_id
 

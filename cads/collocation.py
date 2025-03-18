@@ -30,7 +30,7 @@ def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=F
     old = CollocationItem.query.filter_by(collocation_id=collocation.id)
     if old.first():
         current_app.logger.debug("get_or_create_counts :: counts already exist")
-        return
+        return True
         # TODO remove existing counts when forcing rerun
         # current_app.logger.debug("deleting old ones")
         # CollocationItems.query.filter_by(collocation_id=collocation.id).delete()
@@ -53,6 +53,9 @@ def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=F
     ###################
     current_app.logger.debug(f'get_or_create_counts :: getting context of query {focus_query.id}')
     cotext = get_or_create_cotext(focus_query, window, s_break, return_df=True)
+    if not cotext:
+        current_app.logger.error('get_or_create_counts :: empty cotext')
+        return False
     cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
                                             CotextLines.offset <= window,
                                             CotextLines.offset >= -window)
