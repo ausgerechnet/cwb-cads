@@ -10,7 +10,6 @@ import {
   addDiscoursemeDescription,
   discoursemesList,
 } from '@cads/shared/queries'
-import { Headline3 } from '@cads/shared/components/ui/typography'
 import {
   Form,
   FormControl,
@@ -32,7 +31,11 @@ import {
   SelectValue,
 } from '@cads/shared/components/ui/select'
 import { ItemsInput } from '@cads/shared/components/ui/items-input'
-import { Dialog, DialogContent } from '@cads/shared/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from '@cads/shared/components/ui/dialog'
 import { useNavigate } from '@tanstack/react-router'
 
 // The automatically generated DiscoursemeDescriptionIn does not support .extend()
@@ -98,7 +101,7 @@ export function DiscoursemeAnalysis({
     <>
       <Dialog open={isOpen} onOpenChange={(isOpen) => setIsOpen(isOpen)}>
         <DialogContent>
-          <Headline3 className="w-full">Start Discourseme Analysis</Headline3>
+          <DialogTitle>Start Discourseme Analysis</DialogTitle>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(({ p, items, ...data }) => {
