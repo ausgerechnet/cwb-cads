@@ -37,6 +37,7 @@ import WordCloud from '@/components/word-cloud'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { ComplexSelect } from '@cads/shared/components/select-complex'
+import { LoaderBig } from '@cads/shared/components/loader-big'
 import {
   Dialog,
   DialogContent,
@@ -70,8 +71,6 @@ import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { InputGrowable } from '@cads/shared/components/input-growable'
-
-const COORDINATES_SCALE_FACTOR = 1_000 // Coordinates range from -1 to 1 in both axes
 
 export function SemanticMap({
   constellationId,
@@ -118,10 +117,10 @@ export function SemanticMap({
   const words = useMemo(() => {
     const words = mapItems?.map ?? []
     return words.map(({ scaled_score, discourseme_id, x, y, ...w }) => ({
-      x: x * COORDINATES_SCALE_FACTOR,
-      y: y * COORDINATES_SCALE_FACTOR,
-      originX: x * COORDINATES_SCALE_FACTOR,
-      originY: y * COORDINATES_SCALE_FACTOR,
+      x,
+      y,
+      originX: x,
+      originY: y,
       significance: scaled_score,
       discoursemeId: discourseme_id ?? undefined,
       ...w,
@@ -175,7 +174,6 @@ export function SemanticMap({
               },
             )}
             words={words}
-            size={COORDINATES_SCALE_FACTOR * 2}
             semanticMapId={semantic_map_id}
             onNewDiscourseme={onNewDiscourseme}
             onUpdateDiscourseme={onUpdateDiscourseme}
@@ -202,12 +200,7 @@ export function SemanticMap({
         className="relative col-start-3 row-start-3"
       />
       {isFetching && (
-        <div className="bg-muted text-muted-foreground relative z-10 col-start-2 row-start-3 max-w-40 self-center justify-self-center rounded-2xl p-5 text-center shadow-2xl">
-          <div className="mx-auto inline-block">
-            <Loader2Icon className="h-24 w-24 animate-spin" strokeWidth="1" />
-          </div>
-          <p>This may take a while…</p>
-        </div>
+        <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />
       )}
       <div className="col-start-2 row-start-3 self-start justify-self-start">
         <ErrorMessage error={errorCollocation} />

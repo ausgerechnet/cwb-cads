@@ -10,6 +10,7 @@ import { z } from 'zod'
 import {
   corpusById,
   corpusList,
+  corpusMeta,
   corpusMetaFrequencies,
   createSubcorpus,
 } from '@cads/shared/queries'
@@ -73,6 +74,12 @@ function SubcorpusNew() {
     ...corpusById(corpusId),
     enabled: corpusId !== undefined,
   })
+
+  const { data: corpusMetaData } = useQuery({
+    ...corpusMeta(corpusId),
+    enabled: corpusId !== undefined,
+  })
+  console.log('meta', corpusMetaData)
 
   const levelKeyMap = useMemo(() => {
     const levelKeyPairs = (corpus?.s_annotations ?? []).map((annotation) => {

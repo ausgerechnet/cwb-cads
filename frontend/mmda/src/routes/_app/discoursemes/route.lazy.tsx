@@ -94,29 +94,33 @@ function Discoursemes() {
         label: 'New Discourseme',
       }}
     >
-      {discoursemes.length === 0 && (
+      {discoursemes.length === 0 ? (
         <>
           <Large>
             No discoursemes yet.
             <br />
             Create one using the button below.
           </Large>
-          <Link to="/discoursemes/new" className={cn(buttonVariants(), 'mt-4')}>
+          <Link
+            to="/discoursemes/new"
+            className={cn(buttonVariants(), 'mr-auto mt-4')}
+          >
             <Plus className="mr-2 h-4 w-4" />
             New Discourseme
           </Link>
         </>
+      ) : (
+        <DataTable
+          onRowClick={(row) =>
+            navigate({
+              to: '/discoursemes/$discoursemeId',
+              params: { discoursemeId: String(row.id) },
+            })
+          }
+          columns={columns}
+          rows={discoursemes}
+        />
       )}
-      <DataTable
-        onRowClick={(row) =>
-          navigate({
-            to: '/discoursemes/$discoursemeId',
-            params: { discoursemeId: String(row.id) },
-          })
-        }
-        columns={columns}
-        rows={discoursemes}
-      />
     </AppPageFrame>
   )
 }

@@ -230,6 +230,16 @@ export const createSubcorpus: MutationOptions<
   },
 }
 
+export const corpusMeta = (corpusId: number) =>
+  queryOptions({
+    queryKey: ['corpus-meta', corpusId],
+    queryFn: ({ signal }) =>
+      apiClient.get('/corpus/:id/meta/', {
+        params: { id: corpusId.toString() },
+        signal,
+      }),
+  })
+
 export const corpusMetaFrequencies = (
   corpusId: number,
   level: string,

@@ -17,8 +17,8 @@ import { cn } from '@cads/shared/lib/utils'
 export type Word = {
   id: string
   item: string
-  x: number
-  y: number
+  x: number // Should be between -1 and 1
+  y: number // Should be between -1 and 1
   source: string
   dragStartX?: number
   dragStartY?: number
@@ -36,16 +36,18 @@ const discoursemeRadiusMax = 125
 
 export default function WordCloud({
   className,
-  words,
+  words: wordsInput,
   semanticMapId,
-  size,
+  width = 5_000,
+  height = 2_000,
   onNewDiscourseme,
   onUpdateDiscourseme,
 }: {
   className?: string
   words: Omit<Word, 'radius' | 'id'>[]
-  semanticMapId: number
-  size: number
+  semanticMapId?: number
+  width?: number
+  height?: number
   onNewDiscourseme?: (surfaces: string[]) => void
   onUpdateDiscourseme?: (
     discoursemeDescriptionId: number,
@@ -58,6 +60,21 @@ export default function WordCloud({
   const { theme } = useTheme()
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
   const router = useRouter()
+
+  const averageSignificance =
+    wordsInput.reduce((acc, word) => acc + word.significance, 0) /
+    wordsInput.length
+  const targetSignificance = 0.02
+  const significanceScale = targetSignificance / averageSignificance
+
+  const words = wordsInput.map((word) => ({
+    ...word,
+    significance: word.significance * significanceScale,
+    x: (word.x * width) / 2,
+    y: (word.y * height) / 2,
+    originX: (word.x * width) / 2,
+    originY: (word.y * height) / 2,
+  }))
 
   useEffect(() => {
     const [initialZoom, initialX, initialY] = location.hash
@@ -88,9 +105,16 @@ export default function WordCloud({
       .filter((w) => w.source === 'items')
       .map((w) => w.significance)
       .sort((a, b) => b - a)
-    const topSignificanceValues =
+    let topSignificanceValues =
       significanceValues[Math.floor(significanceValues.length * 0.1)] +
       Number.MIN_VALUE
+    if (
+      !words.some(
+        (w) => w.source === 'items' && w.significance >= topSignificanceValues,
+      )
+    ) {
+      topSignificanceValues -= Number.MIN_VALUE * 2
+    }
 
     const drag = d3.drag<SVGCircleElement, Word>()
 
@@ -115,10 +139,10 @@ export default function WordCloud({
       .append('rect')
       .attr('class', 'dark:fill-white/5 fill-black/[2%]')
       .attr('rx', 20)
-      .attr('width', size)
-      .attr('height', size)
-      .attr('x', -size / 2)
-      .attr('y', -size / 2)
+      .attr('width', width)
+      .attr('height', height)
+      .attr('x', -width / 2)
+      .attr('y', -height / 2)
 
     const originLine = container
       .selectAll('.origin-line')
@@ -304,23 +328,26 @@ export default function WordCloud({
         'dark:fill-gray-900 fill-gray-400 stroke-foreground stroke-[.25rem]',
       )
       .attr('rx', 75)
-      .attr('width', size)
-      .attr('height', size)
+      .attr('width', width)
+      .attr('height', height)
 
     // minimap background with mask to highlight the viewport
     miniMapBackground
       .append('rect')
-      .attr('class', 'fill-gray-300 dark:fill-gray-800')
+      .attr(
+        'class',
+        'fill-gray-300 dark:fill-white/20 outline-[500px] outline outline-red-500',
+      )
       .attr('rx', 75)
-      .attr('width', size)
-      .attr('height', size)
+      .attr('width', width)
+      .attr('height', height)
       .attr('mask', 'url(#highlight-mask)')
 
     // get the #highlight-mask mask and add a rect to it
     const miniMapViewport = svg
       .select('#highlight-mask')
       .append('rect')
-      .attr('class', 'fill-white')
+      .attr('class', 'fill-white outline-red-500 outline-[100px]')
       .attr('width', svgWidth)
       .attr('height', svgHeight)
       .attr('mask', 'url(#mini-map-mask)')
@@ -332,7 +359,7 @@ export default function WordCloud({
       .join('circle')
       .attr('class', (d) =>
         d.discoursemeId === undefined
-          ? 'fill-black/40 dark:fill-white/30'
+          ? 'fill-black/90 dark:fill-white/30'
           : 'opacity-90',
       )
       .attr('fill', (d) => {
@@ -340,8 +367,8 @@ export default function WordCloud({
         return getColorForNumber(d.discoursemeId)
       })
       .attr('r', (d) => (d.discoursemeId === undefined ? 20 : 60))
-      .attr('cx', (d) => d.x + size / 2)
-      .attr('cy', (d) => d.y + size / 2)
+      .attr('cx', (d) => d.x + width / 2)
+      .attr('cy', (d) => d.y + height / 2)
 
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
 
@@ -411,14 +438,14 @@ export default function WordCloud({
     function handleResize() {
       svgWidth = svgRef.current?.clientWidth ?? 0
       svgHeight = svgRef.current?.clientHeight ?? 0
-      const baseScale = Math.min(svgWidth, svgHeight) / size
+      const baseScale = Math.min(svgWidth / width, svgHeight / height)
       scaleRange[0] = baseScale
       scaleRange[1] = baseScale * 5
       zoom.scaleExtent(scaleRange)
       const translationFactor = 0.5
       zoom.translateExtent([
-        [-size * translationFactor, -size * translationFactor],
-        [size * translationFactor, size * translationFactor],
+        [-width * translationFactor, -height * translationFactor],
+        [width * translationFactor, height * translationFactor],
       ])
       render()
     }
@@ -449,13 +476,13 @@ export default function WordCloud({
 
       miniMap.attr(
         'class',
-        'translate-x-1 translate-y-1 scale-[.07] opacity-[.97]',
+        'translate-x-1 translate-y-1 scale-[.05] opacity-[.97]',
       )
       miniMapViewport
         .attr('width', svgWidth / k)
         .attr('height', svgHeight / k)
-        .attr('x', -transformationState.x / k + size / 2)
-        .attr('y', -transformationState.y / k + size / 2)
+        .attr('x', -transformationState.x / k + width / 2)
+        .attr('y', -transformationState.y / k + height / 2)
 
       boundary.attr('transform', transformationState)
 
@@ -551,8 +578,8 @@ export default function WordCloud({
       event.subject.isDragging = false
       word.originX = word.x = event.x
       word.originY = word.y = event.y
-      const newX = (event.x / size) * 2
-      const newY = (event.y / size) * 2
+      const newX = (event.x / width) * 2
+      const newY = (event.y / height) * 2
 
       if (
         word.source === 'items' &&
@@ -573,12 +600,14 @@ export default function WordCloud({
         return
       }
 
-      updateCoordinates({
-        semanticMapId,
-        item: word.item,
-        x_user: newX,
-        y_user: newY,
-      })
+      if (semanticMapId === undefined) {
+        updateCoordinates({
+          semanticMapId,
+          item: word.item,
+          x_user: newX,
+          y_user: newY,
+        })
+      }
     }
 
     // This value feels like a hack
@@ -661,7 +690,8 @@ export default function WordCloud({
     words,
     navigate,
     theme,
-    size,
+    width,
+    height,
     updateCoordinates,
     semanticMapId,
     onNewDiscourseme,
@@ -676,10 +706,10 @@ export default function WordCloud({
       >
         <defs>
           <mask id="highlight-mask">
-            <rect x="0" y="0" width={size} height={size} fill="black" />
+            <rect x="0" y="0" width={width} height={height} fill="black" />
           </mask>
           <mask id="mini-map-mask">
-            <rect width={size} height={size} fill="#fff" />
+            <rect width={width} height={height} fill="#fff" />
           </mask>
         </defs>
         {/* This rect merely serves as a "grabbing" area */}
