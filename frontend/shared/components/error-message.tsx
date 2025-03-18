@@ -6,15 +6,26 @@ import {
 } from '@cads/shared/components/ui/alert'
 import { cn } from '@cads/shared/lib/utils'
 
+type ErrorType = Error | null | undefined | ErrorType[]
+
 export function ErrorMessage({
   error,
   className,
 }: {
-  error: Error | null | undefined
+  error: ErrorType
   className?: string
 }) {
   if (error === null || error === undefined) {
     return null
+  }
+  if (Array.isArray(error)) {
+    return (
+      <>
+        {error.map((error, i) => (
+          <ErrorMessage key={i} error={error} />
+        ))}
+      </>
+    )
   }
   // eslint-disable-next-line @typescript-eslint/no-ts-ignore
   // @ts-ignore - We assume that some errors are thrown via axios; in these cases we check whether the error has a response and display the `message` from there -- if it exists.

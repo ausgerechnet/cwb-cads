@@ -11,12 +11,40 @@ import { TokenLine } from '../routes/_app/constellations_/$constellationId/-cons
 import WordCloud from './word-cloud'
 import { WordCloudPreview } from './word-cloud-preview'
 import { ReactNode } from '@tanstack/react-router'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
   return (
     <div className="p-2">
       <Headline1 className="my-4">Component Overview</Headline1>
+
+      <Headline2 className="my-4">ErrorMessage</Headline2>
+      <Code> &lt;ErrorMessage ... /&gt;</Code>
+      <div className="flex flex-col gap-1">
+        <ErrorMessage error={null} />
+        <ErrorMessage error={undefined} />
+        <ErrorMessage error={new Error('This is an error message')} />
+        <ErrorMessage
+          error={[
+            new Error('This is an error message within an array 1/2'),
+            new Error('This is another error message within an array 2/2'),
+            undefined,
+            null,
+            [
+              new Error(
+                'This is an error message within an array WITHIN an array',
+              ),
+              (() => {
+                const e = new Error('This is an error message')
+                // @ts-expect-error - simulates an error thrown by axios
+                e.response = { data: { message: 'Alert!' } }
+                return e
+              })(),
+            ],
+          ]}
+        />
+      </div>
 
       <Headline2 className="my-4">SelectMulti</Headline2>
       <Code> &lt;SelectMulti ... /&gt;</Code>
@@ -362,8 +390,6 @@ export function ComponentOverview() {
               y: 0,
               item: 'Hello',
               source: 'items',
-              originX: 0,
-              originY: 0,
               significance: 0.5,
             },
             {
@@ -371,8 +397,6 @@ export function ComponentOverview() {
               y: -0.9,
               item: 'World',
               source: 'items',
-              originX: -0.9,
-              originY: -0.9,
               significance: 0.2,
             },
             {
@@ -380,8 +404,6 @@ export function ComponentOverview() {
               y: 0.9,
               item: '!',
               source: 'items',
-              originX: 0.9,
-              originY: 0.9,
               significance: 0.1,
             },
           ]}
