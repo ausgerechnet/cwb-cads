@@ -37,6 +37,7 @@ import WordCloud from '@/components/word-cloud'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { ComplexSelect } from '@cads/shared/components/select-complex'
+import { LoaderBig } from '@cads/shared/components/loader-big'
 import {
   Dialog,
   DialogContent,
@@ -202,12 +203,7 @@ export function SemanticMap({
         className="relative col-start-3 row-start-3"
       />
       {isFetching && (
-        <div className="bg-muted text-muted-foreground relative z-10 col-start-2 row-start-3 max-w-40 self-center justify-self-center rounded-2xl p-5 text-center shadow-2xl">
-          <div className="mx-auto inline-block">
-            <Loader2Icon className="h-24 w-24 animate-spin" strokeWidth="1" />
-          </div>
-          <p>This may take a while…</p>
-        </div>
+        <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />
       )}
       <div className="col-start-2 row-start-3 self-start justify-self-start">
         <ErrorMessage error={errorCollocation} />

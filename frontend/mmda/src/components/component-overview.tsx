@@ -4,20 +4,22 @@ import { Ellipsis } from '@cads/shared/components/ellipsis'
 import { InputGrowable } from '@cads/shared/components/input-growable'
 import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 import { SelectMulti } from '@cads/shared/components/select-multi'
+import { LabelBox } from '@cads/shared/components/label-box'
+import { Input } from '@cads/shared/components/ui/input'
+
 import { TokenLine } from '../routes/_app/constellations_/$constellationId/-constellation-concordance-lines'
 import WordCloud from './word-cloud'
 import { WordCloudPreview } from './word-cloud-preview'
+import { ReactNode } from '@tanstack/react-router'
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
   return (
     <div className="p-2">
-      <Headline1 className="mb-4">Component Overview goes here</Headline1>
+      <Headline1 className="my-4">Component Overview goes here</Headline1>
 
-      <Headline2 className="mb-4">SelectMulti</Headline2>
-      <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
-        &lt;SelectMulti ... /&gt;
-      </code>
+      <Headline2 className="my-4">SelectMulti</Headline2>
+      <Code> &lt;SelectMulti ... /&gt;</Code>
       <SelectMulti
         items={[
           { id: 0, name: 'Aaron Aaronson' },
@@ -32,9 +34,7 @@ export function ComponentOverview() {
       />
 
       <Headline2 className="my-4">Ellipsis</Headline2>
-      <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
-        &lt;Ellipsis&gt;...&lt;/Ellipsis&gt;
-      </code>
+      <Code>&lt;Ellipsis&gt;...&lt;/Ellipsis&gt;</Code>
 
       <Ellipsis className="max-w-sm border-2 border-red-500">
         <div className="whitespace-nowrap">!</div>
@@ -319,8 +319,8 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="mb-4">Word Cloud Preview</Headline2>
-      <div className="relative overflow-hidden outline outline-1 outline-yellow-300">
+      <Headline2 className="my-4">Word Cloud Preview</Headline2>
+      <div className="relative overflow-hidden">
         <WordCloudPreview
           items={[
             {
@@ -353,7 +353,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="mb-4">Word Cloud</Headline2>
+      <Headline2 className="my-4">Word Cloud</Headline2>
       <div className="relative grid aspect-video max-w-[1200px] grid-cols-[5rem_1fr_5rem] grid-rows-[5rem_1fr_5rem] overflow-hidden outline outline-1 outline-yellow-300">
         <WordCloud
           words={[
@@ -391,10 +391,8 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="mb-4">Automatically Growing Input</Headline2>
-      <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
-        &lt;InputGrowable ... /&gt;
-      </code>
+      <Headline2 className="my-4">Automatically Growing Input</Headline2>
+      <Code>&lt;InputGrowable ... /&gt;</Code>
       <div>
         <InputGrowable
           className="bg-background text-foreground"
@@ -410,10 +408,8 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="mb-4">AssociationMatrix</Headline2>
-      <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
-        &lt;AssociationMatrix ... /&gt;
-      </code>
+      <Headline2 className="my-4">AssociationMatrix</Headline2>
+      <Code>&lt;AssociationMatrix ... /&gt;</Code>
       <AssociationMatrix
         className="outline outline-1 outline-yellow-400"
         legendNameMap={
@@ -494,6 +490,26 @@ export function ComponentOverview() {
           },
         ]}
       />
+
+      <Headline2 className="my-4">LabelBox</Headline2>
+      <Code>&lt;LabelBox ... /&gt;</Code>
+
+      <div className="flex gap-3">
+        <LabelBox labelText="Label Text">
+          <Input defaultValue="Lorem ipsum dolor sit amet" />
+        </LabelBox>
+        <LabelBox labelText="Label Text">
+          <Input defaultValue="Lorem ipsum dolor sit amet" />
+        </LabelBox>
+      </div>
     </div>
+  )
+}
+
+function Code({ children }: { children: ReactNode }) {
+  return (
+    <code className="bg-muted text-muted-foreground mb-2 mt-1 inline-block rounded px-1 py-0.5">
+      {children}
+    </code>
   )
 }
