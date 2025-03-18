@@ -349,7 +349,7 @@ export function ComponentOverview() {
               discourseme_id: 1,
             },
           ]}
-          className="aspect-square h-96 max-w-full bg-white/5"
+          className="aspect-[2/1] h-96 max-w-full bg-white/5"
         />
       </div>
 
@@ -386,7 +386,6 @@ export function ComponentOverview() {
             },
           ]}
           semanticMapId={0}
-          size={2000}
           className="col-start-2 row-start-2 h-full w-full"
         />
       </div>

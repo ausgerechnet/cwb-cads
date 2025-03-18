@@ -72,8 +72,6 @@ import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { InputGrowable } from '@cads/shared/components/input-growable'
 
-const COORDINATES_SCALE_FACTOR = 1_000 // Coordinates range from -1 to 1 in both axes
-
 export function SemanticMap({
   constellationId,
   children,
@@ -119,10 +117,10 @@ export function SemanticMap({
   const words = useMemo(() => {
     const words = mapItems?.map ?? []
     return words.map(({ scaled_score, discourseme_id, x, y, ...w }) => ({
-      x: x * COORDINATES_SCALE_FACTOR,
-      y: y * COORDINATES_SCALE_FACTOR,
-      originX: x * COORDINATES_SCALE_FACTOR,
-      originY: y * COORDINATES_SCALE_FACTOR,
+      x,
+      y,
+      originX: x,
+      originY: y,
       significance: scaled_score,
       discoursemeId: discourseme_id ?? undefined,
       ...w,
@@ -176,7 +174,6 @@ export function SemanticMap({
               },
             )}
             words={words}
-            size={COORDINATES_SCALE_FACTOR * 2}
             semanticMapId={semantic_map_id}
             onNewDiscourseme={onNewDiscourseme}
             onUpdateDiscourseme={onUpdateDiscourseme}

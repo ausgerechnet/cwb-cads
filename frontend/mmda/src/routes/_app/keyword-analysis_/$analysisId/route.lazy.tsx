@@ -130,9 +130,8 @@ function KeywordAnalysis() {
   const mapItems = data?.coordinates
 
   const words = (data?.items ?? []).map(({ item, scaled_scores }) => {
-    let { x = 0, y = 0 } = data?.coordinates.find((c) => c.item === item) ?? {}
-    x *= 1_000
-    y *= 1_000
+    const { x = 0, y = 0 } =
+      data?.coordinates.find((c) => c.item === item) ?? {}
     const score = scaled_scores.find((s) => s.measure === ccSortBy)?.score
     if (score === undefined)
       throw new Error(`Score not found for ${item} for measure ${ccSortBy}`)
@@ -198,7 +197,7 @@ function KeywordAnalysis() {
             {isLoadingMap ? (
               <LoaderBig className="place-self-center self-center justify-self-center" />
             ) : (
-              <WordCloud words={words} size={2_000} className="h-full w-full" />
+              <WordCloud words={words} className="h-full w-full" />
             )}
           </div>
         </div>
@@ -228,7 +227,7 @@ function KeywordAnalysis() {
               from="/keyword-analysis/$analysisId"
               params={(p) => p}
               search={(s) => s}
-              className="group/map-link block transition-opacity focus-visible:outline-none"
+              className="group/map-link block aspect-[2/1] transition-opacity focus-visible:outline-none"
             >
               <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
                 <WordCloudPreview

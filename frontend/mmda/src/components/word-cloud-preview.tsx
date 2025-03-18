@@ -41,15 +41,15 @@ export function WordCloudPreview({
 
   return (
     <svg
-      className={className}
-      viewBox="-100 -100 200 200"
+      className={cn('aspect-[2/1]', className)}
+      viewBox="-200 -100 400 200"
       preserveAspectRatio="xMidYMid meet"
     >
       {(filteredItems ?? []).map(({ x, y, item, discourseme_id, source }) => {
         const isDiscourseme = source === 'discoursemes'
         return (
           <circle
-            cx={x * 100}
+            cx={x * 200}
             cy={y * 100}
             r={isDiscourseme ? 4 : 2}
             key={`${item}_${discourseme_id}`}
