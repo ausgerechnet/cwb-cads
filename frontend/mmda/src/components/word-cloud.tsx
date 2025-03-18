@@ -348,10 +348,7 @@ export default function WordCloud({
     // minimap background with mask to highlight the viewport
     miniMapBackground
       .append('rect')
-      .attr(
-        'class',
-        'fill-gray-300 dark:fill-white/20 outline-[500px] outline outline-red-500',
-      )
+      .attr('class', 'fill-gray-300 dark:fill-white/20 outline-[500px] outline')
       .attr('rx', 75)
       .attr('width', width)
       .attr('height', height)
@@ -361,7 +358,7 @@ export default function WordCloud({
     const miniMapViewport = svg
       .select('#highlight-mask')
       .append('rect')
-      .attr('class', 'fill-white outline-red-500 outline-[100px]')
+      .attr('class', 'fill-white outline-[100px]')
       .attr('width', svgWidth)
       .attr('height', svgHeight)
       .attr('mask', 'url(#mini-map-mask)')
