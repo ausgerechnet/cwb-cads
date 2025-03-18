@@ -16,10 +16,10 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
   return (
-    <div className="p-2">
-      <Headline1 className="my-4">Component Overview</Headline1>
+    <div className="mx-auto max-w-7xl p-2 pb-16">
+      <Headline1 className="mb-4 mt-16">Component Overview</Headline1>
 
-      <Headline2 className="my-4">ErrorMessage</Headline2>
+      <Headline2 className="mb-4 mt-16">ErrorMessage</Headline2>
       <Code> &lt;ErrorMessage ... /&gt;</Code>
       <div className="flex flex-col gap-1">
         <ErrorMessage error={null} />
@@ -46,7 +46,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">SelectMulti</Headline2>
+      <Headline2 className="mb-4 mt-16">SelectMulti</Headline2>
       <Code> &lt;SelectMulti ... /&gt;</Code>
       <SelectMulti
         items={[
@@ -61,7 +61,7 @@ export function ComponentOverview() {
         onChange={setMultiSelectValue}
       />
 
-      <Headline2 className="my-4">Ellipsis</Headline2>
+      <Headline2 className="mb-4 mt-16">Ellipsis</Headline2>
       <Code>&lt;Ellipsis&gt;...&lt;/Ellipsis&gt;</Code>
 
       <Ellipsis className="max-w-sm border-2 border-red-500">
@@ -112,7 +112,7 @@ export function ComponentOverview() {
         <div className="block whitespace-nowrap">Child 8</div>
       </Ellipsis>
 
-      <Headline2 className="my-4">Token Line</Headline2>
+      <Headline2 className="mb-4 mt-16">Token Line</Headline2>
       <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
         &lt;TokenLine ... /&gt;
       </code>
@@ -347,7 +347,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">Word Cloud Preview</Headline2>
+      <Headline2 className="mb-4 mt-16">Word Cloud Preview</Headline2>
       <div className="relative overflow-hidden">
         <WordCloudPreview
           items={[
@@ -381,7 +381,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">Word Cloud</Headline2>
+      <Headline2 className="mb-4 mt-16">Word Cloud</Headline2>
       <div className="relative grid aspect-video max-w-[1200px] grid-cols-[5rem_1fr_5rem] grid-rows-[5rem_1fr_5rem] overflow-hidden outline outline-1 outline-yellow-300">
         <WordCloud
           words={[
@@ -412,7 +412,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">Automatically Growing Input</Headline2>
+      <Headline2 className="mb-4 mt-16">Automatically Growing Input</Headline2>
       <Code>&lt;InputGrowable ... /&gt;</Code>
       <div>
         <InputGrowable
@@ -429,7 +429,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">AssociationMatrix</Headline2>
+      <Headline2 className="mb-4 mt-16">AssociationMatrix</Headline2>
       <Code>&lt;AssociationMatrix ... /&gt;</Code>
       <AssociationMatrix
         className="outline outline-1 outline-yellow-400"
@@ -512,7 +512,7 @@ export function ComponentOverview() {
         ]}
       />
 
-      <Headline2 className="my-4">LabelBox</Headline2>
+      <Headline2 className="mb-4 mt-16">LabelBox</Headline2>
       <Code>&lt;LabelBox ... /&gt;</Code>
 
       <div className="flex gap-3">
