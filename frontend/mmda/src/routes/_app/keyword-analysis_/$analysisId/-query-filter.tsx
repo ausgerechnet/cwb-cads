@@ -32,14 +32,14 @@ export function QueryFilter({
 }) {
   const navigate = useNavigate()
 
-  const searchParams = useSearch({
-    from: '/_app/keyword-analysis_/$analysisId',
-  })
   const {
     windowSize = 3,
     clSortByOffset = 0,
     clSortOrder = 'random',
-  } = searchParams
+    ...searchParams
+  } = useSearch({
+    from: '/_app/keyword-analysis_/$analysisId',
+  })
 
   // This is only rendered if corpusId actually exists
   const { data: corpus } = useQuery(corpusById(corpusId))

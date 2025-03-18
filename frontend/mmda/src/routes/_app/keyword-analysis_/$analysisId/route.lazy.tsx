@@ -34,11 +34,10 @@ import { useFilterSelection } from '../../constellations_/$constellationId/-use-
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
 import { KeywordTable } from './-keywords'
 import { QueryFilter } from './-query-filter'
+import { LoaderBig } from '@cads/shared/components/loader-big'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
-  {
-    component: KeywordAnalysis,
-  },
+  { component: KeywordAnalysis },
 )
 
 // TODO: Duplicate! extract!
@@ -84,14 +83,10 @@ function KeywordAnalysis() {
         match.routeId === '/_app/keyword-analysis_/$analysisId/semantic-map',
     ) !== undefined
 
-  const { ccSortOrder, ccSortBy } = useFilterSelection(
+  const { ccSortBy = 'conservative_log_ratio' } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
   )
-  const {
-    clIsVisible = false,
-    clCorpus = 'target',
-    measure = 'conservative_log_ratio',
-  } = Route.useSearch()
+  const { clIsVisible = false, clCorpus = 'target' } = Route.useSearch()
   const { clFilterItem } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
   )
@@ -119,9 +114,13 @@ function KeywordAnalysis() {
     enabled: clFilterItem !== undefined && analysisData !== undefined,
   })
 
-  const { data, error: errorMapItems } = useQuery({
+  const {
+    data,
+    isLoading: isLoadingMap,
+    error: errorMapItems,
+  } = useQuery({
     ...keywordAnalysisItemsById(analysisId, {
-      sortOrder: ccSortOrder,
+      sortOrder: 'descending',
       sortBy: ccSortBy,
       pageSize: 300,
       pageNumber: 1,
@@ -134,9 +133,9 @@ function KeywordAnalysis() {
     let { x = 0, y = 0 } = data?.coordinates.find((c) => c.item === item) ?? {}
     x *= 1_000
     y *= 1_000
-    const score = scaled_scores.find((s) => s.measure === measure)?.score
+    const score = scaled_scores.find((s) => s.measure === ccSortBy)?.score
     if (score === undefined)
-      throw new Error(`Score not found for ${item} for measure ${measure}`)
+      throw new Error(`Score not found for ${item} for measure ${ccSortBy}`)
     return {
       id: item,
       x,
@@ -145,7 +144,7 @@ function KeywordAnalysis() {
       originY: y,
       source: 'items',
       significance: score,
-      radius: score * 10,
+      radius: 0, // TODO: Radius should be calculated in the word cloud component
       item,
     }
   })
@@ -172,14 +171,14 @@ function KeywordAnalysis() {
           </Link>
           <label>
             <Select
-              onValueChange={(measure) => {
+              onValueChange={(ccSortBy) => {
                 navigate({
                   to: '',
                   params: (p) => p,
-                  search: (s) => ({ ...s, measure }),
+                  search: (s) => ({ ...s, ccSortBy }),
                 })
               }}
-              value={measure}
+              value={ccSortBy}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="No Query Layer Selected" />
@@ -195,8 +194,12 @@ function KeywordAnalysis() {
               </SelectContent>
             </Select>
           </label>
-          <div className="relative col-span-2 block h-full w-full self-stretch justify-self-stretch overflow-hidden pb-4">
-            <WordCloud words={words} size={2_000} className="h-full w-full" />
+          <div className="relative col-span-full grid h-full w-full self-stretch justify-self-stretch overflow-hidden pb-4">
+            {isLoadingMap ? (
+              <LoaderBig className="place-self-center self-center justify-self-center" />
+            ) : (
+              <WordCloud words={words} size={2_000} className="h-full w-full" />
+            )}
           </div>
         </div>
       )}

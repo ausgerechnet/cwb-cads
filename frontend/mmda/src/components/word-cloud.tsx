@@ -32,8 +32,7 @@ export type Word = {
 const fontSizeMin = 6
 const fontSizeMax = 24
 const discoursemeRadiusMin = 25
-// const discoursemeRadiusMax = 125
-const discoursemeRadiusMax = 50
+const discoursemeRadiusMax = 125
 
 export default function WordCloud({
   className,
