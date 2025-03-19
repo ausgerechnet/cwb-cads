@@ -7,21 +7,15 @@ import {
   queryById,
 } from '@cads/shared/queries'
 import { z } from 'zod'
+import { FilterSchema } from '../../constellations_/$constellationId/-use-filter-selection'
 
 export const Route = createFileRoute('/_app/queries_/$queryId')({
-  validateSearch: z.object({
-    pAtt: z.string().optional(),
+  validateSearch: FilterSchema.extend({
     contextBreak: z.string().optional().catch(undefined),
-    windowSize: z.number().positive().min(2).int().optional().catch(undefined),
-    primary: z.string().optional(),
-    secondary: z.string().optional().catch(undefined),
     clSortOrder: z
-      .enum(['ascending', 'descending', 'random'] as const)
+      .enum(['ascending', 'descending', 'random', 'first'] as const)
       .optional()
       .catch(undefined),
-    clSortByOffset: z.number().int().optional().catch(undefined),
-    clPageSize: z.number().positive().int().optional().catch(undefined),
-    clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
     // TODO: This is mostly a duplicate. Prefix filterItem and filterItemPAtt with cl
     filterItem: z.string().optional().catch(undefined),
     filterItemPAtt: z.string().optional().catch(undefined),

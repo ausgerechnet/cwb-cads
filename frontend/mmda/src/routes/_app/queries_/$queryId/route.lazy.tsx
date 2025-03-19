@@ -22,6 +22,7 @@ import { QueryConcordanceLines } from './-query-concordance-lines'
 import { QueryFrequencyBreakdown } from './-query-frequency-breakdown'
 import { QueryFilter } from './-query-filter'
 import { DiscoursemeAnalysis } from './-query-discourseme-analysis'
+import { QueryCollocation } from './-query-collocation'
 
 export const Route = createLazyFileRoute('/_app/queries_/$queryId')({
   component: SingleQuery,
@@ -91,13 +92,11 @@ function SingleQuery() {
         corpusId={query.corpus_id!}
         className="bg-background sticky top-14"
       />
-      <div className="bg-muted text-muted-foreground min-h-[150svh] rounded-xl p-4">
-        Placeholder: Collocation
-      </div>
+      <QueryCollocation />
       <Drawer
         isVisible={Boolean(isConcordanceVisible)}
         onToggle={(isVisible) => setSearch('isConcordanceVisible', isVisible)}
-        className="col-span-full"
+        className="col-span-full -mx-2"
       >
         <QueryConcordanceLines queryId={queryId} className="col-span-full" />
       </Drawer>

@@ -11,14 +11,50 @@ import { TokenLine } from '../routes/_app/constellations_/$constellationId/-cons
 import WordCloud from './word-cloud'
 import { WordCloudPreview } from './word-cloud-preview'
 import { ReactNode } from '@tanstack/react-router'
+import { ErrorMessage } from '@cads/shared/components/error-message'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cads/shared/components/ui/select'
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
   return (
-    <div className="p-2">
-      <Headline1 className="my-4">Component Overview goes here</Headline1>
+    <div className="mx-auto max-w-7xl p-2 pb-16">
+      <Headline1 className="mb-4 mt-16">Component Overview</Headline1>
 
-      <Headline2 className="my-4">SelectMulti</Headline2>
+      <Headline2 className="mb-4 mt-16">ErrorMessage</Headline2>
+      <Code> &lt;ErrorMessage ... /&gt;</Code>
+      <div className="flex flex-col gap-1">
+        <ErrorMessage error={null} />
+        <ErrorMessage error={undefined} />
+        <ErrorMessage error={new Error('This is an error message')} />
+        <ErrorMessage
+          error={[
+            new Error('This is an error message within an array 1/2'),
+            new Error('This is another error message within an array 2/2'),
+            undefined,
+            null,
+            [
+              new Error(
+                'This is an error message within an array WITHIN an array',
+              ),
+              (() => {
+                const e = new Error('This is an error message')
+                // @ts-expect-error - simulates an error thrown by axios
+                e.response = { data: { message: 'Alert!' } }
+                return e
+              })(),
+            ],
+          ]}
+        />
+      </div>
+
+      <Headline2 className="mb-4 mt-16">SelectMulti</Headline2>
       <Code> &lt;SelectMulti ... /&gt;</Code>
       <SelectMulti
         items={[
@@ -33,7 +69,7 @@ export function ComponentOverview() {
         onChange={setMultiSelectValue}
       />
 
-      <Headline2 className="my-4">Ellipsis</Headline2>
+      <Headline2 className="mb-4 mt-16">Ellipsis</Headline2>
       <Code>&lt;Ellipsis&gt;...&lt;/Ellipsis&gt;</Code>
 
       <Ellipsis className="max-w-sm border-2 border-red-500">
@@ -84,7 +120,7 @@ export function ComponentOverview() {
         <div className="block whitespace-nowrap">Child 8</div>
       </Ellipsis>
 
-      <Headline2 className="my-4">Token Line</Headline2>
+      <Headline2 className="mb-4 mt-16">Token Line</Headline2>
       <code className="bg-muted text-muted-foreground my-1 inline-block rounded px-1 py-0.5">
         &lt;TokenLine ... /&gt;
       </code>
@@ -319,7 +355,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">Word Cloud Preview</Headline2>
+      <Headline2 className="mb-4 mt-16">Word Cloud Preview</Headline2>
       <div className="relative overflow-hidden">
         <WordCloudPreview
           items={[
@@ -353,7 +389,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">Word Cloud</Headline2>
+      <Headline2 className="mb-4 mt-16">Word Cloud</Headline2>
       <div className="relative grid aspect-video max-w-[1200px] grid-cols-[5rem_1fr_5rem] grid-rows-[5rem_1fr_5rem] overflow-hidden outline outline-1 outline-yellow-300">
         <WordCloud
           words={[
@@ -362,26 +398,20 @@ export function ComponentOverview() {
               y: 0,
               item: 'Hello',
               source: 'items',
-              originX: 0,
-              originY: 0,
               significance: 0.5,
             },
             {
-              x: -900,
-              y: -900,
+              x: -0.9,
+              y: -0.9,
               item: 'World',
               source: 'items',
-              originX: -900,
-              originY: -900,
               significance: 0.2,
             },
             {
-              x: 900,
-              y: 900,
+              x: 0.9,
+              y: 0.9,
               item: '!',
               source: 'items',
-              originX: 900,
-              originY: 900,
               significance: 0.1,
             },
           ]}
@@ -390,7 +420,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">Automatically Growing Input</Headline2>
+      <Headline2 className="mb-4 mt-16">Automatically Growing Input</Headline2>
       <Code>&lt;InputGrowable ... /&gt;</Code>
       <div>
         <InputGrowable
@@ -407,7 +437,7 @@ export function ComponentOverview() {
         />
       </div>
 
-      <Headline2 className="my-4">AssociationMatrix</Headline2>
+      <Headline2 className="mb-4 mt-16">AssociationMatrix</Headline2>
       <Code>&lt;AssociationMatrix ... /&gt;</Code>
       <AssociationMatrix
         className="outline outline-1 outline-yellow-400"
@@ -490,15 +520,33 @@ export function ComponentOverview() {
         ]}
       />
 
-      <Headline2 className="my-4">LabelBox</Headline2>
+      <Headline2 className="mb-4 mt-16">LabelBox</Headline2>
       <Code>&lt;LabelBox ... /&gt;</Code>
 
       <div className="flex gap-3">
-        <LabelBox labelText="Label Text">
+        <LabelBox labelText="Label Text" autoId>
           <Input defaultValue="Lorem ipsum dolor sit amet" />
         </LabelBox>
-        <LabelBox labelText="Label Text">
+        <LabelBox labelText="Label Text" autoId>
           <Input defaultValue="Lorem ipsum dolor sit amet" />
+        </LabelBox>
+        <LabelBox labelText="Label Text" htmlFor="input-id">
+          <Input defaultValue="Lorem ipsum dolor sit amet" id="input-id" />
+        </LabelBox>
+        <LabelBox labelText="A Select Input" autoId>
+          <Select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a person" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="adam">Aaron Aaronson</SelectItem>
+                <SelectItem value="berta">Berta Beispiel</SelectItem>
+                <SelectItem value="charlie">Charlie Chaplin</SelectItem>
+                <SelectItem value="dora">Dora Datensatz</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </LabelBox>
       </div>
     </div>

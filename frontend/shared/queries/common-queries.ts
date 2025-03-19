@@ -169,6 +169,43 @@ export const shuffleQueryConcordances: MutationOptions<
   },
 }
 
+export const queryCollocation = (
+  queryId: number,
+  p: string,
+  {
+    window,
+    semanticBreak: s_break,
+    filterItem: filter_item,
+    filterItemPAtt: filter_item_p_att,
+  }: {
+    window?: number
+    semanticBreak?: string
+    filterItem?: string
+    filterItemPAtt?: string
+  } = {},
+) =>
+  queryOptions({
+    queryKey: [
+      'query-collocations',
+      queryId,
+      p,
+      { window, s_break, filter_item, filter_item_p_att },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get('/query/:query_id/collocation', {
+        params: { query_id: String(queryId) },
+        queries: {
+          p,
+          window,
+          s_break,
+          filter_item,
+          filter_item_p_att,
+          semantic_map_init: false,
+        },
+        signal,
+      }),
+  })
+
 // ==================== CORPORA ====================
 
 export const corpusById = (corpusId: number) =>

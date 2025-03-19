@@ -220,14 +220,15 @@ function ConstellationDetail() {
               </div>
             </Label>
           </div>
-          {description?.id !== undefined && (
-            <Card className="my-4">
-              <DescriptionAssociation
-                constellationId={constellationId}
-                descriptionId={description.id}
-              />
-            </Card>
-          )}
+          {description?.id !== undefined &&
+            constellationDiscoursemes.length > 1 && (
+              <Card className="my-4">
+                <DescriptionAssociation
+                  constellationId={constellationId}
+                  descriptionId={description.id}
+                />
+              </Card>
+            )}
         </>
       )}
       {corpusId !== undefined && (

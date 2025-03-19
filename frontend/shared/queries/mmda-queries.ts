@@ -643,13 +643,10 @@ export const getCollocationItems = (
     queryKey: [
       'collocation-items',
       id,
-      sortOrder,
-      sortBy,
-      pageSize,
-      pageNumber,
+      { sortOrder, sortBy, pageSize, pageNumber },
     ],
     queryFn: ({ signal }) =>
-      apiClient.get('/collocation/:id/', {
+      apiClient.get('/collocation/:id/items', {
         params: { id: id.toString() },
         queries: {
           sort_order: sortOrder,

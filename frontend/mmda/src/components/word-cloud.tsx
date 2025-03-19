@@ -14,6 +14,15 @@ import { clamp } from '@cads/shared/lib/clamp'
 import { putSemanticMapCoordinates } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
 
+export type WordIn = {
+  item: string
+  x: number
+  y: number
+  source: string
+  significance: number
+  discoursemeId?: number | undefined
+}
+
 export type Word = {
   id: string
   item: string
@@ -26,7 +35,7 @@ export type Word = {
   originY: number
   significance: number
   radius: number
-  discoursemeId?: number | undefined
+  discoursemeId: number | null
 }
 
 const fontSizeMin = 6
@@ -44,7 +53,7 @@ export default function WordCloud({
   onUpdateDiscourseme,
 }: {
   className?: string
-  words: Omit<Word, 'radius' | 'id'>[]
+  words: WordIn[]
   semanticMapId?: number
   width?: number
   height?: number
@@ -67,14 +76,19 @@ export default function WordCloud({
   const targetSignificance = 0.02
   const significanceScale = targetSignificance / averageSignificance
 
-  const words = wordsInput.map((word) => ({
-    ...word,
-    significance: word.significance * significanceScale,
-    x: (word.x * width) / 2,
-    y: (word.y * height) / 2,
-    originX: (word.x * width) / 2,
-    originY: (word.y * height) / 2,
-  }))
+  const words = wordsInput.map(
+    (word): Word => ({
+      ...word,
+      id: word.item + word.source,
+      significance: word.significance * significanceScale,
+      x: (word.x * width) / 2,
+      y: (word.y * height) / 2,
+      originX: (word.x * width) / 2,
+      originY: (word.y * height) / 2,
+      radius: 0,
+      discoursemeId: word.discoursemeId ?? null,
+    }),
+  )
 
   useEffect(() => {
     const [initialZoom, initialX, initialY] = location.hash
@@ -334,10 +348,7 @@ export default function WordCloud({
     // minimap background with mask to highlight the viewport
     miniMapBackground
       .append('rect')
-      .attr(
-        'class',
-        'fill-gray-300 dark:fill-white/20 outline-[500px] outline outline-red-500',
-      )
+      .attr('class', 'fill-gray-300 dark:fill-white/20 outline-[500px] outline')
       .attr('rx', 75)
       .attr('width', width)
       .attr('height', height)
@@ -347,7 +358,7 @@ export default function WordCloud({
     const miniMapViewport = svg
       .select('#highlight-mask')
       .append('rect')
-      .attr('class', 'fill-white outline-red-500 outline-[100px]')
+      .attr('class', 'fill-white outline-[100px]')
       .attr('width', svgWidth)
       .attr('height', svgHeight)
       .attr('mask', 'url(#mini-map-mask)')

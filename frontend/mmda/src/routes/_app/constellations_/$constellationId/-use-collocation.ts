@@ -46,7 +46,7 @@ export function useCollocation(
   const {
     data: collocationItems,
     isLoading: isLoadingItem,
-    isFetching: isFetchingItem,
+    isFetching: isFetchingItems,
     error: errorConstellation,
   } = useQuery({
     ...constellationCollocationItems(
@@ -78,12 +78,15 @@ export function useCollocation(
         sortOrder: ccSortOrder,
       },
     ),
-    enabled: collocation?.id !== undefined && descriptionId !== undefined,
+    enabled:
+      collocation?.id !== undefined &&
+      descriptionId !== undefined &&
+      !isFetchingItems,
   })
 
   const isLoading = isLoadingConstellation || isLoadingItemsMap || isLoadingItem
   const isFetching =
-    isFetchingConstellation || isFetchingItemsMap || isFetchingItem
+    isFetchingConstellation || isFetchingItemsMap || isFetchingItems
 
   return {
     isLoading,

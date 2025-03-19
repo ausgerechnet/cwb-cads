@@ -86,7 +86,7 @@ const columns: ColumnDef<z.infer<typeof schemas.QueryOut>>[] = [
     meta: { className: 'w-0' },
   },
   {
-    accessorKey: 'corpus.name',
+    accessorKey: 'corpus_name',
     header: ({ column }) => <SortButton column={column}>Corpus</SortButton>,
     meta: { className: 'w-48' },
   },

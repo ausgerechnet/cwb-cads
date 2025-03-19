@@ -10,7 +10,6 @@ import { z } from 'zod'
 import {
   corpusById,
   corpusList,
-  corpusMeta,
   corpusMetaFrequencies,
   createSubcorpus,
 } from '@cads/shared/queries'
@@ -75,12 +74,6 @@ function SubcorpusNew() {
     enabled: corpusId !== undefined,
   })
 
-  const { data: corpusMetaData } = useQuery({
-    ...corpusMeta(corpusId),
-    enabled: corpusId !== undefined,
-  })
-  console.log('meta', corpusMetaData)
-
   const levelKeyMap = useMemo(() => {
     const levelKeyPairs = (corpus?.s_annotations ?? []).map((annotation) => {
       const [level, key] = annotation.split('_')
@@ -91,7 +84,7 @@ function SubcorpusNew() {
         if (acc[level] === undefined) {
           acc[level] = []
         }
-        if (!acc[level].includes(key)) {
+        if (!acc[level].includes(key) && key !== undefined) {
           acc[level].push(key)
         }
         return acc
@@ -114,6 +107,7 @@ function SubcorpusNew() {
     error: errorFrequencies,
   } = useQuery({
     ...corpusMetaFrequencies(corpusId, level, key, 'unicode'),
+    retry: 0,
     enabled: corpusId !== undefined && level !== undefined && key !== undefined,
   })
 
@@ -135,8 +129,7 @@ function SubcorpusNew() {
 
   return (
     <AppPageFrame title="New Subcorpus">
-      <ErrorMessage error={errorCorpusList} />
-      <ErrorMessage error={errorFrequencies} />
+      <ErrorMessage error={[errorCorpusList, errorFrequencies]} />
       <Card className="max-w-lg p-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => mutate(data))}>
@@ -215,11 +208,21 @@ function SubcorpusNew() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {availableLevels.map((level) => (
-                              <SelectItem value={level} key={level}>
-                                {level}
-                              </SelectItem>
-                            ))}
+                            {availableLevels.map((level) => {
+                              const hasKeys = levelKeyMap[level]?.length > 0
+                              return (
+                                <SelectItem
+                                  value={level}
+                                  key={level}
+                                  disabled={!hasKeys}
+                                >
+                                  {level}
+                                  {!hasKeys && (
+                                    <span className="italic"> (No keys)</span>
+                                  )}
+                                </SelectItem>
+                              )
+                            })}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -257,6 +260,11 @@ function SubcorpusNew() {
                       </Select>
                     </FormControl>
                     <FormMessage />
+                    {!!level && availableKeys.length === 0 && (
+                      <p className="text-destructive text-sm font-medium">
+                        No keys available for this level
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
