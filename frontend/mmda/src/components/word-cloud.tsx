@@ -611,7 +611,7 @@ export default function WordCloud({
         return
       }
 
-      if (semanticMapId === undefined) {
+      if (semanticMapId !== undefined) {
         updateCoordinates({
           semanticMapId,
           item: word.item,
