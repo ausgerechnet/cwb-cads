@@ -384,6 +384,8 @@ class BreakdownItems(db.Model):
 
     """
 
+    __table_args__ = (db.UniqueConstraint('breakdown_id', 'item'),)
+
     id = db.Column(db.Integer, primary_key=True)
 
     breakdown_id = db.Column(db.Integer, db.ForeignKey('breakdown.id', ondelete='CASCADE'), index=True)
