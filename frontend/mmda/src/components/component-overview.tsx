@@ -12,6 +12,14 @@ import WordCloud from './word-cloud'
 import { WordCloudPreview } from './word-cloud-preview'
 import { ReactNode } from '@tanstack/react-router'
 import { ErrorMessage } from '@cads/shared/components/error-message'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cads/shared/components/ui/select'
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
@@ -516,11 +524,29 @@ export function ComponentOverview() {
       <Code>&lt;LabelBox ... /&gt;</Code>
 
       <div className="flex gap-3">
-        <LabelBox labelText="Label Text">
+        <LabelBox labelText="Label Text" autoId>
           <Input defaultValue="Lorem ipsum dolor sit amet" />
         </LabelBox>
-        <LabelBox labelText="Label Text">
+        <LabelBox labelText="Label Text" autoId>
           <Input defaultValue="Lorem ipsum dolor sit amet" />
+        </LabelBox>
+        <LabelBox labelText="Label Text" htmlFor="input-id">
+          <Input defaultValue="Lorem ipsum dolor sit amet" id="input-id" />
+        </LabelBox>
+        <LabelBox labelText="A Select Input" autoId>
+          <Select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a person" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="adam">Aaron Aaronson</SelectItem>
+                <SelectItem value="berta">Berta Beispiel</SelectItem>
+                <SelectItem value="charlie">Charlie Chaplin</SelectItem>
+                <SelectItem value="dora">Dora Datensatz</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </LabelBox>
       </div>
     </div>
