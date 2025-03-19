@@ -80,8 +80,8 @@ def ccc_corpus_attributes(corpus_name, cqp_bin, registry_dir, data_dir):
 
 def meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir):
 
-    if level not in corpus.s_atts:
-        abort(404, 'attribute level not found')
+    # if level not in corpus.s_atts:
+    #     abort(404, 'attribute level not found')
 
     if f'{level}_{key}' not in corpus.s_annotations:
         abort(404, 'annotation level not found')
