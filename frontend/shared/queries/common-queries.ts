@@ -114,7 +114,7 @@ export const queryConcordances = (
     filterItemPAtt?: string
     pageSize?: number
     pageNumber?: number
-    sortOrder?: 'ascending' | 'descending' | 'random'
+    sortOrder?: 'ascending' | 'descending' | 'random' | 'first'
     sortByOffset?: number
     contextBreak?: string
   } = {},
@@ -177,11 +177,13 @@ export const queryCollocation = (
     semanticBreak: s_break,
     filterItem: filter_item,
     filterItemPAtt: filter_item_p_att,
+    semanticMapInit: semantic_map_init,
   }: {
     window?: number
     semanticBreak?: string
     filterItem?: string
     filterItemPAtt?: string
+    semanticMapInit?: boolean
   } = {},
 ) =>
   queryOptions({
@@ -189,21 +191,24 @@ export const queryCollocation = (
       'query-collocations',
       queryId,
       p,
-      { window, s_break, filter_item, filter_item_p_att },
+      { window, s_break, filter_item, filter_item_p_att, semantic_map_init },
     ],
     queryFn: ({ signal }) =>
-      apiClient.get('/query/:query_id/collocation', {
-        params: { query_id: String(queryId) },
-        queries: {
+      apiClient.put(
+        '/query/:query_id/collocation',
+        {
           p,
           window,
           s_break,
           filter_item,
           filter_item_p_att,
-          semantic_map_init: false,
+          semantic_map_init,
         },
-        signal,
-      }),
+        {
+          params: { query_id: String(queryId) },
+          signal,
+        },
+      ),
   })
 
 // ==================== CORPORA ====================

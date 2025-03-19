@@ -73,8 +73,10 @@ export default function WordCloud({
   const router = useRouter()
 
   const averageSignificance =
-    wordsInput.reduce((acc, word) => acc + word.significance, 0) /
-    wordsInput.length
+    wordsInput.length === 0
+      ? 1
+      : wordsInput.reduce((acc, word) => acc + word.significance, 0) /
+        wordsInput.length
   const targetSignificance = 0.02
   const significanceScale = targetSignificance / averageSignificance
 
@@ -137,6 +139,9 @@ export default function WordCloud({
       )
     ) {
       topSignificanceValues -= Number.MIN_VALUE * 2
+    }
+    if (words.length < 100) {
+      topSignificanceValues = 0
     }
 
     const drag = d3.drag<SVGCircleElement, Word>()

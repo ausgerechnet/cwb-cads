@@ -1,6 +1,4 @@
 import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
-import { getCollocationItems, queryCollocation } from '@cads/shared/queries'
-import { useQuery } from '@tanstack/react-query'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Table,
@@ -17,8 +15,8 @@ import { Pagination } from '@cads/shared/components/pagination'
 import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 
-import { Route } from './route'
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
+import { useCollocation } from './-use-collocation'
 
 const measureOrder = [
   'conservative_log_ratio',
@@ -55,59 +53,23 @@ const measureMap: Record<(typeof measureOrder)[number], string> = {
 }
 
 export function QueryCollocation() {
-  const queryId = parseInt(Route.useParams().queryId)
   const {
-    setFilter,
-    ccPageSize,
+    ccSortBy = 'conservative_log_ratio',
     ccPageNumber = 1,
+    ccPageSize = 10,
+    ccSortOrder = 'descending',
     clFilterItem,
-    ccSortOrder,
-    ccSortBy,
     secondary = 'lemma',
-    windowSize,
+    setFilter,
   } = useFilterSelection('/_app/queries_/$queryId')
-  const {
-    // secondary = 'lemma',
-    contextBreak = 's',
-    filterItem,
-    filterItemPAtt,
-  } = Route.useSearch()
-  const {
-    data: collocation,
-    error: errorCollocation,
-    isLoading: isLoadingCollocation,
-  } = useQuery({
-    ...queryCollocation(queryId, secondary!, {
-      semanticBreak: contextBreak,
-      filterItem,
-      filterItemPAtt,
-      window: windowSize,
-    }),
-    enabled: Boolean(secondary),
-    retry: 1,
-  })
-  const collocationId = collocation?.id
-  const {
-    data: collocationItems,
-    isLoading: isLoadingItems,
-    error: errorItems,
-  } = useQuery({
-    ...getCollocationItems(collocationId as number, {
-      sortOrder: ccSortOrder,
-      sortBy: ccSortBy,
-      pageSize: ccPageSize,
-      pageNumber: ccPageNumber,
-    }),
-    enabled: Boolean(collocationId),
-  })
-  const isLoading = isLoadingCollocation || isLoadingItems
+  const { collocationItems, isLoading, errors } = useCollocation()
 
   return (
     <div>
       <div className="bg-destructive text-destructive-foreground mb-4 rounded-md p-2">
         TODO: Properly wire up filter UI
       </div>
-      <ErrorMessage error={[errorCollocation, errorItems]} />
+      <ErrorMessage error={errors} />
       <Table>
         <TableHeader>
           <TableRow>

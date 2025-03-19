@@ -30,7 +30,6 @@ export function LabelBox({
   if (Children.count(children) > 1 && autoId) {
     throw new Error('autoId only works with exactly one child')
   }
-  console.log('children', Children.toArray(children))
 
   return (
     <div className={cn('space-y-2', className)}>

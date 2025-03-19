@@ -764,6 +764,9 @@ const DiscoursemeDescriptionIn: z.ZodType<DiscoursemeDescriptionIn> = z
     subcorpus_id: z.number().int().nullish(),
   })
   .passthrough()
+const DiscoursemeItemsIn = z
+  .object({ p: z.string().nullish(), surface: z.array(z.string()) })
+  .passthrough()
 const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
   .object({
     breakdown_id: z.number().int(),
@@ -810,6 +813,22 @@ const QueryIn = z
     match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().nullish(),
+  })
+  .passthrough()
+const CollocationIn = z
+  .object({
+    filter_item: z.string().nullish(),
+    filter_item_p_att: z.string().optional().default('lemma'),
+    filter_overlap: z
+      .enum(['partial', 'full', 'match', 'matchend'])
+      .optional()
+      .default('partial'),
+    marginals: z.enum(['local', 'global']).optional().default('local'),
+    p: z.string(),
+    s_break: z.string().optional(),
+    semantic_map_id: z.number().int().nullish().default(null),
+    semantic_map_init: z.boolean().optional().default(true),
+    window: z.number().int().optional().default(10),
   })
   .passthrough()
 const QueryMetaOut = z
@@ -947,11 +966,13 @@ export const schemas = {
   DiscoursemeCoordinatesIn,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
+  DiscoursemeItemsIn,
   BreakdownItemsOut,
   BreakdownOut,
   DiscoursemeDescriptionSimilarOut,
   QueryOut,
   QueryIn,
+  CollocationIn,
   QueryMetaOut,
   SemanticMapIn,
   CoordinatesIn,
@@ -2258,6 +2279,11 @@ const endpoints = makeApi([
         schema: z.string(),
       },
       {
+        name: 'return_coordinates',
+        type: 'Query',
+        schema: z.boolean().optional().default(false),
+      },
+      {
         name: 'hide_focus',
         type: 'Query',
         schema: z.boolean().optional().default(true),
@@ -2349,16 +2375,6 @@ const endpoints = makeApi([
         name: 'collocation_id',
         type: 'Path',
         schema: z.string(),
-      },
-      {
-        name: 'hide_focus',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
-      },
-      {
-        name: 'hide_filter',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
       },
       {
         name: 'sort_order',
@@ -3360,6 +3376,51 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: 'patch',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/add-items',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeItemsIn,
+      },
+      {
+        name: 'discourseme_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'update_discourseme',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: DiscoursemeDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'get',
     path: '/mmda/discourseme/:discourseme_id/description/:description_id/breakdown',
     requestFormat: 'json',
@@ -3425,9 +3486,9 @@ const endpoints = makeApi([
         schema: z.number().int().optional().default(200),
       },
       {
-        name: 'min_freq',
+        name: 'embeddings',
         type: 'Query',
-        schema: z.number().int().optional().default(2),
+        schema: z.string().nullish().default(null),
       },
     ],
     response: z.array(DiscoursemeDescriptionSimilarOut),
@@ -3648,62 +3709,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
+    method: 'put',
     path: '/query/:query_id/collocation',
     requestFormat: 'json',
     parameters: [
       {
+        name: 'body',
+        type: 'Body',
+        schema: CollocationIn,
+      },
+      {
         name: 'query_id',
         type: 'Path',
         schema: z.string(),
-      },
-      {
-        name: 'semantic_map_id',
-        type: 'Query',
-        schema: z.number().int().nullish().default(null),
-      },
-      {
-        name: 'semantic_map_init',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
-      },
-      {
-        name: 'p',
-        type: 'Query',
-        schema: z.string(),
-      },
-      {
-        name: 'window',
-        type: 'Query',
-        schema: z.number().int().optional().default(10),
-      },
-      {
-        name: 'marginals',
-        type: 'Query',
-        schema: z.enum(['local', 'global']).optional().default('local'),
-      },
-      {
-        name: 's_break',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'filter_item',
-        type: 'Query',
-        schema: z.string().nullish(),
-      },
-      {
-        name: 'filter_item_p_att',
-        type: 'Query',
-        schema: z.string().optional().default('lemma'),
-      },
-      {
-        name: 'filter_overlap',
-        type: 'Query',
-        schema: z
-          .enum(['partial', 'full', 'match', 'matchend'])
-          .optional()
-          .default('partial'),
       },
     ],
     response: CollocationOut,
