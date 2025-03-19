@@ -794,30 +794,30 @@ def get_meta(query_id, query_data):
 #####################
 # QUERY/COLLOCATION #
 #####################
-@bp.get("/<query_id>/collocation")
-@bp.input(CollocationIn, location='query')
+@bp.put("/<query_id>/collocation")
+@bp.input(CollocationIn)
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
-def get_collocation(query_id, query_data):
-    """Get collocation of query. Will create if doesn't exist.
+def get_or_create_collocation(query_id, json_data):
+    """Get collocation analysis of query; create if necessary.
 
     """
 
     query = db.get_or_404(Query, query_id)
 
-    p = query_data.get('p')
-    window = query_data.get('window')
-    s_break = query_data.get('s_break')
-    marginals = query_data.get('marginals', 'global')
+    p = json_data.get('p')
+    window = json_data.get('window')
+    s_break = json_data.get('s_break')
+    marginals = json_data.get('marginals', 'global')
 
     # semantic map
-    semantic_map_id = query_data.get('semantic_map_id', None)
-    semantic_map_init = query_data.get('semantic_map_init', True)
+    semantic_map_id = json_data.get('semantic_map_id', None)
+    semantic_map_init = json_data.get('semantic_map_init', True)
 
     # filtering
-    filter_item = query_data.pop('filter_item', None)
-    filter_item_p_att = query_data.pop('filter_item_p_att', None)
-    filter_overlap = query_data.pop('filter_overlap', 'partial')
+    filter_item = json_data.pop('filter_item', None)
+    filter_item_p_att = json_data.pop('filter_item_p_att', None)
+    filter_overlap = json_data.pop('filter_overlap', 'partial')
     filter_queries = dict()
     if filter_item:
         filter_queries['_FILTER'] = get_or_create_query_item(query.corpus, filter_item, filter_item_p_att, query.s)
@@ -826,17 +826,32 @@ def get_collocation(query_id, query_data):
         if query is None:
             abort(406, 'empty iterative query')
 
-    collocation = Collocation(
+    collocation = Collocation.query.filter_by(
         query_id=query.id,
         p=p,
         s_break=s_break,
         window=window,
         marginals=marginals
-    )
-    db.session.add(collocation)
-    db.session.commit()
+    ).order_by(Collocation.id.desc()).first()
+    if not collocation:
+        current_app.logger.debug("creating collocation analysis")
+        collocation = Collocation(
+            query_id=query.id,
+            p=p,
+            s_break=s_break,
+            window=window,
+            marginals=marginals
+        )
+        db.session.add(collocation)
+        db.session.commit()
+    else:
+        current_app.logger.debug("collocation object already exists")
 
-    get_or_create_counts(collocation, remove_focus_cpos=True)
+    ret = get_or_create_counts(collocation, remove_focus_cpos=True)
+    if isinstance(ret, bool):
+        if not ret:
+            current_app.logger.error("collocation analysis based on empty cotext")
+            abort(406, 'empty cotext')
 
     if semantic_map_init:
         ccc_semmap_init(collocation, semantic_map_id)

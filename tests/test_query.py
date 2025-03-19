@@ -264,12 +264,10 @@ def test_query_collocation(client, auth):
 
         assert query.status_code == 200
 
-        collocation = client.get(url_for('query.get_collocation',
-                                         query_id=query.json['id'],
-                                         p='word',
-                                         window=10,
-                                         page_size=10, page_number=1,
-                                         sort_by='conservative_log_ratio'),
+        collocation = client.put(url_for('query.get_or_create_collocation',
+                                         query_id=query.json['id']),
+                                 json={'p': 'word',
+                                       'window': 10},
                                  headers=auth_header)
 
         assert collocation.status_code == 200
@@ -384,12 +382,10 @@ def test_query_collocation_scores(client, auth):
 
         assert query.status_code == 200
 
-        collocation = client.get(url_for('query.get_collocation',
-                                         query_id=query.json['id'],
-                                         p='word',
-                                         window=10,
-                                         page_size=10, page_number=1,
-                                         sort_by='conservative_log_ratio'),
+        collocation = client.put(url_for('query.get_or_create_collocation',
+                                         query_id=query.json['id']),
+                                 json={'p': 'word',
+                                       'window': 10},
                                  headers=auth_header)
 
         assert collocation.status_code == 200
