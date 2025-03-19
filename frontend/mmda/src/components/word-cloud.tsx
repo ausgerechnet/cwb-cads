@@ -84,7 +84,10 @@ export default function WordCloud({
         (word): Word => ({
           ...word,
           id: word.item + word.source,
-          significance: word.significance * significanceScale,
+          significance:
+            word.source === 'discoursemes'
+              ? word.significance
+              : word.significance * significanceScale,
           x: (word.x * (width - boardPadding)) / 2,
           y: (word.y * (height - boardPadding)) / 2,
           originX: (word.x * (width - boardPadding)) / 2,
