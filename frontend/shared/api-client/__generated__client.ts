@@ -226,11 +226,12 @@ type MetaFrequenciesOut = {
   page_number: number
   page_size: number
   sort_by: string
+  sort_order: string
 }
 type MetaFrequencyOut = {
+  bin: string
   nr_spans: number
   nr_tokens: number
-  value: string
 }
 type MetaOut = {
   annotations: Array<AnnotationsOut>
@@ -430,9 +431,9 @@ const MetaIn = z
   .passthrough()
 const MetaFrequencyOut: z.ZodType<MetaFrequencyOut> = z
   .object({
+    bin: z.string(),
     nr_spans: z.number().int(),
     nr_tokens: z.number().int(),
-    value: z.string(),
   })
   .passthrough()
 const MetaFrequenciesOut: z.ZodType<MetaFrequenciesOut> = z
@@ -443,6 +444,7 @@ const MetaFrequenciesOut: z.ZodType<MetaFrequenciesOut> = z
     page_number: z.number().int(),
     page_size: z.number().int(),
     sort_by: z.string(),
+    sort_order: z.string(),
   })
   .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
@@ -1429,6 +1431,45 @@ const endpoints = makeApi([
         name: 'key',
         type: 'Query',
         schema: z.string(),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum(['bin', 'nr_spans', 'nr_tokens'])
+          .optional()
+          .default('nr_tokens'),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'nr_bins',
+        type: 'Query',
+        schema: z.number().int().optional().default(30),
+      },
+      {
+        name: 'time_interval',
+        type: 'Query',
+        schema: z
+          .enum(['hour', 'day', 'week', 'month', 'year'])
+          .optional()
+          .default('day'),
       },
     ],
     response: MetaFrequenciesOut,

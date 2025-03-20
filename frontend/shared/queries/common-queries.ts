@@ -153,6 +153,58 @@ export const queryConcordances = (
       }),
   })
 
+export const queryConcordanceContext = (
+  queryId: number,
+  matchId: number,
+  {
+    window,
+    extendedWindow: extended_window,
+    contextBreak: context_break,
+    extendedContextBreak: extended_context_break,
+    primary,
+    secondary,
+    highlightQueryIds: highlight_query_ids = [],
+  }: {
+    window: number
+    extendedWindow: number
+    contextBreak?: string
+    extendedContextBreak?: string
+    primary: string
+    secondary: string
+    highlightQueryIds?: number[]
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'query-concordance-context',
+      queryId,
+      matchId,
+      {
+        window,
+        context_break,
+        extended_window,
+        extended_context_break,
+        primary,
+        secondary,
+        highlight_query_ids,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get('/query/:query_id/concordance/:match_id', {
+        params: { query_id: String(queryId), match_id: String(matchId) },
+        queries: {
+          window,
+          context_break,
+          extended_window,
+          extended_context_break,
+          primary,
+          secondary,
+          highlight_query_ids,
+        },
+        signal,
+      }),
+  })
+
 export const shuffleQueryConcordances: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
   Error,
