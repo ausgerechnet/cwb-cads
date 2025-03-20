@@ -83,7 +83,13 @@ function ConstellationDetail() {
         </SemanticMap>
       }
       drawerContent={
-        corpusId === undefined ? null : (
+        corpusId === undefined ? (
+          <p className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
+            No data available.
+            <br />
+            Select a corpus.
+          </p>
+        ) : (
           <ConstellationConcordanceLines
             corpusId={corpusId}
             constellationId={constellationId}
@@ -142,7 +148,7 @@ function ConstellationDetail() {
 
       <div className="mt-4 flex gap-1">
         <Label>
-          Subcorpus
+          Corpus or Subcorpus
           <div className="relative mt-1">
             <SelectSubcorpus
               onChange={(corpusId, subcorpusId) => {
