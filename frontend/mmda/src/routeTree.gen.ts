@@ -36,6 +36,7 @@ import { Route as AppConstellationsNewImport } from './routes/_app/constellation
 import { Route as AppQueriesQueryIdRouteImport } from './routes/_app/queries_/$queryId/route'
 import { Route as AppKeywordAnalysisAnalysisIdRouteImport } from './routes/_app/keyword-analysis_/$analysisId/route'
 import { Route as AppConstellationsConstellationIdRouteImport } from './routes/_app/constellations_/$constellationId/route'
+import { Route as AppQueriesQueryIdSemanticMapImport } from './routes/_app/queries_/$queryId/semantic-map'
 import { Route as AppKeywordAnalysisAnalysisIdSemanticMapImport } from './routes/_app/keyword-analysis_/$analysisId/semantic-map'
 import { Route as AppDiscoursemesDiscoursemeIdNewDescriptionImport } from './routes/_app/discoursemes_/$discoursemeId_/new-description'
 import { Route as AppConstellationsConstellationIdSemanticMapImport } from './routes/_app/constellations_/$constellationId/semantic-map'
@@ -240,6 +241,13 @@ const AppConstellationsConstellationIdRouteRoute =
       (d) => d.Route,
     ),
   )
+
+const AppQueriesQueryIdSemanticMapRoute =
+  AppQueriesQueryIdSemanticMapImport.update({
+    id: '/semantic-map',
+    path: '/semantic-map',
+    getParentRoute: () => AppQueriesQueryIdRouteRoute,
+  } as any)
 
 const AppKeywordAnalysisAnalysisIdSemanticMapRoute =
   AppKeywordAnalysisAnalysisIdSemanticMapImport.update({
@@ -466,6 +474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKeywordAnalysisAnalysisIdSemanticMapImport
       parentRoute: typeof AppKeywordAnalysisAnalysisIdRouteImport
     }
+    '/_app/queries_/$queryId/semantic-map': {
+      id: '/_app/queries_/$queryId/semantic-map'
+      path: '/semantic-map'
+      fullPath: '/queries/$queryId/semantic-map'
+      preLoaderRoute: typeof AppQueriesQueryIdSemanticMapImport
+      parentRoute: typeof AppQueriesQueryIdRouteImport
+    }
   }
 }
 
@@ -501,6 +516,20 @@ const AppKeywordAnalysisAnalysisIdRouteRouteWithChildren =
     AppKeywordAnalysisAnalysisIdRouteRouteChildren,
   )
 
+interface AppQueriesQueryIdRouteRouteChildren {
+  AppQueriesQueryIdSemanticMapRoute: typeof AppQueriesQueryIdSemanticMapRoute
+}
+
+const AppQueriesQueryIdRouteRouteChildren: AppQueriesQueryIdRouteRouteChildren =
+  {
+    AppQueriesQueryIdSemanticMapRoute: AppQueriesQueryIdSemanticMapRoute,
+  }
+
+const AppQueriesQueryIdRouteRouteWithChildren =
+  AppQueriesQueryIdRouteRoute._addFileChildren(
+    AppQueriesQueryIdRouteRouteChildren,
+  )
+
 interface AppRouteChildren {
   AppConstellationsRouteRoute: typeof AppConstellationsRouteRoute
   AppCorporaRouteRoute: typeof AppCorporaRouteRoute
@@ -511,7 +540,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppConstellationsConstellationIdRouteRoute: typeof AppConstellationsConstellationIdRouteRouteWithChildren
   AppKeywordAnalysisAnalysisIdRouteRoute: typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
-  AppQueriesQueryIdRouteRoute: typeof AppQueriesQueryIdRouteRoute
+  AppQueriesQueryIdRouteRoute: typeof AppQueriesQueryIdRouteRouteWithChildren
   AppConstellationsNewRoute: typeof AppConstellationsNewRoute
   AppCorporaCorpusIdRoute: typeof AppCorporaCorpusIdRoute
   AppDiscoursemesDiscoursemeIdRoute: typeof AppDiscoursemesDiscoursemeIdRoute
@@ -535,7 +564,7 @@ const AppRouteChildren: AppRouteChildren = {
     AppConstellationsConstellationIdRouteRouteWithChildren,
   AppKeywordAnalysisAnalysisIdRouteRoute:
     AppKeywordAnalysisAnalysisIdRouteRouteWithChildren,
-  AppQueriesQueryIdRouteRoute: AppQueriesQueryIdRouteRoute,
+  AppQueriesQueryIdRouteRoute: AppQueriesQueryIdRouteRouteWithChildren,
   AppConstellationsNewRoute: AppConstellationsNewRoute,
   AppCorporaCorpusIdRoute: AppCorporaCorpusIdRoute,
   AppDiscoursemesDiscoursemeIdRoute: AppDiscoursemesDiscoursemeIdRoute,
@@ -567,7 +596,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
-  '/queries/$queryId': typeof AppQueriesQueryIdRouteRoute
+  '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
   '/constellations/new': typeof AppConstellationsNewRoute
   '/corpora/$corpusId': typeof AppCorporaCorpusIdRoute
   '/discoursemes/$discoursemeId': typeof AppDiscoursemesDiscoursemeIdRoute
@@ -579,6 +608,7 @@ export interface FileRoutesByFullPath {
   '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
   '/keyword-analysis/$analysisId/semantic-map': typeof AppKeywordAnalysisAnalysisIdSemanticMapRoute
+  '/queries/$queryId/semantic-map': typeof AppQueriesQueryIdSemanticMapRoute
 }
 
 export interface FileRoutesByTo {
@@ -598,7 +628,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
-  '/queries/$queryId': typeof AppQueriesQueryIdRouteRoute
+  '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
   '/constellations/new': typeof AppConstellationsNewRoute
   '/corpora/$corpusId': typeof AppCorporaCorpusIdRoute
   '/discoursemes/$discoursemeId': typeof AppDiscoursemesDiscoursemeIdRoute
@@ -610,6 +640,7 @@ export interface FileRoutesByTo {
   '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
   '/keyword-analysis/$analysisId/semantic-map': typeof AppKeywordAnalysisAnalysisIdSemanticMapRoute
+  '/queries/$queryId/semantic-map': typeof AppQueriesQueryIdSemanticMapRoute
 }
 
 export interface FileRoutesById {
@@ -630,7 +661,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRoute
   '/_app/constellations_/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/_app/keyword-analysis_/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
-  '/_app/queries_/$queryId': typeof AppQueriesQueryIdRouteRoute
+  '/_app/queries_/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
   '/_app/constellations_/new': typeof AppConstellationsNewRoute
   '/_app/corpora_/$corpusId': typeof AppCorporaCorpusIdRoute
   '/_app/discoursemes_/$discoursemeId': typeof AppDiscoursemesDiscoursemeIdRoute
@@ -642,6 +673,7 @@ export interface FileRoutesById {
   '/_app/constellations_/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/_app/discoursemes_/$discoursemeId_/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
   '/_app/keyword-analysis_/$analysisId/semantic-map': typeof AppKeywordAnalysisAnalysisIdSemanticMapRoute
+  '/_app/queries_/$queryId/semantic-map': typeof AppQueriesQueryIdSemanticMapRoute
 }
 
 export interface FileRouteTypes {
@@ -675,6 +707,7 @@ export interface FileRouteTypes {
     | '/constellations/$constellationId/semantic-map'
     | '/discoursemes/$discoursemeId/new-description'
     | '/keyword-analysis/$analysisId/semantic-map'
+    | '/queries/$queryId/semantic-map'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -705,6 +738,7 @@ export interface FileRouteTypes {
     | '/constellations/$constellationId/semantic-map'
     | '/discoursemes/$discoursemeId/new-description'
     | '/keyword-analysis/$analysisId/semantic-map'
+    | '/queries/$queryId/semantic-map'
   id:
     | '__root__'
     | '/'
@@ -735,6 +769,7 @@ export interface FileRouteTypes {
     | '/_app/constellations_/$constellationId/semantic-map'
     | '/_app/discoursemes_/$discoursemeId_/new-description'
     | '/_app/keyword-analysis_/$analysisId/semantic-map'
+    | '/_app/queries_/$queryId/semantic-map'
   fileRoutesById: FileRoutesById
 }
 
@@ -865,7 +900,10 @@ export const routeTree = rootRoute
     },
     "/_app/queries_/$queryId": {
       "filePath": "_app/queries_/$queryId/route.tsx",
-      "parent": "/_app"
+      "parent": "/_app",
+      "children": [
+        "/_app/queries_/$queryId/semantic-map"
+      ]
     },
     "/_app/constellations_/new": {
       "filePath": "_app/constellations_/new.tsx",
@@ -910,6 +948,10 @@ export const routeTree = rootRoute
     "/_app/keyword-analysis_/$analysisId/semantic-map": {
       "filePath": "_app/keyword-analysis_/$analysisId/semantic-map.tsx",
       "parent": "/_app/keyword-analysis_/$analysisId"
+    },
+    "/_app/queries_/$queryId/semantic-map": {
+      "filePath": "_app/queries_/$queryId/semantic-map.tsx",
+      "parent": "/_app/queries_/$queryId"
     }
   }
 }
