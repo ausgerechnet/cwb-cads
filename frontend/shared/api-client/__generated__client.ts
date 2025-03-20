@@ -219,6 +219,19 @@ type KeywordItemsOut = {
   page_size: number
   sort_by: string
 }
+type MetaFrequenciesOut = {
+  frequencies: Array<MetaFrequencyOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
+}
+type MetaFrequencyOut = {
+  nr_spans: number
+  nr_tokens: number
+  value: string
+}
 type MetaOut = {
   annotations: Array<AnnotationsOut>
   level: string
@@ -415,11 +428,21 @@ const MetaIn = z
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
   .passthrough()
-const MetaFrequenciesOut = z
+const MetaFrequencyOut: z.ZodType<MetaFrequencyOut> = z
   .object({
     nr_spans: z.number().int(),
     nr_tokens: z.number().int(),
     value: z.string(),
+  })
+  .passthrough()
+const MetaFrequenciesOut: z.ZodType<MetaFrequenciesOut> = z
+  .object({
+    frequencies: z.array(MetaFrequencyOut),
+    nr_items: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
+    sort_by: z.string(),
   })
   .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
@@ -932,6 +955,7 @@ export const schemas = {
   AnnotationsOut,
   MetaOut,
   MetaIn,
+  MetaFrequencyOut,
   MetaFrequenciesOut,
   SubCorpusOut,
   SubCorpusIn,
@@ -1407,7 +1431,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.array(MetaFrequenciesOut),
+    response: MetaFrequenciesOut,
     errors: [
       {
         status: 401,
