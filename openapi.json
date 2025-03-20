@@ -1642,6 +1642,9 @@
           },
           "sort_by": {
             "type": "string"
+          },
+          "sort_order": {
+            "type": "string"
           }
         },
         "required": [
@@ -1650,26 +1653,27 @@
           "page_count",
           "page_number",
           "page_size",
-          "sort_by"
+          "sort_by",
+          "sort_order"
         ],
         "type": "object"
       },
       "MetaFrequencyOut": {
         "properties": {
+          "bin": {
+            "type": "string"
+          },
           "nr_spans": {
             "type": "integer"
           },
           "nr_tokens": {
             "type": "integer"
-          },
-          "value": {
-            "type": "string"
           }
         },
         "required": [
+          "bin",
           "nr_spans",
-          "nr_tokens",
-          "value"
+          "nr_tokens"
         ],
         "type": "object"
       },
@@ -2218,7 +2222,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev29"
+    "version": "0.3.0.dev30"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3099,6 +3103,78 @@
             "name": "key",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "nr_tokens",
+              "enum": [
+                "bin",
+                "nr_spans",
+                "nr_tokens"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "descending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "how may (equidistant) bins to create. only used for numeric values.",
+            "in": "query",
+            "name": "nr_bins",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "which bins to create for datetime values. only used for datetime values.",
+            "in": "query",
+            "name": "time_interval",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
               "type": "string"
             }
           }

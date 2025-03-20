@@ -13,7 +13,7 @@ from ccc import SubCorpus as CCCSubCorpus
 from flask import abort, current_app
 from numpy import array_split
 from pandas import DataFrame, read_csv, to_datetime
-from sqlalchemy import func
+from sqlalchemy import func, cast, Integer as sql_Integer, String as sql_String
 
 from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
@@ -224,18 +224,64 @@ def get_meta_frequencies(corpus, level, key):
     return records
 
 
-def get_meta_freq(corpus, att):
+def get_meta_freq(att, nr_bins=30, time_interval='hour'):
 
-    records = db.session.query(
-        SegmentationSpanAnnotation.__table__.c['value_' + att.value_type],
-        func.count(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]).label('nr_spans'),
-        func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
-    ).filter_by(
+    time_formats = {
+        'hour': '%Y-%m-%d %H:00:00',
+        'day': '%Y-%m-%d',
+        'week': '%Y-%W',
+        'month': '%Y-%m',
+        'year': '%Y%'
+    }
+
+    if att.value_type in ['boolean', 'unicode']:
+
+        records = db.session.query(
+            SegmentationSpanAnnotation.__table__.c['value_' + att.value_type].label('bin'),
+            func.count(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]).label('nr_spans'),
+            func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
+        )
+
+    elif att.value_type == 'numeric':
+
+        min_value, max_value = db.session.query(
+            func.min(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]),
+            func.max(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type])
+        ).first()
+
+        bin_width = (max_value - min_value) / nr_bins
+
+        bin_index_expr = ((SegmentationSpanAnnotation.__table__.c['value_' + att.value_type] - min_value) / bin_width).cast(sql_Integer)
+        bin_start_expr = min_value + bin_index_expr * bin_width
+        bin_end_expr = bin_start_expr + bin_width
+        bin_label_expr = cast(bin_start_expr, sql_String) + ' - ' + cast(bin_end_expr, sql_String)
+
+        records = db.session.query(
+            bin_index_expr.label('bin_index'),
+            bin_start_expr.label('bin_start'),
+            bin_end_expr.label('bin_end'),
+            func.count().label('nr_spans'),
+            func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens'),
+            bin_label_expr.label('bin')
+        )
+
+    elif att.value_type == 'datetime':
+
+        records = db.session.query(
+            func.strftime(time_formats[time_interval], SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]).label('bin'),
+            func.count().label('nr_spans'),
+            func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
+        )
+
+    else:
+        raise ValueError()
+
+    records = records.filter_by(
         segmentation_annotation_id=att.id
     ).join(
         SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
     ).group_by(
-        SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]
+        'bin'
     )
 
     return records
@@ -427,6 +473,18 @@ class MetaFrequenciesIn(Schema):
 
     level = String(required=True)
     key = String(required=True)
+    sort_by = String(required=False, load_default='nr_tokens', validate=OneOf(['bin', 'nr_spans', 'nr_tokens']))
+    sort_order = String(required=False, load_default='descending', validate=OneOf(['ascending', 'descending']))
+    page_size = Integer(required=False, load_default=10)
+    page_number = Integer(required=False, load_default=1)
+    nr_bins = Integer(
+        required=False, load_default=30,
+        metadata={'description': "how may (equidistant) bins to create. only used for numeric values."}
+    )
+    time_interval = String(
+        required=False, load_default='day', validate=OneOf(['hour', 'day', 'week', 'month', 'year']),
+        metadata={'description': "which bins to create for datetime values. only used for datetime values."}
+    )
 
 
 # Output
@@ -466,7 +524,7 @@ class MetaOut(Schema):
 
 class MetaFrequencyOut(Schema):
 
-    value = String(required=True)
+    bin = String(required=True)
     nr_spans = Integer(required=True)
     nr_tokens = Integer(required=True)
 
@@ -474,6 +532,7 @@ class MetaFrequencyOut(Schema):
 class MetaFrequenciesOut(Schema):
 
     sort_by = String(required=True)
+    sort_order = String(required=True)
     nr_items = Integer(required=True)
     page_size = Integer(required=True)
     page_number = Integer(required=True)
@@ -551,12 +610,13 @@ def create_subcorpus(id, json_data):
     # TODO simplify variables, get value type from database
     # TODO allow span selection for numeric and datetime
     values_numeric = json_data.get('values_numeric')
+    values_datetime = json_data.get('values_datetime')
     values_unicode = json_data.get('values_unicode')
     value_boolean = json_data.get('value_boolean')
 
     create_nqr = json_data['create_nqr']
 
-    values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else value_boolean
+    values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else value_boolean if values_datetime is not None else values_datetime
     if values is None:
         abort(400, 'Bad Request: You have to provide exactly one type of values')
 
@@ -642,8 +702,11 @@ def get_frequencies(id, query_data):
     page_number = query_data.get('page_number', 1)
     page_size = query_data.get('page_size', 20)
     sort_order = query_data.get('sort_order', 'descending')  # ascending, descending
-    sort_by = query_data.get('sort_by', 'nr_tokens')  # 'nr_tokens', 'nr_spans', 'value'
+    sort_by = query_data.get('sort_by', 'nr_tokens')  # 'nr_tokens', 'nr_spans', 'bin'
     ascending = True if sort_order == 'ascending' else False
+
+    nr_bins = query_data.get('nr_bins', 5)
+    time_interval = query_data.get('time_interval', 'day')
 
     # get attribute
     att = None
@@ -655,24 +718,18 @@ def get_frequencies(id, query_data):
     if att is None:
         abort(404, 'annotation layer not found')
 
-    # value type unicode or boolean
-    if att.value_type == "unicode" or att.value_type == "boolean":
-        records = get_meta_freq(corpus, att).paginate(page=page_number, per_page=page_size)
-        nr_items = records.total
-        page_count = records.pages
-        df_freq = DataFrame(
-            records.items, columns=['value', 'nr_spans', 'nr_tokens']
-        ).set_index('value').sort_values(by=sort_by, ascending=ascending)
-        freq = df_freq.reset_index().to_dict(orient='records')
-    else:
-        # datetime, numeric: bins
-        raise NotImplementedError()
+    records = get_meta_freq(att, nr_bins, time_interval)
+    records = records.paginate(page=page_number, per_page=page_size)
+    df_freq = DataFrame(records.items).sort_values(by=sort_by, ascending=ascending)
+    freq = df_freq[['bin', 'nr_spans', 'nr_tokens']].to_dict(orient='records')
 
     return MetaFrequenciesOut().dump({
-        'nr_items': nr_items,
+        'sort_by': sort_by,
+        'sort_order': sort_order,
+        'nr_items': records.total,
         'page_size': page_size,
         'page_number': page_number,
-        'page_count': page_count,
+        'page_count': records.pages,
         'frequencies': [MetaFrequencyOut().dump(f) for f in freq]
     }), 200
 
