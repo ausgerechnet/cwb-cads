@@ -219,7 +219,24 @@ def get_meta_frequencies(corpus, level, key):
         segmentation_annotation_id=segmentation_annotation_id
     ).group_by(
         SegmentationSpanAnnotation.__table__.c['value_' + value_type]
-    ).all()
+    )
+
+    return records
+
+
+def get_meta_freq(corpus, att):
+
+    records = db.session.query(
+        SegmentationSpanAnnotation.__table__.c['value_' + att.value_type],
+        func.count(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]).label('nr_spans'),
+        func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
+    ).filter_by(
+        segmentation_annotation_id=att.id
+    ).join(
+        SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
+    ).group_by(
+        SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]
+    )
 
     return records
 
@@ -447,11 +464,22 @@ class MetaOut(Schema):
     annotations = Nested(AnnotationsOut(many=True), required=True, dump_default=[])
 
 
-class MetaFrequenciesOut(Schema):
+class MetaFrequencyOut(Schema):
 
     value = String(required=True)
     nr_spans = Integer(required=True)
     nr_tokens = Integer(required=True)
+
+
+class MetaFrequenciesOut(Schema):
+
+    sort_by = String(required=True)
+    nr_items = Integer(required=True)
+    page_size = Integer(required=True)
+    page_number = Integer(required=True)
+    page_count = Integer(required=True)
+
+    frequencies = Nested(MetaFrequencyOut(many=True), required=True, dump_default=[])
 
 
 #################
@@ -520,9 +548,12 @@ def create_subcorpus(id, json_data):
     description = json_data.get('description')
     level = json_data['level']
     key = json_data['key']
+    # TODO simplify variables, get value type from database
+    # TODO allow span selection for numeric and datetime
     values_numeric = json_data.get('values_numeric')
     values_unicode = json_data.get('values_unicode')
     value_boolean = json_data.get('value_boolean')
+
     create_nqr = json_data['create_nqr']
 
     values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else value_boolean
@@ -556,12 +587,9 @@ def get_meta(id):
     """Get meta data of corpus.
 
     """
-    # TODO
-    # datetime/numeric: min, maximum
-    # boolean: yes/no
-    # unicode: searchable endpoint: einzelne Auswahl
-    # array of filter_object:
 
+    # TODO return more corpus info
+    # TODO also return some descriptive summary of annotation
     corpus = db.get_or_404(Corpus, id)
     outs = list()
     for s in corpus.segmentations:
@@ -600,7 +628,7 @@ def set_meta(id, json_data):
 
 @bp.get('/<id>/meta/frequencies')
 @bp.input(MetaFrequenciesIn, location='query')
-@bp.output(MetaFrequenciesOut(many=True))
+@bp.output(MetaFrequenciesOut)
 @bp.auth_required(auth)
 def get_frequencies(id, query_data):
     """Get frequencies of segmentation span annotations.
@@ -611,15 +639,42 @@ def get_frequencies(id, query_data):
     level = query_data.get('level')
     key = query_data.get('key')
 
-    df_spans = DataFrame.from_records(get_meta_frequencies(corpus, level, key))
-    df_spans.columns = ['value', 'nr_spans']
-    df_tokens = DataFrame.from_records(get_meta_number_tokens(corpus, level, key))
-    df_tokens.columns = ['value', 'nr_tokens']
+    page_number = query_data.get('page_number', 1)
+    page_size = query_data.get('page_size', 20)
+    sort_order = query_data.get('sort_order', 'descending')  # ascending, descending
+    sort_by = query_data.get('sort_by', 'nr_tokens')  # 'nr_tokens', 'nr_spans', 'value'
+    ascending = True if sort_order == 'ascending' else False
 
-    df_freq = df_spans.set_index('value').join(df_tokens.set_index('value'), how='outer').sort_values(by='nr_tokens', ascending=False)
-    freq = df_freq.reset_index().to_dict(orient='records')
+    # get attribute
+    att = None
+    for s in corpus.segmentations:
+        if s.level == level:
+            for ann in s.annotations:
+                if ann.key == key:
+                    att = ann
+    if att is None:
+        abort(404, 'annotation layer not found')
 
-    return [MetaFrequenciesOut().dump(f) for f in freq], 200
+    # value type unicode or boolean
+    if att.value_type == "unicode" or att.value_type == "boolean":
+        records = get_meta_freq(corpus, att).paginate(page=page_number, per_page=page_size)
+        nr_items = records.total
+        page_count = records.pages
+        df_freq = DataFrame(
+            records.items, columns=['value', 'nr_spans', 'nr_tokens']
+        ).set_index('value').sort_values(by=sort_by, ascending=ascending)
+        freq = df_freq.reset_index().to_dict(orient='records')
+    else:
+        # datetime, numeric: bins
+        raise NotImplementedError()
+
+    return MetaFrequenciesOut().dump({
+        'nr_items': nr_items,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count,
+        'frequencies': [MetaFrequencyOut().dump(f) for f in freq]
+    }), 200
 
 
 @bp.get('/<id>/concordance')

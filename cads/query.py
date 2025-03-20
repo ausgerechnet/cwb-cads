@@ -757,6 +757,7 @@ def get_meta(query_id, query_data):
 
     """
 
+    # TODO use get_meta_freq
     from .corpus import get_meta_frequencies, get_meta_number_tokens
 
     query = db.get_or_404(Query, query_id)
@@ -769,7 +770,7 @@ def get_meta(query_id, query_data):
     df_meta = crps.concordance(p_show=[p], s_show=[f'{level}_{key}'], cut_off=None)[[p, f'{level}_{key}']].value_counts().reset_index()
     df_meta.columns = ['item', 'value', 'frequency']
 
-    df_texts = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key))
+    df_texts = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key).all())
     df_texts.columns = ['value', 'nr_texts']
 
     df_tokens = DataFrame.from_records(get_meta_number_tokens(query.corpus, level, key))

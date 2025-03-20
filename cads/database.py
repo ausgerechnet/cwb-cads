@@ -173,7 +173,7 @@ class CorpusAttributes(db.Model):
     """
     id = db.Column(db.Integer, primary_key=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
-    attribute = db.Column(db.Unicode)  # p or s
+    attribute = db.Column(db.Unicode)  # p(ositional) or s(structural)
     level = db.Column(db.Unicode)  # text, p, s, ...
     embeddings = db.Column(db.Integer, db.ForeignKey('embeddings.id'))  # only for p-attributes
 

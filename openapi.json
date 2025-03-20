@@ -104,6 +104,59 @@
         ],
         "type": "object"
       },
+      "CollocationIn": {
+        "properties": {
+          "filter_item": {
+            "nullable": true,
+            "type": "string"
+          },
+          "filter_item_p_att": {
+            "default": "lemma",
+            "type": "string"
+          },
+          "filter_overlap": {
+            "default": "partial",
+            "enum": [
+              "partial",
+              "full",
+              "match",
+              "matchend"
+            ],
+            "type": "string"
+          },
+          "marginals": {
+            "default": "local",
+            "enum": [
+              "local",
+              "global"
+            ],
+            "type": "string"
+          },
+          "p": {
+            "type": "string"
+          },
+          "s_break": {
+            "type": "string"
+          },
+          "semantic_map_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          },
+          "semantic_map_init": {
+            "default": true,
+            "type": "boolean"
+          },
+          "window": {
+            "default": 10,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "p"
+        ],
+        "type": "object"
+      },
       "CollocationItemOut": {
         "properties": {
           "item": {
@@ -1569,6 +1622,40 @@
       },
       "MetaFrequenciesOut": {
         "properties": {
+          "frequencies": {
+            "items": {
+              "$ref": "#/components/schemas/MetaFrequencyOut"
+            },
+            "type": "array"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "sort_by": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "frequencies",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by"
+        ],
+        "type": "object"
+      },
+      "MetaFrequencyOut": {
+        "properties": {
           "nr_spans": {
             "type": "integer"
           },
@@ -2131,7 +2218,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev28"
+    "version": "0.3.0.dev29"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3021,10 +3108,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MetaFrequenciesOut"
-                  },
-                  "type": "array"
+                  "$ref": "#/components/schemas/MetaFrequenciesOut"
                 }
               }
             },
@@ -7827,7 +7911,7 @@
       }
     },
     "/query/{query_id}/collocation": {
-      "get": {
+      "put": {
         "parameters": [
           {
             "in": "path",
@@ -7836,98 +7920,17 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "in": "query",
-            "name": "semantic_map_id",
-            "required": false,
-            "schema": {
-              "default": null,
-              "nullable": true,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "semantic_map_init",
-            "required": false,
-            "schema": {
-              "default": true,
-              "type": "boolean"
-            }
-          },
-          {
-            "in": "query",
-            "name": "p",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "window",
-            "required": false,
-            "schema": {
-              "default": 10,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "marginals",
-            "required": false,
-            "schema": {
-              "default": "local",
-              "enum": [
-                "local",
-                "global"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "s_break",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_item",
-            "required": false,
-            "schema": {
-              "nullable": true,
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_item_p_att",
-            "required": false,
-            "schema": {
-              "default": "lemma",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "filter_overlap",
-            "required": false,
-            "schema": {
-              "default": "partial",
-              "enum": [
-                "partial",
-                "full",
-                "match",
-                "matchend"
-              ],
-              "type": "string"
-            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollocationIn"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "content": {
@@ -7975,7 +7978,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get collocation of query. Will create if doesn't exist.",
+        "summary": "Get collocation analysis of query; create if necessary.",
         "tags": [
           "Query"
         ]
