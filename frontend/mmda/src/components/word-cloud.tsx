@@ -450,7 +450,7 @@ export default function WordCloud({
           })
       })
 
-    const scaleRange: [number, number] = [1, 5]
+    const scaleRange: [number, number] = [1, 10]
 
     function getNormalizedScale(k: number) {
       return (k - scaleRange[0]) / (scaleRange[1] - scaleRange[0])
@@ -465,7 +465,7 @@ export default function WordCloud({
       svgHeight = svgRef.current?.clientHeight ?? 0
       const baseScale = Math.min(svgWidth / width, svgHeight / height)
       scaleRange[0] = baseScale
-      scaleRange[1] = baseScale * 5
+      scaleRange[1] = baseScale * 10
       zoom.scaleExtent(scaleRange)
       const translationFactor = 0.5
       zoom.translateExtent([
@@ -645,12 +645,7 @@ export default function WordCloud({
         if (node.source === 'discourseme_items') continue
         const distanceX = node.x - node.originX
         const distanceY = node.y - node.originY
-        const k =
-          alpha *
-          0.02 *
-          homeStrength *
-          // increase strength on higher zoom levels
-          clamp(transformationState.k, 0.5, 2)
+        const k = alpha * 0.05 * homeStrength
 
         node.vx -= distanceX * k * 2
         node.vy -= distanceY * k * 2
