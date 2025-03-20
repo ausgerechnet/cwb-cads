@@ -6,7 +6,7 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Float, Integer, List, Nested, String
+from apiflask.fields import Boolean, Float, Integer, List, Nested, String, DateTime
 from apiflask.validators import OneOf
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
@@ -224,7 +224,7 @@ def get_meta_frequencies(corpus, level, key):
     return records
 
 
-def get_meta_freq(att, nr_bins=30, time_interval='hour', sort_by='bin', ascending=False):
+def get_meta_freq(att, nr_bins=30, time_interval='hour'):
 
     time_formats = {
         'hour': '%Y-%m-%d %H:00:00',
@@ -260,9 +260,9 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour', sort_by='bin', ascendin
             bin_index_expr.label('bin_index'),
             bin_start_expr.label('bin_start'),
             bin_end_expr.label('bin_end'),
+            bin_label_expr.label('bin'),
             func.count().label('nr_spans'),
-            func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens'),
-            bin_label_expr.label('bin')
+            func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
         )
 
     elif att.value_type == 'datetime':
@@ -452,13 +452,18 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', description='imported 
 # Input
 class SubCorpusIn(Schema):
 
-    level = String(required=True)
-    key = String(required=True)
     name = String(required=True)
     description = String(required=False, allow_none=True)
-    values_numeric = List(Float, required=False, allow_none=True)
+
+    level = String(required=True)
+    key = String(required=True)
+
+    # TODO allow list of intervals for numeric and datetime / how to combine with bins of meta out?
     values_unicode = List(String, required=False, allow_none=True)
     value_boolean = Boolean(required=False, allow_none=True)
+    values_numeric = List(Float, required=False, allow_none=True)
+    values_datetime = List(DateTime, required=False, allow_none=True)
+
     create_nqr = Boolean(required=False, load_default=True)
 
 
@@ -473,10 +478,12 @@ class MetaFrequenciesIn(Schema):
 
     level = String(required=True)
     key = String(required=True)
+
     sort_by = String(required=False, load_default='nr_tokens', validate=OneOf(['bin', 'nr_spans', 'nr_tokens']))
     sort_order = String(required=False, load_default='descending', validate=OneOf(['ascending', 'descending']))
     page_size = Integer(required=False, load_default=10)
     page_number = Integer(required=False, load_default=1)
+
     nr_bins = Integer(
         required=False, load_default=30,
         metadata={'description': "how may (equidistant) bins to create. only used for numeric values."}
@@ -516,10 +523,16 @@ class AnnotationsOut(Schema):
     value_type = String(required=True, validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
 
 
-class MetaOut(Schema):
+class LevelOut(Schema):
 
     level = String(required=True)
     annotations = Nested(AnnotationsOut(many=True), required=True, dump_default=[])
+
+
+class MetaOut(Schema):
+
+    corpus_id = Integer(required=True)
+    levels = Nested(LevelOut(many=True), required=True, dump_default=[])
 
 
 class MetaFrequencyOut(Schema):
@@ -616,7 +629,7 @@ def create_subcorpus(id, json_data):
 
     create_nqr = json_data['create_nqr']
 
-    values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else value_boolean if values_datetime is not None else values_datetime
+    values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else values_datetime if values_datetime is not None else value_boolean
     if values is None:
         abort(400, 'Bad Request: You have to provide exactly one type of values')
 
@@ -641,7 +654,7 @@ def create_subcorpus(id, json_data):
 
 
 @bp.get('/<id>/meta/')
-@bp.output(MetaOut(many=True))
+@bp.output(MetaOut)
 @bp.auth_required(auth)
 def get_meta(id):
     """Get meta data of corpus.
@@ -651,15 +664,18 @@ def get_meta(id):
     # TODO return more corpus info
     # TODO also return some descriptive summary of annotation
     corpus = db.get_or_404(Corpus, id)
-    outs = list()
+    levels = list()
     for s in corpus.segmentations:
-        out = {'level': s.level}
-        out['annotations'] = list()
+        level = {'level': s.level}
+        level['annotations'] = list()
         for ann in s.annotations:
-            out['annotations'].append({'key': ann.key, 'value_type': ann.value_type})
-        outs.append(out)
+            level['annotations'].append({'key': ann.key, 'value_type': ann.value_type})
+        levels.append(level)
 
-    return [MetaOut().dump(out) for out in outs], 200
+    return MetaOut().dump({
+        'corpus_id': id,
+        'levels': [LevelOut().dump(level) for level in levels]
+    }), 200
 
 
 @bp.put('/<id>/meta/')
@@ -726,6 +742,8 @@ def get_frequencies(id, query_data):
     if sort_by in column_map:
         order_by_clause = column_map[sort_by] if ascending else column_map[sort_by].desc()
         records = records.order_by(order_by_clause)
+    else:
+        current_app.logger.error("couldn't sort")
 
     records = records.paginate(page=page_number, per_page=page_size)
     df_freq = DataFrame(records.items)

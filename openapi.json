@@ -1620,6 +1620,24 @@
         ],
         "type": "object"
       },
+      "LevelOut": {
+        "properties": {
+          "annotations": {
+            "items": {
+              "$ref": "#/components/schemas/AnnotationsOut"
+            },
+            "type": "array"
+          },
+          "level": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "annotations",
+          "level"
+        ],
+        "type": "object"
+      },
       "MetaFrequenciesOut": {
         "properties": {
           "frequencies": {
@@ -1704,19 +1722,19 @@
       },
       "MetaOut": {
         "properties": {
-          "annotations": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "levels": {
             "items": {
-              "$ref": "#/components/schemas/AnnotationsOut"
+              "$ref": "#/components/schemas/LevelOut"
             },
             "type": "array"
-          },
-          "level": {
-            "type": "string"
           }
         },
         "required": [
-          "annotations",
-          "level"
+          "corpus_id",
+          "levels"
         ],
         "type": "object"
       },
@@ -2015,6 +2033,14 @@
             "nullable": true,
             "type": "boolean"
           },
+          "values_datetime": {
+            "items": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
           "values_numeric": {
             "items": {
               "type": "number"
@@ -2222,7 +2248,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev30"
+    "version": "0.3.0.dev31"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -2966,10 +2992,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/MetaOut"
-                  },
-                  "type": "array"
+                  "$ref": "#/components/schemas/MetaOut"
                 }
               }
             },

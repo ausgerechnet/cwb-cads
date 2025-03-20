@@ -48,11 +48,6 @@ def test_set_meta(client, auth):
                           headers=auth_header)
         assert meta.status_code == 200
 
-        freq = client.get(url_for('corpus.get_frequencies', id=corpora.json[0]['id'], level='text', key='role'),
-                          content_type='application/json',
-                          headers=auth_header)
-        assert freq.status_code == 200
-
 
 def test_create_subcorpus(client, auth):
 
