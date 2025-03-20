@@ -224,14 +224,14 @@ def get_meta_frequencies(corpus, level, key):
     return records
 
 
-def get_meta_freq(att, nr_bins=30, time_interval='hour'):
+def get_meta_freq(att, nr_bins=30, time_interval='hour', sort_by='bin', ascending=False):
 
     time_formats = {
         'hour': '%Y-%m-%d %H:00:00',
         'day': '%Y-%m-%d',
         'week': '%Y-%W',
         'month': '%Y-%m',
-        'year': '%Y%'
+        'year': '%Y'
     }
 
     if att.value_type in ['boolean', 'unicode']:
@@ -719,8 +719,16 @@ def get_frequencies(id, query_data):
         abort(404, 'annotation layer not found')
 
     records = get_meta_freq(att, nr_bins, time_interval)
+
+    # sorting
+    column_map = {desc["name"]: desc["expr"] for desc in records.column_descriptions}
+
+    if sort_by in column_map:
+        order_by_clause = column_map[sort_by] if ascending else column_map[sort_by].desc()
+        records = records.order_by(order_by_clause)
+
     records = records.paginate(page=page_number, per_page=page_size)
-    df_freq = DataFrame(records.items).sort_values(by=sort_by, ascending=ascending)
+    df_freq = DataFrame(records.items)
     freq = df_freq[['bin', 'nr_spans', 'nr_tokens']].to_dict(orient='records')
 
     return MetaFrequenciesOut().dump({
