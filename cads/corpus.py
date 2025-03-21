@@ -6,14 +6,14 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Float, Integer, List, Nested, String, DateTime
+from apiflask.fields import Boolean, Float, Integer, List, Nested, String, DateTime, Tuple
 from apiflask.validators import OneOf
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
 from flask import abort, current_app
 from numpy import array_split
 from pandas import DataFrame, read_csv, to_datetime
-from sqlalchemy import func, cast, Integer as sql_Integer, String as sql_String
+from sqlalchemy import func, or_, Integer as sql_Integer
 
 from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
@@ -237,7 +237,7 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
     if att.value_type in ['boolean', 'unicode']:
 
         records = db.session.query(
-            SegmentationSpanAnnotation.__table__.c['value_' + att.value_type].label('bin'),
+            SegmentationSpanAnnotation.__table__.c['value_' + att.value_type].label('bin_index'),
             func.count(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]).label('nr_spans'),
             func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
         )
@@ -248,19 +248,16 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
             func.min(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]),
             func.max(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type])
         ).first()
-
         bin_width = (max_value - min_value) / nr_bins
 
         bin_index_expr = ((SegmentationSpanAnnotation.__table__.c['value_' + att.value_type] - min_value) / bin_width).cast(sql_Integer)
         bin_start_expr = min_value + bin_index_expr * bin_width
         bin_end_expr = bin_start_expr + bin_width
-        bin_label_expr = cast(bin_start_expr, sql_String) + ' - ' + cast(bin_end_expr, sql_String)
 
         records = db.session.query(
             bin_index_expr.label('bin_index'),
             bin_start_expr.label('bin_start'),
             bin_end_expr.label('bin_end'),
-            bin_label_expr.label('bin'),
             func.count().label('nr_spans'),
             func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
         )
@@ -268,7 +265,7 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
     elif att.value_type == 'datetime':
 
         records = db.session.query(
-            func.strftime(time_formats[time_interval], SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]).label('bin'),
+            func.strftime(time_formats[time_interval], SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]).label('bin_index'),
             func.count().label('nr_spans'),
             func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('nr_tokens')
         )
@@ -281,7 +278,7 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
     ).join(
         SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
     ).group_by(
-        'bin'
+        'bin_index'
     )
 
     return records
@@ -458,11 +455,16 @@ class SubCorpusIn(Schema):
     level = String(required=True)
     key = String(required=True)
 
-    # TODO allow list of intervals for numeric and datetime / how to combine with bins of meta out?
-    values_unicode = List(String, required=False, allow_none=True)
-    value_boolean = Boolean(required=False, allow_none=True)
-    values_numeric = List(Float, required=False, allow_none=True)
-    values_datetime = List(DateTime, required=False, allow_none=True)
+    bins_unicode = List(String, required=False, allow_none=True)
+    bins_boolean = Boolean(required=False, allow_none=True)
+    bins_numeric = List(
+        Tuple((Float, Float)), required=False, allow_none=True,
+        metadata={'description': "intervals are understood as close-left, open-right (start <= value < end)"}
+    )
+    bins_datetime = List(
+        Tuple((DateTime, DateTime)), required=False, allow_none=True,
+        metadata={'description': "intervals are understood as close-left, open-right (start <= value < end)"}
+    )
 
     create_nqr = Boolean(required=False, load_default=True)
 
@@ -537,7 +539,11 @@ class MetaOut(Schema):
 
 class MetaFrequencyOut(Schema):
 
-    bin = String(required=True)
+    # bin = String(required=True)
+    bin_unicode = String(required=False, allow_none=True)
+    bin_boolean = Boolean(required=False, allow_none=True)
+    bin_numeric = Tuple((Float, Float), required=False, allow_none=True)
+    bin_datetime = String(required=False, allow_none=True)
     nr_spans = Integer(required=True)
     nr_tokens = Integer(required=True)
 
@@ -550,6 +556,7 @@ class MetaFrequenciesOut(Schema):
     page_size = Integer(required=True)
     page_number = Integer(required=True)
     page_count = Integer(required=True)
+    value_type = String(required=True, validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
 
     frequencies = Nested(MetaFrequencyOut(many=True), required=True, dump_default=[])
 
@@ -597,7 +604,7 @@ def get_subcorpora(id):
 @bp.output(SubCorpusOut)
 @bp.auth_required(auth)
 def get_subcorpus(id, subcorpus_id):
-    """Get all details of subcorpus.
+    """Get details of a subcorpus.
 
     """
     subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
@@ -612,37 +619,67 @@ def get_subcorpus(id, subcorpus_id):
 def create_subcorpus(id, json_data):
     """Create subcorpus from stored meta data.
 
+    # support: one level (protocol, text, etc.)
+    # boolean / unicode keys: categorical select
+    # numeric / datetime keys: interval select
+
     """
 
     corpus = db.get_or_404(Corpus, id)
 
     name = json_data['name']
     description = json_data.get('description')
+
     level = json_data['level']
     key = json_data['key']
-    # TODO simplify variables, get value type from database
-    # TODO allow span selection for numeric and datetime
-    values_numeric = json_data.get('values_numeric')
-    values_datetime = json_data.get('values_datetime')
-    values_unicode = json_data.get('values_unicode')
-    value_boolean = json_data.get('value_boolean')
 
     create_nqr = json_data['create_nqr']
 
-    values = values_numeric if values_numeric is not None else values_unicode if values_unicode is not None else values_datetime if values_datetime is not None else value_boolean
-    if values is None:
-        abort(400, 'Bad Request: You have to provide exactly one type of values')
+    # TODO simplify variables?
+    # values_numeric = json_data.get('values_numeric')
+    # values_datetime = json_data.get('values_datetime')
+    # values_unicode = json_data.get('values_unicode')
+    # value_boolean = json_data.get('value_boolean')
+    # values = values_numeric if values_numeric is not None
+    # else values_unicode if values_unicode is not None
+    # else values_datetime if values_datetime is not None
+    # else value_boolean
 
     segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
     segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=key).first()
+    value_type = segmentation_annotation.value_type
+    # TODO allow span selection for numeric and datetime
+    values = json_data.get(f'bins_{value_type}')
+    if values is None:
+        abort(400, f'Bad Request: {level}_{key} is of type {value_type}, but no such value(s) provided')
 
-    span_ids = SegmentationSpanAnnotation.query.filter(
-        SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
-        SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type].in_(values)
-    )
+    if value_type in ['unicode', 'boolean']:
+        span_ids = SegmentationSpanAnnotation.query.filter(
+            SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
+            SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type].in_(values)
+        )
+    elif value_type == 'numeric':
+        span_ids = SegmentationSpanAnnotation.query.filter(
+            SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
+            or_(
+                *[(SegmentationSpanAnnotation.value_numeric >= start) & (SegmentationSpanAnnotation.value_numeric < end) for start, end in values]
+            )
+        )
+    elif value_type == 'datetime':
+        span_ids = SegmentationSpanAnnotation.query.filter(
+            SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
+            or_(
+                *[(SegmentationSpanAnnotation.value_datetime >= start) & (SegmentationSpanAnnotation.value_datetime < end) for start, end in values]
+            )
+        )
+    else:
+        raise ValueError()
 
+    # TODO use sqlite filter
     spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_([s.segmentation_span_id for s in span_ids]))
     df = DataFrame([vars(s) for s in spans])
+    if len(df) == 0:
+        abort(406, 'empty subcorpus')
     df = df[['match', 'matchend']]
 
     subcorpus = subcorpus_from_df(corpus.cwb_id, name, description, df, level, create_nqr,
@@ -657,12 +694,11 @@ def create_subcorpus(id, json_data):
 @bp.output(MetaOut)
 @bp.auth_required(auth)
 def get_meta(id):
-    """Get meta data of corpus.
+    """Get meta data of corpus. Used for subcorpus creation.
 
+    TODO also return some descriptive summary of level annotations?
     """
 
-    # TODO return more corpus info
-    # TODO also return some descriptive summary of annotation
     corpus = db.get_or_404(Corpus, id)
     levels = list()
     for s in corpus.segmentations:
@@ -683,7 +719,7 @@ def get_meta(id):
 @bp.auth_required(auth)
 @bp.output(AnnotationsOut)
 def set_meta(id, json_data):
-    """Set meta data of corpus from encoded s-attribute.
+    """Set meta data of corpus from CWB-encoded s-attribute.
 
     """
 
@@ -707,7 +743,7 @@ def set_meta(id, json_data):
 @bp.output(MetaFrequenciesOut)
 @bp.auth_required(auth)
 def get_frequencies(id, query_data):
-    """Get frequencies of segmentation span annotations.
+    """Get frequencies meta data.
 
     """
 
@@ -717,14 +753,14 @@ def get_frequencies(id, query_data):
 
     page_number = query_data.get('page_number', 1)
     page_size = query_data.get('page_size', 20)
-    sort_order = query_data.get('sort_order', 'descending')  # ascending, descending
-    sort_by = query_data.get('sort_by', 'nr_tokens')  # 'nr_tokens', 'nr_spans', 'bin'
-    ascending = True if sort_order == 'ascending' else False
+    sort_order = query_data.get('sort_order', 'descending')
+    sort_by = query_data.get('sort_by', 'nr_tokens')
+    sort_by = 'bin_index' if sort_by == 'bin' else sort_by
 
     nr_bins = query_data.get('nr_bins', 5)
     time_interval = query_data.get('time_interval', 'day')
 
-    # get attribute
+    # get attribute TODO simplify
     att = None
     for s in corpus.segmentations:
         if s.level == level:
@@ -734,20 +770,29 @@ def get_frequencies(id, query_data):
     if att is None:
         abort(404, 'annotation layer not found')
 
+    value_type = att.value_type
     records = get_meta_freq(att, nr_bins, time_interval)
 
     # sorting
     column_map = {desc["name"]: desc["expr"] for desc in records.column_descriptions}
 
     if sort_by in column_map:
-        order_by_clause = column_map[sort_by] if ascending else column_map[sort_by].desc()
+        order_by_clause = column_map[sort_by] if sort_order == 'ascending' else column_map[sort_by].desc()
         records = records.order_by(order_by_clause)
     else:
-        current_app.logger.error("couldn't sort")
+        current_app.logger.error(f"sort_by '{sort_by}' not supported")
 
     records = records.paginate(page=page_number, per_page=page_size)
     df_freq = DataFrame(records.items)
-    freq = df_freq[['bin', 'nr_spans', 'nr_tokens']].to_dict(orient='records')
+    if att.value_type == 'unicode':
+        df_freq['bin_unicode'] = df_freq['bin_index']
+    elif att.value_type == 'boolean':
+        df_freq['bin_boolean'] = df_freq['bin_index']
+    elif att.value_type == 'numeric':
+        df_freq['bin_numeric'] = list(zip(df_freq['bin_start'], df_freq['bin_end']))
+    elif att.value_type == 'datetime':
+        df_freq['bin_datetime'] = df_freq['bin_index']
+    freq = df_freq.to_dict(orient='records')
 
     return MetaFrequenciesOut().dump({
         'sort_by': sort_by,
@@ -756,6 +801,7 @@ def get_frequencies(id, query_data):
         'page_size': page_size,
         'page_number': page_number,
         'page_count': records.pages,
+        'value_type': value_type,
         'frequencies': [MetaFrequencyOut().dump(f) for f in freq]
     }), 200
 

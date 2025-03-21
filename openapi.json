@@ -1663,6 +1663,15 @@
           },
           "sort_order": {
             "type": "string"
+          },
+          "value_type": {
+            "enum": [
+              "datetime",
+              "numeric",
+              "boolean",
+              "unicode"
+            ],
+            "type": "string"
           }
         },
         "required": [
@@ -1672,13 +1681,26 @@
           "page_number",
           "page_size",
           "sort_by",
-          "sort_order"
+          "sort_order",
+          "value_type"
         ],
         "type": "object"
       },
       "MetaFrequencyOut": {
         "properties": {
-          "bin": {
+          "bin_boolean": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "bin_datetime": {
+            "nullable": true,
+            "type": "string"
+          },
+          "bin_numeric": {
+            "nullable": true
+          },
+          "bin_unicode": {
+            "nullable": true,
             "type": "string"
           },
           "nr_spans": {
@@ -1689,7 +1711,6 @@
           }
         },
         "required": [
-          "bin",
           "nr_spans",
           "nr_tokens"
         ],
@@ -2012,6 +2033,29 @@
       },
       "SubCorpusIn": {
         "properties": {
+          "bins_boolean": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "bins_datetime": {
+            "description": "intervals are understood as close-left, open-right (start <= value < end)",
+            "items": {},
+            "nullable": true,
+            "type": "array"
+          },
+          "bins_numeric": {
+            "description": "intervals are understood as close-left, open-right (start <= value < end)",
+            "items": {},
+            "nullable": true,
+            "type": "array"
+          },
+          "bins_unicode": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
           "create_nqr": {
             "default": true,
             "type": "boolean"
@@ -2028,32 +2072,6 @@
           },
           "name": {
             "type": "string"
-          },
-          "value_boolean": {
-            "nullable": true,
-            "type": "boolean"
-          },
-          "values_datetime": {
-            "items": {
-              "format": "date-time",
-              "type": "string"
-            },
-            "nullable": true,
-            "type": "array"
-          },
-          "values_numeric": {
-            "items": {
-              "type": "number"
-            },
-            "nullable": true,
-            "type": "array"
-          },
-          "values_unicode": {
-            "items": {
-              "type": "string"
-            },
-            "nullable": true,
-            "type": "array"
           }
         },
         "required": [
@@ -2248,7 +2266,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev31"
+    "version": "0.3.0.dev32"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -2977,6 +2995,7 @@
     },
     "/corpus/{id}/meta/": {
       "get": {
+        "description": "TODO also return some descriptive summary of level annotations?",
         "parameters": [
           {
             "in": "path",
@@ -3024,7 +3043,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get meta data of corpus.",
+        "summary": "Get meta data of corpus. Used for subcorpus creation.",
         "tags": [
           "Corpus"
         ]
@@ -3096,7 +3115,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Set meta data of corpus from encoded s-attribute.",
+        "summary": "Set meta data of corpus from CWB-encoded s-attribute.",
         "tags": [
           "Corpus"
         ]
@@ -3249,7 +3268,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get frequencies of segmentation span annotations.",
+        "summary": "Get frequencies meta data.",
         "tags": [
           "Corpus"
         ]
@@ -3313,6 +3332,7 @@
         ]
       },
       "put": {
+        "description": "# support: one level (protocol, text, etc.)\n# boolean / unicode keys: categorical select\n# numeric / datetime keys: interval select",
         "parameters": [
           {
             "in": "path",
@@ -3442,7 +3462,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get all details of subcorpus.",
+        "summary": "Get details of a subcorpus.",
         "tags": [
           "Corpus"
         ]
