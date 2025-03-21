@@ -32,6 +32,7 @@ export function QueryConcordanceLines({
     clSortOrder,
     clFilterItem,
     clFilterItemPAtt,
+    clContextBreak,
     setPageSize,
     setPageIndex,
     setFilterItem,
@@ -45,6 +46,7 @@ export function QueryConcordanceLines({
     queryConcordances(queryId, {
       primary,
       secondary,
+      contextBreak: clContextBreak,
       window: windowSize,
       filterItem: clFilterItem,
       filterItemPAtt: clFilterItemPAtt,

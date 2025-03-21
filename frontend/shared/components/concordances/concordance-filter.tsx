@@ -129,7 +129,10 @@ export function FilterItemInput({ className }: { className?: string }) {
     clFilterItemPAtt,
   } = useConcordanceFilterContext()
   return (
-    <LabelBox className={className} labelText="Filter Item">
+    <LabelBox
+      className={className}
+      labelText={`Filter Item${clFilterItemPAtt ? ` (on ${clFilterItemPAtt})` : ''}`}
+    >
       <div className="flex gap-1">
         <Input
           readOnly

@@ -7,7 +7,6 @@ import { Button } from '@cads/shared/components/ui/button'
 import {
   ContextBreakInput,
   FilterItemInput,
-  FilterItemLayerInput,
   PrimaryInput,
   SecondaryInput,
   SortByOffsetInput,
@@ -33,7 +32,6 @@ export function QueryFilter({
       <SortOrderInput />
       <ContextBreakInput />
       <FilterItemInput />
-      <FilterItemLayerInput />
       <PrimaryInput />
       <SecondaryInput />
 
