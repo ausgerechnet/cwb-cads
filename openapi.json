@@ -2038,13 +2038,13 @@
             "type": "boolean"
           },
           "bins_datetime": {
-            "description": "intervals are understood as close-left, open-right (start <= value < end)",
+            "description": "intervals are understood as left-closed, right-open (start <= value < end)",
             "items": {},
             "nullable": true,
             "type": "array"
           },
           "bins_numeric": {
-            "description": "intervals are understood as close-left, open-right (start <= value < end)",
+            "description": "intervals are understood as left-closed, right-open (start <= value < end)",
             "items": {},
             "nullable": true,
             "type": "array"
@@ -3332,7 +3332,7 @@
         ]
       },
       "put": {
-        "description": "# support: one level (protocol, text, etc.)\n# boolean / unicode keys: categorical select\n# numeric / datetime keys: interval select",
+        "description": "- boolean / unicode keys: categorical select\n- numeric / datetime keys: interval select",
         "parameters": [
           {
             "in": "path",
@@ -3399,7 +3399,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create subcorpus from stored meta data.",
+        "summary": "Create subcorpus from stored meta data. We only support creation of subcorpora from one key-value pair.",
         "tags": [
           "Corpus"
         ]

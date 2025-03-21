@@ -6,14 +6,16 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Float, Integer, List, Nested, String, DateTime, Tuple
+from apiflask.fields import (Boolean, DateTime, Float, Integer, List, Nested,
+                             String, Tuple)
 from apiflask.validators import OneOf
 from ccc import Corpus as CCCorpus
 from ccc import SubCorpus as CCCSubCorpus
 from flask import abort, current_app
 from numpy import array_split
 from pandas import DataFrame, read_csv, to_datetime
-from sqlalchemy import func, or_, Integer as sql_Integer
+from sqlalchemy import Integer as sql_Integer
+from sqlalchemy import func, or_
 
 from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
@@ -459,11 +461,11 @@ class SubCorpusIn(Schema):
     bins_boolean = Boolean(required=False, allow_none=True)
     bins_numeric = List(
         Tuple((Float, Float)), required=False, allow_none=True,
-        metadata={'description': "intervals are understood as close-left, open-right (start <= value < end)"}
+        metadata={'description': "intervals are understood as left-closed, right-open (start <= value < end)"}
     )
     bins_datetime = List(
         Tuple((DateTime, DateTime)), required=False, allow_none=True,
-        metadata={'description': "intervals are understood as close-left, open-right (start <= value < end)"}
+        metadata={'description': "intervals are understood as left-closed, right-open (start <= value < end)"}
     )
 
     create_nqr = Boolean(required=False, load_default=True)
@@ -617,11 +619,9 @@ def get_subcorpus(id, subcorpus_id):
 @bp.output(SubCorpusOut)
 @bp.auth_required(auth)
 def create_subcorpus(id, json_data):
-    """Create subcorpus from stored meta data.
-
-    # support: one level (protocol, text, etc.)
-    # boolean / unicode keys: categorical select
-    # numeric / datetime keys: interval select
+    """Create subcorpus from stored meta data. We only support creation of subcorpora from one key-value pair.
+    - boolean / unicode keys: categorical select
+    - numeric / datetime keys: interval select
 
     """
 
@@ -635,53 +635,38 @@ def create_subcorpus(id, json_data):
 
     create_nqr = json_data['create_nqr']
 
-    # TODO simplify variables?
-    # values_numeric = json_data.get('values_numeric')
-    # values_datetime = json_data.get('values_datetime')
-    # values_unicode = json_data.get('values_unicode')
-    # value_boolean = json_data.get('value_boolean')
-    # values = values_numeric if values_numeric is not None
-    # else values_unicode if values_unicode is not None
-    # else values_datetime if values_datetime is not None
-    # else value_boolean
-
     segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
     segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=key).first()
     value_type = segmentation_annotation.value_type
-    # TODO allow span selection for numeric and datetime
     values = json_data.get(f'bins_{value_type}')
+
     if values is None:
         abort(400, f'Bad Request: {level}_{key} is of type {value_type}, but no such value(s) provided')
 
+    from sqlalchemy import select
     if value_type in ['unicode', 'boolean']:
-        span_ids = SegmentationSpanAnnotation.query.filter(
+        span_ids = select(SegmentationSpanAnnotation.segmentation_span_id).filter(
             SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
             SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type].in_(values)
         )
-    elif value_type == 'numeric':
-        span_ids = SegmentationSpanAnnotation.query.filter(
+
+    elif value_type in ['numeric', 'datetime']:
+        span_ids = select(SegmentationSpanAnnotation.segmentation_span_id).filter(
             SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
-            or_(
-                *[(SegmentationSpanAnnotation.value_numeric >= start) & (SegmentationSpanAnnotation.value_numeric < end) for start, end in values]
-            )
-        )
-    elif value_type == 'datetime':
-        span_ids = SegmentationSpanAnnotation.query.filter(
-            SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
-            or_(
-                *[(SegmentationSpanAnnotation.value_datetime >= start) & (SegmentationSpanAnnotation.value_datetime < end) for start, end in values]
-            )
+            or_(*[
+                (SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type] >= start) &
+                (SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type] < end) for start, end in values
+            ])
         )
     else:
         raise ValueError()
 
-    # TODO use sqlite filter
-    spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_([s.segmentation_span_id for s in span_ids]))
+    spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_(span_ids.scalar_subquery()))
     df = DataFrame([vars(s) for s in spans])
     if len(df) == 0:
         abort(406, 'empty subcorpus')
-    df = df[['match', 'matchend']]
 
+    df = df[['match', 'matchend']]
     subcorpus = subcorpus_from_df(corpus.cwb_id, name, description, df, level, create_nqr,
                                   cqp_bin=current_app.config['CCC_CQP_BIN'],
                                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],

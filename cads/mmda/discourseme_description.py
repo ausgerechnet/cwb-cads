@@ -5,7 +5,7 @@ import os
 from collections import defaultdict
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Boolean, Float, Integer, Nested, String, List
+from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from ccc.cache import generate_idx
 from ccc.utils import cqp_escape

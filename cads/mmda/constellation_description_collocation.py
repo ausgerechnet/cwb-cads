@@ -16,8 +16,9 @@ from ..breakdown import ccc_breakdown
 from ..collocation import (CollocationIn, CollocationItemOut,
                            CollocationItemsIn, CollocationItemsOut,
                            CollocationOut, get_or_create_counts)
-from ..database import (Breakdown, Collocation, CollocationItem, CollocationItemScore,
-                        CotextLines, Matches, Query, get_or_create)
+from ..database import (Breakdown, Collocation, CollocationItem,
+                        CollocationItemScore, CotextLines, Matches, Query,
+                        get_or_create)
 from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
                      iterative_query)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
@@ -109,48 +110,27 @@ def query_discourseme_cotext(collocation, cotext_id, window, discourseme_descrip
             Matches.query_id == corpus_query.id,
             Matches.match.in_(cotext_subquery) | Matches.matchend.in_(cotext_subquery)
         )
-        # corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos']) | corpus_matches_df['matchend'].isin(df_cotext['cpos'])
-        # subcorpus_matches = Matches.query.filter(
-        #     Matches.query_id == corpus_query.id,
-        #     Matches.match.in_(df_cotext['cpos']) | Matches.matchend.in_(df_cotext['cpos'])
-        # )
     elif overlap == 'full':
         # TODO: this does not ensure that match and matchend are both in the same context_region!
         subcorpus_matches = db.session.query(Matches).filter(
             Matches.query_id == corpus_query.id,
             Matches.match.in_(cotext_subquery) & Matches.matchend.in_(cotext_subquery)
         )
-        # corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos']) & corpus_matches_df['matchend'].isin(df_cotext['cpos'])
-        # subcorpus_matches = Matches.query.filter(
-        #     Matches.query_id == corpus_query.id,
-        #     Matches.match.in_(df_cotext['cpos']) & Matches.matchend.in_(df_cotext['cpos'])
-        # )
     elif overlap == 'match':
         subcorpus_matches = db.session.query(Matches).filter(
             Matches.query_id == corpus_query.id,
             Matches.match.in_(cotext_subquery)
         )
-        # corpus_matches_df['in_context'] = corpus_matches_df['match'].isin(df_cotext['cpos'])
-        # subcorpus_matches = Matches.query.filter(
-        #     Matches.query_id == corpus_query.id,
-        #     Matches.match.in_(df_cotext['cpos'])
-        # )
     elif overlap == 'matchend':
         subcorpus_matches = db.session.query(Matches).filter(
             Matches.query_id == corpus_query.id,
             Matches.matchend.in_(cotext_subquery)
         )
-        # corpus_matches_df['in_context'] = corpus_matches_df['matchend'].isin(df_cotext['cpos'])
-        # subcorpus_matches = Matches.query.filter(
-        #     Matches.query_id == corpus_query.id,
-        #     Matches.matchend.in_(df_cotext['cpos'])
-        # )
     else:
         raise ValueError("overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
     subcorpus_matches_df = DataFrame([vars(s) for s in subcorpus_matches], columns=['match', 'matchend', 'contextid'])
 
-    # subcorpus_matches_df = corpus_matches_df.loc[corpus_matches_df['in_context']]
     if len(subcorpus_matches_df) == 0:
         current_app.logger.debug(
             f'query_discourseme_cotext :: no matches in context for discourseme "{discourseme_description.discourseme.name}"'
@@ -164,15 +144,9 @@ def query_discourseme_cotext(collocation, cotext_id, window, discourseme_descrip
     else:
         corpus = corpus.ccc()
 
-    # current_app.logger.debug('query_discourseme_cotext :: .. creating breakdowns in whole corpus')
-    # corpus_matches_df = corpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
-    # corpus_matches = corpus.subcorpus(df_dump=corpus_matches_df, overwrite=False)
-    # corpus_matches_breakdown = corpus_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f2'}, axis=1)
-
     subcorpus_matches_df = subcorpus_matches_df[['match', 'matchend']].set_index(['match', 'matchend'])
     subcorpus_matches = corpus.subcorpus(df_dump=subcorpus_matches_df, overwrite=False)
     subcorpus_matches_breakdown = subcorpus_matches.breakdown(p_atts=[p_description]).rename({'freq': 'f'}, axis=1)
-    # print(subcorpus_matches_breakdown)
 
     # CollocationDiscoursemeItem
     current_app.logger.debug('query_discourseme_cotext :: .. combining subcorpus and corpus item counts')
@@ -212,14 +186,12 @@ def set_collocation_discourseme_scores(collocation, discourseme_descriptions, ov
     if cotext is None:
         current_app.logger.error('set_collocation_discourseme_scores :: empty cotext')
         return
-    # cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id, CotextLines.offset <= window, CotextLines.offset >= -window)
-    # df_cotext = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True).drop_duplicates(subset='cpos')
 
     # size of cotext
     f1 = db.session.query(db.func.count(db.func.distinct(CotextLines.cpos))).filter(
         CotextLines.cotext_id == cotext.id,
         CotextLines.offset <= window,
-        CotextLines.offset >= -window,
+        CotextLines.offset >= -window
     ).scalar()
 
     current_app.logger.debug('set_collocation_discourseme_scores :: looping through descriptions')
@@ -275,7 +247,6 @@ def get_collocation_discourseme_scores(collocation_id, discourseme_description_i
 
         # global scores
         df_discourseme_global_scores = df_discourseme_items.groupby('discourseme_id').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
-        # df_discourseme_global_scores = df_discourseme_unigram_items.groupby('discourseme_id').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
         df_global_scores = measures.score(df_discourseme_global_scores, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
 
         # output
@@ -650,6 +621,7 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
     set_collocation_discourseme_scores(collocation,
                                        [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
                                        overlap=description.overlap)
+    # TODO: rewrite using get-collocation-discourseme-scores
     discourseme_scores = get_collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
