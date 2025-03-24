@@ -146,7 +146,6 @@ def get_or_create_assisted(json_data, execute=True):
 
     json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
 
-    # TODO: need to filter on None-values
     subcorpus_id = json_data.get('subcorpus_id')
     if subcorpus_id is None:
         query = Query.query.filter_by(
@@ -276,6 +275,7 @@ def filter_matches(focus_query, filter_queries, window, overlap):
             (Matches.query_id == fq.id) &
             (Matches.match == CotextLines.cpos)
         )
+        # TODO use subquery
         matches_in_cotext = set([c.match_pos for c in cotext_lines_match])
         current_app.logger.debug("filter_matches :: filtering cotext: matchends")
         cotext_lines_matchend = cotext_lines.join(
@@ -584,7 +584,7 @@ def get_queries():
     return [QueryOut().dump(query) for query in queries], 200
 
 
-@bp.get('/<id>')
+@bp.get('/<query_id>')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
 def get_query(id):
@@ -622,7 +622,7 @@ def get_query(id):
 #     return QueryOut().dump(query), 200
 
 
-@bp.delete('/<id>')
+@bp.delete('/<query_id>')
 @bp.auth_required(auth)
 def delete_query(id):
     """Delete query.
