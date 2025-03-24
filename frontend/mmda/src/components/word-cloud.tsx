@@ -2,7 +2,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
 import * as d3 from 'd3'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { LocateIcon } from 'lucide-react'
@@ -49,6 +49,7 @@ export default function WordCloud({
   semanticMapId,
   width = 5_000,
   height = 2_000,
+  boardPadding = 300,
   onNewDiscourseme,
   onUpdateDiscourseme,
 }: {
@@ -57,6 +58,7 @@ export default function WordCloud({
   semanticMapId?: number
   width?: number
   height?: number
+  boardPadding?: number
   onNewDiscourseme?: (surfaces: string[]) => void
   onUpdateDiscourseme?: (
     discoursemeDescriptionId: number,
@@ -71,23 +73,32 @@ export default function WordCloud({
   const router = useRouter()
 
   const averageSignificance =
-    wordsInput.reduce((acc, word) => acc + word.significance, 0) /
-    wordsInput.length
+    wordsInput.length === 0
+      ? 1
+      : wordsInput.reduce((acc, word) => acc + word.significance, 0) /
+        wordsInput.length
   const targetSignificance = 0.02
   const significanceScale = targetSignificance / averageSignificance
 
-  const words = wordsInput.map(
-    (word): Word => ({
-      ...word,
-      id: word.item + word.source,
-      significance: word.significance * significanceScale,
-      x: (word.x * width) / 2,
-      y: (word.y * height) / 2,
-      originX: (word.x * width) / 2,
-      originY: (word.y * height) / 2,
-      radius: 0,
-      discoursemeId: word.discoursemeId ?? null,
-    }),
+  const words = useMemo(
+    () =>
+      wordsInput.map(
+        (word): Word => ({
+          ...word,
+          id: word.item + word.source,
+          significance:
+            word.source === 'discoursemes'
+              ? word.significance
+              : word.significance * significanceScale,
+          x: (word.x * (width - boardPadding)) / 2,
+          y: (word.y * (height - boardPadding)) / 2,
+          originX: (word.x * (width - boardPadding)) / 2,
+          originY: (word.y * (height - boardPadding)) / 2,
+          radius: 0,
+          discoursemeId: word.discoursemeId ?? null,
+        }),
+      ),
+    [boardPadding, height, significanceScale, width, wordsInput],
   )
 
   useEffect(() => {
@@ -128,6 +139,9 @@ export default function WordCloud({
       )
     ) {
       topSignificanceValues -= Number.MIN_VALUE * 2
+    }
+    if (words.length < 100) {
+      topSignificanceValues = 0
     }
 
     const drag = d3.drag<SVGCircleElement, Word>()
@@ -348,7 +362,7 @@ export default function WordCloud({
     // minimap background with mask to highlight the viewport
     miniMapBackground
       .append('rect')
-      .attr('class', 'fill-gray-300 dark:fill-white/20 outline-[500px] outline')
+      .attr('class', 'fill-gray-300 dark:fill-white/20')
       .attr('rx', 75)
       .attr('width', width)
       .attr('height', height)
@@ -358,7 +372,7 @@ export default function WordCloud({
     const miniMapViewport = svg
       .select('#highlight-mask')
       .append('rect')
-      .attr('class', 'fill-white outline-[100px]')
+      .attr('class', 'fill-white')
       .attr('width', svgWidth)
       .attr('height', svgHeight)
       .attr('mask', 'url(#mini-map-mask)')
@@ -436,7 +450,7 @@ export default function WordCloud({
           })
       })
 
-    const scaleRange: [number, number] = [1, 5]
+    const scaleRange: [number, number] = [1, 10]
 
     function getNormalizedScale(k: number) {
       return (k - scaleRange[0]) / (scaleRange[1] - scaleRange[0])
@@ -451,7 +465,7 @@ export default function WordCloud({
       svgHeight = svgRef.current?.clientHeight ?? 0
       const baseScale = Math.min(svgWidth / width, svgHeight / height)
       scaleRange[0] = baseScale
-      scaleRange[1] = baseScale * 5
+      scaleRange[1] = baseScale * 10
       zoom.scaleExtent(scaleRange)
       const translationFactor = 0.5
       zoom.translateExtent([
@@ -589,8 +603,8 @@ export default function WordCloud({
       event.subject.isDragging = false
       word.originX = word.x = event.x
       word.originY = word.y = event.y
-      const newX = (event.x / width) * 2
-      const newY = (event.y / height) * 2
+      const newX = (event.x / (width - boardPadding)) * 2
+      const newY = (event.y / (height - boardPadding)) * 2
 
       if (
         word.source === 'items' &&
@@ -611,12 +625,12 @@ export default function WordCloud({
         return
       }
 
-      if (semanticMapId === undefined) {
+      if (semanticMapId !== undefined) {
         updateCoordinates({
           semanticMapId,
           item: word.item,
-          x_user: newX,
-          y_user: newY,
+          x_user: clamp(newX, -1, 1),
+          y_user: clamp(newY, -1, 1),
         })
       }
     }
@@ -631,12 +645,7 @@ export default function WordCloud({
         if (node.source === 'discourseme_items') continue
         const distanceX = node.x - node.originX
         const distanceY = node.y - node.originY
-        const k =
-          alpha *
-          0.02 *
-          homeStrength *
-          // increase strength on higher zoom levels
-          clamp(transformationState.k, 0.5, 2)
+        const k = alpha * 0.05 * homeStrength
 
         node.vx -= distanceX * k * 2
         node.vy -= distanceY * k * 2
@@ -707,6 +716,7 @@ export default function WordCloud({
     semanticMapId,
     onNewDiscourseme,
     onUpdateDiscourseme,
+    boardPadding,
   ])
 
   return (

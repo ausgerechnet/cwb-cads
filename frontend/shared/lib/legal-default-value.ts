@@ -10,5 +10,9 @@ export function legalDefaultValue<T, V>(
     return fallback
   }
   // @ts-expect-error this function checks exactly for what TS complains about
+  if (!legalValues.includes(fallback)) {
+    fallback = legalValues[0]
+  }
+  // @ts-expect-error this function checks exactly for what TS complains about
   return legalValues.includes(defaultValue) ? defaultValue : fallback
 }

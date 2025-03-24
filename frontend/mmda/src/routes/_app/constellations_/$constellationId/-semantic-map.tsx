@@ -281,9 +281,9 @@ function ConstellationDiscoursemesEditor({
         className,
       )}
     >
-      <ErrorMessage error={errorDeleteDiscourseme} />
-      <ErrorMessage error={errorAddDiscourseme} />
-      <ErrorMessage error={errorDeleteItem} />
+      <ErrorMessage
+        error={[errorDeleteDiscourseme, errorAddDiscourseme, errorDeleteItem]}
+      />
 
       <div className="flex justify-between p-2 pr-3">
         <span>

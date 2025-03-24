@@ -219,6 +219,20 @@ type KeywordItemsOut = {
   page_size: number
   sort_by: string
 }
+type MetaFrequenciesOut = {
+  frequencies: Array<MetaFrequencyOut>
+  nr_items: number
+  page_count: number
+  page_number: number
+  page_size: number
+  sort_by: string
+  sort_order: string
+}
+type MetaFrequencyOut = {
+  bin: string
+  nr_spans: number
+  nr_tokens: number
+}
 type MetaOut = {
   annotations: Array<AnnotationsOut>
   level: string
@@ -415,11 +429,22 @@ const MetaIn = z
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
   .passthrough()
-const MetaFrequenciesOut = z
+const MetaFrequencyOut: z.ZodType<MetaFrequencyOut> = z
   .object({
+    bin: z.string(),
     nr_spans: z.number().int(),
     nr_tokens: z.number().int(),
-    value: z.string(),
+  })
+  .passthrough()
+const MetaFrequenciesOut: z.ZodType<MetaFrequenciesOut> = z
+  .object({
+    frequencies: z.array(MetaFrequencyOut),
+    nr_items: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
+    sort_by: z.string(),
+    sort_order: z.string(),
   })
   .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
@@ -764,6 +789,9 @@ const DiscoursemeDescriptionIn: z.ZodType<DiscoursemeDescriptionIn> = z
     subcorpus_id: z.number().int().nullish(),
   })
   .passthrough()
+const DiscoursemeItemsIn = z
+  .object({ p: z.string().nullish(), surface: z.array(z.string()) })
+  .passthrough()
 const BreakdownItemsOut: z.ZodType<BreakdownItemsOut> = z
   .object({
     breakdown_id: z.number().int(),
@@ -810,6 +838,22 @@ const QueryIn = z
     match_strategy: z.enum(['longest', 'shortest', 'standard']).optional(),
     s: z.string().optional(),
     subcorpus_id: z.number().int().nullish(),
+  })
+  .passthrough()
+const CollocationIn = z
+  .object({
+    filter_item: z.string().nullish(),
+    filter_item_p_att: z.string().optional().default('lemma'),
+    filter_overlap: z
+      .enum(['partial', 'full', 'match', 'matchend'])
+      .optional()
+      .default('partial'),
+    marginals: z.enum(['local', 'global']).optional().default('local'),
+    p: z.string(),
+    s_break: z.string().optional(),
+    semantic_map_id: z.number().int().nullish().default(null),
+    semantic_map_init: z.boolean().optional().default(true),
+    window: z.number().int().optional().default(10),
   })
   .passthrough()
 const QueryMetaOut = z
@@ -913,6 +957,7 @@ export const schemas = {
   AnnotationsOut,
   MetaOut,
   MetaIn,
+  MetaFrequencyOut,
   MetaFrequenciesOut,
   SubCorpusOut,
   SubCorpusIn,
@@ -947,11 +992,13 @@ export const schemas = {
   DiscoursemeCoordinatesIn,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
+  DiscoursemeItemsIn,
   BreakdownItemsOut,
   BreakdownOut,
   DiscoursemeDescriptionSimilarOut,
   QueryOut,
   QueryIn,
+  CollocationIn,
   QueryMetaOut,
   SemanticMapIn,
   CoordinatesIn,
@@ -1385,8 +1432,47 @@ const endpoints = makeApi([
         type: 'Query',
         schema: z.string(),
       },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum(['bin', 'nr_spans', 'nr_tokens'])
+          .optional()
+          .default('nr_tokens'),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'nr_bins',
+        type: 'Query',
+        schema: z.number().int().optional().default(30),
+      },
+      {
+        name: 'time_interval',
+        type: 'Query',
+        schema: z
+          .enum(['hour', 'day', 'week', 'month', 'year'])
+          .optional()
+          .default('day'),
+      },
     ],
-    response: z.array(MetaFrequenciesOut),
+    response: MetaFrequenciesOut,
     errors: [
       {
         status: 401,
@@ -2258,6 +2344,11 @@ const endpoints = makeApi([
         schema: z.string(),
       },
       {
+        name: 'return_coordinates',
+        type: 'Query',
+        schema: z.boolean().optional().default(false),
+      },
+      {
         name: 'hide_focus',
         type: 'Query',
         schema: z.boolean().optional().default(true),
@@ -2349,16 +2440,6 @@ const endpoints = makeApi([
         name: 'collocation_id',
         type: 'Path',
         schema: z.string(),
-      },
-      {
-        name: 'hide_focus',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
-      },
-      {
-        name: 'hide_filter',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
       },
       {
         name: 'sort_order',
@@ -3360,6 +3441,51 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: 'patch',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/add-items',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeItemsIn,
+      },
+      {
+        name: 'discourseme_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'update_discourseme',
+        type: 'Query',
+        schema: z.boolean().optional().default(true),
+      },
+    ],
+    response: DiscoursemeDescriptionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'get',
     path: '/mmda/discourseme/:discourseme_id/description/:description_id/breakdown',
     requestFormat: 'json',
@@ -3425,9 +3551,9 @@ const endpoints = makeApi([
         schema: z.number().int().optional().default(200),
       },
       {
-        name: 'min_freq',
+        name: 'embeddings',
         type: 'Query',
-        schema: z.number().int().optional().default(2),
+        schema: z.string().nullish().default(null),
       },
     ],
     response: z.array(DiscoursemeDescriptionSimilarOut),
@@ -3648,62 +3774,19 @@ const endpoints = makeApi([
     ],
   },
   {
-    method: 'get',
+    method: 'put',
     path: '/query/:query_id/collocation',
     requestFormat: 'json',
     parameters: [
       {
+        name: 'body',
+        type: 'Body',
+        schema: CollocationIn,
+      },
+      {
         name: 'query_id',
         type: 'Path',
         schema: z.string(),
-      },
-      {
-        name: 'semantic_map_id',
-        type: 'Query',
-        schema: z.number().int().nullish().default(null),
-      },
-      {
-        name: 'semantic_map_init',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
-      },
-      {
-        name: 'p',
-        type: 'Query',
-        schema: z.string(),
-      },
-      {
-        name: 'window',
-        type: 'Query',
-        schema: z.number().int().optional().default(10),
-      },
-      {
-        name: 'marginals',
-        type: 'Query',
-        schema: z.enum(['local', 'global']).optional().default('local'),
-      },
-      {
-        name: 's_break',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'filter_item',
-        type: 'Query',
-        schema: z.string().nullish(),
-      },
-      {
-        name: 'filter_item_p_att',
-        type: 'Query',
-        schema: z.string().optional().default('lemma'),
-      },
-      {
-        name: 'filter_overlap',
-        type: 'Query',
-        schema: z
-          .enum(['partial', 'full', 'match', 'matchend'])
-          .optional()
-          .default('partial'),
       },
     ],
     response: CollocationOut,

@@ -114,7 +114,7 @@ export const queryConcordances = (
     filterItemPAtt?: string
     pageSize?: number
     pageNumber?: number
-    sortOrder?: 'ascending' | 'descending' | 'random'
+    sortOrder?: 'ascending' | 'descending' | 'random' | 'first'
     sortByOffset?: number
     contextBreak?: string
   } = {},
@@ -153,6 +153,58 @@ export const queryConcordances = (
       }),
   })
 
+export const queryConcordanceContext = (
+  queryId: number,
+  matchId: number,
+  {
+    window,
+    extendedWindow: extended_window,
+    contextBreak: context_break,
+    extendedContextBreak: extended_context_break,
+    primary,
+    secondary,
+    highlightQueryIds: highlight_query_ids = [],
+  }: {
+    window: number
+    extendedWindow: number
+    contextBreak?: string
+    extendedContextBreak?: string
+    primary: string
+    secondary: string
+    highlightQueryIds?: number[]
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'query-concordance-context',
+      queryId,
+      matchId,
+      {
+        window,
+        context_break,
+        extended_window,
+        extended_context_break,
+        primary,
+        secondary,
+        highlight_query_ids,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get('/query/:query_id/concordance/:match_id', {
+        params: { query_id: String(queryId), match_id: String(matchId) },
+        queries: {
+          window,
+          context_break,
+          extended_window,
+          extended_context_break,
+          primary,
+          secondary,
+          highlight_query_ids,
+        },
+        signal,
+      }),
+  })
+
 export const shuffleQueryConcordances: MutationOptions<
   z.infer<typeof schemas.QueryOut>,
   Error,
@@ -177,11 +229,13 @@ export const queryCollocation = (
     semanticBreak: s_break,
     filterItem: filter_item,
     filterItemPAtt: filter_item_p_att,
+    semanticMapInit: semantic_map_init,
   }: {
     window?: number
     semanticBreak?: string
     filterItem?: string
     filterItemPAtt?: string
+    semanticMapInit?: boolean
   } = {},
 ) =>
   queryOptions({
@@ -189,21 +243,24 @@ export const queryCollocation = (
       'query-collocations',
       queryId,
       p,
-      { window, s_break, filter_item, filter_item_p_att },
+      { window, s_break, filter_item, filter_item_p_att, semantic_map_init },
     ],
     queryFn: ({ signal }) =>
-      apiClient.get('/query/:query_id/collocation', {
-        params: { query_id: String(queryId) },
-        queries: {
+      apiClient.put(
+        '/query/:query_id/collocation',
+        {
           p,
           window,
           s_break,
           filter_item,
           filter_item_p_att,
-          semantic_map_init: false,
+          semantic_map_init,
         },
-        signal,
-      }),
+        {
+          params: { query_id: String(queryId) },
+          signal,
+        },
+      ),
   })
 
 // ==================== CORPORA ====================

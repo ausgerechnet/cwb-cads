@@ -40,6 +40,7 @@ import { schemas } from '@/rest-client'
 import { Small } from '@cads/shared/components/ui/typography'
 import { Card } from '@cads/shared/components/ui/card'
 import { formatNumber } from '@cads/shared/lib/format-number'
+import { createLevelKeyMap } from '@cads/shared/lib/create-level-key-map'
 
 export const Route = createLazyFileRoute('/_app/subcorpora_/new')({
   component: SubcorpusNew,
@@ -69,29 +70,15 @@ function SubcorpusNew() {
   const level = form.watch('level')
   const key = form.watch('key')
 
-  const { data: corpus } = useQuery({
+  const { data: corpus, error: errorQuery } = useQuery({
     ...corpusById(corpusId),
     enabled: corpusId !== undefined,
   })
 
-  const levelKeyMap = useMemo(() => {
-    const levelKeyPairs = (corpus?.s_annotations ?? []).map((annotation) => {
-      const [level, key] = annotation.split('_')
-      return { level, key }
-    })
-    return levelKeyPairs.reduce(
-      (acc, { level, key }) => {
-        if (acc[level] === undefined) {
-          acc[level] = []
-        }
-        if (!acc[level].includes(key) && key !== undefined) {
-          acc[level].push(key)
-        }
-        return acc
-      },
-      {} as Record<string, string[]>,
-    )
-  }, [corpus?.s_annotations])
+  const levelKeyMap = useMemo(
+    () => createLevelKeyMap(corpus?.s_annotations ?? []),
+    [corpus?.s_annotations],
+  )
 
   const availableLevels = useMemo(() => Object.keys(levelKeyMap), [levelKeyMap])
   useFormFieldDependency(form, 'level', availableLevels)
@@ -129,7 +116,7 @@ function SubcorpusNew() {
 
   return (
     <AppPageFrame title="New Subcorpus">
-      <ErrorMessage error={[errorCorpusList, errorFrequencies]} />
+      <ErrorMessage error={[errorCorpusList, errorFrequencies, errorQuery]} />
       <Card className="max-w-lg p-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => mutate(data))}>
@@ -283,7 +270,7 @@ function SubcorpusNew() {
                           <ValueListSelect
                             onChange={field.onChange}
                             value={field.value ?? []}
-                            metaFrequencies={dataFrequencies ?? []}
+                            metaFrequencies={dataFrequencies?.frequencies ?? []}
                           />
                         </FormControl>
                       )}
@@ -315,34 +302,33 @@ function ValueListSelect({
   onChange,
   value,
 }: {
-  metaFrequencies: z.infer<typeof schemas.MetaFrequenciesOut>[]
+  metaFrequencies: z.infer<typeof schemas.MetaFrequencyOut>[]
   onChange: (values: string[]) => void
   value: string[]
 }) {
   const selectedMetaFrequencies = useMemo(
-    () =>
-      metaFrequencies.filter((meta) => value.includes(meta.value as string)),
+    () => metaFrequencies.filter((meta) => value.includes(meta.bin)),
     [metaFrequencies, value],
   )
   const nonSelectedMetaFrequencies = metaFrequencies.filter(
-    (meta) => !value.includes(meta.value as string),
+    (meta) => !value.includes(meta.bin),
   )
 
   return (
     <div className="flex flex-col gap-2">
       {selectedMetaFrequencies.map((meta) => (
         <div
-          key={meta.value}
+          key={meta.bin}
           className="border-input ring-ring flex gap-x-4 rounded-md border py-2 pl-4 pr-1 ring-offset-2 focus-within:ring-2"
         >
           <Small className="mx-0 my-auto flex-grow">
-            {meta.value}
+            {meta.bin}
             <span className="text-muted-foreground mt-1 block">
               {formatNumber(meta.nr_tokens ?? 0)} Tokens
             </span>
           </Small>
           <Button
-            onClick={() => onChange(value.filter((i) => i !== meta.value))}
+            onClick={() => onChange(value.filter((i) => i !== meta.bin))}
             variant="ghost"
             type="button"
             size="icon"
@@ -364,13 +350,11 @@ function ValueListSelect({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {nonSelectedMetaFrequencies.map(
-                ({ nr_tokens = 0, value = '' }) => (
-                  <SelectItem value={value} key={value}>
-                    {value} ({formatNumber(nr_tokens)} Tokens)
-                  </SelectItem>
-                ),
-              )}
+              {nonSelectedMetaFrequencies.map(({ nr_tokens = 0, bin = '' }) => (
+                <SelectItem value={bin} key={bin}>
+                  {bin} ({formatNumber(nr_tokens)} Tokens)
+                </SelectItem>
+              ))}
             </SelectGroup>
           </SelectContent>
         </Select>

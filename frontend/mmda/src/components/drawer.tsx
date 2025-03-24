@@ -33,9 +33,9 @@ export function Drawer({
       <Button
         variant="outline"
         className={cn(
-          'rounded-xs absolute left-0 top-0 grid h-8 w-full -translate-y-1/2 grid-cols-[1fr_auto_1fr] place-content-center place-items-center border-none bg-transparent p-0 hover:bg-transparent',
+          'rounded-xs absolute left-0 top-0 grid h-8 w-full -translate-y-1/2 grid-cols-[1fr_auto_1fr] place-content-center place-items-center border-none bg-transparent p-0 text-white hover:bg-transparent',
           'before:bg-primary before:col-span-full before:col-start-1 before:row-start-1 before:mx-0 before:my-auto before:h-px before:w-full before:transition-all hover:before:h-2',
-          'after:bg-primary after:col-start-2 after:row-start-1 after:block after:aspect-square after:h-5 after:rounded-full',
+          'after:bg-primary after::text-white after:col-start-2 after:row-start-1 after:block after:aspect-square after:h-5 after:rounded-full',
         )}
         onClick={() => onToggle(!isVisible)}
       >
