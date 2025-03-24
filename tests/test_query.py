@@ -3,6 +3,7 @@ import pytest
 from pprint import pprint
 
 
+@pytest.mark.now
 def test_create_query(client, auth):
 
     auth_header = auth.login()
@@ -22,7 +23,7 @@ def test_create_query(client, auth):
         queries = client.get(url_for('query.get_queries'),
                              headers=auth_header)
 
-        query = client.get(url_for('query.get_query', id=queries.json[0]['id']),
+        query = client.get(url_for('query.get_query', query_id=queries.json[0]['id']),
                            headers=auth_header)
 
         assert query.status_code == 200
@@ -365,7 +366,7 @@ def test_query_concordance_sort_complete(client, auth):
         assert list(reversed(sorted(tokens))) == tokens
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_query_collocation_scores(client, auth):
 
     auth_header = auth.login()

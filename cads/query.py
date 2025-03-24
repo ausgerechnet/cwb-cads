@@ -587,12 +587,12 @@ def get_queries():
 @bp.get('/<query_id>')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def get_query(id):
+def get_query(query_id):
     """Get details of query.
 
     """
 
-    query = db.get_or_404(Query, id)
+    query = db.get_or_404(Query, query_id)
 
     return QueryOut().dump(query), 200
 
@@ -624,12 +624,12 @@ def get_query(id):
 
 @bp.delete('/<query_id>')
 @bp.auth_required(auth)
-def delete_query(id):
+def delete_query(query_id):
     """Delete query.
 
     """
 
-    query = db.get_or_404(Query, id)
+    query = db.get_or_404(Query, query_id)
     db.session.delete(query)
     db.session.commit()
 
