@@ -15,18 +15,30 @@ from flask import abort, current_app
 from numpy import array_split
 from pandas import DataFrame, read_csv, to_datetime
 from sqlalchemy import Integer as sql_Integer
-from sqlalchemy import func, or_
+from sqlalchemy import select, func, or_
 
 from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
 from .database import (Corpus, CorpusAttributes, Segmentation,
                        SegmentationAnnotation, SegmentationSpan,
-                       SegmentationSpanAnnotation, SubCorpus)
+                       SegmentationSpanAnnotation, SubCorpus,
+                       SubCorpusCollection)
 from .query import (QueryAssistedIn, get_concordance_lines,
                     get_or_create_assisted)
 from .users import auth
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
+
+
+DEFAULT_VALUE_TYPES = {
+    'date': 'datetime',
+    'lp': 'numeric',
+    'n': 'numeric',
+    'session': 'numeric',
+    'no': 'numeric',
+    'counts': 'numeric',
+    'duplicated': 'boolean'
+}
 
 
 def sort_p(p_atts, order=['lemma_pos', 'lemma', 'word']):
@@ -93,7 +105,9 @@ def meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_
     meta_from_df(corpus, df_meta, level, {key: value_type})
 
 
-def meta_from_df(corpus, df_meta, level, column_mapping):
+def meta_from_df(corpus, df_meta, level, column_value_types=dict()):
+
+    column_mapping = {**DEFAULT_VALUE_TYPES, **column_value_types}
 
     # defined = set(df_meta.columns).intersection(set(column_mapping.keys()))
     undefined = set(df_meta.columns) - set(column_mapping.keys())
@@ -172,7 +186,9 @@ def meta_from_df(corpus, df_meta, level, column_mapping):
             df.to_sql("segmentation_span_annotation", con=db.engine, if_exists='append', index=False)
 
 
-def meta_from_within_xml(cwb_id, level="text", column_mapping={}):
+def meta_from_within_xml(cwb_id, level="text", column_value_types=dict()):
+
+    column_mapping = {**DEFAULT_VALUE_TYPES, **column_value_types}
 
     corpus = Corpus.query.filter_by(cwb_id=cwb_id).first()
     cqp_bin = current_app.config['CCC_CQP_BIN']
@@ -405,6 +421,7 @@ def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin,
 
     # get segmentation spans
     # we need to batch here for select clause (hard limit: 500,000 for `column.in_()`)
+    # TODO use sqlite subquery instead
     nr_arrays = int(len(df) / 100000) + 1
     dfs = array_split(df, nr_arrays)
     spans = list()
@@ -458,7 +475,7 @@ class SubCorpusIn(Schema):
     key = String(required=True)
 
     bins_unicode = List(String, required=False, allow_none=True)
-    bins_boolean = Boolean(required=False, allow_none=True)
+    bins_boolean = List(Boolean, required=False, allow_none=True)
     bins_numeric = List(
         Tuple((Float, Float)), required=False, allow_none=True,
         metadata={'description': "intervals are understood as left-closed, right-open (start <= value < end)"}
@@ -466,6 +483,22 @@ class SubCorpusIn(Schema):
     bins_datetime = List(
         Tuple((DateTime, DateTime)), required=False, allow_none=True,
         metadata={'description': "intervals are understood as left-closed, right-open (start <= value < end)"}
+    )
+
+    create_nqr = Boolean(required=False, load_default=True)
+
+
+class SubCorpusCollectionIn(Schema):
+
+    name = String(required=True)
+    description = String(required=False, allow_none=True)
+
+    level = String(required=True)
+    key = String(required=True)
+
+    time_interval = String(
+        required=False, load_default='day', validate=OneOf(['hour', 'day', 'week', 'month', 'year']),
+        metadata={'description': "which bins to use."}
     )
 
     create_nqr = Boolean(required=False, load_default=True)
@@ -519,6 +552,15 @@ class SubCorpusOut(Schema):
     name = String(required=True, dump_default=None, allow_none=True)
     description = String(required=True, dump_default=None, allow_none=True)
     nqr_cqp = String(required=True, dump_default=None, allow_none=True)
+
+
+class SubCorpusCollectionOut(Schema):
+
+    id = Integer(required=True)
+    corpus = Nested(CorpusOut, required=True)
+    name = String(required=True, dump_default=None, allow_none=True)
+    description = String(required=True, dump_default=None, allow_none=True)
+    subcorpora = Nested(SubCorpusOut(many=True), required=True)
 
 
 class AnnotationsOut(Schema):
@@ -643,7 +685,6 @@ def create_subcorpus(id, json_data):
     if values is None:
         abort(400, f'Bad Request: {level}_{key} is of type {value_type}, but no such value(s) provided')
 
-    from sqlalchemy import select
     if value_type in ['unicode', 'boolean']:
         span_ids = select(SegmentationSpanAnnotation.segmentation_span_id).filter(
             SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
@@ -673,6 +714,73 @@ def create_subcorpus(id, json_data):
                                   data_dir=current_app.config['CCC_DATA_DIR'])
 
     return SubCorpusOut().dump(subcorpus), 200
+
+
+@bp.put('/<id>/subcorpus-collection/')
+@bp.input(SubCorpusCollectionIn)
+@bp.output(SubCorpusCollectionOut)
+@bp.auth_required(auth)
+def create_subcorpus_collection(id, json_data):
+    """Create subcorpus collection.
+
+    """
+
+    corpus = db.get_or_404(Corpus, id)
+
+    name = json_data['name']
+    description = json_data.get('description')
+
+    level = json_data['level']
+    key = json_data['key']
+
+    time_interval = json_data.get('time_interval', 'day')
+    create_nqr = json_data['create_nqr']
+
+    # get attribute
+    att = corpus.get_s_att(level=level, key=key)
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
+    segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=key).first()
+
+    collection = SubCorpusCollection(
+        name=name,
+        description=description,
+        corpus_id=corpus.id,
+        level=level,
+        key=key,
+        time_interval=time_interval
+    )
+    db.session.add(collection)
+    db.session.commit()
+
+    # meta frequencies
+    records = get_meta_freq(att, None, time_interval)
+    df_freq = DataFrame(records.all())
+    periods = list(zip(df_freq['bin_index'].tolist(), df_freq['bin_index'].tolist()[1:] + ["999999-12-31"]))
+
+    for start, end in periods:
+        current_app.logger.debug(f"creating subcorpus {start} to {end}")
+        span_ids = select(SegmentationSpanAnnotation.segmentation_span_id).filter(
+            SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
+            (SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type] >= start) &
+            (SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type] < end)
+        )
+
+        spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_(span_ids.scalar_subquery()))
+        df = DataFrame([vars(s) for s in spans])
+        if len(df) > 0:
+            df = df[['match', 'matchend']]
+            subcorpus = subcorpus_from_df(corpus.cwb_id, start, "subcorpus-collection", df, level, create_nqr,
+                                          cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                          registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                          data_dir=current_app.config['CCC_DATA_DIR'])
+            subcorpus.collection_id = collection.id
+
+    db.session.commit()
+
+    return SubCorpusCollectionOut().dump(collection), 200
 
 
 @bp.get('/<id>/meta/')
@@ -883,12 +991,12 @@ def read_meta(cwb_id, path, level):
     - from within XML
     """
 
-    column_mapping = {'date': 'datetime', 'lp': 'numeric', 'role': 'unicode', 'faction': 'unicode'}
+    column_value_types = {}
 
     if not path:
-        meta_from_within_xml(cwb_id, level, column_mapping)
+        meta_from_within_xml(cwb_id, level, column_value_types)
     else:
-        meta_from_tsv(cwb_id, path, level, column_mapping)
+        meta_from_tsv(cwb_id, path, level, column_value_types)
 
 
 @bp.cli.command('subcorpora')

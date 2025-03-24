@@ -287,6 +287,42 @@ def test_meta_frequencies_datetime(client, auth):
 
 
 # @pytest.mark.now
+def test_meta_frequencies_datetime_2(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+
+        client.get("/")
+
+        # discourseme
+        corpora = client.get(url_for('corpus.get_corpora'),
+                             content_type='application/json',
+                             headers=auth_header)
+        assert corpora.status_code == 200
+
+        corpus = client.get(url_for('corpus.get_corpus', id=corpora.json[1]['id']),
+                            content_type='application/json',
+                            headers=auth_header)
+        assert corpus.status_code == 200
+
+        meta = client.put(url_for('corpus.set_meta', id=corpora.json[1]['id']),
+                          json={
+                              'level': 'article', 'key': 'date', 'value_type': 'datetime'
+                          },
+                          content_type='application/json',
+                          headers=auth_header)
+        assert meta.status_code == 200
+
+        freq = client.get(url_for('corpus.get_frequencies', id=corpora.json[1]['id'], level='article', key='date', time_interval='month'),
+                          content_type='application/json',
+                          headers=auth_header)
+        assert freq.status_code == 200
+        # print(freq.json['frequencies'])
+        # assert freq.json['frequencies'][0]['nr_tokens'] == 149800
+
+
+# @pytest.mark.now
 def test_meta_frequencies_numeric(client, auth):
 
     auth_header = auth.login()
@@ -321,7 +357,7 @@ def test_meta_frequencies_numeric(client, auth):
         assert freq.json['frequencies'][0]['nr_tokens'] == 66624
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_meta_frequencies_subcorpus_unicode(client, auth):
 
     auth_header = auth.login()
@@ -362,5 +398,52 @@ def test_meta_frequencies_subcorpus_unicode(client, auth):
                           content_type='application/json',
                           headers=auth_header)
         assert freq.status_code == 200
-        from pprint import pprint
-        pprint(freq.json)
+
+        # pprint(freq.json)
+
+
+@pytest.mark.now
+def test_create_subcorpus_collection(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+
+        client.get("/")
+
+        # discourseme
+        corpora = client.get(url_for('corpus.get_corpora'),
+                             content_type='application/json',
+                             headers=auth_header)
+        assert corpora.status_code == 200
+
+        corpus = client.get(url_for('corpus.get_corpus', id=corpora.json[1]['id']),
+                            content_type='application/json',
+                            headers=auth_header)
+        assert corpus.status_code == 200
+
+        meta = client.get(url_for('corpus.set_meta', id=corpora.json[1]['id']),
+                          json={
+                              'level': 'article', 'key': 'date', 'value_type': 'datetime'
+                          },
+                          content_type='application/json',
+                          headers=auth_header)
+        assert meta.status_code == 200
+
+        collection = client.put(url_for('corpus.create_subcorpus_collection', id=corpora.json[1]['id']),
+                                json={
+                                    'level': 'article', 'key': 'date', 'time_interval': 'day', 'name': 'days'
+                                },
+                                content_type='application/json',
+                                headers=auth_header)
+        assert collection.status_code == 200
+        assert len(collection.json['subcorpora']) == 44
+
+        collection = client.put(url_for('corpus.create_subcorpus_collection', id=corpora.json[1]['id']),
+                                json={
+                                    'level': 'article', 'key': 'date', 'time_interval': 'month', 'name': 'months'
+                                },
+                                content_type='application/json',
+                                headers=auth_header)
+        assert collection.status_code == 200
+        assert len(collection.json['subcorpora']) == 2

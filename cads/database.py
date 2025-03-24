@@ -128,6 +128,7 @@ class Corpus(db.Model):
     attributes = db.relationship('CorpusAttributes', backref='corpus', passive_deletes=True, cascade='all, delete')
     segmentations = db.relationship('Segmentation', backref='corpus', passive_deletes=True, cascade='all, delete')
     subcorpora = db.relationship('SubCorpus', backref='corpus', passive_deletes=True, cascade='all, delete')
+    collections = db.relationship('SubCorpusCollection', backref='corpus', passive_deletes=True, cascade='all, delete')
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
 
     @property
@@ -196,6 +197,7 @@ class SubCorpus(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
+    collection_id = db.Column(db.Integer, db.ForeignKey('sub_corpus_collection.id', ondelete='CASCADE'), index=True)
     segmentation_id = db.Column(db.Integer, db.ForeignKey('segmentation.id', ondelete='CASCADE'), index=True)
 
     name = db.Column(db.Unicode)
@@ -221,6 +223,23 @@ class SubCorpus(db.Model):
         else:
             subcrps = crps.subcorpus(subcorpus_name=self.nqr_cqp)
         return subcrps
+
+
+class SubCorpusCollection(db.Model):
+    """Collection of subcorpora (of one corpus). Created from DateTime variable.
+
+    """
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Unicode)
+    description = db.Column(db.Unicode)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
+    level = db.Column(db.Unicode)
+    key = db.Column(db.Unicode)
+    time_interval = db.Column(db.Unicode)
+    subcorpora = db.relationship('SubCorpus', backref='collection', passive_deletes=True, cascade='all, delete')
 
 
 class Embeddings(db.Model):
