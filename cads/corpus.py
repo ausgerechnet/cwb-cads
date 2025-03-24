@@ -728,11 +728,77 @@ def set_meta(id, json_data):
 @bp.output(MetaFrequenciesOut)
 @bp.auth_required(auth)
 def get_frequencies(id, query_data):
-    """Get frequencies meta data.
+    """Get meta data frequencies in corpus.
 
     """
 
     corpus = db.get_or_404(Corpus, id)
+    level = query_data.get('level')
+    key = query_data.get('key')
+
+    page_number = query_data.get('page_number', 1)
+    page_size = query_data.get('page_size', 20)
+    sort_order = query_data.get('sort_order', 'descending')
+    sort_by = query_data.get('sort_by', 'nr_tokens')
+    sort_by = 'bin_index' if sort_by == 'bin' else sort_by
+
+    nr_bins = query_data.get('nr_bins', 5)
+    time_interval = query_data.get('time_interval', 'day')
+
+    # get attribute
+    att = corpus.get_s_att(level=level, key=key)
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    # meta frequencies
+    records = get_meta_freq(att, nr_bins, time_interval)
+
+    # sorting
+    column_map = {desc["name"]: desc["expr"] for desc in records.column_descriptions}
+
+    if sort_by in column_map:
+        order_by_clause = column_map[sort_by] if sort_order == 'ascending' else column_map[sort_by].desc()
+        records = records.order_by(order_by_clause)
+    else:
+        current_app.logger.error(f"sort_by '{sort_by}' not supported")
+
+    records = records.paginate(page=page_number, per_page=page_size)
+    df_freq = DataFrame(records.items)
+    if att.value_type == 'unicode':
+        df_freq['bin_unicode'] = df_freq['bin_index']
+    elif att.value_type == 'boolean':
+        df_freq['bin_boolean'] = df_freq['bin_index']
+    elif att.value_type == 'numeric':
+        df_freq['bin_numeric'] = list(zip(df_freq['bin_start'], df_freq['bin_end']))
+    elif att.value_type == 'datetime':
+        df_freq['bin_datetime'] = df_freq['bin_index']
+    freq = df_freq.to_dict(orient='records')
+
+    return MetaFrequenciesOut().dump({
+        'sort_by': sort_by,
+        'sort_order': sort_order,
+        'nr_items': records.total,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': records.pages,
+        'value_type': att.value_type,
+        'frequencies': [MetaFrequencyOut().dump(f) for f in freq]
+    }), 200
+
+
+@bp.get('/<id>/subcorpus/<subcorpus_id>/meta/frequencies')
+@bp.input(MetaFrequenciesIn, location='query')
+@bp.output(MetaFrequenciesOut)
+@bp.auth_required(auth)
+def get_frequencies_subcorpus(id, subcorpus_id, query_data):
+    """Get meta data frequencies in subcorpus.
+
+    TODO: implement correctly, this retrieves corpus meta frequencies right now
+
+    """
+
+    corpus = db.get_or_404(Corpus, id)
+    subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
     level = query_data.get('level')
     key = query_data.get('key')
 

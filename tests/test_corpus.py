@@ -122,7 +122,7 @@ def test_create_subcorpus_numeric(client, auth):
         assert subcorpus.status_code == 200
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_create_subcorpus_datetime(client, auth):
 
     auth_header = auth.login()
@@ -319,3 +319,48 @@ def test_meta_frequencies_numeric(client, auth):
                           headers=auth_header)
         assert freq.status_code == 200
         assert freq.json['frequencies'][0]['nr_tokens'] == 66624
+
+
+@pytest.mark.now
+def test_meta_frequencies_subcorpus_unicode(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+
+        client.get("/")
+
+        # discourseme
+        corpora = client.get(url_for('corpus.get_corpora'),
+                             content_type='application/json',
+                             headers=auth_header)
+        assert corpora.status_code == 200
+
+        corpus = client.get(url_for('corpus.get_corpus', id=corpora.json[0]['id']),
+                            content_type='application/json',
+                            headers=auth_header)
+        assert corpus.status_code == 200
+
+        meta = client.get(url_for('corpus.set_meta', id=corpora.json[0]['id']),
+                          json={
+                              'level': 'text', 'key': 'role', 'value_type': 'unicode'
+                          },
+                          content_type='application/json',
+                          headers=auth_header)
+        assert meta.status_code == 200
+
+        subcorpus = client.put(url_for('corpus.create_subcorpus', id=corpora.json[0]['id']),
+                               json={
+                                   'level': 'text', 'key': 'role', 'bins_unicode': ['mp'], 'name': 'Test'
+                               },
+                               content_type='application/json',
+                               headers=auth_header)
+        assert subcorpus.status_code == 200
+
+        freq = client.get(url_for('corpus.get_frequencies_subcorpus', id=corpora.json[0]['id'], subcorpus_id=subcorpus.json['id'],
+                                  level='text', key='role'),
+                          content_type='application/json',
+                          headers=auth_header)
+        assert freq.status_code == 200
+        from pprint import pprint
+        pprint(freq.json)

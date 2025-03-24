@@ -755,6 +755,7 @@ def get_breakdown(query_id, query_data):
 def get_meta(query_id, query_data):
     """Get meta distribution of query.
 
+    TODO: implement correctly, this does not allow pagination etc.
     """
 
     # TODO use get_meta_freq

@@ -2266,7 +2266,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev33"
+    "version": "0.3.0.dev34"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3268,7 +3268,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get frequencies meta data.",
+        "summary": "Get meta data frequencies in corpus.",
         "tags": [
           "Corpus"
         ]
@@ -3463,6 +3463,168 @@
           }
         ],
         "summary": "Get details of a subcorpus.",
+        "tags": [
+          "Corpus"
+        ]
+      }
+    },
+    "/corpus/{id}/subcorpus/{subcorpus_id}/meta/frequencies": {
+      "get": {
+        "description": "TODO: implement correctly, this retrieves corpus meta frequencies right now",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "subcorpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "nr_tokens",
+              "enum": [
+                "bin",
+                "nr_spans",
+                "nr_tokens"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "descending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "how may (equidistant) bins to create. only used for numeric values.",
+            "in": "query",
+            "name": "nr_bins",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "which bins to create for datetime values. only used for datetime values.",
+            "in": "query",
+            "name": "time_interval",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaFrequenciesOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get meta data frequencies in subcorpus.",
         "tags": [
           "Corpus"
         ]
@@ -8722,6 +8884,7 @@
     },
     "/query/{query_id}/meta": {
       "get": {
+        "description": "TODO: implement correctly, this does not allow pagination etc.",
         "parameters": [
           {
             "in": "path",
