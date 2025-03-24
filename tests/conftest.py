@@ -24,6 +24,8 @@ with app.app_context():
 
     subcorpora_from_tsv("GERMAPARL1386", "tests/corpora/germaparl-subcorpora.tsv")
 
+    meta_from_within_xml("TAGESSCHAU-MINI", "article")
+
     import_library("tests/library/", corpus_id=1, username='admin')
 
 

@@ -21,6 +21,7 @@ HOME tests/corpora/data/germaparl1386
 
 ATTRIBUTE word
 ATTRIBUTE pos
+ATTRIBUTE lemma
 
 
 ##
@@ -65,4 +66,3 @@ STRUCTURE p_type	# [annotations]
 
 # <s> ... </s>
 STRUCTURE s
-ATTRIBUTE lemma

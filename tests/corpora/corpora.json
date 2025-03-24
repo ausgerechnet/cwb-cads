@@ -1,10 +1,18 @@
 [
     {
-        "name": "GermaParl (small test corpus)",
+        "name": "GermaParl",
         "cwb_id": "GERMAPARL1386",
         "embeddings": "tests/corpora/embeddings/germaparl.semmap",
         "language": "de",
         "register": "standard",
-        "description": "Bundestag"
+        "description": "Bundestag (small test corpus: 86th session of 13th LP)"
+    },
+    {
+        "name": "tagesschau.de (small test corpus)",
+        "cwb_id": "TAGESSCHAU-MINI",
+        "embeddings": "tests/corpora/embeddings/germaparl.semmap",
+        "language": "de",
+        "register": "standard",
+        "description": "tagesschau.de (small test corpus: 169 articles from early 2010)"
     }
 ]
