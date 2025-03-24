@@ -2031,11 +2031,85 @@
         },
         "type": "object"
       },
+      "SubCorpusCollectionIn": {
+        "properties": {
+          "create_nqr": {
+            "default": true,
+            "type": "boolean"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "time_interval": {
+            "default": "day",
+            "description": "which bins to use.",
+            "enum": [
+              "hour",
+              "day",
+              "week",
+              "month",
+              "year"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "level",
+          "name"
+        ],
+        "type": "object"
+      },
+      "SubCorpusCollectionOut": {
+        "properties": {
+          "corpus": {
+            "$ref": "#/components/schemas/CorpusOut"
+          },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "nullable": true,
+            "type": "string"
+          },
+          "subcorpora": {
+            "items": {
+              "$ref": "#/components/schemas/SubCorpusOut"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "corpus",
+          "description",
+          "id",
+          "name",
+          "subcorpora"
+        ],
+        "type": "object"
+      },
       "SubCorpusIn": {
         "properties": {
           "bins_boolean": {
+            "items": {
+              "type": "boolean"
+            },
             "nullable": true,
-            "type": "boolean"
+            "type": "array"
           },
           "bins_datetime": {
             "description": "intervals are understood as left-closed, right-open (start <= value < end)",
@@ -2266,7 +2340,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev34"
+    "version": "0.3.0.dev35"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3269,6 +3343,80 @@
           }
         ],
         "summary": "Get meta data frequencies in corpus.",
+        "tags": [
+          "Corpus"
+        ]
+      }
+    },
+    "/corpus/{id}/subcorpus-collection/": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubCorpusCollectionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubCorpusCollectionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create subcorpus collection.",
         "tags": [
           "Corpus"
         ]
