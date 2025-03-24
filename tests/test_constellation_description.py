@@ -341,7 +341,7 @@ def test_associations(client, auth):
         assert all(v in associations.json['scores'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])
         assert all(v in associations.json['scaled_scores'][0].keys() for v in ['measure', 'score', 'node', 'candidate'])
 
-        print(associations.json)
+        # print(associations.json)
 
 
 def test_associations_empty(client, auth):

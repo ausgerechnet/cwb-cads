@@ -56,7 +56,7 @@ def test_map(client, auth):
         assert m.status_code == 200
 
         df = DataFrame(m.json['map'])
-        print(df.loc[df.duplicated(subset=['item', 'source'], keep=False)])
+        # print(df.loc[df.duplicated(subset=['item', 'source'], keep=False)])
 
 
 @pytest.mark.now
@@ -136,4 +136,4 @@ def test_discourseme_creation(client, auth):
 
         assert collocation.status_code == 200
 
-        print(collocation.json)
+        # print(collocation.json)

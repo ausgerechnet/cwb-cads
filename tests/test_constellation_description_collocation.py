@@ -102,13 +102,13 @@ def test_constellation_collocation_scaled_scores(client, auth):
                                   },
                                   headers=auth_header)
         assert description.status_code == 200
-        print(url_for('mmda.constellation.description.collocation.create_collocation',
-                      constellation_id=constellation.json['id'],
-                      description_id=description.json['id']))
+        # print(url_for('mmda.constellation.description.collocation.create_collocation',
+        #               constellation_id=constellation.json['id'],
+        #               description_id=description.json['id']))
 
-        print(url_for('mmda.constellation.description.collocation.get_or_create_collocation',
-                      constellation_id=constellation.json['id'],
-                      description_id=description.json['id']))
+        # print(url_for('mmda.constellation.description.collocation.get_or_create_collocation',
+        #               constellation_id=constellation.json['id'],
+        #               description_id=description.json['id']))
 
         collocation = client.post(url_for('mmda.constellation.description.collocation.create_collocation',
                                           constellation_id=constellation.json['id'],

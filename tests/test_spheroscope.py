@@ -55,4 +55,4 @@ def test_execute_slot_query(client, auth):
                                  headers=auth_header)
 
         assert slot_query.status_code == 200
-        pprint(slot_query)
+        # pprint(slot_query)
