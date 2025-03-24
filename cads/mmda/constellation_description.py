@@ -11,7 +11,7 @@ from flask import current_app
 from pandas import DataFrame
 
 from .. import db
-from ..concordance import ConcordanceIn, ConcordanceOut, ccc_concordance
+from ..concordance import ConcordanceLineIn, ConcordanceLineOut, ConcordanceIn, ConcordanceOut, ccc_concordance
 from ..database import Corpus
 from ..query import ccc_query, get_or_create_query_item
 from ..users import auth
@@ -525,6 +525,44 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
                                       sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
 
     return ConcordanceOut().dump(concordance), 200
+
+
+@bp.get("/<description_id>/concordance/<match_id>")
+@bp.input(ConcordanceLineIn, location='query')
+@bp.input({'focus_discourseme_id': Integer(required=True)}, location='query', arg_name='query_focus')
+@bp.output(ConcordanceLineOut)
+@bp.auth_required(auth)
+def concordance_line(constellation_id, description_id, match_id, query_data, query_focus):
+
+    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
+    description = db.get_or_404(ConstellationDescription, description_id)
+
+    # display options
+    primary = query_data.get('primary')
+    secondary = query_data.get('secondary')
+
+    window = query_data.get('window')
+    context_break = query_data.get('context_break')
+
+    extended_window = query_data.get('extended_window')
+    extended_context_break = query_data.get('extended_context_break')
+
+    # select and categorise queries
+    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
+    focus_query = highlight_queries[query_focus['focus_discourseme_id']]
+
+    # attributes to show
+    p_show = [primary, secondary]
+    s_show = focus_query.corpus.s_annotations
+
+    concordance = ccc_concordance(focus_query,
+                                  p_show, s_show,
+                                  window, context_break,
+                                  extended_window, extended_context_break,
+                                  highlight_queries,
+                                  match_id)
+
+    return ConcordanceLineOut().dump(concordance['lines'][0]), 200
 
 
 # ASSOCIATIONS

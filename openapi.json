@@ -2266,7 +2266,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev32"
+    "version": "0.3.0.dev33"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -5598,6 +5598,172 @@
         ]
       }
     },
+    "/mmda/constellation/{constellation_id}/description/{description_id}/concordance/{match_id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "match_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "focus_discourseme_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "tokens outside of window will be marked \"out of window\" (also used for filtering)",
+            "in": "query",
+            "name": "window",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "tokens in s-att instances other than the one at match will be marked \"out of window\" (also used for filtering)",
+            "in": "query",
+            "name": "context_break",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "maximum number of tokens to display",
+            "in": "query",
+            "name": "extended_window",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "structural attribute to break extended context",
+            "in": "query",
+            "name": "extended_context_break",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "description": "primary positional attribute",
+            "in": "query",
+            "name": "primary",
+            "required": false,
+            "schema": {
+              "default": "word",
+              "type": "string"
+            }
+          },
+          {
+            "description": "secondary positional attribute",
+            "in": "query",
+            "name": "secondary",
+            "required": false,
+            "schema": {
+              "default": "lemma",
+              "type": "string"
+            }
+          },
+          {
+            "description": "queries to highlight in (extended) context",
+            "explode": true,
+            "in": "query",
+            "name": "highlight_query_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConcordanceLineOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Concordance Line",
+        "tags": [
+          "Mmda.Constellation.Description"
+        ]
+      }
+    },
     "/mmda/constellation/{constellation_id}/description/{description_id}/discourseme-description": {
       "post": {
         "description": "(1) create a discourseme with provided template items\n(2) create a suitable description in the constellation description corpus\n(3) link discourseme to constellation\n(4) link discourseme description and constellation description",
@@ -7850,12 +8016,12 @@
         ]
       }
     },
-    "/query/{id}": {
+    "/query/{query_id}": {
       "delete": {
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "query_id",
             "required": true,
             "schema": {
               "type": "string"
@@ -7906,7 +8072,7 @@
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "query_id",
             "required": true,
             "schema": {
               "type": "string"
