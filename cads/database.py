@@ -158,6 +158,15 @@ class Corpus(db.Model):
     def nr_tokens(self):
         return self.ccc().size()
 
+    def get_s_att(self, level, key):
+        att = None
+        for s in self.segmentations:
+            if s.level == level:
+                for ann in s.annotations:
+                    if ann.key == key:
+                        att = ann
+        return att
+
     def ccc(self):
         return Crps(corpus_name=self.cwb_id,
                     lib_dir=current_app.config['CCC_LIB_DIR'],

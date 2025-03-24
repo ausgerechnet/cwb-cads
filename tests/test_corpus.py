@@ -234,7 +234,7 @@ def test_meta_frequencies_unicode(client, auth):
                           headers=auth_header)
         assert freq.status_code == 200
 
-        print(freq.json)
+        # print(freq.json)
 
         # meta = client.put(url_for('corpus.set_meta', id=corpora.json[0]['id']),
         #                   json={
@@ -248,8 +248,7 @@ def test_meta_frequencies_unicode(client, auth):
                           content_type='application/json',
                           headers=auth_header)
         assert freq.status_code == 200
-
-        print(freq.json)
+        assert freq.json['frequencies'][0]['nr_tokens'] == 9741
 
 
 # @pytest.mark.now
@@ -284,8 +283,7 @@ def test_meta_frequencies_datetime(client, auth):
                           content_type='application/json',
                           headers=auth_header)
         assert freq.status_code == 200
-
-        print(freq.json)
+        assert freq.json['frequencies'][0]['nr_tokens'] == 149800
 
 
 # @pytest.mark.now
@@ -320,5 +318,4 @@ def test_meta_frequencies_numeric(client, auth):
                           content_type='application/json',
                           headers=auth_header)
         assert freq.status_code == 200
-
-        print(freq.json)
+        assert freq.json['frequencies'][0]['nr_tokens'] == 66624

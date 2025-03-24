@@ -226,6 +226,35 @@ def get_meta_frequencies(corpus, level, key):
     return records
 
 
+def get_meta_number_tokens(corpus, level, key):
+
+    # get attribute
+    att = None
+    for s in corpus.segmentations:
+        if s.level == level:
+            for ann in s.annotations:
+                if ann.key == key:
+                    att = ann
+                    value_type = ann.value_type
+                    segmentation_annotation_id = ann.id
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    # number of tokens
+    records = db.session.query(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
+        func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('total_span')
+    ).filter_by(
+        segmentation_annotation_id=segmentation_annotation_id
+    ).join(
+        SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
+    ).group_by(
+        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
+    ).all()
+
+    return records
+
+
 def get_meta_freq(att, nr_bins=30, time_interval='hour'):
 
     time_formats = {
@@ -282,35 +311,6 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
     ).group_by(
         'bin_index'
     )
-
-    return records
-
-
-def get_meta_number_tokens(corpus, level, key):
-
-    # get attribute
-    att = None
-    for s in corpus.segmentations:
-        if s.level == level:
-            for ann in s.annotations:
-                if ann.key == key:
-                    att = ann
-                    value_type = ann.value_type
-                    segmentation_annotation_id = ann.id
-    if att is None:
-        abort(404, 'annotation layer not found')
-
-    # number of tokens
-    records = db.session.query(
-        SegmentationSpanAnnotation.__table__.c['value_' + value_type],
-        func.sum(SegmentationSpan.matchend - SegmentationSpan.match + 1).label('total_span')
-    ).filter_by(
-        segmentation_annotation_id=segmentation_annotation_id
-    ).join(
-        SegmentationSpan, SegmentationSpanAnnotation.segmentation_span_id == SegmentationSpan.id
-    ).group_by(
-        SegmentationSpanAnnotation.__table__.c['value_' + value_type]
-    ).all()
 
     return records
 
@@ -745,17 +745,12 @@ def get_frequencies(id, query_data):
     nr_bins = query_data.get('nr_bins', 5)
     time_interval = query_data.get('time_interval', 'day')
 
-    # get attribute TODO simplify
-    att = None
-    for s in corpus.segmentations:
-        if s.level == level:
-            for ann in s.annotations:
-                if ann.key == key:
-                    att = ann
+    # get attribute
+    att = corpus.get_s_att(level=level, key=key)
     if att is None:
         abort(404, 'annotation layer not found')
 
-    value_type = att.value_type
+    # meta frequencies
     records = get_meta_freq(att, nr_bins, time_interval)
 
     # sorting
@@ -786,7 +781,7 @@ def get_frequencies(id, query_data):
         'page_size': page_size,
         'page_number': page_number,
         'page_count': records.pages,
-        'value_type': value_type,
+        'value_type': att.value_type,
         'frequencies': [MetaFrequencyOut().dump(f) for f in freq]
     }), 200
 
