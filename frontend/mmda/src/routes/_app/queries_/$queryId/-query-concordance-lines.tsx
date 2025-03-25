@@ -84,7 +84,6 @@ export function QueryConcordanceLines({
             rowCount={clPageSize}
             fetchContext={fetchContext}
             onItemClick={(word) => {
-              console.log('clicked:', word)
               setFilterItem(word.secondary, secondary)
             }}
           />
