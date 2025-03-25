@@ -219,6 +219,14 @@ type KeywordItemsOut = {
   page_size: number
   sort_by: string
 }
+type LevelOut = {
+  annotations: Array<AnnotationsOut>
+  level: string
+}
+type AnnotationsOut = {
+  key: string
+  value_type: 'datetime' | 'numeric' | 'boolean' | 'unicode'
+}
 type MetaFrequenciesOut = {
   frequencies: Array<MetaFrequencyOut>
   nr_items: number
@@ -227,19 +235,19 @@ type MetaFrequenciesOut = {
   page_size: number
   sort_by: string
   sort_order: string
+  value_type: 'datetime' | 'numeric' | 'boolean' | 'unicode'
 }
 type MetaFrequencyOut = {
-  bin: string
+  bin_boolean?: (boolean | null) | undefined
+  bin_datetime?: (string | null) | undefined
+  bin_numeric?: unknown | undefined
+  bin_unicode?: (string | null) | undefined
   nr_spans: number
   nr_tokens: number
 }
 type MetaOut = {
-  annotations: Array<AnnotationsOut>
-  level: string
-}
-type AnnotationsOut = {
-  key: string
-  value_type: 'datetime' | 'numeric' | 'boolean' | 'unicode'
+  corpus_id: number
+  levels: Array<LevelOut>
 }
 type SlotQueryIn = {
   corpus_id: number
@@ -267,12 +275,12 @@ type SlotQueryOut = Partial<{
   name: string
   slots: Array<AnchorSlot>
 }>
-type SubCorpusOut = {
+type SubCorpusCollectionOut = {
   corpus: CorpusOut
   description: string | null
   id: number
   name: string | null
-  nqr_cqp: string | null
+  subcorpora: Array<SubCorpusOut>
 }
 type CorpusOut = {
   cwb_id: string
@@ -284,6 +292,13 @@ type CorpusOut = {
   register: string | null
   s_annotations: Array<string>
   s_atts: Array<string>
+}
+type SubCorpusOut = {
+  corpus: CorpusOut
+  description: string | null
+  id: number
+  name: string | null
+  nqr_cqp: string | null
 }
 
 const CollocationOut = z
@@ -419,8 +434,11 @@ const AnnotationsOut: z.ZodType<AnnotationsOut> = z
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
   .passthrough()
-const MetaOut: z.ZodType<MetaOut> = z
+const LevelOut: z.ZodType<LevelOut> = z
   .object({ annotations: z.array(AnnotationsOut), level: z.string() })
+  .passthrough()
+const MetaOut: z.ZodType<MetaOut> = z
+  .object({ corpus_id: z.number().int(), levels: z.array(LevelOut) })
   .passthrough()
 const MetaIn = z
   .object({
@@ -431,7 +449,10 @@ const MetaIn = z
   .passthrough()
 const MetaFrequencyOut: z.ZodType<MetaFrequencyOut> = z
   .object({
-    bin: z.string(),
+    bin_boolean: z.boolean().nullish(),
+    bin_datetime: z.string().nullish(),
+    bin_numeric: z.unknown().nullish(),
+    bin_unicode: z.string().nullish(),
     nr_spans: z.number().int(),
     nr_tokens: z.number().int(),
   })
@@ -445,6 +466,20 @@ const MetaFrequenciesOut: z.ZodType<MetaFrequenciesOut> = z
     page_size: z.number().int(),
     sort_by: z.string(),
     sort_order: z.string(),
+    value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
+  })
+  .passthrough()
+const SubCorpusCollectionIn = z
+  .object({
+    create_nqr: z.boolean().optional().default(true),
+    description: z.string().nullish(),
+    key: z.string(),
+    level: z.string(),
+    name: z.string(),
+    time_interval: z
+      .enum(['hour', 'day', 'week', 'month', 'year'])
+      .optional()
+      .default('day'),
   })
   .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
@@ -456,16 +491,26 @@ const SubCorpusOut: z.ZodType<SubCorpusOut> = z
     nqr_cqp: z.string().nullable(),
   })
   .passthrough()
+const SubCorpusCollectionOut: z.ZodType<SubCorpusCollectionOut> = z
+  .object({
+    corpus: CorpusOut,
+    description: z.string().nullable(),
+    id: z.number().int(),
+    name: z.string().nullable(),
+    subcorpora: z.array(SubCorpusOut),
+  })
+  .passthrough()
 const SubCorpusIn = z
   .object({
+    bins_boolean: z.array(z.boolean()).nullish(),
+    bins_datetime: z.array(z.unknown()).nullish(),
+    bins_numeric: z.array(z.unknown()).nullish(),
+    bins_unicode: z.array(z.string()).nullish(),
     create_nqr: z.boolean().optional().default(true),
     description: z.string().nullish(),
     key: z.string(),
     level: z.string(),
     name: z.string(),
-    value_boolean: z.boolean().nullish(),
-    values_numeric: z.array(z.number()).nullish(),
-    values_unicode: z.array(z.string()).nullish(),
   })
   .passthrough()
 const KeywordOut = z
@@ -955,11 +1000,14 @@ export const schemas = {
   ConcordanceLineOut,
   ConcordanceOut,
   AnnotationsOut,
+  LevelOut,
   MetaOut,
   MetaIn,
   MetaFrequencyOut,
   MetaFrequenciesOut,
+  SubCorpusCollectionIn,
   SubCorpusOut,
+  SubCorpusCollectionOut,
   SubCorpusIn,
   KeywordOut,
   KeywordIn,
@@ -1355,6 +1403,7 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/corpus/:id/meta/',
+    description: `TODO also return some descriptive summary of level annotations?`,
     requestFormat: 'json',
     parameters: [
       {
@@ -1363,7 +1412,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: z.array(MetaOut),
+    response: MetaOut,
     errors: [
       {
         status: 401,
@@ -1492,6 +1541,41 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: 'put',
+    path: '/corpus/:id/subcorpus-collection/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SubCorpusCollectionIn,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SubCorpusCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'get',
     path: '/corpus/:id/subcorpus/',
     requestFormat: 'json',
@@ -1519,6 +1603,8 @@ const endpoints = makeApi([
   {
     method: 'put',
     path: '/corpus/:id/subcorpus/',
+    description: `- boolean / unicode keys: categorical select
+- numeric / datetime keys: interval select`,
     requestFormat: 'json',
     parameters: [
       {
@@ -1578,6 +1664,91 @@ const endpoints = makeApi([
         status: 404,
         description: `Not found`,
         schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/:id/subcorpus/:subcorpus_id/meta/frequencies',
+    description: `TODO: implement correctly, this retrieves corpus meta frequencies right now`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'subcorpus_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'level',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'key',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum(['bin', 'nr_spans', 'nr_tokens'])
+          .optional()
+          .default('nr_tokens'),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'nr_bins',
+        type: 'Query',
+        schema: z.number().int().optional().default(30),
+      },
+      {
+        name: 'time_interval',
+        type: 'Query',
+        schema: z
+          .enum(['hour', 'day', 'week', 'month', 'year'])
+          .optional()
+          .default('day'),
+      },
+    ],
+    response: MetaFrequenciesOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
       },
     ],
   },
@@ -2613,6 +2784,86 @@ const endpoints = makeApi([
       },
     ],
     response: ConcordanceOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/concordance/:match_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'match_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'focus_discourseme_id',
+        type: 'Query',
+        schema: z.number().int(),
+      },
+      {
+        name: 'window',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'context_break',
+        type: 'Query',
+        schema: z.string().nullish().default(null),
+      },
+      {
+        name: 'extended_window',
+        type: 'Query',
+        schema: z.number().int().optional().default(25),
+      },
+      {
+        name: 'extended_context_break',
+        type: 'Query',
+        schema: z.string().nullish().default(null),
+      },
+      {
+        name: 'primary',
+        type: 'Query',
+        schema: z.string().optional().default('word'),
+      },
+      {
+        name: 'secondary',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'highlight_query_ids',
+        type: 'Query',
+        schema: z.array(z.number().int()).optional().default([]),
+      },
+    ],
+    response: ConcordanceLineOut,
     errors: [
       {
         status: 401,
@@ -3690,11 +3941,11 @@ const endpoints = makeApi([
   },
   {
     method: 'delete',
-    path: '/query/:id',
+    path: '/query/:query_id',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'query_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -3715,11 +3966,11 @@ const endpoints = makeApi([
   },
   {
     method: 'get',
-    path: '/query/:id',
+    path: '/query/:query_id',
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'query_id',
         type: 'Path',
         schema: z.string(),
       },
@@ -4019,6 +4270,7 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/query/:query_id/meta',
+    description: `TODO: implement correctly, this does not allow pagination etc.`,
     requestFormat: 'json',
     parameters: [
       {
