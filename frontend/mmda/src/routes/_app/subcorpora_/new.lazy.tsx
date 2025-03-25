@@ -1,20 +1,29 @@
-import { useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import { Loader2, X } from 'lucide-react'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
+import { Loader2Icon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
-  corpusById,
   corpusList,
+  corpusMeta,
   corpusMetaFrequencies,
   createSubcorpus,
 } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { CorpusSelect } from '@/components/select-corpus'
+import {
+  MetaFrequencyDatetimeInput,
+  MetaFrequencyUnicodeInput,
+} from '@cads/shared/components/meta-frequency'
 import {
   Form,
   FormControl,
@@ -36,11 +45,10 @@ import {
   SelectContent,
 } from '@cads/shared/components/ui/select'
 import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
-import { schemas } from '@/rest-client'
-import { Small } from '@cads/shared/components/ui/typography'
 import { Card } from '@cads/shared/components/ui/card'
-import { formatNumber } from '@cads/shared/lib/format-number'
-import { createLevelKeyMap } from '@cads/shared/lib/create-level-key-map'
+import { LabelBox } from '@cads/shared/components/label-box'
+import { ToggleBar } from '@cads/shared/components/toggle-bar'
+import { useDebouncedValue } from '@cads/shared/lib/use-debounced-value'
 
 export const Route = createLazyFileRoute('/_app/subcorpora_/new')({
   component: SubcorpusNew,
@@ -54,8 +62,10 @@ const SubcorpusPut = z.object({
   key: z.string(),
   level: z.string(),
   name: z.string(),
-  // TODO: In the future this should also support value_bolean, value_numeric
-  values_unicode: z.array(z.string()),
+  bins_unicode: z.array(z.string()).nullable(),
+  bins_datetime: z.array(z.string()).nullable(),
+  bins_numeric: z.array(z.number()).nullable(),
+  bins_boolean: z.array(z.boolean()).nullable(),
 })
 
 type SubcorpusPut = z.infer<typeof SubcorpusPut>
@@ -70,33 +80,41 @@ function SubcorpusNew() {
   const level = form.watch('level')
   const key = form.watch('key')
 
-  const { data: corpus, error: errorQuery } = useQuery({
-    ...corpusById(corpusId),
+  const {
+    data: dataMeta,
+    isLoading: isLoadingCorpus,
+    error: errorCorpus,
+  } = useQuery({
+    ...corpusMeta(corpusId),
     enabled: corpusId !== undefined,
   })
 
-  const levelKeyMap = useMemo(
-    () => createLevelKeyMap(corpus?.s_annotations ?? []),
-    [corpus?.s_annotations],
-  )
+  const levelKeyMap = useMemo(() => {
+    const entries: [string, string[]][] =
+      dataMeta?.levels.map((levelDescription) => {
+        const keys = levelDescription.annotations.map(
+          (annotation) => annotation.key,
+        )
+        return [levelDescription.level, keys]
+      }) ?? []
+    return Object.fromEntries(entries)
+  }, [dataMeta?.levels])
+
+  const metaValueType = useMemo(() => {
+    return dataMeta?.levels
+      .find((levelDescription) => levelDescription.level === level)
+      ?.annotations.find((annotation) => annotation.key === key)?.value_type
+  }, [dataMeta?.levels, key, level])
 
   const availableLevels = useMemo(() => Object.keys(levelKeyMap), [levelKeyMap])
+
   useFormFieldDependency(form, 'level', availableLevels)
+
   const availableKeys = useMemo(
     () => levelKeyMap[level ?? ''] ?? [],
     [levelKeyMap, level],
   )
   useFormFieldDependency(form, 'key', availableKeys)
-
-  const {
-    data: dataFrequencies,
-    isLoading: isLoadingFrequencies,
-    error: errorFrequencies,
-  } = useQuery({
-    ...corpusMetaFrequencies(corpusId, level, key, 'unicode'),
-    retry: 0,
-    enabled: corpusId !== undefined && level !== undefined && key !== undefined,
-  })
 
   const { mutate, isPending, error } = useMutation({
     ...createSubcorpus,
@@ -112,14 +130,102 @@ function SubcorpusNew() {
       toast.error('Failed to create subcorpus')
     },
   })
-  const isDisabled = isLoadingFrequencies || isPending
+
+  const [sortBy, setSortBy] = useState<'bin' | 'nr_tokens' | 'nr_spans'>(
+    'nr_tokens',
+  )
+  const [timeInterval, setTimeInterval] = useState<
+    'hour' | 'day' | 'week' | 'month' | 'year'
+  >('year')
+  const [nrBins, setNrBins] = useState(30)
+  const debouncedNrBins = useDebouncedValue(nrBins, 500)
+
+  const { data, fetchNextPage, hasNextPage, isFetching, isLoading } =
+    useInfiniteQuery({
+      ...corpusMetaFrequencies(corpusId, level, key, {
+        pageSize: 50,
+        sortBy: metaValueType === 'datetime' ? 'bin' : sortBy,
+        sortOrder: 'descending',
+        timeInterval: metaValueType === 'datetime' ? timeInterval : undefined,
+        nrBins: debouncedNrBins,
+      }),
+      select: (data) => ({
+        ...data,
+        nrItems: data.pages[0]?.nr_items ?? 0,
+        loadedItems: data.pages.reduce(
+          (acc, page) => acc + page.frequencies.length,
+          0,
+        ),
+        frequencies:
+          data.pages
+            .flatMap((page) => page.frequencies)
+            .map((frequency) => ({
+              value:
+                frequency.bin_boolean ??
+                frequency.bin_datetime ??
+                frequency.bin_numeric ??
+                frequency.bin_unicode,
+              nrSpans: frequency.nr_spans,
+              nrTokens: frequency.nr_tokens,
+            })) ?? [],
+        legalFrequencyValues:
+          data.pages
+            .flatMap((page) => page.frequencies)
+            .map(
+              (frequency) =>
+                frequency.bin_boolean ??
+                frequency.bin_datetime ??
+                frequency.bin_numeric ??
+                frequency.bin_unicode,
+            ) ?? [],
+      }),
+      retry: 0,
+      enabled: Boolean(level) && Boolean(key),
+    })
+
+  const frequencies = useMemo(
+    () => data?.frequencies ?? [],
+    [data?.frequencies],
+  )
+
+  useEffect(() => {
+    form.setValue('bins_datetime', null)
+    form.setValue('bins_numeric', null)
+    form.setValue('bins_boolean', null)
+    form.setValue('bins_unicode', null)
+  }, [form, key, level, sortBy])
+
+  const isDisabled = isPending
 
   return (
     <AppPageFrame title="New Subcorpus">
-      <ErrorMessage error={[errorCorpusList, errorFrequencies, errorQuery]} />
-      <Card className="max-w-lg p-4">
+      <ErrorMessage error={[errorCorpusList, errorCorpus]} />
+
+      <Card className="max-w-2xl p-4">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => mutate(data))}>
+          <form
+            onSubmit={form.handleSubmit((data) => {
+              // Validate that at least one bin is selected
+              if (
+                (data.bins_datetime === null ||
+                  data.bins_datetime?.length === 0) &&
+                (data.bins_numeric === null ||
+                  data.bins_numeric?.length === 0) &&
+                (data.bins_boolean === null ||
+                  data.bins_unicode?.length === 0) &&
+                (data.bins_unicode === null || data.bins_unicode?.length === 0)
+              ) {
+                toast.error('Please select a bin')
+                if (metaValueType !== undefined) {
+                  form.setError(`bins_${metaValueType}`, {
+                    message: 'Required',
+                  })
+                }
+              } else {
+                mutate(data)
+              }
+            })}
+          >
             <fieldset disabled={isPending} className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -214,7 +320,16 @@ function SubcorpusNew() {
                         </SelectContent>
                       </Select>
                     </FormControl>
+
                     <FormMessage />
+
+                    {corpusId !== undefined &&
+                      !isLoadingCorpus &&
+                      availableLevels.length === 0 && (
+                        <p className="text-destructive text-sm font-medium">
+                          No levels available for this corpus
+                        </p>
+                      )}
                   </FormItem>
                 )}
               />
@@ -256,28 +371,108 @@ function SubcorpusNew() {
                 )}
               />
 
-              {key !== undefined && (
+              {key !== undefined && metaValueType !== 'datetime' && (
+                <LabelBox labelText="Sort by">
+                  <ToggleBar
+                    options={[
+                      'bin',
+                      ['nr_tokens', '#tokens'],
+                      ['nr_spans', '#spans'],
+                    ]}
+                    value={sortBy}
+                    onChange={setSortBy}
+                  />
+                </LabelBox>
+              )}
+
+              {metaValueType === 'numeric' && (
+                <LabelBox labelText="Bin Number">
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={String(nrBins)}
+                    onChange={(event) => {
+                      setNrBins(parseInt(event.target.value))
+                    }}
+                  />
+                </LabelBox>
+              )}
+
+              {metaValueType === 'unicode' && (
                 <FormField
                   control={form.control}
-                  name="values_unicode"
+                  name="bins_unicode"
                   render={({ field }) => (
                     <FormItem className="col-span-full">
-                      <FormLabel>Values</FormLabel>
-                      {isLoadingFrequencies ? (
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      ) : (
-                        <FormControl>
-                          <ValueListSelect
-                            onChange={field.onChange}
-                            value={field.value ?? []}
-                            metaFrequencies={dataFrequencies?.frequencies ?? []}
-                          />
-                        </FormControl>
-                      )}
+                      <FormControl>
+                        <MetaFrequencyUnicodeInput
+                          value={field.value ?? []}
+                          frequencies={frequencies as Frequency<string>[]}
+                          onChange={(value) => {
+                            field.onChange(value)
+                          }}
+                        />
+                      </FormControl>
+
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              )}
+
+              {metaValueType === 'datetime' && (
+                <ToggleBar
+                  options={['hour', 'day', 'week', 'month', 'year']}
+                  value={timeInterval}
+                  onChange={(value) => setTimeInterval(value)}
+                />
+              )}
+
+              {isLoading && (
+                <div className="col-span-full flex">
+                  <Loader2Icon className="mx-auto h-4 w-4 animate-spin" />
+                </div>
+              )}
+
+              {metaValueType === 'datetime' && Boolean(frequencies.length) && (
+                <FormField
+                  key={`${timeInterval}`}
+                  control={form.control}
+                  name="bins_datetime"
+                  render={({ field }) => (
+                    <FormItem className="col-span-full">
+                      <FormControl>
+                        <MetaFrequencyDatetimeInput
+                          frequencies={frequencies as Frequency<string>[]}
+                          onChange={field.onChange}
+                          timeInterval={timeInterval}
+                        />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {metaValueType === 'boolean' && (
+                <ErrorMessage error={new Error('Boolean not implemented')} />
+              )}
+
+              {hasNextPage && (
+                <Button
+                  onClick={() => fetchNextPage()}
+                  className="col-span-full"
+                  disabled={isFetching}
+                  variant="secondary"
+                  type="button"
+                >
+                  {isFetching && (
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Load more
+                </Button>
               )}
 
               <Button
@@ -285,81 +480,18 @@ function SubcorpusNew() {
                 className="col-span-full mt-4"
                 disabled={isDisabled}
               >
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending && (
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Create Subcorpus
               </Button>
+
               <ErrorMessage error={error} className="col-span-full" />
             </fieldset>
           </form>
         </Form>
       </Card>
     </AppPageFrame>
-  )
-}
-
-function ValueListSelect({
-  metaFrequencies,
-  onChange,
-  value,
-}: {
-  metaFrequencies: z.infer<typeof schemas.MetaFrequencyOut>[]
-  onChange: (values: string[]) => void
-  value: string[]
-}) {
-  const selectedMetaFrequencies = useMemo(
-    () => metaFrequencies.filter((meta) => value.includes(meta.bin)),
-    [metaFrequencies, value],
-  )
-  const nonSelectedMetaFrequencies = metaFrequencies.filter(
-    (meta) => !value.includes(meta.bin),
-  )
-
-  return (
-    <div className="flex flex-col gap-2">
-      {selectedMetaFrequencies.map((meta) => (
-        <div
-          key={meta.bin}
-          className="border-input ring-ring flex gap-x-4 rounded-md border py-2 pl-4 pr-1 ring-offset-2 focus-within:ring-2"
-        >
-          <Small className="mx-0 my-auto flex-grow">
-            {meta.bin}
-            <span className="text-muted-foreground mt-1 block">
-              {formatNumber(meta.nr_tokens ?? 0)} Tokens
-            </span>
-          </Small>
-          <Button
-            onClick={() => onChange(value.filter((i) => i !== meta.bin))}
-            variant="ghost"
-            type="button"
-            size="icon"
-            className="min-h-min min-w-min flex-shrink-0 self-center p-2 focus:ring-0 focus-visible:ring-0 focus-visible:ring-transparent"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-      {nonSelectedMetaFrequencies.length > 0 && (
-        <Select
-          onValueChange={(newValue) => {
-            onChange([...value, newValue])
-          }}
-          value={undefined}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a value to add" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {nonSelectedMetaFrequencies.map(({ nr_tokens = 0, bin = '' }) => (
-                <SelectItem value={bin} key={bin}>
-                  {bin} ({formatNumber(nr_tokens)} Tokens)
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      )}
-    </div>
   )
 }
 
@@ -373,4 +505,10 @@ function SubcorpusNewPending() {
       </div>
     </AppPageFrame>
   )
+}
+
+type Frequency<T> = {
+  value: T
+  nrSpans: number
+  nrTokens: number
 }

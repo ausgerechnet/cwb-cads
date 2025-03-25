@@ -1,4 +1,8 @@
-import { queryOptions, MutationOptions } from '@tanstack/react-query'
+import {
+  queryOptions,
+  MutationOptions,
+  infiniteQueryOptions,
+} from '@tanstack/react-query'
 import { z } from 'zod'
 import { queryClient } from './query-client'
 import { apiClient, schemas } from '../api-client'
@@ -15,7 +19,10 @@ export const queryById = (queryId: number) =>
   queryOptions({
     queryKey: ['query', queryId],
     queryFn: ({ signal }) =>
-      apiClient.get('/query/:id', { params: { id: String(queryId) }, signal }),
+      apiClient.get('/query/:query_id', {
+        params: { query_id: String(queryId) },
+        signal,
+      }),
   })
 
 export const createQueryCQP: MutationOptions<
@@ -77,7 +84,9 @@ export const getQueryAssisted = ({
 
 export const deleteQuery: MutationOptions<unknown, Error, string> = {
   mutationFn: (queryId: string) =>
-    apiClient.delete('/query/:id', undefined, { params: { id: queryId } }),
+    apiClient.delete('/query/:query_id', undefined, {
+      params: { query_id: queryId },
+    }),
   onSuccess: () => {
     void queryClient.invalidateQueries(queriesList)
   },
@@ -338,40 +347,57 @@ export const corpusMetaFrequencies = (
   corpusId: number,
   level: string,
   key: string,
-  createAsIfNotExists:
-    | 'datetime'
-    | 'numeric'
-    | 'unicode'
-    | 'boolean'
-    | false = false,
+  {
+    sortBy: sort_by = 'nr_tokens',
+    sortOrder: sort_order = 'descending',
+    pageSize: page_size = 10,
+    nrBins: nr_bins = 30,
+    timeInterval: time_interval = 'day',
+  }: {
+    sortBy?: 'nr_tokens' | 'nr_spans' | 'bin'
+    sortOrder?: 'ascending' | 'descending'
+    pageSize?: number
+    nrBins?: number
+    timeInterval?: 'hour' | 'day' | 'week' | 'month' | 'year'
+  } = {},
 ) =>
-  queryOptions({
+  infiniteQueryOptions({
     // createAsIfNotExists is a hack to create a new meta key if it doesn't exist, should not be a dep
     // TODO: move this to the backend, probably
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryKey: ['corpus-meta-frequencies', corpusId, level, key],
-    queryFn: async ({ signal }) => {
-      if (!createAsIfNotExists) {
-        return getFrequencies()
-      }
-      try {
-        return await getFrequencies()
-      } catch (error) {
-        await apiClient.put(
-          '/corpus/:id/meta/',
-          { level, key, value_type: createAsIfNotExists },
-          { params: { id: corpusId.toString() } },
-        )
-        return await getFrequencies()
-      }
-      function getFrequencies() {
-        return apiClient.get('/corpus/:id/meta/frequencies', {
-          params: { id: corpusId.toString() },
-          queries: { level, key },
-          signal,
-        })
-      }
-    },
+    queryKey: [
+      'corpus-meta-frequencies',
+      corpusId,
+      level,
+      key,
+      {
+        sort_by,
+        sort_order,
+        page_size,
+        nr_bins,
+        time_interval,
+      },
+    ],
+    queryFn: async ({ signal, pageParam }) =>
+      apiClient.get('/corpus/:id/meta/frequencies', {
+        params: { id: corpusId.toString() },
+        queries: {
+          level,
+          key,
+          sort_by,
+          sort_order,
+          page_size,
+          page_number: pageParam,
+          nr_bins,
+          time_interval,
+        },
+        signal,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page_number < lastPage.page_count
+        ? lastPage.page_number + 1
+        : undefined,
   })
 
 export const corpusConcordances = (

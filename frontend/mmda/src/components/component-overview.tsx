@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { ReactNode } from '@tanstack/react-router'
+
 import { Headline1, Headline2 } from '@cads/shared/components/ui/typography'
 import { Ellipsis } from '@cads/shared/components/ellipsis'
 import { InputGrowable } from '@cads/shared/components/input-growable'
@@ -6,11 +8,6 @@ import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 import { SelectMulti } from '@cads/shared/components/select-multi'
 import { LabelBox } from '@cads/shared/components/label-box'
 import { Input } from '@cads/shared/components/ui/input'
-
-import { TokenLine } from '../routes/_app/constellations_/$constellationId/-constellation-concordance-lines'
-import WordCloud from './word-cloud'
-import { WordCloudPreview } from './word-cloud-preview'
-import { ReactNode } from '@tanstack/react-router'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Select,
@@ -20,12 +17,110 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@cads/shared/components/ui/select'
+import {
+  MetaFrequencyBooleanInput,
+  MetaFrequencyDatetimeInput,
+  MetaFrequencyNumericInput,
+  MetaFrequencyUnicodeInput,
+} from '@cads/shared/components/meta-frequency'
+import { ToggleBar } from '@cads/shared/components/toggle-bar'
+
+import { TokenLine } from '../routes/_app/constellations_/$constellationId/-constellation-concordance-lines'
+import { WordCloudPreview } from './word-cloud-preview'
+import WordCloud from './word-cloud'
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
   return (
     <div className="mx-auto max-w-7xl p-2 pb-16">
       <Headline1 className="mb-4 mt-16">Component Overview</Headline1>
+
+      <Headline2 className="mb-4 mt-16">ToggleBar</Headline2>
+      <Code> &lt;ToggleBar... /&gt;</Code>
+
+      <ToggleBar
+        onChange={(value) => console.log('Selected:', value)}
+        options={[['opt-1', 'Option 1'], 'Option 2', 'Option 3']}
+        defaultValue="opt-1"
+      />
+
+      <Headline2 className="mb-4 mt-16">MetaFrequencyDatetimeInput</Headline2>
+      <Code> &lt;MetaFrequencyDatetimeInput... /&gt;</Code>
+
+      <MetaFrequencyDatetimeInput
+        timeInterval="year"
+        frequencies={Array.from({ length: 20 }).map((_, i, { length }) => ({
+          value: `1990-01-${(i + 1).toString().padStart(2, '0')}T00:00:00`,
+          nrTokens: (length - i) ** 2 + 5,
+          nrSpans: i * 3,
+        }))}
+      />
+
+      <Headline2 className="mb-4 mt-16">MetaFrequencyBooleanInput</Headline2>
+      <Code> &lt;MetaFrequencyBooleanInput... /&gt;</Code>
+
+      <MetaFrequencyBooleanInput
+        frequencies={[
+          {
+            value: true,
+            nrTokens: 300,
+            nrSpans: 30,
+          },
+          {
+            value: false,
+            nrTokens: 200,
+            nrSpans: 20,
+          },
+        ]}
+      />
+
+      <Headline2 className="mb-4 mt-16">MetaFrequencyUnicodeInput</Headline2>
+      <Code> &lt;MetaFrequencyUnicodeInput... /&gt;</Code>
+
+      <MetaFrequencyUnicodeInput
+        value={['Some category']}
+        frequencies={[
+          {
+            value: 'Yet another category',
+            nrTokens: 300,
+            nrSpans: 30,
+          },
+          {
+            value: 'Another category',
+            nrTokens: 200,
+            nrSpans: 20,
+          },
+          {
+            value: 'Some category',
+            nrTokens: 100,
+            nrSpans: 10,
+          },
+          {
+            value: 'Small category',
+            nrTokens: 1,
+            nrSpans: 10,
+          },
+        ]}
+      />
+
+      <Headline2 className="mb-4 mt-16">MetaFrequencyNumericInput</Headline2>
+      <Code> &lt;MetaFrequencyNumericInput... /&gt;</Code>
+
+      <MetaFrequencyNumericInput
+        frequencies={Array.from({ length: 20 }).map((_, i, { length }) => ({
+          value: i,
+          nrTokens: (length - i) ** 2 + 5,
+          nrSpans: i * 3,
+        }))}
+      />
+
+      <MetaFrequencyNumericInput
+        frequencies={Array.from({ length: 500 }).map((_, i, { length }) => ({
+          value: i,
+          nrTokens: (length - i + 500) ** 10 / 1e26 + 5_000,
+          nrSpans: i * 3,
+        }))}
+      />
 
       <Headline2 className="mb-4 mt-16">ErrorMessage</Headline2>
       <Code> &lt;ErrorMessage ... /&gt;</Code>
