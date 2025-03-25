@@ -22,6 +22,7 @@ import { AppPageFrame } from '@/components/app-page-frame'
 import { CorpusSelect } from '@/components/select-corpus'
 import {
   MetaFrequencyDatetimeInput,
+  MetaFrequencyNumericInput,
   MetaFrequencyUnicodeInput,
 } from '@cads/shared/components/meta-frequency'
 import {
@@ -63,8 +64,8 @@ const SubcorpusPut = z.object({
   level: z.string(),
   name: z.string(),
   bins_unicode: z.array(z.string()).nullable(),
-  bins_datetime: z.array(z.string()).nullable(),
-  bins_numeric: z.array(z.number()).nullable(),
+  bins_datetime: z.array(z.array(z.string()).nullable()).nullable(),
+  bins_numeric: z.array(z.array(z.number()).nullable()).nullable(),
   bins_boolean: z.array(z.boolean()).nullable(),
 })
 
@@ -145,7 +146,7 @@ function SubcorpusNew() {
       ...corpusMetaFrequencies(corpusId, level, key, {
         pageSize: 50,
         sortBy: metaValueType === 'datetime' ? 'bin' : sortBy,
-        sortOrder: 'descending',
+        sortOrder: sortBy === 'bin' ? 'ascending' : 'descending',
         timeInterval: metaValueType === 'datetime' ? timeInterval : undefined,
         nrBins: debouncedNrBins,
       }),
@@ -386,17 +387,36 @@ function SubcorpusNew() {
               )}
 
               {metaValueType === 'numeric' && (
-                <LabelBox labelText="Bin Number">
-                  <Input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={String(nrBins)}
-                    onChange={(event) => {
-                      setNrBins(parseInt(event.target.value))
-                    }}
+                <>
+                  <LabelBox labelText="Bin Number">
+                    <Input
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={String(nrBins)}
+                      onChange={(event) => {
+                        setNrBins(parseInt(event.target.value))
+                      }}
+                    />
+                  </LabelBox>
+
+                  <FormField
+                    control={form.control}
+                    name="bins_numeric"
+                    render={({ field }) => (
+                      <FormItem className="col-span-full">
+                        <FormControl>
+                          <MetaFrequencyNumericInput
+                            frequencies={frequencies as Frequency<number>[]}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </LabelBox>
+                </>
               )}
 
               {metaValueType === 'unicode' && (
@@ -407,6 +427,13 @@ function SubcorpusNew() {
                     <FormItem className="col-span-full">
                       <FormControl>
                         <MetaFrequencyUnicodeInput
+                          showBars={
+                            sortBy === 'nr_spans'
+                              ? 'spans'
+                              : sortBy === 'nr_tokens'
+                                ? 'tokens'
+                                : 'both'
+                          }
                           value={field.value ?? []}
                           frequencies={frequencies as Frequency<string>[]}
                           onChange={(value) => {
