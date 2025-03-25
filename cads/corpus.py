@@ -276,7 +276,7 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
     time_formats = {
         'hour': '%Y-%m-%d %H:00:00',
         'day': '%Y-%m-%d',
-        'week': '%Y-%W',
+        'week': '%Y-w%W',
         'month': '%Y-%m',
         'year': '%Y'
     }
