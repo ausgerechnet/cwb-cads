@@ -11,10 +11,12 @@ export const Route = createLazyFileRoute('/_app/partition')({
 })
 
 function Partition() {
+  const { defaultCorpusId: corpusId, defaultSubcorpusId: subcorpusId } =
+    Route.useSearch()
   return (
     <AppPageFrame title="Create Partition Corpus">
       <Card className="max-w-2xl p-4">
-        <PartitionForm />
+        <PartitionForm defaultCorpus={{ corpusId, subcorpusId }} />
       </Card>
     </AppPageFrame>
   )

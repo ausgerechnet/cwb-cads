@@ -2,7 +2,7 @@ import { createLazyFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { EyeIcon } from 'lucide-react'
+import { EyeIcon, ScissorsIcon } from 'lucide-react'
 
 import { corpusList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
@@ -11,6 +11,7 @@ import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { schemas } from '@/rest-client'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
+import { QuickActions } from '@cads/shared/components/quick-actions'
 
 export const Route = createLazyFileRoute('/_app/corpora')({
   component: CorporaOverview,
@@ -75,18 +76,35 @@ const columns: ColumnDef<z.infer<typeof schemas.CorpusOut>>[] = [
     header: '',
     meta: { className: 'w-0' },
     cell: ({ row }) => (
-      <Link
-        className={cn(
-          buttonVariants({ variant: 'ghost', size: 'icon' }),
-          '-my-1',
-        )}
-        to="/corpora/$corpusId"
-        params={{
-          corpusId: String(row.id),
-        }}
-      >
-        <EyeIcon className="h-4 w-4" />
-      </Link>
+      <QuickActions>
+        <Link
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'w-full',
+          )}
+          to="/corpora/$corpusId"
+          params={{
+            corpusId: String(row.id),
+          }}
+        >
+          <EyeIcon className="mr-2 h-4 w-4" />
+          View Corpus
+        </Link>
+
+        <Link
+          to="/partition"
+          search={{
+            defaultCorpusId: row.original.id,
+          }}
+          className={cn(
+            buttonVariants({ variant: 'outline', size: 'sm' }),
+            'w-full',
+          )}
+        >
+          <ScissorsIcon className="mr-2 h-4 w-4" />
+          Create Partition
+        </Link>
+      </QuickActions>
     ),
   },
 ]

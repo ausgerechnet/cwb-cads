@@ -42,12 +42,19 @@ const Partition = schemas.SubCorpusCollectionIn.extend({
 
 type Partition = z.infer<typeof Partition>
 
-export function PartitionForm({ className }: { className?: string }) {
+export function PartitionForm({
+  className,
+  defaultCorpus,
+}: {
+  className?: string
+  defaultCorpus?: { corpusId?: number; subcorpusId?: number }
+}) {
   'use no memo'
   const navigate = useNavigate()
   const form = useForm<Partition>({
     resolver: zodResolver(Partition),
     defaultValues: {
+      corpus: defaultCorpus,
       time_interval: 'year',
       name: '',
       description: '',
@@ -57,6 +64,8 @@ export function PartitionForm({ className }: { className?: string }) {
   const corpusId = form.watch('corpus')?.corpusId
   const subcorpusId = form.watch('corpus')?.subcorpusId
   const level = form.watch('level')
+
+  console.log('corpusId', corpusId)
 
   const {
     data: dataMeta,
