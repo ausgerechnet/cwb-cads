@@ -126,6 +126,7 @@ function KeywordAnalysisNew() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="p"
@@ -156,7 +157,9 @@ function KeywordAnalysisNew() {
                   </FormItem>
                 )}
               />
+
               <Large className="col-span-full">Reference</Large>
+
               <FormField
                 control={form.control}
                 name="corpus_reference"
@@ -177,6 +180,7 @@ function KeywordAnalysisNew() {
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="p_reference"

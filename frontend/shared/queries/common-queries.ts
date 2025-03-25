@@ -333,6 +333,29 @@ export const createSubcorpus: MutationOptions<
   },
 }
 
+export const createSubcorpusCollection: MutationOptions<
+  z.infer<typeof schemas.SubCorpusCollectionOut>,
+  Error,
+  z.infer<typeof schemas.SubCorpusCollectionIn> & {
+    corpus_id: number
+    subcorpus_id?: number | undefined
+  }
+> = {
+  mutationFn: async ({ corpus_id, subcorpus_id, ...args }) => {
+    if (subcorpus_id !== undefined) {
+      throw new Error('Partitioning a subcorpus is not yet supported')
+    }
+    return apiClient.put('/corpus/:id/subcorpus-collection/', args, {
+      params: { id: corpus_id.toString() },
+    })
+  },
+  onSuccess: (data) => {
+    void queryClient.invalidateQueries(corpusList)
+    void queryClient.invalidateQueries(subcorporaList)
+    void queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))
+  },
+}
+
 export const corpusMeta = (corpusId: number) =>
   queryOptions({
     queryKey: ['corpus-meta', corpusId],
