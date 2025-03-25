@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+from datetime import date
 from glob import glob
 
 import click
@@ -15,7 +16,7 @@ from flask import abort, current_app
 from numpy import array_split
 from pandas import DataFrame, read_csv, to_datetime
 from sqlalchemy import Integer as sql_Integer
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 
 from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
@@ -39,6 +40,18 @@ DEFAULT_VALUE_TYPES = {
     'counts': 'numeric',
     'duplicated': 'boolean'
 }
+
+
+def correct_week_00(d):
+    """correct a datetime week returned by SQLite to comply with ISO8601:
+    replace week 00 with last week of preceding year
+
+    """
+    if d.endswith("00"):
+        year = int(d.split("-")[0])
+        last_week = date(year, 12, 31).isocalendar().week
+        d = str(year - 1) + "-W" + str(last_week)
+    return d
 
 
 def sort_p(p_atts, order=['lemma_pos', 'lemma', 'word']):
@@ -107,7 +120,8 @@ def meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_
 
 def meta_from_df(corpus, df_meta, level, column_value_types=dict()):
 
-    column_mapping = {**DEFAULT_VALUE_TYPES, **column_value_types}
+    default_values = {k: v for k, v in DEFAULT_VALUE_TYPES.items() if k in df_meta.columns}
+    column_mapping = {**default_values, **column_value_types}
 
     # defined = set(df_meta.columns).intersection(set(column_mapping.keys()))
     undefined = set(df_meta.columns) - set(column_mapping.keys())
@@ -276,7 +290,7 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
     time_formats = {
         'hour': '%Y-%m-%d %H:00:00',
         'day': '%Y-%m-%d',
-        'week': '%Y-w%W',
+        'week': '%Y-W%W',
         'month': '%Y-%m',
         'year': '%Y'
     }
@@ -880,6 +894,8 @@ def get_frequencies(id, query_data):
         df_freq['bin_numeric'] = list(zip(df_freq['bin_start'], df_freq['bin_end']))
     elif att.value_type == 'datetime':
         df_freq['bin_datetime'] = df_freq['bin_index']
+        if time_interval == 'week':
+            df_freq['bin_datetime'] = df_freq['bin_datetime'].apply(correct_week_00)
     freq = df_freq.to_dict(orient='records')
 
     return MetaFrequenciesOut().dump({

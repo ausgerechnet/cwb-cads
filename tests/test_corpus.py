@@ -286,7 +286,7 @@ def test_meta_frequencies_datetime(client, auth):
         assert freq.json['frequencies'][0]['nr_tokens'] == 149800
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_meta_frequencies_datetime_2(client, auth):
 
     auth_header = auth.login()
@@ -318,8 +318,14 @@ def test_meta_frequencies_datetime_2(client, auth):
                           content_type='application/json',
                           headers=auth_header)
         assert freq.status_code == 200
-        # print(freq.json['frequencies'])
-        # assert freq.json['frequencies'][0]['nr_tokens'] == 149800
+
+        freq = client.get(url_for('corpus.get_frequencies', id=corpora.json[1]['id'], level='article', key='date', time_interval='week'),
+                          content_type='application/json',
+                          headers=auth_header)
+        assert freq.status_code == 200
+        weeks = [_['bin_datetime'] for _ in freq.json['frequencies']]
+        assert all([not w.endswith("W00") for w in weeks])
+        assert "W52" in [w.split("-")[-1] for w in weeks]
 
 
 # @pytest.mark.now
@@ -402,7 +408,7 @@ def test_meta_frequencies_subcorpus_unicode(client, auth):
         # pprint(freq.json)
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_create_subcorpus_collection(client, auth):
 
     auth_header = auth.login()
