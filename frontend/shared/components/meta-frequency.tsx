@@ -1,9 +1,4 @@
-import {
-  CheckCircleIcon,
-  CheckSquareIcon,
-  CircleIcon,
-  SquareIcon,
-} from 'lucide-react'
+import { CheckSquareIcon, SquareIcon } from 'lucide-react'
 
 import { cn } from '../lib/utils'
 import { formatNumber } from '../lib/format-number'
