@@ -670,6 +670,21 @@ def get_subcorpus(id, subcorpus_id):
     return SubCorpusOut().dump(subcorpus), 200
 
 
+@bp.delete('/<id>/subcorpus/<subcorpus_id>')
+@bp.output(SubCorpusCollectionOut)
+@bp.auth_required(auth)
+def delete_subcorpus(id, subcorpus_id):
+    """Get subcorpus collection.
+
+    """
+
+    subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
+    db.session.delete(subcorpus)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
+
+
 @bp.put('/<id>/subcorpus/')
 @bp.input(SubCorpusIn)
 @bp.output(SubCorpusOut)
@@ -795,6 +810,47 @@ def create_subcorpus_collection(id, json_data):
     db.session.commit()
 
     return SubCorpusCollectionOut().dump(collection), 200
+
+
+@bp.get('/<id>/subcorpus-collection/')
+@bp.output(SubCorpusCollectionOut(many=True))
+@bp.auth_required(auth)
+def get_subcorpus_collections(id):
+    """Get all subcorpus collections in corpus.
+
+    """
+
+    collections = SubCorpusCollection.query.filter_by(corpus_id=id).all()
+
+    return [SubCorpusCollectionOut().dump(collection) for collection in collections], 200
+
+
+@bp.get('/<id>/subcorpus-collection/<subcorpus_collection_id>')
+@bp.output(SubCorpusCollectionOut)
+@bp.auth_required(auth)
+def get_subcorpus_collection(id, subcorpus_collection_id):
+    """Get subcorpus collection.
+
+    """
+
+    collection = db.get_or_404(SubCorpusCollection, subcorpus_collection_id)
+
+    return SubCorpusCollectionOut().dump(collection), 200
+
+
+@bp.delete('/<id>/subcorpus-collection/<subcorpus_collection_id>')
+@bp.output(SubCorpusCollectionOut)
+@bp.auth_required(auth)
+def delete_subcorpus_collection(id, subcorpus_collection_id):
+    """Get subcorpus collection.
+
+    """
+
+    collection = db.get_or_404(SubCorpusCollection, subcorpus_collection_id)
+    db.session.delete(collection)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
 
 
 @bp.get('/<id>/meta/')
