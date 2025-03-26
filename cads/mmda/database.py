@@ -166,6 +166,7 @@ class Constellation(db.Model):
 
     discoursemes = db.relationship("Discourseme", secondary=constellation_discourseme)
     descriptions = db.RelationshipProperty("ConstellationDescription", backref="constellation", cascade='all, delete')
+    collections = db.RelationshipProperty("ConstellationDescriptionCollection", backref="constellation", cascade='all, delete')
 
 
 class ConstellationDescription(db.Model):
@@ -178,6 +179,7 @@ class ConstellationDescription(db.Model):
     modified = db.Column(db.DateTime, default=datetime.utcnow)  # (→ queries need update)
 
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
+    collection_id = db.Column(db.Integer, db.ForeignKey('constellation_description_collection.id', ondelete='CASCADE'), index=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))
     s = db.Column(db.String(), nullable=True)  # for max. query context
@@ -194,6 +196,27 @@ class ConstellationDescription(db.Model):
     @property
     def subcorpus(self):
         return db.get_or_404(SubCorpus, self.subcorpus_id) if self.subcorpus_id else None
+
+
+class ConstellationDescriptionCollection(db.Model):
+    """Collection of Constellation Descriptions
+
+    """
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+    modified = db.Column(db.DateTime, default=datetime.utcnow)
+
+    constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
+    subcorpus_collection_id = db.Column(db.Integer, db.ForeignKey('sub_corpus_collection.id', ondelete='CASCADE'))
+
+    s = db.Column(db.String(), nullable=True)  # for max. query context
+    match_strategy = db.Column(db.Unicode, default='longest')
+    overlap = db.Column(db.Unicode, default='partial')  # when to count a discourseme to be in context (partial, full, match, matchend)
+    semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
+
+    constellation_descriptions = db.relationship('ConstellationDescription', backref='collection', passive_deletes=True, cascade='all, delete')
 
 
 ###############

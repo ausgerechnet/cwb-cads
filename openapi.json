@@ -583,6 +583,103 @@
         ],
         "type": "object"
       },
+      "ConstellationDescriptionCollectionCollocationOut": {
+        "properties": {
+          "collocations": {
+            "items": {
+              "$ref": "#/components/schemas/ConstellationCollocationOut"
+            },
+            "type": "array"
+          },
+          "ufa": {
+            "items": {
+              "$ref": "#/components/schemas/UFAScoreOut"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "collocations"
+        ],
+        "type": "object"
+      },
+      "ConstellationDescriptionCollectionIn": {
+        "properties": {
+          "match_strategy": {
+            "default": "longest",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ],
+            "type": "string"
+          },
+          "overlap": {
+            "default": "partial",
+            "enum": [
+              "partial",
+              "full",
+              "match",
+              "matchend"
+            ],
+            "type": "string"
+          },
+          "s": {
+            "type": "string"
+          },
+          "subcorpus_collection_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "subcorpus_collection_id"
+        ],
+        "type": "object"
+      },
+      "ConstellationDescriptionCollectionOut": {
+        "properties": {
+          "constellation_descriptions": {
+            "items": {
+              "$ref": "#/components/schemas/ConstellationDescriptionOut"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "match_strategy": {
+            "default": "longest",
+            "enum": [
+              "longest",
+              "shortest",
+              "standard"
+            ],
+            "type": "string"
+          },
+          "overlap": {
+            "default": "partial",
+            "enum": [
+              "partial",
+              "full",
+              "match",
+              "matchend"
+            ],
+            "type": "string"
+          },
+          "s": {
+            "type": "string"
+          },
+          "subcorpus_collection_id": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "constellation_descriptions",
+          "id",
+          "subcorpus_collection_id"
+        ],
+        "type": "object"
+      },
       "ConstellationDescriptionIn": {
         "properties": {
           "corpus_id": {
@@ -2216,6 +2313,20 @@
         ],
         "type": "object"
       },
+      "UFAScoreOut": {
+        "properties": {
+          "left_id": {
+            "type": "integer"
+          },
+          "right_id": {
+            "type": "integer"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "UserIn": {
         "properties": {
           "password": {
@@ -2340,7 +2451,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev38"
+    "version": "0.3.0.dev39"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -4917,6 +5028,286 @@
         "summary": "Create description of constellation in corpus. Makes sure individual discourseme descriptions exist.",
         "tags": [
           "Mmda.Constellation.Description"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/collection/": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConstellationDescriptionCollectionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create Constellation Description Collection",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/collection/{collection_id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Constellation Description Collection",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Constellation Description Collection",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/collection/{collection_id}/collocation": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConstellationCollocationIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionCollocationOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Or Create Collocation",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
         ]
       }
     },
@@ -10198,6 +10589,9 @@
     },
     {
       "name": "Mmda.Constellation.Description.Semantic-Map"
+    },
+    {
+      "name": "Mmda.Constellation.Description.Collection"
     },
     {
       "name": "Spheroscope"
