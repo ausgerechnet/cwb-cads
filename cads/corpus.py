@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
-from datetime import date
+from datetime import date, datetime
 from glob import glob
 
 import click
@@ -48,10 +48,17 @@ def correct_week_00(d):
 
     """
     if d.endswith("00"):
-        year = int(d.split("-")[0])
-        last_week = date(year, 12, 31).isocalendar().week
-        d = str(year - 1) + "-W" + str(last_week)
+        last_year = int(d.split("-")[0]) - 1
+        last_week = date(last_year, 12, 31).isocalendar().week
+        d = str(last_year) + "-W" + str(last_week)
     return d
+
+
+def week2dates(d):
+    """return date of first day of the week
+
+    """
+    return str(datetime.strptime(d + '-1', "%Y-W%W-%w"))
 
 
 def sort_p(p_atts, order=['lemma_pos', 'lemma', 'word']):
@@ -787,6 +794,9 @@ def create_subcorpus_collection(id, json_data):
     # meta frequencies
     records = get_meta_freq(att, None, time_interval)
     df_freq = DataFrame(records.all())
+    if time_interval == 'week':
+        # we convert weeks back to the first day of the week to be able to use normal select clauses below
+        df_freq['bin_index'] = df_freq['bin_index'].apply(week2dates)
     periods = list(zip(df_freq['bin_index'].tolist(), df_freq['bin_index'].tolist()[1:] + ["999999-12-31"]))
 
     for start, end in periods:

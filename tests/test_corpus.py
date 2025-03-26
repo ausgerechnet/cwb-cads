@@ -1,5 +1,6 @@
 from flask import url_for
 import pytest
+from pprint import pprint
 
 
 def test_get_corpus(client, auth):
@@ -286,7 +287,7 @@ def test_meta_frequencies_datetime(client, auth):
         assert freq.json['frequencies'][0]['nr_tokens'] == 149800
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_meta_frequencies_datetime_2(client, auth):
 
     auth_header = auth.login()
@@ -325,7 +326,7 @@ def test_meta_frequencies_datetime_2(client, auth):
         assert freq.status_code == 200
         weeks = [_['bin_datetime'] for _ in freq.json['frequencies']]
         assert all([not w.endswith("W00") for w in weeks])
-        assert "W52" in [w.split("-")[-1] for w in weeks]
+        assert "W53" in [w.split("-")[-1] for w in weeks]
 
 
 # @pytest.mark.now
@@ -408,7 +409,7 @@ def test_meta_frequencies_subcorpus_unicode(client, auth):
         # pprint(freq.json)
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_create_subcorpus_collection(client, auth):
 
     auth_header = auth.login()
@@ -417,7 +418,6 @@ def test_create_subcorpus_collection(client, auth):
 
         client.get("/")
 
-        # discourseme
         corpora = client.get(url_for('corpus.get_corpora'),
                              content_type='application/json',
                              headers=auth_header)
@@ -444,6 +444,16 @@ def test_create_subcorpus_collection(client, auth):
                                 headers=auth_header)
         assert collection.status_code == 200
         assert len(collection.json['subcorpora']) == 44
+
+        collection = client.put(url_for('corpus.create_subcorpus_collection', id=corpora.json[1]['id']),
+                                json={
+                                    'level': 'article', 'key': 'date', 'time_interval': 'week', 'name': 'weeks'
+                                },
+                                content_type='application/json',
+                                headers=auth_header)
+        assert collection.status_code == 200
+        pprint(collection.json)
+        assert len(collection.json['subcorpora']) == 9
 
         collection = client.put(url_for('corpus.create_subcorpus_collection', id=corpora.json[1]['id']),
                                 json={
