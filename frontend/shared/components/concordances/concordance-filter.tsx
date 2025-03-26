@@ -1,5 +1,3 @@
-import { z } from 'zod'
-
 import { LabelBox } from '../label-box'
 import { Slider } from '../ui/slider'
 import { Button } from '../ui/button'
@@ -16,6 +14,7 @@ import {
 } from '../ui/select'
 import { Input } from '../ui/input'
 import { XIcon } from 'lucide-react'
+import { ToggleBar } from '../toggle-bar'
 
 export function WindowSizeInput({ className }: { className?: string }) {
   const { windowSize, setWindowSize } = useConcordanceFilterContext()
@@ -67,31 +66,20 @@ export function SortByOffsetInput({
   )
 }
 
-const sortOrderOption = ['ascending', 'descending', 'random', 'first'] as const
-const SortOrderOption = z.enum(sortOrderOption)
-const sortOrderLabelMap = new Map<(typeof sortOrderOption)[number], string>([
-  ['ascending', 'Asc'],
-  ['descending', 'Desc'],
-  ['random', 'Rand'],
-  ['first', 'First'],
-])
 export function SortOrderInput({ className }: { className?: string }) {
   const { clSortOrder, setSortOrder } = useConcordanceFilterContext()
   return (
     <LabelBox className={className} labelText="Sort Order">
-      <div className={cn('grid grid-cols-4 items-center', className)}>
-        {sortOrderOption.map((value) => (
-          <Button
-            key={value}
-            onClick={() => setSortOrder(SortOrderOption.parse(value))}
-            className="h-10 flex-grow rounded-none p-1 text-xs first:rounded-bl-md first:rounded-tl-md last:rounded-br-md last:rounded-tr-md"
-            variant={value === clSortOrder ? 'default' : 'secondary'}
-            size="sm"
-          >
-            {sortOrderLabelMap.get(value)}
-          </Button>
-        ))}
-      </div>
+      <ToggleBar
+        value={clSortOrder}
+        options={[
+          ['ascending', 'Asc'],
+          ['descending', 'Desc'],
+          ['random', 'Rand'],
+          ['first', 'First'],
+        ]}
+        onChange={setSortOrder}
+      />
     </LabelBox>
   )
 }

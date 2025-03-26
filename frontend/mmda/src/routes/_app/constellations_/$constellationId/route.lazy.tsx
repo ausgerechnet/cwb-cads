@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useSuspenseQuery, useQuery } from '@tanstack/react-query'
 import {
   createLazyFileRoute,
@@ -14,9 +15,12 @@ import {
   constellationById,
   discoursemesList,
   constellationDescriptionAssociations,
+  corpusById,
 } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils.ts'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
+import { ConcordanceFilterProvider } from '@cads/shared/components/concordances'
+
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationCollocationFilter } from './-constellation-filter'
 import { Collocation } from './-constellation-collocation'
@@ -41,13 +45,16 @@ function ConstellationDetail() {
       (match) =>
         match.routeId === '/_app/constellations_/$constellationId/semantic-map',
     ) !== undefined
+  const params = Route.useSearch()
   const constellationId = parseInt(Route.useParams().constellationId)
 
   const hasAnalysisSelection =
     useAnalysisSelection().analysisSelection !== undefined
+  const { corpusId, subcorpusId, focusDiscourseme } = useAnalysisSelection()
 
-  const { setFilter, corpusId, isConcordanceVisible, focusDiscourseme } =
-    useFilterSelection('/_app/constellations_/$constellationId')
+  const { setFilter, isConcordanceVisible } = useFilterSelection(
+    '/_app/constellations_/$constellationId',
+  )
 
   const {
     data: { comment, name, discoursemes: constellationDiscoursemes = [] },
@@ -55,106 +62,118 @@ function ConstellationDetail() {
   const { description } = useDescription()
   const { data: discoursemes = [] } = useQuery(discoursemesList)
 
+  const { data: corpus } = useQuery({
+    ...corpusById(corpusId!, subcorpusId),
+    enabled: corpusId !== undefined,
+  })
+  const [layers, structureAttributes] = useMemo(
+    () => [corpus?.p_atts ?? [], corpus?.s_atts ?? []],
+    [corpus],
+  )
+
   const isMapAvailable =
     corpusId !== undefined && focusDiscourseme !== undefined
 
   return (
-    <AppPageFrameSemanticMap
-      title="Constellation"
-      showsSemanticMap={showsSemanticMap}
-      mapContent={
-        <SemanticMap constellationId={constellationId}>
-          <ConstellationCollocationFilter
-            className="grow rounded-xl p-2 shadow"
-            hideSortOrder
-          />
-        </SemanticMap>
-      }
-      drawerContent={
-        corpusId === undefined ? (
-          <p className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
-            No data available.
-            <br />
-            Select a corpus.
-          </p>
-        ) : (
-          <ConstellationConcordanceLines
-            corpusId={corpusId}
-            constellationId={constellationId}
-          />
-        )
-      }
-      isDrawerVisible={isConcordanceVisible}
-      onDrawerToggle={(isVisible) =>
-        setFilter('isConcordanceVisible', isVisible)
-      }
+    <ConcordanceFilterProvider
+      params={params}
+      layers={layers}
+      structureAttributes={structureAttributes}
     >
-      <Headline3 className="border-0">{name}</Headline3>
-
-      {comment && <Muted>{comment}</Muted>}
-
-      <div className="mb-8 mt-4 grid grid-cols-[2fr_1fr_auto] gap-4">
-        <AnalysisSelection />
-
-        <DiscoursemeList
-          constellationId={constellationId}
-          descriptionId={description?.id as number}
-          discoursemes={discoursemes}
-          constellationDiscoursemes={constellationDiscoursemes}
-        />
-
-        <Link
-          to="/constellations/$constellationId/semantic-map"
-          from="/constellations/$constellationId"
-          params={{ constellationId: constellationId.toString() }}
-          search={(s) => s}
-          disabled={!isMapAvailable}
-          className={cn('transition-opacity focus-visible:outline-none', {
-            'opacity-50': !isMapAvailable,
-            'group/map-link': isMapAvailable,
-          })}
-        >
-          <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
-            <SemanticMapPreview className="absolute h-full w-full scale-110 transition-all group-hover/map-link:scale-100 group-hover/map-link:opacity-75 group-focus-visible/map-link:scale-100" />
-            <div className="bg-muted/70 group-focus-visible/map-link:bg-muted/90 group-hover/map-link:bg-muted/90 transition-color relative flex gap-3 rounded p-2">
-              <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
-              <span>Semantic Map</span>
-            </div>
-            {(corpusId === undefined || focusDiscourseme === undefined) && (
-              <div className="relative flex flex-col gap-1 rounded bg-amber-200 p-2 text-amber-800">
-                {corpusId === undefined && (
-                  <div>Select a corpus to view the map</div>
-                )}{' '}
-                {focusDiscourseme === undefined && (
-                  <div>Select a focus discourseme to view the map</div>
-                )}
-              </div>
-            )}
-          </Card>
-        </Link>
-      </div>
-
-      {description?.id !== undefined &&
-        constellationDiscoursemes.length > 1 && (
-          <Card className="my-4 p-4">
-            <DescriptionAssociation
-              constellationId={constellationId}
-              descriptionId={description.id}
+      <AppPageFrameSemanticMap
+        title="Constellation"
+        showsSemanticMap={showsSemanticMap}
+        mapContent={
+          <SemanticMap constellationId={constellationId}>
+            <ConstellationCollocationFilter
+              className="grow rounded-xl p-2 shadow"
+              hideSortOrder
             />
-          </Card>
-        )}
+          </SemanticMap>
+        }
+        drawerContent={
+          corpusId === undefined ? (
+            <p className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
+              No data available.
+              <br />
+              Select a corpus.
+            </p>
+          ) : (
+            <ConstellationConcordanceLines constellationId={constellationId} />
+          )
+        }
+        isDrawerVisible={isConcordanceVisible}
+        onDrawerToggle={(isVisible) =>
+          setFilter('isConcordanceVisible', isVisible)
+        }
+      >
+        <Headline3 className="border-0">{name}</Headline3>
 
-      {hasAnalysisSelection && (
-        <>
-          <ConstellationCollocationFilter className="sticky top-14 mb-8" />
+        {comment && <Muted>{comment}</Muted>}
 
-          <Collocation
+        <div className="mb-8 mt-4 grid grid-cols-[2fr_1fr_auto] gap-4">
+          <AnalysisSelection />
+
+          <DiscoursemeList
             constellationId={constellationId}
-            descriptionId={description?.id}
+            descriptionId={description?.id as number}
+            discoursemes={discoursemes}
+            constellationDiscoursemes={constellationDiscoursemes}
           />
-        </>
-      )}
-    </AppPageFrameSemanticMap>
+
+          <Link
+            to="/constellations/$constellationId/semantic-map"
+            from="/constellations/$constellationId"
+            params={{ constellationId: constellationId.toString() }}
+            search={(s) => s}
+            disabled={!isMapAvailable}
+            className={cn('transition-opacity focus-visible:outline-none', {
+              'opacity-50': !isMapAvailable,
+              'group/map-link': isMapAvailable,
+            })}
+          >
+            <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
+              <SemanticMapPreview className="absolute h-full w-full scale-110 transition-all group-hover/map-link:scale-100 group-hover/map-link:opacity-75 group-focus-visible/map-link:scale-100" />
+              <div className="bg-muted/70 group-focus-visible/map-link:bg-muted/90 group-hover/map-link:bg-muted/90 transition-color relative flex gap-3 rounded p-2">
+                <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
+                <span>Semantic Map</span>
+              </div>
+              {(corpusId === undefined || focusDiscourseme === undefined) && (
+                <div className="relative flex flex-col gap-1 rounded bg-amber-200 p-2 text-amber-800">
+                  {corpusId === undefined && (
+                    <div>Select a corpus to view the map</div>
+                  )}{' '}
+                  {focusDiscourseme === undefined && (
+                    <div>Select a focus discourseme to view the map</div>
+                  )}
+                </div>
+              )}
+            </Card>
+          </Link>
+        </div>
+
+        {description?.id !== undefined &&
+          constellationDiscoursemes.length > 1 && (
+            <Card className="my-4 p-4">
+              <DescriptionAssociation
+                constellationId={constellationId}
+                descriptionId={description.id}
+              />
+            </Card>
+          )}
+
+        {hasAnalysisSelection && (
+          <>
+            <ConstellationCollocationFilter className="sticky top-14 mb-8" />
+
+            <Collocation
+              constellationId={constellationId}
+              descriptionId={description?.id}
+            />
+          </>
+        )}
+      </AppPageFrameSemanticMap>
+    </ConcordanceFilterProvider>
   )
 }
 
@@ -183,22 +202,18 @@ function DescriptionAssociation({
   const { data: discoursemes, error: errorDiscoursemes } =
     useQuery(discoursemesList)
 
-  if (isLoading || !data || discoursemes === undefined) {
-    return <Loader2Icon className="mx-auto my-5 animate-spin" />
-  }
-  if (error || errorDiscoursemes) {
-    return (
-      <>
-        <ErrorMessage error={error} />
-        <ErrorMessage error={errorDiscoursemes} />
-      </>
-    )
-  }
-
-  const legendNameMap = discoursemes.reduce((acc, { id, name }) => {
+  const legendNameMap = discoursemes?.reduce((acc, { id, name }) => {
     acc.set(id, name ?? 'No Name Available')
     return acc
   }, new Map<number, string>())
+
+  if (isLoading || !data || discoursemes === undefined) {
+    return <Loader2Icon className="mx-auto my-5 animate-spin" />
+  }
+
+  if (error || errorDiscoursemes) {
+    return <ErrorMessage error={[error, errorDiscoursemes]} />
+  }
 
   return (
     <AssociationMatrix

@@ -14,6 +14,7 @@ import {
   removeConstellationDiscourseme,
 } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 
 export function DiscoursemeList({
   constellationId,
@@ -98,13 +99,17 @@ function DiscoursemeItem({
 
   return (
     <li
-      key={discourseme.id}
+      key={discoursemeId}
       className={cn(
         'border-input ring-ring flex gap-x-4 rounded-lg border py-0 pl-2 pr-0 ring-offset-2 transition-all focus-within:ring-2',
         !isEditable && 'border-transparent py-0 pl-0',
       )}
     >
       <Small className="mx-0 my-auto flex flex-grow leading-none">
+        <span
+          style={{ backgroundColor: getColorForNumber(discoursemeId) }}
+          className="my-auto mr-1 inline-block h-2 w-2 rounded-full"
+        />
         {discourseme.name}
         <span className="text-muted-foreground mt-1 block">
           {discourseme.comment}

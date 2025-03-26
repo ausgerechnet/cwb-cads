@@ -22,13 +22,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@cads/shared/components/ui/tooltip'
-import { ButtonTooltip } from '@/components/button-tooltip'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Pagination } from '@cads/shared/components/pagination'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { Repeat } from '@cads/shared/components/repeat'
 import { Ellipsis } from '@cads/shared/components/ellipsis'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
+import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
 
 const emptyArray = [] as const
 

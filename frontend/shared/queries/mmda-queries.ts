@@ -375,6 +375,70 @@ export const constellationDescriptionFor = ({
     },
   })
 
+export const constellationConcordanceContext = (
+  constellationId: number,
+  descriptionId: number,
+  matchId: number,
+  focus_discourseme_id: number,
+  {
+    window,
+    extendedWindow: extended_window,
+    contextBreak: context_break,
+    extendedContextBreak: extended_context_break,
+    primary,
+    secondary,
+    highlightQueryIds: highlight_query_ids = [],
+  }: {
+    window: number
+    extendedWindow: number
+    contextBreak?: string
+    extendedContextBreak?: string
+    primary: string
+    secondary: string
+    highlightQueryIds?: number[]
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-concordance-context',
+      constellationId,
+      descriptionId,
+      matchId,
+      focus_discourseme_id,
+      {
+        window,
+        context_break,
+        extended_window,
+        extended_context_break,
+        primary,
+        secondary,
+        highlight_query_ids,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/concordance/:match_id',
+        {
+          params: {
+            constellation_id: String(constellationId),
+            description_id: String(descriptionId),
+            match_id: String(matchId),
+          },
+          queries: {
+            focus_discourseme_id,
+            window,
+            context_break,
+            extended_window,
+            extended_context_break,
+            primary,
+            secondary,
+            highlight_query_ids,
+          },
+          signal,
+        },
+      ),
+  })
+
 export const constellationConcordances = (
   constellationId: number,
   descriptionId: number,

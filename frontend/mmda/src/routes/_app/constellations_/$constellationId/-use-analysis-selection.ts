@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
+
 import { Route } from './route'
 
 const AnalysisType = z.enum(['collocation', 'keyword', 'ufa'])
