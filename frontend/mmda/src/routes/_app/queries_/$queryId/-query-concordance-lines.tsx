@@ -66,8 +66,8 @@ export function QueryConcordanceLines({
       queryConcordanceContext(queryId, matchId, {
         window: windowSize,
         extendedWindow: 100,
-        primary,
-        secondary,
+        primary: primary!,
+        secondary: secondary!,
       }),
     [primary, queryId, secondary, windowSize],
   )
@@ -78,15 +78,17 @@ export function QueryConcordanceLines({
 
       <div className="relative col-span-full flex flex-col gap-4">
         <div className="max-w-full rounded-md border">
-          <ConcordanceTable
-            concordanceLines={concordanceLines?.lines}
-            isLoading={isLoading}
-            rowCount={clPageSize}
-            fetchContext={fetchContext}
-            onItemClick={(word) => {
-              setFilterItem(word.secondary, secondary)
-            }}
-          />
+          {secondary !== undefined && (
+            <ConcordanceTable
+              concordanceLines={concordanceLines?.lines}
+              isLoading={isLoading}
+              rowCount={clPageSize}
+              fetchContext={fetchContext}
+              onItemClick={(word) => {
+                setFilterItem(word.secondary, secondary)
+              }}
+            />
+          )}
         </div>
 
         <Pagination

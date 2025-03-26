@@ -78,10 +78,10 @@ function useConcordanceFilters(
   const navigate = useNavigate()
 
   const primary = legalDefaultValue(primaryInput, layers, 'word')
-  if (primary === undefined) throw new Error(`Invalid primary: ${primaryInput}`)
+  // if (primary === undefined) throw new Error(`Invalid primary: ${primaryInput}`)
   const secondary = legalDefaultValue(secondaryInput, layers, 'lemma')
-  if (secondary === undefined)
-    throw new Error(`Invalid secondary: ${secondaryInput}`)
+  // if (secondary === undefined)
+  //   throw new Error(`Invalid secondary: ${secondaryInput}`)
 
   const clFilterItemPAtt = legalDefaultValue(
     'lemma',

@@ -1,5 +1,8 @@
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
+import { useQuery } from '@tanstack/react-query'
+
+import { corpusById } from '@cads/shared/queries'
 
 import { Route } from './route'
 
@@ -7,12 +10,20 @@ const AnalysisType = z.enum(['collocation', 'keyword', 'ufa'])
 type AnalysisType = z.infer<typeof AnalysisType>
 
 export const AnalysisSchema = z.object({
+  analysisType: AnalysisType.optional(),
+
   corpusId: z.number().optional(),
   subscorpusId: z.number().optional(),
-  analysisType: AnalysisType.optional(),
+  analysisLayer: z.string().optional(),
+  layers: z.array(z.string()).optional(),
+
   focusDiscourseme: z.number().optional(),
+
   referenceCorpusId: z.number().optional(),
   referenceSubcorpusId: z.number().optional(),
+  referenceLayer: z.string().optional(),
+  referenceLayers: z.array(z.string()).optional(),
+
   partition: z.number().optional(),
 })
 
@@ -21,14 +32,17 @@ type AnalysisSelection =
       analysisType: 'collocation'
       corpusId: number
       subcorpusId?: number
+      analysisLayer: string
       focusDiscourseme: number
     }
   | {
       analysisType: 'keyword'
       corpusId: number
       subcorpusId?: number
+      analysisLayer: string
       referenceCorpusId: number
       referenceSubcorpusId?: number
+      referenceLayer: string
     }
   | {
       analysisType: 'ufa'
@@ -42,33 +56,59 @@ export function useAnalysisSelection() {
   const {
     corpusId,
     subcorpusId,
+    analysisLayer,
     analysisType = 'collocation',
     focusDiscourseme,
     referenceCorpusId,
     referenceSubcorpusId,
+    referenceLayer,
     partition,
   } = Route.useSearch()
+
+  const { data: layers } = useQuery({
+    ...corpusById(corpusId!, subcorpusId),
+    select: (corpus) => corpus.p_atts,
+    enabled: corpusId !== undefined,
+  })
+
+  const { data: referenceLayers } = useQuery({
+    ...corpusById(referenceCorpusId!, referenceSubcorpusId),
+    select: (corpus) => corpus.p_atts,
+    enabled: referenceCorpusId !== undefined,
+  })
 
   let analysisSelection: AnalysisSelection | undefined = undefined
   switch (analysisType) {
     case 'collocation':
-      if (corpusId !== undefined && focusDiscourseme !== undefined) {
+      if (
+        corpusId !== undefined &&
+        focusDiscourseme !== undefined &&
+        analysisLayer !== undefined
+      ) {
         analysisSelection = {
           analysisType,
           corpusId,
           subcorpusId,
           focusDiscourseme,
+          analysisLayer,
         }
       }
       break
     case 'keyword':
-      if (corpusId !== undefined && referenceCorpusId !== undefined) {
+      if (
+        corpusId !== undefined &&
+        referenceCorpusId !== undefined &&
+        analysisLayer !== undefined &&
+        referenceLayer !== undefined
+      ) {
         analysisSelection = {
           analysisType,
           corpusId,
           subcorpusId,
           referenceCorpusId,
           referenceSubcorpusId,
+          referenceLayer,
+          analysisLayer,
         }
       }
       break
@@ -87,15 +127,28 @@ export function useAnalysisSelection() {
   return {
     analysisType,
     analysisSelection,
+    analysisLayer,
     corpusId,
     subcorpusId,
-    referenceCorpusId:
-      analysisType === 'collocation' ? undefined : referenceCorpusId,
-    referenceSubcorpusId:
-      analysisType === 'collocation' ? undefined : referenceSubcorpusId,
-    focusDiscourseme:
-      analysisType === 'collocation' ? focusDiscourseme : undefined,
-    partition: analysisType === 'collocation' ? partition : undefined,
+    layers,
+    referenceCorpusId,
+    referenceSubcorpusId,
+    focusDiscourseme,
+    referenceLayer,
+    referenceLayers,
+    partition,
+    setAnalysisLayer: (layer: string) =>
+      navigate({
+        to: '.',
+        params: (p) => p,
+        search: (s) => ({ ...s, analysisLayer: layer }),
+      }),
+    setReferenceLayer: (layer: string) =>
+      navigate({
+        to: '.',
+        params: (p) => p,
+        search: (s) => ({ ...s, referenceLayer: layer }),
+      }),
     setCorpus: (corpusId?: number, subcorpusId?: number) =>
       navigate({
         to: '.',
@@ -104,6 +157,8 @@ export function useAnalysisSelection() {
           ...s,
           corpusId,
           subcorpusId,
+          analysisLayer: undefined,
+          focusDiscourseme: undefined,
         }),
       }),
     setFocusDiscourseme: (focusDiscourseme?: number) =>
@@ -120,6 +175,7 @@ export function useAnalysisSelection() {
           ...s,
           referenceCorpusId: corpusId,
           referenceSubcorpusId: subcorpusId,
+          referenceLayer: undefined,
         }),
       }),
     setPartition: (partition: number | undefined) =>
@@ -140,6 +196,7 @@ export function useAnalysisSelection() {
                 analysisType,
                 referenceCorpusId: undefined,
                 referenceSubcorpusId: undefined,
+                referenceLayer: undefined,
                 partition: undefined,
               }
             case 'ufa':
@@ -148,6 +205,7 @@ export function useAnalysisSelection() {
                 analysisType,
                 referenceCorpusId: undefined,
                 referenceSubcorpusId: undefined,
+                referenceLayer: undefined,
               }
             case 'keyword':
               return {

@@ -44,7 +44,11 @@ export function ConstellationConcordanceLines({
   } = useConcordanceFilterContext()
 
   const descriptionId = useDescription()?.description?.id
-  const enabled = focusDiscourseme !== undefined && descriptionId !== undefined
+  const enabled =
+    focusDiscourseme !== undefined &&
+    descriptionId !== undefined &&
+    primary !== undefined &&
+    secondary !== undefined
 
   const {
     data: concordanceLines,
@@ -86,8 +90,8 @@ export function ConstellationConcordanceLines({
         {
           window: windowSize,
           extendedWindow: 100,
-          primary,
-          secondary,
+          primary: primary!,
+          secondary: secondary!,
         },
       ),
     [
@@ -118,7 +122,7 @@ export function ConstellationConcordanceLines({
         </div>
       )}
 
-      {enabled && (
+      {enabled && secondary && (
         <>
           <div className="relative col-span-full flex flex-col gap-4">
             <div className="max-w-full rounded-md border">

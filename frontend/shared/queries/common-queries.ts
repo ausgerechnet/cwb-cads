@@ -278,7 +278,7 @@ export const corpusById = (corpusId: number, subcorpusId?: number) =>
   queryOptions({
     queryKey: ['corpus', corpusId],
     queryFn: async ({ signal }) => {
-      if (subcorpusId !== undefined) {
+      if (subcorpusId === undefined) {
         return apiClient.get('/corpus/:id', {
           params: { id: String(corpusId) },
           signal,
