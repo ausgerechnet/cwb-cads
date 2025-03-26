@@ -12,7 +12,7 @@ export function useCollocation(
 ) {
   const {
     secondary,
-    s,
+    clContextBreak,
     windowSize,
     focusDiscourseme,
     ccFilterDiscoursemeIds,
@@ -30,7 +30,7 @@ export function useCollocation(
     ...constellationCollocation(constellationId, descriptionId!, {
       focusDiscoursemeId: focusDiscourseme!,
       p: secondary!,
-      sBreak: s!,
+      sBreak: clContextBreak!,
       window: windowSize,
       filterDiscoursemeIds: ccFilterDiscoursemeIds,
     }),
@@ -39,7 +39,7 @@ export function useCollocation(
     enabled:
       focusDiscourseme !== undefined &&
       descriptionId !== undefined &&
-      s !== undefined &&
+      clContextBreak !== undefined &&
       secondary !== undefined,
   })
 

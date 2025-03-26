@@ -455,6 +455,7 @@ export const constellationConcordances = (
     sortOrder: sort_order,
     sortByOffset: sort_by_offset,
     sortByPAtt: sort_by_p_att,
+    contextBreak: context_break,
   }: {
     window?: number
     primary?: string
@@ -467,6 +468,7 @@ export const constellationConcordances = (
     sortOrder?: 'ascending' | 'descending' | 'random' | 'first'
     sortByOffset?: number
     sortByPAtt?: string
+    contextBreak?: string
   } = {},
 ) =>
   queryOptions({
@@ -487,6 +489,7 @@ export const constellationConcordances = (
         sort_order,
         sort_by_offset,
         sort_by_p_att,
+        context_break,
       },
     ],
     queryFn: ({ signal }) =>
@@ -508,6 +511,7 @@ export const constellationConcordances = (
             page_size,
             page_number,
             sort_order,
+            context_break,
             ...(sort_order === 'descending' || sort_order === 'ascending'
               ? {
                   sort_by_offset,

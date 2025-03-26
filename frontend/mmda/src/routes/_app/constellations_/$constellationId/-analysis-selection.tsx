@@ -23,6 +23,7 @@ import { useAnalysisSelection } from './-use-analysis-selection'
 
 export function AnalysisSelection({ className }: { className?: string }) {
   'use no memo'
+
   const {
     corpusId,
     subcorpusId,
