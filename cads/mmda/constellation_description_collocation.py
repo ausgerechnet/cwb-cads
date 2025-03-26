@@ -35,6 +35,291 @@ from .discourseme_description import (DiscoursemeCoordinatesOut,
 bp = APIBlueprint('collocation', __name__, url_prefix='/<description_id>/collocation')
 
 
+def get_or_create_coll(description,
+                       window, p, marginals, include_negative,
+                       semantic_map_id,
+                       focus_discourseme_id,
+                       filter_discourseme_ids, filter_item, filter_item_p_att):
+
+    s = description.s
+    semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
+
+    # select and categorise queries
+    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
+    focus_query = highlight_queries[focus_discourseme_id]
+    filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
+    if filter_item:
+        filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+
+    # filter?
+    if len(filter_queries) > 0:
+        current_app.logger.debug("second-order collocation mode")
+        focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
+        get_or_create(
+            DiscoursemeDescription,
+            discourseme_id=focus_discourseme_id,
+            corpus_id=description.corpus_id,
+            subcorpus_id=description.subcorpus_id,
+            s=description.s,
+            filter_sequence=focus_query.filter_sequence,
+            match_strategy=description.match_strategy,
+            query_id=focus_query.id
+        )
+        # if discourseme_description not in description.discourseme_descriptions:
+        #     description.discourseme_descriptions.append(discourseme_description)
+        #     db.session.commit()
+
+    if semantic_map_id is None:
+        collocation = Collocation.query.filter_by(
+            query_id=focus_query.id,
+            p=p,
+            s_break=s,
+            window=window,
+            marginals=marginals
+        ).order_by(Collocation.id.desc()).first()
+    else:
+        collocation = Collocation.query.filter_by(
+            semantic_map_id=semantic_map_id,
+            query_id=focus_query.id,
+            p=p,
+            s_break=s,
+            window=window,
+            marginals=marginals
+        ).order_by(Collocation.id.desc()).first()
+
+    if not collocation:
+        current_app.logger.debug("collocation object does not exist, creating new one")
+        # create collocation object
+        collocation = Collocation(
+            semantic_map_id=semantic_map_id,
+            query_id=focus_query.id,
+            p=p,
+            s_break=s,
+            window=window,
+            marginals=marginals
+        )
+        db.session.add(collocation)
+        db.session.commit()
+
+    else:
+        current_app.logger.debug("collocation object already exists")
+
+    ret = get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+    if isinstance(ret, bool):
+        if not ret:
+            current_app.logger.error("collocation analysis based on empty cotext")
+            abort(406, 'empty cotext')
+    else:
+        set_collocation_discourseme_scores(collocation,
+                                           [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
+                                           overlap=description.overlap)
+        ccc_semmap_init(collocation, semantic_map_id)
+
+    if description.semantic_map_id is None:
+        description.semantic_map_id = collocation.semantic_map_id
+
+    return collocation
+
+
+def get_collo_items(description, collocation, page_size, page_number, sort_order, sort_by, hide_focus, hide_filter, return_coordinates):
+
+    # focus query
+    focus_query_id = collocation.query_id
+    focus_query = db.get_or_404(Query, focus_query_id)
+
+    # discourseme scores
+    discourseme_scores = get_collocation_discourseme_scores(collocation.id, [d.id for d in description.discourseme_descriptions])
+    for s in discourseme_scores:
+        s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
+    discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+
+    # hide focus
+    blacklist = []
+    if hide_focus:
+        focus_discourseme_description = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
+        focus_unigrams = [i for i in chain.from_iterable(
+            [a.split(" ") for a in focus_discourseme_description.breakdown(collocation.p).index]
+        )]
+        blacklist_focus = CollocationItem.query.filter(
+            CollocationItem.collocation_id == collocation.id,
+            CollocationItem.item.in_(focus_unigrams)
+        )
+        blacklist += [b.id for b in blacklist_focus]
+
+    # hide filter
+    if hide_filter and focus_query.filter_sequence is not None:
+        filter_query_ids = [int(x) for x in focus_query.filter_sequence.lstrip("Q-").split("-")[1:]]
+        filter_descriptions = [d for d in description.discourseme_descriptions if d.query_id in filter_query_ids]
+        for desc in filter_descriptions:
+            desc_unigrams = [i for i in chain.from_iterable(
+                [a.split(" ") for a in desc.breakdown(collocation.p).index]
+            )]
+            blacklist_desc = CollocationItem.query.filter(
+                CollocationItem.collocation_id == collocation.id,
+                CollocationItem.item.in_(desc_unigrams)
+            )
+            blacklist += [b.id for b in blacklist_desc]
+
+    # get scores
+    scores = CollocationItemScore.query.filter(
+        CollocationItemScore.collocation_id == collocation.id,
+        CollocationItemScore.measure == sort_by,
+        ~ CollocationItemScore.collocation_item_id.in_(blacklist)
+    )
+
+    # order
+    if sort_order == 'ascending':
+        scores = scores.order_by(CollocationItemScore.score)
+    elif sort_order == 'descending':
+        scores = scores.order_by(CollocationItemScore.score.desc())
+
+    # paginate
+    scores = scores.paginate(page=page_number, per_page=page_size)
+    nr_items = scores.total
+    page_count = scores.pages
+
+    # format
+    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
+    items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
+
+    # coordinates
+    coordinates = []
+    discourseme_coordinates = []
+    if collocation.semantic_map and return_coordinates:
+        # make sure there's coordinates for all requested items and discourseme items
+        requested_items = [item['item'] for item in items]
+        for discourseme_score in discourseme_scores:
+            requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
+        ccc_semmap_update(collocation.semantic_map, requested_items)
+        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
+
+        # discourseme coordinates
+        discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
+        discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
+
+    collocation_items = {
+        'id': collocation.id,
+        'sort_by': sort_by,
+        'nr_items': nr_items,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count,
+        'items': items,
+        'coordinates': coordinates,
+        'discourseme_scores': discourseme_scores,
+        'discourseme_coordinates': discourseme_coordinates
+    }
+
+    return collocation_items
+
+
+def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by):
+
+    # filter out all items that are included in any discourseme unigram breakdown
+    blacklist = []
+    for desc in description.discourseme_descriptions:
+        bd = desc.breakdown(collocation.p)
+        if bd is not None:
+            desc_unigrams = [i for i in chain.from_iterable([a.split(" ") for a in bd.index])]
+            blacklist_desc = CollocationItem.query.filter(
+                CollocationItem.collocation_id == collocation.id,
+                CollocationItem.item.in_(desc_unigrams)
+            )
+            blacklist += [b.id for b in blacklist_desc]
+
+    # retrieve scores (without blacklist)
+    scores = CollocationItemScore.query.filter(
+        CollocationItemScore.collocation_id == collocation.id,
+        CollocationItemScore.measure == sort_by,
+        ~ CollocationItemScore.collocation_item_id.in_(blacklist)
+    )
+    # order
+    if sort_order == 'ascending':
+        scores = scores.order_by(CollocationItemScore.score)
+    elif sort_order == 'descending':
+        scores = scores.order_by(CollocationItemScore.score.desc())
+
+    # pagination
+    scores = scores.paginate(page=page_number, per_page=page_size)
+    nr_items = scores.total
+    page_count = scores.pages
+
+    # format
+    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
+    df_scores = DataFrame([CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']])
+    df_scores = expand_scores_dataframe(df_scores)
+    df_scores['discourseme_id'] = None
+    df_scores['source'] = 'items'
+
+    # combine
+    discourseme_scores = get_collocation_discourseme_scores_2(
+        collocation.id,
+        [desc.id for desc in description.discourseme_descriptions]
+    )
+    df_discourseme_item_scores = discourseme_scores['item_scores']
+    df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
+    df_discourseme_global_scores = discourseme_scores['global_scores']
+
+    if len(df_discourseme_item_scores) == 0:
+        # empty result
+        _map = []
+
+    else:
+        # scale
+        max_disc_score = max([
+            df_discourseme_item_scores[sort_by].max(),
+            df_discourseme_unigram_item_scores[sort_by].max(),
+            df_discourseme_global_scores[sort_by].max(),
+        ])
+        if isnan(max_disc_score) or max_disc_score == 0:
+            max_disc_score = 1
+        df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
+        df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
+        df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
+
+        # coordinates
+        if collocation.semantic_map:
+
+            # make sure there's coordinates for all requested items
+            requested_items = list(df_scores['item'].values)
+            requested_items += list(df_discourseme_item_scores['item'].values)
+            requested_items += list(df_discourseme_unigram_item_scores['item'])
+            ccc_semmap_update(collocation.semantic_map, list(set(requested_items)))
+            coordinates = DataFrame(
+                [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
+            )
+            df_scores = merge(df_scores, coordinates, on='item', how='left')
+            df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
+            df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
+
+            # discourseme coordinates
+            discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
+            discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
+            df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
+
+        df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
+        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
+        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
+        df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
+        df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
+        df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+
+        _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
+
+    collocation_map = {
+        'id': collocation.id,
+        'semantic_map_id': collocation.semantic_map_id,
+        'sort_by': sort_by,
+        'nr_items': nr_items,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count,
+        'map': _map
+    }
+
+    return collocation_map
+
+
 def query_discourseme_cotext(collocation, cotext_id, window, discourseme_description, f1, overlap='partial'):
     """ensure that CollocationDiscoursemeItems exist for discourseme description
 
@@ -473,7 +758,6 @@ def get_or_create_collocation(constellation_id, description_id, json_data):
     # context options
     window = json_data.get('window')
     p = json_data.get('p')
-    s = description.s
 
     # marginals
     marginals = json_data.get('marginals', 'local')
@@ -483,89 +767,25 @@ def get_or_create_collocation(constellation_id, description_id, json_data):
 
     # semantic map
     semantic_map_id = json_data.get('semantic_map_id', None)
-    semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
 
-    # filtering
+    # focus
+    focus_discourseme_id = json_data['focus_discourseme_id']
+
+    # filter
     filter_discourseme_ids = json_data.get('filter_discourseme_ids')
     filter_item = json_data.get('filter_item')
     filter_item_p_att = json_data.get('filter_item_p_att')
 
-    # select and categorise queries
-    highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
-    focus_query = highlight_queries[json_data['focus_discourseme_id']]
-    filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
-    if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+    collocation = get_or_create_coll(
+        description,
+        window, p, marginals, include_negative,
+        semantic_map_id,
+        focus_discourseme_id,
+        filter_discourseme_ids, filter_item, filter_item_p_att
+    )
 
-    # filter?
-    if len(filter_queries) > 0:
-        current_app.logger.debug("second-order collocation mode")
-        focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
-        get_or_create(
-            DiscoursemeDescription,
-            discourseme_id=json_data['focus_discourseme_id'],
-            corpus_id=description.corpus_id,
-            subcorpus_id=description.subcorpus_id,
-            s=description.s,
-            filter_sequence=focus_query.filter_sequence,
-            match_strategy=description.match_strategy,
-            query_id=focus_query.id
-        )
-        # if discourseme_description not in description.discourseme_descriptions:
-        #     description.discourseme_descriptions.append(discourseme_description)
-        #     db.session.commit()
-
-    if semantic_map_id is None:
-        collocation = Collocation.query.filter_by(
-            query_id=focus_query.id,
-            p=p,
-            s_break=s,
-            window=window,
-            marginals=marginals
-        ).order_by(Collocation.id.desc()).first()
-    else:
-        collocation = Collocation.query.filter_by(
-            semantic_map_id=semantic_map_id,
-            query_id=focus_query.id,
-            p=p,
-            s_break=s,
-            window=window,
-            marginals=marginals
-        ).order_by(Collocation.id.desc()).first()
-
-    if not collocation:
-        current_app.logger.debug("collocation object does not exist, creating new one")
-        # create collocation object
-        collocation = Collocation(
-            semantic_map_id=semantic_map_id,
-            query_id=focus_query.id,
-            p=p,
-            s_break=s,
-            window=window,
-            marginals=marginals
-        )
-        db.session.add(collocation)
-        db.session.commit()
-
-    else:
-        current_app.logger.debug("collocation object already exists")
-
-    ret = get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
-    if isinstance(ret, bool):
-        if not ret:
-            current_app.logger.error("collocation analysis based on empty cotext")
-            abort(406, 'empty cotext')
-    else:
-        set_collocation_discourseme_scores(collocation,
-                                           [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
-                                           overlap=description.overlap)
-        ccc_semmap_init(collocation, semantic_map_id)
-
-    if description.semantic_map_id is None:
-        description.semantic_map_id = collocation.semantic_map_id
-
-    collocation.focus_discourseme_id = json_data['focus_discourseme_id']
-    collocation.filter_discourseme_ids = json_data['filter_discourseme_ids']
+    collocation.focus_discourseme_id = focus_discourseme_id
+    collocation.filter_discourseme_ids = filter_discourseme_ids
 
     return ConstellationCollocationOut().dump(collocation), 200
 
@@ -617,91 +837,13 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
 
-    # discourseme scores
-    set_collocation_discourseme_scores(collocation,
-                                       [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
-                                       overlap=description.overlap)
-    # TODO: rewrite using get-collocation-discourseme-scores
-    discourseme_scores = get_collocation_discourseme_scores(collocation_id, [d.id for d in description.discourseme_descriptions])
-    for s in discourseme_scores:
-        s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
-    discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-
-    focus_query_id = collocation.query_id
-    blacklist = []
-    if hide_focus:
-        focus_discourseme_description = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
-        focus_unigrams = [i for i in chain.from_iterable(
-            [a.split(" ") for a in focus_discourseme_description.breakdown(collocation.p).index]
-        )]
-        blacklist_focus = CollocationItem.query.filter(
-            CollocationItem.collocation_id == collocation.id,
-            CollocationItem.item.in_(focus_unigrams)
-        )
-        blacklist += [b.id for b in blacklist_focus]
-
-    focus_query = db.get_or_404(Query, focus_query_id)
-    if hide_filter and focus_query.filter_sequence is not None:
-        filter_query_ids = [int(x) for x in focus_query.filter_sequence.lstrip("Q-").split("-")[1:]]
-        filter_descriptions = [d for d in description.discourseme_descriptions if d.query_id in filter_query_ids]
-        for desc in filter_descriptions:
-            desc_unigrams = [i for i in chain.from_iterable(
-                [a.split(" ") for a in desc.breakdown(collocation.p).index]
-            )]
-            blacklist_desc = CollocationItem.query.filter(
-                CollocationItem.collocation_id == collocation.id,
-                CollocationItem.item.in_(desc_unigrams)
-            )
-            blacklist += [b.id for b in blacklist_desc]
-
-    scores = CollocationItemScore.query.filter(
-        CollocationItemScore.collocation_id == collocation.id,
-        CollocationItemScore.measure == sort_by,
-        ~ CollocationItemScore.collocation_item_id.in_(blacklist)
+    # discourseme scores (set here to use for creating blacklist if necessary)
+    set_collocation_discourseme_scores(
+        collocation, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None], overlap=description.overlap
     )
-
-    # order
-    if sort_order == 'ascending':
-        scores = scores.order_by(CollocationItemScore.score)
-    elif sort_order == 'descending':
-        scores = scores.order_by(CollocationItemScore.score.desc())
-
-    # paginate
-    scores = scores.paginate(page=page_number, per_page=page_size)
-    nr_items = scores.total
-    page_count = scores.pages
-
-    # format
-    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
-    items = [CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']]
-
-    # coordinates
-    coordinates = []
-    discourseme_coordinates = []
-    if collocation.semantic_map and query_coord['return_coordinates']:
-        # make sure there's coordinates for all requested items and discourseme items
-        requested_items = [item['item'] for item in items]
-        for discourseme_score in discourseme_scores:
-            requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
-        ccc_semmap_update(collocation.semantic_map, requested_items)
-        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
-
-        # discourseme coordinates
-        discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
-        discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
-
-    collocation_items = {
-        'id': collocation.id,
-        'sort_by': sort_by,
-        'nr_items': nr_items,
-        'page_size': page_size,
-        'page_number': page_number,
-        'page_count': page_count,
-        'items': items,
-        'coordinates': coordinates,
-        'discourseme_scores': discourseme_scores,
-        'discourseme_coordinates': discourseme_coordinates
-    }
+    collocation_items = get_collo_items(
+        description, collocation, page_size, page_number, sort_order, sort_by, hide_focus, hide_filter, query_coord['return_coordinates']
+    )
 
     return ConstellationCollocationItemsOut().dump(collocation_items), 200
 
@@ -727,109 +869,12 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
     sort_by = query_data.pop('sort_by')
 
     # discourseme scores (set here to use for creating blacklist if necessary)
-    set_collocation_discourseme_scores(collocation, description.discourseme_descriptions, overlap=description.overlap)
-
-    # filter out all items that are included in any discourseme unigram breakdown
-    blacklist = []
-    for desc in description.discourseme_descriptions:
-        bd = desc.breakdown(collocation.p)
-        if bd is not None:
-            desc_unigrams = [i for i in chain.from_iterable([a.split(" ") for a in bd.index])]
-            blacklist_desc = CollocationItem.query.filter(
-                CollocationItem.collocation_id == collocation.id,
-                CollocationItem.item.in_(desc_unigrams)
-            )
-            blacklist += [b.id for b in blacklist_desc]
-
-    # retrieve scores (without blacklist)
-    scores = CollocationItemScore.query.filter(
-        CollocationItemScore.collocation_id == collocation.id,
-        CollocationItemScore.measure == sort_by,
-        ~ CollocationItemScore.collocation_item_id.in_(blacklist)
+    set_collocation_discourseme_scores(
+        collocation, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None], overlap=description.overlap
     )
-    # order
-    if sort_order == 'ascending':
-        scores = scores.order_by(CollocationItemScore.score)
-    elif sort_order == 'descending':
-        scores = scores.order_by(CollocationItemScore.score.desc())
-
-    # pagination
-    scores = scores.paginate(page=page_number, per_page=page_size)
-    nr_items = scores.total
-    page_count = scores.pages
-
-    # format
-    df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
-    df_scores = DataFrame([CollocationItemOut().dump(db.get_or_404(CollocationItem, id)) for id in df_scores['collocation_item_id']])
-    df_scores = expand_scores_dataframe(df_scores)
-    df_scores['discourseme_id'] = None
-    df_scores['source'] = 'items'
-
-    # combine
-    discourseme_scores = get_collocation_discourseme_scores_2(
-        collocation_id,
-        [desc.id for desc in description.discourseme_descriptions]
+    collocation_map = get_collo_map(
+        description, collocation, page_size, page_number, sort_order, sort_by
     )
-    df_discourseme_item_scores = discourseme_scores['item_scores']
-    df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
-    df_discourseme_global_scores = discourseme_scores['global_scores']
-
-    if len(df_discourseme_item_scores) == 0:
-        # empty result
-        _map = []
-
-    else:
-        # scale
-        max_disc_score = max([
-            df_discourseme_item_scores[sort_by].max(),
-            df_discourseme_unigram_item_scores[sort_by].max(),
-            df_discourseme_global_scores[sort_by].max(),
-        ])
-        if isnan(max_disc_score) or max_disc_score == 0:
-            max_disc_score = 1
-        df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
-        df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
-        df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
-
-        # coordinates
-        if collocation.semantic_map:
-
-            # make sure there's coordinates for all requested items
-            requested_items = list(df_scores['item'].values)
-            requested_items += list(df_discourseme_item_scores['item'].values)
-            requested_items += list(df_discourseme_unigram_item_scores['item'])
-            ccc_semmap_update(collocation.semantic_map, list(set(requested_items)))
-            coordinates = DataFrame(
-                [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
-            )
-            df_scores = merge(df_scores, coordinates, on='item', how='left')
-            df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
-            df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
-
-            # discourseme coordinates
-            discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
-            discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
-            df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
-
-        df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
-        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
-        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
-        df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
-        df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
-        df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
-
-        _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
-
-    collocation_map = {
-        'id': collocation.id,
-        'semantic_map_id': collocation.semantic_map_id,
-        'sort_by': sort_by,
-        'nr_items': nr_items,
-        'page_size': page_size,
-        'page_number': page_number,
-        'page_count': page_count,
-        'map': _map
-    }
 
     return ConstellationMapOut().dump(collocation_map), 200
 

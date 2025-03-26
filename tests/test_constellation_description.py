@@ -89,7 +89,7 @@ def test_constellation_concordance(client, auth):
             assert discoursemes[1]['id'] in discourseme_ids
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_concordance_line(client, auth):
 
     auth_header = auth.login()

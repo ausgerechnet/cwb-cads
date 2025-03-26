@@ -11,7 +11,8 @@ from flask import current_app
 from pandas import DataFrame
 
 from .. import db
-from ..concordance import ConcordanceLineIn, ConcordanceLineOut, ConcordanceIn, ConcordanceOut, ccc_concordance
+from ..concordance import (ConcordanceIn, ConcordanceLineIn,
+                           ConcordanceLineOut, ConcordanceOut, ccc_concordance)
 from ..database import Corpus
 from ..query import ccc_query, get_or_create_query_item
 from ..users import auth
