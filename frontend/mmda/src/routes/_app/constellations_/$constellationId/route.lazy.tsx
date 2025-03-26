@@ -25,7 +25,8 @@ import { useDescription } from './-use-description'
 import { SemanticMapPreview } from './-semantic-map-preview'
 import { useFilterSelection } from './-use-filter-selection'
 import { DiscoursemeList } from './-discourseme-list'
-import { AnalysisSelection, useAnalysisSelection } from './-analysis-selection'
+import { AnalysisSelection } from './-analysis-selection'
+import { useAnalysisSelection } from './-use-analysis-selection'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -44,7 +45,6 @@ function ConstellationDetail() {
 
   const hasAnalysisSelection =
     useAnalysisSelection().analysisSelection !== undefined
-  console.log('useAnalysisSelection', useAnalysisSelection().analysisSelection)
 
   const { setFilter, corpusId, isConcordanceVisible, focusDiscourseme } =
     useFilterSelection('/_app/constellations_/$constellationId')
