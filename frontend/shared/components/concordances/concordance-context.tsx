@@ -147,8 +147,6 @@ function useConcordanceFilters(
     setSortByOffset: (sortByOffset: number) =>
       updateFilters({ clSortByOffset: sortByOffset }),
     setFilterItem: (filterItem: string | undefined, filterItemPAtt: string) => {
-      console.log('filterItem', filterItem)
-      console.log('filterItemPAtt', filterItemPAtt)
       updateFilters({
         clFilterItem: filterItem,
         clFilterItemPAtt: filterItemPAtt,

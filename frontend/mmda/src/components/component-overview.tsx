@@ -60,6 +60,7 @@ export function ComponentOverview() {
       <Code> &lt;MetaFrequencyBooleanInput... /&gt;</Code>
 
       <MetaFrequencyBooleanInput
+        value={[true]}
         frequencies={[
           {
             value: true,
@@ -70,6 +71,11 @@ export function ComponentOverview() {
             value: false,
             nrTokens: 200,
             nrSpans: 20,
+          },
+          {
+            value: null,
+            nrTokens: 2,
+            nrSpans: 1,
           },
         ]}
       />

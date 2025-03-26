@@ -22,6 +22,7 @@ import { Route as IndexImport } from './routes/index'
 import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
+import { Route as AppPartitionRouteImport } from './routes/_app/partition/route'
 import { Route as AppKeywordAnalysisRouteImport } from './routes/_app/keyword-analysis/route'
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
 import { Route as AppCorporaRouteImport } from './routes/_app/corpora/route'
@@ -111,6 +112,14 @@ const AppQueriesRouteRoute = AppQueriesRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any).lazy(() =>
   import('./routes/_app/queries/route.lazy').then((d) => d.Route),
+)
+
+const AppPartitionRouteRoute = AppPartitionRouteImport.update({
+  id: '/partition',
+  path: '/partition',
+  getParentRoute: () => AppRoute,
+} as any).lazy(() =>
+  import('./routes/_app/partition/route.lazy').then((d) => d.Route),
 )
 
 const AppKeywordAnalysisRouteRoute = AppKeywordAnalysisRouteImport.update({
@@ -355,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKeywordAnalysisRouteImport
       parentRoute: typeof AppImport
     }
+    '/_app/partition': {
+      id: '/_app/partition'
+      path: '/partition'
+      fullPath: '/partition'
+      preLoaderRoute: typeof AppPartitionRouteImport
+      parentRoute: typeof AppImport
+    }
     '/_app/queries': {
       id: '/_app/queries'
       path: '/queries'
@@ -535,6 +551,7 @@ interface AppRouteChildren {
   AppCorporaRouteRoute: typeof AppCorporaRouteRoute
   AppDiscoursemesRouteRoute: typeof AppDiscoursemesRouteRoute
   AppKeywordAnalysisRouteRoute: typeof AppKeywordAnalysisRouteRoute
+  AppPartitionRouteRoute: typeof AppPartitionRouteRoute
   AppQueriesRouteRoute: typeof AppQueriesRouteRoute
   AppSubcorporaRouteRoute: typeof AppSubcorporaRouteRoute
   AppAdminRoute: typeof AppAdminRoute
@@ -557,6 +574,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCorporaRouteRoute: AppCorporaRouteRoute,
   AppDiscoursemesRouteRoute: AppDiscoursemesRouteRoute,
   AppKeywordAnalysisRouteRoute: AppKeywordAnalysisRouteRoute,
+  AppPartitionRouteRoute: AppPartitionRouteRoute,
   AppQueriesRouteRoute: AppQueriesRouteRoute,
   AppSubcorporaRouteRoute: AppSubcorporaRouteRoute,
   AppAdminRoute: AppAdminRoute,
@@ -591,6 +609,7 @@ export interface FileRoutesByFullPath {
   '/corpora': typeof AppCorporaRouteRoute
   '/discoursemes': typeof AppDiscoursemesRouteRoute
   '/keyword-analysis': typeof AppKeywordAnalysisRouteRoute
+  '/partition': typeof AppPartitionRouteRoute
   '/queries': typeof AppQueriesRouteRoute
   '/subcorpora': typeof AppSubcorporaRouteRoute
   '/admin': typeof AppAdminRoute
@@ -623,6 +642,7 @@ export interface FileRoutesByTo {
   '/corpora': typeof AppCorporaRouteRoute
   '/discoursemes': typeof AppDiscoursemesRouteRoute
   '/keyword-analysis': typeof AppKeywordAnalysisRouteRoute
+  '/partition': typeof AppPartitionRouteRoute
   '/queries': typeof AppQueriesRouteRoute
   '/subcorpora': typeof AppSubcorporaRouteRoute
   '/admin': typeof AppAdminRoute
@@ -656,6 +676,7 @@ export interface FileRoutesById {
   '/_app/corpora': typeof AppCorporaRouteRoute
   '/_app/discoursemes': typeof AppDiscoursemesRouteRoute
   '/_app/keyword-analysis': typeof AppKeywordAnalysisRouteRoute
+  '/_app/partition': typeof AppPartitionRouteRoute
   '/_app/queries': typeof AppQueriesRouteRoute
   '/_app/subcorpora': typeof AppSubcorporaRouteRoute
   '/_app/admin': typeof AppAdminRoute
@@ -690,6 +711,7 @@ export interface FileRouteTypes {
     | '/corpora'
     | '/discoursemes'
     | '/keyword-analysis'
+    | '/partition'
     | '/queries'
     | '/subcorpora'
     | '/admin'
@@ -721,6 +743,7 @@ export interface FileRouteTypes {
     | '/corpora'
     | '/discoursemes'
     | '/keyword-analysis'
+    | '/partition'
     | '/queries'
     | '/subcorpora'
     | '/admin'
@@ -752,6 +775,7 @@ export interface FileRouteTypes {
     | '/_app/corpora'
     | '/_app/discoursemes'
     | '/_app/keyword-analysis'
+    | '/_app/partition'
     | '/_app/queries'
     | '/_app/subcorpora'
     | '/_app/admin'
@@ -827,6 +851,7 @@ export const routeTree = rootRoute
         "/_app/corpora",
         "/_app/discoursemes",
         "/_app/keyword-analysis",
+        "/_app/partition",
         "/_app/queries",
         "/_app/subcorpora",
         "/_app/admin",
@@ -870,6 +895,10 @@ export const routeTree = rootRoute
     },
     "/_app/keyword-analysis": {
       "filePath": "_app/keyword-analysis/route.tsx",
+      "parent": "/_app"
+    },
+    "/_app/partition": {
+      "filePath": "_app/partition/route.tsx",
       "parent": "/_app"
     },
     "/_app/queries": {

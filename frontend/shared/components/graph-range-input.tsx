@@ -130,8 +130,6 @@ export default function GraphRangeInput({
   useEffect(() => {
     // prevent update while dragging
     if (onChange && !activeDrag) {
-      console.log('range.min', range.min)
-      console.log('range.max', range.max)
       onChange(range.min, range.max)
     }
   }, [range.min, range.max, onChange, activeDrag])
