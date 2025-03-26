@@ -65,8 +65,6 @@ export function PartitionForm({
   const subcorpusId = form.watch('corpus')?.subcorpusId
   const level = form.watch('level')
 
-  console.log('corpusId', corpusId)
-
   const {
     data: dataMeta,
     isLoading: isLoadingCorpus,

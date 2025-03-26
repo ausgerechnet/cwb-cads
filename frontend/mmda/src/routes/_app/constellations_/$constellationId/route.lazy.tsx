@@ -9,8 +9,6 @@ import { Loader2Icon, MapIcon } from 'lucide-react'
 import { Card } from '@cads/shared/components/ui/card'
 import { Headline3, Muted } from '@cads/shared/components/ui/typography'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
-import { Label } from '@cads/shared/components/ui/label'
 import { AssociationMatrix } from '@cads/shared/components/association-matrix'
 import {
   constellationById,
@@ -18,7 +16,6 @@ import {
   constellationDescriptionAssociations,
 } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils.ts'
-import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationCollocationFilter } from './-constellation-filter'
@@ -28,6 +25,7 @@ import { useDescription } from './-use-description'
 import { SemanticMapPreview } from './-semantic-map-preview'
 import { useFilterSelection } from './-use-filter-selection'
 import { DiscoursemeList } from './-discourseme-list'
+import { AnalysisSelection, useAnalysisSelection } from './-analysis-selection'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -44,28 +42,18 @@ function ConstellationDetail() {
     ) !== undefined
   const constellationId = parseInt(Route.useParams().constellationId)
 
-  const {
-    setFilter,
-    setFilters,
-    corpusId,
-    subcorpusId,
-    isConcordanceVisible,
-    focusDiscourseme,
-  } = useFilterSelection('/_app/constellations_/$constellationId')
+  const hasAnalysisSelection =
+    useAnalysisSelection().analysisSelection !== undefined
+  console.log('useAnalysisSelection', useAnalysisSelection().analysisSelection)
+
+  const { setFilter, corpusId, isConcordanceVisible, focusDiscourseme } =
+    useFilterSelection('/_app/constellations_/$constellationId')
 
   const {
     data: { comment, name, discoursemes: constellationDiscoursemes = [] },
   } = useSuspenseQuery(constellationById(constellationId))
-  const { description, isLoadingDescription, errorDescription } =
-    useDescription()
+  const { description } = useDescription()
   const { data: discoursemes = [] } = useQuery(discoursemesList)
-
-  const constellationIds = (description?.discourseme_descriptions ?? []).map(
-    (d) => d.discourseme_id,
-  )
-  const discoursemesInDescription = discoursemes.filter((d) =>
-    constellationIds.includes(d.id),
-  )
 
   const isMapAvailable =
     corpusId !== undefined && focusDiscourseme !== undefined
@@ -101,13 +89,13 @@ function ConstellationDetail() {
         setFilter('isConcordanceVisible', isVisible)
       }
     >
-      <ErrorMessage error={errorDescription} />
-
       <Headline3 className="border-0">{name}</Headline3>
 
       {comment && <Muted>{comment}</Muted>}
 
-      <div className="mt-4 grid grid-cols-[3fr_1fr] gap-5">
+      <div className="mb-8 mt-4 grid grid-cols-[2fr_1fr_auto] gap-4">
+        <AnalysisSelection />
+
         <DiscoursemeList
           constellationId={constellationId}
           descriptionId={description?.id as number}
@@ -146,47 +134,9 @@ function ConstellationDetail() {
         </Link>
       </div>
 
-      <div className="mt-4 flex gap-1">
-        <Label>
-          Corpus or Subcorpus
-          <div className="relative mt-1">
-            <SelectSubcorpus
-              onChange={(corpusId, subcorpusId) => {
-                void setFilters({
-                  corpusId: corpusId,
-                  subcorpusId: subcorpusId,
-                })
-              }}
-              corpusId={corpusId}
-              subcorpusId={subcorpusId}
-            />
-          </div>
-        </Label>
-        <Label>
-          Focus Discourseme:
-          <div className="relative mt-1">
-            <DiscoursemeSelect
-              discoursemes={discoursemesInDescription}
-              discoursemeId={focusDiscourseme}
-              onChange={(discoursemeId) => {
-                void setFilters({
-                  ccPageNumber: 1,
-                  focusDiscourseme: discoursemeId,
-                })
-              }}
-              disabled={isLoadingDescription}
-              className="w-full"
-            />
-            {isLoadingDescription && (
-              <Loader2Icon className="absolute left-1/2 top-2 animate-spin" />
-            )}
-          </div>
-        </Label>
-      </div>
-
       {description?.id !== undefined &&
         constellationDiscoursemes.length > 1 && (
-          <Card className="my-4">
+          <Card className="my-4 p-4">
             <DescriptionAssociation
               constellationId={constellationId}
               descriptionId={description.id}
@@ -194,12 +144,16 @@ function ConstellationDetail() {
           </Card>
         )}
 
-      <ConstellationCollocationFilter className="sticky top-14 mb-8" />
+      {hasAnalysisSelection && (
+        <>
+          <ConstellationCollocationFilter className="sticky top-14 mb-8" />
 
-      <Collocation
-        constellationId={constellationId}
-        descriptionId={description?.id}
-      />
+          <Collocation
+            constellationId={constellationId}
+            descriptionId={description?.id}
+          />
+        </>
+      )}
     </AppPageFrameSemanticMap>
   )
 }

@@ -6,7 +6,7 @@ import {
 } from '@cads/shared/components/ui/alert'
 import { cn } from '@cads/shared/lib/utils'
 
-type ErrorType = Error | null | undefined | ErrorType[]
+type ErrorType = Error | string | null | undefined | ErrorType[]
 
 export function ErrorMessage({
   error,
@@ -30,7 +30,8 @@ export function ErrorMessage({
   // eslint-disable-next-line @typescript-eslint/no-ts-ignore
   // @ts-ignore - We assume that some errors are thrown via axios; in these cases we check whether the error has a response and display the `message` from there -- if it exists.
   const responseMessage = error.response?.data?.message
-  const message = responseMessage ?? error.message
+  const message =
+    typeof error === 'string' ? error : (responseMessage ?? error.message)
   return (
     <Alert
       variant="destructive"
@@ -41,7 +42,7 @@ export function ErrorMessage({
          If the error contained a Response with a message, omit the `error.name`.
          These combinations might be confusing for the user.
       */}
-      {responseMessage ? (
+      {typeof error === 'string' || responseMessage ? (
         <AlertTitle>{message}</AlertTitle>
       ) : (
         <>

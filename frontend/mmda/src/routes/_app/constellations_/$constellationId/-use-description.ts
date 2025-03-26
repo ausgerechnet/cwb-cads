@@ -9,6 +9,7 @@ export function useDescription() {
   const { secondary, s, corpusId, subcorpusId } = useFilterSelection(
     '/_app/constellations_/$constellationId',
   )
+  console.log('>>s', s)
   const {
     data: description,
     isLoading: isLoadingDescription,
