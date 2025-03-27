@@ -562,6 +562,7 @@ export const constellationCollocation = (
     ],
     staleTime: 1_000 * 60 * 5, // 5 minutes
     queryFn: async ({ signal }) => {
+      // @ts-expect-error - deeply nested types
       return apiClient.put(
         '/mmda/constellation/:constellation_id/description/:description_id/collocation/',
         {
