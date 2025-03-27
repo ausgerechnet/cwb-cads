@@ -122,7 +122,7 @@ function AssociationTable({
 
   return (
     <table
-      className="grid"
+      className="mt-2 grid"
       style={{
         gridTemplateColumns: `auto repeat(${columnIds.length}, 1fr)`,
       }}
@@ -131,14 +131,18 @@ function AssociationTable({
         <tr className="col-span-full grid grid-cols-subgrid">
           <th></th>
           {rowIds.map((rowId) => (
-            <th key={rowId}>{legendNameMap?.get(rowId) ?? rowId}</th>
+            <th key={rowId} className="py-1 text-xs">
+              {legendNameMap?.get(rowId) ?? rowId}
+            </th>
           ))}
         </tr>
       </thead>
       <tbody className="col-span-full grid grid-cols-subgrid">
         {columnIds.map((columnId) => (
           <tr key={columnId} className="col-span-full grid grid-cols-subgrid">
-            <td>{legendNameMap?.get(columnId) ?? columnId}</td>
+            <th className="pr-2 text-left text-xs">
+              {legendNameMap?.get(columnId) ?? columnId}
+            </th>
             {rowIds.map((candidate) => {
               const { score: associationScore, scaledScore = 0.5 } =
                 associations.find(
