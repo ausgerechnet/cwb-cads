@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 
-import { corpusById } from '@cads/shared/queries'
+import { corpusById, subcorpusCollections } from '@cads/shared/queries'
 
 import { Route } from './route'
 
@@ -65,16 +65,30 @@ export function useAnalysisSelection() {
     partition,
   } = Route.useSearch()
 
-  const { data: layers } = useQuery({
-    ...corpusById(corpusId!, subcorpusId),
-    select: (corpus) => corpus.p_atts,
-    enabled: corpusId !== undefined,
-  })
+  const { data: { layers, structuredAttributes } = {}, error: errorLayers } =
+    useQuery({
+      ...corpusById(corpusId!, subcorpusId),
+      select: (corpus) => ({
+        layers: corpus.p_atts,
+        structuredAttributes: corpus.s_atts,
+      }),
+      enabled: corpusId !== undefined,
+    })
 
-  const { data: referenceLayers } = useQuery({
+  const { data: referenceLayers, error: errorReferenceLayers } = useQuery({
     ...corpusById(referenceCorpusId!, referenceSubcorpusId),
     select: (corpus) => corpus.p_atts,
     enabled: referenceCorpusId !== undefined,
+  })
+
+  const { data: partitions, error: subcorpusCollectionsError } = useQuery({
+    ...subcorpusCollections(corpusId!, subcorpusId),
+    select: (collections) =>
+      collections.map(({ id, name, description }) => ({
+        id,
+        label: name + (description ? ` (${description})` : ''),
+      })),
+    enabled: corpusId !== undefined,
   })
 
   let analysisSelection: AnalysisSelection | undefined = undefined
@@ -125,12 +139,15 @@ export function useAnalysisSelection() {
   }
 
   return {
+    errors: [errorLayers, errorReferenceLayers, subcorpusCollectionsError],
     analysisType,
     analysisSelection,
     analysisLayer,
     corpusId,
     subcorpusId,
     layers,
+    partitions,
+    structuredAttributes,
     referenceCorpusId,
     referenceSubcorpusId,
     focusDiscourseme,
@@ -159,6 +176,7 @@ export function useAnalysisSelection() {
           subcorpusId,
           analysisLayer: undefined,
           focusDiscourseme: undefined,
+          contextBreak: undefined,
         }),
       }),
     setFocusDiscourseme: (focusDiscourseme?: number) =>

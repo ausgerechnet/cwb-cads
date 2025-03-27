@@ -8,6 +8,7 @@ export function useDescription() {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { secondary, clContextBreak, corpusId, subcorpusId } =
     useFilterSelection('/_app/constellations_/$constellationId')
+
   const {
     data: description,
     isLoading: isLoadingDescription,

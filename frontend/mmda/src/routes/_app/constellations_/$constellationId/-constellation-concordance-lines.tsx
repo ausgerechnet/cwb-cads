@@ -13,9 +13,40 @@ import {
   ConcordanceTable,
   useConcordanceFilterContext,
 } from '@cads/shared/components/concordances'
+
 import { useAnalysisSelection } from './-use-analysis-selection'
+import { useKeywordAnalysis } from './-use-keyword-analysis'
 
 export function ConstellationConcordanceLines({
+  constellationId,
+  className,
+}: {
+  constellationId: number
+  className?: string
+}) {
+  const { analysisSelection } = useAnalysisSelection()
+
+  useKeywordAnalysis()
+
+  if (analysisSelection === undefined) {
+    return (
+      <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
+        No data available.
+        <br />
+        Finish your analysis selection.
+      </div>
+    )
+  }
+
+  return (
+    <ConstellationConcordanceLinesCollocation
+      constellationId={constellationId}
+      className={className}
+    />
+  )
+}
+
+function ConstellationConcordanceLinesCollocation({
   constellationId,
   className,
 }: {
@@ -111,18 +142,6 @@ export function ConstellationConcordanceLines({
       <ErrorMessage className="col-span-full" error={error} />
 
       <ConstellationConcordanceFilter />
-
-      {!enabled && (
-        <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
-          No data available.
-          {focusDiscourseme === undefined && (
-            <>
-              <br />
-              Select a focus discourseme.
-            </>
-          )}
-        </div>
-      )}
 
       {enabled && secondary && (
         <>
