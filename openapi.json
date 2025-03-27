@@ -2451,7 +2451,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev39"
+    "version": "0.3.0.dev40"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -5961,7 +5961,6 @@
     },
     "/mmda/constellation/{constellation_id}/description/{description_id}/collocation/{collocation_id}/items": {
       "get": {
-        "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
@@ -6127,7 +6126,6 @@
     },
     "/mmda/constellation/{constellation_id}/description/{description_id}/collocation/{collocation_id}/map": {
       "get": {
-        "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
@@ -6930,7 +6928,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get all keyword analyses featuring this constellation. (Not implemented.)",
+        "summary": "Get all keyword analyses of constellation description.",
         "tags": [
           "Mmda.Constellation.Description.Keyword"
         ]
@@ -7087,7 +7085,6 @@
     },
     "/mmda/constellation/{constellation_id}/description/{description_id}/keyword/{keyword_id}/items": {
       "get": {
-        "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",
@@ -7111,6 +7108,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "return_coordinates",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
             }
           },
           {
@@ -7226,7 +7232,6 @@
     },
     "/mmda/constellation/{constellation_id}/description/{description_id}/keyword/{keyword_id}/map": {
       "get": {
-        "description": "TODO also return ranks (to ease frontend pagination)?",
         "parameters": [
           {
             "in": "path",

@@ -10,7 +10,7 @@ from flask import current_app
 from pandas import DataFrame, concat, merge, to_numeric
 
 from .. import db
-from ..database import Keyword, KeywordItem, KeywordItemScore
+from ..database import Corpus, Keyword, KeywordItem, KeywordItemScore
 from ..keyword import (KeywordItemOut, KeywordItemsIn, KeywordItemsOut,
                        KeywordOut, ccc_keywords)
 from ..query import ccc_query
@@ -20,13 +20,177 @@ from .constellation_description import expand_scores_dataframe
 from .constellation_description_collocation import (ConstellationMapItemOut,
                                                     ConstellationMapOut)
 from .constellation_description_semantic_map import get_discourseme_coordinates
-from .database import (Constellation, ConstellationDescription, Discourseme,
+from .database import (Constellation, ConstellationDescription,
+                       ConstellationDescriptionKeyword, Discourseme,
                        DiscoursemeDescription, KeywordDiscoursemeItem)
 from .discourseme_description import (DiscoursemeCoordinatesOut,
                                       DiscoursemeScoresOut,
                                       discourseme_template_to_description)
 
 bp = APIBlueprint('keyword', __name__, url_prefix='/<description_id>/keyword')
+
+
+def get_kw_items(description, keyword, page_size, page_number, sort_order, sort_by, return_coordinates):
+
+    scores = KeywordItemScore.query.filter(
+        KeywordItemScore.keyword_id == keyword.id,
+        KeywordItemScore.measure == sort_by
+    )
+
+    # order
+    if sort_order == 'ascending':
+        scores = scores.order_by(KeywordItemScore.score)
+    elif sort_order == 'descending':
+        scores = scores.order_by(KeywordItemScore.score.desc())
+
+    # paginate
+    scores = scores.paginate(page=page_number, per_page=page_size)
+    nr_items = scores.total
+    page_count = scores.pages
+
+    # format
+    df_scores = DataFrame([vars(s) for s in scores], columns=['keyword_item_id'])
+    items = [KeywordItemOut().dump(db.get_or_404(KeywordItem, id)) for id in df_scores['keyword_item_id']]
+
+    # discourseme scores
+    set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
+    discourseme_scores = get_keyword_discourseme_scores(keyword.id, [d.id for d in description.discourseme_descriptions])
+    discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
+
+    # coordinates
+    coordinates = list()
+    discourseme_coordinates = list()
+    if keyword.semantic_map and return_coordinates:
+        # make sure there's coordinates for all requested items and discourseme items
+        requested_items = [item['item'] for item in items]
+        for discourseme_score in discourseme_scores:
+            requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
+        ccc_semmap_update(keyword.semantic_map, requested_items)
+        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
+
+        # discourseme coordinates
+        discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions, keyword.p)
+        discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
+
+    keyword_items = {
+        'id': keyword.id,
+        'sort_by': sort_by,
+        'nr_items': nr_items,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count,
+        'items': items,
+        'coordinates': coordinates,
+        'discourseme_scores': discourseme_scores,
+        'discourseme_coordinates': discourseme_coordinates
+    }
+
+    return keyword_items
+
+
+def get_kw_map(description, keyword, page_size, page_number, sort_order, sort_by):
+
+    # filter out all items that are included in any discourseme unigram breakdown
+    blacklist = []
+    for desc in description.discourseme_descriptions:
+        if desc.breakdown(keyword.p) is not None:
+            desc_unigrams = [i for i in chain.from_iterable(
+                [a.split(" ") for a in desc.breakdown(keyword.p).index]
+            )]
+            blacklist_desc = KeywordItem.query.filter(
+                KeywordItem.keyword_id == keyword.id,
+                KeywordItem.item.in_(desc_unigrams)
+            )
+            blacklist += [b.id for b in blacklist_desc]
+
+    # retrieve scores (without blacklist)
+    scores = KeywordItemScore.query.filter(
+        KeywordItemScore.keyword_id == keyword.id,
+        KeywordItemScore.measure == sort_by,
+        ~ KeywordItemScore.keyword_item_id.in_(blacklist)
+    )
+
+    # order
+    if sort_order == 'ascending':
+        scores = scores.order_by(KeywordItemScore.score)
+    elif sort_order == 'descending':
+        scores = scores.order_by(KeywordItemScore.score.desc())
+
+    # pagination
+    scores = scores.paginate(page=page_number, per_page=page_size)
+    nr_items = scores.total
+    page_count = scores.pages
+
+    # format
+    df_scores = DataFrame([vars(s) for s in scores], columns=['keyword_item_id'])
+    df_scores = DataFrame([KeywordItemOut().dump(db.get_or_404(KeywordItem, id)) for id in df_scores['keyword_item_id']])
+    df_scores = expand_scores_dataframe(df_scores)
+    df_scores['discourseme_id'] = None
+    df_scores['source'] = 'items'
+
+    # combine
+    discourseme_scores = get_keyword_discourseme_scores_2(
+        keyword.id,
+        [desc.id for desc in description.discourseme_descriptions]
+    )
+    df_discourseme_item_scores = discourseme_scores['item_scores']
+    df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
+    df_discourseme_global_scores = discourseme_scores['global_scores']
+
+    if len(df_discourseme_item_scores) == 0:
+        # empty result
+        _map = []
+    else:
+        # scale
+        max_disc_score = max([
+            df_discourseme_item_scores[sort_by].max(),
+            df_discourseme_unigram_item_scores[sort_by].max(),
+            df_discourseme_global_scores[sort_by].max(),
+        ])
+        df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
+        df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
+        df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
+
+        # coordinates
+        if keyword.semantic_map:
+
+            # make sure there's coordinates for all requested items
+            requested_items = list(df_scores['item'].values)
+            requested_items += list(df_discourseme_item_scores['item'].values)
+            requested_items += list(df_discourseme_unigram_item_scores['item'])
+            ccc_semmap_update(keyword.semantic_map, list(set(requested_items)))
+            coordinates = DataFrame(
+                [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
+            )
+            df_scores = merge(df_scores, coordinates, on='item', how='left')
+            df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
+            df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
+
+            # discourseme coordinates
+            discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions, keyword.p)
+            discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
+            df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
+
+        df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
+        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
+        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
+        df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
+        df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
+        df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+
+        _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
+
+    keyword_map = {
+        'id': keyword.id,
+        'sort_by': sort_by,
+        'nr_items': nr_items,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count,
+        'map': _map
+    }
+
+    return keyword_map
 
 
 def query_discourseme_corpora(keyword, discourseme_description):
@@ -48,6 +212,8 @@ def query_discourseme_corpora(keyword, discourseme_description):
     p_description = keyword.p
     match_strategy = discourseme_description.match_strategy
     s_query = discourseme_description.s
+    corpus_reference = db.get_or_404(Corpus, corpus_id_reference)
+    s_query_reference = s_query if s_query in corpus_reference.s_atts else corpus_reference.s_default
 
     # make sure discourseme description exists in reference corpus
     discourseme_description_reference = DiscoursemeDescription.query.filter_by(
@@ -55,7 +221,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
         corpus_id=corpus_id_reference,
         subcorpus_id=subcorpus_id_reference,
         filter_sequence=None,
-        s=s_query,
+        s=s_query_reference,
         match_strategy=match_strategy
     ).first()
     if not discourseme_description_reference:
@@ -64,7 +230,7 @@ def query_discourseme_corpora(keyword, discourseme_description):
             [{'surface': item.surface, 'p': item.p, 'cqp_query': item.cqp_query} for item in discourseme_description.items],
             corpus_id_reference,
             subcorpus_id_reference,
-            s_query,
+            s_query_reference,
             match_strategy
         )
 
@@ -328,6 +494,13 @@ def create_keyword(constellation_id, description_id, json_data):
     if description.semantic_map_id is None:
         description.semantic_map_id = keyword.semantic_map_id
 
+    obj = ConstellationDescriptionKeyword(
+        constellation_description_id=description.id,
+        keyword_id=keyword.id
+    )
+    db.session.add(obj)
+    db.session.commit()
+
     return KeywordOut().dump(keyword), 200
 
 
@@ -335,94 +508,26 @@ def create_keyword(constellation_id, description_id, json_data):
 @bp.output(KeywordOut(many=True))
 @bp.auth_required(auth)
 def get_all_keyword(constellation_id, description_id):
-    """Get all keyword analyses featuring this constellation. (Not implemented.)
+    """Get all keyword analyses of constellation description.
 
     """
 
-    raise NotImplementedError()
+    # description = db.get_or_404(ConstellationDescription, description_id)
+    keywords = list()
+    for cdk in ConstellationDescriptionKeyword.query.filter_by(constellation_description_id=description_id):
+        keywords.append(db.get_or_404(Keyword, cdk.keyword_id))
+
+    return [KeywordOut().dump(keyword) for keyword in keywords], 200
 
 
 @bp.get("/<keyword_id>/items")
 @bp.input(KeywordItemsIn, location='query')
+@bp.input({'return_coordinates': Boolean(required=False, load_default=False)}, location='query', arg_name='query_coord')
 @bp.output(ConstellationKeywordItemsOut)
 @bp.auth_required(auth)
-def get_keyword_items(constellation_id, description_id, keyword_id, query_data):
+def get_keyword_items(constellation_id, description_id, keyword_id, query_data, query_coord):
     """Get scored items and discourseme scores of constellation keyword analysis.
 
-    TODO also return ranks (to ease frontend pagination)?
-    """
-
-    description = db.get_or_404(ConstellationDescription, description_id)
-    keyword = db.get_or_404(Keyword, keyword_id)
-
-    page_size = query_data.pop('page_size')
-    page_number = query_data.pop('page_number')
-    sort_order = query_data.pop('sort_order')
-    sort_by = query_data.pop('sort_by')
-
-    scores = KeywordItemScore.query.filter(
-        KeywordItemScore.keyword_id == keyword.id,
-        KeywordItemScore.measure == sort_by
-    )
-
-    # order
-    if sort_order == 'ascending':
-        scores = scores.order_by(KeywordItemScore.score)
-    elif sort_order == 'descending':
-        scores = scores.order_by(KeywordItemScore.score.desc())
-
-    # paginate
-    scores = scores.paginate(page=page_number, per_page=page_size)
-    nr_items = scores.total
-    page_count = scores.pages
-
-    # format
-    df_scores = DataFrame([vars(s) for s in scores], columns=['keyword_item_id'])
-    items = [KeywordItemOut().dump(db.get_or_404(KeywordItem, id)) for id in df_scores['keyword_item_id']]
-
-    # discourseme scores
-    set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
-    discourseme_scores = get_keyword_discourseme_scores(keyword_id, [d.id for d in description.discourseme_descriptions])
-    discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
-
-    # coordinates
-    coordinates = list()
-    if keyword.semantic_map:
-        # make sure there's coordinates for all requested items and discourseme items
-        requested_items = [item['item'] for item in items]
-        for discourseme_score in discourseme_scores:
-            requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
-        ccc_semmap_update(keyword.semantic_map, requested_items)
-        coordinates = [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
-
-        # discourseme coordinates
-        discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions, keyword.p)
-        discourseme_coordinates = [DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates]
-
-    keyword_items = {
-        'id': keyword.id,
-        'sort_by': sort_by,
-        'nr_items': nr_items,
-        'page_size': page_size,
-        'page_number': page_number,
-        'page_count': page_count,
-        'items': items,
-        'coordinates': coordinates,
-        'discourseme_scores': discourseme_scores,
-        'discourseme_coordinates': discourseme_coordinates
-    }
-
-    return ConstellationKeywordItemsOut().dump(keyword_items), 200
-
-
-@bp.get("/<keyword_id>/map")
-@bp.input(KeywordItemsIn, location='query')
-@bp.output(ConstellationMapOut)
-@bp.auth_required(auth)
-def get_keyword_map(constellation_id, description_id, keyword_id, query_data):
-    """Get scored items and discourseme scores of constellation keyword analysis.
-
-    TODO also return ranks (to ease frontend pagination)?
     """
 
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -434,107 +539,40 @@ def get_keyword_map(constellation_id, description_id, keyword_id, query_data):
     sort_by = query_data.pop('sort_by')
 
     # discourseme scores (set here to use for creating blacklist if necessary)
-    set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
-
-    # filter out all items that are included in any discourseme unigram breakdown
-    blacklist = []
-    for desc in description.discourseme_descriptions:
-        if desc.breakdown(keyword.p) is not None:
-            desc_unigrams = [i for i in chain.from_iterable(
-                [a.split(" ") for a in desc.breakdown(keyword.p).index]
-            )]
-            blacklist_desc = KeywordItem.query.filter(
-                KeywordItem.keyword_id == keyword.id,
-                KeywordItem.item.in_(desc_unigrams)
-            )
-            blacklist += [b.id for b in blacklist_desc]
-
-    # retrieve scores (without blacklist)
-    scores = KeywordItemScore.query.filter(
-        KeywordItemScore.keyword_id == keyword.id,
-        KeywordItemScore.measure == sort_by,
-        ~ KeywordItemScore.keyword_item_id.in_(blacklist)
+    set_keyword_discourseme_scores(
+        keyword, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None]
+    )
+    keyword_items = get_kw_items(
+        description, keyword, page_size, page_number, sort_order, sort_by, query_coord['return_coordinates']
     )
 
-    # order
-    if sort_order == 'ascending':
-        scores = scores.order_by(KeywordItemScore.score)
-    elif sort_order == 'descending':
-        scores = scores.order_by(KeywordItemScore.score.desc())
+    return ConstellationKeywordItemsOut().dump(keyword_items), 200
 
-    # pagination
-    scores = scores.paginate(page=page_number, per_page=page_size)
-    nr_items = scores.total
-    page_count = scores.pages
 
-    # format
-    df_scores = DataFrame([vars(s) for s in scores], columns=['keyword_item_id'])
-    df_scores = DataFrame([KeywordItemOut().dump(db.get_or_404(KeywordItem, id)) for id in df_scores['keyword_item_id']])
-    df_scores = expand_scores_dataframe(df_scores)
-    df_scores['discourseme_id'] = None
-    df_scores['source'] = 'items'
+@bp.get("/<keyword_id>/map")
+@bp.input(KeywordItemsIn, location='query')
+@bp.output(ConstellationMapOut)
+@bp.auth_required(auth)
+def get_keyword_map(constellation_id, description_id, keyword_id, query_data):
+    """Get scored items and discourseme scores of constellation keyword analysis.
 
-    # combine
-    discourseme_scores = get_keyword_discourseme_scores_2(
-        keyword_id,
-        [desc.id for desc in description.discourseme_descriptions]
+    """
+
+    description = db.get_or_404(ConstellationDescription, description_id)
+    keyword = db.get_or_404(Keyword, keyword_id)
+
+    page_size = query_data.pop('page_size')
+    page_number = query_data.pop('page_number')
+    sort_order = query_data.pop('sort_order')
+    sort_by = query_data.pop('sort_by')
+
+    # discourseme scores (set here to use for creating blacklist if necessary)
+    set_keyword_discourseme_scores(
+        keyword, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None]
     )
-    df_discourseme_item_scores = discourseme_scores['item_scores']
-    df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
-    df_discourseme_global_scores = discourseme_scores['global_scores']
-
-    if len(df_discourseme_item_scores) == 0:
-        # empty result
-        _map = []
-    else:
-        # scale
-        max_disc_score = max([
-            df_discourseme_item_scores[sort_by].max(),
-            df_discourseme_unigram_item_scores[sort_by].max(),
-            df_discourseme_global_scores[sort_by].max(),
-        ])
-        df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
-        df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
-        df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
-
-        # coordinates
-        if keyword.semantic_map:
-
-            # make sure there's coordinates for all requested items
-            requested_items = list(df_scores['item'].values)
-            requested_items += list(df_discourseme_item_scores['item'].values)
-            requested_items += list(df_discourseme_unigram_item_scores['item'])
-            ccc_semmap_update(keyword.semantic_map, list(set(requested_items)))
-            coordinates = DataFrame(
-                [CoordinatesOut().dump(coordinates) for coordinates in keyword.semantic_map.coordinates if coordinates.item in requested_items]
-            )
-            df_scores = merge(df_scores, coordinates, on='item', how='left')
-            df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
-            df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
-
-            # discourseme coordinates
-            discourseme_coordinates = get_discourseme_coordinates(keyword.semantic_map, description.discourseme_descriptions, keyword.p)
-            discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
-            df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
-
-        df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
-        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
-        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
-        df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
-        df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
-        df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
-
-        _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
-
-    keyword_map = {
-        'id': keyword.id,
-        'sort_by': sort_by,
-        'nr_items': nr_items,
-        'page_size': page_size,
-        'page_number': page_number,
-        'page_count': page_count,
-        'map': _map
-    }
+    keyword_map = get_kw_map(
+        description, keyword, page_size, page_number, sort_order, sort_by
+    )
 
     return ConstellationMapOut().dump(keyword_map), 200
 

@@ -284,6 +284,17 @@ class CollocationDiscoursemeItemScore(db.Model):
 ###########
 # KEYWORD #
 ###########
+class ConstellationDescriptionKeyword(db.Model):
+    """
+
+    """
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    keyword_id = db.Column(db.Integer, db.ForeignKey('keyword.id', ondelete='CASCADE'), index=True)
+    constellation_description_id = db.Column(db.Integer, db.ForeignKey('constellation_description.id', ondelete='CASCADE'), index=True)
+
+
 class KeywordDiscoursemeItem(db.Model):
     """
 
