@@ -22,7 +22,7 @@ from .constellation_description_collocation import (ConstellationMapItemOut,
 from .constellation_description_semantic_map import get_discourseme_coordinates
 from .database import (Constellation, ConstellationDescription,
                        ConstellationDescriptionKeyword, Discourseme,
-                       DiscoursemeDescription, KeywordDiscoursemeItem)
+                       DiscoursemeDescription, get_or_create, KeywordDiscoursemeItem)
 from .discourseme_description import (DiscoursemeCoordinatesOut,
                                       DiscoursemeScoresOut,
                                       discourseme_template_to_description)
@@ -449,7 +449,9 @@ class ConstellationKeywordItemsOut(KeywordItemsOut):
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
 def create_keyword(constellation_id, description_id, json_data):
-    """Create keyword analysis for constellation description.
+    """DEPRECATED. USE PUT INSTEAD.
+
+    Create keyword analysis for constellation description.
 
     """
 
@@ -500,6 +502,88 @@ def create_keyword(constellation_id, description_id, json_data):
     )
     db.session.add(obj)
     db.session.commit()
+
+    return KeywordOut().dump(keyword), 200
+
+
+@bp.put("/")
+@bp.input(ConstellationKeywordIn)
+@bp.output(KeywordOut)
+@bp.auth_required(auth)
+def get_or_create_keyword(constellation_id, description_id, json_data):
+    """Get keyword analysis for constellation description; create if necessary.
+
+    """
+
+    # description
+    description = db.get_or_404(ConstellationDescription, description_id)
+
+    # corpus
+    corpus_id = description.corpus_id
+    subcorpus_id = description.subcorpus_id
+    p = json_data.get('p')
+
+    # reference corpus
+    corpus_id_reference = json_data.get('corpus_id_reference')
+    subcorpus_id_reference = json_data.get('subcorpus_id_reference')
+    p_reference = json_data.get('p_reference')
+
+    # semantic map
+    semantic_map_id = json_data.get('semantic_map_id', None)
+    semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
+
+    # settings
+    sub_vs_rest = json_data.get('sub_vs_rest')
+    min_freq = json_data.get('min_freq')
+
+    keyword_query = Keyword.query.filter_by(
+        corpus_id=corpus_id,
+        p=p,
+        corpus_id_reference=corpus_id_reference,
+        p_reference=p_reference,
+        min_freq=min_freq,
+        sub_vs_rest=sub_vs_rest
+    )
+
+    if subcorpus_id is None:
+        keyword_query = keyword_query.filter(Keyword.subcorpus_id.is_(None))
+    else:
+        keyword_query = keyword_query.filter_by(subcorpus_id=subcorpus_id)
+
+    if subcorpus_id_reference is None:
+        keyword_query = keyword_query.filter(Keyword.subcorpus_id_reference.is_(None))
+    else:
+        keyword_query = keyword_query.filter_by(subcorpus_id_reference=subcorpus_id_reference)
+
+    keyword = keyword_query.order_by(Keyword.id.desc()).first()
+    if not keyword:
+        current_app.logger.debug("keyword object does not exist, creating new one")
+        keyword = Keyword(
+            semantic_map_id=semantic_map_id,
+            corpus_id=corpus_id,
+            subcorpus_id=subcorpus_id,
+            p=p,
+            corpus_id_reference=corpus_id_reference,
+            subcorpus_id_reference=subcorpus_id_reference,
+            p_reference=p_reference,
+            min_freq=min_freq,
+            sub_vs_rest=sub_vs_rest
+        )
+        db.session.add(keyword)
+        db.session.commit()
+    else:
+        current_app.logger.debug("keyword object already exists")
+
+    keyword.semantic_map_id = semantic_map_id
+    db.session.commit()
+
+    ccc_keywords(keyword)
+    set_keyword_discourseme_scores(keyword, description.discourseme_descriptions)
+    ccc_semmap_init(keyword, semantic_map_id)
+    if description.semantic_map_id is None:
+        description.semantic_map_id = keyword.semantic_map_id
+
+    get_or_create(ConstellationDescriptionKeyword, constellation_description_id=description.id, keyword_id=keyword.id)
 
     return KeywordOut().dump(keyword), 200
 

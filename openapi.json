@@ -2451,7 +2451,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev40"
+    "version": "0.3.0.dev41"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -6934,6 +6934,7 @@
         ]
       },
       "post": {
+        "description": "Create keyword analysis for constellation description.",
         "parameters": [
           {
             "in": "path",
@@ -7008,7 +7009,87 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create keyword analysis for constellation description.",
+        "summary": "DEPRECATED. USE PUT INSTEAD.",
+        "tags": [
+          "Mmda.Constellation.Description.Keyword"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConstellationKeywordIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeywordOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get keyword analysis for constellation description; create if necessary.",
         "tags": [
           "Mmda.Constellation.Description.Keyword"
         ]
