@@ -365,7 +365,7 @@ def test_put_constellation_keywords(client, auth):
         assert description.status_code == 200
 
         # put keyword
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={
@@ -376,7 +376,7 @@ def test_put_constellation_keywords(client, auth):
         assert keyword.status_code == 200
 
         # put again
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={
@@ -421,7 +421,7 @@ def test_get_constellation_keywords(client, auth):
         assert description.status_code == 200
 
         # create keyword
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={
@@ -431,7 +431,7 @@ def test_get_constellation_keywords(client, auth):
                              headers=auth_header)
         assert keyword.status_code == 200
 
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={
@@ -442,7 +442,7 @@ def test_get_constellation_keywords(client, auth):
         assert keyword.status_code == 200
 
         # create another keyword
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={
@@ -452,7 +452,7 @@ def test_get_constellation_keywords(client, auth):
                              headers=auth_header)
         assert keyword.status_code == 200
 
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={
@@ -463,7 +463,7 @@ def test_get_constellation_keywords(client, auth):
         assert keyword.status_code == 200
 
         # create another keyword
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={
@@ -473,7 +473,7 @@ def test_get_constellation_keywords(client, auth):
                              headers=auth_header)
         assert keyword.status_code == 200
 
-        keyword = client.put(url_for('mmda.constellation.description.keyword.create_keyword',
+        keyword = client.put(url_for('mmda.constellation.description.keyword.get_or_create_keyword',
                                      constellation_id=constellation.json['id'],
                                      description_id=description.json['id']),
                              json={

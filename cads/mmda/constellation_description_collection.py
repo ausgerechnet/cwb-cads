@@ -96,6 +96,10 @@ def calculate_rbo(left, right, sort_by="conservative_log_ratio", number=50):
 @bp.output(ConstellationDescriptionCollectionOut)
 @bp.auth_required(auth)
 def create_constellation_description_collection(constellation_id, json_data):
+    """DEPRECATED. USE PUT INSTEAD.
+
+    Create constellation description collection.
+    """
 
     constellation = db.get_or_404(Constellation, constellation_id)
     collection_id = json_data.get('subcorpus_collection_id')
@@ -155,6 +159,92 @@ def create_constellation_description_collection(constellation_id, json_data):
 
         constellation_description_collection.constellation_descriptions.append(description)
         db.session.commit()
+
+    return ConstellationDescriptionCollectionOut().dump(constellation_description_collection), 200
+
+
+@bp.put('/')
+@bp.input(ConstellationDescriptionCollectionIn)
+@bp.output(ConstellationDescriptionCollectionOut)
+@bp.auth_required(auth)
+def get_or_create_constellation_description_collection(constellation_id, json_data):
+    """Get constellation description collection; create if not exists.
+
+    """
+
+    constellation = db.get_or_404(Constellation, constellation_id)
+    collection_id = json_data.get('subcorpus_collection_id')
+    collection = db.get_or_404(SubCorpusCollection, collection_id)
+    corpus = collection.corpus
+
+    s_query = json_data.get('s', corpus.s_default)
+    match_strategy = json_data.get('match_strategy')
+    overlap = json_data.get('overlap')
+    semantic_map_id = json_data.get('semantic_map_id')
+
+    cdc_query = ConstellationDescriptionCollection.query.filter_by(
+        constellation_id=constellation_id,
+        subcorpus_collection_id=collection.id,
+        corpus_id=corpus.id,
+        s=s_query,
+        match_strategy=match_strategy,
+        overlap=overlap,
+    )
+
+    if cdc_query.first():
+        current_app.logger.debug("constellation description collection already exists")
+        constellation_description_collection = cdc_query.first()
+
+    else:
+        current_app.logger.debug("creating constellation description collection")
+        constellation_description_collection = ConstellationDescriptionCollection(
+            constellation_id=constellation_id,
+            subcorpus_collection_id=collection.id,
+            corpus_id=corpus.id,
+            s=s_query,
+            match_strategy=match_strategy,
+            overlap=overlap,
+            semantic_map_id=semantic_map_id
+        )
+        db.session.add(constellation_description_collection)
+        db.session.commit()
+
+        for subcorpus in collection.subcorpora:
+
+            current_app.logger.debug(f"creating constellation description collection: subcorpus {subcorpus.id}")
+            description = ConstellationDescription(
+                constellation_id=constellation.id,
+                collection_id=constellation_description_collection.id,
+                semantic_map_id=semantic_map_id,
+                corpus_id=corpus.id,
+                subcorpus_id=subcorpus.id,
+                s=s_query,
+                match_strategy=match_strategy,
+                overlap=overlap
+            )
+            db.session.add(description)
+
+            for discourseme in constellation.discoursemes:
+                desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
+                                                              corpus_id=corpus.id,
+                                                              subcorpus_id=subcorpus.id,
+                                                              filter_sequence=None,
+                                                              s=s_query,
+                                                              match_strategy=match_strategy).first()
+                if not desc:
+                    desc = discourseme_template_to_description(
+                        discourseme,
+                        [],
+                        corpus.id,
+                        subcorpus.id,
+                        s_query,
+                        match_strategy
+                    )
+                description.discourseme_descriptions.append(desc)
+                db.session.commit()
+
+            constellation_description_collection.constellation_descriptions.append(description)
+            db.session.commit()
 
     return ConstellationDescriptionCollectionOut().dump(constellation_description_collection), 200
 

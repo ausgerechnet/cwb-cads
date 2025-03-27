@@ -2451,7 +2451,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev41"
+    "version": "0.3.0.dev42"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -5033,6 +5033,7 @@
     },
     "/mmda/constellation/{constellation_id}/description/collection/": {
       "post": {
+        "description": "Create constellation description collection.",
         "parameters": [
           {
             "in": "path",
@@ -5099,7 +5100,79 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create Constellation Description Collection",
+        "summary": "DEPRECATED. USE PUT INSTEAD.",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConstellationDescriptionCollectionIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get constellation description collection; create if not exists.",
         "tags": [
           "Mmda.Constellation.Description.Collection"
         ]
