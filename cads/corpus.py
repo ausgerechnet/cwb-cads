@@ -216,12 +216,15 @@ def meta_from_within_xml(cwb_id, level="text", column_value_types=dict()):
     registry_dir = current_app.config['CCC_REGISTRY_DIR']
     data_dir = current_app.config['CCC_DATA_DIR']
 
-    attributes = [a for a in corpus.s_annotations if a.startswith(f'{level}_')]
-    for a in attributes:
-        level = a.split("_")[0]
-        key = a.split(f"{level}_")[1]
-        value_type = column_mapping.get(key, 'unicode')
-        meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir)
+    if not corpus:
+        current_app.logger.error(f"corpus {cwb_id} not available")
+    else:
+        attributes = [a for a in corpus.s_annotations if a.startswith(f'{level}_')]
+        for a in attributes:
+            level = a.split("_")[0]
+            key = a.split(f"{level}_")[1]
+            value_type = column_mapping.get(key, 'unicode')
+            meta_from_s_att(corpus, level, key, value_type, cqp_bin, registry_dir, data_dir)
 
 
 def meta_from_tsv(cwb_id, path, level='text', column_mapping={}, sep="\t"):
@@ -1067,10 +1070,8 @@ def concordance(id, json_data, query_data):
 @click.option('--path')
 @click.option('--level', default='text')
 def read_meta(cwb_id, path, level):
-    """Read meta data of corpus from TSV table.
+    """Read meta data of corpus from TSV table or from within XML.
 
-    - from TSV
-    - from within XML
     """
 
     column_value_types = {}
