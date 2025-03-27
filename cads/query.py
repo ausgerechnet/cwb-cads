@@ -10,6 +10,8 @@ from ccc.collocates import dump2cooc
 from ccc.utils import format_cqp_query
 from flask import current_app
 from pandas import DataFrame, read_sql, to_numeric
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import exists
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
@@ -252,10 +254,8 @@ def filter_matches(focus_query, filter_queries, window, overlap):
     current_app.logger.debug("filter_matches :: enter")
 
     matches = Matches.query.filter_by(query_id=focus_query.id)
-    matches_tmp = matches.all()
-    relevant_match_pos = set([m.match for m in matches_tmp])
 
-    # get relevant cotext lines
+    # Get relevant cotext lines
     current_app.logger.debug("filter_matches :: getting cotext")
     cotext = get_or_create_cotext(focus_query, window, focus_query.s)
     if cotext is None:
@@ -263,51 +263,54 @@ def filter_matches(focus_query, filter_queries, window, overlap):
         return
 
     current_app.logger.debug("filter_matches :: filtering cotext")
-    cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
-                                            CotextLines.offset <= window,
-                                            CotextLines.offset >= -window)
+    cotext_lines = CotextLines.query.filter(
+        CotextLines.cotext_id == cotext.id,
+        CotextLines.offset.between(-window, window)
+    ).subquery()
+
     for key, fq in filter_queries.items():
         current_app.logger.debug(f"filter_matches :: filtering cotext: {key}")
 
-        current_app.logger.debug("filter_matches :: filtering cotext: matches")
-        cotext_lines_match = cotext_lines.join(
-            Matches,
-            (Matches.query_id == fq.id) &
-            (Matches.match == CotextLines.cpos)
+        # Define alias for Matches (to avoid conflicts in joins)
+        matches_alias = aliased(Matches)
+
+        # Subqueries to check for match and matchend presence
+        match_subquery = (
+            db.session.query(cotext_lines.c.match_pos)
+            .join(matches_alias, (matches_alias.query_id == fq.id) & (matches_alias.match == cotext_lines.c.cpos))
+            .subquery()
         )
-        # TODO use subquery
-        matches_in_cotext = set([c.match_pos for c in cotext_lines_match])
-        current_app.logger.debug("filter_matches :: filtering cotext: matchends")
-        cotext_lines_matchend = cotext_lines.join(
-            Matches,
-            (Matches.query_id == fq.id) &
-            (Matches.matchend == CotextLines.cpos)
+
+        matchend_subquery = (
+            db.session.query(cotext_lines.c.match_pos)
+            .join(matches_alias, (matches_alias.query_id == fq.id) & (matches_alias.matchend == cotext_lines.c.cpos))
+            .subquery()
         )
-        matchends_in_cotext = set([c.match_pos for c in cotext_lines_matchend])
 
         current_app.logger.debug(f"filter_matches :: filtering cotext: overlap mode: {overlap}")
-        if overlap == 'partial':
-            relevant_match_pos = relevant_match_pos.intersection(matches_in_cotext.union(matchends_in_cotext))
-        elif overlap == 'full':
-            # TODO: this does not work perfectly, since it does not take into account that
-            # match and matchend could stem from different filter query matches
-            relevant_match_pos = relevant_match_pos.intersection(matches_in_cotext.intersection(matchends_in_cotext))
-        elif overlap == 'match':
-            relevant_match_pos = relevant_match_pos.intersection(matches_in_cotext)
-        elif overlap == 'matchend':
-            relevant_match_pos = relevant_match_pos.intersection(matchends_in_cotext)
+
+        # Apply filtering based on overlap mode
+        if overlap == "partial":
+            matches = matches.filter(
+                exists().where(Matches.match == match_subquery.c.match_pos) |
+                exists().where(Matches.match == matchend_subquery.c.match_pos)
+            )
+        elif overlap == "full":
+            matches = matches.filter(
+                exists().where(Matches.match == match_subquery.c.match_pos),
+                exists().where(Matches.matchend == matchend_subquery.c.match_pos)
+            )
+        elif overlap == "match":
+            matches = matches.filter(exists().where(Matches.match == match_subquery.c.match_pos))
+        elif overlap == "matchend":
+            matches = matches.filter(exists().where(Matches.matchend == matchend_subquery.c.match_pos))
         else:
             raise ValueError("filter_matches :: filtering cotext: overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
-        if len(relevant_match_pos) == 0:
+        # Check if no matches remain
+        if matches.count() == 0:
             current_app.logger.error(f"filter_matches :: filtering cotext: no lines left after filtering for query {fq.cqp_query}")
             return
-
-    current_app.logger.debug("filter_matches :: filtering matches")
-    matches = Matches.query.filter(
-        Matches.query_id == focus_query.id,
-        Matches.match.in_(relevant_match_pos)
-    )
 
     current_app.logger.debug("filter_matches :: exit")
 
