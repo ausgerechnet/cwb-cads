@@ -5,8 +5,8 @@ import { cn } from '../lib/utils'
 import { formatNumber } from '../lib/format-number'
 import { getColorForNumber } from '../lib/get-color-for-number'
 import { useDebouncedValue } from '../lib/use-debounced-value'
-import { Button } from './ui/button'
 import { ComplexSelect } from './select-complex'
+import { ToggleBar } from './toggle-bar'
 
 type Association = {
   node: number
@@ -63,7 +63,7 @@ export function AssociationMatrix({
     .filter((a): a is Association => a.score !== null && a.scaledScore !== null)
 
   return (
-    <div className={cn('', className)}>
+    <div className={className}>
       <div className="flex items-center gap-4">
         <ComplexSelect
           items={measureItems}
@@ -73,27 +73,19 @@ export function AssociationMatrix({
             setMeasure(newValue)
           }}
         />
+
         <div className="flex gap-0">
-          <Button
-            className="rounded-r-none opacity-50 hover:opacity-80 disabled:opacity-100"
-            variant="secondary"
-            size="sm"
-            onClick={() => setView('table')}
-            disabled={view === 'table'}
-          >
-            Table
-          </Button>
-          <Button
-            className="rounded-l-none opacity-50 hover:opacity-80 disabled:opacity-100"
-            variant="secondary"
-            size="sm"
-            onClick={() => setView('graph')}
-            disabled={view === 'graph'}
-          >
-            Graph
-          </Button>
+          <ToggleBar<'table' | 'graph'>
+            options={[
+              ['table', 'Table'],
+              ['graph', 'Graph'],
+            ]}
+            value={view}
+            onChange={setView}
+          />
         </div>
       </div>
+
       {view === 'table' && (
         <AssociationTable
           itemIds={itemIds}
@@ -101,6 +93,7 @@ export function AssociationMatrix({
           legendNameMap={legendNameMap}
         />
       )}
+
       {view === 'graph' && (
         <AssociationGraph
           itemIds={itemIds}
@@ -129,7 +122,7 @@ function AssociationTable({
 
   return (
     <table
-      className="grid"
+      className="mt-2 grid"
       style={{
         gridTemplateColumns: `auto repeat(${columnIds.length}, 1fr)`,
       }}
@@ -138,14 +131,18 @@ function AssociationTable({
         <tr className="col-span-full grid grid-cols-subgrid">
           <th></th>
           {rowIds.map((rowId) => (
-            <th key={rowId}>{legendNameMap?.get(rowId) ?? rowId}</th>
+            <th key={rowId} className="py-1 text-xs">
+              {legendNameMap?.get(rowId) ?? rowId}
+            </th>
           ))}
         </tr>
       </thead>
       <tbody className="col-span-full grid grid-cols-subgrid">
         {columnIds.map((columnId) => (
           <tr key={columnId} className="col-span-full grid grid-cols-subgrid">
-            <td>{legendNameMap?.get(columnId) ?? columnId}</td>
+            <th className="pr-2 text-left text-xs">
+              {legendNameMap?.get(columnId) ?? columnId}
+            </th>
             {rowIds.map((candidate) => {
               const { score: associationScore, scaledScore = 0.5 } =
                 associations.find(

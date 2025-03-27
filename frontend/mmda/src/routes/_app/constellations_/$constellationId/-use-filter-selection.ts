@@ -6,7 +6,7 @@ import { corpusById } from '@cads/shared/queries'
 
 export const FilterSchema = z.object({
   pAtt: z.string().optional(),
-  s: z.string().optional().catch(undefined),
+  clContextBreak: z.string().optional().catch(undefined),
   windowSize: z.number().positive().min(2).int().optional().catch(undefined),
   primary: z.string().optional(),
   secondary: z.string().optional().catch(undefined),
@@ -77,7 +77,7 @@ export function useFilterSelection(
     ccPageSize = 5,
     ccSortOrder = 'descending',
     ccFilterDiscoursemeIds = [],
-    s,
+    clContextBreak,
     primary,
     secondary,
     isConcordanceVisible = true,
@@ -139,7 +139,7 @@ export function useFilterSelection(
     setFilters,
     primary: defaultTo([primary, 'word'], corpus?.p_atts),
     secondary: defaultTo(secondary, corpus?.p_atts),
-    s: defaultTo(s, corpus?.s_atts),
+    clContextBreak: defaultTo(clContextBreak, corpus?.s_atts),
     pAttributes,
     contextBreakList,
     isConcordanceVisible,

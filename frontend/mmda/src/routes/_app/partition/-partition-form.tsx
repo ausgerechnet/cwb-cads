@@ -65,8 +65,6 @@ export function PartitionForm({
   const subcorpusId = form.watch('corpus')?.subcorpusId
   const level = form.watch('level')
 
-  console.log('corpusId', corpusId)
-
   const {
     data: dataMeta,
     isLoading: isLoadingCorpus,
@@ -317,7 +315,7 @@ export function PartitionForm({
           )}
         />
 
-        <Button className="col-span-full" type="submit">
+        <Button className="col-span-full" type="submit" disabled={isPending}>
           {isPending && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
           Create
         </Button>

@@ -5,12 +5,14 @@ import {
   discoursemesList,
 } from '@cads/shared/queries'
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
 import { FilterSchema } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
+import { ConcordanceFilterSchema } from '@cads/shared/components/concordances'
+import { AnalysisSchema } from './-use-analysis-selection'
 
 export const Route = createFileRoute('/_app/constellations_/$constellationId')({
   validateSearch: FilterSchema.extend({
-    focusDiscourseme: z.number().optional().catch(undefined),
+    ...AnalysisSchema.shape,
+    ...ConcordanceFilterSchema.shape,
   }),
   loader: ({ context: { queryClient }, params: { constellationId } }) =>
     Promise.all([

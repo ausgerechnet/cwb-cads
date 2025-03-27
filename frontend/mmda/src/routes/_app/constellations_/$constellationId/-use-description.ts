@@ -6,9 +6,9 @@ import { Route } from '@/routes/_app/constellations_/$constellationId/route.lazy
 
 export function useDescription() {
   const constellationId = parseInt(Route.useParams().constellationId)
-  const { secondary, s, corpusId, subcorpusId } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
+  const { secondary, clContextBreak, corpusId, subcorpusId } =
+    useFilterSelection('/_app/constellations_/$constellationId')
+
   const {
     data: description,
     isLoading: isLoadingDescription,
@@ -19,10 +19,12 @@ export function useDescription() {
       corpusId: corpusId!,
       subcorpusId: subcorpusId,
       matchStrategy: 'longest',
-      s,
+      s: clContextBreak!,
     }),
     enabled:
-      corpusId !== undefined && secondary !== undefined && s !== undefined,
+      corpusId !== undefined &&
+      secondary !== undefined &&
+      clContextBreak !== undefined,
   })
 
   return {

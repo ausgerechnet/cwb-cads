@@ -274,14 +274,28 @@ export const queryCollocation = (
 
 // ==================== CORPORA ====================
 
-export const corpusById = (corpusId: number) =>
+export const corpusById = (corpusId: number, subcorpusId?: number) =>
   queryOptions({
     queryKey: ['corpus', corpusId],
-    queryFn: ({ signal }) =>
-      apiClient.get('/corpus/:id', {
-        params: { id: String(corpusId) },
-        signal,
-      }),
+    queryFn: async ({ signal }) => {
+      if (subcorpusId === undefined) {
+        return apiClient.get('/corpus/:id', {
+          params: { id: String(corpusId) },
+          signal,
+        })
+      }
+      const subcorpusData = await apiClient.get(
+        '/corpus/:id/subcorpus/:subcorpus_id',
+        {
+          params: { id: String(corpusId), subcorpus_id: String(subcorpusId) },
+          signal,
+        },
+      )
+      return {
+        ...subcorpusData.corpus,
+        ...subcorpusData,
+      }
+    },
   })
 
 export const corpusList = queryOptions({
@@ -332,6 +346,20 @@ export const createSubcorpus: MutationOptions<
     void queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))
   },
 }
+
+export const subcorpusCollections = (corpusId: number, subcorpusId?: number) =>
+  queryOptions({
+    queryKey: ['subcorpus-collections', corpusId, subcorpusId],
+    queryFn: ({ signal }) => {
+      if (subcorpusId !== undefined) {
+        throw new Error('Partitioning a subcorpus is not yet supported')
+      }
+      return apiClient.get('/corpus/:id/subcorpus-collection/', {
+        params: { id: corpusId.toString() },
+        signal,
+      })
+    },
+  })
 
 export const createSubcorpusCollection: MutationOptions<
   z.infer<typeof schemas.SubCorpusCollectionOut>,
