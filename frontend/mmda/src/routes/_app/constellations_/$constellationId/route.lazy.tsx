@@ -30,7 +30,6 @@ import { AnalysisSelection } from './-analysis-selection'
 import { useAnalysisSelection } from './-use-analysis-selection'
 import { DescriptionAssociation } from './-description-association'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { useKeywordAnalysis } from './-use-keyword-analysis'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -73,9 +72,6 @@ function ConstellationDetail() {
 
   const isMapAvailable =
     corpusId !== undefined && focusDiscourseme !== undefined
-
-  const keywordAnalysis = useKeywordAnalysis()
-  console.log(keywordAnalysis.data)
 
   return (
     <ConcordanceFilterProvider
