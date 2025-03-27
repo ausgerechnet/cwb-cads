@@ -108,6 +108,35 @@ type DiscoursemeScoresOut = {
   item_scores: Array<CollocationItemOut>
   unigram_item_scores: Array<CollocationItemOut>
 }
+type ConstellationDescriptionCollectionCollocationOut = {
+  collocations: Array<ConstellationCollocationOut>
+  ufa?: Array<UFAScoreOut> | undefined
+}
+type ConstellationCollocationOut = {
+  filter_discourseme_ids: Array<number>
+  focus_discourseme_id: number
+  id: number
+  marginals: string
+  nr_items: number
+  p: string
+  query_id: number
+  s_break: string
+  semantic_map_id: number | null
+  window: number
+}
+type UFAScoreOut = Partial<{
+  left_id: number
+  right_id: number
+  score: number
+}>
+type ConstellationDescriptionCollectionOut = {
+  constellation_descriptions: Array<ConstellationDescriptionOut>
+  id: number
+  match_strategy?: ('longest' | 'shortest' | 'standard') | undefined
+  overlap?: ('partial' | 'full' | 'match' | 'matchend') | undefined
+  s?: string | undefined
+  subcorpus_collection_id: number
+}
 type ConstellationDescriptionOut = {
   corpus_id: number
   discourseme_descriptions: Array<DiscoursemeDescriptionOut>
@@ -469,19 +498,6 @@ const MetaFrequenciesOut: z.ZodType<MetaFrequenciesOut> = z
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
   .passthrough()
-const SubCorpusCollectionIn = z
-  .object({
-    create_nqr: z.boolean().optional().default(true),
-    description: z.string().nullish(),
-    key: z.string(),
-    level: z.string(),
-    name: z.string(),
-    time_interval: z
-      .enum(['hour', 'day', 'week', 'month', 'year'])
-      .optional()
-      .default('day'),
-  })
-  .passthrough()
 const SubCorpusOut: z.ZodType<SubCorpusOut> = z
   .object({
     corpus: CorpusOut,
@@ -498,6 +514,19 @@ const SubCorpusCollectionOut: z.ZodType<SubCorpusCollectionOut> = z
     id: z.number().int(),
     name: z.string().nullable(),
     subcorpora: z.array(SubCorpusOut),
+  })
+  .passthrough()
+const SubCorpusCollectionIn = z
+  .object({
+    create_nqr: z.boolean().optional().default(true),
+    description: z.string().nullish(),
+    key: z.string(),
+    level: z.string(),
+    name: z.string(),
+    time_interval: z
+      .enum(['hour', 'day', 'week', 'month', 'year'])
+      .optional()
+      .default('day'),
   })
   .passthrough()
 const SubCorpusIn = z
@@ -646,6 +675,85 @@ const ConstellationDescriptionIn = z
     subcorpus_id: z.number().int().optional(),
   })
   .passthrough()
+const ConstellationDescriptionCollectionIn = z
+  .object({
+    match_strategy: z
+      .enum(['longest', 'shortest', 'standard'])
+      .optional()
+      .default('longest'),
+    overlap: z
+      .enum(['partial', 'full', 'match', 'matchend'])
+      .optional()
+      .default('partial'),
+    s: z.string().optional(),
+    subcorpus_collection_id: z.number().int(),
+  })
+  .passthrough()
+const ConstellationDescriptionCollectionOut: z.ZodType<ConstellationDescriptionCollectionOut> =
+  z
+    .object({
+      constellation_descriptions: z.array(ConstellationDescriptionOut),
+      id: z.number().int(),
+      match_strategy: z
+        .enum(['longest', 'shortest', 'standard'])
+        .optional()
+        .default('longest'),
+      overlap: z
+        .enum(['partial', 'full', 'match', 'matchend'])
+        .optional()
+        .default('partial'),
+      s: z.string().optional(),
+      subcorpus_collection_id: z.number().int(),
+    })
+    .passthrough()
+const ConstellationCollocationIn = z
+  .object({
+    filter_discourseme_ids: z.array(z.number().int()).optional().default([]),
+    filter_item: z.string().nullish(),
+    filter_item_p_att: z.string().optional().default('lemma'),
+    filter_overlap: z
+      .enum(['partial', 'full', 'match', 'matchend'])
+      .optional()
+      .default('partial'),
+    focus_discourseme_id: z.number().int(),
+    include_negative: z.boolean().optional().default(false),
+    marginals: z.enum(['local', 'global']).optional().default('local'),
+    p: z.string(),
+    s_break: z.string().optional(),
+    semantic_map_id: z.number().int().nullish().default(null),
+    semantic_map_init: z.boolean().optional().default(true),
+    window: z.number().int().optional().default(10),
+  })
+  .passthrough()
+const ConstellationCollocationOut: z.ZodType<ConstellationCollocationOut> = z
+  .object({
+    filter_discourseme_ids: z.array(z.number().int()),
+    focus_discourseme_id: z.number().int(),
+    id: z.number().int(),
+    marginals: z.string(),
+    nr_items: z.number().int(),
+    p: z.string(),
+    query_id: z.number().int(),
+    s_break: z.string(),
+    semantic_map_id: z.number().int().nullable(),
+    window: z.number().int(),
+  })
+  .passthrough()
+const UFAScoreOut: z.ZodType<UFAScoreOut> = z
+  .object({
+    left_id: z.number().int(),
+    right_id: z.number().int(),
+    score: z.number(),
+  })
+  .partial()
+  .passthrough()
+const ConstellationDescriptionCollectionCollocationOut: z.ZodType<ConstellationDescriptionCollectionCollocationOut> =
+  z
+    .object({
+      collocations: z.array(ConstellationCollocationOut),
+      ufa: z.array(UFAScoreOut).optional(),
+    })
+    .passthrough()
 const ConstellationDiscoursemeDescriptionIn = z
   .object({
     discourseme_description_ids: z.array(z.number().int()).default([]),
@@ -683,39 +791,6 @@ const ConstellationAssociationOut: z.ZodType<ConstellationAssociationOut> = z
     s: z.string(),
     scaled_scores: z.array(ConstellationAssociationItemOut),
     scores: z.array(ConstellationAssociationItemOut),
-  })
-  .passthrough()
-const ConstellationCollocationOut = z
-  .object({
-    filter_discourseme_ids: z.array(z.number().int()),
-    focus_discourseme_id: z.number().int(),
-    id: z.number().int(),
-    marginals: z.string(),
-    nr_items: z.number().int(),
-    p: z.string(),
-    query_id: z.number().int(),
-    s_break: z.string(),
-    semantic_map_id: z.number().int().nullable(),
-    window: z.number().int(),
-  })
-  .passthrough()
-const ConstellationCollocationIn = z
-  .object({
-    filter_discourseme_ids: z.array(z.number().int()).optional().default([]),
-    filter_item: z.string().nullish(),
-    filter_item_p_att: z.string().optional().default('lemma'),
-    filter_overlap: z
-      .enum(['partial', 'full', 'match', 'matchend'])
-      .optional()
-      .default('partial'),
-    focus_discourseme_id: z.number().int(),
-    include_negative: z.boolean().optional().default(false),
-    marginals: z.enum(['local', 'global']).optional().default('local'),
-    p: z.string(),
-    s_break: z.string().optional(),
-    semantic_map_id: z.number().int().nullish().default(null),
-    semantic_map_init: z.boolean().optional().default(true),
-    window: z.number().int().optional().default(10),
   })
   .passthrough()
 const DiscoursemeCoordinatesOut: z.ZodType<DiscoursemeCoordinatesOut> = z
@@ -1005,9 +1080,9 @@ export const schemas = {
   MetaIn,
   MetaFrequencyOut,
   MetaFrequenciesOut,
-  SubCorpusCollectionIn,
   SubCorpusOut,
   SubCorpusCollectionOut,
+  SubCorpusCollectionIn,
   SubCorpusIn,
   KeywordOut,
   KeywordIn,
@@ -1022,13 +1097,17 @@ export const schemas = {
   DiscoursemeDescriptionOut,
   ConstellationDescriptionOut,
   ConstellationDescriptionIn,
+  ConstellationDescriptionCollectionIn,
+  ConstellationDescriptionCollectionOut,
+  ConstellationCollocationIn,
+  ConstellationCollocationOut,
+  UFAScoreOut,
+  ConstellationDescriptionCollectionCollocationOut,
   ConstellationDiscoursemeDescriptionIn,
   ConstellationDescriptionOutUpdate,
   Generated,
   ConstellationAssociationItemOut,
   ConstellationAssociationOut,
-  ConstellationCollocationOut,
-  ConstellationCollocationIn,
   DiscoursemeCoordinatesOut,
   DiscoursemeScoresOut,
   ConstellationCollocationItemsOut,
@@ -1541,6 +1620,31 @@ const endpoints = makeApi([
     ],
   },
   {
+    method: 'get',
+    path: '/corpus/:id/subcorpus-collection/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(SubCorpusCollectionOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
     method: 'put',
     path: '/corpus/:id/subcorpus-collection/',
     requestFormat: 'json',
@@ -1572,6 +1676,66 @@ const endpoints = makeApi([
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/corpus/:id/subcorpus-collection/:subcorpus_collection_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'subcorpus_collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SubCorpusCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/corpus/:id/subcorpus-collection/:subcorpus_collection_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'subcorpus_collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SubCorpusCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
       },
     ],
   },
@@ -1634,6 +1798,36 @@ const endpoints = makeApi([
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/corpus/:id/subcorpus/:subcorpus_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'subcorpus_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: SubCorpusCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
       },
     ],
   },
@@ -3344,6 +3538,141 @@ const endpoints = makeApi([
       },
     ],
     response: z.array(DiscoursemeCoordinatesOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/constellation/:constellation_id/description/collection/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationDescriptionCollectionIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id/collocation',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationCollocationIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionCollectionCollocationOut,
     errors: [
       {
         status: 401,
