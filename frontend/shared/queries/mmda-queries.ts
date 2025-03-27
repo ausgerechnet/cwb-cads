@@ -666,6 +666,147 @@ export const addConstellationDiscourseme: MutationOptions<
     })
   },
 }
+
+export const constellationKeywordAnalyses = (
+  constellationId: number,
+  descriptionId: number,
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-keyword-analyses',
+      constellationId,
+      descriptionId,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+          },
+          signal,
+        },
+      ),
+  })
+
+export const createConstellationKeywordAnalysis: MutationOptions<
+  z.infer<typeof schemas.ConstellationKeywordIn>,
+  Error,
+  {
+    constellationId: number
+    descriptionId: number
+    corpusIdReference: number
+    subcorpusIdReference?: number
+    p: string
+    pReference: string
+  }
+> = {
+  mutationFn: async ({
+    constellationId,
+    descriptionId,
+    corpusIdReference: corpus_id_reference,
+    subcorpusIdReference: subcorpus_id_reference,
+    p,
+    pReference: p_reference,
+  }) =>
+    apiClient.post(
+      '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+      {
+        corpus_id_reference,
+        subcorpus_id_reference,
+        p,
+        p_reference,
+      },
+      {
+        params: {
+          constellation_id: constellationId.toString(),
+          description_id: descriptionId.toString(),
+        },
+      },
+    ),
+  onSettled: () => {
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-keyword-analyses'],
+    })
+  },
+}
+
+export const constellationKeywordAnalysis = (
+  constellationId: number,
+  descriptionId: number,
+  {
+    corpusIdReference: corpus_id_reference,
+    subcorpusIdReference: subcorpus_id_reference,
+    p,
+    pReference: p_reference,
+  }: {
+    corpusIdReference: number
+    subcorpusIdReference?: number
+    p: string
+    pReference: string
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-keyword-analysis',
+      constellationId,
+      descriptionId,
+      {
+        corpus_id_reference,
+        subcorpus_id_reference,
+        p,
+        p_reference,
+      },
+    ],
+    queryFn: async ({ signal }) => {
+      try {
+        return await getMatchingKeywordAnalysis()
+      } catch (error) {
+        console.warn('No matching keyword analysis found, creating one')
+        await apiClient.post(
+          '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+          {
+            corpus_id_reference,
+            subcorpus_id_reference,
+            p,
+            p_reference,
+          },
+          {
+            params: {
+              constellation_id: constellationId.toString(),
+              description_id: descriptionId.toString(),
+            },
+            signal,
+          },
+        )
+      }
+      return getMatchingKeywordAnalysis()
+
+      async function getMatchingKeywordAnalysis() {
+        const analyses = await apiClient.get(
+          '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+          {
+            params: {
+              constellation_id: constellationId.toString(),
+              description_id: descriptionId.toString(),
+            },
+            signal,
+          },
+        )
+        const matchingAnalysis = analyses.find(
+          (a) =>
+            a.corpus_id_reference === corpus_id_reference &&
+            a.subcorpus_id_reference === subcorpus_id_reference &&
+            a.p === p &&
+            a.p_reference === p_reference,
+        )
+        if (matchingAnalysis) return matchingAnalysis
+        throw new Error('No matching keyword analysis found')
+      }
+    },
+  })
+
 // ==================== COLLOCATIONS ====================
 
 export const getCollocation = (id: number) =>
