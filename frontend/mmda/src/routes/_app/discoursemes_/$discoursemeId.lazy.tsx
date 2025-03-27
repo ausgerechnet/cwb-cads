@@ -1,7 +1,9 @@
+import { z } from 'zod'
+import { PlusIcon } from 'lucide-react'
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
-import { Loader2Icon, PlusIcon, TrashIcon } from 'lucide-react'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
+import { schemas } from '@/rest-client'
 import {
   corpusById,
   deleteDiscoursemeDescription,
@@ -9,12 +11,12 @@ import {
   discoursemeDescriptionsById,
 } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Large, Paragraph } from '@cads/shared/components/ui/typography'
-import { Button, buttonVariants } from '@cads/shared/components/ui/button'
+import { Large } from '@cads/shared/components/ui/typography'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
-import { z } from 'zod'
-import { schemas } from '@/rest-client'
 import { ErrorMessage } from '@cads/shared/components/error-message'
+import { Card } from '@cads/shared/components/ui/card'
+import { ButtonAlert } from '@/components/button-alert'
 
 export const Route = createLazyFileRoute('/_app/discoursemes_/$discoursemeId')({
   component: SingleDiscourseme,
@@ -43,16 +45,20 @@ function SingleDiscourseme() {
         },
       }}
     >
-      <Large className="bg-destructive text-destructive-foreground p-2">
-        Todo: Prettier UI...
-      </Large>
-      {comment && <Large>{comment}</Large>}
-      {template.length > 0 && (
-        <Paragraph>
-          Template on Layer "{template[0].p}":{' '}
-          {template.map((t) => t.surface).join(', ')}
-        </Paragraph>
-      )}
+      <Card className="grid max-w-lg grid-cols-[auto,1fr] gap-4 gap-y-0.5 p-4">
+        <strong>Comment:</strong>
+        <span>
+          {comment ? (
+            comment
+          ) : (
+            <span className="text-muted-foreground italic">n.a.</span>
+          )}
+        </span>
+        <strong>Template:</strong>
+        {template.length > 0 && (
+          <div>{template.map((t) => t.surface).join(', ')}</div>
+        )}
+      </Card>
 
       {descriptions.length === 0 && (
         <div className="start flex flex-col gap-4">
@@ -72,15 +78,26 @@ function SingleDiscourseme() {
         </div>
       )}
 
-      {descriptions.length > 0 && <Large>Descriptions</Large>}
+      <Card className="mr-auto mt-6 flex flex-col gap-2 p-4">
+        {descriptions.length > 0 && <Large>Descriptions</Large>}
 
-      {descriptions.map((description) => (
-        <Description description={description} key={description.id!} />
-      ))}
+        <ul className="flex flex-col gap-2">
+          {descriptions.map((description) => (
+            <Description description={description} key={description.id!} />
+          ))}
+        </ul>
 
-      <div className="mono bg-muted text-muted-foreground whitespace-pre rounded-md p-2 text-sm leading-tight">
-        {JSON.stringify(descriptions, null, 2)}
-      </div>
+        <Link
+          to="/discoursemes/$discoursemeId/new-description"
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          params={{ discoursemeId: discoursemeId.toString() }}
+          className={cn('ml-auto mt-10', buttonVariants())}
+        >
+          <PlusIcon className="mr-2 h-4 w-4" />
+          Create New Description
+        </Link>
+      </Card>
     </AppPageFrame>
   )
 }
@@ -95,25 +112,43 @@ function Description({
     data,
     isLoading,
     error: errorCorpus,
-  } = useQuery(corpusById(description.corpus_id!))
+  } = useQuery(corpusById(description.corpus_id!, description.subcorpus_id))
+
   return (
-    <div className="bg-muted my-1">
-      {description.id} {isLoading ? 'Loading...' : `on Corpus "${data?.name}"`}
-      <br />
-      {description.items?.map((i) => i.surface).join(', ')}
-      <Button
+    <li className="my-1 grid grid-cols-[1fr_min-content] gap-4 rounded-lg p-1 pl-2">
+      <div className="flex flex-col gap-2 text-sm">
+        {isLoading ? (
+          'Loading...'
+        ) : (
+          <span>
+            in <strong>{data?.name}</strong> on{' '}
+            <strong>{description.items[0]?.p}</strong>
+          </span>
+        )}
+        <div className="flex flex-wrap gap-1 text-sm">
+          {description.items?.map((i) => (
+            <span
+              key={i.surface}
+              className="outline-border no-wrap inline-block rounded-full px-2 py-0.5 text-xs outline outline-1"
+            >
+              {i.surface}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <ButtonAlert
         onClick={() =>
           mutate({
             descriptionId: description.id!,
             discoursemeId: description.discourseme_id!,
           })
         }
+        className="mt-auto"
         disabled={isPending}
-      >
-        {isPending ? <Loader2Icon className="animate-spin" /> : <TrashIcon />}
-      </Button>
-      <ErrorMessage error={error} />
-      <ErrorMessage error={errorCorpus} />
-    </div>
+      />
+
+      <ErrorMessage error={[errorCorpus, error]} className="col-span-full" />
+    </li>
   )
 }

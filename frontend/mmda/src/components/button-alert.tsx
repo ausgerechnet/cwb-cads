@@ -12,11 +12,13 @@ import {
   AlertDialogTrigger,
 } from '@cads/shared/components/ui/alert-dialog'
 import { Button } from '@cads/shared/components/ui/button'
+import { cn } from '@cads/shared/lib/utils'
 
 export function ButtonAlert({
   onClick,
   disabled,
   children = 'Delete',
+  className,
   labelButton = children,
   labelCancel = 'Cancel',
   labelTitle = 'Are you sure?',
@@ -27,6 +29,7 @@ export function ButtonAlert({
   labelButton?: ReactNode
   labelTitle?: ReactNode
   labelDescription?: ReactNode
+  className?: string
   onClick?: () => void
   disabled?: boolean
 }) {
@@ -36,7 +39,7 @@ export function ButtonAlert({
         <Button
           variant="destructive"
           size="sm"
-          className="w-full"
+          className={cn('w-full', className)}
           disabled={disabled}
         >
           {disabled ? (
@@ -47,13 +50,16 @@ export function ButtonAlert({
           {labelButton}
         </Button>
       </AlertDialogTrigger>
+
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{labelTitle}</AlertDialogTitle>
+
           <AlertDialogDescription>{labelDescription}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{labelCancel}</AlertDialogCancel>
+
           <AlertDialogAction asChild onClick={onClick}>
             <Button variant="destructive" disabled={disabled}>
               {labelButton}

@@ -9,7 +9,6 @@ export function useKeywordAnalysis() {
   const { constellationId, description: { id: descriptionId } = {} } =
     useDescription()
   const analysisSelection = useAnalysisSelection().analysisSelection
-  console.log('descriptionId', descriptionId)
 
   let p: string | undefined
   let pReference: string | undefined
