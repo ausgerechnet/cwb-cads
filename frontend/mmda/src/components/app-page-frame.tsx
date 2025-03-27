@@ -26,9 +26,7 @@ export function AppPageFrame({
     <div className={cn('flex flex-col p-2', classNameContainer)}>
       {Boolean(title || cta) && (
         <div className="mb-8 flex gap-4">
-          {title && (
-            <Headline1 className="flex-grow overflow-hidden">{title}</Headline1>
-          )}
+          {title && <Headline1 className="flex-grow">{title}</Headline1>}
           {cta && (
             <Link
               {...cta.nav}
