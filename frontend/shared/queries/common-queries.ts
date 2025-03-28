@@ -381,6 +381,7 @@ export const createSubcorpusCollection: MutationOptions<
     })
   },
   onSuccess: (data) => {
+    void queryClient.invalidateQueries({ queryKey: ['subcorpus-collections'] })
     void queryClient.invalidateQueries(corpusList)
     void queryClient.invalidateQueries(subcorporaList)
     void queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))

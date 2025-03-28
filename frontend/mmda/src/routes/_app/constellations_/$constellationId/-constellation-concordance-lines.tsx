@@ -24,11 +24,11 @@ export function ConstellationConcordanceLines({
   constellationId: number
   className?: string
 }) {
-  const { analysisSelection } = useAnalysisSelection()
+  const { analysisSelection: { analysisType } = {} } = useAnalysisSelection()
 
   useKeywordAnalysis()
 
-  if (analysisSelection === undefined) {
+  if (analysisType === undefined) {
     return (
       <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
         No data available.
@@ -38,12 +38,24 @@ export function ConstellationConcordanceLines({
     )
   }
 
-  return (
-    <ConstellationConcordanceLinesCollocation
-      constellationId={constellationId}
-      className={className}
-    />
-  )
+  if (analysisType === 'collocation') {
+    return (
+      <ConstellationConcordanceLinesCollocation
+        constellationId={constellationId}
+        className={className}
+      />
+    )
+  }
+
+  if (analysisType === 'keyword') {
+    return <>Keyword CL goes here</>
+  }
+
+  if (analysisType === 'ufa') {
+    return <>UFA CL goes here</>
+  }
+
+  throw new Error(`Unknown analysis type: ${analysisType}`)
 }
 
 function ConstellationConcordanceLinesCollocation({

@@ -72,7 +72,7 @@ import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { InputGrowable } from '@cads/shared/components/input-growable'
 
-export function SemanticMap({
+export function SemanticMapCollocations({
   constellationId,
   children,
 }: {

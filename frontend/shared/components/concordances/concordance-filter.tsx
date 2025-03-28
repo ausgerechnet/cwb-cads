@@ -45,7 +45,12 @@ export function SortByOffsetInput({
       className={className}
       labelText={`Sort by offset ${clSortByOffset}`}
     >
-      <div className={cn('flex flex-grow items-center', className)}>
+      <div
+        className={cn(
+          'bg-muted text-muted-foreground flex h-10 w-full flex-grow items-center justify-center gap-[1px] rounded-md p-1',
+          className,
+        )}
+      >
         {offsets.map((offset) => (
           <Button
             key={offset}
