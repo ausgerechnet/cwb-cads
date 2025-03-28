@@ -13,14 +13,15 @@ export function SortByOffset({
   disabled?: boolean
 }) {
   return (
-    <div className={cn('flex flex-grow items-center', className)}>
+    <div className={cn('flex flex-grow items-center gap-[1px]', className)}>
       {Offsets.map((offset) => (
         <Button
           key={offset}
           onClick={() => onChange(offset)}
-          className="h-full flex-grow rounded-none p-1 text-sm first:rounded-bl-md first:rounded-tl-md last:rounded-br-md last:rounded-tr-md"
+          className="ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=inactive]:hover:bg-background/50 flex grow flex-col items-center justify-center whitespace-nowrap rounded-sm px-0.5 py-1.5 text-center text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-80 data-[state=active]:shadow-sm"
           disabled={disabled}
-          variant={offset === value ? 'default' : 'secondary'}
+          variant="secondary"
+          data-state={offset === value ? 'active' : 'inactive'}
           size="sm"
         >
           {offset}
