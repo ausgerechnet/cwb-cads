@@ -17,7 +17,7 @@ type BreakdownItemsOut = {
 }
 type CollocationItemOut = {
   item: string
-  raw_scores: Array<CollocationScoreOut>
+  raw_scores?: Array<CollocationScoreOut>
   scaled_scores?: Array<CollocationScoreOut> | undefined
   scores: Array<CollocationScoreOut>
 }
@@ -182,7 +182,7 @@ type ConstellationKeywordItemsOut = {
 }
 type KeywordItemOut = {
   item: string
-  raw_scores: Array<KeywordScoreOut>
+  raw_scores?: Array<KeywordScoreOut>
   scaled_scores: Array<KeywordScoreOut>
   scores: Array<KeywordScoreOut>
 }
@@ -362,7 +362,7 @@ const CollocationScoreOut: z.ZodType<CollocationScoreOut> = z
 const CollocationItemOut: z.ZodType<CollocationItemOut> = z
   .object({
     item: z.string(),
-    raw_scores: z.array(CollocationScoreOut),
+    raw_scores: z.array(CollocationScoreOut).optional(),
     scaled_scores: z.array(CollocationScoreOut).optional(),
     scores: z.array(CollocationScoreOut),
   })
@@ -581,7 +581,7 @@ const KeywordScoreOut: z.ZodType<KeywordScoreOut> = z
 const KeywordItemOut: z.ZodType<KeywordItemOut> = z
   .object({
     item: z.string(),
-    raw_scores: z.array(KeywordScoreOut),
+    raw_scores: z.array(KeywordScoreOut).optional(),
     scaled_scores: z.array(KeywordScoreOut),
     scores: z.array(KeywordScoreOut),
   })
@@ -2690,7 +2690,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/:collocation_id/items',
-    description: `TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2788,7 +2787,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/mmda/constellation/:constellation_id/description/:description_id/collocation/:collocation_id/map',
-    description: `TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3198,6 +3196,47 @@ const endpoints = makeApi([
   {
     method: 'post',
     path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+    description: `Create keyword analysis for constellation description.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationKeywordIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: KeywordOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
     requestFormat: 'json',
     parameters: [
       {
@@ -3273,7 +3312,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/items',
-    description: `TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3290,6 +3328,11 @@ const endpoints = makeApi([
         name: 'keyword_id',
         type: 'Path',
         schema: z.string(),
+      },
+      {
+        name: 'return_coordinates',
+        type: 'Query',
+        schema: z.boolean().optional().default(false),
       },
       {
         name: 'sort_order',
@@ -3356,7 +3399,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/map',
-    description: `TODO also return ranks (to ease frontend pagination)?`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3558,6 +3600,42 @@ const endpoints = makeApi([
   },
   {
     method: 'post',
+    path: '/mmda/constellation/:constellation_id/description/collection/',
+    description: `Create constellation description collection.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ConstellationDescriptionCollectionIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
     path: '/mmda/constellation/:constellation_id/description/collection/',
     requestFormat: 'json',
     parameters: [
