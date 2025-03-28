@@ -71,7 +71,7 @@ def test_constellation_description_collection(client, auth):
         assert len(set(subcorpus_ids)) == 2
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_description_collection_put(client, auth):
 
     auth_header = auth.login()
@@ -157,7 +157,7 @@ def test_constellation_description_collection_put(client, auth):
         assert len(set(subcorpus_ids)) == 2
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_constellation_description_collection_collocation(client, auth):
 
     auth_header = auth.login()

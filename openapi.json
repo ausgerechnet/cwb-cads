@@ -348,6 +348,26 @@
         ],
         "type": "object"
       },
+      "ConfidenceIntervalOut": {
+        "properties": {
+          "lower_90": {
+            "type": "number"
+          },
+          "lower_95": {
+            "type": "number"
+          },
+          "median": {
+            "type": "number"
+          },
+          "upper_90": {
+            "type": "number"
+          },
+          "upper_95": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
       "ConstellationAssociationItemOut": {
         "properties": {
           "candidate": {
@@ -2345,6 +2365,9 @@
       },
       "UFAScoreOut": {
         "properties": {
+          "confidence": {
+            "$ref": "#/components/schemas/ConfidenceIntervalOut"
+          },
           "left_id": {
             "type": "integer"
           },
@@ -2353,6 +2376,9 @@
           },
           "score": {
             "type": "number"
+          },
+          "x_label": {
+            "type": "string"
           }
         },
         "type": "object"

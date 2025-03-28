@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, Nested, String
+from apiflask.fields import Float, Integer, Nested, String, DateTime
+from datetime import datetime
 from apiflask.validators import OneOf
 from association_measures.comparisons import rbo
 from flask import current_app
@@ -24,6 +25,43 @@ from .discourseme_description import discourseme_template_to_description
 bp = APIBlueprint('collection', __name__, url_prefix='/collection/')
 
 
+def calculate_time_diff(time_strings, unit='minutes'):
+    """
+    Calculate the difference between consecutive time strings in the provided unit.
+
+    :param time_strings: List of time strings
+    :param unit: Time unit to calculate the difference ('minutes', 'hours', 'seconds', 'days', 'weeks', 'months')
+    :return: List of time differences in the specified unit
+    """
+    # Convert time strings to datetime objects
+    time_objects = [datetime.fromisoformat(time_str) for time_str in time_strings]
+
+    # Calculate the time differences in the specified unit
+    time_diffs = []
+    for i in range(1, len(time_objects)):
+        diff = time_objects[i] - time_objects[i-1]
+
+        # Convert the difference to different units
+        if unit == 'minutes':
+            diff_value = diff.total_seconds() / 60
+        elif unit == 'hours':
+            diff_value = diff.total_seconds() / 3600
+        elif unit == 'seconds':
+            diff_value = diff.total_seconds()
+        elif unit == 'days':
+            diff_value = diff.days
+        elif unit == 'weeks':
+            diff_value = diff.days / 7
+        elif unit == 'months':
+            diff_value = diff.days / 30  # Approximate by assuming 30 days in a month
+        else:
+            raise ValueError(f"Unsupported unit '{unit}'. Choose from 'minutes', 'hours', 'seconds', 'days', 'weeks', 'months'.")
+
+        time_diffs.append(diff_value)
+
+    return time_diffs
+
+
 class ConstellationDescriptionCollectionIn(Schema):
 
     subcorpus_collection_id = Integer(required=True)
@@ -42,11 +80,22 @@ class ConstellationDescriptionCollectionOut(Schema):
     constellation_descriptions = Nested(ConstellationDescriptionOut(many=True), required=True, dump_default=[])
 
 
+class ConfidenceIntervalOut(Schema):
+
+    lower_95 = Float()
+    lower_90 = Float()
+    median = Float()
+    upper_90 = Float()
+    upper_95 = Float()
+
+
 class UFAScoreOut(Schema):
 
     left_id = Integer()
     right_id = Integer()
+    x_label = String()
     score = Float()
+    confidence = Nested(ConfidenceIntervalOut)
 
 
 class ConstellationDescriptionCollectionCollocationOut(Schema):
@@ -312,16 +361,38 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
 
         collocations.append(collocation)
 
-    ufa = list()
+    x = list()
+    scores = list()
     for i in range(1, len(collocations)):
+        left = collocations[i-1]
+        right = collocations[i]
+        x.append(right._query.subcorpus.name)
+        scores.append(calculate_rbo(left, right, sort_by='conservative_log_ratio', number=50))
+
+    # diffs = calculate_time_diff([datetime.fromisoformat(time_str) for time_str in x])
+    # TODO calculate smoothing
+
+    ufa = list()
+    for i, score in zip(range(1, len(collocations)), scores):
 
         left = collocations[i-1]
         right = collocations[i]
 
+        # print(right._query.subcorpus.name)
+        # print(datetime.fromisoformat(right._query.subcorpus.name))
+
         ufa_score = {
             'left_id': left.id,
             'right_id': right.id,
-            'score': calculate_rbo(left, right, sort_by='conservative_log_ratio', number=50)
+            'x_label': right._query.subcorpus.name,
+            'score': score,
+            'confidence': {
+                'lower_95': score + .02,
+                'lower_90': score + .01,
+                'median': score,
+                'upper_90': score - .01,
+                'upper_95': score - .02
+            }
         }
 
         ufa.append(ufa_score)
