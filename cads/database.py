@@ -165,7 +165,10 @@ class Corpus(db.Model):
 
     @property
     def nr_tokens(self):
-        return self.ccc().size()
+        if not self._nr_tokens:
+            self._nr_tokens = int(self.ccc().size())
+            db.session.commit()
+        return self._nr_tokens
 
     def get_s_att(self, level, key):
         att = None
@@ -220,7 +223,10 @@ class SubCorpus(db.Model):
 
     @property
     def nr_tokens(self):
-        return self.ccc().size()
+        if not self._nr_tokens:
+            self._nr_tokens = int(self.ccc().size())
+            db.session.commit()
+        return self._nr_tokens
 
     def ccc(self):
         crps = self.corpus.ccc()

@@ -105,7 +105,6 @@ def test_create_subcorpus_subcorpus(client, auth):
                              content_type='application/json',
                              headers=auth_header)
         assert corpora.status_code == 200
-        print(corpora.json)
 
         corpus = client.get(url_for('corpus.get_corpus', id=corpora.json[0]['id']),
                             content_type='application/json',
