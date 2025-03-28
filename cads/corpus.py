@@ -681,7 +681,6 @@ def get_subcorpus(id, subcorpus_id):
 
 
 @bp.delete('/<id>/subcorpus/<subcorpus_id>')
-@bp.output(SubCorpusCollectionOut)
 @bp.auth_required(auth)
 def delete_subcorpus(id, subcorpus_id):
     """Get subcorpus collection.
@@ -852,7 +851,6 @@ def get_subcorpus_collection(id, subcorpus_collection_id):
 
 
 @bp.delete('/<id>/subcorpus-collection/<subcorpus_collection_id>')
-@bp.output(SubCorpusCollectionOut)
 @bp.auth_required(auth)
 def delete_subcorpus_collection(id, subcorpus_collection_id):
     """Get subcorpus collection.
