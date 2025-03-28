@@ -127,7 +127,7 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     focus_query_id = collocation.query_id
     focus_query = db.get_or_404(Query, focus_query_id)
 
-    # discourseme scores
+    # discourseme scores (calculated here to hide unigram breakdown if requested)
     discourseme_scores = get_collocation_discourseme_scores(collocation.id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
         s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
@@ -160,7 +160,7 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
             )
             blacklist += [b.id for b in blacklist_desc]
 
-    # get scores
+    # item scores
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
         CollocationItemScore.measure == sort_by,

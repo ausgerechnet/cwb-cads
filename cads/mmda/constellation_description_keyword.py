@@ -315,20 +315,7 @@ def get_keyword_discourseme_scores(keyword_id, discourseme_description_ids):
         df_discourseme_items = DataFrame([vars(s) for s in discourseme_items], columns=['item', 'f1', 'N1', 'f2', 'N2'])
         if len(df_discourseme_items) == 0:
             continue
-        # THIS IS ACTUALLY ALREADY SAVED BUT I'M TOO STUPID TO RETRIEVE IT
         df_discourseme_items['discourseme_id'] = discourseme_id
-        df_discourseme_items_scores = df_discourseme_items.set_index('item')
-        df_discourseme_items_scores = measures.score(df_discourseme_items_scores, freq=True, per_million=True, digits=6, boundary='poisson')
-        _discourseme_items_scores = df_discourseme_items_scores.to_dict(orient='index')
-        discourseme_items_scores = list()
-        for item in _discourseme_items_scores.keys():
-            _scores = list()
-            for measure in _discourseme_items_scores[item].keys():
-                _scores.append({'measure': measure, 'score': _discourseme_items_scores[item][measure]})
-            discourseme_items_scores.append({
-                'item': item,
-                'scores': _scores
-            })
 
         # discourseme unigram items
         df_discourseme_unigram_items = df_discourseme_items.copy()
@@ -340,21 +327,28 @@ def get_keyword_discourseme_scores(keyword_id, discourseme_description_ids):
         unigram_item_scores = list()
         for item in _unigram_item_scores.keys():
             _scores = list()
+            _raw_scores = list()
             for measure in _unigram_item_scores[item].keys():
-                _scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
+                if measure in ['O11', 'O12', 'O21', 'O22', 'E11', 'E12', 'E21', 'E22', 'R1', 'R2', 'C1', 'C2', 'N']:
+                    _raw_scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
+                else:
+                    _scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
+                if measure in ['O11', 'E11']:  # also include in scores
+                    _scores.append({'measure': measure, 'score': _unigram_item_scores[item][measure]})
             unigram_item_scores.append({
                 'item': item,
-                'scores': _scores
+                'scores': _scores,
+                'raw_scores': _raw_scores
             })
 
+        # global scores
         df_discourseme_global_scores = df_discourseme_items.groupby('discourseme_id').aggregate({'f1': 'sum', 'N1': 'max', 'f2': 'sum', 'N2': 'max'})
-        # df_discourseme_global_scores = df_discourseme_unigram_items.groupby('discourseme_id').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
         df_global_scores = measures.score(df_discourseme_global_scores, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
 
         # output
         discourseme_scores.append({'discourseme_id': discourseme_id,
                                    'global_scores': df_global_scores.melt(var_name='measure', value_name='score').to_records(index=False),
-                                   'item_scores': discourseme_items_scores,
+                                   'item_scores': discourseme_items.all(),
                                    'unigram_item_scores': unigram_item_scores})
 
     return discourseme_scores

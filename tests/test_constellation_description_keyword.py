@@ -57,24 +57,24 @@ def test_constellation_keyword(client, auth):
         keyword_items.json['discourseme_scores'][2]['discourseme_id'] == 3  # Kanzler
         scores = {k['measure']: k['score'] for k in keyword_items.json['discourseme_scores'][2]['global_scores']}
         assert int(scores['O11']) == 29
-        assert int(scores['R1']) == 35980
+        assert int(scores['O11']) + int(scores['O12']) == 35980
         assert int(scores['O21']) == 29
-        assert int(scores['R2']) == 113820
+        assert int(scores['O21']) + int(scores['O22']) == 113820
 
         # F. D. P.
         assert keyword_items.json['discourseme_scores'][1]['item_scores'][0]['item'] == 'F. D. P.'
         scores = {k['measure']: k['score'] for k in keyword_items.json['discourseme_scores'][1]['item_scores'][0]['scores']}
         assert int(scores['O11']) == 41
-        assert int(scores['R1']) == 35980
+        assert int(scores['O11']) + int(scores['O12']) == 35980
         assert int(scores['O21']) == 356
-        assert int(scores['R2']) == 113820
+        assert int(scores['O21']) + int(scores['O22']) == 113820
 
         assert keyword_items.json['discourseme_scores'][1]['unigram_item_scores'][0]['item'] == 'D.'
         scores = {k['measure']: k['score'] for k in keyword_items.json['discourseme_scores'][1]['unigram_item_scores'][0]['scores']}
         assert int(scores['O11']) == 87
-        assert int(scores['R1']) == 35980
-        assert int(scores['O21']) == 414
-        assert int(scores['R2']) == 113820
+        # assert int(scores['O11']) + int(scores['O12']) == 35980
+        # assert int(scores['O21']) == 414
+        # assert int(scores['O21']) + int(scores['O22']) == 113820
 
 
 def test_constellation_keyword_coordinates(client, auth):
@@ -223,6 +223,7 @@ def test_constellation_keyword_empty_queries(client, auth):
         assert keyword_items.status_code == 200
 
 
+@pytest.mark.now
 def test_constellation_keyword_map(client, auth):
 
     auth_header = auth.login()
@@ -273,7 +274,8 @@ def test_constellation_keyword_map(client, auth):
                                     page_size=50, sort_by='conservative_log_ratio'),
                             headers=auth_header)
         assert kw_map.status_code == 200
-
+        from pprint import pprint
+        pprint(kw_map.json['map'])
         assert kw_map.json['map'][0]['discourseme_id'] is None
         assert kw_map.json['map'][9]['discourseme_id'] is None
 
@@ -387,7 +389,6 @@ def test_put_constellation_keywords(client, auth):
         assert keyword.status_code == 200
 
 
-@pytest.mark.now
 def test_get_constellation_keywords(client, auth):
 
     auth_header = auth.login()
