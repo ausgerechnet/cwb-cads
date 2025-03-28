@@ -1105,6 +1105,9 @@
             "nullable": true,
             "type": "string"
           },
+          "nr_tokens": {
+            "type": "integer"
+          },
           "p_atts": {
             "items": {
               "type": "string"
@@ -1134,6 +1137,7 @@
           "id",
           "language",
           "name",
+          "nr_tokens",
           "p_atts",
           "register",
           "s_annotations",
@@ -2147,6 +2151,11 @@
           "name": {
             "type": "string"
           },
+          "subcorpus_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          },
           "time_interval": {
             "default": "day",
             "description": "which bins to use.",
@@ -2188,6 +2197,17 @@
               "$ref": "#/components/schemas/SubCorpusOut"
             },
             "type": "array"
+          },
+          "subcorpus": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/SubCorpusOut"
+              }
+            ]
           }
         },
         "required": [
@@ -2195,7 +2215,8 @@
           "description",
           "id",
           "name",
-          "subcorpora"
+          "subcorpora",
+          "subcorpus"
         ],
         "type": "object"
       },
@@ -2243,6 +2264,11 @@
           },
           "name": {
             "type": "string"
+          },
+          "subcorpus_id": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
           }
         },
         "required": [
@@ -2271,6 +2297,9 @@
           "nqr_cqp": {
             "nullable": true,
             "type": "string"
+          },
+          "nr_tokens": {
+            "type": "integer"
           }
         },
         "required": [
@@ -2278,7 +2307,8 @@
           "description",
           "id",
           "name",
-          "nqr_cqp"
+          "nqr_cqp",
+          "nr_tokens"
         ],
         "type": "object"
       },
@@ -2451,7 +2481,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev42"
+    "version": "0.3.0.dev43"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3228,7 +3258,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get meta data of corpus. Used for subcorpus creation.",
+        "summary": "Get meta data of corpus. Can be used for subcorpus creation.",
         "tags": [
           "Corpus"
         ]
@@ -3315,6 +3345,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subcorpus_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
             }
           },
           {
@@ -3453,7 +3493,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get meta data frequencies in corpus.",
+        "summary": "Get meta data frequencies in (sub-)corpus.",
         "tags": [
           "Corpus"
         ]
@@ -3468,6 +3508,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subcorpus_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
             }
           }
         ],
@@ -3504,6 +3554,16 @@
               }
             },
             "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
           }
         },
         "security": [
@@ -3511,7 +3571,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get all subcorpus collections in corpus.",
+        "summary": "Get all subcorpus collections in (sub-corpus).",
         "tags": [
           "Corpus"
         ]
@@ -3613,9 +3673,7 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubCorpusCollectionOut"
-                }
+                "schema": {}
               }
             },
             "description": "Successful response"
@@ -3646,7 +3704,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get subcorpus collection.",
+        "summary": "Delete subcorpus collection.",
         "tags": [
           "Corpus"
         ]
@@ -3771,7 +3829,7 @@
         ]
       },
       "put": {
-        "description": "- boolean / unicode keys: categorical select\n- numeric / datetime keys: interval select",
+        "description": "We only support creation of subcorpora from one level-key pair.\n- boolean / unicode keys: categorical select\n- numeric / datetime keys: interval select\n\nSubcorpora can be built iteratively as long as working on the same level.",
         "parameters": [
           {
             "in": "path",
@@ -3838,7 +3896,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create subcorpus from stored meta data. We only support creation of subcorpora from one key-value pair.",
+        "summary": "Create subcorpus from stored meta data.",
         "tags": [
           "Corpus"
         ]
@@ -3868,9 +3926,7 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubCorpusCollectionOut"
-                }
+                "schema": {}
               }
             },
             "description": "Successful response"
@@ -3963,168 +4019,6 @@
           }
         ],
         "summary": "Get details of a subcorpus.",
-        "tags": [
-          "Corpus"
-        ]
-      }
-    },
-    "/corpus/{id}/subcorpus/{subcorpus_id}/meta/frequencies": {
-      "get": {
-        "description": "TODO: implement correctly, this retrieves corpus meta frequencies right now",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "subcorpus_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "level",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "key",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_by",
-            "required": false,
-            "schema": {
-              "default": "nr_tokens",
-              "enum": [
-                "bin",
-                "nr_spans",
-                "nr_tokens"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort_order",
-            "required": false,
-            "schema": {
-              "default": "descending",
-              "enum": [
-                "ascending",
-                "descending"
-              ],
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 10,
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_number",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "how may (equidistant) bins to create. only used for numeric values.",
-            "in": "query",
-            "name": "nr_bins",
-            "required": false,
-            "schema": {
-              "default": 30,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "which bins to create for datetime values. only used for datetime values.",
-            "in": "query",
-            "name": "time_interval",
-            "required": false,
-            "schema": {
-              "default": "day",
-              "enum": [
-                "hour",
-                "day",
-                "week",
-                "month",
-                "year"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MetaFrequenciesOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Get meta data frequencies in subcorpus.",
         "tags": [
           "Corpus"
         ]

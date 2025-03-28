@@ -17,9 +17,10 @@ from numpy import array_split
 from pandas import DataFrame, read_csv, to_datetime
 from sqlalchemy import Integer as sql_Integer
 from sqlalchemy import func, or_, select
-
 from . import db
 from .concordance import ConcordanceIn, ConcordanceOut
+
+from .database import subcorpus_segmentation_span
 from .database import (Corpus, CorpusAttributes, Segmentation,
                        SegmentationAnnotation, SegmentationSpan,
                        SegmentationSpanAnnotation, SubCorpus,
@@ -295,7 +296,7 @@ def get_meta_number_tokens(corpus, level, key):
     return records
 
 
-def get_meta_freq(att, nr_bins=30, time_interval='hour'):
+def get_meta_freq(att, nr_bins=30, time_interval='hour', subcorpus_id=None):
 
     time_formats = {
         'hour': '%Y-%m-%d %H:00:00',
@@ -318,6 +319,8 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
         min_value, max_value = db.session.query(
             func.min(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type]),
             func.max(SegmentationSpanAnnotation.__table__.c['value_' + att.value_type])
+        ).filter_by(
+            segmentation_annotation_id=att.id
         ).first()
         bin_width = (max_value - min_value) / nr_bins
 
@@ -343,6 +346,14 @@ def get_meta_freq(att, nr_bins=30, time_interval='hour'):
 
     else:
         raise ValueError()
+
+    if subcorpus_id:
+        span_subquery = select(subcorpus_segmentation_span.c.segmentation_span_id).where(
+            subcorpus_segmentation_span.c.subcorpus_id == subcorpus_id
+        ).scalar_subquery()
+        records = records.filter(
+            SegmentationSpanAnnotation.segmentation_span_id.in_(span_subquery)
+        )
 
     records = records.filter_by(
         segmentation_annotation_id=att.id
@@ -492,6 +503,8 @@ def subcorpora_from_tsv(cwb_id, path, column='subcorpus', description='imported 
 # Input
 class SubCorpusIn(Schema):
 
+    subcorpus_id = Integer(required=False, allow_none=True, load_default=None)
+
     name = String(required=True)
     description = String(required=False, allow_none=True)
 
@@ -513,6 +526,8 @@ class SubCorpusIn(Schema):
 
 
 class SubCorpusCollectionIn(Schema):
+
+    subcorpus_id = Integer(required=False, allow_none=True, load_default=None)
 
     name = String(required=True)
     description = String(required=False, allow_none=True)
@@ -536,6 +551,8 @@ class MetaIn(Schema):
 
 
 class MetaFrequenciesIn(Schema):
+
+    subcorpus_id = Integer(required=False, allow_none=True, load_default=None)
 
     level = String(required=True)
     key = String(required=True)
@@ -567,6 +584,7 @@ class CorpusOut(Schema):
     s_atts = List(String, required=True, dump_default=[])
     p_atts = List(String, required=True, dump_default=[])
     s_annotations = List(String, required=True, dump_default=[])
+    nr_tokens = Integer(required=True)
 
 
 class SubCorpusOut(Schema):
@@ -576,12 +594,14 @@ class SubCorpusOut(Schema):
     name = String(required=True, dump_default=None, allow_none=True)
     description = String(required=True, dump_default=None, allow_none=True)
     nqr_cqp = String(required=True, dump_default=None, allow_none=True)
+    nr_tokens = Integer(required=True)  # TODO SPEED UP
 
 
 class SubCorpusCollectionOut(Schema):
 
     id = Integer(required=True)
     corpus = Nested(CorpusOut, required=True)
+    subcorpus = Nested(SubCorpusOut, required=True, allow_none=True)
     name = String(required=True, dump_default=None, allow_none=True)
     description = String(required=True, dump_default=None, allow_none=True)
     subcorpora = Nested(SubCorpusOut(many=True), required=True)
@@ -699,13 +719,18 @@ def delete_subcorpus(id, subcorpus_id):
 @bp.output(SubCorpusOut)
 @bp.auth_required(auth)
 def create_subcorpus(id, json_data):
-    """Create subcorpus from stored meta data. We only support creation of subcorpora from one key-value pair.
+    """Create subcorpus from stored meta data.
+
+    We only support creation of subcorpora from one level-key pair.
     - boolean / unicode keys: categorical select
     - numeric / datetime keys: interval select
+
+    Subcorpora can be built iteratively as long as working on the same level.
 
     """
 
     corpus = db.get_or_404(Corpus, id)
+    subcorpus_id = json_data.get('subcorpus_id')
 
     name = json_data['name']
     description = json_data.get('description')
@@ -719,6 +744,9 @@ def create_subcorpus(id, json_data):
     segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=key).first()
     value_type = segmentation_annotation.value_type
     values = json_data.get(f'bins_{value_type}')
+
+    if segmentation.level != level:
+        abort(406, f'subcorpus was created on "{segmentation.level}", cannot use "{level}" for further subcorpus creation')
 
     if values is None:
         abort(400, f'Bad Request: {level}_{key} is of type {value_type}, but no such value(s) provided')
@@ -740,6 +768,13 @@ def create_subcorpus(id, json_data):
     else:
         raise ValueError()
 
+    if subcorpus_id:
+        span_subquery = select(subcorpus_segmentation_span.c.segmentation_span_id).where(
+            subcorpus_segmentation_span.c.subcorpus_id == subcorpus_id
+        ).scalar_subquery()
+        span_ids = span_ids.filter(
+            SegmentationSpanAnnotation.segmentation_span_id.in_(span_subquery)
+        )
     spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_(span_ids.scalar_subquery()))
     df = DataFrame([vars(s) for s in spans])
     if len(df) == 0:
@@ -764,6 +799,7 @@ def create_subcorpus_collection(id, json_data):
     """
 
     corpus = db.get_or_404(Corpus, id)
+    subcorpus_id = json_data.get('subcorpus_id')
 
     name = json_data['name']
     description = json_data.get('description')
@@ -771,7 +807,7 @@ def create_subcorpus_collection(id, json_data):
     level = json_data['level']
     key = json_data['key']
 
-    time_interval = json_data.get('time_interval', 'day')
+    time_interval = json_data['time_interval']
     create_nqr = json_data['create_nqr']
 
     # get attribute
@@ -786,6 +822,7 @@ def create_subcorpus_collection(id, json_data):
         name=name,
         description=description,
         corpus_id=corpus.id,
+        subcorpus_id=subcorpus_id,
         level=level,
         key=key,
         time_interval=time_interval
@@ -794,7 +831,7 @@ def create_subcorpus_collection(id, json_data):
     db.session.commit()
 
     # meta frequencies
-    records = get_meta_freq(att, None, time_interval)
+    records = get_meta_freq(att, nr_bins=None, time_interval=time_interval, subcorpus_id=subcorpus_id)
     df_freq = DataFrame(records.all())
     if time_interval == 'week':
         # we convert weeks back to the first day of the week to be able to use normal select clauses below
@@ -809,7 +846,16 @@ def create_subcorpus_collection(id, json_data):
             (SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type] < end)
         )
 
+        if subcorpus_id:
+            span_subquery = select(subcorpus_segmentation_span.c.segmentation_span_id).where(
+                subcorpus_segmentation_span.c.subcorpus_id == subcorpus_id
+            ).scalar_subquery()
+            span_ids = span_ids.filter(
+                SegmentationSpanAnnotation.segmentation_span_id.in_(span_subquery)
+            )
+
         spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_(span_ids.scalar_subquery()))
+
         df = DataFrame([vars(s) for s in spans])
         if len(df) > 0:
             df = df[['match', 'matchend']]
@@ -817,7 +863,7 @@ def create_subcorpus_collection(id, json_data):
                                           cqp_bin=current_app.config['CCC_CQP_BIN'],
                                           registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                                           data_dir=current_app.config['CCC_DATA_DIR'])
-            subcorpus.collection_id = collection.id
+            collection.subcorpora.append(subcorpus)
 
     db.session.commit()
 
@@ -825,14 +871,20 @@ def create_subcorpus_collection(id, json_data):
 
 
 @bp.get('/<id>/subcorpus-collection/')
+@bp.input({'subcorpus_id': Integer(required=False, load_default=None, allow_none=True)}, location='query')
 @bp.output(SubCorpusCollectionOut(many=True))
 @bp.auth_required(auth)
-def get_subcorpus_collections(id):
-    """Get all subcorpus collections in corpus.
+def get_subcorpus_collections(id, query_data):
+    """Get all subcorpus collections in (sub-corpus).
 
     """
-
-    collections = SubCorpusCollection.query.filter_by(corpus_id=id).all()
+    if query_data['subcorpus_id']:
+        collections = SubCorpusCollection.query.filter_by(corpus_id=id, subcorpus_id=query_data['subcorpus_id']).all()
+    else:
+        collections = SubCorpusCollection.query.filter(
+            SubCorpusCollection.corpus_id == id,
+            SubCorpusCollection.subcorpus_id.is_(None)
+        ).all()
 
     return [SubCorpusCollectionOut().dump(collection) for collection in collections], 200
 
@@ -853,7 +905,7 @@ def get_subcorpus_collection(id, subcorpus_collection_id):
 @bp.delete('/<id>/subcorpus-collection/<subcorpus_collection_id>')
 @bp.auth_required(auth)
 def delete_subcorpus_collection(id, subcorpus_collection_id):
-    """Get subcorpus collection.
+    """Delete subcorpus collection.
 
     """
 
@@ -868,7 +920,7 @@ def delete_subcorpus_collection(id, subcorpus_collection_id):
 @bp.output(MetaOut)
 @bp.auth_required(auth)
 def get_meta(id):
-    """Get meta data of corpus. Used for subcorpus creation.
+    """Get meta data of corpus. Can be used for subcorpus creation.
 
     TODO also return some descriptive summary of level annotations?
     """
@@ -917,11 +969,12 @@ def set_meta(id, json_data):
 @bp.output(MetaFrequenciesOut)
 @bp.auth_required(auth)
 def get_frequencies(id, query_data):
-    """Get meta data frequencies in corpus.
+    """Get meta data frequencies in (sub-)corpus.
 
     """
 
     corpus = db.get_or_404(Corpus, id)
+    subcorpus_id = query_data.get('subcorpus_id', None)
     level = query_data.get('level')
     key = query_data.get('key')
 
@@ -940,7 +993,7 @@ def get_frequencies(id, query_data):
         abort(404, 'annotation layer not found')
 
     # meta frequencies
-    records = get_meta_freq(att, nr_bins, time_interval)
+    records = get_meta_freq(att, nr_bins, time_interval, subcorpus_id=subcorpus_id)
 
     # sorting
     column_map = {desc["name"]: desc["expr"] for desc in records.column_descriptions}
@@ -963,72 +1016,6 @@ def get_frequencies(id, query_data):
         df_freq['bin_datetime'] = df_freq['bin_index']
         if time_interval == 'week':
             df_freq['bin_datetime'] = df_freq['bin_datetime'].apply(correct_week_00)
-    freq = df_freq.to_dict(orient='records')
-
-    return MetaFrequenciesOut().dump({
-        'sort_by': sort_by,
-        'sort_order': sort_order,
-        'nr_items': records.total,
-        'page_size': page_size,
-        'page_number': page_number,
-        'page_count': records.pages,
-        'value_type': att.value_type,
-        'frequencies': [MetaFrequencyOut().dump(f) for f in freq]
-    }), 200
-
-
-@bp.get('/<id>/subcorpus/<subcorpus_id>/meta/frequencies')
-@bp.input(MetaFrequenciesIn, location='query')
-@bp.output(MetaFrequenciesOut)
-@bp.auth_required(auth)
-def get_frequencies_subcorpus(id, subcorpus_id, query_data):
-    """Get meta data frequencies in subcorpus.
-
-    TODO: implement correctly, this retrieves corpus meta frequencies right now
-
-    """
-
-    corpus = db.get_or_404(Corpus, id)
-    subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
-    level = query_data.get('level')
-    key = query_data.get('key')
-
-    page_number = query_data.get('page_number', 1)
-    page_size = query_data.get('page_size', 20)
-    sort_order = query_data.get('sort_order', 'descending')
-    sort_by = query_data.get('sort_by', 'nr_tokens')
-    sort_by = 'bin_index' if sort_by == 'bin' else sort_by
-
-    nr_bins = query_data.get('nr_bins', 5)
-    time_interval = query_data.get('time_interval', 'day')
-
-    # get attribute
-    att = corpus.get_s_att(level=level, key=key)
-    if att is None:
-        abort(404, 'annotation layer not found')
-
-    # meta frequencies
-    records = get_meta_freq(att, nr_bins, time_interval)
-
-    # sorting
-    column_map = {desc["name"]: desc["expr"] for desc in records.column_descriptions}
-
-    if sort_by in column_map:
-        order_by_clause = column_map[sort_by] if sort_order == 'ascending' else column_map[sort_by].desc()
-        records = records.order_by(order_by_clause)
-    else:
-        current_app.logger.error(f"sort_by '{sort_by}' not supported")
-
-    records = records.paginate(page=page_number, per_page=page_size)
-    df_freq = DataFrame(records.items)
-    if att.value_type == 'unicode':
-        df_freq['bin_unicode'] = df_freq['bin_index']
-    elif att.value_type == 'boolean':
-        df_freq['bin_boolean'] = df_freq['bin_index']
-    elif att.value_type == 'numeric':
-        df_freq['bin_numeric'] = list(zip(df_freq['bin_start'], df_freq['bin_end']))
-    elif att.value_type == 'datetime':
-        df_freq['bin_datetime'] = df_freq['bin_index']
     freq = df_freq.to_dict(orient='records')
 
     return MetaFrequenciesOut().dump({

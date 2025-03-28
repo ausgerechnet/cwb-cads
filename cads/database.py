@@ -64,6 +64,12 @@ subcorpus_segmentation_span = db.Table(
     db.Column('segmentation_span_id', db.Integer, db.ForeignKey('segmentation_span.id'))
 )
 
+collection_subcorpus = db.Table(
+    'collection_subcorpus',
+    db.Column('collection_id', db.Integer, db.ForeignKey('sub_corpus_collection.id')),
+    db.Column('subcorpus_id', db.Integer, db.ForeignKey('sub_corpus.id'))
+)
+
 
 # USERS #
 #########
@@ -131,6 +137,8 @@ class Corpus(db.Model):
     collections = db.relationship('SubCorpusCollection', backref='corpus', passive_deletes=True, cascade='all, delete')
     queries = db.relationship('Query', backref='corpus', passive_deletes=True, cascade='all, delete')
 
+    _nr_tokens = db.Column(db.Integer)
+
     @property
     def s_default(self):
         """default s-attribute to link matches to contexts"""
@@ -197,7 +205,6 @@ class SubCorpus(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
-    collection_id = db.Column(db.Integer, db.ForeignKey('sub_corpus_collection.id', ondelete='CASCADE'), index=True)
     segmentation_id = db.Column(db.Integer, db.ForeignKey('segmentation.id', ondelete='CASCADE'), index=True)
 
     name = db.Column(db.Unicode)
@@ -207,6 +214,9 @@ class SubCorpus(db.Model):
 
     spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span, backref=db.backref('sub_corpus'))
     queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
+    collections = db.relationship('SubCorpusCollection', backref='subcorpus', passive_deletes=True, cascade='all, delete')
+
+    _nr_tokens = db.Column(db.Integer)
 
     @property
     def nr_tokens(self):
@@ -224,6 +234,10 @@ class SubCorpus(db.Model):
             subcrps = crps.subcorpus(subcorpus_name=self.nqr_cqp)
         return subcrps
 
+    @property
+    def segmentation(self):
+        return self.spans[0].segmentation
+
 
 class SubCorpusCollection(db.Model):
     """Collection of subcorpora (of one corpus). Created from DateTime variable.
@@ -236,10 +250,12 @@ class SubCorpusCollection(db.Model):
     name = db.Column(db.Unicode)
     description = db.Column(db.Unicode)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
+    subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), index=True)
+
     level = db.Column(db.Unicode)
     key = db.Column(db.Unicode)
     time_interval = db.Column(db.Unicode)
-    subcorpora = db.relationship('SubCorpus', backref='collection', passive_deletes=True, cascade='all, delete')
+    subcorpora = db.relationship("SubCorpus", secondary=collection_subcorpus)
 
 
 class Embeddings(db.Model):
