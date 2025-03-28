@@ -65,9 +65,10 @@ export function SelectSubcorpus({
                   {subcorpus.name}
                 </span>
               ),
-              searchValue: `${corpus.name ?? ''} ${corpus.description ?? ''}_${
-                subcorpus.name ?? ''
-              } ${subcorpus.description}`.toLowerCase(),
+              searchValue:
+                `${subcorpus.id} ${corpus.name ?? ''} ${corpus.description ?? ''}_${
+                  subcorpus.name ?? ''
+                } ${subcorpus.description}`.toLowerCase(),
             })),
         ])
         .flat(),
