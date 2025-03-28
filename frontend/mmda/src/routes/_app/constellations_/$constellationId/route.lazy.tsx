@@ -16,6 +16,7 @@ import {
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { ConcordanceFilterProvider } from '@cads/shared/components/concordances'
 import { ErrorMessage } from '@cads/shared/components/error-message'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationCollocationFilter } from './-constellation-filter'
@@ -28,7 +29,7 @@ import { AnalysisSelection } from './-analysis-selection'
 import { useAnalysisSelection } from './-use-analysis-selection'
 import { DescriptionAssociation } from './-description-association'
 import { SemanticMapLink } from './-semantic-map-link'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { KeywordTable } from './-keyword-table'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -161,9 +162,7 @@ function ConstellationDetail() {
           />
         )}
 
-        {analysisType === 'keyword' && (
-          <strong>Keyword analysis goes here</strong>
-        )}
+        {analysisType === 'keyword' && <KeywordTable />}
 
         {analysisType === 'ufa' && (
           <strong>Usage Frequency Analysis goes here</strong>

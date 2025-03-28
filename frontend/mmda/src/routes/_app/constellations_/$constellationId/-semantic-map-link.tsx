@@ -1,10 +1,12 @@
 import { ComponentProps } from 'react'
 
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { WordCloudLink } from '@/components/word-cloud-link'
 
 import { useAnalysisSelection } from './-use-analysis-selection'
 import { useCollocation } from './-use-collocation'
 import { Route } from './route'
+import { useKeywordAnalysis } from './-use-keyword-analysis'
 
 export function SemanticMapLink() {
   const analysisType = useAnalysisSelection().analysisType
@@ -41,6 +43,12 @@ function CollocationLink({ descriptionId }: { descriptionId?: number }) {
 
 function KeywordLink() {
   const { analysisSelection } = useAnalysisSelection()
+  const { errors } = useKeywordAnalysis()
+
+  if (errors.length) {
+    return <ErrorMessage error={errors} />
+  }
+
   return (
     <MapLink
       items={[]}

@@ -762,46 +762,100 @@ export const constellationKeywordAnalysis = (
     ],
     queryFn: async ({ signal }) =>
       apiClient.put(
-          '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
-          {
-            corpus_id_reference,
-            subcorpus_id_reference,
-            p,
-            p_reference,
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+        {
+          corpus_id_reference,
+          subcorpus_id_reference,
+          p,
+          p_reference,
+        },
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
           },
-          {
-            params: {
-              constellation_id: constellationId.toString(),
-              description_id: descriptionId.toString(),
-            },
-            signal,
-          },
-        )
-      }
-      return getMatchingKeywordAnalysis()
+          signal,
+        },
+      ),
+  })
 
-      async function getMatchingKeywordAnalysis() {
-        const analyses = await apiClient.get(
-          '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
-          {
-            params: {
-              constellation_id: constellationId.toString(),
-              description_id: descriptionId.toString(),
-            },
-            signal,
+export const constellationKeywordAnalysisItems = (
+  constellationId: number,
+  descriptionId: number,
+  keywordId: number,
+  {
+    sortOrder,
+    sortBy,
+    pageSize,
+    pageNumber,
+  }: {
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?: SortBy
+    pageSize?: number
+    pageNumber?: number
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-keyword-analysis-items',
+      {
+        constellationId,
+        descriptionId,
+        keywordId,
+        sortOrder,
+        sortBy,
+        pageSize,
+        pageNumber,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/items',
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+            keyword_id: keywordId.toString(),
           },
-        )
-        const matchingAnalysis = analyses.find(
-          (a) =>
-            a.corpus_id_reference === corpus_id_reference &&
-            a.subcorpus_id_reference === subcorpus_id_reference &&
-            a.p === p &&
-            a.p_reference === p_reference,
-        )
-        if (matchingAnalysis) return matchingAnalysis
-        throw new Error('No matching keyword analysis found')
-      }
-    },
+          queries: {
+            sort_order: sortOrder,
+            sort_by: sortBy,
+            page_size: pageSize,
+            page_number: pageNumber,
+          },
+          signal,
+        },
+      ),
+  })
+
+export const constellationKeywordAnalysisMap = (
+  constellationId: number,
+  descriptionId: number,
+  keywordId: number,
+  sortBy: SortBy,
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-keyword-analysis-map',
+      { constellationId, descriptionId, keywordId, sortBy },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/items',
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+            keyword_id: keywordId.toString(),
+          },
+          queries: {
+            page_size: 300,
+            page_number: 1,
+            sort_by: sortBy,
+          },
+          signal,
+        },
+      ),
   })
 
 // ==================== COLLOCATIONS ====================
