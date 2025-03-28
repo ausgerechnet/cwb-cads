@@ -7,6 +7,7 @@ from apiflask.validators import OneOf
 from association_measures import measures
 from flask import current_app
 from pandas import DataFrame, read_sql, to_numeric
+from sqlalchemy import select
 
 from . import db
 from .database import (Collocation, CollocationItem, CollocationItemScore,
@@ -19,62 +20,73 @@ from .utils import AMS_DICT
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
 
 
-def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=False):
-    """makes sure that CollocationItems exist for collocation analysis = query + context
+def get_filtered_cotext(focus_query, window, s_break, remove_focus_cpos=True):
+    """retrieve cotext of focus query, removing duplicates and focus cpos if needed.
 
     """
 
+    # get cotext as DataFrame
     from .query import get_or_create_cotext
+    cotext = get_or_create_cotext(focus_query, window, s_break, return_df=True)
+    if cotext is None:
+        current_app.logger.error('get_filtered_cotext :: empty cotext')
+        return None
+
+    # query cotext lines
+    cotext_lines_stmt = select(
+        CotextLines.id, CotextLines.cpos, CotextLines.offset
+    ).filter(
+        CotextLines.cotext_id == cotext.id,
+        CotextLines.offset.between(-window, window)
+    ).distinct()
+
+    # convert query results to DataFrame
+    current_app.logger.debug('get_filtered_cotext :: removing duplicates')
+    df_cooc = read_sql(cotext_lines_stmt, con=db.engine).drop(columns=['id']).drop_duplicates(subset='cpos')
+
+    # remove focus cpos if needed
+    if remove_focus_cpos:
+        current_app.logger.debug('get_filtered_cotext :: removing filter cpos')
+        discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0, 'cpos'])
+        df_cooc = df_cooc[~df_cooc['cpos'].isin(discourseme_cpos)]
+
+    return df_cooc
+
+
+def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=False, delete_old=False):
+    """make sure that CollocationItems exist for collocation analysis = query + context
+
+    """
 
     current_app.logger.debug("get_or_create_counts :: getting counts")
     old = CollocationItem.query.filter_by(collocation_id=collocation.id)
     if old.first():
         current_app.logger.debug("get_or_create_counts :: counts already exist")
-        return True
-        # TODO remove existing counts when forcing rerun
-        # current_app.logger.debug("deleting old ones")
-        # CollocationItems.query.filter_by(collocation_id=collocation.id).delete()
-        # current_app.logger.debug("deleted")
-        # db.session.commit()
+        if not delete_old:
+            return True
+        else:
+            current_app.logger.debug("get_or_create_counts :: deleting counts")
+            CollocationItem.query.filter_by(collocation_id=collocation.id).delete()
+            db.session.commit()
+            current_app.logger.debug("deleted")
 
-    # get relevant objects
+    # parse parameters
     focus_query = collocation._query
     window = collocation.window
     s_break = collocation.s_break
-
-    # corpus / subcorpus
     if focus_query.subcorpus and collocation.marginals == 'local':
         corpus = collocation._query.subcorpus.ccc()
     else:
         corpus = collocation._query.corpus.ccc()
 
-    ###################
-    # (1) GET CONTEXT #
-    ###################
     current_app.logger.debug(f'get_or_create_counts :: getting context of query {focus_query.id}')
-    cotext = get_or_create_cotext(focus_query, window, s_break, return_df=True)
-    if not cotext:
-        current_app.logger.error('get_or_create_counts :: empty cotext')
+    df_cooc = get_filtered_cotext(focus_query, window, s_break, remove_focus_cpos)
+    if df_cooc is None:
         return False
-    cotext_lines = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
-                                            CotextLines.offset <= window,
-                                            CotextLines.offset >= -window)
-    df_cooc = read_sql(cotext_lines.statement, con=db.engine, index_col='id').reset_index(drop=True)
-    if remove_focus_cpos:
-        discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0]['cpos'])  # focus can only match in context
-    df_cooc = df_cooc.drop_duplicates(subset='cpos')
-    if remove_focus_cpos:
-        current_app.logger.debug('get_or_create_counts :: removing filter cpos')
-        df_cooc = df_cooc.loc[~df_cooc['cpos'].isin(discourseme_cpos)]
 
-    ###################
-    # (2) COUNT ITEMS #
-    ###################
     current_app.logger.debug(f'get_or_create_counts :: counting items in context for window {window}')
-
     # create context counts of items for window
     f = corpus.counts.cpos(df_cooc['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
-
     # add marginals
     f2 = corpus.marginals(f.index, [collocation.p])[['freq']].rename(columns={'freq': 'f2'})
     counts = f.join(f2)
@@ -82,65 +94,25 @@ def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=F
     counts['f1'] = len(df_cooc)
     counts['N'] = corpus.size()
 
-    ###################
-    # (3) SAVE COUNTS #
-    ###################
     current_app.logger.debug(f'get_or_create_counts :: saving {len(counts)} items to database')
     counts['collocation_id'] = collocation.id
     counts.reset_index().to_sql('collocation_item', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
-    ###################
-    # (4) SAVE SCORES #
-    ###################
     current_app.logger.debug('get_or_create_counts :: adding scores')
     counts = DataFrame([vars(s) for s in collocation.items], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
-
     scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
     if not include_negative:
         scores = scores.loc[scores.E11 <= scores.O11]
     scores = scores.drop(['O12', 'O21', 'O22', 'E12', 'E21', 'E22', 'R1', 'R2', 'C1', 'C2', 'N'], axis=1)
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'collocation_item_id'}, axis=1)
     scores['collocation_id'] = collocation.id
+
+    current_app.logger.debug('get_or_create_counts :: saving scores')
     scores.to_sql('collocation_item_score', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
     return scores
-
-
-# def ccc_collocates_conflate(collocation):
-#     """conflate items in context
-
-
-#     """
-
-#     records = [{'item': item.item, 'window': item.window, 'am': item.am, 'value': item.value} for item in collocation.items]
-#     df_collocates = DataFrame.from_records(records).pivot(index=['item', 'window'], columns='am', values='value').reset_index()
-#     for discourseme in collocation.constellation.highlight_discoursemes:
-
-#         disc_label = f"(ID: {discourseme.id})"
-#         disc_items = discourseme.items.split("\t")
-
-#         # DELETE IF EXISTS
-#         CollocationItems.query.filter_by(collocation_id=collocation.id, item=disc_label).delete()
-#         db.session.commit()
-
-#         # CONFLATE
-#         df = df_collocates.loc[df_collocates['item'].isin(disc_items)]
-#         df = df.groupby('window').agg({'O11': 'sum', 'O21': 'sum', 'R1': 'mean', 'R2': 'mean', 'in_nodes': 'sum', 'marginal': 'mean'})
-#         df = df.rename({'O11': 'f1', 'O21': 'f2', 'R1': 'N1', 'R2': 'N2'}, axis=1)
-#         df = measures.score(df, freq=True, per_million=True, digits=6, boundary='poisson', vocab=len(collocation.items))
-#         df = df.reset_index().fillna(0)
-#         df['item'] = disc_label
-
-#         # ADD TO DATABASE
-#         df = df.melt(id_vars=['item', 'window'], var_name='am')
-#         for row in df.iterrows():
-#             items = dict(row[1])
-#             items['collocation_id'] = collocation.id
-#             db.session.add(CollocationItems(**items))
-
-#     db.session.commit()
 
 
 ################
@@ -181,10 +153,6 @@ class CollocationOut(Schema):
 
 
 # IDENTICAL TO KEYWORDS ↓
-# class CollocationPatchIn(Schema):
-
-#     semantic_map_id = Integer(required=False, load_default=None)
-
 
 class CollocationItemsIn(Schema):
 
@@ -263,24 +231,6 @@ def delete_collocation(id):
     db.session.commit()
 
     return 'Deletion successful.', 200
-
-
-# @bp.patch('/<id>/')
-# @bp.input(CollocationPatchIn)
-# @bp.output(CollocationOut)
-# @bp.auth_required(auth)
-# def patch_collocation(id, json_data):
-#     """Patch a collocation analysis. Use for updating semantic map.
-
-#     """
-
-#     collocation = db.get_or_404(Collocation, id)
-
-#     for attr, value in json_data.items():
-#         setattr(collocation, attr, value)
-#     db.session.commit()
-
-#     return CollocationOut().dump(collocation), 200
 
 
 @bp.get("/<id>/items")

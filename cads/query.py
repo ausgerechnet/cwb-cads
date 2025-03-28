@@ -243,7 +243,7 @@ def get_or_create_cotext(query, window, context_break, return_df=False):
 
 
 def filter_matches(focus_query, filter_queries, window, overlap):
-    """Filter matches of focus query matches according to presence of filter queries in window (and focus_query.s)
+    """Filter matches of focus query according to presence of filter queries in window (and focus_query.s)
 
     :param Query focus_query:
     :param dict(Query) filter_queries:
