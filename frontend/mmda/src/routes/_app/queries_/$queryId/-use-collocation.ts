@@ -77,7 +77,9 @@ export function useCollocation() {
           mapItems?.coordinates.find((c) => c.item === item) ?? {}
         const score = scaled_scores?.find((s) => s.measure === ccSortBy)?.score
         if (score === undefined)
-          throw new Error(`Score not found for ${item} for measure ${ccSortBy}`)
+          throw new Error(
+            `Score not found for "${item}" for measure "${ccSortBy}"`,
+          )
         return {
           id: item,
           x,
