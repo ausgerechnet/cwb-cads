@@ -114,11 +114,8 @@ function AssociationTable({
   legendNameMap?: Map<number, string>
   associations: Association[]
 }) {
-  const rowIds = itemIds.map((i) => i).slice(0, -1)
-  const columnIds = itemIds
-    .map((i) => i)
-    .toReversed()
-    .slice(0, -1)
+  const rowIds = itemIds
+  const columnIds = itemIds.toReversed()
 
   return (
     <table
@@ -146,7 +143,9 @@ function AssociationTable({
             {rowIds.map((candidate) => {
               const { score: associationScore, scaledScore = 0.5 } =
                 associations.find(
-                  (a) => a.node === candidate && a.candidate === columnId,
+                  (a) =>
+                    (a.node === candidate && a.candidate === columnId) ||
+                    (a.node === columnId && a.candidate === candidate),
                 ) ?? {}
               return (
                 <td
