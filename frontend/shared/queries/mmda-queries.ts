@@ -760,12 +760,8 @@ export const constellationKeywordAnalysis = (
         p_reference,
       },
     ],
-    queryFn: async ({ signal }) => {
-      try {
-        return await getMatchingKeywordAnalysis()
-      } catch (error) {
-        console.warn('No matching keyword analysis found, creating one')
-        await apiClient.post(
+    queryFn: async ({ signal }) =>
+      apiClient.put(
           '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
           {
             corpus_id_reference,
