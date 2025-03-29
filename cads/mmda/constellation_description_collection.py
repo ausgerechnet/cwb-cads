@@ -358,7 +358,11 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
             focus_discourseme_id,
             filter_discourseme_ids, filter_item, filter_item_p_att
         )
+
         collocations.append(collocation)
+        if semantic_map_id is None:
+            # use same map for following analyses
+            semantic_map_id = collocation.semantic_map_id
 
     xs = list()
     scores = list()

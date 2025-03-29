@@ -2516,7 +2516,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev46"
+    "version": "0.3.0.dev47"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -6300,8 +6300,10 @@
           {
             "in": "query",
             "name": "focus_discourseme_id",
-            "required": true,
+            "required": false,
             "schema": {
+              "default": null,
+              "nullable": true,
               "type": "integer"
             }
           },

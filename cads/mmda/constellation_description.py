@@ -7,7 +7,7 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
-from flask import current_app
+from flask import current_app, abort
 from pandas import DataFrame
 
 from .. import db
@@ -446,7 +446,7 @@ def put_items_into_constellation(constellation_id, description_id, json_data):
 ##############
 @bp.get("/<description_id>/concordance/")
 @bp.input(ConcordanceIn, location='query')
-@bp.input({'focus_discourseme_id': Integer(required=True)}, location='query', arg_name='query_focus')
+@bp.input({'focus_discourseme_id': Integer(load_default=None)}, location='query', arg_name='query_focus')
 @bp.input({'filter_discourseme_ids': List(Integer(), load_default=[], required=False)}, location='query', arg_name='query_filter')
 @bp.output(ConcordanceOut)
 @bp.auth_required(auth)
@@ -454,6 +454,8 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
     """Get concordance lines of constellation in corpus.
 
     """
+
+    focus_discourseme_id = query_focus.get('focus_discourseme_id')
 
     # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -485,7 +487,13 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
 
     # select and categorise queries
     highlight_queries = {desc.discourseme.id: desc._query for desc in description.discourseme_descriptions if desc.filter_sequence is None}
-    focus_query = highlight_queries[query_focus['focus_discourseme_id']]
+
+    if focus_discourseme_id:
+        focus_query = highlight_queries[focus_discourseme_id]
+    else:
+        if not filter_item:
+            abort(400, 'Bad Request: no focus discourseme and no filter item provided')
+        focus_query = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
     try:
         filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     except KeyError:
@@ -499,7 +507,7 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
         }
 
     else:
-        if filter_item:
+        if focus_discourseme_id and filter_item:
             # TODO: speed up - this can take up to 10 minutes for highly frequent items
             # only search for filter in context of focus
             filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s,
