@@ -66,7 +66,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
   } = useFilterSelection('/_app/keyword-analysis_/$analysisId')
 
   const {
-    data: collocationItems,
+    data: collocationItems, // TODO: Rename, it's not a collocation
     error,
     isLoading,
   } = useQuery(

@@ -841,7 +841,7 @@ export const constellationKeywordAnalysisMap = (
     ],
     queryFn: ({ signal }) =>
       apiClient.get(
-        '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/items',
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/map',
         {
           params: {
             constellation_id: constellationId.toString(),
@@ -856,6 +856,7 @@ export const constellationKeywordAnalysisMap = (
           signal,
         },
       ),
+    retry: 1,
   })
 
 export const constellationDescriptionCollection = (

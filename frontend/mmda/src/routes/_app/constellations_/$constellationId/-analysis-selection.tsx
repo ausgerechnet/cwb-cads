@@ -66,6 +66,7 @@ export function AnalysisSelection({ className }: { className?: string }) {
           <AnalysisLayerInput />
           <ReferenceCorpusInput />
           <ReferenceLayerInput />
+          <FocusDiscoursemeInput className="col-span-full" />
         </>
       )}
     </Card>

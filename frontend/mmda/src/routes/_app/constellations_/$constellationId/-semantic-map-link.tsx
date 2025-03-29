@@ -43,7 +43,7 @@ function CollocationLink({ descriptionId }: { descriptionId?: number }) {
 
 function KeywordLink() {
   const { analysisSelection } = useAnalysisSelection()
-  const { errors } = useKeywordAnalysis()
+  const { errors, mapItems } = useKeywordAnalysis()
 
   if (errors.length) {
     return <ErrorMessage error={errors} />
@@ -51,7 +51,7 @@ function KeywordLink() {
 
   return (
     <MapLink
-      items={[]}
+      items={mapItems?.map ?? []}
       warn={
         analysisSelection ? null : `Select a corpus, layer and reference layer`
       }
