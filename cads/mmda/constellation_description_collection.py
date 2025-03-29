@@ -73,7 +73,7 @@ class ConstellationDescriptionCollectionIn(Schema):
 class ConstellationDescriptionCollectionOut(Schema):
 
     id = Integer(required=True)
-    s = String(required=False)
+    s = String(required=False, allow_none=True)
     subcorpus_collection_id = Integer(required=True)
     match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
     overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
@@ -82,19 +82,19 @@ class ConstellationDescriptionCollectionOut(Schema):
 
 class ConfidenceIntervalOut(Schema):
 
-    lower_95 = Float()
-    lower_90 = Float()
-    median = Float()
-    upper_90 = Float()
-    upper_95 = Float()
+    lower_95 = Float(allow_none=True)
+    lower_90 = Float(allow_none=True)
+    median = Float(allow_none=True)
+    upper_90 = Float(allow_none=True)
+    upper_95 = Float(allow_none=True)
 
 
 class UFAScoreOut(Schema):
 
-    left_id = Integer()
-    right_id = Integer()
+    left_id = Integer(allow_none=True)
+    right_id = Integer(allow_none=True)
     x_label = String()
-    score = Float()
+    score = Float(allow_none=True)
     confidence = Nested(ConfidenceIntervalOut)
 
 
