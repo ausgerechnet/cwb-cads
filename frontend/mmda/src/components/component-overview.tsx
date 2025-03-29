@@ -36,6 +36,7 @@ function rnd(seed: number) {
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
+  const [tsValue, setTsValue] = useState<string | undefined>(undefined)
   return (
     <div className="mx-auto max-w-7xl p-2 pb-16">
       <Headline1 className="mb-4 mt-16">Component Overview</Headline1>
@@ -45,6 +46,8 @@ export function ComponentOverview() {
 
       <TimeSeries
         className="my-5"
+        value={tsValue}
+        onChange={setTsValue}
         data={Array.from({ length: 5 }).map((_, i) => ({
           score: rnd(i),
           label: `Label ${i}`,
@@ -87,6 +90,27 @@ export function ComponentOverview() {
             ] as const,
           }
         })}
+      />
+
+      <TimeSeries
+        className="my-5"
+        data={Array.from({ length: 100 }).map((_, i) => {
+          const score = rnd(i) * 0.01 + 0.25
+          return {
+            score: rnd(i + rnd(i + 100)) < 0.5 ? undefined : score,
+            label: `Label ${i}`,
+            median: score,
+            confidence90: [
+              score - rnd(i) * 0.02,
+              score + rnd(i) * 0.01,
+            ] as const,
+            confidence95: [
+              score - 0.01 - rnd(i) * 0.02,
+              score + 0.01 + rnd(i) * 0.01,
+            ] as const,
+          }
+        })}
+        zoom
       />
 
       <TimeSeries

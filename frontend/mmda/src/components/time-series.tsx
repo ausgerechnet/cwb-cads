@@ -1,102 +1,233 @@
 import { clamp } from '@cads/shared/lib/clamp'
 import { cn } from '@cads/shared/lib/utils'
+import { Fragment, useEffect, useRef, useState } from 'react'
 
 export function TimeSeries({
   className,
+  value,
   data,
+  onChange,
   zoom,
 }: {
   className?: string
+  value?: string
+  onChange?: (value: string) => void
   data: {
     score?: number // 0-1
     label?: string
     median: number
     confidence90: [number, number]
     confidence95: [number, number]
-    onClick?: () => void
   }[]
   zoom?: boolean
 }) {
+  const svgRef = useRef<SVGSVGElement | null>(null)
+  const [svgWidth, setSvgWidth] = useState(100)
+
+  const minY = zoom ? Math.min(...data.map((d) => d.confidence95[0])) / 1.05 : 0
+  const maxY = zoom ? Math.max(...data.map((d) => d.confidence95[1])) * 1.05 : 1
   const xStep = 100 / (data.length - 1)
-  const minY = zoom
-    ? Math.min(...data.map((d) => d.confidence95[0] - 0.025))
-    : 0
-  const maxY = zoom
-    ? Math.max(...data.map((d) => d.confidence95[1] + 0.025))
-    : 1
+  const scaleX = 100 / svgWidth
+  const scaleY = (maxY - minY) * 0.65 // magic number :-/
+  const maxWidth = svgWidth / data.length
+
+  useEffect(() => {
+    const svgElement = svgRef.current
+    if (svgElement === null) return
+    const updateWidth = () => {
+      const { width } = svgElement.getBoundingClientRect()
+      setSvgWidth(width)
+    }
+    const observer = new ResizeObserver(() => void updateWidth())
+    observer.observe(svgElement)
+    updateWidth()
+    return () => void observer.disconnect()
+  }, [svgRef])
 
   return (
-    <div className={cn('relative flex h-52 w-full flex-col', className)}>
-      <svg
-        viewBox={`0 ${(1 - maxY) * 100} 100 ${(maxY - minY) * 100}`}
-        preserveAspectRatio="none"
-        className="absolute left-0 top-0 h-full w-full bg-white/10"
-      >
-        <path
-          className="fill-slate-200 stroke-none dark:fill-slate-800"
-          d={getBandPath(data.map((d) => d.confidence95))}
-        />
-
-        <path
-          className="fill-slate-400 stroke-none dark:fill-slate-600"
-          d={getBandPath(data.map((d) => d.confidence90))}
-        />
-
-        <path
-          vectorEffect="non-scaling-stroke"
-          className="stroke-primary fill-transparent stroke-[2px]"
-          d={pathToSvgPath(
-            pointsToCatmullRom(
-              data.map(({ median }, index) =>
-                p(xStep * index, (1 - median) * 100),
-              ),
-              {
-                tension: 0.5,
-                divisions: 150,
-                closed: false,
-              },
-            ),
-          )}
-        />
-
-        {Array.from({ length: 4 }).map((_, index) => (
-          <line
-            vectorEffect="non-scaling-stroke"
-            key={index}
-            x1="0"
-            x2="100"
-            y1={index * 25}
-            y2={index * 25}
-            className="stroke-slate-300 stroke-[0.5px] opacity-50 dark:stroke-slate-700/50"
+    <div
+      className={cn(
+        'bg-muted grid grid-cols-[0.5rem_1fr_0] grid-rows-[10rem] gap-2 overflow-hidden',
+        className,
+      )}
+    >
+      <aside aria-label="Y-axis labels" className="w-32"></aside>
+      <div className="relative flex">
+        <svg
+          viewBox={`0 ${(1 - maxY) * 100} 100 ${(maxY - minY) * 100}`}
+          preserveAspectRatio="none"
+          className="absolute left-0 top-0 h-full w-full overflow-visible bg-white/10"
+          ref={svgRef}
+        >
+          <path
+            className="fill-slate-200 stroke-none dark:fill-slate-800"
+            d={getBandPath(data.map((d) => d.confidence95))}
           />
-        ))}
-      </svg>
 
-      <div className="absolute inset-0">
-        {data.map(({ score }, index) => {
-          if (score === undefined) return null
-          return (
-            <div
-              key={index}
-              className="group absolute top-0 h-full max-w-10 -translate-x-1/2 hover:bg-black/5 dark:hover:bg-white/5"
-              style={{
-                left: `${xStep * index}%`,
-                width: `${xStep}%`,
-              }}
-            >
-              <span
-                className="dark:bg-foreground group-hover:bg-primary outline-primary absolute left-1/2 aspect-square w-2 -translate-x-1/2 translate-y-1/2 rounded-full bg-white outline outline-2 group-hover:shadow group-hover:outline-none"
-                style={{
-                  bottom: zoom
-                    ? `${((minY - score) / (minY - maxY)) * 100}%`
-                    : `${score * 100}%`,
-                }}
+          <path
+            className="fill-slate-400 stroke-none dark:fill-slate-600"
+            d={getBandPath(data.map((d) => d.confidence90))}
+          />
+
+          <path
+            vectorEffect="non-scaling-stroke"
+            className="stroke-primary fill-transparent stroke-[2px]"
+            d={pathToSvgPath(
+              pointsToCatmullRom(
+                data.map(({ median }, index) =>
+                  p(xStep * index, (1 - median) * 100),
+                ),
+                {
+                  tension: 0.5,
+                  divisions: 150,
+                  closed: false,
+                },
+              ),
+            )}
+          />
+
+          <g aria-label="Grid lines">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <line
+                vectorEffect="non-scaling-stroke"
+                key={index}
+                x1="0"
+                x2="100"
+                y1={index * 25}
+                y2={index * 25}
+                className="stroke-slate-300 stroke-[0.5px] opacity-50 dark:stroke-slate-700/50"
               />
-            </div>
-          )
-        })}
+            ))}
+          </g>
+
+          <g aria-label="data points">
+            {data.map((dataPoint, index) => {
+              return (
+                <DataPoint
+                  x={xStep * index}
+                  scaleX={scaleX}
+                  scaleY={scaleY}
+                  key={index}
+                  value={value}
+                  labelSide={index > data.length / 2 ? 'left' : 'right'}
+                  onChange={onChange}
+                  maxWidth={maxWidth}
+                  {...dataPoint}
+                />
+              )
+            })}
+          </g>
+        </svg>
       </div>
+
+      <aside className="col-start-2" aria-label="X-axis labels"></aside>
     </div>
+  )
+}
+
+function DataPoint({
+  score,
+  labelSide = 'right',
+  confidence90,
+  confidence95,
+  label,
+  x,
+  scaleX,
+  scaleY,
+  value,
+  maxWidth,
+  onChange,
+}: {
+  score?: number | undefined
+  labelSide: 'left' | 'right'
+  confidence90: [number, number]
+  confidence95: [number, number]
+  label?: string | undefined
+  x: number
+  scaleX: number
+  scaleY: number
+  value?: string
+  maxWidth: number
+  onChange?: (value: string) => void
+}) {
+  if (score === undefined) return null
+  const isActive = label === value
+  const width = Math.min(maxWidth, 16)
+  const touchWidth = Math.min(maxWidth, 32)
+
+  return (
+    <g className="cursor-pointer">
+      <rect
+        x={x - touchWidth / 2}
+        y={-100}
+        width={touchWidth}
+        height={200}
+        className={cn('peer fill-transparent', isActive && 'fill-primary/20')}
+        style={{
+          transformOrigin: `${x}px ${(1 - score) * 100}px`,
+          scale: `${scaleX} 1`,
+        }}
+        onClick={() => label && onChange?.(label)}
+      />
+
+      <line
+        vectorEffect="non-scaling-stroke"
+        x1={x}
+        y1={-100}
+        x2={x}
+        y2={200}
+        className="stroke-muted-foreground pointer-events-none stroke-[1px] opacity-0 peer-hover:opacity-100"
+      />
+
+      {[...confidence90, ...confidence95].map((rawY, confidenceIndex) => {
+        const y = (1 - rawY) * 100
+        return (
+          <Fragment key={confidenceIndex}>
+            <line
+              vectorEffect="non-scaling-stroke"
+              x1={x - width / 2}
+              x2={x + width / 2}
+              y1={y}
+              y2={y}
+              className="stroke-muted-foreground pointer-events-none stroke-1 opacity-0 peer-hover:opacity-100"
+              style={{
+                transformOrigin: `${x}px ${y}px`,
+                scale: `${scaleX} 1`,
+              }}
+            />
+
+            <text
+              style={{
+                transformOrigin: `${x}px ${y}px`,
+                scale: `${scaleX} ${scaleY}`,
+              }}
+              x={x + (labelSide === 'left' ? -(width / 2 + 5) : width / 2 + 5)}
+              y={y + 3}
+              className="fill-primary stroke pointer-events-none stroke-white stroke-[3px] text-xs font-semibold opacity-0 peer-hover:opacity-100 dark:fill-slate-800"
+              textAnchor={labelSide === 'right' ? 'start' : 'end'}
+              paintOrder="stroke fill"
+            >
+              {rawY.toFixed(2)}
+            </text>
+          </Fragment>
+        )
+      })}
+
+      <circle
+        cx={x}
+        cy={(1 - score) * 100}
+        r={isActive ? 8 : 4}
+        strokeWidth={isActive ? 2 : 1}
+        className={cn(
+          'fill-primary pointer-events-none stroke-white peer-hover:fill-white',
+          isActive && 'stroke-primary dark:stroke-primary fill-white',
+        )}
+        style={{
+          transformOrigin: `${x}px ${(1 - score) * 100}px`,
+          scale: `${scaleX} ${scaleY}`,
+        }}
+      />
+    </g>
   )
 }
 
