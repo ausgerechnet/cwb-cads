@@ -2371,15 +2371,21 @@
       },
       "UFAScoreOut": {
         "properties": {
-          "confidence": {
-            "$ref": "#/components/schemas/ConfidenceIntervalOut"
-          },
-          "left_id": {
+          "collocation_id_left": {
             "nullable": true,
             "type": "integer"
           },
-          "right_id": {
+          "collocation_id_right": {
             "nullable": true,
+            "type": "integer"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/ConfidenceIntervalOut"
+          },
+          "description_id_left": {
+            "type": "integer"
+          },
+          "description_id_right": {
             "type": "integer"
           },
           "score": {

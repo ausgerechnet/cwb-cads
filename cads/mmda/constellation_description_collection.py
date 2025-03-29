@@ -7,12 +7,11 @@ from datetime import datetime
 from apiflask.validators import OneOf
 from association_measures.comparisons import rbo
 from flask import current_app
-from pandas import DataFrame
 
 from .. import db
-from ..database import (CollocationItem, CollocationItemScore,
-                        SubCorpusCollection)
+from ..database import SubCorpusCollection
 from ..users import auth
+from .constellation_description_collocation import get_collo_items
 from .constellation_description import ConstellationDescriptionOut
 from .constellation_description_collocation import (
     ConstellationCollocationIn, ConstellationCollocationOut,
@@ -91,8 +90,10 @@ class ConfidenceIntervalOut(Schema):
 
 class UFAScoreOut(Schema):
 
-    left_id = Integer(allow_none=True)
-    right_id = Integer(allow_none=True)
+    collocation_id_left = Integer(allow_none=True)
+    description_id_left = Integer()
+    collocation_id_right = Integer(allow_none=True)
+    description_id_right = Integer()
     x_label = String()
     score = Float(allow_none=True)
     confidence = Nested(ConfidenceIntervalOut)
@@ -104,34 +105,18 @@ class ConstellationDescriptionCollectionCollocationOut(Schema):
     ufa = Nested(UFAScoreOut(many=True))
 
 
-def calculate_rbo(left, right, sort_by="conservative_log_ratio", number=50):
+def calculate_rbo(description_left, collocation_left, description_right, collocation_right, sort_by="conservative_log_ratio", number=50):
 
     # TODO: this does not seem to be right, especially for rbo(left, left)
     current_app.logger.warning("verify correct implementation of RBO")
 
-    # get left scores
-    scores_left = CollocationItemScore.query.filter(
-        CollocationItemScore.collocation_id == left.id,
-        CollocationItemScore.measure == sort_by
-    ).order_by(
-        CollocationItemScore.score.desc()
-    ).paginate(
-        page=1, per_page=number
-    )
-    df_ids = DataFrame([vars(s) for s in scores_left], columns=['collocation_item_id'])
-    items_left = [db.get_or_404(CollocationItem, id).item for id in df_ids['collocation_item_id']]
+    scores_left = get_collo_items(description_left, collocation_left, number, 1, 'descending', sort_by, True, True, False)
+    lrc_left = [score['score'] for item in scores_left['items'] for score in item['scores'] if score['measure'] == sort_by]
+    items_left = [item['item'] for lrc, item in zip(lrc_left, scores_left['items']) if lrc > 0]
 
-    # get right scores
-    scores_right = CollocationItemScore.query.filter(
-        CollocationItemScore.collocation_id == right.id,
-        CollocationItemScore.measure == sort_by
-    ).order_by(
-        CollocationItemScore.score.desc()
-    ).paginate(
-        page=1, per_page=number
-    )
-    df_ids = DataFrame([vars(s) for s in scores_right], columns=['collocation_item_id'])
-    items_right = [db.get_or_404(CollocationItem, id).item for id in df_ids['collocation_item_id']]
+    scores_right = get_collo_items(description_right, collocation_right, number, 1, 'descending', sort_by, True, True, False)
+    lrc_right = [score['score'] for item in scores_right['items'] for score in item['scores'] if score['measure'] == sort_by]
+    items_right = [item['item'] for lrc, item in zip(lrc_right, scores_right['items']) if lrc > 0]
 
     rbo_values = rbo(items_left, items_right)
 
@@ -348,6 +333,7 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
     filter_item = json_data.get('filter_item')
     filter_item_p_att = json_data.get('filter_item_p_att')
 
+    # get collocation objects
     collocations = list()
     for description in collection.constellation_descriptions:
 
@@ -360,45 +346,48 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
         )
 
         collocations.append(collocation)
-        if semantic_map_id is None:
+        if semantic_map_id is None and collocation is not None:
             # use same map for following analyses
             semantic_map_id = collocation.semantic_map_id
 
+    # calculate RBO scores
     xs = list()
     scores = list()
     for i in range(1, len(collocations)):
         left = collocations[i-1]
         right = collocations[i]
-        description = collection.constellation_descriptions[i]
-        xs.append(description.subcorpus.name)
+        description_left = collection.constellation_descriptions[i-1]
+        description_right = collection.constellation_descriptions[i]
+        xs.append(description_right.subcorpus.name)
         if not left or not right:
             scores.append(None)
         else:
-            scores.append(calculate_rbo(left, right, sort_by='conservative_log_ratio', number=50))
+            scores.append(calculate_rbo(description_left, left, description_right, right, sort_by='conservative_log_ratio', number=50))
 
-    # diffs = calculate_time_diff([datetime.fromisoformat(time_str) for time_str in x])
     # TODO calculate smoothing
+    # diffs = calculate_time_diff([datetime.fromisoformat(time_str) for time_str in x])
 
     ufa = list()
     for i, score, x in zip(range(1, len(collocations)), scores, xs):
 
-        left = collocations[i-1]
-        right = collocations[i]
-
-        # print(right._query.subcorpus.name)
-        # print(datetime.fromisoformat(right._query.subcorpus.name))
+        collocation_left = collocations[i-1]
+        collocation_right = collocations[i]
+        description_left = collection.constellation_descriptions[i-1]
+        description_right = collection.constellation_descriptions[i]
 
         ufa_score = {
-            'left_id': left.id if left else None,
-            'right_id': right.id if right else None,
+            'collocation_id_left': collocation_left.id if collocation_left else None,
+            'description_id_left': description_left.id,
+            'collocation_id_right': collocation_right.id if collocation_right else None,
+            'description_id_right': description_right.id,
             'x_label': x,
             'score': score,
             'confidence': {
-                'lower_95': score + .02 if score else None,
-                'lower_90': score + .01 if score else None,
+                'lower_95': score + .02 if score is not None else None,
+                'lower_90': score + .01 if score is not None else None,
                 'median': score,
-                'upper_90': score - .01 if score else None,
-                'upper_95': score - .02 if score else None
+                'upper_90': score - .01 if score is not None else None,
+                'upper_95': score - .02 if score is not None else None
             }
         }
 
