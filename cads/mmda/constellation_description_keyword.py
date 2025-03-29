@@ -182,6 +182,7 @@ def get_kw_map(description, keyword, page_size, page_number, sort_order, sort_by
 
     keyword_map = {
         'id': keyword.id,
+        'semantic_map_id': keyword.semantic_map_id,
         'sort_by': sort_by,
         'nr_items': nr_items,
         'page_size': page_size,
