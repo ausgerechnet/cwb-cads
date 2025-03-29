@@ -43,12 +43,15 @@ type AnalysisSelection =
       referenceCorpusId: number
       referenceSubcorpusId?: number
       referenceLayer: string
+      focusDiscourseme: number
     }
   | {
       analysisType: 'ufa'
       corpusId: number
       subcorpusId?: number
+      analysisLayer: string
       partition: number
+      focusDiscourseme: number
     }
 
 export function useAnalysisSelection() {
@@ -113,7 +116,8 @@ export function useAnalysisSelection() {
         corpusId !== undefined &&
         referenceCorpusId !== undefined &&
         analysisLayer !== undefined &&
-        referenceLayer !== undefined
+        referenceLayer !== undefined &&
+        focusDiscourseme !== undefined
       ) {
         analysisSelection = {
           analysisType,
@@ -123,16 +127,24 @@ export function useAnalysisSelection() {
           referenceSubcorpusId,
           referenceLayer,
           analysisLayer,
+          focusDiscourseme,
         }
       }
       break
     case 'ufa':
-      if (corpusId !== undefined && partition !== undefined) {
+      if (
+        corpusId !== undefined &&
+        partition !== undefined &&
+        analysisLayer !== undefined &&
+        focusDiscourseme !== undefined
+      ) {
         analysisSelection = {
           analysisType,
           corpusId,
           subcorpusId,
           partition,
+          analysisLayer,
+          focusDiscourseme,
         }
       }
       break

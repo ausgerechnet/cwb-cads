@@ -32,10 +32,14 @@ export function ErrorMessage({
   const responseMessage = error.response?.data?.message
   const message =
     typeof error === 'string' ? error : (responseMessage ?? error.message)
+
   return (
     <Alert
       variant="destructive"
-      className={cn('bg-destructive/5 font-sans', className)}
+      className={cn(
+        'bg-destructive/5 max-h-96 overflow-auto font-sans',
+        className,
+      )}
     >
       <AlertCircle className="mr-2 h-4 w-4" />
       {/*

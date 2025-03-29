@@ -121,8 +121,8 @@ export function PartitionForm({
         onSubmit={form.handleSubmit(({ corpus, ...data }) =>
           createPartition({
             corpus_id: corpus.corpusId,
-            subcorpus_id: corpus.subcorpusId,
             ...data,
+            subcorpus_id: corpus.subcorpusId ?? null,
           }),
         )}
       >

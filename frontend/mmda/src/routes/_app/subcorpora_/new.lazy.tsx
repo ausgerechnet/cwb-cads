@@ -58,6 +58,7 @@ export const Route = createLazyFileRoute('/_app/subcorpora_/new')({
 
 const SubcorpusPut = z.object({
   corpus_id: z.number(),
+  subcorpus_id: z.number().nullable().default(null),
   description: z.string().optional(),
   create_nqr: z.boolean().optional().default(true),
   key: z.string(),

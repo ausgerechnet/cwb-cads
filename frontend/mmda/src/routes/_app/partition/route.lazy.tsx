@@ -14,7 +14,7 @@ function Partition() {
   const { defaultCorpusId: corpusId, defaultSubcorpusId: subcorpusId } =
     Route.useSearch()
   return (
-    <AppPageFrame title="Create Partition Corpus">
+    <AppPageFrame title="Create Subcorpus Collection">
       <Card className="max-w-2xl p-4">
         <PartitionForm defaultCorpus={{ corpusId, subcorpusId }} />
       </Card>
@@ -24,7 +24,7 @@ function Partition() {
 
 function LoaderPartition() {
   return (
-    <AppPageFrame title="Create Partition Corpus">
+    <AppPageFrame title="Create Subcorpus Collection">
       <DefaultPendingComponent />
     </AppPageFrame>
   )

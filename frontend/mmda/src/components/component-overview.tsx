@@ -27,12 +27,123 @@ import { ToggleBar } from '@cads/shared/components/toggle-bar'
 
 import { WordCloudPreview } from './word-cloud-preview'
 import WordCloud from './word-cloud'
+import { TimeSeries } from './time-series'
+
+function rnd(seed: number) {
+  const x = Math.sin(seed) * 1_000_000
+  return x - Math.floor(x)
+}
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
+  const [tsValue, setTsValue] = useState<string | undefined>(undefined)
   return (
     <div className="mx-auto max-w-7xl p-2 pb-16">
       <Headline1 className="mb-4 mt-16">Component Overview</Headline1>
+
+      <Headline2 className="mb-4 mt-16">TimeSeries</Headline2>
+      <Code> &lt;TimeSeries... /&gt;</Code>
+
+      <TimeSeries
+        className="my-5"
+        value={tsValue}
+        onChange={setTsValue}
+        data={Array.from({ length: 5 }).map((_, i) => ({
+          score: rnd(i),
+          label: `Label ${i}`,
+          median: rnd(i),
+          confidence90: [rnd(i) - rnd(i) * 0.1, rnd(i) + rnd(i) * 0.1],
+          confidence95: [
+            rnd(i) - 0.1 - rnd(i) * 0.1,
+            rnd(i) + 0.1 + rnd(i) * 0.1,
+          ],
+        }))}
+      />
+
+      <TimeSeries
+        className="my-5"
+        data={Array.from({ length: 5 }).map((_, i) => ({
+          score: rnd(i),
+          label: `Label ${i}`,
+          median: rnd(i),
+          confidence90: [rnd(i) - rnd(i) * 0.1, rnd(i) + rnd(i) * 0.1],
+          confidence95: [
+            rnd(i) - 0.1 - rnd(i) * 0.1,
+            rnd(i) + 0.1 + rnd(i) * 0.1,
+          ],
+        }))}
+        zoom
+      />
+
+      <TimeSeries
+        className="my-5"
+        data={Array.from({ length: 100 }).map((_, i) => {
+          const score = rnd(i) * 0.2 + 0.25
+          return {
+            score: rnd(i + rnd(i + 100)) < 0.5 ? undefined : score,
+            label: `Label ${i}`,
+            median: score,
+            confidence90: [score - rnd(i) * 0.1, score + rnd(i) * 0.1] as const,
+            confidence95: [
+              score - 0.1 - rnd(i) * 0.05,
+              score + 0.1 + rnd(i) * 0.05,
+            ] as const,
+          }
+        })}
+      />
+
+      <TimeSeries
+        className="my-5"
+        data={Array.from({ length: 100 }).map((_, i) => {
+          const score = rnd(i) * 0.01 + 0.25
+          return {
+            score: rnd(i + rnd(i + 100)) < 0.5 ? undefined : score,
+            label: `Label ${i}`,
+            median: score,
+            confidence90: [
+              score - rnd(i) * 0.02,
+              score + rnd(i) * 0.01,
+            ] as const,
+            confidence95: [
+              score - 0.01 - rnd(i) * 0.02,
+              score + 0.01 + rnd(i) * 0.01,
+            ] as const,
+          }
+        })}
+        zoom
+      />
+
+      <TimeSeries
+        className="my-5"
+        data={Array.from({ length: 100 }).map((_, i) => {
+          const score = rnd(i) * 0.2 + 0.25
+          return {
+            score: rnd(i + rnd(i + 100)) < 0.5 ? undefined : score,
+            label: `Label ${i}`,
+            median: score,
+            confidence90: [score - rnd(i) * 0.1, score + rnd(i) * 0.1] as const,
+            confidence95: [
+              score - 0.1 - rnd(i) * 0.05,
+              score + 0.1 + rnd(i) * 0.05,
+            ] as const,
+          }
+        })}
+        zoom
+      />
+
+      <TimeSeries
+        className="my-5"
+        data={Array.from({ length: 300 }).map((_, i) => ({
+          score: rnd(i) < 0.1 ? undefined : rnd(i),
+          label: `Label ${i}`,
+          median: rnd(i),
+          confidence90: [rnd(i) - rnd(i) * 0.1, rnd(i) + rnd(i) * 0.1],
+          confidence95: [
+            rnd(i) - 0.1 - rnd(i) * 0.1,
+            rnd(i) + 0.1 + rnd(i) * 0.1,
+          ],
+        }))}
+      />
 
       <Headline2 className="mb-4 mt-16">ToggleBar</Headline2>
       <Code> &lt;ToggleBar... /&gt;</Code>

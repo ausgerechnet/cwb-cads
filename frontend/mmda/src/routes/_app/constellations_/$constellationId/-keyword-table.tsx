@@ -1,8 +1,13 @@
 import { useEffect } from 'react'
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { cn } from '@cads/shared/lib/utils'
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
+
+import { constellationKeywordAnalysisItems } from '@cads/shared/queries'
+import { Pagination } from '@cads/shared/components/pagination'
 import { ErrorMessage } from '@cads/shared/components/error-message'
+import { buttonVariants } from '@cads/shared/components/ui/button'
+import { cn } from '@cads/shared/lib/utils'
 import {
   Table,
   TableBody,
@@ -11,13 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from '@cads/shared/components/ui/table'
-import { useQuery } from '@tanstack/react-query'
-import { buttonVariants } from '@cads/shared/components/ui/button'
-import { Pagination } from '@cads/shared/components/pagination'
-import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Repeat } from '@cads/shared/components/repeat'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
-import { keywordAnalysisItemsById } from '@cads/shared/queries'
+
+import { useAnalysisSelection } from './-use-analysis-selection'
+import { useDescription } from './-use-description'
+import { useKeywordAnalysis } from './-use-keyword-analysis'
 
 const measureOrder = [
   'conservative_log_ratio',
@@ -53,8 +58,12 @@ const measureMap: Record<(typeof measureOrder)[number], string> = {
   local_mutual_information: 'Local Mutual Info.',
 }
 
-// TODO: This component is duplicated. Should be extracted to a shared component.
-export function KeywordTable({ analysisId }: { analysisId: number }) {
+export function KeywordTable() {
+  const analysisSelection = useAnalysisSelection().analysisSelection
+  const { constellationId, description } = useDescription()
+  const descriptionId = description?.id
+  const { keywordId } = useKeywordAnalysis()
+
   const {
     setFilter,
     ccPageSize,
@@ -63,20 +72,31 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
     ccSortOrder,
     ccSortBy,
     secondary,
-  } = useFilterSelection('/_app/keyword-analysis_/$analysisId')
+  } = useFilterSelection('/_app/constellations_/$constellationId')
+
+  if (analysisSelection?.analysisType !== 'keyword') {
+    throw new Error('KeywordTable can only be used with keyword analysis')
+  }
 
   const {
     data: collocationItems, // TODO: Rename, it's not a collocation
     error,
     isLoading,
-  } = useQuery(
-    keywordAnalysisItemsById(analysisId, {
-      sortOrder: ccSortOrder,
-      sortBy: ccSortBy,
-      pageSize: ccPageSize,
-      pageNumber: ccPageNumber,
-    }),
-  )
+  } = useQuery({
+    ...constellationKeywordAnalysisItems(
+      constellationId,
+      descriptionId!,
+      keywordId!,
+      {
+        sortOrder: ccSortOrder,
+        sortBy: ccSortBy,
+        pageSize: ccPageSize,
+        pageNumber: ccPageNumber,
+      },
+    ),
+    retry: 0,
+    enabled: descriptionId !== undefined && keywordId !== undefined,
+  })
 
   const maxPageNumber = isLoading
     ? ccPageNumber
@@ -94,7 +114,8 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
 
   return (
     <div>
-      <ErrorMessage error={error} />
+      <ErrorMessage error={[error]} />
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -127,13 +148,13 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                       }
                     }}
                   >
-                    {measureMap[measure]}
                     {isCurrent && ccSortOrder === 'ascending' && (
-                      <ArrowUpIcon className="h-3 w-3" />
-                    )}
-                    {isCurrent && ccSortOrder === 'descending' && (
                       <ArrowDownIcon className="h-3 w-3" />
                     )}
+                    {isCurrent && ccSortOrder === 'descending' && (
+                      <ArrowUpIcon className="h-3 w-3" />
+                    )}
+                    {measureMap[measure]}
                   </Link>
                 </TableHead>
               )
@@ -167,7 +188,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                     search={(s) => ({
                       ...s,
                       clPageIndex: 0,
-                      clFilterItem: s.clFilterItem === item ? undefined : item,
+                      clFilterItem: item,
                       clFilterItemPAtt: secondary,
                     })}
                   >
@@ -187,6 +208,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
             ))}
         </TableBody>
       </Table>
+
       <Pagination
         totalRows={collocationItems?.nr_items ?? 0}
         setPageSize={(size) => setFilter('ccPageSize', size)}

@@ -760,52 +760,189 @@ export const constellationKeywordAnalysis = (
         p_reference,
       },
     ],
-    queryFn: async ({ signal }) => {
-      try {
-        return await getMatchingKeywordAnalysis()
-      } catch (error) {
-        console.warn('No matching keyword analysis found, creating one')
-        await apiClient.post(
-          '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
-          {
-            corpus_id_reference,
-            subcorpus_id_reference,
-            p,
-            p_reference,
+    queryFn: async ({ signal }) =>
+      apiClient.put(
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
+        {
+          corpus_id_reference,
+          subcorpus_id_reference,
+          p,
+          p_reference,
+        },
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
           },
-          {
-            params: {
-              constellation_id: constellationId.toString(),
-              description_id: descriptionId.toString(),
-            },
-            signal,
-          },
-        )
-      }
-      return getMatchingKeywordAnalysis()
+          signal,
+        },
+      ),
+  })
 
-      async function getMatchingKeywordAnalysis() {
-        const analyses = await apiClient.get(
-          '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
-          {
-            params: {
-              constellation_id: constellationId.toString(),
-              description_id: descriptionId.toString(),
-            },
-            signal,
+export const constellationKeywordAnalysisItems = (
+  constellationId: number,
+  descriptionId: number,
+  keywordId: number,
+  {
+    sortOrder,
+    sortBy,
+    pageSize,
+    pageNumber,
+  }: {
+    sortOrder?: 'ascending' | 'descending'
+    sortBy?: SortBy
+    pageSize?: number
+    pageNumber?: number
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-keyword-analysis-items',
+      {
+        constellationId,
+        descriptionId,
+        keywordId,
+        sortOrder,
+        sortBy,
+        pageSize,
+        pageNumber,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/items',
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+            keyword_id: keywordId.toString(),
           },
-        )
-        const matchingAnalysis = analyses.find(
-          (a) =>
-            a.corpus_id_reference === corpus_id_reference &&
-            a.subcorpus_id_reference === subcorpus_id_reference &&
-            a.p === p &&
-            a.p_reference === p_reference,
-        )
-        if (matchingAnalysis) return matchingAnalysis
-        throw new Error('No matching keyword analysis found')
-      }
-    },
+          queries: {
+            sort_order: sortOrder,
+            sort_by: sortBy,
+            page_size: pageSize,
+            page_number: pageNumber,
+          },
+          signal,
+        },
+      ),
+  })
+
+export const constellationKeywordAnalysisMap = (
+  constellationId: number,
+  descriptionId: number,
+  keywordId: number,
+  sortBy: SortBy,
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-keyword-analysis-map',
+      { constellationId, descriptionId, keywordId, sortBy },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/keyword/:keyword_id/map',
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+            keyword_id: keywordId.toString(),
+          },
+          queries: {
+            page_size: 300,
+            page_number: 1,
+            sort_by: sortBy,
+          },
+          signal,
+        },
+      ),
+    retry: 1,
+  })
+
+export const constellationDescriptionCollection = (
+  constellation_id: number,
+  s: string,
+  subcorpus_collection_id: number,
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-description-collection',
+      constellation_id,
+      s,
+      subcorpus_collection_id,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.put(
+        '/mmda/constellation/:constellation_id/description/collection/',
+        {
+          s,
+          subcorpus_collection_id: subcorpus_collection_id,
+        },
+        {
+          params: {
+            constellation_id: constellation_id.toString(),
+          },
+          signal,
+        },
+      ),
+  })
+
+export const constellationDescriptionCollectionCollocation = (
+  constellationId: number,
+  collectionId: number,
+  {
+    filterDiscoursemeIds: filter_discourseme_ids = [],
+    filterItem: filter_item,
+    filterItemPAtt: filter_item_p_att,
+    focusDiscoursemeId: focus_discourseme_id,
+    p,
+    sBreak: s_break,
+    window,
+  }: {
+    filterDiscoursemeIds?: number[]
+    filterItem?: string
+    filterItemPAtt?: string
+    focusDiscoursemeId: number
+    p: string
+    sBreak: string
+    window: number
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-description-collection-collocation',
+      constellationId,
+      collectionId,
+      {
+        filter_discourseme_ids,
+        filter_item,
+        filter_item_p_att,
+        focus_discourseme_id,
+        p,
+        s_break,
+        window,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.put(
+        '/mmda/constellation/:constellation_id/description/collection/:collection_id/collocation',
+        {
+          filter_discourseme_ids,
+          filter_item,
+          filter_item_p_att,
+          focus_discourseme_id,
+          p,
+          s_break,
+          window,
+        },
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            collection_id: collectionId.toString(),
+          },
+          signal,
+        },
+      ),
   })
 
 // ==================== COLLOCATIONS ====================

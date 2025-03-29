@@ -24,11 +24,11 @@ export function ConstellationConcordanceLines({
   constellationId: number
   className?: string
 }) {
-  const { analysisSelection } = useAnalysisSelection()
+  const { analysisSelection: { analysisType } = {} } = useAnalysisSelection()
 
   useKeywordAnalysis()
 
-  if (analysisSelection === undefined) {
+  if (analysisType === undefined) {
     return (
       <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
         No data available.
@@ -38,11 +38,156 @@ export function ConstellationConcordanceLines({
     )
   }
 
+  if (analysisType === 'collocation') {
+    return (
+      <ConstellationConcordanceLinesCollocation
+        constellationId={constellationId}
+        className={className}
+      />
+    )
+  }
+
+  if (analysisType === 'keyword') {
+    return (
+      <ConstellationConcordanceLinesKeyword
+        constellationId={constellationId}
+        className={className}
+      />
+    )
+  }
+
+  if (analysisType === 'ufa') {
+    return <>UFA CL goes here</>
+  }
+
+  throw new Error(`Unknown analysis type: ${analysisType}`)
+}
+
+function ConstellationConcordanceLinesKeyword({
+  constellationId,
+  className,
+}: {
+  constellationId: number
+  className?: string
+}) {
+  const nrLinesRef = useRef<number>(0)
+  const pageCountRef = useRef<number>(0)
+
+  const { focusDiscourseme } = useAnalysisSelection()
+
+  const {
+    primary,
+    secondary,
+    windowSize,
+    clPageSize,
+    clPageIndex,
+    clSortByOffset,
+    clSortOrder,
+    clFilterItem,
+    clFilterItemPAtt,
+    clFilterDiscoursemeIds,
+    clContextBreak,
+    setPageSize,
+    setPageIndex,
+    setFilterItem,
+  } = useConcordanceFilterContext()
+
+  const descriptionId = useDescription()?.description?.id
+  const enabled =
+    focusDiscourseme !== undefined &&
+    descriptionId !== undefined &&
+    primary !== undefined &&
+    secondary !== undefined
+
+  const {
+    data: concordanceLines,
+    isLoading,
+    error,
+  } = useQuery({
+    ...constellationConcordances(
+      constellationId,
+      descriptionId!,
+      focusDiscourseme!,
+      {
+        primary,
+        secondary,
+        window: windowSize,
+        filterItem: clFilterItem,
+        filterItemPAtt: clFilterItemPAtt,
+        pageSize: clPageSize,
+        pageNumber: clPageIndex + 1,
+        sortOrder: clSortOrder,
+        sortByOffset: clSortByOffset,
+        sortByPAtt: secondary,
+        contextBreak: clContextBreak,
+        filterDiscoursemeIds: clFilterDiscoursemeIds,
+      },
+    ),
+    enabled,
+  })
+
+  pageCountRef.current =
+    concordanceLines?.page_count ?? pageCountRef.current ?? 0
+  nrLinesRef.current = concordanceLines?.nr_lines ?? nrLinesRef.current ?? 0
+
+  const fetchContext = useCallback(
+    (matchId: number) =>
+      constellationConcordanceContext(
+        constellationId,
+        descriptionId!,
+        matchId,
+        focusDiscourseme!,
+        {
+          window: windowSize,
+          extendedWindow: 100,
+          primary: primary!,
+          secondary: secondary!,
+        },
+      ),
+    [
+      constellationId,
+      descriptionId,
+      focusDiscourseme,
+      primary,
+      secondary,
+      windowSize,
+    ],
+  )
+
   return (
-    <ConstellationConcordanceLinesCollocation
-      constellationId={constellationId}
-      className={className}
-    />
+    <div className={className}>
+      <ErrorMessage className="col-span-full" error={error} />
+
+      <ConstellationConcordanceFilter />
+
+      {enabled && secondary && (
+        <>
+          <div className="relative col-span-full flex flex-col gap-4">
+            <div className="max-w-full rounded-md border">
+              <ConcordanceTable
+                concordanceLines={concordanceLines?.lines}
+                isLoading={isLoading}
+                rowCount={clPageSize}
+                fetchContext={fetchContext}
+                onItemClick={(word) => {
+                  setFilterItem(word.secondary, secondary)
+                }}
+              />
+            </div>
+
+            <Pagination
+              className="col-span-full"
+              pageSize={clPageSize}
+              pageCount={pageCountRef.current}
+              totalRows={nrLinesRef.current}
+              pageIndex={clPageIndex}
+              setPageSize={setPageSize}
+              setPageIndex={setPageIndex}
+            />
+          </div>
+        </>
+      )}
+    </div>
   )
 }
 

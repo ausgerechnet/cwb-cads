@@ -56,7 +56,7 @@ export const FilterSchema = z.object({
 
 type FilterSchema = z.infer<typeof FilterSchema>
 
-// TODO: also use this in query detail etc.
+// TODO: also use this in query detail etc. and separate from concordance line logic
 export function useFilterSelection(
   path:
     | '/_app/constellations_/$constellationId'

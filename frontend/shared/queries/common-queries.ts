@@ -369,18 +369,15 @@ export const createSubcorpusCollection: MutationOptions<
   Error,
   z.infer<typeof schemas.SubCorpusCollectionIn> & {
     corpus_id: number
-    subcorpus_id?: number | undefined
   }
 > = {
-  mutationFn: async ({ corpus_id, subcorpus_id, ...args }) => {
-    if (subcorpus_id !== undefined) {
-      throw new Error('Partitioning a subcorpus is not yet supported')
-    }
+  mutationFn: async ({ corpus_id, ...args }) => {
     return apiClient.put('/corpus/:id/subcorpus-collection/', args, {
       params: { id: corpus_id.toString() },
     })
   },
   onSuccess: (data) => {
+    void queryClient.invalidateQueries({ queryKey: ['subcorpus-collections'] })
     void queryClient.invalidateQueries(corpusList)
     void queryClient.invalidateQueries(subcorporaList)
     void queryClient.invalidateQueries(corpusById(data.corpus?.id ?? -1))

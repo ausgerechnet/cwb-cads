@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { constellationKeywordAnalysis } from '@cads/shared/queries'
+import {
+  constellationKeywordAnalysis,
+  constellationKeywordAnalysisMap,
+} from '@cads/shared/queries'
 
 import { useAnalysisSelection } from './-use-analysis-selection'
 import { useDescription } from './-use-description'
@@ -22,7 +25,7 @@ export function useKeywordAnalysis() {
     subcorpusIdReference = analysisSelection.referenceSubcorpusId
   }
 
-  return useQuery({
+  const { data: { id: keywordId } = {}, error: errorKeyword } = useQuery({
     ...constellationKeywordAnalysis(constellationId, descriptionId!, {
       corpusIdReference: corpusIdReference!,
       subcorpusIdReference: subcorpusIdReference!,
@@ -34,4 +37,23 @@ export function useKeywordAnalysis() {
       descriptionId !== undefined &&
       analysisSelection?.analysisType === 'keyword',
   })
+
+  const { data: mapItems, error: errorItems } = useQuery({
+    ...constellationKeywordAnalysisMap(
+      constellationId,
+      descriptionId!,
+      keywordId!,
+      'conservative_log_ratio',
+    ),
+    enabled:
+      descriptionId !== undefined &&
+      analysisSelection?.analysisType === 'keyword' &&
+      keywordId !== undefined,
+  })
+
+  return {
+    errors: [errorKeyword, errorItems].filter(Boolean),
+    keywordId,
+    mapItems,
+  }
 }

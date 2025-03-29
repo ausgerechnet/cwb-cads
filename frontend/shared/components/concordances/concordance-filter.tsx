@@ -45,14 +45,20 @@ export function SortByOffsetInput({
       className={className}
       labelText={`Sort by offset ${clSortByOffset}`}
     >
-      <div className={cn('flex flex-grow items-center', className)}>
+      <div
+        className={cn(
+          'bg-muted text-muted-foreground flex h-10 w-full flex-grow items-center justify-center gap-[1px] rounded-md p-1',
+          className,
+        )}
+      >
         {offsets.map((offset) => (
           <Button
             key={offset}
             onClick={() => setSortByOffset(offset)}
-            className="flex h-10 flex-grow flex-col rounded-none p-1 text-sm leading-none first:rounded-bl-md first:rounded-tl-md last:rounded-br-md last:rounded-tr-md"
+            className="ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=inactive]:hover:bg-background/50 flex grow flex-col items-center justify-center whitespace-nowrap rounded-sm px-0.5 py-1.5 text-center text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-80 data-[state=active]:shadow-sm"
             disabled={clSortOrder === 'random' || clSortOrder === 'first'}
-            variant={offset === clSortByOffset ? 'default' : 'secondary'}
+            data-state={offset === clSortByOffset ? 'active' : 'inactive'}
+            variant="secondary"
             size="sm"
           >
             <span className="-mt-1 block h-3 text-xs leading-none">

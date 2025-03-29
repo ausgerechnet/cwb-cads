@@ -1,5 +1,6 @@
-import { Loader2Icon } from 'lucide-react'
+import { PlusIcon, Loader2Icon } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
@@ -20,6 +21,7 @@ import {
 
 import { useDescription } from './-use-description'
 import { useAnalysisSelection } from './-use-analysis-selection'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 
 export function AnalysisSelection({ className }: { className?: string }) {
   'use no memo'
@@ -28,19 +30,18 @@ export function AnalysisSelection({ className }: { className?: string }) {
 
   return (
     <Card className={cn('grid grid-cols-2 content-start gap-2 p-4', className)}>
-      <LabelBox labelText="Analysis Type" className="col-span-full">
-        <ToggleBar
-          options={
-            [
-              ['collocation', 'Collocation Analysis'],
-              ['ufa', 'UFA'],
-              ['keyword', 'Keyword Analysis'],
-            ] as const
-          }
-          value={analysisType}
-          onChange={setAnalysisType}
-        />
-      </LabelBox>
+      <ToggleBar
+        options={
+          [
+            ['collocation', 'Collocation Analysis'],
+            ['ufa', 'UFA'],
+            ['keyword', 'Keyword Analysis'],
+          ] as const
+        }
+        value={analysisType}
+        onChange={setAnalysisType}
+        className="col-span-full"
+      />
 
       {analysisType === 'collocation' && (
         <>
@@ -65,6 +66,7 @@ export function AnalysisSelection({ className }: { className?: string }) {
           <AnalysisLayerInput />
           <ReferenceCorpusInput />
           <ReferenceLayerInput />
+          <FocusDiscoursemeInput className="col-span-full" />
         </>
       )}
     </Card>
@@ -197,28 +199,55 @@ function ReferenceLayerInput() {
 }
 
 function PartitionInput() {
-  const { partition, setPartition, partitions } = useAnalysisSelection()
+  const { partition, setPartition, partitions, corpusId, subcorpusId } =
+    useAnalysisSelection()
   return (
     <LabelBox labelText="Subcorpus Collection">
-      <Select
-        disabled={partitions === undefined}
-        value={String(partition ?? '')}
-        onValueChange={(value) => setPartition(parseInt(value))}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Select Subcorpus Collection" />
-        </SelectTrigger>
+      {partitions?.length ? (
+        <div className="flex gap-2">
+          <Select
+            disabled={partitions === undefined || partitions.length === 0}
+            value={String(partition ?? '')}
+            onValueChange={(value) => setPartition(parseInt(value))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select Subcorpus Collection" />
+            </SelectTrigger>
 
-        <SelectContent>
-          <SelectGroup>
-            {(partitions ?? []).map(({ id, label }) => (
-              <SelectItem key={id} value={String(id)}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+            <SelectContent>
+              <SelectGroup>
+                {(partitions ?? []).map(({ id, label }) => (
+                  <SelectItem key={id} value={String(id)}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
+          <Link
+            to="/partition"
+            search={{
+              defaultCorpusId: corpusId,
+              defaultSubcorpusId: subcorpusId,
+            }}
+            className={buttonVariants({ size: 'icon' })}
+          >
+            <PlusIcon className="h-4 w-4" />
+          </Link>
+        </div>
+      ) : (
+        <Link
+          to="/partition"
+          search={{
+            defaultCorpusId: corpusId,
+            defaultSubcorpusId: subcorpusId,
+          }}
+          className={cn(buttonVariants(), 'flex text-xs')}
+        >
+          No Subcorpus Collections, yet - Create One?
+        </Link>
+      )}
     </LabelBox>
   )
 }
