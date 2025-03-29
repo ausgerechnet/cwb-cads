@@ -858,6 +858,92 @@ export const constellationKeywordAnalysisMap = (
       ),
   })
 
+export const constellationDescriptionCollection = (
+  constellation_id: number,
+  s: string,
+  subcorpus_collection_id: number,
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-description-collection',
+      constellation_id,
+      s,
+      subcorpus_collection_id,
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.put(
+        '/mmda/constellation/:constellation_id/description/collection/',
+        {
+          s,
+          subcorpus_collection_id: subcorpus_collection_id,
+        },
+        {
+          params: {
+            constellation_id: constellation_id.toString(),
+          },
+          signal,
+        },
+      ),
+  })
+
+export const constellationDescriptionCollectionCollocation = (
+  constellationId: number,
+  collectionId: number,
+  {
+    filterDiscoursemeIds: filter_discourseme_ids = [],
+    filterItem: filter_item,
+    filterItemPAtt: filter_item_p_att,
+    focusDiscoursemeId: focus_discourseme_id,
+    p,
+    sBreak: s_break,
+    window,
+  }: {
+    filterDiscoursemeIds?: number[]
+    filterItem?: string
+    filterItemPAtt?: string
+    focusDiscoursemeId: number
+    p: string
+    sBreak: string
+    window: number
+  },
+) =>
+  queryOptions({
+    queryKey: [
+      'constellation-description-collection-collocation',
+      constellationId,
+      collectionId,
+      {
+        filter_discourseme_ids,
+        filter_item,
+        filter_item_p_att,
+        focus_discourseme_id,
+        p,
+        s_break,
+        window,
+      },
+    ],
+    queryFn: ({ signal }) =>
+      apiClient.put(
+        '/mmda/constellation/:constellation_id/description/collection/:collection_id/collocation',
+        {
+          filter_discourseme_ids,
+          filter_item,
+          filter_item_p_att,
+          focus_discourseme_id,
+          p,
+          s_break,
+          window,
+        },
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            collection_id: collectionId.toString(),
+          },
+          signal,
+        },
+      ),
+  })
+
 // ==================== COLLOCATIONS ====================
 
 export const getCollocation = (id: number) =>
