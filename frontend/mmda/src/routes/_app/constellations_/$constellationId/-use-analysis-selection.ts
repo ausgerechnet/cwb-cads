@@ -48,7 +48,9 @@ type AnalysisSelection =
       analysisType: 'ufa'
       corpusId: number
       subcorpusId?: number
+      analysisLayer: string
       partition: number
+      focusDiscourseme: number
     }
 
 export function useAnalysisSelection() {
@@ -127,12 +129,19 @@ export function useAnalysisSelection() {
       }
       break
     case 'ufa':
-      if (corpusId !== undefined && partition !== undefined) {
+      if (
+        corpusId !== undefined &&
+        partition !== undefined &&
+        analysisLayer !== undefined &&
+        focusDiscourseme !== undefined
+      ) {
         analysisSelection = {
           analysisType,
           corpusId,
           subcorpusId,
           partition,
+          analysisLayer,
+          focusDiscourseme,
         }
       }
       break
