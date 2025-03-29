@@ -834,9 +834,13 @@ def create_subcorpus_collection(id, json_data):
     # meta frequencies
     records = get_meta_freq(att, nr_bins=None, time_interval=time_interval, subcorpus_id=subcorpus_id)
     df_freq = DataFrame(records.all())
+    # we convert values back str that are interpreted as datetimes to be able to use normal select clauses below
     if time_interval == 'week':
-        # we convert weeks back to the first day of the week to be able to use normal select clauses below
+        # first day of the week
         df_freq['bin_index'] = df_freq['bin_index'].apply(week2dates)
+    if time_interval == 'year':
+        # first month of the year
+        df_freq['bin_index'] = df_freq['bin_index'].apply(lambda x: str(x + "-01"))
     periods = list(zip(df_freq['bin_index'].tolist(), df_freq['bin_index'].tolist()[1:] + ["999999-12-31"]))
 
     for start, end in periods:
