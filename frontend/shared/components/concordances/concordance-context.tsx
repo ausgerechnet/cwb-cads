@@ -20,14 +20,14 @@ export type ConcordanceContextValue = {
   }
 }
 
-const ConcordanceContext = createContext<ConcordanceContextValue>(
+const ConcordanceTableContext = createContext<ConcordanceContextValue>(
   null as unknown as ConcordanceContextValue,
 )
 
-export const ConcordanceProvider = ConcordanceContext.Provider
+export const ConcordanceProvider = ConcordanceTableContext.Provider
 
-export function useConcordanceContext() {
-  return useContext(ConcordanceContext)
+export function useConcordanceTableContext() {
+  return useContext(ConcordanceTableContext)
 }
 
 const ConcordanceFilterContext = createContext<
@@ -46,6 +46,7 @@ export function ConcordanceFilterProvider({
   children: ReactNode
 }) {
   const value = useConcordanceFilters(params, layers, structureAttributes)
+
   return (
     <ConcordanceFilterContext.Provider value={value}>
       {children}

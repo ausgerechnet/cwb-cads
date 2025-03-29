@@ -18,7 +18,7 @@ import { TableCell, TableRow } from '../ui/table'
 import { Ellipsis } from '../ellipsis'
 import { ButtonTooltip } from '../button-tooltip'
 import { ErrorMessage } from '../error-message'
-import { useConcordanceContext } from './concordance-context'
+import { useConcordanceTableContext } from './concordance-context'
 
 export function ConcordanceLineRender({
   concordanceLine: {
@@ -30,7 +30,7 @@ export function ConcordanceLineRender({
 }: {
   concordanceLine: z.infer<typeof schemas.ConcordanceLineOut>
 }) {
-  const { fetchContext } = useConcordanceContext()
+  const { fetchContext } = useConcordanceTableContext()
   const meta = useMemo(() => Object.entries(structural), [structural])
   const [isExpanded, setIsExpanded] = useState(false)
   const {
@@ -244,7 +244,7 @@ function TokenRender({
     offset?: number
   }[]
 }) {
-  const { onItemClick } = useConcordanceContext()
+  const { onItemClick } = useConcordanceTableContext()
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
