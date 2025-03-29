@@ -728,7 +728,6 @@ def create_subcorpus(id, json_data):
     Subcorpora can be built iteratively as long as working on the same level.
 
     """
-
     corpus = db.get_or_404(Corpus, id)
     subcorpus_id = json_data.get('subcorpus_id')
 
@@ -745,11 +744,13 @@ def create_subcorpus(id, json_data):
     value_type = segmentation_annotation.value_type
     values = json_data.get(f'bins_{value_type}')
 
-    if segmentation.level != level:
-        abort(406, f'subcorpus was created on "{segmentation.level}", cannot use "{level}" for further subcorpus creation')
-
     if values is None:
         abort(400, f'Bad Request: {level}_{key} is of type {value_type}, but no such value(s) provided')
+
+    if subcorpus_id:
+        subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
+        if subcorpus.segmentation.level != level:
+            abort(400, description=f'Bad Request: subcorpus was created on "{subcorpus.segmentation.level}", cannot use "{level}" for further subcorpus creation')
 
     if value_type in ['unicode', 'boolean']:
         span_ids = select(SegmentationSpanAnnotation.segmentation_span_id).filter(

@@ -5,7 +5,8 @@
 import os
 
 from apiflask import APIFlask, HTTPTokenAuth
-from flask import redirect, request
+from flask import redirect, request, abort, jsonify
+import werkzeug.exceptions
 # from flask.logging import default_handler
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -50,6 +51,26 @@ def create_app(config=CONFIG):
     #     logger = logging.getLogger('ccc')
     #     logger.addHandler(default_handler)
     #     logger.setLevel(logging.DEBUG)
+
+    # dynamic error handler for all HTTP errors
+    @app.errorhandler(werkzeug.exceptions.HTTPException)
+    def handle_exception(error):
+        """Global error handler for all HTTP exceptions."""
+        if isinstance(error, werkzeug.exceptions.HTTPException):
+            status_code = error.code
+            error_name = error.name
+            message = error.description
+        else:
+            status_code = 500
+            error_name = "Internal Server Error"
+            message = "An unexpected error occurred. Probably my fault."
+
+        response = jsonify({
+            "error": error_name,
+            "message": message
+        })
+        response.status_code = status_code
+        return response
 
     # init database connection
     if 'SQLALCHEMY_DATABASE_URI' not in app.config:

@@ -156,7 +156,8 @@ def test_create_subcorpus_subcorpus(client, auth):
                                },
                                content_type='application/json',
                                headers=auth_header)
-        assert subcorpus.status_code == 406
+        assert subcorpus.status_code == 400
+        assert subcorpus.json['message'] == 'Bad Request: subcorpus was created on "text", cannot use "div" for further subcorpus creation'
 
 
 def test_create_subcorpus_numeric(client, auth):
