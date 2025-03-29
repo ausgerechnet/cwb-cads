@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Float, Integer, Nested, String, DateTime
+from apiflask.fields import Float, Integer, Nested, String
 from datetime import datetime
 from apiflask.validators import OneOf
 from association_measures.comparisons import rbo
@@ -358,22 +358,25 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
             focus_discourseme_id,
             filter_discourseme_ids, filter_item, filter_item_p_att
         )
-
         collocations.append(collocation)
 
-    x = list()
+    xs = list()
     scores = list()
     for i in range(1, len(collocations)):
         left = collocations[i-1]
         right = collocations[i]
-        x.append(right._query.subcorpus.name)
-        scores.append(calculate_rbo(left, right, sort_by='conservative_log_ratio', number=50))
+        description = collection.constellation_descriptions[i]
+        xs.append(description.subcorpus.name)
+        if not left or not right:
+            scores.append(None)
+        else:
+            scores.append(calculate_rbo(left, right, sort_by='conservative_log_ratio', number=50))
 
     # diffs = calculate_time_diff([datetime.fromisoformat(time_str) for time_str in x])
     # TODO calculate smoothing
 
     ufa = list()
-    for i, score in zip(range(1, len(collocations)), scores):
+    for i, score, x in zip(range(1, len(collocations)), scores, xs):
 
         left = collocations[i-1]
         right = collocations[i]
@@ -382,16 +385,16 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
         # print(datetime.fromisoformat(right._query.subcorpus.name))
 
         ufa_score = {
-            'left_id': left.id,
-            'right_id': right.id,
-            'x_label': right._query.subcorpus.name,
+            'left_id': left.id if left else None,
+            'right_id': right.id if right else None,
+            'x_label': x,
             'score': score,
             'confidence': {
-                'lower_95': score + .02,
-                'lower_90': score + .01,
+                'lower_95': score + .02 if score else None,
+                'lower_90': score + .01 if score else None,
                 'median': score,
-                'upper_90': score - .01,
-                'upper_95': score - .02
+                'upper_90': score - .01 if score else None,
+                'upper_95': score - .02 if score else None
             }
         }
 

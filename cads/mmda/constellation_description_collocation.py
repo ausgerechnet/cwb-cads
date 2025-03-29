@@ -108,7 +108,7 @@ def get_or_create_coll(description,
     if isinstance(ret, bool):
         if not ret:
             current_app.logger.error("collocation analysis based on empty cotext")
-            abort(406, 'empty cotext')
+            return ret
     else:
         set_collocation_discourseme_scores(collocation,
                                            [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
@@ -783,6 +783,8 @@ def get_or_create_collocation(constellation_id, description_id, json_data):
         focus_discourseme_id,
         filter_discourseme_ids, filter_item, filter_item_p_att
     )
+    if not collocation:
+        abort(406, 'empty cotext')
 
     collocation.focus_discourseme_id = focus_discourseme_id
     collocation.filter_discourseme_ids = filter_discourseme_ids

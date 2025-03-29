@@ -157,7 +157,7 @@ def test_constellation_description_collection_put(client, auth):
         assert len(set(subcorpus_ids)) == 2
 
 
-@pytest.mark.now
+#@pytest.mark.now
 def test_constellation_description_collection_collocation(client, auth):
 
     auth_header = auth.login()
@@ -239,6 +239,82 @@ def test_constellation_description_collection_collocation(client, auth):
                                                     collection_id=collection.json['id']),
                                             json={
                                                 'focus_discourseme_id': discourseme1.json['id'],
+                                                'p': 'lemma'
+                                            },
+                                            headers=auth_header)
+        assert collocation_collection.status_code == 200
+
+        pprint(collocation_collection.json)
+
+
+@pytest.mark.now
+def test_constellation_description_collection_collocation_empty(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get corpora
+        corpora = client.get(url_for('corpus.get_corpora'),
+                             content_type='application/json',
+                             headers=auth_header)
+        assert corpora.status_code == 200
+
+        # make sure meta data exists
+        meta = client.get(url_for('corpus.set_meta', id=corpora.json[1]['id']),
+                          json={
+                              'level': 'article', 'key': 'date', 'value_type': 'datetime'
+                          },
+                          content_type='application/json',
+                          headers=auth_header)
+        assert meta.status_code == 200
+
+        # create subcorpora
+        subcorpus_collection = client.put(url_for('corpus.create_subcorpus_collection', id=corpora.json[1]['id']),
+                                          json={
+                                              'level': 'article', 'key': 'date', 'time_interval': 'week', 'name': 'weeks'
+                                          },
+                                          content_type='application/json',
+                                          headers=auth_header)
+        assert subcorpus_collection.status_code == 200
+        assert len(subcorpus_collection.json['subcorpora']) == 9
+
+        # create discoursemes
+        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
+                                  json={
+                                      'name': 'Wenig',
+                                      'comment': 'Testdiskursem mit wenigen Treffern',
+                                      'template': [
+                                          {'surface': 'Kraft'}
+                                      ],
+                                   },
+                                  content_type='application/json',
+                                  headers=auth_header)
+        assert discourseme.status_code == 200
+
+        # create constellation
+        constellation = client.post(url_for('mmda.constellation.create_constellation'),
+                                    json={
+                                        'name': 'Testkonstellation',
+                                        'comment': 'Testkonstellation mit vielen Treffern',
+                                        'discourseme_ids': [discourseme.json['id']]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        collection = client.post(url_for('mmda.constellation.description.collection.create_constellation_description_collection',
+                                         constellation_id=constellation.json['id']),
+                                 json={
+                                     'subcorpus_collection_id': subcorpus_collection.json['id']
+                                 },
+                                 headers=auth_header)
+        assert collection.status_code == 200
+
+        collocation_collection = client.put(url_for('mmda.constellation.description.collection.get_or_create_collocation',
+                                                    constellation_id=constellation.json['id'],
+                                                    collection_id=collection.json['id']),
+                                            json={
+                                                'focus_discourseme_id': discourseme.json['id'],
                                                 'p': 'lemma'
                                             },
                                             headers=auth_header)
