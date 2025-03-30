@@ -347,7 +347,8 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
             focus_discourseme_id,
             filter_discourseme_ids, filter_item, filter_item_p_att
         )
-
+        if collocation:
+            collocation.focus_discourseme_id = focus_discourseme_id
         collocations.append(collocation)
         if semantic_map_id is None and collocation:
             # use same map for following analyses
