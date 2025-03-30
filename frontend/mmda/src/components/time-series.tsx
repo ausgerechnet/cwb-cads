@@ -65,7 +65,7 @@ export function TimeSeries({
   return (
     <div
       className={cn(
-        'border-1 border-border grid grid-cols-[4rem_1fr_3rem] grid-rows-[10rem] gap-2 overflow-hidden rounded-lg border',
+        'border-1 border-border bg-muted grid grid-cols-[4rem_1fr_3rem] grid-rows-[10rem] gap-2 overflow-hidden rounded-lg border',
         className,
       )}
     >
@@ -190,7 +190,11 @@ export function TimeSeries({
           </g>
         </svg>
       </div>
-      <aside className="col-start-2" aria-label="X-axis labels">
+
+      <aside
+        className="bg-muted relative col-start-2"
+        aria-label="X-axis labels"
+      >
         <svg className="fill-foreground relative h-8 w-full overflow-visible">
           {data.map((dataPoint, index) => {
             const label = dataPoint.label
@@ -313,7 +317,7 @@ function getBandPath(band: [number, number][]) {
 
   const splineConfig = {
     tension: 0.5,
-    divisions: Math.min(50, band.length),
+    divisions: Math.max(50, band.length * 2),
     closed: false,
   } as const
 
