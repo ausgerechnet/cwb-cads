@@ -1,7 +1,6 @@
-import { Loader2Icon } from 'lucide-react'
-
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { TimeSeries } from '@/components/time-series'
+import { cn } from '@cads/shared/lib/utils'
 
 import { UfaCollocation } from './-ufa-collocation'
 import { useUfa } from './-use-ufa'
@@ -51,15 +50,18 @@ export function UfaSelection({ className }: { className?: string }) {
     <div className={className}>
       <ErrorMessage error={errors} />
 
-      {isLoading && <Loader2Icon className="h-4 w-4 animate-spin" />}
-
-      <TimeSeries
-        data={timeSeriesData}
-        value={ufaTimeSpan}
-        onChange={setUfaTimeSpan}
-        className="mb-4"
-        zoom
-      />
+      <div className="relative">
+        <TimeSeries
+          data={timeSeriesData}
+          value={ufaTimeSpan}
+          onChange={setUfaTimeSpan}
+          className={cn('mb-4', isLoading && 'opacity-0')}
+          zoom
+        />
+        {isLoading && (
+          <div className="bg-muted absolute inset-0 animate-pulse rounded-lg" />
+        )}
+      </div>
 
       <UfaCollocation />
     </div>
