@@ -20,6 +20,11 @@ export function useUfa() {
   const navigate = Route.useNavigate()
   const { analysisSelection } = useAnalysisSelection()
   const { clContextBreak, windowSize } = useConcordanceFilterContext()
+  const partition =
+    analysisSelection?.analysisType === 'ufa'
+      ? analysisSelection.partition
+      : undefined
+  const { focusDiscourseme, analysisLayer } = analysisSelection ?? {}
 
   function setUfaTimeSpan(ufaTimeSpan: string) {
     navigate({
@@ -29,17 +34,13 @@ export function useUfa() {
     })
   }
 
-  if (analysisSelection?.analysisType !== 'ufa') {
-    throw new Error('Invalid analysis type')
-  }
-
   const { data: collection, error: errorCollection } = useQuery({
     ...constellationDescriptionCollection(
       constellationId,
       clContextBreak!,
-      analysisSelection.partition,
+      partition!,
     ),
-    enabled: clContextBreak !== undefined,
+    enabled: clContextBreak !== undefined && partition !== undefined,
   })
   const collectionId = collection?.id
 
@@ -57,8 +58,8 @@ export function useUfa() {
         filterDiscoursemeIds,
         filterItem: undefined,
         filterItemPAtt: undefined,
-        focusDiscoursemeId: analysisSelection.focusDiscourseme,
-        p: analysisSelection.analysisLayer,
+        focusDiscoursemeId: focusDiscourseme!,
+        p: analysisLayer!,
         sBreak: clContextBreak!,
         window: windowSize,
       },
@@ -67,7 +68,9 @@ export function useUfa() {
     enabled:
       collectionId !== undefined &&
       clContextBreak !== undefined &&
-      collectionId !== undefined,
+      collectionId !== undefined &&
+      focusDiscourseme !== undefined &&
+      analysisLayer !== undefined,
   })
 
   const possibleTimeSpans: string[] =
@@ -79,12 +82,8 @@ export function useUfa() {
   const selectedTimeSpan = collectionDescriptions?.ufa?.find(
     ({ x_label }) => x_label === ufaTimeSpan,
   )
-  let ufaCollocationId = undefined
-  let ufaDescriptionId = undefined
-  if (selectedTimeSpan) {
-    ufaCollocationId = selectedTimeSpan.collocation_id_right ?? undefined
-    ufaDescriptionId = selectedTimeSpan.description_id_right ?? undefined
-  }
+  const ufaCollocationId = selectedTimeSpan?.collocation_id_right ?? undefined
+  const ufaDescriptionId = selectedTimeSpan?.description_id_right ?? undefined
 
   const {
     data: collocationItems,
