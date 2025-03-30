@@ -31,6 +31,7 @@ import { DescriptionAssociation } from './-description-association'
 import { SemanticMapLink } from './-semantic-map-link'
 import { KeywordTable } from './-keyword-table'
 import { UfaSelection } from './-ufa-selection'
+import { SemanticMapKeyword } from './-semantic-map-keyword'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -86,11 +87,11 @@ function ConstellationDetail() {
             )}
 
             {analysisType === 'keyword' && (
-              <strong>Semantic Map for Keyword analysis goes here</strong>
+              <SemanticMapKeyword constellationId={constellationId} />
             )}
 
             {analysisType === 'ufa' && (
-              <strong>Semantic Map for Keyword analysis goes here</strong>
+              <strong>Semantic Map for UFA goes here</strong>
             )}
 
             {!analysisType && (
