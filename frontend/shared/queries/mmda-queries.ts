@@ -691,48 +691,6 @@ export const constellationKeywordAnalyses = (
       ),
   })
 
-export const createConstellationKeywordAnalysis: MutationOptions<
-  z.infer<typeof schemas.ConstellationKeywordIn>,
-  Error,
-  {
-    constellationId: number
-    descriptionId: number
-    corpusIdReference: number
-    subcorpusIdReference?: number
-    p: string
-    pReference: string
-  }
-> = {
-  mutationFn: async ({
-    constellationId,
-    descriptionId,
-    corpusIdReference: corpus_id_reference,
-    subcorpusIdReference: subcorpus_id_reference,
-    p,
-    pReference: p_reference,
-  }) =>
-    apiClient.post(
-      '/mmda/constellation/:constellation_id/description/:description_id/keyword/',
-      {
-        corpus_id_reference,
-        subcorpus_id_reference,
-        p,
-        p_reference,
-      },
-      {
-        params: {
-          constellation_id: constellationId.toString(),
-          description_id: descriptionId.toString(),
-        },
-      },
-    ),
-  onSettled: () => {
-    void queryClient.invalidateQueries({
-      queryKey: ['constellation-keyword-analyses'],
-    })
-  },
-}
-
 export const constellationKeywordAnalysis = (
   constellationId: number,
   descriptionId: number,

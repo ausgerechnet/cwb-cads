@@ -129,6 +129,12 @@ function AssociationTable({
           <th></th>
           {rowIds.map((rowId) => (
             <th key={rowId} className="py-1 text-xs">
+              <span
+                className="mr-1 inline-block aspect-square h-2 w-2 rounded-full"
+                style={{
+                  backgroundColor: getColorForNumber(rowId),
+                }}
+              />
               {legendNameMap?.get(rowId) ?? rowId}
             </th>
           ))}
@@ -138,6 +144,12 @@ function AssociationTable({
         {columnIds.map((columnId) => (
           <tr key={columnId} className="col-span-full grid grid-cols-subgrid">
             <th className="pr-2 text-left text-xs">
+              <span
+                className="mr-1 inline-block aspect-square h-2 w-2 rounded-full"
+                style={{
+                  backgroundColor: getColorForNumber(columnId),
+                }}
+              />
               {legendNameMap?.get(columnId) ?? columnId}
             </th>
             {rowIds.map((candidate) => {
@@ -151,7 +163,7 @@ function AssociationTable({
                 <td
                   key={candidate}
                   className={cn(
-                    'font-xs p-1 text-right font-mono transition-colors duration-500',
+                    'font-xs p-1 text-right font-mono text-sm transition-colors duration-500',
                     {
                       'text-white': scaledScore <= 0.25 || scaledScore >= 0.75,
                       'text-black': scaledScore > 0.25 && scaledScore < 0.75,

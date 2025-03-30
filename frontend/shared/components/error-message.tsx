@@ -1,4 +1,5 @@
 import { AlertCircle } from 'lucide-react'
+import { z } from 'zod'
 import {
   Alert,
   AlertDescription,
@@ -27,11 +28,7 @@ export function ErrorMessage({
       </>
     )
   }
-  // eslint-disable-next-line @typescript-eslint/no-ts-ignore
-  // @ts-ignore - We assume that some errors are thrown via axios; in these cases we check whether the error has a response and display the `message` from there -- if it exists.
-  const responseMessage = error.response?.data?.message
-  const message =
-    typeof error === 'string' ? error : (responseMessage ?? error.message)
+  const { title, message } = getMessage(error)
 
   return (
     <Alert
@@ -42,20 +39,35 @@ export function ErrorMessage({
       )}
     >
       <AlertCircle className="mr-2 h-4 w-4" />
-      {/*
-         If the error contained a Response with a message, omit the `error.name`.
-         These combinations might be confusing for the user.
-      */}
-      {typeof error === 'string' || responseMessage ? (
-        <AlertTitle>{message}</AlertTitle>
-      ) : (
-        <>
-          <AlertTitle>{error.name}</AlertTitle>
-          <AlertDescription className="whitespace-pre-wrap">
-            {message}
-          </AlertDescription>
-        </>
+      <AlertTitle>{title}</AlertTitle>
+      {message && (
+        <AlertDescription className="whitespace-pre-wrap">
+          {message}
+        </AlertDescription>
       )}
     </Alert>
   )
+}
+
+const FlaskError = z.object({
+  error: z.string(),
+  message: z.string(),
+})
+
+function getMessage(error: unknown): { title: string; message?: string } {
+  if (typeof error === 'string') {
+    return { title: error }
+  }
+
+  try {
+    // @ts-ignore
+    const { error: title, message } = FlaskError.parse(error?.response?.data)
+    return { title, message }
+  } catch {}
+
+  if (typeof error === 'object' && error !== null && error instanceof Error) {
+    return { title: error.name, message: error.message }
+  }
+
+  return { title: 'Unknown error' }
 }

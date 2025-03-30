@@ -398,7 +398,7 @@ export default function WordCloud({
     let transformationState: d3.ZoomTransform = new d3.ZoomTransform(1, 0, 0)
 
     simulation
-      .alphaDecay(0.1)
+      .alphaDecay(0.05)
       .nodes([...wordData])
       .force(
         'collide',
@@ -490,7 +490,7 @@ export default function WordCloud({
       )
     }
 
-    function render() {
+    function render(preventSimulation = false) {
       const k = transformationState.k
       const kNormalized = getNormalizedScale(k)
       let minimumSignificance = 0
@@ -548,6 +548,7 @@ export default function WordCloud({
           (d) => `translate(-${d.width / k}, -${d.height / k + 2 / k})`,
         )
 
+      if (preventSimulation) return
       simulation.alpha(0.3).restart()
       simulation.force('collide')?.radius((d) => {
         switch (d.source) {
@@ -567,8 +568,10 @@ export default function WordCloud({
     svg.call(zoom.scaleExtent([0.25, 10]).on('zoom', zoomed))
 
     function zoomed({ transform }: { transform: d3.ZoomTransform }) {
+      const isSameZoom = transform.k === transformationState.k
       transformationState = transform
-      render()
+
+      render(isSameZoom)
     }
 
     let dragStartTime = new Date().getTime()
@@ -657,7 +660,7 @@ export default function WordCloud({
       filterDiscoursemeIds = [
         ...(event.toLocation.search.clFilterDiscoursemeIds ?? []),
       ]
-      render()
+      render(true)
     })
 
     // TODO: add this event listener the 'react' way

@@ -40,10 +40,20 @@ export function SortByOffsetInput({
 }) {
   const { clSortByOffset, setSortByOffset, clSortOrder } =
     useConcordanceFilterContext()
+  const isDisabled = clSortOrder === 'random' || clSortOrder === 'first'
   return (
     <LabelBox
       className={className}
-      labelText={`Sort by offset ${clSortByOffset}`}
+      labelText={
+        <>
+          Sort by offset{' '}
+          {isDisabled ? (
+            <span className="text-muted-foreground italic">n.a.</span>
+          ) : (
+            clSortByOffset
+          )}
+        </>
+      }
     >
       <div
         className={cn(
@@ -55,9 +65,11 @@ export function SortByOffsetInput({
           <Button
             key={offset}
             onClick={() => setSortByOffset(offset)}
-            className="ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=inactive]:hover:bg-background/50 flex grow flex-col items-center justify-center whitespace-nowrap rounded-sm px-0.5 py-1.5 text-center text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-80 data-[state=active]:shadow-sm"
-            disabled={clSortOrder === 'random' || clSortOrder === 'first'}
-            data-state={offset === clSortByOffset ? 'active' : 'inactive'}
+            className="ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=inactive]:hover:bg-background/50 data-[state=inactive]:disabled:bg-background/20 flex grow flex-col items-center justify-center whitespace-nowrap rounded-sm px-0.5 py-1.5 text-center text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed data-[state=active]:shadow-sm"
+            disabled={isDisabled}
+            data-state={
+              !isDisabled && offset === clSortByOffset ? 'active' : 'inactive'
+            }
             variant="secondary"
             size="sm"
           >

@@ -67,8 +67,9 @@ import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { ConstellationCollocationFilter } from './-constellation-filter'
+import { useKeywordAnalysis } from './-use-keyword-analysis'
 
-export function SemanticMapCollocations({
+export function SemanticMapKeyword({
   constellationId,
 }: {
   constellationId: number
@@ -77,12 +78,14 @@ export function SemanticMapCollocations({
     '/_app/constellations_/$constellationId',
   )
   const { description } = useDescription()
+  // TODO: unify! Only these five lines differ from SemanticMapCollocations
   const {
     mapItems,
+    errors: errorCollocation,
     isFetching,
-    collocation: { semantic_map_id } = {},
-    error: errorCollocation,
-  } = useCollocation(constellationId, description?.id)
+  } = useKeywordAnalysis()
+  // -----
+  const semantic_map_id = mapItems?.semantic_map_id
 
   const { mutate: postNewDiscourseme, error: errorNewDiscourseme } =
     useMutation({

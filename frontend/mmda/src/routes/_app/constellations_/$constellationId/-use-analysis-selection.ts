@@ -59,14 +59,13 @@ export function useAnalysisSelection() {
   const {
     corpusId,
     subcorpusId,
-    analysisLayer,
     analysisType = 'collocation',
     focusDiscourseme,
     referenceCorpusId,
     referenceSubcorpusId,
-    referenceLayer,
     partition,
   } = Route.useSearch()
+  let { analysisLayer, referenceLayer } = Route.useSearch()
 
   const { data: { layers, structuredAttributes } = {}, error: errorLayers } =
     useQuery({
@@ -93,6 +92,14 @@ export function useAnalysisSelection() {
       })),
     enabled: corpusId !== undefined,
   })
+
+  analysisLayer = defaultValue(layers, analysisLayer, 'lemma')
+  referenceLayer = defaultValue(
+    referenceLayers,
+    referenceLayer,
+    analysisLayer,
+    'lemma',
+  )
 
   let analysisSelection: AnalysisSelection | undefined = undefined
   switch (analysisType) {
@@ -250,4 +257,19 @@ export function useAnalysisSelection() {
         },
       }),
   }
+}
+
+function defaultValue<T>(
+  legalValues: (T | undefined)[] | undefined,
+  ...potentialValues: (T | undefined)[]
+): T | undefined {
+  if (!legalValues) {
+    return undefined
+  }
+  for (const value of potentialValues) {
+    if (legalValues.includes(value)) {
+      return value
+    }
+  }
+  return legalValues[0]
 }

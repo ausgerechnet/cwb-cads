@@ -129,9 +129,6 @@ export function SelectMulti<IdType extends string | number>({
                   )}
 
                   {renderValue ? renderValue : name}
-                  <span className="text-muted-foreground ml-2 text-sm">
-                    id: {id}
-                  </span>
                 </CommandItem>
               ))}
             </ScrollArea>

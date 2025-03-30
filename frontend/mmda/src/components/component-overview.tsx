@@ -243,6 +243,7 @@ export function ComponentOverview() {
       <div className="flex flex-col gap-1">
         <ErrorMessage error={null} />
         <ErrorMessage error={undefined} />
+        <ErrorMessage error="This is a string error message" />
         <ErrorMessage error={new Error('This is an error message')} />
         <ErrorMessage
           error={[

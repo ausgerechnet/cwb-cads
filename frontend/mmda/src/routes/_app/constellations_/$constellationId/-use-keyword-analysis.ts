@@ -5,12 +5,16 @@ import {
   constellationKeywordAnalysisMap,
 } from '@cads/shared/queries'
 
+import { useFilterSelection } from './-use-filter-selection'
 import { useAnalysisSelection } from './-use-analysis-selection'
 import { useDescription } from './-use-description'
 
 export function useKeywordAnalysis() {
   const { constellationId, description: { id: descriptionId } = {} } =
     useDescription()
+  const { ccSortBy } = useFilterSelection(
+    '/_app/constellations_/$constellationId',
+  )
   const analysisSelection = useAnalysisSelection().analysisSelection
 
   let p: string | undefined
@@ -25,7 +29,11 @@ export function useKeywordAnalysis() {
     subcorpusIdReference = analysisSelection.referenceSubcorpusId
   }
 
-  const { data: { id: keywordId } = {}, error: errorKeyword } = useQuery({
+  const {
+    data: { id: keywordId } = {},
+    error: errorKeyword,
+    isFetching: isFetchingKeyword,
+  } = useQuery({
     ...constellationKeywordAnalysis(constellationId, descriptionId!, {
       corpusIdReference: corpusIdReference!,
       subcorpusIdReference: subcorpusIdReference!,
@@ -38,12 +46,16 @@ export function useKeywordAnalysis() {
       analysisSelection?.analysisType === 'keyword',
   })
 
-  const { data: mapItems, error: errorItems } = useQuery({
+  const {
+    data: mapItems,
+    error: errorItems,
+    isFetching: isFetchingItems,
+  } = useQuery({
     ...constellationKeywordAnalysisMap(
       constellationId,
       descriptionId!,
       keywordId!,
-      'conservative_log_ratio',
+      ccSortBy,
     ),
     enabled:
       descriptionId !== undefined &&
@@ -55,5 +67,6 @@ export function useKeywordAnalysis() {
     errors: [errorKeyword, errorItems].filter(Boolean),
     keywordId,
     mapItems,
+    isFetching: isFetchingKeyword || isFetchingItems,
   }
 }
