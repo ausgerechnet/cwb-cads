@@ -118,9 +118,12 @@ def calculate_rbo(description_left, collocation_left, description_right, colloca
     lrc_right = [score['score'] for item in scores_right['items'] for score in item['scores'] if score['measure'] == sort_by]
     items_right = [item['item'] for lrc, item in zip(lrc_right, scores_right['items']) if lrc > 0]
 
-    rbo_values = rbo(items_left, items_right)
+    if len(set(items_left).intersection(set(items_right))) == 0:
+        r = 0.0
+    else:
+        r = rbo(items_left, items_right, p=.95)[2]
 
-    return rbo_values
+    return r
 
 
 # CONSTELLATION COLLECTIONS
