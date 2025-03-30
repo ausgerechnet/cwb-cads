@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import {
   constellationById,
   constellationDescriptionsById,
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/_app/constellations_/$constellationId')({
   validateSearch: FilterSchema.extend({
     ...AnalysisSchema.shape,
     ...ConcordanceFilterSchema.shape,
+    ufaTimeSpan: z.string().optional(),
   }),
   loader: ({ context: { queryClient }, params: { constellationId } }) =>
     Promise.all([

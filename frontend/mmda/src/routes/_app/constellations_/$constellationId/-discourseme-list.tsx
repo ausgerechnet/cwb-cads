@@ -108,7 +108,7 @@ function DiscoursemeItem({
       <Small className="mx-0 my-auto flex flex-grow leading-none">
         <span
           style={{ backgroundColor: getColorForNumber(discoursemeId) }}
-          className="my-auto mr-1 inline-block h-2 w-2 rounded-full"
+          className="my-auto mr-1 inline-block h-2 w-2 shrink-0 rounded-full"
         />
         {discourseme.name}
         <span className="text-muted-foreground mt-1 block">
