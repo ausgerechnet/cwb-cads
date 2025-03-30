@@ -15,7 +15,6 @@ import {
 } from '@cads/shared/components/concordances'
 
 import { useAnalysisSelection } from './-use-analysis-selection'
-import { useKeywordAnalysis } from './-use-keyword-analysis'
 
 export function ConstellationConcordanceLines({
   constellationId,
@@ -25,8 +24,6 @@ export function ConstellationConcordanceLines({
   className?: string
 }) {
   const { analysisSelection: { analysisType } = {} } = useAnalysisSelection()
-
-  useKeywordAnalysis()
 
   if (analysisType === undefined) {
     return (
