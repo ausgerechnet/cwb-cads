@@ -82,12 +82,7 @@ function ConstellationDetail() {
         mapContent={
           <>
             {analysisType === 'collocation' && (
-              <SemanticMapCollocations constellationId={constellationId}>
-                <ConstellationCollocationFilter
-                  className="grow rounded-xl p-2 shadow"
-                  hideSortOrder
-                />
-              </SemanticMapCollocations>
+              <SemanticMapCollocations constellationId={constellationId} />
             )}
 
             {analysisType === 'keyword' && (

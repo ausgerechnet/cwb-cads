@@ -1,10 +1,4 @@
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { Link } from '@tanstack/react-router'
 import {
@@ -67,17 +61,17 @@ import {
   CollapsibleTrigger,
 } from '@cads/shared/components/ui/collapsible'
 import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
+import { InputGrowable } from '@cads/shared/components/input-growable'
+
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
-import { InputGrowable } from '@cads/shared/components/input-growable'
+import { ConstellationCollocationFilter } from './-constellation-filter'
 
 export function SemanticMapCollocations({
   constellationId,
-  children,
 }: {
   constellationId: number
-  children: ReactNode
 }) {
   const { secondary } = useFilterSelection(
     '/_app/constellations_/$constellationId',
@@ -193,7 +187,10 @@ export function SemanticMapCollocations({
           <ArrowLeftIcon />
         </Link>
 
-        {children}
+        <ConstellationCollocationFilter
+          className="grow rounded-xl p-2 shadow"
+          hideSortOrder
+        />
       </div>
       <ConstellationDiscoursemesEditor
         constellationId={constellationId}
