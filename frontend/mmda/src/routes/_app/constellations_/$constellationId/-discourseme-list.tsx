@@ -111,10 +111,8 @@ function DiscoursemeItem({
           className="my-auto mr-1 inline-block h-2 w-2 shrink-0 rounded-full"
         />
         {discourseme.name}
-        <span className="text-muted-foreground mt-1 block">
-          {discourseme.comment}
-        </span>
       </Small>
+
       <Button
         disabled={isMutating || !isEditable}
         onClick={() =>
@@ -134,6 +132,7 @@ function DiscoursemeItem({
           <XIcon className="h-4 w-4" />
         )}
       </Button>
+
       <ErrorMessage error={error} />
     </li>
   )
