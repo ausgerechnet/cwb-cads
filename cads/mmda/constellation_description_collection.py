@@ -346,7 +346,7 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
         )
 
         collocations.append(collocation)
-        if semantic_map_id is None and collocation is not None:
+        if semantic_map_id is None and collocation:
             # use same map for following analyses
             semantic_map_id = collocation.semantic_map_id
 
