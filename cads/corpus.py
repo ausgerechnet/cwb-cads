@@ -880,7 +880,7 @@ def create_subcorpus_collection(id, json_data):
 @bp.output(SubCorpusCollectionOut(many=True))
 @bp.auth_required(auth)
 def get_subcorpus_collections(id, query_data):
-    """Get all subcorpus collections in (sub-corpus).
+    """Get all subcorpus collections in (sub-)corpus.
 
     """
     if query_data['subcorpus_id']:

@@ -398,7 +398,7 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
         ufa.append(ufa_score)
 
     collocation_collection = {
-        'collocations': [ConstellationCollocationOut().dump(collocation) for collocation in collocations],
+        'collocations': [ConstellationCollocationOut().dump(collocation) if collocation else None for collocation in collocations],
         'ufa': ufa
     }
 

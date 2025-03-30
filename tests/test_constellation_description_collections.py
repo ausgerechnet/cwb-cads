@@ -296,7 +296,7 @@ def test_constellation_description_collection_collocation_empty(client, auth):
         constellation = client.post(url_for('mmda.constellation.create_constellation'),
                                     json={
                                         'name': 'Testkonstellation',
-                                        'comment': 'Testkonstellation mit vielen Treffern',
+                                        'comment': 'Testkonstellation mit wenigen Treffern',
                                         'discourseme_ids': [discourseme.json['id']]
                                     },
                                     headers=auth_header)
