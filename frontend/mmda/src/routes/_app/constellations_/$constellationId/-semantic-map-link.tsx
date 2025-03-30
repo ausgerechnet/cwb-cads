@@ -27,7 +27,11 @@ export function SemanticMapLink() {
 function CollocationLink({ descriptionId }: { descriptionId?: number }) {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { analysisSelection } = useAnalysisSelection()
-  const { mapItems } = useCollocation(constellationId, descriptionId)
+  const { mapItems, error } = useCollocation(constellationId, descriptionId)
+
+  if (error) {
+    return <ErrorMessage error={error} />
+  }
 
   return (
     <MapLink
