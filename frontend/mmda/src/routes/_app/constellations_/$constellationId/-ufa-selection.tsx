@@ -20,13 +20,14 @@ function useUfa() {
     throw new Error('Invalid analysis type')
   }
 
-  const { data: collection, error: errorCollection } = useQuery(
-    constellationDescriptionCollection(
+  const { data: collection, error: errorCollection } = useQuery({
+    ...constellationDescriptionCollection(
       constellationId,
-      analysisSelection.analysisLayer,
+      clContextBreak!,
       analysisSelection.partition,
     ),
-  )
+    enabled: clContextBreak !== undefined,
+  })
   const collectionId = collection?.id
 
   const filterDiscoursemeIds: number[] = []
