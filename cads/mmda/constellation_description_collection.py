@@ -61,55 +61,12 @@ def calculate_time_diff(time_strings, unit='minutes'):
     return time_diffs
 
 
-class ConstellationDescriptionCollectionIn(Schema):
-
-    subcorpus_collection_id = Integer(required=True)
-    s = String(required=False)
-    match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
-    overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
-
-
-class ConstellationDescriptionCollectionOut(Schema):
-
-    id = Integer(required=True)
-    s = String(required=False, allow_none=True)
-    subcorpus_collection_id = Integer(required=True)
-    match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
-    overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
-    constellation_descriptions = Nested(ConstellationDescriptionOut(many=True), required=True, dump_default=[])
-
-
-class ConfidenceIntervalOut(Schema):
-
-    lower_95 = Float(allow_none=True)
-    lower_90 = Float(allow_none=True)
-    median = Float(allow_none=True)
-    upper_90 = Float(allow_none=True)
-    upper_95 = Float(allow_none=True)
-
-
-class UFAScoreOut(Schema):
-
-    collocation_id_left = Integer(allow_none=True)
-    description_id_left = Integer()
-    collocation_id_right = Integer(allow_none=True)
-    description_id_right = Integer()
-    x_label = String()
-    score = Float(allow_none=True)
-    confidence = Nested(ConfidenceIntervalOut)
-
-
-class ConstellationDescriptionCollectionCollocationOut(Schema):
-
-    collocations = Nested(ConstellationCollocationOut(many=True), required=True)
-    ufa = Nested(UFAScoreOut(many=True))
-
-
 def calculate_rbo(description_left, collocation_left, description_right, collocation_right, sort_by="conservative_log_ratio", number=50):
+    """RBO calculation of two constellation description collocation analyses
 
-    # TODO: this does not seem to be right, especially for rbo(left, left)
-    current_app.logger.warning("verify correct implementation of RBO")
+    TODO: also return discourseme scores
 
+    """
     scores_left = get_collo_items(description_left, collocation_left, number, 1, 'descending', sort_by, True, True, False)
     lrc_left = [score['score'] for item in scores_left['items'] for score in item['scores'] if score['measure'] == sort_by]
     items_left = [item['item'] for lrc, item in zip(lrc_left, scores_left['items']) if lrc > 0]
@@ -126,8 +83,56 @@ def calculate_rbo(description_left, collocation_left, description_right, colloca
     return r
 
 
-# CONSTELLATION COLLECTIONS
-############################
+################
+# API schemata #
+################
+class ConstellationDescriptionCollectionIn(Schema):
+
+    subcorpus_collection_id = Integer(required=True)
+    s = String(required=False)
+    match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
+
+
+class ConstellationDescriptionCollectionOut(Schema):
+
+    id = Integer(required=True)
+    s = String(required=True, allow_none=True, dump_default=None)
+    subcorpus_collection_id = Integer(required=True)
+    match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
+    constellation_descriptions = Nested(ConstellationDescriptionOut(many=True), required=True, dump_default=[])
+
+
+class ConfidenceIntervalOut(Schema):
+
+    lower_95 = Float(required=True, allow_none=True)
+    lower_90 = Float(required=True, allow_none=True)
+    median = Float(required=True, allow_none=True)
+    upper_90 = Float(required=True, allow_none=True)
+    upper_95 = Float(required=True, allow_none=True)
+
+
+class UFAScoreOut(Schema):
+
+    collocation_id_left = Integer(required=True, allow_none=True, dump_default=None)
+    description_id_left = Integer(required=True)
+    collocation_id_right = Integer(required=True, allow_none=True, dump_default=None)
+    description_id_right = Integer(required=True)
+    x_label = String(required=True)
+    score = Float(required=True, allow_none=True, dump_default=None)
+    confidence = Nested(ConfidenceIntervalOut, required=True)
+
+
+class ConstellationDescriptionCollectionCollocationOut(Schema):
+
+    collocations = Nested(ConstellationCollocationOut(many=True), required=True, dump_default=[])
+    ufa = Nested(UFAScoreOut(many=True), required=True, dump_default=[])
+
+
+#########################################
+# CONSTELLATION DESCRIPTION COLLECTIONS #
+#########################################
 @bp.post('/')
 @bp.input(ConstellationDescriptionCollectionIn)
 @bp.output(ConstellationDescriptionCollectionOut)
@@ -307,6 +312,9 @@ def delete_constellation_description_collection(constellation_id, collection_id)
     return 'Deletion successful.', 200
 
 
+###################
+# COLLOCATION/UFA #
+###################
 @bp.put('/<collection_id>/collocation')
 @bp.input(ConstellationCollocationIn)
 @bp.output(ConstellationDescriptionCollectionCollocationOut)

@@ -371,6 +371,13 @@
             "type": "number"
           }
         },
+        "required": [
+          "lower_90",
+          "lower_95",
+          "median",
+          "upper_90",
+          "upper_95"
+        ],
         "type": "object"
       },
       "ConstellationAssociationItemOut": {
@@ -624,7 +631,8 @@
           }
         },
         "required": [
-          "collocations"
+          "collocations",
+          "ufa"
         ],
         "type": "object"
       },
@@ -702,6 +710,7 @@
         "required": [
           "constellation_descriptions",
           "id",
+          "s",
           "subcorpus_collection_id"
         ],
         "type": "object"
@@ -2396,6 +2405,15 @@
             "type": "string"
           }
         },
+        "required": [
+          "collocation_id_left",
+          "collocation_id_right",
+          "confidence",
+          "description_id_left",
+          "description_id_right",
+          "score",
+          "x_label"
+        ],
         "type": "object"
       },
       "UserIn": {
@@ -3612,7 +3630,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get all subcorpus collections in (sub-corpus).",
+        "summary": "Get all subcorpus collections in (sub-)corpus.",
         "tags": [
           "Corpus"
         ]
