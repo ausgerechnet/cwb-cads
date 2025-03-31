@@ -60,7 +60,7 @@ def ccc_query(query, return_df=True):
             return DataFrame()
 
         if len(matches.df) == 0:  # no matches
-            current_app.logger.debug("0 matches")
+            current_app.logger.debug("ccc_query :: 0 matches")
             query.zero_matches = True
             db.session.commit()
             return DataFrame()
@@ -86,6 +86,8 @@ def ccc_query(query, return_df=True):
     else:
         current_app.logger.debug("ccc_query :: matches exist in database")
         return
+
+    current_app.logger.debug(f'ccc_query :: exit')
 
     return matches_df
 

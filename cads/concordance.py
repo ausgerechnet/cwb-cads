@@ -15,6 +15,9 @@ from .database import Concordance, ConcordanceLines, Matches
 
 
 def ccc2attributes(line, p_show, s_show):
+    """
+
+    """
 
     if len(p_show) != 2:
         raise NotImplementedError()
@@ -57,17 +60,31 @@ def sort_matches(query, sort_by_offset, sort_by_p_att, sort_by_s_att=None):
 
     """
 
+    current_app.logger.debug("sort_matches :: query {query.id}, sorting by {sort_by_p_att} at offset {sort_by_offset}")
+
     if sort_by_s_att:
         raise NotImplementedError()
 
     # retrieve from database if possible
     random_seed = query.random_seed
-    concordance = Concordance.query.filter_by(query_id=query.id, sort_by=sort_by_p_att, sort_offset=sort_by_offset, random_seed=random_seed).first()
+    concordance = Concordance.query.filter_by(
+        query_id=query.id,
+        sort_by=sort_by_p_att,
+        sort_offset=sort_by_offset,
+        random_seed=random_seed
+    ).first()
 
     if not concordance:
 
+        current_app.logger.debug("sort_matches :: sorting")
+
         # create concordance
-        concordance = Concordance(query_id=query.id, sort_offset=sort_by_offset, sort_by=sort_by_p_att, random_seed=random_seed)
+        concordance = Concordance(
+            query_id=query.id,
+            sort_offset=sort_by_offset,
+            sort_by=sort_by_p_att,
+            random_seed=random_seed
+        )
         db.session.add(concordance)
         db.session.commit()
 
@@ -105,7 +122,9 @@ def sort_matches(query, sort_by_offset, sort_by_p_att, sort_by_s_att=None):
         concordance_lines['contextid'] = concordance_lines['match'].apply(lambda x: subcorpus.cpos2sid(x, query.s))
         if sort_by_offset is not None:
             # move the lines where sort position is out of context to the top
-            concordance_lines['contextid_sort'] = concordance_lines['match'].apply(lambda x: subcorpus.cpos2sid(x + sort_by_offset, query.s))
+            concordance_lines['contextid_sort'] = concordance_lines['match'].apply(
+                lambda x: subcorpus.cpos2sid(x + sort_by_offset, query.s)
+            )
             concordance_lines['contextid_sort'] = concordance_lines['contextid_sort'] == concordance_lines['contextid']
             concordance_lines = concat([
                 concordance_lines.loc[~ concordance_lines['contextid_sort']],
@@ -115,6 +134,8 @@ def sort_matches(query, sort_by_offset, sort_by_p_att, sort_by_s_att=None):
 
         # and save to database
         concordance_lines.to_sql('concordance_lines', con=db.engine, if_exists='append', index=False)
+
+    current_app.logger.debug("sort_matches :: exit")
 
     return concordance
 
@@ -161,7 +182,7 @@ def ccc_concordance(focus_query,
 
     """
 
-    current_app.logger.debug("ccc_concordance :: enter")
+    current_app.logger.debug(f"ccc_concordance :: query {focus_query.id} with {len(filter_queries)} filter queries")
 
     # CHECK PARAMETERS
     if sort_order in ('random', 'first', 'last') and (sort_by_p_att or sort_by_s_att):
@@ -173,6 +194,7 @@ def ccc_concordance(focus_query,
         raise ValueError("ccc_concordance :: cannot filter with specific match id")
 
     if sort_by_p_att and sort_by_s_att:
+        # TODO 400
         raise NotImplementedError("ccc_concordance :: cannot sort by s-att and p-att")
 
     if sort_by_offset is None and (sort_by_p_att or sort_by_s_att):
@@ -182,7 +204,10 @@ def ccc_concordance(focus_query,
     # SELECT MATCHES
     if match_id:
         current_app.logger.debug(f"ccc_concordance :: getting match {match_id}")
-        matches = Matches.query.filter_by(match=match_id, query_id=focus_query.id).all()
+        matches = Matches.query.filter_by(
+            match=match_id,
+            query_id=focus_query.id
+        ).all()
         nr_lines = 1
         page_count = 1
 
@@ -207,7 +232,12 @@ def ccc_concordance(focus_query,
         elif sort_order == 'last':
             matches = matches.order_by(Matches.id.desc())
         elif sort_order in ('random', 'ascending', 'descending'):
-            concordance = sort_matches(focus_query, sort_by_offset, sort_by_p_att, sort_by_s_att)
+            concordance = sort_matches(
+                focus_query,
+                sort_by_offset,
+                sort_by_p_att,
+                sort_by_s_att
+            )
             matches = matches.join(
                 ConcordanceLines,
                 (ConcordanceLines.concordance_id == concordance.id) &
@@ -222,12 +252,14 @@ def ccc_concordance(focus_query,
             raise ValueError()
 
         # PAGINATION
+        current_app.logger.debug("ccc_concordance :: pagination")
         matches = matches.paginate(page=page_number, per_page=page_size)
         nr_lines = matches.total
         page_count = matches.pages
 
     # RETRIEVE DATA FROM CWB-CCC
-    current_app.logger.debug("ccc_concordance :: creating selected concordances")
+    current_app.logger.debug("ccc_concordance :: retrieving selected concordance lines from database")
+
     df_dump = DataFrame(
         [vars(s) for s in matches], columns=['match', 'matchend', 'contextid']
     ).set_index(['match', 'matchend'])
@@ -239,6 +271,8 @@ def ccc_concordance(focus_query,
             'page_number': page_number,
             'page_count': 0
         }
+
+    current_app.logger.debug("ccc_concordance :: creating selected concordance lines from cwb-ccc")
     lines = SubCorpus(
         subcorpus_name=None,
         df_dump=df_dump,
@@ -267,17 +301,25 @@ def ccc_concordance(focus_query,
         s_show=s_show,
         order='asis'
     )
-    lines = lines_in_extended_context.drop(['context', 'contextend'], axis=1).join(lines_in_context[['context', 'contextend']])
+    lines = lines_in_extended_context.drop(
+        ['context', 'contextend'], axis=1
+    ).join(
+        lines_in_context[['context', 'contextend']]
+    )
 
     # FORMATTING
+    current_app.logger.debug("ccc_concordance :: formatting")
     lines = lines.apply(lambda line: ccc2attributes(line, p_show, s_show), axis=1)
 
     # HIGHLIGHTING
+    current_app.logger.debug("ccc_concordance :: highlighting")
     highlight_ranges = defaultdict(list)
     filter_item_cpos = set()
     for key, hq in highlight_queries.items():
-        hd_matches = Matches.query.filter(Matches.query_id == hq.id,
-                                          Matches.contextid.in_(list(df_dump['contextid']))).all()
+        hd_matches = Matches.query.filter(
+            Matches.query_id == hq.id,
+            Matches.contextid.in_(list(df_dump['contextid']))
+        ).all()
         for match in hd_matches:
             if key == '_FILTER':
                 filter_item_cpos.add(match.match)
@@ -288,6 +330,7 @@ def ccc_concordance(focus_query,
                     'end': match.matchend
                 })
 
+    current_app.logger.debug("ccc_concordance :: highlighting")
     for line in lines:
         line['match_id'] = line.pop('id')
         line['discourseme_ranges'] = highlight_ranges.get(line['contextid'], [])
@@ -391,9 +434,9 @@ class ConcordanceIn(ConcordanceLineIn):
 
 
 # Output
-class DiscoursemeRangeOut(Schema):  # rename to 'RangeOut'
+class DiscoursemeRangeOut(Schema):  # TODO rename to 'RangeOut'
 
-    discourseme_id = Integer(required=True)  # rename to 'identifier' (→ query, discourseme, filter_item)
+    discourseme_id = Integer(required=True)  # TODO rename to 'identifier' (→ query, discourseme, filter_item)
     start = Integer(required=True)
     end = Integer(required=True)
 
@@ -405,7 +448,7 @@ class TokenOut(Schema):
     primary = String(required=True)
     secondary = String(required=True)
     out_of_window = Boolean(required=True, dump_default=False)
-    is_filter_item = Boolean(required=True, dump_default=False)
+    is_filter_item = Boolean(required=True, dump_default=False)  # TODO simplify
 
 
 class ConcordanceLineOut(Schema):
@@ -413,7 +456,7 @@ class ConcordanceLineOut(Schema):
     match_id = Integer(required=True)
     tokens = Nested(TokenOut(many=True), required=True, dump_default=[])
     structural = Dict(required=True, dump_default={})
-    discourseme_ranges = Nested(DiscoursemeRangeOut(many=True), required=True, dump_default=[])  # rename to 'ranges'
+    discourseme_ranges = Nested(DiscoursemeRangeOut(many=True), required=True, dump_default=[])  # TODO rename to 'ranges'
 
 
 class ConcordanceOut(Schema):
