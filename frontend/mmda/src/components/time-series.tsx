@@ -113,7 +113,7 @@ export function TimeSeries({
           </g>
 
           <path
-            className="fill-slate-200 stroke-none dark:fill-slate-800"
+            className="fill-slate-300 stroke-none dark:fill-slate-700"
             d={getBandPath(data.map((d) => d.confidence95))}
           />
 
