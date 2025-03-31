@@ -358,7 +358,7 @@
             "nullable": true,
             "type": "number"
           },
-          "median": {
+          "smooth": {
             "nullable": true,
             "type": "number"
           },
@@ -374,7 +374,7 @@
         "required": [
           "lower_90",
           "lower_95",
-          "median",
+          "smooth",
           "upper_90",
           "upper_95"
         ],
@@ -2388,9 +2388,6 @@
             "nullable": true,
             "type": "integer"
           },
-          "confidence": {
-            "$ref": "#/components/schemas/ConfidenceIntervalOut"
-          },
           "description_id_left": {
             "type": "integer"
           },
@@ -2401,6 +2398,9 @@
             "nullable": true,
             "type": "number"
           },
+          "score_confidence": {
+            "$ref": "#/components/schemas/ConfidenceIntervalOut"
+          },
           "x_label": {
             "type": "string"
           }
@@ -2408,10 +2408,10 @@
         "required": [
           "collocation_id_left",
           "collocation_id_right",
-          "confidence",
           "description_id_left",
           "description_id_right",
           "score",
+          "score_confidence",
           "x_label"
         ],
         "type": "object"
@@ -2540,7 +2540,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev47"
+    "version": "0.3.0.dev48"
   },
   "openapi": "3.0.2",
   "paths": {

@@ -87,7 +87,7 @@ def ccc_query(query, return_df=True):
         current_app.logger.debug("ccc_query :: matches exist in database")
         return
 
-    current_app.logger.debug(f'ccc_query :: exit')
+    current_app.logger.debug('ccc_query :: exit')
 
     return matches_df
 

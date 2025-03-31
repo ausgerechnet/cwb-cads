@@ -1,20 +1,22 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, Nested, String
-from datetime import datetime
 from apiflask.validators import OneOf
 from association_measures.comparisons import rbo
 from flask import current_app
+from pandas import DataFrame
 
 from .. import db
 from ..database import SubCorpusCollection
+from ..tsa import gam_smoothing
 from ..users import auth
-from .constellation_description_collocation import get_collo_items
 from .constellation_description import ConstellationDescriptionOut
 from .constellation_description_collocation import (
-    ConstellationCollocationIn, ConstellationCollocationOut,
+    ConstellationCollocationIn, ConstellationCollocationOut, get_collo_items,
     get_or_create_coll)
 from .database import (Constellation, ConstellationDescription,
                        ConstellationDescriptionCollection,
@@ -22,43 +24,6 @@ from .database import (Constellation, ConstellationDescription,
 from .discourseme_description import discourseme_template_to_description
 
 bp = APIBlueprint('collection', __name__, url_prefix='/collection/')
-
-
-def calculate_time_diff(time_strings, unit='minutes'):
-    """
-    Calculate the difference between consecutive time strings in the provided unit.
-
-    :param time_strings: List of time strings
-    :param unit: Time unit to calculate the difference ('minutes', 'hours', 'seconds', 'days', 'weeks', 'months')
-    :return: List of time differences in the specified unit
-    """
-    # Convert time strings to datetime objects
-    time_objects = [datetime.fromisoformat(time_str) for time_str in time_strings]
-
-    # Calculate the time differences in the specified unit
-    time_diffs = []
-    for i in range(1, len(time_objects)):
-        diff = time_objects[i] - time_objects[i-1]
-
-        # Convert the difference to different units
-        if unit == 'minutes':
-            diff_value = diff.total_seconds() / 60
-        elif unit == 'hours':
-            diff_value = diff.total_seconds() / 3600
-        elif unit == 'seconds':
-            diff_value = diff.total_seconds()
-        elif unit == 'days':
-            diff_value = diff.days
-        elif unit == 'weeks':
-            diff_value = diff.days / 7
-        elif unit == 'months':
-            diff_value = diff.days / 30  # Approximate by assuming 30 days in a month
-        else:
-            raise ValueError(f"Unsupported unit '{unit}'. Choose from 'minutes', 'hours', 'seconds', 'days', 'weeks', 'months'.")
-
-        time_diffs.append(diff_value)
-
-    return time_diffs
 
 
 def calculate_rbo(description_left, collocation_left, description_right, collocation_right, sort_by="conservative_log_ratio", number=50):
@@ -108,7 +73,7 @@ class ConfidenceIntervalOut(Schema):
 
     lower_95 = Float(required=True, allow_none=True)
     lower_90 = Float(required=True, allow_none=True)
-    median = Float(required=True, allow_none=True)
+    smooth = Float(required=True, allow_none=True)
     upper_90 = Float(required=True, allow_none=True)
     upper_95 = Float(required=True, allow_none=True)
 
@@ -121,7 +86,7 @@ class UFAScoreOut(Schema):
     description_id_right = Integer(required=True)
     x_label = String(required=True)
     score = Float(required=True, allow_none=True, dump_default=None)
-    confidence = Nested(ConfidenceIntervalOut, required=True)
+    score_confidence = Nested(ConfidenceIntervalOut, required=True)
 
 
 class ConstellationDescriptionCollectionCollocationOut(Schema):
@@ -376,12 +341,11 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
         else:
             scores.append(calculate_rbo(description_left, left, description_right, right, sort_by='conservative_log_ratio', number=50))
 
-    # TODO calculate smoothing
-    # diffs = calculate_time_diff([datetime.fromisoformat(time_str) for time_str in x])
+    seconds = [datetime.fromisoformat(time_str + "-01").timestamp() for time_str in xs]
+    predictions = gam_smoothing(DataFrame({'x': seconds, 'score': scores}))
 
     ufa = list()
-    for i, score, x in zip(range(1, len(collocations)), scores, xs):
-
+    for i, score, x, row in zip(range(1, len(collocations)), scores, xs, predictions.iterrows()):
         collocation_left = collocations[i-1]
         collocation_right = collocations[i]
         description_left = collection.constellation_descriptions[i-1]
@@ -394,12 +358,12 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
             'description_id_right': description_right.id,
             'x_label': x,
             'score': score,
-            'confidence': {
-                'lower_95': score + .02 if score is not None else None,
-                'lower_90': score + .01 if score is not None else None,
-                'median': score,
-                'upper_90': score - .01 if score is not None else None,
-                'upper_95': score - .02 if score is not None else None
+            'score_confidence': {
+                'lower_95': min(1, row[1]['ci_025']) if score else None,
+                'lower_90': min(1, row[1]['ci_050']) if score else None,
+                'smooth': row[1]['smooth'] if score else None,
+                'upper_90': max(0, row[1]['ci_950']) if score else None,
+                'upper_95': max(0, row[1]['ci_975']) if score else None
             }
         }
 
