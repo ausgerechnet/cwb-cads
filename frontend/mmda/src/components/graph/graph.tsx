@@ -1,4 +1,4 @@
-import { memo, useMemo, Fragment } from 'react'
+import { useMemo, Fragment } from 'react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { clamp } from '@cads/shared/lib/clamp'
@@ -19,6 +19,7 @@ export function Graph({
 }: {
   dataPoints?: {
     position: [number, number]
+    label?: string
     className?: string
   }[]
   pointStyle?: 'circle' | 'bar'
@@ -30,8 +31,6 @@ export function Graph({
   hideLegend?: boolean
   formatY?: (value: number) => string
 }) {
-  'use no memo'
-
   const {
     minY,
     barWidth,
@@ -54,10 +53,14 @@ export function Graph({
     }
   })
 
+  const pointsWithinViewport = dataPoints?.filter(
+    ({ position: [x] }) => x >= viewboxX && x <= viewboxX + viewboxWidth,
+  )
+
   return (
     <div
       className={cn(
-        'bg-muted group/graph grid h-48 w-full grid-cols-[var(--col-1)_1fr]',
+        'bg-muted group/graph grid h-48 w-full grid-cols-[var(--col-1)_1fr] grid-rows-[1fr_min-content]',
         className,
       )}
       style={{
@@ -90,16 +93,6 @@ export function Graph({
         >
           {!hideLegend && (
             <g>
-              <line
-                x1={viewboxX}
-                y1={0}
-                x2={viewboxX + viewboxWidth}
-                y2={0}
-                strokeDasharray="5 5"
-                className="stroke-muted stroke-[1px]"
-                vectorEffect="non-scaling-stroke"
-              />
-
               {/* Warning: using  a <line> will come with unexpected behavior when the line starts at x < 0 and is too long */}
               {yTickValues.map(({ value }, index) => (
                 <path
@@ -110,17 +103,21 @@ export function Graph({
                   vectorEffect="non-scaling-stroke"
                 />
               ))}
+
+              <line
+                x1={viewboxX}
+                y1={0}
+                x2={viewboxX + viewboxWidth}
+                y2={0}
+                className="stroke-foreground stroke-[1px] opacity-50"
+                vectorEffect="non-scaling-stroke"
+              />
             </g>
           )}
 
-          {lines?.map((line, index) => <LineMemo points={line} key={index} />)}
+          {lines?.map((line, index) => <Line points={line} key={index} />)}
 
           {bands?.map((band, index) => <Band {...band} key={index} />)}
-
-          {pointStyle === 'bar' &&
-            dataPoints?.map(({ position }, index) => (
-              <DataPoint key={index} position={position} barWidth={barWidth} />
-            ))}
         </svg>
 
         <div className="absolute inset-0">
@@ -129,21 +126,43 @@ export function Graph({
             const left = `${((x - viewboxX) / viewboxWidth) * 100}%`
             const top = `${((flipY(y) - viewboxY) / viewboxHeight) * 100}%`
 
+            const scaledBarWidth = (barWidth / viewboxWidth) * 100
+            const relativeHeight = (y / viewboxHeight) * 100
+
             return (
               <Fragment key={index}>
                 <button
-                  className="absolute bottom-0 h-full w-5 -translate-x-1/2 [&:hover+span+svg+span]:opacity-100 [&:hover+span+svg]:opacity-100 [&:hover+span]:scale-150 [&:hover+span]:opacity-100"
-                  style={{ left }}
+                  className={cn(
+                    'absolute bottom-0 h-full w-5 -translate-x-1/2 [&:hover+span+svg+span]:opacity-100 [&:hover+span+svg]:opacity-100 [&:hover+span]:opacity-100',
+                    pointStyle === 'circle' && '[&:hover+span]:scale-150',
+                    pointStyle === 'bar' &&
+                      'min-w-1 [&:hover+span]:bg-blue-800',
+                  )}
+                  style={{
+                    left,
+                    width:
+                      pointStyle === 'bar' ? `${scaledBarWidth}%` : undefined,
+                  }}
                 />
 
                 <span
                   className={cn(
-                    'outline-primary pointer-events-none absolute aspect-square h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white outline outline-2',
+                    'pointer-events-none absolute',
                     hideLegend && 'bg-primary h-1 outline-0',
-                    pointStyle === 'bar' && 'opacity-0',
+                    pointStyle === 'circle' &&
+                      'outline-primary aspect-square h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white outline outline-2',
+                    pointStyle === 'bar' &&
+                      'bg-primary min-w-1 -translate-x-1/2 rounded-t-sm',
                     className,
                   )}
-                  style={{ left, top }}
+                  style={{
+                    left,
+                    top,
+                    width:
+                      pointStyle === 'bar' ? `${scaledBarWidth}%` : undefined,
+                    height:
+                      pointStyle === 'bar' ? `${relativeHeight}%` : undefined,
+                  }}
                 />
 
                 {!hideLegend && (
@@ -180,30 +199,47 @@ export function Graph({
           })}
         </div>
       </div>
+
+      {!hideLegend && (
+        <article className="text-muted-foreground relative col-start-2 flex h-6 justify-between pt-2 font-mono leading-none">
+          {pointsWithinViewport?.map(({ position: [x], label }, index) => {
+            const itemsPerViewport = 5
+            // filter out all points except every nth item
+            if (
+              index %
+                Math.ceil(pointsWithinViewport.length / itemsPerViewport) !==
+                0 &&
+              index !== pointsWithinViewport.length - 1 &&
+              pointsWithinViewport.length > 6
+            ) {
+              return null
+            }
+            const left = ((x - viewboxX) / viewboxWidth) * 100
+            return (
+              <span
+                key={index}
+                className="absolute"
+                style={{
+                  left: `${left}%`,
+                  translate:
+                    index === 0
+                      ? undefined
+                      : index === pointsWithinViewport.length - 1
+                        ? '-100% 0'
+                        : '-50% 0',
+                }}
+              >
+                {label ? label : x}
+              </span>
+            )
+          })}
+        </article>
+      )}
     </div>
   )
 }
 
-function DataPoint({
-  position: [x, y],
-  barWidth,
-}: {
-  position: [number, number]
-  barWidth: number
-}) {
-  return (
-    <rect
-      x={x - barWidth / 2}
-      y={0}
-      width={barWidth}
-      height={y}
-      className="fill-primary"
-    />
-  )
-}
-
 function Line({ points }: { points: [number, number][] }) {
-  'use no memo'
   const d = useMemo(
     () =>
       pathToSvgPath(
@@ -227,10 +263,6 @@ function Line({ points }: { points: [number, number][] }) {
     />
   )
 }
-
-const LineMemo = memo(Line, (prevProps, nextProps) => {
-  return prevProps.points === nextProps.points
-})
 
 function Band({
   points,
