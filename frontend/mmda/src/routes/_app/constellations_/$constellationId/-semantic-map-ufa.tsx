@@ -77,9 +77,13 @@ export function SemanticMapUfa({
   const { secondary } = useFilterSelection(
     '/_app/constellations_/$constellationId',
   )
-  const { description } = useDescription()
-  // TODO: unify! Only this lines differs from SemanticMapCollocations
-  const { mapItems, errors: errorCollocation, isFetching } = useUfa()
+  // TODO: unify! Only these lines differ from SemanticMapCollocations
+  const {
+    mapItems,
+    errors: errorCollocation,
+    isFetching,
+    description,
+  } = useUfa()
   // -----
   const semantic_map_id = mapItems?.semantic_map_id
 
