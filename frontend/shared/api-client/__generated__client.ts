@@ -377,7 +377,7 @@ const ConstellationDescriptionCollectionOut = z
       .enum(['partial', 'full', 'match', 'matchend'])
       .optional()
       .default('partial'),
-    s: z.string().optional(),
+    s: z.string().nullish(),
     subcorpus_collection_id: z.number().int(),
   })
   .passthrough()
@@ -416,20 +416,22 @@ const ConstellationCollocationOut = z
   .passthrough()
 const ConfidenceIntervalOut = z
   .object({
-    lower_90: z.number(),
-    lower_95: z.number(),
-    median: z.number(),
-    upper_90: z.number(),
-    upper_95: z.number(),
+    lower_90: z.number().nullable(),
+    lower_95: z.number().nullable(),
+    median: z.number().nullable(),
+    upper_90: z.number().nullable(),
+    upper_95: z.number().nullable(),
   })
   .partial()
   .passthrough()
 const UFAScoreOut = z
   .object({
+    collocation_id_left: z.number().int().nullable(),
+    collocation_id_right: z.number().int().nullable(),
     confidence: ConfidenceIntervalOut,
-    left_id: z.number().int(),
-    right_id: z.number().int(),
-    score: z.number(),
+    description_id_left: z.number().int(),
+    description_id_right: z.number().int(),
+    score: z.number().nullable(),
     x_label: z.string(),
   })
   .partial()
@@ -2506,7 +2508,7 @@ Subcorpora can be built iteratively as long as working on the same level.`,
       {
         name: 'focus_discourseme_id',
         type: 'Query',
-        schema: z.number().int(),
+        schema: z.number().int().nullish().default(null),
       },
       {
         name: 'window',

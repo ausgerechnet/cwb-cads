@@ -7,6 +7,7 @@ import { useAnalysisSelection } from './-use-analysis-selection'
 import { useCollocation } from './-use-collocation'
 import { Route } from './route'
 import { useKeywordAnalysis } from './-use-keyword-analysis'
+import { useUfa } from './-use-ufa'
 
 export function SemanticMapLink() {
   const analysisType = useAnalysisSelection().analysisType
@@ -65,9 +66,15 @@ function KeywordLink() {
 
 function UfaLink() {
   const { analysisSelection } = useAnalysisSelection()
+  const { mapItems, errors } = useUfa()
+
+  if (errors.length) {
+    return <ErrorMessage error={errors} />
+  }
+
   return (
     <MapLink
-      items={[]}
+      items={mapItems?.map ?? []}
       warn={
         analysisSelection
           ? null

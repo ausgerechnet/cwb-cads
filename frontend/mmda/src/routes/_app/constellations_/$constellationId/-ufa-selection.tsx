@@ -1,69 +1,67 @@
-import { useQuery } from '@tanstack/react-query'
+import { Loader2Icon } from 'lucide-react'
 
-import { cn } from '@cads/shared/lib/utils'
-import {
-  constellationDescriptionCollection,
-  constellationDescriptionCollectionCollocation,
-} from '@cads/shared/queries'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { useConcordanceFilterContext } from '@cads/shared/components/concordances'
+import { TimeSeries } from '@/components/time-series'
 
-import { useAnalysisSelection } from './-use-analysis-selection'
-import { Route } from './route'
-
-function useUfa() {
-  const constellationId = parseInt(Route.useParams().constellationId)
-  const { analysisSelection } = useAnalysisSelection()
-  const { clContextBreak, windowSize } = useConcordanceFilterContext()
-
-  if (analysisSelection?.analysisType !== 'ufa') {
-    throw new Error('Invalid analysis type')
-  }
-
-  const { data: collection, error: errorCollection } = useQuery(
-    constellationDescriptionCollection(
-      constellationId,
-      analysisSelection.analysisLayer,
-      analysisSelection.partition,
-    ),
-  )
-  const collectionId = collection?.id
-
-  const filterDiscoursemeIds: number[] = []
-
-  const { data: collectionDescriptions, error: errorCollectionDescriptions } =
-    useQuery({
-      ...constellationDescriptionCollectionCollocation(
-        constellationId,
-        collectionId!,
-        {
-          filterDiscoursemeIds,
-          filterItem: undefined,
-          filterItemPAtt: undefined,
-          focusDiscoursemeId: analysisSelection.focusDiscourseme,
-          p: analysisSelection.analysisLayer,
-          sBreak: clContextBreak!,
-          window: windowSize,
-        },
-      ),
-      enabled:
-        collectionId !== undefined &&
-        clContextBreak !== undefined &&
-        collectionId !== undefined,
-    })
-
-  return {
-    errors: [errorCollection, errorCollectionDescriptions],
-    collectionDescriptions,
-  }
-}
+import { UfaCollocation } from './-ufa-collocation'
+import { useUfa } from './-use-ufa'
 
 export function UfaSelection({ className }: { className?: string }) {
-  const { errors } = useUfa()
+  const {
+    errors,
+    collectionDescriptions,
+    isLoading,
+    ufaTimeSpan,
+    setUfaTimeSpan,
+  } = useUfa()
+
+  const timeSeriesData =
+    collectionDescriptions?.ufa?.map(({ score, x_label, confidence }) => {
+      // TODO: backend should be stricter and return fewer optional/nullable values
+      if (!confidence) {
+        throw new Error('Invalid data format')
+      }
+      const { median, lower_90, upper_90, lower_95, upper_95 } = confidence
+      if (
+        typeof median !== 'number' ||
+        typeof lower_90 !== 'number' ||
+        typeof upper_90 !== 'number' ||
+        typeof lower_95 !== 'number' ||
+        typeof upper_95 !== 'number'
+      ) {
+        throw new Error('Invalid data format')
+      }
+
+      return {
+        score: score ?? undefined,
+        label: x_label ?? undefined,
+        median,
+        confidence90: [lower_90 as number, upper_90 as number] satisfies [
+          number,
+          number,
+        ],
+        confidence95: [lower_95 as number, upper_95 as number] satisfies [
+          number,
+          number,
+        ],
+      }
+    }) ?? []
+
   return (
-    <div>
+    <div className={className}>
       <ErrorMessage error={errors} />
-      <div className={cn('flex flex-col gap-2', className)}>Here</div>
+
+      {isLoading && <Loader2Icon className="h-4 w-4 animate-spin" />}
+
+      <TimeSeries
+        data={timeSeriesData}
+        value={ufaTimeSpan}
+        onChange={setUfaTimeSpan}
+        className="mb-4"
+        zoom
+      />
+
+      <UfaCollocation />
     </div>
   )
 }

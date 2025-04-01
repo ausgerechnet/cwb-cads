@@ -1,6 +1,7 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+
 import { clamp } from '@cads/shared/lib/clamp'
 import { cn } from '@cads/shared/lib/utils'
-import { Fragment, useEffect, useRef, useState } from 'react'
 
 export function TimeSeries({
   className,
@@ -23,13 +24,30 @@ export function TimeSeries({
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [svgWidth, setSvgWidth] = useState(100)
+  const [hoveredLabel, setHoveredLabel] = useState<string | undefined>(value)
 
-  const minY = zoom ? Math.min(...data.map((d) => d.confidence95[0])) / 1.05 : 0
-  const maxY = zoom ? Math.max(...data.map((d) => d.confidence95[1])) * 1.05 : 1
+  const [minValue, maxValue] = useMemo(() => {
+    const allValues = data
+      .map((d) => [d.median, ...d.confidence90, ...d.confidence95, d.score])
+      .flat()
+      .filter((d): d is number => typeof d === 'number' && !isNaN(d))
+    return [Math.min(...allValues), Math.max(...allValues)]
+  }, [data])
+
+  const valueRange = maxValue - minValue
+  const minY = zoom ? minValue - 0.1 * valueRange : 0
+  const maxY = zoom ? maxValue + 0.1 * valueRange : 1
+  const viewportHeight = Math.abs(maxY - minY)
   const xStep = 100 / (data.length - 1)
   const scaleX = 100 / svgWidth
   const scaleY = (maxY - minY) * 0.65 // magic number :-/
   const maxWidth = svgWidth / data.length
+
+  let gridResolution = 0.2
+  if (viewportHeight < 0.5) gridResolution = 0.05
+  if (viewportHeight < 0.2) gridResolution = 0.01
+  const hoveredDataPoint = data.find((d) => d.label === hoveredLabel)
+  const textX = -35 * scaleX
 
   useEffect(() => {
     const svgElement = svgRef.current
@@ -47,18 +65,53 @@ export function TimeSeries({
   return (
     <div
       className={cn(
-        'bg-muted grid grid-cols-[0.5rem_1fr_0] grid-rows-[10rem] gap-2 overflow-hidden',
+        'border-1 border-border bg-muted grid grid-cols-[4rem_1fr_3rem] grid-rows-[10rem] gap-2 overflow-hidden rounded-lg border',
         className,
       )}
     >
       <aside aria-label="Y-axis labels" className="w-32"></aside>
+
       <div className="relative flex">
         <svg
-          viewBox={`0 ${(1 - maxY) * 100} 100 ${(maxY - minY) * 100}`}
+          viewBox={`0 ${(1 - maxY) * 100} 100 ${viewportHeight * 100}`}
           preserveAspectRatio="none"
-          className="absolute left-0 top-0 h-full w-full overflow-visible bg-white/10"
+          className="absolute left-0 top-0 h-full w-full overflow-visible"
           ref={svgRef}
         >
+          <g aria-label="Grid lines">
+            {Array.from({ length: 1 / gridResolution + 1 }).map((_, index) => {
+              const textY = index * 100 * gridResolution
+              let label = (1 - index * gridResolution).toFixed(2)
+              if (label.startsWith('0')) label = label.slice(1)
+              return (
+                <g key={index}>
+                  <text
+                    x={textX}
+                    y={textY}
+                    textAnchor="end"
+                    className="fill-muted-foreground font-mono text-xs"
+                    opacity={hoveredDataPoint ? 0.1 : 1}
+                    style={{
+                      transformOrigin: `${textX}px ${textY}px`,
+                      scale: `${scaleX} ${scaleY}`,
+                    }}
+                  >
+                    {label}
+                  </text>
+
+                  <line
+                    vectorEffect="non-scaling-stroke"
+                    x1={-20 * scaleX}
+                    x2={100}
+                    y1={index * (100 * gridResolution)}
+                    y2={index * (100 * gridResolution)}
+                    className="stroke-slate-500 stroke-[1px] opacity-20 dark:stroke-slate-400"
+                  />
+                </g>
+              )
+            })}
+          </g>
+
           <path
             className="fill-slate-200 stroke-none dark:fill-slate-800"
             d={getBandPath(data.map((d) => d.confidence95))}
@@ -79,57 +132,104 @@ export function TimeSeries({
                 ),
                 {
                   tension: 0.5,
-                  divisions: 150,
+                  divisions: Math.max(150, data.length * 2),
                   closed: false,
                 },
               ),
             )}
           />
 
-          <g aria-label="Grid lines">
-            {Array.from({ length: 4 }).map((_, index) => (
+          {hoveredDataPoint && (
+            <g>
+              <text
+                x={textX}
+                y={(1 - hoveredDataPoint.score!) * 100}
+                textAnchor="end"
+                className="fill-foreground bg-black font-mono text-xs"
+                style={{
+                  transformOrigin: `${textX}px ${(1 - hoveredDataPoint.score!) * 100}px`,
+                  scale: `${scaleX} ${scaleY}`,
+                }}
+              >
+                {hoveredDataPoint.score === undefined
+                  ? 'n.a.'
+                  : Math.round(hoveredDataPoint.score * 100) / 100}
+              </text>
+
               <line
                 vectorEffect="non-scaling-stroke"
-                key={index}
-                x1="0"
-                x2="100"
-                y1={index * 25}
-                y2={index * 25}
-                className="stroke-slate-300 stroke-[0.5px] opacity-50 dark:stroke-slate-700/50"
+                strokeDasharray="10 5"
+                x1={-20 * scaleX}
+                x2={100}
+                y1={(1 - hoveredDataPoint.score!) * 100}
+                y2={(1 - hoveredDataPoint.score!) * 100}
+                className="stroke-foreground stroke-1"
               />
-            ))}
-          </g>
+            </g>
+          )}
 
           <g aria-label="data points">
-            {data.map((dataPoint, index) => {
-              return (
-                <DataPoint
-                  x={xStep * index}
-                  scaleX={scaleX}
-                  scaleY={scaleY}
-                  key={index}
-                  value={value}
-                  labelSide={index > data.length / 2 ? 'left' : 'right'}
-                  onChange={onChange}
-                  maxWidth={maxWidth}
-                  {...dataPoint}
-                />
-              )
-            })}
+            {data.map((dataPoint, index) => (
+              <DataPoint
+                key={index}
+                x={xStep * index}
+                scaleX={scaleX}
+                scaleY={scaleY}
+                value={value}
+                maxWidth={maxWidth}
+                onChange={onChange}
+                onMouseOver={setHoveredLabel}
+                onMouseOut={(outLabel) =>
+                  setHoveredLabel((label) =>
+                    label === outLabel ? undefined : label,
+                  )
+                }
+                {...dataPoint}
+              />
+            ))}
           </g>
         </svg>
       </div>
 
-      <aside className="col-start-2" aria-label="X-axis labels"></aside>
+      <aside
+        className="bg-muted relative col-start-2"
+        aria-label="X-axis labels"
+      >
+        <svg className="fill-foreground relative h-8 w-full overflow-visible">
+          {data.map((dataPoint, index) => {
+            const label = dataPoint.label
+            const steps = Math.floor(data.length / 5)
+            const isHighlight = label === value || hoveredLabel === label
+            const isVisibleStep =
+              index === 0 || index % steps === 0 || index === data.length - 1
+            const isVisible =
+              isHighlight || (hoveredLabel === undefined && isVisibleStep)
+
+            return (
+              <text
+                key={label}
+                className={cn(
+                  !isVisible && 'fill-transparent transition-all',
+                  isHighlight && 'fill-primary',
+                  !isHighlight && hoveredLabel && 'opacity-50',
+                )}
+                textAnchor="middle"
+                x={`${index * xStep}%`}
+                y={10}
+                fontSize={12}
+              >
+                {label}
+              </text>
+            )
+          })}
+        </svg>
+      </aside>
     </div>
   )
 }
 
 function DataPoint({
   score,
-  labelSide = 'right',
-  confidence90,
-  confidence95,
   label,
   x,
   scaleX,
@@ -137,11 +237,10 @@ function DataPoint({
   value,
   maxWidth,
   onChange,
+  onMouseOver,
+  onMouseOut,
 }: {
   score?: number | undefined
-  labelSide: 'left' | 'right'
-  confidence90: [number, number]
-  confidence95: [number, number]
   label?: string | undefined
   x: number
   scaleX: number
@@ -149,10 +248,11 @@ function DataPoint({
   value?: string
   maxWidth: number
   onChange?: (value: string) => void
+  onMouseOver?: (value: string) => void
+  onMouseOut?: (value: string) => void
 }) {
   if (score === undefined) return null
   const isActive = label === value
-  const width = Math.min(maxWidth, 16)
   const touchWidth = Math.min(maxWidth, 32)
 
   return (
@@ -161,65 +261,38 @@ function DataPoint({
         x={x - touchWidth / 2}
         y={-100}
         width={touchWidth}
-        height={200}
-        className={cn('peer fill-transparent', isActive && 'fill-primary/20')}
+        height={300}
+        className="peer fill-transparent"
         style={{
           transformOrigin: `${x}px ${(1 - score) * 100}px`,
           scale: `${scaleX} 1`,
         }}
         onClick={() => label && onChange?.(label)}
+        onMouseOver={() => label && onMouseOver?.(label)}
+        onMouseOut={() => label && onMouseOut?.(label)}
       />
-
-      <line
-        vectorEffect="non-scaling-stroke"
-        x1={x}
-        y1={-100}
-        x2={x}
-        y2={200}
-        className="stroke-muted-foreground pointer-events-none stroke-[1px] opacity-0 peer-hover:opacity-100"
-      />
-
-      {[...confidence90, ...confidence95].map((rawY, confidenceIndex) => {
-        const y = (1 - rawY) * 100
-        return (
-          <Fragment key={confidenceIndex}>
-            <line
-              vectorEffect="non-scaling-stroke"
-              x1={x - width / 2}
-              x2={x + width / 2}
-              y1={y}
-              y2={y}
-              className="stroke-muted-foreground pointer-events-none stroke-1 opacity-0 peer-hover:opacity-100"
-              style={{
-                transformOrigin: `${x}px ${y}px`,
-                scale: `${scaleX} 1`,
-              }}
-            />
-
-            <text
-              style={{
-                transformOrigin: `${x}px ${y}px`,
-                scale: `${scaleX} ${scaleY}`,
-              }}
-              x={x + (labelSide === 'left' ? -(width / 2 + 5) : width / 2 + 5)}
-              y={y + 3}
-              className="fill-primary stroke pointer-events-none stroke-white stroke-[3px] text-xs font-semibold opacity-0 peer-hover:opacity-100 dark:fill-slate-800"
-              textAnchor={labelSide === 'right' ? 'start' : 'end'}
-              paintOrder="stroke fill"
-            >
-              {rawY.toFixed(2)}
-            </text>
-          </Fragment>
-        )
-      })}
 
       <circle
         cx={x}
         cy={(1 - score) * 100}
-        r={isActive ? 8 : 4}
-        strokeWidth={isActive ? 2 : 1}
+        r={isActive ? 12 : 5}
         className={cn(
-          'fill-primary pointer-events-none stroke-white peer-hover:fill-white',
+          'fill-primary opacity-0 transition-all',
+          isActive && 'opacity-30',
+        )}
+        style={{
+          transformOrigin: `${x}px ${(1 - score) * 100}px`,
+          scale: `${scaleX} ${scaleY}`,
+        }}
+      />
+
+      <circle
+        cx={x}
+        cy={(1 - score) * 100}
+        r={isActive ? 6 : 5}
+        strokeWidth={2}
+        className={cn(
+          'fill-primary peer-hover:stroke-primary pointer-events-none stroke-white peer-hover:fill-white',
           isActive && 'stroke-primary dark:stroke-primary fill-white',
         )}
         style={{
@@ -244,7 +317,7 @@ function getBandPath(band: [number, number][]) {
 
   const splineConfig = {
     tension: 0.5,
-    divisions: 50,
+    divisions: Math.max(50, band.length * 2),
     closed: false,
   } as const
 
