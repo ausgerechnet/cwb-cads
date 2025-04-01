@@ -3,7 +3,6 @@ import pytest
 from pprint import pprint
 
 
-# @pytest.mark.now
 def test_constellation_description_collection(client, auth):
 
     auth_header = auth.login()
@@ -71,7 +70,6 @@ def test_constellation_description_collection(client, auth):
         assert len(set(subcorpus_ids)) == 2
 
 
-# @pytest.mark.now
 def test_constellation_description_collection_put(client, auth):
 
     auth_header = auth.login()
@@ -157,7 +155,7 @@ def test_constellation_description_collection_put(client, auth):
         assert len(set(subcorpus_ids)) == 2
 
 
-#@pytest.mark.now
+@pytest.mark.now
 def test_constellation_description_collection_collocation(client, auth):
 
     auth_header = auth.login()
@@ -195,33 +193,19 @@ def test_constellation_description_collection_collocation(client, auth):
                                        'name': 'Modalverben',
                                        'comment': 'Testdiskursem mit vielen Treffern',
                                        'template': [
-                                           {'surface': 'können', 'p': 'lemma'},
-                                           {'surface': 'müssen', 'p': 'lemma'}
+                                           {'surface': 'von', 'p': 'lemma'}
                                        ],
                                    },
                                    content_type='application/json',
                                    headers=auth_header)
         assert discourseme1.status_code == 200
 
-        discourseme2 = client.post(url_for('mmda.discourseme.create_discourseme'),
-                                   json={
-                                       'name': 'Konjunktionen',
-                                       'comment': 'Testdiskursem mit vielen Treffern',
-                                       'template': [
-                                           {'surface': 'und', 'p': 'lemma'},
-                                           {'surface': 'oder', 'p': 'lemma'}
-                                       ],
-                                   },
-                                   content_type='application/json',
-                                   headers=auth_header)
-        assert discourseme2.status_code == 200
-
         # create constellation
         constellation = client.post(url_for('mmda.constellation.create_constellation'),
                                     json={
                                         'name': 'Testkonstellation',
                                         'comment': 'Testkonstellation mit vielen Treffern',
-                                        'discourseme_ids': [discourseme1.json['id'], discourseme2.json['id']]
+                                        'discourseme_ids': [discourseme1.json['id']]
                                     },
                                     headers=auth_header)
         assert constellation.status_code == 200
@@ -236,7 +220,8 @@ def test_constellation_description_collection_collocation(client, auth):
 
         collocation_collection = client.put(url_for('mmda.constellation.description.collection.get_or_create_collocation',
                                                     constellation_id=constellation.json['id'],
-                                                    collection_id=collection.json['id']),
+                                                    collection_id=collection.json['id'],
+                                                    sort_by='O11'),
                                             json={
                                                 'focus_discourseme_id': discourseme1.json['id'],
                                                 'p': 'lemma'
@@ -247,7 +232,6 @@ def test_constellation_description_collection_collocation(client, auth):
         pprint(collocation_collection.json)
 
 
-@pytest.mark.now
 def test_constellation_description_collection_collocation_empty(client, auth):
 
     auth_header = auth.login()

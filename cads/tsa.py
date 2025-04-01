@@ -8,6 +8,7 @@ from pandas import DataFrame
 from scipy.stats import norm
 from statsmodels.gam.api import BSplines, GLMGam
 from statsmodels.nonparametric.smoothers_lowess import lowess
+from statsmodels.tools.sm_exceptions import PerfectSeparationError
 
 
 def calculate_time_diff(time_strings, unit='minutes'):
@@ -70,14 +71,22 @@ def gam_smoothing(d, df=5, degree=3):
 
     bs = BSplines(d[['x']], df=[df], degree=[degree])
     gam_bs = GLMGam.from_formula('score ~ x', data=d, smoother=bs)
-    res_bs = gam_bs.fit()
-    se_pred = res_bs.get_prediction().se
+    try:
+        res_bs = gam_bs.fit()
+    except PerfectSeparationError:
+        d['smooth'] = None
+        d['ci_025'] = None
+        d['ci_050'] = None
+        d['ci_950'] = None
+        d['ci_975'] = None
 
-    d['smooth'] = res_bs.predict()
-    d['smooth'] = d['smooth'].clip(0, 1)
-    d['ci_025'] = (d['smooth'] - norm.ppf(.975) * se_pred).clip(0, 1)
-    d['ci_050'] = (d['smooth'] - norm.ppf(.95) * se_pred).clip(0, 1)
-    d['ci_950'] = (d['smooth'] + norm.ppf(.95) * se_pred).clip(0, 1)
-    d['ci_975'] = (d['smooth'] + norm.ppf(.975) * se_pred).clip(0, 1)
+    else:
+        se_pred = res_bs.get_prediction().se
+        d['smooth'] = res_bs.predict()
+        d['smooth'] = d['smooth'].clip(0, 1)
+        d['ci_025'] = (d['smooth'] - norm.ppf(.975) * se_pred).clip(0, 1)
+        d['ci_050'] = (d['smooth'] - norm.ppf(.95) * se_pred).clip(0, 1)
+        d['ci_950'] = (d['smooth'] + norm.ppf(.95) * se_pred).clip(0, 1)
+        d['ci_975'] = (d['smooth'] + norm.ppf(.975) * se_pred).clip(0, 1)
 
     return d

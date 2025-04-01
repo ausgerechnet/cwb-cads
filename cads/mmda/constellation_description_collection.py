@@ -282,11 +282,16 @@ def delete_constellation_description_collection(constellation_id, collection_id)
 ###################
 @bp.put('/<collection_id>/collocation')
 @bp.input(ConstellationCollocationIn)
+@bp.input({'sort_by': String(), 'max_depth': Integer()}, location='query')
 @bp.output(ConstellationDescriptionCollectionCollocationOut)
 @bp.auth_required(auth)
-def get_or_create_collocation(constellation_id, collection_id, json_data):
+def get_or_create_collocation(constellation_id, collection_id, json_data, query_data):
 
     collection = db.get_or_404(ConstellationDescriptionCollection, collection_id)
+
+    # RBO options
+    sort_by = query_data.get('sort_by', 'conservative_log_ratio')
+    max_depth = query_data.get('max_depth', 50)
 
     # context options
     window = json_data.get('window')
@@ -337,13 +342,17 @@ def get_or_create_collocation(constellation_id, collection_id, json_data):
         description_right = collection.constellation_descriptions[i]
         xs.append(description_right.subcorpus.name)
         if not left or not right:
-            scores.append(None)
+            scores.append(0)    # no overlap between empty sets (None will not work with smoothing)
         else:
-            scores.append(calculate_rbo(description_left, left, description_right, right, sort_by='conservative_log_ratio', number=50))
+            scores.append(calculate_rbo(description_left, left, description_right, right, sort_by=sort_by, number=max_depth))
 
-    seconds = [datetime.fromisoformat(time_str + "-01").timestamp() for time_str in xs]
+    if collection.subcorpus_collection.time_interval in ['month', 'year']:
+        seconds = [datetime.fromisoformat(time_str + "-01").timestamp() for time_str in xs]
+    else:
+        seconds = [datetime.fromisoformat(time_str).timestamp() for time_str in xs]
     predictions = gam_smoothing(DataFrame({'x': seconds, 'score': scores}))
 
+    # create output format
     ufa = list()
     for i, score, x, row in zip(range(1, len(collocations)), scores, xs, predictions.iterrows()):
         collocation_left = collocations[i-1]

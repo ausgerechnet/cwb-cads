@@ -5,7 +5,7 @@ from datetime import datetime
 
 from .. import db
 from ..breakdown import ccc_breakdown
-from ..database import Breakdown, Corpus, Query, SubCorpus, get_or_create
+from ..database import Breakdown, Corpus, Query, SubCorpus, SubCorpusCollection, get_or_create
 
 constellation_discourseme = db.Table(
     'constellation_discourseme',
@@ -217,6 +217,10 @@ class ConstellationDescriptionCollection(db.Model):
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
     constellation_descriptions = db.relationship('ConstellationDescription', backref='collection', passive_deletes=True, cascade='all, delete')
+
+    @property
+    def subcorpus_collection(self):
+        return db.get_or_404(SubCorpusCollection, self.subcorpus_collection_id)
 
 
 ###############

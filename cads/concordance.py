@@ -330,7 +330,6 @@ def ccc_concordance(focus_query,
                     'end': match.matchend
                 })
 
-    current_app.logger.debug("ccc_concordance :: highlighting")
     for line in lines:
         line['match_id'] = line.pop('id')
         line['discourseme_ranges'] = highlight_ranges.get(line['contextid'], [])
