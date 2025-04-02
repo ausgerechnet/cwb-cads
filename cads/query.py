@@ -4,12 +4,13 @@
 from random import randint
 
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Boolean, Float, Integer, List, String
+from apiflask.fields import (Boolean, Float, Integer, List, Nested, String,
+                             Tuple)
 from apiflask.validators import OneOf
 from ccc.collocates import dump2cooc
 from ccc.utils import format_cqp_query
 from flask import current_app
-from pandas import DataFrame, read_sql, to_numeric
+from pandas import DataFrame, read_sql
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import exists
 
@@ -92,54 +93,10 @@ def ccc_query(query, return_df=True):
     return matches_df
 
 
-def get_or_create_query_item(corpus, item, p, s, escape=True, match_strategy='longest', focus_query=None):
-    """get or create query for item in corpus
+def get_flags(ignore_case, ignore_diacritics):
+    """translate boolean flags into one string (%cd)
 
     """
-
-    # TODO run only on subcorpus?
-    current_app.logger.debug(f'get_or_create_query :: item "{item}" in corpus "{corpus.cwb_id}"')
-
-    if focus_query:
-        # TODO speed up for subcorpus queries on context of focus query
-        # NB context of focus is not saved as subcorpus
-        pass
-
-    # try to retrieve
-    cqp_query = format_cqp_query([item], p_query=p, s_query=s, escape=escape)
-    query = Query.query.filter_by(
-        corpus_id=corpus.id,
-        cqp_query=cqp_query,
-        s=s,
-        match_strategy=match_strategy
-    ).first()
-
-    # create query
-    if not query:
-        current_app.logger.debug('get_or_create_query :: querying')
-        query = Query(
-            corpus_id=corpus.id,
-            cqp_query=cqp_query,
-            s=s,
-            match_strategy=match_strategy
-        )
-        db.session.add(query)
-        db.session.commit()
-        ccc_query(query, return_df=False)
-
-    return query
-
-
-def get_or_create_assisted(json_data, execute=True):
-
-    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
-    json_data['s'] = json_data.get('s', corpus.s_default)
-
-    items = json_data.pop('items')
-    p = json_data.pop('p')
-    escape = json_data.pop('escape', json_data.get('escape'))
-    ignore_diacritics = json_data.pop('ignore_diacritics', json_data.get('ignore_diacritics'))
-    ignore_case = json_data.pop('ignore_case', json_data.get('ignore_case'))
     flags = ''
     if ignore_case or ignore_diacritics:
         flags = '%'
@@ -147,43 +104,122 @@ def get_or_create_assisted(json_data, execute=True):
             flags += 'c'
         if ignore_diacritics:
             flags += 'd'
+    return flags
 
-    json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
 
-    subcorpus_id = json_data.get('subcorpus_id')
+def get_or_create_query_assisted(corpus_id, subcorpus_id, items, p, s,
+                                 escape, ignore_case, ignore_diacritics,
+                                 focus_query=None, execute=True):
+    """
+
+    """
+    corpus = db.get_or_404(Corpus, corpus_id)
+    s = corpus.s_default if s is None else s
+
+    flags = get_flags(ignore_case, ignore_diacritics)
+    cqp_query = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
+
+    current_app.logger.debug(f'get_or_create_query_assisted :: items "{items}" in corpus "{corpus.cwb_id}"')
+
+    if focus_query:
+        # TODO speed up for subcorpus queries on context of focus query
+        # NB context of focus is not saved as subcorpus
+        pass
+
+    # TODO check reasonable filtering
     if subcorpus_id is None:
         query = Query.query.filter_by(
-            corpus_id=json_data.get('corpus_id'),
-            cqp_query=json_data.get('cqp_query'),
+            corpus_id=corpus_id,
+            cqp_query=cqp_query,
             # match_strategy=json_data.get('match_strategy'),
-            # filter_sequence=None,
-            s=json_data.get('s')
+            # filter_sequence=None,  → filter properly
+            s=s
         ).first()
     else:
         query = Query.query.filter_by(
-            corpus_id=json_data.get('corpus_id'),
+            corpus_id=corpus_id,
             subcorpus_id=subcorpus_id,
-            cqp_query=json_data.get('cqp_query'),
+            cqp_query=cqp_query,
             # match_strategy=json_data.get('match_strategy'),
-            # filter_sequence=None,
-            s=json_data.get('s')
+            # filter_sequence=None,  → filter properly
+            s=s
         ).first()
 
     if query is None:
 
-        query = Query(**json_data)
+        query = Query(
+            corpus_id=corpus_id,
+            subcorpus_id=subcorpus_id,
+            cqp_query=cqp_query,
+            s=s
+        )
         db.session.add(query)
         db.session.commit()
 
         if execute:
+            current_app.logger.debug('get_or_create_query_assisted :: querying')
             ret = ccc_query(query)
             if isinstance(ret, str):  # CQP error
                 return ret
 
+    current_app.logger.debug('get_or_create_query_assisted :: exit')
+
     return query
 
 
-def get_or_create_cotext(query, window, context_break, return_df=False):
+def iterative_query(focus_query, filter_queries, window, overlap='partial'):
+    """Create a new query (and corresponding matches) based on filtered matches of focus query.
+    Retrieve if already exists.
+
+    TODO include in ccc_query
+    """
+
+    filter_sequence = "S" + str(focus_query.s) + "W" + str(window) + "O" + overlap + \
+        "Q-" + "-".join([str(focus_query.id)] + [str(fq.id) for fq in filter_queries.values()])
+
+    # get or create query
+    query = Query.query.filter_by(
+        corpus_id=focus_query.corpus.id,
+        subcorpus_id=focus_query.subcorpus_id,
+        filter_sequence=filter_sequence,
+        match_strategy=focus_query.match_strategy,
+        s=focus_query.s,
+        cqp_query=focus_query.cqp_query
+    ).first()
+
+    if not query:
+        query = Query(
+            corpus_id=focus_query.corpus.id,
+            subcorpus_id=focus_query.subcorpus_id,
+            filter_sequence=filter_sequence,
+            match_strategy=focus_query.match_strategy,
+            s=focus_query.s,
+            cqp_query=focus_query.cqp_query
+        )
+        db.session.add(query)
+        db.session.commit()
+
+    # get or create matches
+    matches = Matches.query.filter_by(
+        query_id=query.id
+    ).first()
+
+    if not matches:
+        # create matches
+        matches = filter_matches(focus_query, filter_queries, window, overlap)
+        if matches is None:
+            return
+        df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
+        df_matches['query_id'] = query.id
+        df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
+
+    return query
+
+
+def get_or_create_cotext(query, window, context_break):
+    """get or create cotext of query specified by window and context_break
+
+    """
 
     cotext = Cotext.query.filter(
         Cotext.query_id == query.id,
@@ -225,21 +261,8 @@ def get_or_create_cotext(query, window, context_break, return_df=False):
         db.session.commit()
         current_app.logger.debug("get_or_create_cotext :: .. saved to database")
 
-        # if return_df:
-        #     df_cooc = df_cooc.loc[abs(df_cooc['offset']) <= window]
-        #     df_cooc = df_cooc[['cotext_id', 'match_pos', 'cpos', 'offset']]
-        #     return df_cooc
-
     else:
         current_app.logger.debug("get_or_create_cotext :: cotext already exists")
-        # if return_df:
-        #     current_app.logger.debug("get_or_create_cotext :: getting cooc-table from database")
-        #     sql_query = CotextLines.query.filter(CotextLines.cotext_id == cotext.id,
-        #                                          CotextLines.offset <= window,
-        #                                          CotextLines.offset >= -window)
-        #     df_cooc = read_sql(sql_query.statement, con=db.engine, index_col='id').reset_index(drop=True)
-        #     current_app.logger.debug(f"get_or_create_cotext :: got {len(df_cooc)} lines from database")
-        #     return df_cooc
 
     return cotext
 
@@ -319,54 +342,6 @@ def filter_matches(focus_query, filter_queries, window, overlap):
     return matches
 
 
-def iterative_query(focus_query, filter_queries, window, overlap='partial'):
-    """Create a new query (and corresponding matches) based on filtered matches of focus query. Retrieve if already exists.
-
-    TODO include in ccc_query
-    """
-
-    filter_sequence = "S" + str(focus_query.s) + "W" + str(window) + "O" + overlap + \
-        "Q-" + "-".join([str(focus_query.id)] + [str(fq.id) for fq in filter_queries.values()])
-
-    # get or create query
-    query = Query.query.filter_by(
-        corpus_id=focus_query.corpus.id,
-        subcorpus_id=focus_query.subcorpus_id,
-        filter_sequence=filter_sequence,
-        match_strategy=focus_query.match_strategy,
-        s=focus_query.s,
-        cqp_query=focus_query.cqp_query
-    ).first()
-
-    if not query:
-        query = Query(
-            corpus_id=focus_query.corpus.id,
-            subcorpus_id=focus_query.subcorpus_id,
-            filter_sequence=filter_sequence,
-            match_strategy=focus_query.match_strategy,
-            s=focus_query.s,
-            cqp_query=focus_query.cqp_query
-        )
-        db.session.add(query)
-        db.session.commit()
-
-    # get or create matches
-    matches = Matches.query.filter_by(
-        query_id=query.id
-    ).first()
-
-    if not matches:
-        # create matches
-        matches = filter_matches(focus_query, filter_queries, window, overlap)
-        if matches is None:
-            return
-        df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
-        df_matches['query_id'] = query.id
-        df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
-
-    return query
-
-
 def get_concordance_lines(query_id, query_data):
 
     query = db.get_or_404(Query, query_id)
@@ -401,7 +376,11 @@ def get_concordance_lines(query_id, query_data):
     # prepare filter queries
     filter_queries = {query_id: db.get_or_404(Query, query_id) for query_id in filter_query_ids}
     if filter_item:
-        fq = get_or_create_query_item(corpus, filter_item, filter_item_p_att, query.s)
+        fq = get_or_create_query_assisted(
+            corpus.id, query.subcorpus_id, [filter_item],
+            filter_item_p_att, query.s,
+            True, False, False
+        )
         filter_queries['_FILTER'] = fq
 
     # prepare highlight queries
@@ -423,6 +402,68 @@ def get_concordance_lines(query_id, query_data):
                                   sort_by_offset=sort_by_offset, sort_by_p_att=sort_by_p_att, sort_by_s_att=sort_by_s_att)
 
     return concordance
+
+
+def paginate_dataframe(df, sort_by, sort_order, page_number, page_size):
+    """paginate a pandas DataFrame.
+
+    """
+    # Sort DataFrame
+    ascending = sort_order == "ascending"
+    df_sorted = df.sort_values(by=sort_by, ascending=ascending)
+
+    # Get total records and pages
+    total_records = len(df_sorted)
+    total_pages = (total_records + page_size - 1) // page_size  # Equivalent to ceil(total_records / page_size)
+
+    # Slice DataFrame for pagination
+    start_idx = (page_number - 1) * page_size
+    end_idx = start_idx + page_size
+    df_paginated = df_sorted.iloc[start_idx:end_idx]
+
+    # Pagination metadata
+    metadata = {
+        "total": total_records,
+        "pages": total_pages,
+        "page_number": page_number,
+        "page_size": page_size,
+    }
+
+    return df_paginated, metadata
+
+
+def get_query_meta_freq_breakdown(query, level, key, p, nr_bins, time_interval):
+
+    # TODO support for numeric / datetime
+
+    from .corpus import get_meta_freq
+
+    att = query.corpus.get_s_att(level, key)
+    if att is None:
+        abort(404, 'annotation layer not found')
+
+    # bin frequencies
+    records = get_meta_freq(att, nr_bins, time_interval, query.subcorpus_id, force_categorical=True).group_by('bin_index')
+    df = DataFrame(records)
+    df['bin_index'] = df['bin_index'].astype(str)
+    df = df.set_index('bin_index')
+
+    # match frequencies
+    matches_df = ccc_query(query, return_df=True)
+    crps = query.corpus.ccc().subcorpus(df_dump=matches_df, overwrite=False)
+    df_matches = crps.concordance(p_show=[p], s_show=[f'{level}_{key}'], cut_off=None)[[p, f'{level}_{key}']].value_counts().reset_index()
+    df_matches.columns = ['item', 'bin_index', 'nr_matches']
+    df_matches = df_matches.set_index('bin_index')
+
+    # TODO: combine to bins
+
+    # combined
+    df_freq = df.join(df_matches)
+    df_freq['nr_matches'] = df_freq['nr_matches'].fillna(0)
+    df_freq = df_freq.sort_values(by='nr_matches', ascending=False)
+    df_freq['nr_ipm'] = round(df_freq['nr_matches'] / df_freq['nr_tokens'] * 10 ** 6, 6)
+
+    return df_freq
 
 
 ################
@@ -459,11 +500,27 @@ class QueryAssistedIn(Schema):
     s = String(required=False)
 
 
-class QueryMetaIn(Schema):
+class QueryMetaFrequenciesIn(Schema):
+
+    subcorpus_id = Integer(required=False, allow_none=True, load_default=None)
 
     level = String(required=True)
     key = String(required=True)
-    p = String(required=False, load_default='word')
+    p = String(required=False, load_default='lemma')
+
+    sort_by = String(required=False, load_default='nr_ipm', validate=OneOf(['bin', 'nr_ipm', 'nr_matches', 'nr_tokens', 'nr_spans']))
+    sort_order = String(required=False, load_default='descending', validate=OneOf(['ascending', 'descending']))
+    page_size = Integer(required=False, load_default=10)
+    page_number = Integer(required=False, load_default=1)
+
+    nr_bins = Integer(
+        required=False, load_default=30,
+        metadata={'description': "how may (equidistant) bins to create. only used for numeric values."}
+    )
+    time_interval = String(
+        required=False, load_default='day', validate=OneOf(['hour', 'day', 'week', 'month', 'year']),
+        metadata={'description': "which bins to create for datetime values. only used for datetime values."}
+    )
 
 
 # OUTPUT
@@ -480,14 +537,32 @@ class QueryOut(Schema):
     number_matches = Integer(required=True)
 
 
-class QueryMetaOut(Schema):
+class QueryMetaFrequencyOut(Schema):
 
-    item = String(required=True)
-    value = String(required=True)
-    frequency = Integer(required=True)
+    bin_unicode = String(required=False, allow_none=True)
+    bin_boolean = Boolean(required=False, allow_none=True)
+    bin_numeric = Tuple((Float, Float), required=False, allow_none=True)
+    bin_datetime = String(required=False, allow_none=True)
+
+    nr_spans = Integer(required=True)
     nr_tokens = Integer(required=True)
-    nr_texts = Integer(required=True)
-    ipm = Float(required=True)
+
+    item = String(metadata={'description': 'item'})
+    nr_matches = Integer(metadata={'description': 'number of matches of query in bin'})
+    nr_ipm = Float(metadata={'description': 'instances of query matches per million tokens in bin'})
+
+
+class QueryMetaFrequenciesOut(Schema):
+
+    sort_by = String(required=True)
+    sort_order = String(required=True)
+    nr_items = Integer(required=True)
+    page_size = Integer(required=True)
+    page_number = Integer(required=True)
+    page_count = Integer(required=True)
+    value_type = String(required=True, validate=OneOf(['datetime', 'numeric', 'boolean', 'unicode']))
+
+    frequencies = Nested(QueryMetaFrequencyOut(many=True), required=True, dump_default=[])
 
 
 #################
@@ -568,7 +643,21 @@ def create_or_get_query(json_data, query_data):
 
     """
 
-    query = get_or_create_assisted(json_data, query_data)
+    corpus_id = json_data.get('corpus_id')
+    subcorpus_id = json_data.get('subcorpus_id')
+
+    s = json_data.get('s')
+    items = json_data.get('items')
+    p = json_data.get('p')
+    escape = json_data.get('escape', json_data.get('escape'))
+    ignore_diacritics = json_data.get('ignore_diacritics', json_data.get('ignore_diacritics'))
+    ignore_case = json_data.get('ignore_case', json_data.get('ignore_case'))
+
+    query = get_or_create_query_assisted(
+        corpus_id, subcorpus_id, items, p, s,
+        escape, ignore_case, ignore_diacritics, focus_query=None,
+        execute=query_data['execute']
+    )
 
     if isinstance(query, str):
         return abort(406, query)
@@ -754,48 +843,54 @@ def get_breakdown(query_id, query_data):
 # QUERY/META #
 ##############
 @bp.get("/<query_id>/meta")
-@bp.input(QueryMetaIn, location='query')
-@bp.output(QueryMetaOut(many=True))
+@bp.input(QueryMetaFrequenciesIn, location='query')
+@bp.output(QueryMetaFrequenciesOut)
 @bp.auth_required(auth)
 def get_meta(query_id, query_data):
-    """Get meta distribution of query.
+    """Get meta distribution of query. NB: only works with categorical data, other types will be forced to categorical.
 
-    TODO: implement correctly, this does not allow pagination etc.
     """
 
-    # TODO use get_meta_freq
-    from .corpus import get_meta_frequencies, get_meta_number_tokens
+    from .corpus import rename_meta_freq
 
     query = db.get_or_404(Query, query_id)
     level = query_data.get('level')
     key = query_data.get('key')
-    p = query_data.get('p', 'word')
+    p = query_data.get('p')
 
-    matches_df = ccc_query(query, return_df=True)
-    crps = query.corpus.ccc().subcorpus(df_dump=matches_df, overwrite=False)
-    df_meta = crps.concordance(p_show=[p], s_show=[f'{level}_{key}'], cut_off=None)[[p, f'{level}_{key}']].value_counts().reset_index()
-    df_meta.columns = ['item', 'value', 'frequency']
+    page_number = query_data.get('page_number', 1)
+    page_size = query_data.get('page_size', 20)
+    sort_order = query_data.get('sort_order', 'descending')
+    sort_by = query_data.get('sort_by', 'nr_matches')
+    sort_by = 'bin_index' if sort_by == 'bin' else sort_by
 
-    df_texts = DataFrame.from_records(get_meta_frequencies(query.corpus, level, key).all())
-    df_texts.columns = ['value', 'nr_texts']
+    att = query.corpus.get_s_att(level, key)
+    if att is None:
+        abort(404, 'annotation layer not found')
 
-    df_tokens = DataFrame.from_records(get_meta_number_tokens(query.corpus, level, key))
-    df_tokens.columns = ['value', 'nr_tokens']
+    # TODO this only works if s-attribute encoded in CWB matches the ones encoded in database
+    nr_bins = query_data.get('nr_bins', 5)
+    time_interval = query_data.get('time_interval', 'day')
 
-    df_meta = df_meta.set_index('value').\
-        join(df_texts.set_index('value'), how='outer').\
-        join(df_tokens.set_index('value'), how='outer')
+    if query.zero_matches:
+        abort(406, 'query has zero matches')
 
-    df_meta['nr_texts'] = to_numeric(df_meta['nr_texts'].fillna(0), downcast='integer')
-    df_meta['nr_tokens'] = to_numeric(df_meta['nr_tokens'].fillna(0), downcast='integer')
+    df_freq = get_query_meta_freq_breakdown(query, level, key, p, nr_bins, time_interval)
+    df_freq, metadata = paginate_dataframe(df_freq, sort_by, sort_order, page_number, page_size)
+    freq = rename_meta_freq(df_freq.reset_index(), att.value_type, time_interval)
 
-    df_meta = df_meta.sort_values(by='frequency', ascending=False)
+    # TODO w/o p
 
-    df_meta['ipm'] = round(df_meta['frequency'] / df_meta['nr_tokens'] * 10 ** 6, 6)
-
-    meta = df_meta.reset_index().to_dict(orient='records')
-
-    return [QueryMetaOut().dump(m) for m in meta], 200
+    return QueryMetaFrequenciesOut().dump({
+        'sort_by': sort_by,
+        'sort_order': sort_order,
+        'nr_items': metadata['total'],
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': metadata['pages'],
+        'value_type': att.value_type,
+        'frequencies': [QueryMetaFrequencyOut().dump(f) for f in freq]
+    }), 200
 
 
 #####################
@@ -827,7 +922,10 @@ def get_or_create_collocation(query_id, json_data):
     filter_overlap = json_data.pop('filter_overlap', 'partial')
     filter_queries = dict()
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_item(query.corpus, filter_item, filter_item_p_att, query.s)
+        filter_queries['_FILTER'] = get_or_create_query_assisted(
+            query.corpus_id, None, [filter_item], filter_item_p_att, query.s,
+            True, False, False
+        )
     if len(filter_queries) > 0:
         query = iterative_query(query, filter_queries, window, filter_overlap)
         if query is None:

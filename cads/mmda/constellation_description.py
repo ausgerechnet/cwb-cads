@@ -7,14 +7,14 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, List, Nested, String
 from apiflask.validators import OneOf
 from association_measures import measures
-from flask import current_app, abort
+from flask import abort, current_app
 from pandas import DataFrame
 
 from .. import db
 from ..concordance import (ConcordanceIn, ConcordanceLineIn,
                            ConcordanceLineOut, ConcordanceOut, ccc_concordance)
 from ..database import Corpus
-from ..query import ccc_query, get_or_create_query_item
+from ..query import ccc_query, get_or_create_query_assisted
 from ..users import auth
 from .database import (Constellation, ConstellationDescription, Discourseme,
                        DiscoursemeDescription, DiscoursemeTemplateItems)
@@ -61,11 +61,13 @@ def expand_scores_dataframe(df):
 
 
 def pairwise_intersections(dict_of_sets):
-    """calculates the length of pairwise intersections between the sets in the provided dict
+    """Calculate the length of pairwise intersections between the sets in the provided dictionary."""
 
-    """
-    nt = lambda a, b: len(dict_of_sets[a].intersection(dict_of_sets[b]))
-    res = dict([(t, nt(*t)) for t in combinations(dict_of_sets.keys(), 2)])
+    res = {}
+    for a, b in combinations(dict_of_sets.keys(), 2):
+        intersection_size = len(dict_of_sets[a].intersection(dict_of_sets[b]))
+        res[(a, b)] = intersection_size
+
     return res
 
 
@@ -148,7 +150,7 @@ class ConstellationMetaOut(Schema):
 @bp.output(ConstellationDescriptionOut)
 @bp.auth_required(auth)
 def create_description(constellation_id, json_data):
-    """Create description of constellation in corpus. Makes sure individual discourseme descriptions exist.
+    """Create description of constellation. Makes sure individual discourseme descriptions exist.
 
     """
 
@@ -157,7 +159,6 @@ def create_description(constellation_id, json_data):
     corpus_id = json_data.get('corpus_id')
     corpus = db.get_or_404(Corpus, corpus_id)
     subcorpus_id = json_data.get('subcorpus_id')
-    # subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
     semantic_map_id = json_data.get('semantic_map_id')
 
     s_query = json_data.get('s', corpus.s_default)
@@ -175,12 +176,14 @@ def create_description(constellation_id, json_data):
     )
 
     for discourseme in constellation.discoursemes:
-        desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
-                                                      corpus_id=corpus_id,
-                                                      subcorpus_id=subcorpus_id,
-                                                      filter_sequence=None,
-                                                      s=s_query,
-                                                      match_strategy=match_strategy).first()
+        desc = DiscoursemeDescription.query.filter_by(
+            discourseme_id=discourseme.id,
+            corpus_id=corpus_id,
+            subcorpus_id=subcorpus_id,
+            filter_sequence=None,
+            s=s_query,
+            match_strategy=match_strategy
+        ).first()
         if not desc:
             desc = discourseme_template_to_description(
                 discourseme,
@@ -202,11 +205,10 @@ def create_description(constellation_id, json_data):
 @bp.output(ConstellationDescriptionOut(many=True))
 @bp.auth_required(auth)
 def get_all_descriptions(constellation_id):
-    """Get all descriptions of this constellation.
+    """Get all descriptions of constellation.
 
     """
 
-    # constellation = db.get_or_404(Constellation, constellation_id)
     descriptions = ConstellationDescription.query.filter_by(constellation_id=constellation_id).all()
 
     return [ConstellationDescriptionOut().dump(description) for description in descriptions]
@@ -220,7 +222,6 @@ def get_description(constellation_id, description_id):
 
     """
 
-    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
 
     return ConstellationDescriptionOut().dump(description)
@@ -233,7 +234,6 @@ def delete_description(constellation_id, description_id):
 
     """
 
-    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
     db.session.delete(description)
     db.session.commit()
@@ -246,11 +246,10 @@ def delete_description(constellation_id, description_id):
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_description_add(constellation_id, description_id, json_data):
-    """Patch constellation description: add discourseme description.
+    """Patch constellation description: add discourseme description(s).
 
     """
 
-    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
     discourseme_description_ids = json_data.get("discourseme_description_ids")
     discourseme_descriptions = [db.get_or_404(DiscoursemeDescription, desc_id) for desc_id in discourseme_description_ids]
@@ -266,11 +265,10 @@ def patch_description_add(constellation_id, description_id, json_data):
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_description_remove(constellation_id, description_id, json_data):
-    """Patch constellation description: remove discourseme description.
+    """Patch constellation description: remove discourseme description(s).
 
     """
 
-    # discourseme = db.get_or_404(Discourseme, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
     discourseme_description_ids = json_data.get("discourseme_description_ids")
     discourseme_descriptions = [db.get_or_404(DiscoursemeDescription, desc_id) for desc_id in discourseme_description_ids]
@@ -286,8 +284,7 @@ def patch_description_remove(constellation_id, description_id, json_data):
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_discourseme_add(constellation_id, description_id, json_data):
-    """convenience function for (1) adding discoursemes, (2) creating respective descriptions if necessary, and
-    (3) adding them to the constellation description
+    """convenience function for adding discourseme(s) and creating and linking corresponding descriptions.
 
     """
 
@@ -331,7 +328,7 @@ def patch_discourseme_add(constellation_id, description_id, json_data):
 def post_items_into_constellation(constellation_id, description_id, json_data):
     """convenience function for creating a new discourseme incl. description during an analysis (e.g. drag & drop on semantic map)
 
-    (1) create a discourseme with provided template items
+    (1) create a discourseme with provided items
     (2) create a suitable description in the constellation description corpus
     (3) link discourseme to constellation
     (4) link discourseme description and constellation description
@@ -381,11 +378,6 @@ def post_items_into_constellation(constellation_id, description_id, json_data):
 def put_items_into_constellation(constellation_id, description_id, json_data):
     """same as corresponding POST but will only create if discourseme with the same name does not exist
 
-    # does discourseme already exist
-    # is discourseme already linked to constellation
-    # does discourseme description already exist
-    # is item already in discourseme description
-    # is discourseme description already linked to constellation description
     """
 
     constellation = db.get_or_404(Constellation, constellation_id)
@@ -451,8 +443,9 @@ def put_items_into_constellation(constellation_id, description_id, json_data):
 @bp.output(ConcordanceOut)
 @bp.auth_required(auth)
 def concordance_lines(constellation_id, description_id, query_data, query_focus, query_filter):
-    """Get concordance lines of constellation in corpus.
+    """Get concordance lines of constellation description.
 
+    TODO re-write using ..query.get_concordance_lines
     """
 
     focus_discourseme_id = query_focus.get('focus_discourseme_id')
@@ -493,7 +486,11 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
     else:
         if not filter_item:
             abort(400, 'Bad Request: no focus discourseme and no filter item provided')
-        focus_query = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+        focus_query = get_or_create_query_assisted(
+            description.corpus_id, description.subcorpus_id, [filter_item],
+            filter_item_p_att, description.s,
+            True, False, False
+        )
     try:
         filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     except KeyError:
@@ -510,8 +507,11 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
         if focus_discourseme_id and filter_item:
             # TODO: speed up - this can take up to 10 minutes for highly frequent items
             # only search for filter in context of focus
-            filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s,
-                                                                 focus_query=focus_query)
+            filter_queries['_FILTER'] = get_or_create_query_assisted(
+                description.corpus_id, description.subcorpus_id, [filter_item],
+                filter_item_p_att, description.s,
+                True, False, False, None, True
+            )
             highlight_queries['_FILTER'] = filter_queries['_FILTER']
 
         # attributes to show
@@ -542,8 +542,10 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
 @bp.output(ConcordanceLineOut)
 @bp.auth_required(auth)
 def concordance_line(constellation_id, description_id, match_id, query_data, query_focus):
+    """Get (additional context of) one concordance line.
 
-    # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
+    """
+
     description = db.get_or_404(ConstellationDescription, description_id)
 
     # display options
