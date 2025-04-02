@@ -10,6 +10,7 @@ from numpy import log
 from pandas import DataFrame
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import db
 
@@ -394,10 +395,9 @@ class Matches(db.Model):
     """
 
     id = db.Column(db.Integer, primary_key=True)
-
-    contextid = db.Column(db.Integer, index=True)  # should be segmentation_span_id
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
+    contextid = db.Column(db.Integer, index=True)  # should be segmentation_span_id
     match = db.Column(db.Integer, nullable=False, index=True)
     matchend = db.Column(db.Integer, nullable=False, index=True)
 

@@ -60,7 +60,7 @@ def sort_matches(query, sort_by_offset, sort_by_p_att, sort_by_s_att=None):
 
     """
 
-    current_app.logger.debug("sort_matches :: query {query.id}, sorting by {sort_by_p_att} at offset {sort_by_offset}")
+    current_app.logger.debug(f"sort_matches :: query {query.id}, sorting by {sort_by_p_att} at offset {sort_by_offset}")
 
     if sort_by_s_att:
         raise NotImplementedError()

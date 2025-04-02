@@ -27,7 +27,7 @@ def get_filtered_cotext(focus_query, window, s_break, remove_focus_cpos=True):
 
     # get cotext as DataFrame
     from .query import get_or_create_cotext
-    cotext = get_or_create_cotext(focus_query, window, s_break, return_df=True)
+    cotext = get_or_create_cotext(focus_query, window, s_break)
     if cotext is None:
         current_app.logger.error('get_filtered_cotext :: empty cotext')
         return None
