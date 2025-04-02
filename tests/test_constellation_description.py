@@ -496,3 +496,43 @@ def test_associations_nan(client, auth):
         assert associations.status_code == 200
 
         assert associations.json['scaled_scores'][0]['score'] is None
+
+
+@pytest.mark.now
+def test_discourseme_get_breakdown(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+        client.get("/")
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  content_type='application/json',
+                                  headers=auth_header).json
+
+        # constellation
+        constellation = client.post(url_for('mmda.constellation.create_constellation'),
+                                    json={
+                                        'name': 'factions',
+                                        'comment': 'union and FDP',
+                                        'discourseme_ids': [discourseme['id'] for discourseme in discoursemes[0:2]]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        # constellation description
+        description = client.post(url_for('mmda.constellation.description.create_description', constellation_id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        # breakdown
+        breakdown = client.get(url_for('mmda.constellation.description.constellation_description_get_breakdown',
+                                       constellation_id=constellation.json['id'], description_id=description.json['id'], p='lemma'),
+                               content_type='application/json',
+                               headers=auth_header)
+        assert breakdown.status_code == 200
+        assert breakdown.json['items'][0]['freq'] == 14

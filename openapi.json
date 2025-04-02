@@ -384,6 +384,72 @@
         ],
         "type": "object"
       },
+      "ConstellationBreakdownItemOut": {
+        "properties": {
+          "breakdown_id": {
+            "type": "integer"
+          },
+          "discourseme_id": {
+            "type": "integer"
+          },
+          "freq": {
+            "type": "integer"
+          },
+          "id": {
+            "nullable": true,
+            "type": "integer"
+          },
+          "ipm": {
+            "type": "number"
+          },
+          "item": {
+            "type": "string"
+          },
+          "nr_tokens": {
+            "type": "integer"
+          },
+          "source": {
+            "enum": [
+              "discourseme",
+              "discourseme_item"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "breakdown_id",
+          "discourseme_id",
+          "freq",
+          "id",
+          "ipm",
+          "item",
+          "nr_tokens",
+          "source"
+        ],
+        "type": "object"
+      },
+      "ConstellationBreakdownOut": {
+        "properties": {
+          "constellation_description_id": {
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConstellationBreakdownItemOut"
+            },
+            "type": "array"
+          },
+          "p": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "constellation_description_id",
+          "items",
+          "p"
+        ],
+        "type": "object"
+      },
       "ConstellationCollocationIn": {
         "properties": {
           "filter_discourseme_ids": {
@@ -2615,7 +2681,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev49"
+    "version": "0.3.0.dev50"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -6155,6 +6221,72 @@
           }
         ],
         "summary": "Get pairwise association scores for discoursemes in constellation, based on s-attribute.",
+        "tags": [
+          "Mmda.Constellation.Description"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/{description_id}/breakdown/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationBreakdownOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "summary": "Constellation Description Get Breakdown",
         "tags": [
           "Mmda.Constellation.Description"
         ]

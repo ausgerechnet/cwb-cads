@@ -11,9 +11,10 @@ from flask import abort, current_app
 from pandas import DataFrame
 
 from .. import db
+from ..breakdown import BreakdownIn, ccc_breakdown
 from ..concordance import (ConcordanceIn, ConcordanceLineIn,
                            ConcordanceLineOut, ConcordanceOut, ccc_concordance)
-from ..database import Corpus
+from ..database import Corpus, get_or_create, Breakdown
 from ..query import ccc_query, get_or_create_query_assisted
 from ..users import auth
 from .database import (Constellation, ConstellationDescription, Discourseme,
@@ -118,6 +119,25 @@ class ConstellationAssociationOut(Schema):
     nr_pairs = Integer(required=True)
     scores = Nested(ConstellationAssociationItemOut(many=True), required=True)
     scaled_scores = Nested(ConstellationAssociationItemOut(many=True), required=True)
+
+
+class ConstellationBreakdownItemOut(Schema):
+
+    id = Integer(required=True, allow_none=True)
+    discourseme_id = Integer(required=True)
+    source = String(required=True, validate=OneOf(['discourseme', 'discourseme_item']))
+    breakdown_id = Integer(required=True)
+    item = String(required=True)
+    freq = Integer(required=True)
+    nr_tokens = Integer(required=True)
+    ipm = Float(required=True)
+
+
+class ConstellationBreakdownOut(Schema):
+
+    constellation_description_id = Integer(required=True)
+    p = String(required=True)
+    items = Nested(ConstellationBreakdownItemOut(many=True), required=True)
 
 
 #################
@@ -664,6 +684,60 @@ def get_constellation_associations(constellation_id, description_id):
     )
 
     return ConstellationAssociationOut().dump(association), 200
+
+
+@bp.get('/<description_id>/breakdown/')
+@bp.input(BreakdownIn, location='query')
+@bp.output(ConstellationBreakdownOut)
+def constellation_description_get_breakdown(constellation_id, description_id, query_data):
+
+    constellation_description = db.get_or_404(ConstellationDescription, description_id)
+    p = query_data.get('p')
+
+    if p not in constellation_description.corpus.p_atts:
+        msg = f'p-attribute "{p}" does not exist in corpus "{constellation_description.corpus.cwb_id}"'
+        current_app.logger.error(msg)
+        abort(404, msg)
+
+    breakdowns = list()
+    for description in constellation_description.discourseme_descriptions:
+
+        query = description._query
+        breakdown = get_or_create(Breakdown, query_id=query.id, p=p)
+        ccc_breakdown(breakdown)
+
+        disc_freq = 0
+        for item in breakdown.items:
+            breakdowns.append({
+                'id': item.id,
+                'discourseme_id': description.discourseme.id,
+                'source': 'discourseme_items',
+                'breakdown_id': breakdown.id,
+                'item': item.item,
+                'freq': item.freq,
+                'nr_tokens': item.nr_tokens,
+                'ipm': item.ipm
+            })
+            disc_freq += item.freq
+
+        breakdowns.append({
+            'id': None,
+            'discourseme_id': description.discourseme.id,
+            'source': 'discoursemes',
+            'breakdown_id': breakdown.id,
+            'item': description.discourseme.name,
+            'freq': disc_freq,
+            'nr_tokens': item.nr_tokens,
+            'ipm': disc_freq / item.nr_tokens * 10**6
+        })
+
+    constellation_breakdown = {
+        'constellation_description_id': constellation_description.id,
+        'p': p,
+        'items': [ConstellationBreakdownItemOut().dump(breakdown) for breakdown in breakdowns]
+    }
+
+    return ConstellationBreakdownOut().dump(constellation_breakdown), 200
 
 
 # META
