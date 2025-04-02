@@ -35,9 +35,9 @@ export function GraphRange({
     >
       <Graph {...props} viewportX={viewportX} className="pr-1" />
 
-      <div className="bg-muted-foreground/10 border-1 border-muted-foreground/10 relative m-1 mt-5 h-14 overflow-hidden rounded-md border">
+      <div className="bg-muted-foreground/10 border-1 border-muted-foreground/10 relative m-2 mt-5 h-14 overflow-hidden rounded-md border">
         <Graph
-          className="absolute left-0 top-0 h-full w-full bg-transparent pt-2"
+          className="pointer-events-none absolute left-0 top-0 h-full w-full bg-transparent pt-2"
           {...props}
           viewportX={[vp.minX - vp.barWidth / 2, vp.maxX + vp.barWidth / 2]}
           hideLegend

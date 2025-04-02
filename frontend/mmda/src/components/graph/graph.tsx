@@ -1,4 +1,4 @@
-import { useMemo, Fragment } from 'react'
+import { useState, useMemo, Fragment } from 'react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { clamp } from '@cads/shared/lib/clamp'
@@ -31,6 +31,7 @@ export function Graph({
   hideLegend?: boolean
   formatY?: (value: number) => string
 }) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const {
     minY,
     barWidth,
@@ -56,6 +57,8 @@ export function Graph({
   const pointsWithinViewport = dataPoints?.filter(
     ({ position: [x] }) => x >= viewboxX && x <= viewboxX + viewboxWidth,
   )
+  const highlightPoint =
+    hoverIndex === null ? null : (dataPoints?.[hoverIndex] ?? null)
 
   return (
     <div
@@ -127,17 +130,21 @@ export function Graph({
             const top = `${((flipY(y) - viewboxY) / viewboxHeight) * 100}%`
 
             const scaledBarWidth = (barWidth / viewboxWidth) * 100
-            const relativeHeight = (y / viewboxHeight) * 100
+            // rounding up prevents rendering issues in Firefox that shift the bar slightly along the y axis
+            const relativeHeight = Math.ceil((y / viewboxHeight) * 100)
+            const bottom = `${-viewboxY / viewboxHeight}%`
 
             return (
               <Fragment key={index}>
                 <button
                   className={cn(
-                    'absolute bottom-0 h-full w-5 -translate-x-1/2 [&:hover+span+svg+span]:opacity-100 [&:hover+span+svg]:opacity-100 [&:hover+span]:opacity-100',
+                    'absolute bottom-0 h-full w-5 -translate-x-1/2 [&:hover+span+svg+span]:opacity-100 [&:hover+span+svg]:opacity-100 [&:hover+span]:z-10 [&:hover+span]:opacity-100',
                     pointStyle === 'circle' && '[&:hover+span]:scale-150',
                     pointStyle === 'bar' &&
                       'min-w-1 [&:hover+span]:bg-blue-800',
                   )}
+                  onMouseOver={() => setHoverIndex(index)}
+                  onMouseLeave={() => setHoverIndex(null)}
                   style={{
                     left,
                     width:
@@ -151,13 +158,18 @@ export function Graph({
                     hideLegend && 'bg-primary h-1 outline-0',
                     pointStyle === 'circle' &&
                       'outline-primary aspect-square h-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white outline outline-2',
+                    pointStyle === 'circle' && hideLegend && 'h-1 outline-1',
                     pointStyle === 'bar' &&
                       'bg-primary min-w-1 -translate-x-1/2 rounded-t-sm',
+                    pointStyle === 'bar' &&
+                      scaledBarWidth < 0.5 &&
+                      'rounded-none',
                     className,
                   )}
                   style={{
                     left,
-                    top,
+                    bottom,
+                    top: pointStyle === 'circle' ? top : undefined,
                     width:
                       pointStyle === 'bar' ? `${scaledBarWidth}%` : undefined,
                     height:
@@ -201,9 +213,9 @@ export function Graph({
       </div>
 
       {!hideLegend && (
-        <article className="text-muted-foreground relative col-start-2 flex h-6 justify-between pt-2 font-mono leading-none">
+        <article className="text-muted-foreground relative col-start-2 flex h-6 justify-between pt-2 font-mono text-xs leading-none">
           {pointsWithinViewport?.map(({ position: [x], label }, index) => {
-            const itemsPerViewport = 5
+            const itemsPerViewport = 15
             // filter out all points except every nth item
             if (
               index %
@@ -218,7 +230,10 @@ export function Graph({
             return (
               <span
                 key={index}
-                className="absolute"
+                className={cn(
+                  'absolute transition-opacity',
+                  hoverIndex !== null && 'opacity-10',
+                )}
                 style={{
                   left: `${left}%`,
                   translate:
@@ -233,6 +248,20 @@ export function Graph({
               </span>
             )
           })}
+
+          {highlightPoint && (
+            <span
+              className="text-foreground absolute"
+              style={{
+                left: `${((highlightPoint.position[0] - viewboxX) / viewboxWidth) * 100}%`,
+                translate: '-50% 0',
+              }}
+            >
+              {highlightPoint.label
+                ? highlightPoint.label
+                : formatNumber(highlightPoint.position[0])}
+            </span>
+          )}
         </article>
       )}
     </div>
