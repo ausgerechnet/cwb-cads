@@ -156,7 +156,7 @@ def test_constellation_description_collection_put(client, auth):
 
 
 @pytest.mark.now
-def test_constellation_description_collection_collocation(client, auth):
+def test_constellation_description_collection_ufa(client, auth):
 
     auth_header = auth.login()
     with client:
@@ -218,7 +218,7 @@ def test_constellation_description_collection_collocation(client, auth):
                                  headers=auth_header)
         assert collection.status_code == 200
 
-        collocation_collection = client.put(url_for('mmda.constellation.description.collection.get_or_create_collocation',
+        collocation_collection = client.put(url_for('mmda.constellation.description.collection.get_or_create_ufa',
                                                     constellation_id=constellation.json['id'],
                                                     collection_id=collection.json['id'],
                                                     sort_by='O11'),
@@ -232,7 +232,7 @@ def test_constellation_description_collection_collocation(client, auth):
         pprint(collocation_collection.json)
 
 
-def test_constellation_description_collection_collocation_empty(client, auth):
+def test_constellation_description_collection_ufa_empty(client, auth):
 
     auth_header = auth.login()
     with client:

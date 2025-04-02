@@ -327,38 +327,6 @@
         ],
         "type": "object"
       },
-      "ConfidenceIntervalOut": {
-        "properties": {
-          "lower_90": {
-            "nullable": true,
-            "type": "number"
-          },
-          "lower_95": {
-            "nullable": true,
-            "type": "number"
-          },
-          "smooth": {
-            "nullable": true,
-            "type": "number"
-          },
-          "upper_90": {
-            "nullable": true,
-            "type": "number"
-          },
-          "upper_95": {
-            "nullable": true,
-            "type": "number"
-          }
-        },
-        "required": [
-          "lower_90",
-          "lower_95",
-          "smooth",
-          "upper_90",
-          "upper_95"
-        ],
-        "type": "object"
-      },
       "ConstellationAssociationItemOut": {
         "properties": {
           "candidate": {
@@ -591,27 +559,6 @@
           "s_break",
           "semantic_map_id",
           "window"
-        ],
-        "type": "object"
-      },
-      "ConstellationDescriptionCollectionCollocationOut": {
-        "properties": {
-          "collocations": {
-            "items": {
-              "$ref": "#/components/schemas/ConstellationCollocationOut"
-            },
-            "type": "array"
-          },
-          "ufa": {
-            "items": {
-              "$ref": "#/components/schemas/UFAScoreOut"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "collocations",
-          "ufa"
         ],
         "type": "object"
       },
@@ -2437,6 +2384,59 @@
         ],
         "type": "object"
       },
+      "UFAConfidenceIntervalOut": {
+        "properties": {
+          "lower_90": {
+            "nullable": true,
+            "type": "number"
+          },
+          "lower_95": {
+            "nullable": true,
+            "type": "number"
+          },
+          "smooth": {
+            "nullable": true,
+            "type": "number"
+          },
+          "upper_90": {
+            "nullable": true,
+            "type": "number"
+          },
+          "upper_95": {
+            "nullable": true,
+            "type": "number"
+          }
+        },
+        "required": [
+          "lower_90",
+          "lower_95",
+          "smooth",
+          "upper_90",
+          "upper_95"
+        ],
+        "type": "object"
+      },
+      "UFAOut": {
+        "properties": {
+          "collocations": {
+            "items": {
+              "$ref": "#/components/schemas/ConstellationCollocationOut"
+            },
+            "type": "array"
+          },
+          "ufa": {
+            "items": {
+              "$ref": "#/components/schemas/UFAScoreOut"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "collocations",
+          "ufa"
+        ],
+        "type": "object"
+      },
       "UFAScoreOut": {
         "properties": {
           "collocation_id_left": {
@@ -2458,7 +2458,7 @@
             "type": "number"
           },
           "score_confidence": {
-            "$ref": "#/components/schemas/ConfidenceIntervalOut"
+            "$ref": "#/components/schemas/UFAConfidenceIntervalOut"
           },
           "x_label": {
             "type": "string"
@@ -5314,7 +5314,7 @@
         ]
       }
     },
-    "/mmda/constellation/{constellation_id}/description/collection/{collection_id}/collocation": {
+    "/mmda/constellation/{constellation_id}/description/collection/{collection_id}/ufa": {
       "put": {
         "parameters": [
           {
@@ -5364,7 +5364,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionCollocationOut"
+                  "$ref": "#/components/schemas/UFAOut"
                 }
               }
             },
@@ -5406,7 +5406,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get Or Create Collocation",
+        "summary": "Get Or Create Ufa",
         "tags": [
           "Mmda.Constellation.Description.Collection"
         ]

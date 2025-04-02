@@ -144,7 +144,7 @@ class ConstellationDescriptionCollectionOut(Schema):
     constellation_descriptions = Nested(ConstellationDescriptionOut(many=True), required=True, dump_default=[])
 
 
-class ConfidenceIntervalOut(Schema):
+class UFAConfidenceIntervalOut(Schema):
 
     lower_95 = Float(required=True, allow_none=True)
     lower_90 = Float(required=True, allow_none=True)
@@ -161,10 +161,10 @@ class UFAScoreOut(Schema):
     description_id_right = Integer(required=True)
     x_label = String(required=True)
     score = Float(required=True, allow_none=True, dump_default=None)
-    score_confidence = Nested(ConfidenceIntervalOut, required=True)
+    score_confidence = Nested(UFAConfidenceIntervalOut, required=True)
 
 
-class ConstellationDescriptionCollectionCollocationOut(Schema):
+class UFAOut(Schema):
 
     collocations = Nested(ConstellationCollocationOut(many=True), required=True, dump_default=[])
     ufa = Nested(UFAScoreOut(many=True), required=True, dump_default=[])
@@ -355,12 +355,12 @@ def delete_constellation_description_collection(constellation_id, collection_id)
 ###################
 # COLLOCATION/UFA #
 ###################
-@bp.put('/<collection_id>/collocation')
+@bp.put('/<collection_id>/ufa')
 @bp.input(ConstellationCollocationIn)
 @bp.input({'sort_by': String(), 'max_depth': Integer()}, location='query')
-@bp.output(ConstellationDescriptionCollectionCollocationOut)
+@bp.output(UFAOut)
 @bp.auth_required(auth)
-def get_or_create_collocation(constellation_id, collection_id, json_data, query_data):
+def get_or_create_ufa(constellation_id, collection_id, json_data, query_data):
 
     collection = db.get_or_404(ConstellationDescriptionCollection, collection_id)
 
@@ -392,4 +392,4 @@ def get_or_create_collocation(constellation_id, collection_id, json_data, query_
     collocation_collection = calculate_ufa(collection, window, p, marginals, include_negative, semantic_map_id, focus_discourseme_id,
                                            filter_discourseme_ids, filter_item, filter_item_p_att, sort_by, max_depth)
 
-    return ConstellationDescriptionCollectionCollocationOut().dump(collocation_collection), 200
+    return UFAOut().dump(collocation_collection), 200
