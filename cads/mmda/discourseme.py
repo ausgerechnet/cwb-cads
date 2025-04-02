@@ -8,7 +8,7 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, Nested, String
+from apiflask.fields import Integer, Nested, String, List
 from flask import current_app
 from pandas import DataFrame, read_csv
 
@@ -97,6 +97,11 @@ def export_discoursemes(path_out):
 ################
 
 # INPUT / OUTPUT
+class DiscoursemeIDs(Schema):
+
+    discourseme_ids = List(Integer, required=True)
+
+
 class DiscoursemeItem(Schema):
     """Used both for templates and descriptions, in- and output.
 

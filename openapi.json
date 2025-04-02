@@ -739,18 +739,6 @@
         },
         "type": "object"
       },
-      "ConstellationDiscoursemeDescriptionIn": {
-        "properties": {
-          "discourseme_description_ids": {
-            "default": [],
-            "items": {
-              "type": "integer"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
       "ConstellationIn": {
         "properties": {
           "comment": {
@@ -1320,6 +1308,20 @@
         ],
         "type": "object"
       },
+      "DiscoursemeDescriptionIDs": {
+        "properties": {
+          "discourseme_description_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "discourseme_description_ids"
+        ],
+        "type": "object"
+      },
       "DiscoursemeDescriptionIn": {
         "properties": {
           "corpus_id": {
@@ -1418,6 +1420,20 @@
           "p",
           "similarity",
           "surface"
+        ],
+        "type": "object"
+      },
+      "DiscoursemeIDs": {
+        "properties": {
+          "discourseme_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "discourseme_ids"
         ],
         "type": "object"
       },
@@ -1579,7 +1595,7 @@
       },
       "Generated": {
         "properties": {
-          "discourseme_ids": {
+          "discourseme_description_ids": {
             "items": {
               "type": "integer"
             },
@@ -1587,7 +1603,7 @@
           }
         },
         "required": [
-          "discourseme_ids"
+          "discourseme_description_ids"
         ],
         "type": "object"
       },
@@ -2599,7 +2615,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev48"
+    "version": "0.3.0.dev49"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -5044,6 +5060,62 @@
       }
     },
     "/mmda/constellation/{constellation_id}/description/collection/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all description collections of constellation.",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      },
       "post": {
         "description": "Create constellation description collection.",
         "parameters": [
@@ -5214,9 +5286,7 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
-                }
+                "schema": {}
               }
             },
             "description": "Successful response"
@@ -5247,7 +5317,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Delete Constellation Description Collection",
+        "summary": "Delete constellation description collection.",
         "tags": [
           "Mmda.Constellation.Description.Collection"
         ]
@@ -5308,7 +5378,254 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get Constellation Description Collection",
+        "summary": "Get details of constellation description collection.",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/collection/{collection_id}/add-discoursemes": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIDs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch collection: add discourseme description(s).",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/collection/{collection_id}/discourseme-description": {
+      "post": {
+        "description": "(1) create a discourseme with provided items\n(2) create a suitable description in the constellation description corpus\n(3) link discourseme to constellation\n(4) link discourseme description and constellation description",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "convenience function for creating a new discourseme incl. description during an analysis (e.g. drag & drop on semantic map)",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/collection/{collection_id}/remove-discoursemes": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIDs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionCollectionOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch collection: add discourseme description(s).",
         "tags": [
           "Mmda.Constellation.Description.Collection"
         ]
@@ -5406,7 +5723,89 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get Or Create Ufa",
+        "summary": "Get or create usage fluctuation analysis (list of collocation analyses).",
+        "tags": [
+          "Mmda.Constellation.Description.Collection"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/collection/{description_id}/discourseme-description": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoursemeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "same as corresponding POST but will only create if discourseme with the same name does not exist.",
         "tags": [
           "Mmda.Constellation.Description.Collection"
         ]
@@ -5558,7 +5957,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ConstellationDiscoursemeDescriptionIn"
+                "$ref": "#/components/schemas/DiscoursemeDescriptionIDs"
               }
             }
           }
@@ -5640,7 +6039,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Generated"
+                "$ref": "#/components/schemas/DiscoursemeIDs"
               }
             }
           }
@@ -7575,7 +7974,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ConstellationDiscoursemeDescriptionIn"
+                "$ref": "#/components/schemas/Generated"
               }
             }
           }
@@ -7628,6 +8027,88 @@
           }
         ],
         "summary": "Patch constellation description: remove discourseme description(s).",
+        "tags": [
+          "Mmda.Constellation.Description"
+        ]
+      }
+    },
+    "/mmda/constellation/{constellation_id}/description/{description_id}/remove-discoursemes": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "constellation_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoursemeIDs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConstellationDescriptionOutUpdate"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "convenience function for adding discourseme(s) and creating and linking corresponding descriptions.",
         "tags": [
           "Mmda.Constellation.Description"
         ]

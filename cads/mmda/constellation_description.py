@@ -18,7 +18,7 @@ from ..query import ccc_query, get_or_create_query_assisted
 from ..users import auth
 from .database import (Constellation, ConstellationDescription, Discourseme,
                        DiscoursemeDescription, DiscoursemeTemplateItems)
-from .discourseme import DiscoursemeIn, DiscoursemeOut
+from .discourseme import DiscoursemeIn, DiscoursemeOut, DiscoursemeIDs
 from .discourseme_description import (DiscoursemeDescriptionOut,
                                       discourseme_template_to_description)
 
@@ -80,25 +80,15 @@ class ConstellationDescriptionIn(Schema):
 
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False)
-
     # semantic_map_id = Integer(required=False, load_default=None)
     s = String(required=False)
     match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
     overlap = String(load_default='partial', required=False, validate=OneOf(['partial', 'full', 'match', 'matchend']))
 
 
-class ConstellationDiscoursemeDescriptionIn(Schema):
+class DiscoursemeDescriptionIDs(Schema):
 
-    discourseme_description_ids = List(Integer(), required=False, load_default=[])
-
-
-class ConstellationMetaIn(Schema):
-
-    discourseme_description_ids = List(Integer(), required=False, load_default=[])
-
-    # level = String(required=True)
-    # key = String(required=True)
-    # p = String(required=False, load_default='word')
+    discourseme_description_ids = List(Integer, required=True)
 
 
 # OUTPUT
@@ -128,18 +118,6 @@ class ConstellationAssociationOut(Schema):
     nr_pairs = Integer(required=True)
     scores = Nested(ConstellationAssociationItemOut(many=True), required=True)
     scaled_scores = Nested(ConstellationAssociationItemOut(many=True), required=True)
-
-
-class ConstellationMetaOut(Schema):
-
-    pass
-
-    # item = String(required=True)
-    # value = String(required=True)
-    # frequency = Integer(required=True)
-    # nr_tokens = Integer(required=True)
-    # nr_texts = Integer(required=True)
-    # ipm = Float(required=True)
 
 
 #################
@@ -242,7 +220,7 @@ def delete_description(constellation_id, description_id):
 
 
 @bp.patch('/<description_id>/add-descriptions')
-@bp.input(ConstellationDiscoursemeDescriptionIn)
+@bp.input(DiscoursemeDescriptionIDs, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_description_add(constellation_id, description_id, json_data):
@@ -261,7 +239,7 @@ def patch_description_add(constellation_id, description_id, json_data):
 
 
 @bp.patch('/<description_id>/remove-descriptions')
-@bp.input(ConstellationDiscoursemeDescriptionIn)
+@bp.input({'discourseme_description_ids': List(Integer, required=True)}, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_description_remove(constellation_id, description_id, json_data):
@@ -280,7 +258,7 @@ def patch_description_remove(constellation_id, description_id, json_data):
 
 
 @bp.patch('/<description_id>/add-discoursemes')
-@bp.input({'discourseme_ids': List(Integer, required=True)}, location='json')
+@bp.input(DiscoursemeIDs, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_discourseme_add(constellation_id, description_id, json_data):
@@ -316,6 +294,41 @@ def patch_discourseme_add(constellation_id, description_id, json_data):
         if desc not in description.discourseme_descriptions:
             # link discourseme_description to constellation description if necessary
             description.discourseme_descriptions.append(desc)
+            db.session.commit()
+
+    return ConstellationDescriptionOut().dump(description), 200
+
+
+@bp.patch('/<description_id>/remove-discoursemes')
+@bp.input(DiscoursemeIDs, location='json')
+@bp.output(ConstellationDescriptionOut(partial=True))
+@bp.auth_required(auth)
+def patch_discourseme_remove(constellation_id, description_id, json_data):
+    """convenience function for adding discourseme(s) and creating and linking corresponding descriptions.
+
+    """
+
+    constellation = db.get_or_404(Constellation, constellation_id)
+    description = db.get_or_404(ConstellationDescription, description_id)
+    discourseme_ids = json_data.get("discourseme_ids")
+    for discourseme_id in discourseme_ids:
+
+        # link discourseme to constellation
+        discourseme = db.get_or_404(Discourseme, discourseme_id)
+        if discourseme in constellation.discoursemes:
+            constellation.discoursemes.remove(discourseme)
+            db.session.commit()
+
+        # link discourseme description to constellation description
+        desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
+                                                      corpus_id=description.corpus_id,
+                                                      subcorpus_id=description.subcorpus_id,
+                                                      filter_sequence=None,
+                                                      s=description.s,
+                                                      match_strategy=description.match_strategy).first()
+
+        if desc and desc in description.discourseme_descriptions:
+            description.discourseme_descriptions.remove(desc)
             db.session.commit()
 
     return ConstellationDescriptionOut().dump(description), 200
