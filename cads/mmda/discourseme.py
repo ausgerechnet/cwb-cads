@@ -229,18 +229,18 @@ def patch_discourseme(discourseme_id, json_data):
     return DiscoursemeOut().dump(discourseme), 200
 
 
-@bp.post('/<discourseme_id>/template')
-@bp.output(DiscoursemeOut)
-@bp.auth_required(auth)
-def generate_template(discourseme_id, json_data):
-    """Generate template from discourseme descriptions (NotImplemented)
+# @bp.post('/<discourseme_id>/template')
+# @bp.output(DiscoursemeOut)
+# @bp.auth_required(auth)
+# def generate_template(discourseme_id, json_data):
+#     """Generate template from discourseme descriptions (NotImplemented)
 
-    """
+#     """
 
-    discourseme = db.get_or_404(Discourseme, discourseme_id)
-    discourseme.generate_template()
+#     discourseme = db.get_or_404(Discourseme, discourseme_id)
+#     discourseme.generate_template()
 
-    return DiscoursemeOut().dump(discourseme), 200
+#     return DiscoursemeOut().dump(discourseme), 200
 
 
 ################

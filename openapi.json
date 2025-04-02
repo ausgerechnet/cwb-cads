@@ -26,27 +26,6 @@
         },
         "type": "object"
       },
-      "AnnotationsOut": {
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "value_type": {
-            "enum": [
-              "datetime",
-              "numeric",
-              "boolean",
-              "unicode"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "value_type"
-        ],
-        "type": "object"
-      },
       "BreakdownItemsOut": {
         "properties": {
           "breakdown_id": {
@@ -1120,6 +1099,166 @@
         ],
         "type": "object"
       },
+      "CorpusAnnotationsIn": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "level": {
+            "type": "string"
+          },
+          "value_type": {
+            "enum": [
+              "datetime",
+              "numeric",
+              "boolean",
+              "unicode"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "level",
+          "value_type"
+        ],
+        "type": "object"
+      },
+      "CorpusAnnotationsOut": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value_type": {
+            "enum": [
+              "datetime",
+              "numeric",
+              "boolean",
+              "unicode"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value_type"
+        ],
+        "type": "object"
+      },
+      "CorpusLevelOut": {
+        "properties": {
+          "annotations": {
+            "items": {
+              "$ref": "#/components/schemas/CorpusAnnotationsOut"
+            },
+            "type": "array"
+          },
+          "level": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "annotations",
+          "level"
+        ],
+        "type": "object"
+      },
+      "CorpusLevelsOut": {
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/CorpusLevelOut"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "corpus_id",
+          "levels"
+        ],
+        "type": "object"
+      },
+      "CorpusMetaFrequenciesOut": {
+        "properties": {
+          "frequencies": {
+            "items": {
+              "$ref": "#/components/schemas/CorpusMetaFrequencyOut"
+            },
+            "type": "array"
+          },
+          "nr_items": {
+            "type": "integer"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "sort_by": {
+            "type": "string"
+          },
+          "sort_order": {
+            "type": "string"
+          },
+          "value_type": {
+            "enum": [
+              "datetime",
+              "numeric",
+              "boolean",
+              "unicode"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "frequencies",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by",
+          "sort_order",
+          "value_type"
+        ],
+        "type": "object"
+      },
+      "CorpusMetaFrequencyOut": {
+        "properties": {
+          "bin_boolean": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "bin_datetime": {
+            "nullable": true,
+            "type": "string"
+          },
+          "bin_numeric": {
+            "nullable": true
+          },
+          "bin_unicode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "nr_spans": {
+            "type": "integer"
+          },
+          "nr_tokens": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nr_spans",
+          "nr_tokens"
+        ],
+        "type": "object"
+      },
       "CorpusOut": {
         "properties": {
           "cwb_id": {
@@ -1396,19 +1535,19 @@
       },
       "DiscoursemeItemsIn": {
         "properties": {
-          "p": {
-            "nullable": true,
-            "type": "string"
-          },
-          "surface": {
+          "items": {
             "items": {
               "type": "string"
             },
             "type": "array"
+          },
+          "p": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "required": [
-          "surface"
+          "items"
         ],
         "type": "object"
       },
@@ -1756,145 +1895,6 @@
         ],
         "type": "object"
       },
-      "LevelOut": {
-        "properties": {
-          "annotations": {
-            "items": {
-              "$ref": "#/components/schemas/AnnotationsOut"
-            },
-            "type": "array"
-          },
-          "level": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "annotations",
-          "level"
-        ],
-        "type": "object"
-      },
-      "MetaFrequenciesOut": {
-        "properties": {
-          "frequencies": {
-            "items": {
-              "$ref": "#/components/schemas/MetaFrequencyOut"
-            },
-            "type": "array"
-          },
-          "nr_items": {
-            "type": "integer"
-          },
-          "page_count": {
-            "type": "integer"
-          },
-          "page_number": {
-            "type": "integer"
-          },
-          "page_size": {
-            "type": "integer"
-          },
-          "sort_by": {
-            "type": "string"
-          },
-          "sort_order": {
-            "type": "string"
-          },
-          "value_type": {
-            "enum": [
-              "datetime",
-              "numeric",
-              "boolean",
-              "unicode"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "frequencies",
-          "nr_items",
-          "page_count",
-          "page_number",
-          "page_size",
-          "sort_by",
-          "sort_order",
-          "value_type"
-        ],
-        "type": "object"
-      },
-      "MetaFrequencyOut": {
-        "properties": {
-          "bin_boolean": {
-            "nullable": true,
-            "type": "boolean"
-          },
-          "bin_datetime": {
-            "nullable": true,
-            "type": "string"
-          },
-          "bin_numeric": {
-            "nullable": true
-          },
-          "bin_unicode": {
-            "nullable": true,
-            "type": "string"
-          },
-          "nr_spans": {
-            "type": "integer"
-          },
-          "nr_tokens": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "nr_spans",
-          "nr_tokens"
-        ],
-        "type": "object"
-      },
-      "MetaIn": {
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "level": {
-            "type": "string"
-          },
-          "value_type": {
-            "enum": [
-              "datetime",
-              "numeric",
-              "boolean",
-              "unicode"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "key",
-          "level",
-          "value_type"
-        ],
-        "type": "object"
-      },
-      "MetaOut": {
-        "properties": {
-          "corpus_id": {
-            "type": "integer"
-          },
-          "levels": {
-            "items": {
-              "$ref": "#/components/schemas/LevelOut"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "corpus_id",
-          "levels"
-        ],
-        "type": "object"
-      },
       "QueryAssistedIn": {
         "properties": {
           "corpus_id": {
@@ -1971,34 +1971,93 @@
         ],
         "type": "object"
       },
-      "QueryMetaOut": {
+      "QueryMetaFrequenciesOut": {
         "properties": {
-          "frequency": {
+          "frequencies": {
+            "items": {
+              "$ref": "#/components/schemas/QueryMetaFrequencyOut"
+            },
+            "type": "array"
+          },
+          "nr_items": {
             "type": "integer"
           },
-          "ipm": {
-            "type": "number"
+          "page_count": {
+            "type": "integer"
           },
-          "item": {
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "sort_by": {
             "type": "string"
           },
-          "nr_texts": {
-            "type": "integer"
+          "sort_order": {
+            "type": "string"
           },
-          "nr_tokens": {
-            "type": "integer"
-          },
-          "value": {
+          "value_type": {
+            "enum": [
+              "datetime",
+              "numeric",
+              "boolean",
+              "unicode"
+            ],
             "type": "string"
           }
         },
         "required": [
-          "frequency",
-          "ipm",
-          "item",
-          "nr_texts",
-          "nr_tokens",
-          "value"
+          "frequencies",
+          "nr_items",
+          "page_count",
+          "page_number",
+          "page_size",
+          "sort_by",
+          "sort_order",
+          "value_type"
+        ],
+        "type": "object"
+      },
+      "QueryMetaFrequencyOut": {
+        "properties": {
+          "bin_boolean": {
+            "nullable": true,
+            "type": "boolean"
+          },
+          "bin_datetime": {
+            "nullable": true,
+            "type": "string"
+          },
+          "bin_numeric": {
+            "nullable": true
+          },
+          "bin_unicode": {
+            "nullable": true,
+            "type": "string"
+          },
+          "item": {
+            "description": "item",
+            "type": "string"
+          },
+          "nr_ipm": {
+            "description": "instances of query matches per million tokens in bin",
+            "type": "number"
+          },
+          "nr_matches": {
+            "description": "number of matches of query in bin",
+            "type": "integer"
+          },
+          "nr_spans": {
+            "type": "integer"
+          },
+          "nr_tokens": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nr_spans",
+          "nr_tokens"
         ],
         "type": "object"
       },
@@ -2596,7 +2655,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get all collocations.",
+        "summary": "Get all collocation analyses.",
         "tags": [
           "Collocation"
         ]
@@ -2649,7 +2708,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Delete collocation.",
+        "summary": "Delete collocation analysis.",
         "tags": [
           "Collocation"
         ]
@@ -2702,7 +2761,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get one collocation analysis.",
+        "summary": "Get details of collocation analysis.",
         "tags": [
           "Collocation"
         ]
@@ -3261,7 +3320,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Concordance",
+        "summary": "Directly get concordance lines. TODO: this accepts JSON, convert to QUERY args?",
         "tags": [
           "Corpus"
         ]
@@ -3285,7 +3344,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MetaOut"
+                  "$ref": "#/components/schemas/CorpusLevelsOut"
                 }
               }
             },
@@ -3337,7 +3396,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MetaIn"
+                "$ref": "#/components/schemas/CorpusAnnotationsIn"
               }
             }
           }
@@ -3347,7 +3406,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnnotationsOut"
+                  "$ref": "#/components/schemas/CorpusAnnotationsOut"
                 }
               }
             },
@@ -3510,7 +3569,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MetaFrequenciesOut"
+                  "$ref": "#/components/schemas/CorpusMetaFrequenciesOut"
                 }
               }
             },
@@ -3552,7 +3611,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get meta data frequencies in (sub-)corpus.",
+        "summary": "Get meta data frequencies of level_key in (sub-)corpus.",
         "tags": [
           "Corpus"
         ]
@@ -4016,7 +4075,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get subcorpus collection.",
+        "summary": "Delete subcorpus.",
         "tags": [
           "Corpus"
         ]
@@ -4294,7 +4353,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get one keyword analysis.",
+        "summary": "Get details of keyword analysis.",
         "tags": [
           "Keyword"
         ]
@@ -4416,7 +4475,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get scored items of a keyword analysis.",
+        "summary": "Get scored items of keyword analysis.",
         "tags": [
           "Keyword"
         ]
@@ -4906,7 +4965,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get all descriptions of this constellation.",
+        "summary": "Get all descriptions of constellation.",
         "tags": [
           "Mmda.Constellation.Description"
         ]
@@ -4978,7 +5037,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create description of constellation in corpus. Makes sure individual discourseme descriptions exist.",
+        "summary": "Create description of constellation. Makes sure individual discourseme descriptions exist.",
         "tags": [
           "Mmda.Constellation.Description"
         ]
@@ -5273,6 +5332,22 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_depth",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "requestBody": {
@@ -5535,7 +5610,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch constellation description: add discourseme description.",
+        "summary": "Patch constellation description: add discourseme description(s).",
         "tags": [
           "Mmda.Constellation.Description"
         ]
@@ -5543,7 +5618,6 @@
     },
     "/mmda/constellation/{constellation_id}/description/{description_id}/add-discoursemes": {
       "patch": {
-        "description": "(3) adding them to the constellation description",
         "parameters": [
           {
             "in": "path",
@@ -5618,7 +5692,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "convenience function for (1) adding discoursemes, (2) creating respective descriptions if necessary, and",
+        "summary": "convenience function for adding discourseme(s) and creating and linking corresponding descriptions.",
         "tags": [
           "Mmda.Constellation.Description"
         ]
@@ -6290,6 +6364,7 @@
     },
     "/mmda/constellation/{constellation_id}/description/{description_id}/concordance/": {
       "get": {
+        "description": "TODO re-write using ..query.get_concordance_lines",
         "parameters": [
           {
             "in": "path",
@@ -6560,7 +6635,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get concordance lines of constellation in corpus.",
+        "summary": "Get concordance lines of constellation description.",
         "tags": [
           "Mmda.Constellation.Description"
         ]
@@ -6726,7 +6801,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Concordance Line",
+        "summary": "Get (additional context of) one concordance line.",
         "tags": [
           "Mmda.Constellation.Description"
         ]
@@ -6734,7 +6809,7 @@
     },
     "/mmda/constellation/{constellation_id}/description/{description_id}/discourseme-description": {
       "post": {
-        "description": "(1) create a discourseme with provided template items\n(2) create a suitable description in the constellation description corpus\n(3) link discourseme to constellation\n(4) link discourseme description and constellation description",
+        "description": "(1) create a discourseme with provided items\n(2) create a suitable description in the constellation description corpus\n(3) link discourseme to constellation\n(4) link discourseme description and constellation description",
         "parameters": [
           {
             "in": "path",
@@ -6815,7 +6890,6 @@
         ]
       },
       "put": {
-        "description": "# does discourseme already exist\n# is discourseme already linked to constellation\n# does discourseme description already exist\n# is item already in discourseme description\n# is discourseme description already linked to constellation description",
         "parameters": [
           {
             "in": "path",
@@ -7553,7 +7627,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch constellation description: remove discourseme description.",
+        "summary": "Patch constellation description: remove discourseme description(s).",
         "tags": [
           "Mmda.Constellation.Description"
         ]
@@ -8330,97 +8404,6 @@
         ]
       }
     },
-    "/mmda/discourseme/{discourseme_id}/description/{description_id}/add-item": {
-      "patch": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "discourseme_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "description_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "update_discourseme",
-            "required": false,
-            "schema": {
-              "default": true,
-              "type": "boolean"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DiscoursemeItem"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscoursemeDescriptionOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ValidationError"
-                }
-              }
-            },
-            "description": "Validation error"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Patch discourseme description: add item to description.",
-        "tags": [
-          "Mmda.Discourseme.Description"
-        ]
-      }
-    },
     "/mmda/discourseme/{discourseme_id}/description/{description_id}/add-items": {
       "patch": {
         "parameters": [
@@ -8506,7 +8489,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch discourseme description: add item to description.",
+        "summary": "Patch discourseme description: add item(s) to description.",
         "tags": [
           "Mmda.Discourseme.Description"
         ]
@@ -8696,7 +8679,189 @@
         ]
       }
     },
-    "/mmda/discourseme/{discourseme_id}/description/{description_id}/remove-item": {
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/meta": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "discourseme_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "description_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subcorpus_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "p",
+            "required": false,
+            "schema": {
+              "default": "lemma",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "nr_ipm",
+              "enum": [
+                "bin",
+                "nr_ipm",
+                "nr_matches",
+                "nr_tokens",
+                "nr_spans"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "descending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "how may (equidistant) bins to create. only used for numeric values.",
+            "in": "query",
+            "name": "nr_bins",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "which bins to create for datetime values. only used for datetime values.",
+            "in": "query",
+            "name": "time_interval",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryMetaFrequenciesOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get meta distribution of discourseme description.",
+        "tags": [
+          "Mmda.Discourseme.Description"
+        ]
+      }
+    },
+    "/mmda/discourseme/{discourseme_id}/description/{description_id}/remove-items": {
       "patch": {
         "parameters": [
           {
@@ -8729,7 +8894,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DiscoursemeItem"
+                "$ref": "#/components/schemas/DiscoursemeItemsIn"
               }
             }
           }
@@ -8781,64 +8946,9 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Patch discourseme description: remove item from description.",
+        "summary": "Patch discourseme description: remove item(s) from description.",
         "tags": [
           "Mmda.Discourseme.Description"
-        ]
-      }
-    },
-    "/mmda/discourseme/{discourseme_id}/template": {
-      "post": {
-        "parameters": [
-          {
-            "in": "path",
-            "name": "discourseme_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DiscoursemeOut"
-                }
-              }
-            },
-            "description": "Successful response"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Authentication error"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            },
-            "description": "Not found"
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "summary": "Generate template from discourseme descriptions (NotImplemented)",
-        "tags": [
-          "Mmda.Discourseme"
         ]
       }
     },
@@ -9778,7 +9888,6 @@
     },
     "/query/{query_id}/meta": {
       "get": {
-        "description": "TODO: implement correctly, this does not allow pagination etc.",
         "parameters": [
           {
             "in": "path",
@@ -9786,6 +9895,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "subcorpus_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
             }
           },
           {
@@ -9809,7 +9928,81 @@
             "name": "p",
             "required": false,
             "schema": {
-              "default": "word",
+              "default": "lemma",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "nr_ipm",
+              "enum": [
+                "bin",
+                "nr_ipm",
+                "nr_matches",
+                "nr_tokens",
+                "nr_spans"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "descending",
+              "enum": [
+                "ascending",
+                "descending"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "how may (equidistant) bins to create. only used for numeric values.",
+            "in": "query",
+            "name": "nr_bins",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "which bins to create for datetime values. only used for datetime values.",
+            "in": "query",
+            "name": "time_interval",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "enum": [
+                "hour",
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
               "type": "string"
             }
           }
@@ -9819,10 +10012,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/QueryMetaOut"
-                  },
-                  "type": "array"
+                  "$ref": "#/components/schemas/QueryMetaFrequenciesOut"
                 }
               }
             },
@@ -9864,7 +10054,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get meta distribution of query.",
+        "summary": "Get meta distribution of query. NB: only works with categorical data, other types will be forced to categorical.",
         "tags": [
           "Query"
         ]
@@ -10412,7 +10602,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
               }
             },
             "description": "Successful response"
@@ -10433,7 +10625,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Identify who is logged with token",
+        "summary": "Identify who is logged in with JWT token.",
         "tags": [
           "User"
         ]
@@ -10473,7 +10665,7 @@
             "description": "Validation error"
           }
         },
-        "summary": "Login with name and password to get JWT token",
+        "summary": "Log in with name and password to get JWT token.",
         "tags": [
           "User"
         ]
@@ -10513,13 +10705,64 @@
             "description": "Validation error"
           }
         },
-        "summary": "Return a new token if the user has a refresh token",
+        "summary": "Return new access and refresh tokens using a refresh token.",
         "tags": [
           "User"
         ]
       }
     },
     "/user/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete user.",
+        "tags": [
+          "User"
+        ]
+      },
       "get": {
         "parameters": [
           {

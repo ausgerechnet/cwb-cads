@@ -23,7 +23,8 @@ from .constellation_description_collocation import (ConstellationMapItemOut,
 from .constellation_description_semantic_map import get_discourseme_coordinates
 from .database import (Constellation, ConstellationDescription,
                        ConstellationDescriptionKeyword, Discourseme,
-                       DiscoursemeDescription, get_or_create, KeywordDiscoursemeItem)
+                       DiscoursemeDescription, KeywordDiscoursemeItem,
+                       get_or_create)
 from .discourseme_description import (DiscoursemeCoordinatesOut,
                                       DiscoursemeScoresOut,
                                       discourseme_template_to_description)

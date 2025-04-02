@@ -19,8 +19,8 @@ from ..collocation import (CollocationIn, CollocationItemOut,
 from ..database import (Breakdown, Collocation, CollocationItem,
                         CollocationItemScore, CotextLines, Matches, Query,
                         get_or_create)
-from ..query import (ccc_query, get_or_create_cotext, get_or_create_query_item,
-                     iterative_query)
+from ..query import (ccc_query, get_or_create_cotext,
+                     get_or_create_query_assisted, iterative_query)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from ..users import auth
 from .constellation_description import expand_scores_dataframe
@@ -49,7 +49,11 @@ def get_or_create_coll(description,
     focus_query = highlight_queries[focus_discourseme_id]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+        filter_queries['_FILTER'] = get_or_create_query_assisted(
+            description.corpus_id, description.subcorpus_id, [filter_item],
+            filter_item_p_att, description.s,
+            True, False, False, None, True
+        )
 
     # filter?
     if len(filter_queries) > 0:
@@ -467,7 +471,7 @@ def set_collocation_discourseme_scores(collocation, discourseme_descriptions, ov
     s_break = collocation.s_break
 
     current_app.logger.debug(f'set_collocation_discourseme_scores :: getting context of query {focus_query.id}')
-    cotext = get_or_create_cotext(focus_query, window, s_break, return_df=True)
+    cotext = get_or_create_cotext(focus_query, window, s_break)
     if cotext is None:
         current_app.logger.error('set_collocation_discourseme_scores :: empty cotext')
         return
@@ -693,7 +697,11 @@ def create_collocation(constellation_id, description_id, json_data):
     focus_query = highlight_queries[json_data['focus_discourseme_id']]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_item(description.corpus, filter_item, filter_item_p_att, description.s)
+        filter_queries['_FILTER'] = get_or_create_query_assisted(
+            description.corpus_id, description.subcorpus_id, [filter_item],
+            filter_item_p_att, description.s,
+            True, False, False, None, True
+        )
 
     # filter?
     if len(filter_queries) > 0:

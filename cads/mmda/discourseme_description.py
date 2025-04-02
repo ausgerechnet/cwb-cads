@@ -17,6 +17,8 @@ from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..database import Breakdown, Corpus, Query, get_or_create
 from ..users import auth
+from ..corpus import rename_meta_freq
+from ..query import get_query_meta_freq_breakdown, paginate_dataframe, QueryMetaFrequenciesIn, QueryMetaFrequenciesOut, QueryMetaFrequencyOut
 from .database import (CollocationDiscoursemeItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem)
@@ -217,7 +219,7 @@ class DiscoursemeCoordinatesIn(Schema):
 
 class DiscoursemeItemsIn(Schema):
 
-    surface = List(String, required=True)
+    items = List(String, required=True)
     p = String(required=False, allow_none=True)
 
 
@@ -413,43 +415,54 @@ def description_get_similar(discourseme_id, description_id, breakdown_id, query_
     return [DiscoursemeDescriptionSimilarOut().dump(f) for f in freq_similar], 200
 
 
-@bp.patch('/<description_id>/add-item')
-@bp.input(DiscoursemeItem)
-@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
-@bp.output(DiscoursemeDescriptionOut)
+@bp.get('/<description_id>/meta')
+@bp.input(QueryMetaFrequenciesIn, location='query')
+@bp.output(QueryMetaFrequenciesOut)
 @bp.auth_required(auth)
-def description_patch_add(discourseme_id, description_id, json_data, query_data):
-    """Patch discourseme description: add item to description.
+def description_get_meta(discourseme_id, description_id, query_data):
+    """Get meta distribution of discourseme description.
 
     """
 
-    discourseme = db.get_or_404(Discourseme, discourseme_id)  # TODO: needed?
     description = db.get_or_404(DiscoursemeDescription, description_id)
-    p = json_data.get('p')
-    surface = json_data.get('surface')
 
-    # update discourseme template
-    if query_data['update_discourseme']:
-        current_app.logger.debug('updating discourseme template')
-        db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=p, surface=surface).first()
-        if db_item:
-            current_app.logger.debug(f'item {p}="{surface}" already in template')
-        else:
-            db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=p, surface=surface)
-            db.session.add(db_item)
-            db.session.commit()
+    query = db.get_or_404(Query, description._query.id)
+    level = query_data.get('level')
+    key = query_data.get('key')
+    p = query_data.get('p')
 
-    # update discourseme description
-    db_item = DiscoursemeDescriptionItems.query.filter_by(discourseme_description_id=description.id, p=p, surface=surface).first()
-    if db_item:
-        current_app.logger.debug(f'item {p}="{surface}" already in description')
-    else:
-        db_item = DiscoursemeDescriptionItems(discourseme_description_id=description.id, p=p, surface=surface)
-        db.session.add(db_item)
-        db.session.commit()
-        delete_description_children(description)
+    page_number = query_data.get('page_number', 1)
+    page_size = query_data.get('page_size', 20)
+    sort_order = query_data.get('sort_order', 'descending')
+    sort_by = query_data.get('sort_by', 'nr_matches')
+    sort_by = 'bin_index' if sort_by == 'bin' else sort_by
+    att = query.corpus.get_s_att(level, key)
+    if att is None:
+        abort(404, 'annotation layer not found')
 
-    return DiscoursemeDescriptionOut().dump(description), 200
+    # TODO this only works if s-attribute encoded in CWB matches the ones encoded in database
+    nr_bins = query_data.get('nr_bins', 5)
+    time_interval = query_data.get('time_interval', 'day')
+
+    if query.zero_matches:
+        abort(406, 'query has zero matches')
+
+    df_freq = get_query_meta_freq_breakdown(query, level, key, p, nr_bins, time_interval)
+    df_freq, metadata = paginate_dataframe(df_freq, sort_by, sort_order, page_number, page_size)
+    freq = rename_meta_freq(df_freq.reset_index(), att.value_type, time_interval)
+
+    # TODO w/o p
+
+    return QueryMetaFrequenciesOut().dump({
+        'sort_by': sort_by,
+        'sort_order': sort_order,
+        'nr_items': metadata['total'],
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': metadata['pages'],
+        'value_type': att.value_type,
+        'frequencies': [QueryMetaFrequencyOut().dump(f) for f in freq]
+    }), 200
 
 
 @bp.patch('/<description_id>/add-items')
@@ -457,15 +470,15 @@ def description_patch_add(discourseme_id, description_id, json_data, query_data)
 @bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
-def description_patch_add_many(discourseme_id, description_id, json_data, query_data):
-    """Patch discourseme description: add item to description.
+def description_patch_add(discourseme_id, description_id, json_data, query_data):
+    """Patch discourseme description: add item(s) to description.
 
     """
 
-    discourseme = db.get_or_404(Discourseme, discourseme_id)  # TODO: needed?
+    discourseme = db.get_or_404(Discourseme, discourseme_id)
     description = db.get_or_404(DiscoursemeDescription, description_id)
     p = json_data.get('p')
-    items = json_data.get('surface')
+    items = json_data.get('items')
 
     for surface in items:
 
@@ -493,38 +506,40 @@ def description_patch_add_many(discourseme_id, description_id, json_data, query_
     return DiscoursemeDescriptionOut().dump(description), 200
 
 
-@bp.patch('/<description_id>/remove-item')
-@bp.input(DiscoursemeItem)
+@bp.patch('/<description_id>/remove-items')
+@bp.input(DiscoursemeItemsIn)
 @bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def description_patch_remove(discourseme_id, description_id, json_data, query_data):
-    """Patch discourseme description: remove item from description.
+    """Patch discourseme description: remove item(s) from description.
 
     """
 
-    discourseme = db.get_or_404(Discourseme, discourseme_id)  # TODO: needed?
+    discourseme = db.get_or_404(Discourseme, discourseme_id)
     description = db.get_or_404(DiscoursemeDescription, description_id)
     p = json_data.get('p')
-    surface = json_data.get('surface')
+    items = json_data.get('items')
 
-    # update discourseme template
-    if query_data['update_discourseme']:
-        current_app.logger.debug('updating discourseme template')
-        db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=p, surface=surface).first()
-        if db_item:
-            current_app.logger.debug('item {p}="{surface}" item not in template')
+    for surface in items:
+        # update discourseme template
+        if query_data['update_discourseme']:
+            current_app.logger.debug('updating discourseme template')
+            db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=p, surface=surface).first()
+            if not db_item:
+                current_app.logger.debug('item {p}="{surface}" item not in template')
+            else:
+                db.session.delete(db_item)
+                db.session.commit()
+
+        # update discourseme description
+        db_item = DiscoursemeDescriptionItems.query.filter_by(discourseme_description_id=description.id, p=p, surface=surface).first()
+        if not db_item:
+            current_app.logger.debug('item {p}="{surface}" item not in description')
+            continue
         else:
             db.session.delete(db_item)
             db.session.commit()
-
-    # update discourseme description
-    db_item = DiscoursemeDescriptionItems.query.filter_by(discourseme_description_id=description.id, p=p, surface=surface).first()
-    if not db_item:
-        return abort(404, 'no such item')
-    else:
-        db.session.delete(db_item)
-        db.session.commit()
-        delete_description_children(description)
+            delete_description_children(description)
 
     return DiscoursemeDescriptionOut().dump(description), 200

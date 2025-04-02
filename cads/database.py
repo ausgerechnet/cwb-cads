@@ -10,7 +10,6 @@ from numpy import log
 from pandas import DataFrame
 from sqlalchemy import text
 from werkzeug.security import generate_password_hash
-from sqlalchemy.ext.hybrid import hybrid_property
 
 from . import db
 

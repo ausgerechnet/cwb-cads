@@ -4,9 +4,9 @@
 # import logging
 import os
 
-from apiflask import APIFlask, HTTPTokenAuth
-from flask import redirect, request, abort, jsonify
 import werkzeug.exceptions
+from apiflask import APIFlask, HTTPTokenAuth
+from flask import jsonify, redirect, request
 # from flask.logging import default_handler
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager

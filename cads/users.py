@@ -79,7 +79,7 @@ class HTTPRefreshTokenIn(Schema):
 @bp.input(UserIn, location='form')
 @bp.output(HTTPTokenOut)
 def login(form_data):
-    """Login with name and password to get JWT token
+    """Log in with name and password to get JWT token.
 
     """
     username = form_data['username']
@@ -104,7 +104,7 @@ def login(form_data):
 @bp.input(HTTPRefreshTokenIn)
 @bp.output(HTTPTokenOut)
 def refresh(json_data):
-    """Return a new token if the user has a refresh token
+    """Return new access and refresh tokens using a refresh token.
 
     """
 
@@ -122,8 +122,9 @@ def refresh(json_data):
 
 @bp.get('/identify')
 @bp.auth_required(auth)
+@bp.output(UserOut)
 def identify():
-    """Identify who is logged with token
+    """Identify who is logged in with JWT token.
 
     """
 
@@ -169,6 +170,20 @@ def get_user(id):
     user = db.get_or_404(User, id)
 
     return UserOut().dump(user), 200
+
+
+@bp.delete('/<id>')
+@bp.auth_required(auth)
+def delete_user(id):
+    """Delete user.
+
+    """
+
+    user = db.get_or_404(User, id)
+    db.session.delete(user)
+    db.session.commit()
+
+    return 'Deletion successful.', 200
 
 
 @bp.get('/')

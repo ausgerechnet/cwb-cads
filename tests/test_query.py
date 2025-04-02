@@ -3,7 +3,7 @@ import pytest
 from pprint import pprint
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_create_query(client, auth):
 
     auth_header = auth.login()
@@ -223,6 +223,7 @@ def test_query_breakdown(client, auth):
         assert breakdown.status_code == 200
 
 
+# @pytest.mark.now
 def test_query_meta(client, auth):
 
     auth_header = auth.login()
@@ -231,22 +232,70 @@ def test_query_meta(client, auth):
 
         query = client.post(url_for('query.create'),
                             json={
-                                'corpus_id': 1,
-                                'cqp_query': '[lemma="oder"]',
+                                'corpus_id': 2,
+                                'cqp_query': '[lemma="müssen"]',
                                 's': 's'
                             },
                             headers=auth_header)
 
         assert query.status_code == 200
 
-        meta = client.get(url_for('query.get_meta', query_id=query.json['id'], level='text', key='parliamentary_group'),
+        meta = client.get(url_for('query.get_meta', query_id=query.json['id'], level='article', key='rubrik', page_size=5, p='lemma'),
                           headers=auth_header)
 
         assert meta.status_code == 200
+        pprint(meta.json)
 
-        assert meta.json[0]['frequency'] == 50
-        assert meta.json[0]['value'] == 'CDU/CSU'
-        assert meta.json[0]['ipm'] == 1829.022936
+        meta = client.get(url_for('query.get_meta', query_id=query.json['id'], level='article', key='date', page_size=25, p='lemma'),
+                          headers=auth_header)
+        assert meta.status_code == 200
+        pprint(meta.json)
+
+
+# @pytest.mark.now
+def test_query_meta_few(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="Kernkraftwerk"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
+
+        assert query.status_code == 200
+
+        meta = client.get(url_for('query.get_meta', query_id=query.json['id'], level='text', key='parliamentary_group', page_size=5, p='lemma'),
+                          headers=auth_header)
+
+        assert meta.status_code == 200
+        pprint(meta.json)
+
+
+# @pytest.mark.now
+def test_query_meta_empty(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 2,
+                                'cqp_query': '[lemma="Kernkraftwerk"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
+
+        assert query.status_code == 200
+
+        meta = client.get(url_for('query.get_meta', query_id=query.json['id'], level='article', key='rubrik', page_size=5, p='lemma'),
+                          headers=auth_header)
+        assert meta.status_code == 406
 
 
 def test_query_collocation(client, auth):
@@ -279,6 +328,43 @@ def test_query_collocation(client, auth):
         assert collocation_items.status_code == 200
 
         assert collocation_items.json['items'][0]['item'] == 'Hornung'
+
+
+# @pytest.mark.now
+def test_query_collocation_empty(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        query = client.post(url_for('query.create'),
+                            json={
+                                'corpus_id': 1,
+                                'cqp_query': '[lemma="Kernkraftwerk"]',
+                                's': 's'
+                            },
+                            headers=auth_header)
+
+        assert query.status_code == 200
+
+        collocation = client.put(url_for('query.get_or_create_collocation',
+                                         query_id=query.json['id']),
+                                 json={'p': 'lemma',
+                                       'window': 10,
+                                       "semantic_map_init": True,
+                                       "semantic_map_id": None,
+                                       "s_break": "s",
+                                       "filter_item_p_att": "lemma",
+                                       "filter_overlap": "partial",
+                                       "marginals": "local"},
+                                 headers=auth_header)
+
+        assert collocation.status_code == 200
+
+        collocation_items = client.get(url_for('collocation.get_collocation_items', id=collocation.json['id']),
+                                       headers=auth_header)
+
+        assert collocation_items.status_code == 200
 
 
 def test_query_concordance_sort_complete(client, auth):

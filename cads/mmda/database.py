@@ -5,7 +5,8 @@ from datetime import datetime
 
 from .. import db
 from ..breakdown import ccc_breakdown
-from ..database import Breakdown, Corpus, Query, SubCorpus, SubCorpusCollection, get_or_create
+from ..database import (Breakdown, Corpus, Query, SubCorpus,
+                        SubCorpusCollection, get_or_create)
 
 constellation_discourseme = db.Table(
     'constellation_discourseme',

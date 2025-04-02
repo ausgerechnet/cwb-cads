@@ -194,7 +194,7 @@ def get_all_keyword():
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
 def get_keyword(id):
-    """Get one keyword analysis.
+    """Get details of keyword analysis.
 
     """
 
@@ -240,7 +240,7 @@ def delete_keyword(id):
 @bp.output(KeywordItemsOut)
 @bp.auth_required(auth)
 def get_keyword_items(id, query_data):
-    """Get scored items of a keyword analysis.
+    """Get scored items of keyword analysis.
 
     """
 

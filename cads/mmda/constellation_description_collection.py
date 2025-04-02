@@ -44,8 +44,83 @@ def calculate_rbo(description_left, collocation_left, description_right, colloca
         r = 0.0
     else:
         r = rbo(items_left, items_right, p=.95)[2]
-
     return r
+
+
+def calculate_ufa(collection, window, p, marginals, include_negative, semantic_map_id, focus_discourseme_id,
+                  filter_discourseme_ids, filter_item, filter_item_p_att, sort_by, max_depth):
+
+    # get collocation objects
+    current_app.logger.debug('calculate_ufa :: getting collocation items')
+    collocations = list()
+    for description in collection.constellation_descriptions:
+
+        collocation = get_or_create_coll(
+            description,
+            window, p, marginals, include_negative,
+            semantic_map_id,
+            focus_discourseme_id,
+            filter_discourseme_ids, filter_item, filter_item_p_att
+        )
+        if collocation:
+            collocation.focus_discourseme_id = focus_discourseme_id
+        collocations.append(collocation)
+        if semantic_map_id is None and collocation:
+            # use same map for following analyses
+            semantic_map_id = collocation.semantic_map_id
+
+    # calculate RBO scores
+    current_app.logger.debug('calculate_ufa :: calculating RBO and fitting GAM')
+    xs = list()
+    scores = list()
+    for i in range(1, len(collocations)):
+        left = collocations[i-1]
+        right = collocations[i]
+        description_left = collection.constellation_descriptions[i-1]
+        description_right = collection.constellation_descriptions[i]
+        xs.append(description_right.subcorpus.name)
+        if not left or not right:
+            scores.append(0)    # no overlap between empty sets (None will not work with smoothing)
+        else:
+            scores.append(calculate_rbo(description_left, left, description_right, right, sort_by=sort_by, number=max_depth))
+
+    if collection.subcorpus_collection.time_interval in ['month', 'year']:
+        seconds = [datetime.fromisoformat(time_str + "-01").timestamp() for time_str in xs]
+    else:
+        seconds = [datetime.fromisoformat(time_str).timestamp() for time_str in xs]
+    predictions = gam_smoothing(DataFrame({'x': seconds, 'score': scores}))
+
+    current_app.logger.debug('calculate_ufa :: formatting output')
+    # create output format
+    ufa = list()
+    for i, score, x, row in zip(range(1, len(collocations)), scores, xs, predictions.iterrows()):
+        collocation_left = collocations[i-1]
+        collocation_right = collocations[i]
+        description_left = collection.constellation_descriptions[i-1]
+        description_right = collection.constellation_descriptions[i]
+
+        ufa_score = {
+            'collocation_id_left': collocation_left.id if collocation_left else None,
+            'description_id_left': description_left.id,
+            'collocation_id_right': collocation_right.id if collocation_right else None,
+            'description_id_right': description_right.id,
+            'x_label': x,
+            'score': score,
+            'score_confidence': {
+                'lower_95': min(1, row[1]['ci_025']) if score else None,
+                'lower_90': min(1, row[1]['ci_050']) if score else None,
+                'smooth': row[1]['smooth'] if score else None,
+                'upper_90': max(0, row[1]['ci_950']) if score else None,
+                'upper_95': max(0, row[1]['ci_975']) if score else None
+            }
+        }
+
+        ufa.append(ufa_score)
+
+    return {
+        'collocations': [ConstellationCollocationOut().dump(collocation) if collocation else None for collocation in collocations],
+        'ufa': ufa
+    }
 
 
 ################
@@ -314,73 +389,7 @@ def get_or_create_collocation(constellation_id, collection_id, json_data, query_
     filter_item = json_data.get('filter_item')
     filter_item_p_att = json_data.get('filter_item_p_att')
 
-    # get collocation objects
-    collocations = list()
-    for description in collection.constellation_descriptions:
-
-        collocation = get_or_create_coll(
-            description,
-            window, p, marginals, include_negative,
-            semantic_map_id,
-            focus_discourseme_id,
-            filter_discourseme_ids, filter_item, filter_item_p_att
-        )
-        if collocation:
-            collocation.focus_discourseme_id = focus_discourseme_id
-        collocations.append(collocation)
-        if semantic_map_id is None and collocation:
-            # use same map for following analyses
-            semantic_map_id = collocation.semantic_map_id
-
-    # calculate RBO scores
-    xs = list()
-    scores = list()
-    for i in range(1, len(collocations)):
-        left = collocations[i-1]
-        right = collocations[i]
-        description_left = collection.constellation_descriptions[i-1]
-        description_right = collection.constellation_descriptions[i]
-        xs.append(description_right.subcorpus.name)
-        if not left or not right:
-            scores.append(0)    # no overlap between empty sets (None will not work with smoothing)
-        else:
-            scores.append(calculate_rbo(description_left, left, description_right, right, sort_by=sort_by, number=max_depth))
-
-    if collection.subcorpus_collection.time_interval in ['month', 'year']:
-        seconds = [datetime.fromisoformat(time_str + "-01").timestamp() for time_str in xs]
-    else:
-        seconds = [datetime.fromisoformat(time_str).timestamp() for time_str in xs]
-    predictions = gam_smoothing(DataFrame({'x': seconds, 'score': scores}))
-
-    # create output format
-    ufa = list()
-    for i, score, x, row in zip(range(1, len(collocations)), scores, xs, predictions.iterrows()):
-        collocation_left = collocations[i-1]
-        collocation_right = collocations[i]
-        description_left = collection.constellation_descriptions[i-1]
-        description_right = collection.constellation_descriptions[i]
-
-        ufa_score = {
-            'collocation_id_left': collocation_left.id if collocation_left else None,
-            'description_id_left': description_left.id,
-            'collocation_id_right': collocation_right.id if collocation_right else None,
-            'description_id_right': description_right.id,
-            'x_label': x,
-            'score': score,
-            'score_confidence': {
-                'lower_95': min(1, row[1]['ci_025']) if score else None,
-                'lower_90': min(1, row[1]['ci_050']) if score else None,
-                'smooth': row[1]['smooth'] if score else None,
-                'upper_90': max(0, row[1]['ci_950']) if score else None,
-                'upper_95': max(0, row[1]['ci_975']) if score else None
-            }
-        }
-
-        ufa.append(ufa_score)
-
-    collocation_collection = {
-        'collocations': [ConstellationCollocationOut().dump(collocation) if collocation else None for collocation in collocations],
-        'ufa': ufa
-    }
+    collocation_collection = calculate_ufa(collection, window, p, marginals, include_negative, semantic_map_id, focus_discourseme_id,
+                                           filter_discourseme_ids, filter_item, filter_item_p_att, sort_by, max_depth)
 
     return ConstellationDescriptionCollectionCollocationOut().dump(collocation_collection), 200

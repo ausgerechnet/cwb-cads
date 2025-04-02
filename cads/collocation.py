@@ -197,7 +197,7 @@ class CollocationItemsOut(Schema):
 @bp.output(CollocationOut(many=True))
 @bp.auth_required(auth)
 def get_all_collocation():
-    """Get all collocations.
+    """Get all collocation analyses.
 
     """
 
@@ -210,7 +210,7 @@ def get_all_collocation():
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def get_collocation(id):
-    """Get one collocation analysis.
+    """Get details of collocation analysis.
 
     """
 
@@ -222,7 +222,7 @@ def get_collocation(id):
 @bp.delete('/<id>/')
 @bp.auth_required(auth)
 def delete_collocation(id):
-    """Delete collocation.
+    """Delete collocation analysis.
 
     """
 
