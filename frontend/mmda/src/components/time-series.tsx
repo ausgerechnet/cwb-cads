@@ -2,6 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { clamp } from '@cads/shared/lib/clamp'
 import { cn } from '@cads/shared/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cads/shared/components/ui/select'
 
 export function TimeSeries({
   className,
@@ -65,7 +73,7 @@ export function TimeSeries({
   return (
     <div
       className={cn(
-        'border-1 border-border bg-muted grid grid-cols-[4rem_1fr_3rem] grid-rows-[10rem] gap-2 overflow-hidden rounded-lg border',
+        'border-1 border-border bg-muted grid grid-cols-[4rem_1fr_3rem] grid-rows-[10rem] overflow-hidden rounded-lg border',
         className,
       )}
     >
@@ -75,7 +83,10 @@ export function TimeSeries({
         <svg
           viewBox={`0 ${(1 - maxY) * 100} 100 ${viewportHeight * 100}`}
           preserveAspectRatio="none"
-          className="absolute left-0 top-0 h-full w-full overflow-visible"
+          className={cn(
+            'absolute left-0 top-0 h-full w-full overflow-visible',
+            data.length === 0 && 'opacity-0',
+          )}
           ref={svgRef}
         >
           <g aria-label="Grid lines">
@@ -113,7 +124,7 @@ export function TimeSeries({
           </g>
 
           <path
-            className="fill-slate-200 stroke-none dark:fill-slate-800"
+            className="fill-slate-300 stroke-none dark:fill-slate-700"
             d={getBandPath(data.map((d) => d.confidence95))}
           />
 
@@ -224,6 +235,33 @@ export function TimeSeries({
           })}
         </svg>
       </aside>
+
+      <div className="bg-muted relative col-span-full col-start-1 pt-2">
+        <Select
+          value={value}
+          onValueChange={onChange}
+          disabled={
+            !onChange ||
+            data.every((d) => d.label === undefined || d.score === undefined)
+          }
+        >
+          <SelectTrigger className="mx-2 mb-2 w-auto">
+            <SelectValue placeholder="Select Entry" />
+          </SelectTrigger>
+
+          <SelectContent>
+            <SelectGroup>
+              {data.map(({ label, score }) =>
+                label === undefined || score === undefined ? null : (
+                  <SelectItem key={label} value={label}>
+                    {label}: {score}
+                  </SelectItem>
+                ),
+              )}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
 }

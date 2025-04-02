@@ -307,6 +307,25 @@ export const constellationDescriptionsById = (constellationId: number) =>
       }),
   })
 
+export const constellationDescription = (
+  constellationId: number,
+  descriptionId: number,
+) =>
+  queryOptions({
+    queryKey: ['constellation-description', constellationId, descriptionId],
+    queryFn: ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/',
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+          },
+          signal,
+        },
+      ),
+  })
+
 export const constellationDescriptionFor = ({
   constellationId,
   corpusId,

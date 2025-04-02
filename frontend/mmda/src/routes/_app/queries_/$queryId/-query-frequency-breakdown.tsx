@@ -69,10 +69,12 @@ export function QueryFrequencyBreakdown({ queryId }: { queryId: number }) {
         <Headline3 className="mr-auto w-max text-lg leading-normal">
           Frequency Breakdown
         </Headline3>
+
         <Select onValueChange={handlePAttChange} value={validatedPAtt}>
           <SelectTrigger className="ml-auto h-7 w-auto">
             <SelectValue placeholder="Select a Comparison Layer" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectGroup>
               {pAtts.map((pAtt) => (
@@ -84,13 +86,17 @@ export function QueryFrequencyBreakdown({ queryId }: { queryId: number }) {
           </SelectContent>
         </Select>
       </div>
+
       {breakdown && <BreakdownTable breakdown={breakdown} />}
+
       {!breakdown && isLoading && !isPaused && (
         <Skeleton className="h-80 w-full rounded-md" />
       )}
-      <ErrorMessage className="mt-4" error={errorCorpus} />
-      <ErrorMessage className="mt-4" error={errorQuery} />
-      <ErrorMessage className="mt-4" error={errorBreakdown} />
+
+      <ErrorMessage
+        className="mt-4"
+        error={[errorCorpus, errorQuery, errorBreakdown]}
+      />
     </>
   )
 }
@@ -105,6 +111,12 @@ const columns: ColumnDef<z.infer<typeof schemas.BreakdownItemsOut>>[] = [
     accessorKey: 'freq',
     enableSorting: true,
     header: ({ column }) => <SortButton column={column}>Frequency</SortButton>,
+    meta: { className: 'w-1/2' },
+  },
+  {
+    accessorKey: 'ipm',
+    enableSorting: true,
+    header: ({ column }) => <SortButton column={column}>IPM</SortButton>,
     meta: { className: 'w-1/2' },
   },
 ]

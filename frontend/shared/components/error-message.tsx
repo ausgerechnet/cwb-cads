@@ -34,11 +34,11 @@ export function ErrorMessage({
     <Alert
       variant="destructive"
       className={cn(
-        'bg-destructive/5 max-h-96 overflow-auto font-sans',
+        'bg-destructive/10 text-destructive dark:bg-destructive/50 dark:text-foreground max-h-96 overflow-auto font-sans',
         className,
       )}
     >
-      <AlertCircle className="mr-2 h-4 w-4" />
+      <AlertCircle className="dark:stroke-foreground mr-2 h-4 w-4" />
       <AlertTitle>{title}</AlertTitle>
       {message && (
         <AlertDescription className="whitespace-pre-wrap">

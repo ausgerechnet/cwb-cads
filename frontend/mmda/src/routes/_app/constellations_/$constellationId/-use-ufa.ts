@@ -5,6 +5,7 @@ import {
   constellationDescriptionCollection,
   constellationDescriptionCollectionCollocation,
   constellationCollocationVisualisation,
+  constellationDescription,
 } from '@cads/shared/queries'
 import { useConcordanceFilterContext } from '@cads/shared/components/concordances'
 
@@ -126,7 +127,22 @@ export function useUfa() {
       !isFetchingItems,
   })
 
-  const isLoading = isLoadingItem || isLoadingItemsMap || isLoadingDescriptions
+  console.log('ufa description id', ufaDescriptionId)
+
+  const {
+    data: description,
+    isLoading: isLoadingDescription,
+    error: errorDescription,
+  } = useQuery({
+    ...constellationDescription(constellationId, ufaDescriptionId as number),
+    enabled: ufaDescriptionId !== undefined,
+  })
+
+  const isLoading =
+    isLoadingItem ||
+    isLoadingItemsMap ||
+    isLoadingDescriptions ||
+    isLoadingDescription
 
   return {
     errors: [
@@ -134,6 +150,7 @@ export function useUfa() {
       errorCollection,
       errorCollectionDescriptions,
       errorConstellationMap,
+      errorDescription,
     ].filter(Boolean),
     collectionDescriptions,
     isLoading,
@@ -141,6 +158,7 @@ export function useUfa() {
 
     collocationItems,
     mapItems,
+    description,
 
     ufaTimeSpan,
     setUfaTimeSpan,

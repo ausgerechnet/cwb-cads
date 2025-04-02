@@ -28,11 +28,31 @@ import { ToggleBar } from '@cads/shared/components/toggle-bar'
 import { WordCloudPreview } from './word-cloud-preview'
 import WordCloud from './word-cloud'
 import { TimeSeries } from './time-series'
+import { Graph, GraphRange } from './graph'
 
 function rnd(seed: number) {
   const x = Math.sin(seed) * 1_000_000
   return x - Math.floor(x)
 }
+
+const sineGraph = [
+  Array.from({ length: 800 }).map((_, i): [number, number] => [
+    i / 100,
+    Math.sin(i / 10),
+  ]),
+]
+
+const sinePoints = Array.from({ length: 800 })
+  .map(
+    (_, i) =>
+      ({
+        position: [
+          i / 100,
+          Math.sin(i / 10) + (rnd(i ** 2) - 0.8) * 0.3,
+        ] satisfies [number, number],
+      }) as const,
+  )
+  .filter((_, i) => rnd(i) > 0.7)
 
 export function ComponentOverview() {
   const [multiSelectValue, setMultiSelectValue] = useState<number[]>([])
@@ -43,8 +63,240 @@ export function ComponentOverview() {
     <div className="mx-auto max-w-7xl p-2 pb-16">
       <Headline1 className="mb-4 mt-16">Component Overview</Headline1>
 
+      <Headline2 className="mb-4 mt-16">Graph</Headline2>
+      <Code> &lt;Graph... /&gt;</Code>
+
+      <Graph
+        className="my-5"
+        pointStyle="bar"
+        dataPoints={[
+          { position: [0, 2] },
+          { position: [1, 4] },
+          { position: [2, 3] },
+          { position: [3, 2] },
+          { position: [4, 1] },
+          { position: [5, 2] },
+        ]}
+        viewportY={[0, 5]}
+      />
+
+      <GraphRange
+        className="my-5"
+        pointStyle="bar"
+        dataPoints={Array.from({ length: 500 })
+          .map((_, i) => ({
+            position: [
+              i / 10,
+              1.5 + Math.sin(i / 10) + (rnd(i ** 2) - 0.8) * 0.3,
+            ] satisfies [number, number],
+            type: 'bar',
+          }))
+          .filter((_, i) => rnd(i) > 0.2)}
+        viewportY={[0]}
+      />
+
+      <Graph
+        className="my-5"
+        dataPoints={[{ position: [0, 0] }, { position: [1, 4] }]}
+        lines={[
+          [
+            [0, 0],
+            [1, 4],
+          ],
+          [
+            [1.5, 0.5],
+            [2, 0],
+            [3, 1],
+          ],
+          [
+            [4, 3],
+            [5, 2],
+            [6, 3],
+            [7, 3],
+            [8, 3],
+            [9, 4],
+            [10, 3],
+          ],
+          [
+            [-1, -15],
+            [10, -15],
+          ],
+        ]}
+        bands={[
+          {
+            points: Array.from({ length: 100 }).map(
+              (_, i): [number, [number, number]] => [
+                i / 10,
+                [
+                  Math.sin(i / 10) * 1 + 0.2 + rnd(i) * 3.5,
+                  Math.sin(i / 10) * 1 - 3 + rnd(i) * 3.5,
+                ],
+              ],
+            ),
+          },
+        ]}
+      />
+
+      <GraphRange
+        className="my-5"
+        dataPoints={[{ position: [0, 0] }, { position: [1, 4] }]}
+        lines={[
+          [
+            [0, 0],
+            [1, 1],
+          ],
+          [
+            [0, 0],
+            [1, 4],
+          ],
+          [
+            [1.5, 0.5],
+            [2, 0],
+            [3, 1],
+          ],
+          [
+            [4, 3],
+            [5, 2],
+            [6, 3],
+            [7, 3],
+            [8, 3],
+            [9, 4],
+            [10, 3],
+          ],
+          [
+            [0, -15],
+            [10, -15],
+          ],
+        ]}
+        bands={[
+          {
+            points: Array.from({ length: 100 }).map(
+              (_, i): [number, [number, number]] => [
+                i / 10,
+                [
+                  Math.sin(i / 10) * 1 + 0.2 + rnd(i) * 3.5,
+                  Math.sin(i / 10) * 1 - 3 + rnd(i) * 3.5,
+                ],
+              ],
+            ),
+            className: 'fill-red-500/20',
+          },
+
+          {
+            points: Array.from({ length: 100 }).map(
+              (_, i): [number, [number, number]] => [
+                i / 10 + 3,
+                [
+                  Math.sin(i / 10) * 1 + 0.2 + rnd(i) * 3.5 - 3,
+                  Math.sin(i / 10) * 1 - 3 + rnd(i) * 3.5 - 3,
+                ],
+              ],
+            ),
+            className: 'fill-yellow-800',
+          },
+        ]}
+      />
+
+      <Graph
+        className="my-5 overflow-hidden"
+        dataPoints={[{ position: [0, 0] }, { position: [1, 4] }]}
+        lines={[
+          [
+            [0, 0],
+            [1, 1],
+          ],
+          [
+            [0, 0],
+            [1, 4],
+          ],
+          [
+            [1.5, 0.5],
+            [2, 0],
+            [3, 1],
+          ],
+          [
+            [4, 3],
+            [5, 2],
+            [6, 3],
+            [7, 3],
+            [8, 3],
+            [9, 4],
+            [10, 3],
+          ],
+          [
+            [-1, -15],
+            [10, -15],
+          ],
+        ]}
+        bands={[
+          {
+            points: Array.from({ length: 100 }).map(
+              (_, i): [number, [number, number]] => [
+                i / 10,
+                [
+                  Math.sin(i / 10) * 1 + 0.2 + rnd(i) * 3.5,
+                  Math.sin(i / 10) * 1 - 3 + rnd(i) * 3.5,
+                ],
+              ],
+            ),
+            className: 'fill-red-500/20',
+          },
+
+          {
+            points: Array.from({ length: 100 }).map(
+              (_, i): [number, [number, number]] => [
+                i / 10 + 3,
+                [
+                  Math.sin(i / 10) * 1 + 0.2 + rnd(i) * 3.5 - 3,
+                  Math.sin(i / 10) * 1 - 3 + rnd(i) * 3.5 - 3,
+                ],
+              ],
+            ),
+            className: 'fill-yellow-800',
+          },
+        ]}
+        viewportX={[0, 1]}
+        viewportY={[0, 1]}
+      />
+
+      <Graph className="my-5" dataPoints={sinePoints} lines={sineGraph} />
+
+      <GraphRange className="my-5" dataPoints={sinePoints} lines={sineGraph} />
+
+      <GraphRange
+        bands={[
+          {
+            points: Array.from({ length: 100 }).map(
+              (_, i): [number, [number, number]] => [
+                i / 10,
+                [
+                  Math.sin(i / 10) * 1 + 0.2 + rnd(i) * 3.5,
+                  Math.sin(i / 10) * 1 - 3 + rnd(i) * 3.5,
+                ],
+              ],
+            ),
+            className: 'fill-red-500/20',
+          },
+
+          {
+            points: Array.from({ length: 100 }).map(
+              (_, i): [number, [number, number]] => [
+                i / 10 + 3,
+                [
+                  Math.sin(i / 10) * 1 + 0.2 + rnd(i) * 3.5 - 3,
+                  Math.sin(i / 10) * 1 - 3 + rnd(i) * 3.5 - 3,
+                ],
+              ],
+            ),
+            className: 'fill-yellow-800',
+          },
+        ]}
+      />
+
       <Headline2 className="mb-4 mt-16">TimeSeries</Headline2>
       <Code> &lt;TimeSeries... /&gt;</Code>
+
+      <TimeSeries className="my-5" data={[]} />
 
       <TimeSeries
         className="my-5"
