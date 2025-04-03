@@ -15,10 +15,12 @@ from semmap import SemanticSpace
 from .. import db
 from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from ..collocation import CollocationItemOut, CollocationScoreOut
-from ..database import Breakdown, Corpus, Query, get_or_create
-from ..users import auth
 from ..corpus import rename_meta_freq
-from ..query import get_query_meta_freq_breakdown, paginate_dataframe, QueryMetaFrequenciesIn, QueryMetaFrequenciesOut, QueryMetaFrequencyOut
+from ..database import Breakdown, Corpus, Query, get_or_create
+from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
+                     QueryMetaFrequencyOut, get_query_meta_freq_breakdown,
+                     paginate_dataframe)
+from ..users import auth
 from .database import (CollocationDiscoursemeItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem)

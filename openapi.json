@@ -2466,6 +2466,41 @@
         ],
         "type": "object"
       },
+      "UFAComparisonOut": {
+        "properties": {
+          "collocation_id_left": {
+            "type": "integer"
+          },
+          "collocation_id_right": {
+            "type": "integer"
+          },
+          "keyword_id_left": {
+            "type": "integer"
+          },
+          "keyword_id_right": {
+            "type": "integer"
+          },
+          "max_depth": {
+            "type": "integer"
+          },
+          "p": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          },
+          "sort_by": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "max_depth",
+          "p",
+          "score",
+          "sort_by"
+        ],
+        "type": "object"
+      },
       "UFAConfidenceIntervalOut": {
         "properties": {
           "lower_90": {
@@ -2681,7 +2716,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev50"
+    "version": "0.3.0.dev51"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -11116,6 +11151,129 @@
         ]
       }
     },
+    "/ufa/score": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "collocation_id_left",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collocation_id_right",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "keyword_id_left",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "keyword_id_right",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_depth",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "p",
+            "required": false,
+            "schema": {
+              "default": 0.95,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "conservative_log_ratio",
+              "enum": [
+                "conservative_log_ratio",
+                "O11",
+                "E11",
+                "ipm",
+                "ipm_expected",
+                "log_likelihood",
+                "z_score",
+                "t_score",
+                "simple_ll",
+                "dice",
+                "log_ratio",
+                "min_sensitivity",
+                "liddell",
+                "mutual_information",
+                "local_mutual_information"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UFAComparisonOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Score",
+        "tags": [
+          "Ufa"
+        ]
+      }
+    },
     "/user/": {
       "get": {
         "parameters": [],
@@ -11535,6 +11693,9 @@
     },
     {
       "name": "Keyword"
+    },
+    {
+      "name": "Ufa"
     },
     {
       "name": "Mmda"

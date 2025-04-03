@@ -8,7 +8,7 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, Nested, String, List
+from apiflask.fields import Integer, List, Nested, String
 from flask import current_app
 from pandas import DataFrame, read_csv
 

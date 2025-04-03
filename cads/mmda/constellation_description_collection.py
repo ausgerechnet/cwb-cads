@@ -21,13 +21,13 @@ from .constellation_description_collocation import (
 from .database import (Constellation, ConstellationDescription,
                        ConstellationDescriptionCollection, Discourseme,
                        DiscoursemeDescription, DiscoursemeTemplateItems)
-from .discourseme import DiscoursemeIn, DiscoursemeOut, DiscoursemeIDs
+from .discourseme import DiscoursemeIDs, DiscoursemeIn, DiscoursemeOut
 from .discourseme_description import discourseme_template_to_description
 
 bp = APIBlueprint('collection', __name__, url_prefix='/collection/')
 
 
-def calculate_rbo(description_left, collocation_left, description_right, collocation_right, sort_by="conservative_log_ratio", number=50):
+def calculate_rbo(description_left, collocation_left, description_right, collocation_right, sort_by="conservative_log_ratio", number=50, p=.95):
     """RBO calculation of two constellation description collocation analyses
 
     TODO: also return discourseme scores
@@ -44,7 +44,7 @@ def calculate_rbo(description_left, collocation_left, description_right, colloca
     if len(set(items_left).intersection(set(items_right))) == 0:
         r = 0.0
     else:
-        r = rbo(items_left, items_right, p=.95)[2]
+        r = rbo(items_left, items_right, p=p)[2]
     return r
 
 

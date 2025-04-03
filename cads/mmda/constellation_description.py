@@ -14,12 +14,12 @@ from .. import db
 from ..breakdown import BreakdownIn, ccc_breakdown
 from ..concordance import (ConcordanceIn, ConcordanceLineIn,
                            ConcordanceLineOut, ConcordanceOut, ccc_concordance)
-from ..database import Corpus, get_or_create, Breakdown
+from ..database import Breakdown, Corpus, get_or_create
 from ..query import ccc_query, get_or_create_query_assisted
 from ..users import auth
 from .database import (Constellation, ConstellationDescription, Discourseme,
                        DiscoursemeDescription, DiscoursemeTemplateItems)
-from .discourseme import DiscoursemeIn, DiscoursemeOut, DiscoursemeIDs
+from .discourseme import DiscoursemeIDs, DiscoursemeIn, DiscoursemeOut
 from .discourseme_description import (DiscoursemeDescriptionOut,
                                       discourseme_template_to_description)
 

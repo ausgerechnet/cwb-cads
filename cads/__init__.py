@@ -119,7 +119,7 @@ def create_app(config=CONFIG):
         return redirect(request.base_url + "docs")
 
     # register blueprints
-    from . import collocation, corpus, keyword, query, semantic_map, users
+    from . import collocation, corpus, keyword, query, semantic_map, ufa, users
 
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)
@@ -127,6 +127,7 @@ def create_app(config=CONFIG):
     app.register_blueprint(collocation.bp)
     app.register_blueprint(semantic_map.bp)
     app.register_blueprint(keyword.bp)
+    app.register_blueprint(ufa.bp)
 
     from . import mmda
     app.register_blueprint(mmda.bp)
