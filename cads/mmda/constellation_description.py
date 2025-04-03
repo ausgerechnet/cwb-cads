@@ -727,8 +727,8 @@ def constellation_description_get_breakdown(constellation_id, description_id, qu
             'breakdown_id': breakdown.id,
             'item': description.discourseme.name,
             'freq': disc_freq,
-            'nr_tokens': item.nr_tokens,
-            'ipm': disc_freq / item.nr_tokens * 10**6
+            'nr_tokens': breakdown.nr_tokens,
+            'ipm': disc_freq / breakdown.nr_tokens * 10**6
         })
 
     constellation_breakdown = {

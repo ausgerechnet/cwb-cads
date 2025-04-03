@@ -816,11 +816,9 @@ class Keyword(db.Model):
         return [item.item for item in keyword_items if ((item.f1 / item.N1) > (item.f2/item.N2))]
 
     def sub_vs_rest_strategy(self):
-        """check if target is subcorpus of reference (or vice versa), and whether to apply sub-vs-rest correction
+        """map (sub-)corpora to target and reference, and check whether to apply sub-vs-rest correction
 
         """
-
-        sub_vs_rest = False
 
         if self.subcorpus_id:
             corpus = self.subcorpus
@@ -836,6 +834,7 @@ class Keyword(db.Model):
             corpus_reference = self.corpus_reference
             reference_is_subcorpus = False
 
+        sub_vs_rest = False
         if self.sub_vs_rest and (target_is_subcorpus ^ reference_is_subcorpus):  # xor
             if target_is_subcorpus:
                 if corpus.corpus.id == corpus_reference.id:
@@ -843,6 +842,10 @@ class Keyword(db.Model):
             if reference_is_subcorpus:
                 if corpus_reference.corpus.id == corpus.id:
                     sub_vs_rest = True
+
+        if self.sub_vs_rest and target_is_subcorpus and reference_is_subcorpus:
+            current_app.logger.warning("forcing sub-vs-rest correction without checking if there's is actual overlap")
+            sub_vs_rest = True
 
         return {
             'sub_vs_rest': sub_vs_rest,
