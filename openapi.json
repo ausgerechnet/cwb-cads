@@ -2483,6 +2483,9 @@
           "max_depth": {
             "type": "integer"
           },
+          "measure": {
+            "type": "string"
+          },
           "p": {
             "type": "number"
           },
@@ -2495,6 +2498,7 @@
         },
         "required": [
           "max_depth",
+          "measure",
           "p",
           "score",
           "sort_by"
@@ -2716,7 +2720,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev51"
+    "version": "0.3.0.dev52"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -11226,6 +11230,20 @@
                 "liddell",
                 "mutual_information",
                 "local_mutual_information"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "measure",
+            "required": false,
+            "schema": {
+              "default": "rbo",
+              "enum": [
+                "rbo",
+                "gwets_ac1",
+                "cohens_kappa"
               ],
               "type": "string"
             }
