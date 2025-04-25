@@ -38,17 +38,20 @@ def get_filtered_cotext(focus_query, window, s_break, remove_focus_cpos=True):
     ).filter(
         CotextLines.cotext_id == cotext.id,
         CotextLines.offset.between(-window, window)
-    ).distinct()
+    )
 
     # convert query results to DataFrame
     current_app.logger.debug('get_filtered_cotext :: removing duplicates')
-    df_cooc = read_sql(cotext_lines_stmt, con=db.engine).drop(columns=['id']).drop_duplicates(subset='cpos')
+    df_cooc = read_sql(cotext_lines_stmt, con=db.engine).drop(columns=['id'])
+    df_cooc['abs_offset'] = df_cooc['offset'].abs()
+    df_cooc = df_cooc.sort_values(by='abs_offset')
+    df_cooc = df_cooc.drop_duplicates(subset='cpos')
+    df_cooc = df_cooc.drop('abs_offset', axis=1)
 
     # remove focus cpos if needed
     if remove_focus_cpos:
         current_app.logger.debug('get_filtered_cotext :: removing filter cpos')
-        discourseme_cpos = set(df_cooc.loc[df_cooc['offset'] == 0, 'cpos'])
-        df_cooc = df_cooc[~df_cooc['cpos'].isin(discourseme_cpos)]
+        df_cooc = df_cooc[df_cooc['offset'] != 0]
 
     return df_cooc
 
