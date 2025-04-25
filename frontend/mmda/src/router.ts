@@ -5,7 +5,10 @@ import { DefaultErrorComponent } from '@/components/default-error-component'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
 import { queryClient } from '@cads/shared/queries'
 
+const basepath = import.meta.env.VITE_ROUTER_BASEPATH || '/'
+
 export const router = createRouter({
+  basepath,
   routeTree,
   defaultStaleTime: 0,
   defaultPreload: false,

@@ -106,3 +106,10 @@ Setup:
   ```sh
   npm run dev
   ```
+
+### Production
+
+- set `target` in `frontend/mmda/vite.config.ts`
+- set frontend URL `VITE_ROUTER_BASEPATH` in `frontend/mmda/.env.production`
+- set backend URL `VITE_API_URL` in `frontend/mmda/.env.production`
+- run `npm run build` and deploy `mmda/dist/`
