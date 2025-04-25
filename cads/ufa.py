@@ -4,7 +4,7 @@
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, String
 from apiflask.validators import OneOf
-from association_measures.comparisons import rbo
+from association_measures.comparisons import rbo, gwets_ac1, cohens_kappa
 
 from .database import CollocationItemScore, KeywordItemScore
 from .users import auth
@@ -22,6 +22,7 @@ class UFAComparisonIn(Schema):
     max_depth = Integer(required=False, load_default=50)
     p = Float(required=False, load_default=.95)
     sort_by = String(required=False, load_default='conservative_log_ratio', validate=OneOf(AMS_DICT.keys()))
+    measure = String(required=False, load_default='rbo', validate=OneOf(['rbo', 'gwets_ac1', 'cohens_kappa']))
 
 
 class UFAComparisonOut(Schema):
@@ -34,6 +35,7 @@ class UFAComparisonOut(Schema):
     p = Float(required=True)
     sort_by = String(required=True)
     score = Float(required=True)
+    measure = String(required=True)
 
 
 def get_scores(model, item_attr, id_field, id_value, sort_by, max_depth):
@@ -63,6 +65,7 @@ def get_score(query_data):
     max_depth = query_data.get('max_depth')
     p = query_data.get('p')
     sort_by = query_data.get('sort_by')
+    measure = query_data.get('measure')
 
     if not ((collocation_id_left is None) ^ (keyword_id_left is None)):
         raise ValueError()
@@ -79,10 +82,12 @@ def get_score(query_data):
     items_left = [score[1] for score in scores_left if score[0] > 0]
     items_right = [score[1] for score in scores_right if score[0] > 0]
 
-    if len(set(items_left).intersection(set(items_right))) == 0:
-        score = 0.0
-    else:
+    if measure == 'rbo':
         score = rbo(items_left, items_right, p=p)[2]
+    elif measure == 'gwets_ac1':
+        score = gwets_ac1(items_left, items_right)
+    elif measure == 'cohens_kappa':
+        score = cohens_kappa(items_left, items_right)
 
     return UFAComparisonOut().dump({
         'score': score,
@@ -92,5 +97,6 @@ def get_score(query_data):
         'collocation_id_left': collocation_id_left,
         'collocation_id_right': collocation_id_right,
         'keyword_id_left': keyword_id_left,
-        'keyword_id_right': keyword_id_right
+        'keyword_id_right': keyword_id_right,
+        'measure': measure
     })
