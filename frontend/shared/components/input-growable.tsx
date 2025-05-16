@@ -42,7 +42,7 @@ export const InputGrowable = function ({
       <input
         {...props}
         className={cn(
-          'absolute bottom-0 left-0 right-0 top-0 w-full before:content-["bla"]',
+          'absolute bottom-0 left-0 right-0 top-0 w-full bg-transparent',
           className,
         )}
         ref={inputRef}

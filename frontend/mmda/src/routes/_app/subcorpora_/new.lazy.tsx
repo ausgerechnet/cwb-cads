@@ -65,8 +65,8 @@ const SubcorpusPut = z.object({
   level: z.string(),
   name: z.string(),
   bins_unicode: z.array(z.string()).nullable(),
-  bins_datetime: z.array(z.array(z.string()).nullable()).nullable(),
-  bins_numeric: z.array(z.array(z.number()).nullable()).nullable(),
+  bins_datetime: z.array(z.tuple([z.string(), z.string()])).nullable(),
+  bins_numeric: z.array(z.tuple([z.number(), z.number()])).nullable(),
   bins_boolean: z.array(z.boolean()).nullable(),
 })
 
@@ -409,7 +409,8 @@ function SubcorpusNew() {
                         <FormControl>
                           <MetaFrequencyNumericInput
                             frequencies={frequencies as Frequency<number>[]}
-                            onChange={field.onChange}
+                            onChange={(value) => field.onChange([value])}
+                            value={field.value?.[0] ?? [0, 0]}
                           />
                         </FormControl>
 
@@ -475,6 +476,12 @@ function SubcorpusNew() {
                           frequencies={frequencies as Frequency<string>[]}
                           onChange={field.onChange}
                           timeInterval={timeInterval}
+                          value={
+                            field.value?.[0] ?? [
+                              String(frequencies.at(0)?.value),
+                              String(frequencies.at(-1)?.value),
+                            ]
+                          }
                         />
                       </FormControl>
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 
 export function useViewport(
   dataPoints?: {
@@ -26,19 +26,22 @@ export function useViewport(
 
     const barWidth =
       pointStyle === 'bar'
-        ? pointXs.reduce((smallestWidth, x, index, pointsX) => {
-            if (index === 0) return smallestWidth
-            const prevX = pointsX[index - 1]
-            const width = Math.abs(prevX - x) * 0.6
-            return Math.min(smallestWidth, width)
-          }, Infinity)
+        ? pointXs.length === 1
+          ? 10
+          : pointXs.reduce((smallestWidth, x, index, pointsX) => {
+              if (index === 0) return smallestWidth
+              const prevX = pointsX[index - 1]
+              if (x === prevX) return smallestWidth
+              const width = Math.abs(prevX - x) * 0.6
+              return Math.min(smallestWidth, width)
+            }, Infinity)
         : 0
 
     return {
-      minX: Math.min(...allX),
-      maxX: Math.max(...allX),
-      minY: Math.min(...allY),
-      maxY: Math.max(...allY),
+      minX: allX.length === 0 ? 0 : Math.min(...allX),
+      maxX: allX.length === 0 ? 0 : Math.max(...allX),
+      minY: allY.length === 0 ? 0 : Math.min(...allY),
+      maxY: allY.length === 0 ? 0 : Math.max(...allY),
       barWidth,
     }
   }, [dataPoints, bands, lines, pointStyle])
@@ -63,9 +66,18 @@ export function useViewport(
     ? viewboxYMax - viewportY[0]
     : valueRangeY + Math.max(valueRangeY * 0.2, 0.2)
 
-  const flipY = (y: number) => {
-    return viewboxY + viewboxHeight - (y - viewboxY)
-  }
+  const flipY = useCallback(
+    (y: number) => viewboxY + viewboxHeight - (y - viewboxY),
+    [viewboxY, viewboxHeight],
+  )
+
+  const hasData = useMemo(
+    () =>
+      Boolean(dataPoints?.length) ||
+      Boolean(lines?.flat().length) ||
+      Boolean(bands?.map((band) => band.points).flat().length),
+    [dataPoints, lines, bands],
+  )
 
   return {
     minX,
@@ -80,5 +92,6 @@ export function useViewport(
     viewboxWidth,
     viewboxHeight,
     flipY,
+    hasData,
   }
 }

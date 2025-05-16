@@ -15,10 +15,19 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Route as rootRoute } from './routes/__root'
 import { Route as VignetteImport } from './routes/vignette'
 import { Route as LoginImport } from './routes/login'
-import { Route as ComponentsImport } from './routes/components_'
 import { Route as AppImport } from './routes/_app'
 import { Route as Import } from './routes/*'
+import { Route as ComponentsRouteImport } from './routes/components_/route'
 import { Route as IndexImport } from './routes/index'
+import { Route as ComponentsWordCloudImport } from './routes/components_/word-cloud'
+import { Route as ComponentsToggleBarImport } from './routes/components_/toggle-bar'
+import { Route as ComponentsTimeSeriesImport } from './routes/components_/time-series'
+import { Route as ComponentsMetaFrequencyImport } from './routes/components_/meta-frequency'
+import { Route as ComponentsInputImport } from './routes/components_/input'
+import { Route as ComponentsGraphImport } from './routes/components_/graph'
+import { Route as ComponentsErrorImport } from './routes/components_/error'
+import { Route as ComponentsEllipsisImport } from './routes/components_/ellipsis'
+import { Route as ComponentsAssociationMatrixImport } from './routes/components_/association-matrix'
 import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
 import { Route as AppQueriesRouteImport } from './routes/_app/queries/route'
@@ -69,12 +78,6 @@ const LoginRoute = LoginImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() => import('./routes/login.lazy').then((d) => d.Route))
 
-const ComponentsRoute = ComponentsImport.update({
-  id: '/components_',
-  path: '/components',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const AppRoute = AppImport.update({
   id: '/_app',
   getParentRoute: () => rootRoute,
@@ -86,11 +89,72 @@ const Route = Import.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ComponentsRouteRoute = ComponentsRouteImport.update({
+  id: '/components_',
+  path: '/components',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
 } as any)
+
+const ComponentsWordCloudRoute = ComponentsWordCloudImport.update({
+  id: '/word-cloud',
+  path: '/word-cloud',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsToggleBarRoute = ComponentsToggleBarImport.update({
+  id: '/toggle-bar',
+  path: '/toggle-bar',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsTimeSeriesRoute = ComponentsTimeSeriesImport.update({
+  id: '/time-series',
+  path: '/time-series',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsMetaFrequencyRoute = ComponentsMetaFrequencyImport.update({
+  id: '/meta-frequency',
+  path: '/meta-frequency',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsInputRoute = ComponentsInputImport.update({
+  id: '/input',
+  path: '/input',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsGraphRoute = ComponentsGraphImport.update({
+  id: '/graph',
+  path: '/graph',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsErrorRoute = ComponentsErrorImport.update({
+  id: '/error',
+  path: '/error',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsEllipsisRoute = ComponentsEllipsisImport.update({
+  id: '/ellipsis',
+  path: '/ellipsis',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsAssociationMatrixRoute =
+  ComponentsAssociationMatrixImport.update({
+    id: '/association-matrix',
+    path: '/association-matrix',
+    getParentRoute: () => ComponentsRouteRoute,
+  } as any)
 
 const AppAdminRoute = AppAdminImport.update({
   id: '/admin',
@@ -294,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/components_': {
+      id: '/components_'
+      path: '/components'
+      fullPath: '/components'
+      preLoaderRoute: typeof ComponentsRouteImport
+      parentRoute: typeof rootRoute
+    }
     '/*': {
       id: '/*'
       path: '/*'
@@ -306,13 +377,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof AppImport
-      parentRoute: typeof rootRoute
-    }
-    '/components_': {
-      id: '/components_'
-      path: '/components'
-      fullPath: '/components'
-      preLoaderRoute: typeof ComponentsImport
       parentRoute: typeof rootRoute
     }
     '/login': {
@@ -391,6 +455,69 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AppAdminImport
       parentRoute: typeof AppImport
+    }
+    '/components_/association-matrix': {
+      id: '/components_/association-matrix'
+      path: '/association-matrix'
+      fullPath: '/components/association-matrix'
+      preLoaderRoute: typeof ComponentsAssociationMatrixImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/ellipsis': {
+      id: '/components_/ellipsis'
+      path: '/ellipsis'
+      fullPath: '/components/ellipsis'
+      preLoaderRoute: typeof ComponentsEllipsisImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/error': {
+      id: '/components_/error'
+      path: '/error'
+      fullPath: '/components/error'
+      preLoaderRoute: typeof ComponentsErrorImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/graph': {
+      id: '/components_/graph'
+      path: '/graph'
+      fullPath: '/components/graph'
+      preLoaderRoute: typeof ComponentsGraphImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/input': {
+      id: '/components_/input'
+      path: '/input'
+      fullPath: '/components/input'
+      preLoaderRoute: typeof ComponentsInputImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/meta-frequency': {
+      id: '/components_/meta-frequency'
+      path: '/meta-frequency'
+      fullPath: '/components/meta-frequency'
+      preLoaderRoute: typeof ComponentsMetaFrequencyImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/time-series': {
+      id: '/components_/time-series'
+      path: '/time-series'
+      fullPath: '/components/time-series'
+      preLoaderRoute: typeof ComponentsTimeSeriesImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/toggle-bar': {
+      id: '/components_/toggle-bar'
+      path: '/toggle-bar'
+      fullPath: '/components/toggle-bar'
+      preLoaderRoute: typeof ComponentsToggleBarImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/word-cloud': {
+      id: '/components_/word-cloud'
+      path: '/word-cloud'
+      fullPath: '/components/word-cloud'
+      preLoaderRoute: typeof ComponentsWordCloudImport
+      parentRoute: typeof ComponentsRouteImport
     }
     '/_app/constellations_/$constellationId': {
       id: '/_app/constellations_/$constellationId'
@@ -502,6 +629,34 @@ declare module '@tanstack/react-router' {
 
 // Create and export the route tree
 
+interface ComponentsRouteRouteChildren {
+  ComponentsAssociationMatrixRoute: typeof ComponentsAssociationMatrixRoute
+  ComponentsEllipsisRoute: typeof ComponentsEllipsisRoute
+  ComponentsErrorRoute: typeof ComponentsErrorRoute
+  ComponentsGraphRoute: typeof ComponentsGraphRoute
+  ComponentsInputRoute: typeof ComponentsInputRoute
+  ComponentsMetaFrequencyRoute: typeof ComponentsMetaFrequencyRoute
+  ComponentsTimeSeriesRoute: typeof ComponentsTimeSeriesRoute
+  ComponentsToggleBarRoute: typeof ComponentsToggleBarRoute
+  ComponentsWordCloudRoute: typeof ComponentsWordCloudRoute
+}
+
+const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
+  ComponentsAssociationMatrixRoute: ComponentsAssociationMatrixRoute,
+  ComponentsEllipsisRoute: ComponentsEllipsisRoute,
+  ComponentsErrorRoute: ComponentsErrorRoute,
+  ComponentsGraphRoute: ComponentsGraphRoute,
+  ComponentsInputRoute: ComponentsInputRoute,
+  ComponentsMetaFrequencyRoute: ComponentsMetaFrequencyRoute,
+  ComponentsTimeSeriesRoute: ComponentsTimeSeriesRoute,
+  ComponentsToggleBarRoute: ComponentsToggleBarRoute,
+  ComponentsWordCloudRoute: ComponentsWordCloudRoute,
+}
+
+const ComponentsRouteRouteWithChildren = ComponentsRouteRoute._addFileChildren(
+  ComponentsRouteRouteChildren,
+)
+
 interface AppConstellationsConstellationIdRouteRouteChildren {
   AppConstellationsConstellationIdSemanticMapRoute: typeof AppConstellationsConstellationIdSemanticMapRoute
 }
@@ -599,9 +754,9 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/components': typeof ComponentsRouteRouteWithChildren
   '/*': typeof Route
   '': typeof AppRouteWithChildren
-  '/components': typeof ComponentsRoute
   '/login': typeof LoginRoute
   '/vignette': typeof VignetteRoute
   '/logout': typeof LogoutLazyRoute
@@ -613,6 +768,15 @@ export interface FileRoutesByFullPath {
   '/queries': typeof AppQueriesRouteRoute
   '/subcorpora': typeof AppSubcorporaRouteRoute
   '/admin': typeof AppAdminRoute
+  '/components/association-matrix': typeof ComponentsAssociationMatrixRoute
+  '/components/ellipsis': typeof ComponentsEllipsisRoute
+  '/components/error': typeof ComponentsErrorRoute
+  '/components/graph': typeof ComponentsGraphRoute
+  '/components/input': typeof ComponentsInputRoute
+  '/components/meta-frequency': typeof ComponentsMetaFrequencyRoute
+  '/components/time-series': typeof ComponentsTimeSeriesRoute
+  '/components/toggle-bar': typeof ComponentsToggleBarRoute
+  '/components/word-cloud': typeof ComponentsWordCloudRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -632,9 +796,9 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/components': typeof ComponentsRouteRouteWithChildren
   '/*': typeof Route
   '': typeof AppRouteWithChildren
-  '/components': typeof ComponentsRoute
   '/login': typeof LoginRoute
   '/vignette': typeof VignetteRoute
   '/logout': typeof LogoutLazyRoute
@@ -646,6 +810,15 @@ export interface FileRoutesByTo {
   '/queries': typeof AppQueriesRouteRoute
   '/subcorpora': typeof AppSubcorporaRouteRoute
   '/admin': typeof AppAdminRoute
+  '/components/association-matrix': typeof ComponentsAssociationMatrixRoute
+  '/components/ellipsis': typeof ComponentsEllipsisRoute
+  '/components/error': typeof ComponentsErrorRoute
+  '/components/graph': typeof ComponentsGraphRoute
+  '/components/input': typeof ComponentsInputRoute
+  '/components/meta-frequency': typeof ComponentsMetaFrequencyRoute
+  '/components/time-series': typeof ComponentsTimeSeriesRoute
+  '/components/toggle-bar': typeof ComponentsToggleBarRoute
+  '/components/word-cloud': typeof ComponentsWordCloudRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -666,9 +839,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/components_': typeof ComponentsRouteRouteWithChildren
   '/*': typeof Route
   '/_app': typeof AppRouteWithChildren
-  '/components_': typeof ComponentsRoute
   '/login': typeof LoginRoute
   '/vignette': typeof VignetteRoute
   '/logout': typeof LogoutLazyRoute
@@ -680,6 +853,15 @@ export interface FileRoutesById {
   '/_app/queries': typeof AppQueriesRouteRoute
   '/_app/subcorpora': typeof AppSubcorporaRouteRoute
   '/_app/admin': typeof AppAdminRoute
+  '/components_/association-matrix': typeof ComponentsAssociationMatrixRoute
+  '/components_/ellipsis': typeof ComponentsEllipsisRoute
+  '/components_/error': typeof ComponentsErrorRoute
+  '/components_/graph': typeof ComponentsGraphRoute
+  '/components_/input': typeof ComponentsInputRoute
+  '/components_/meta-frequency': typeof ComponentsMetaFrequencyRoute
+  '/components_/time-series': typeof ComponentsTimeSeriesRoute
+  '/components_/toggle-bar': typeof ComponentsToggleBarRoute
+  '/components_/word-cloud': typeof ComponentsWordCloudRoute
   '/_app/constellations_/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/_app/keyword-analysis_/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/_app/queries_/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -701,9 +883,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/components'
     | '/*'
     | ''
-    | '/components'
     | '/login'
     | '/vignette'
     | '/logout'
@@ -715,6 +897,15 @@ export interface FileRouteTypes {
     | '/queries'
     | '/subcorpora'
     | '/admin'
+    | '/components/association-matrix'
+    | '/components/ellipsis'
+    | '/components/error'
+    | '/components/graph'
+    | '/components/input'
+    | '/components/meta-frequency'
+    | '/components/time-series'
+    | '/components/toggle-bar'
+    | '/components/word-cloud'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
     | '/queries/$queryId'
@@ -733,9 +924,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/components'
     | '/*'
     | ''
-    | '/components'
     | '/login'
     | '/vignette'
     | '/logout'
@@ -747,6 +938,15 @@ export interface FileRouteTypes {
     | '/queries'
     | '/subcorpora'
     | '/admin'
+    | '/components/association-matrix'
+    | '/components/ellipsis'
+    | '/components/error'
+    | '/components/graph'
+    | '/components/input'
+    | '/components/meta-frequency'
+    | '/components/time-series'
+    | '/components/toggle-bar'
+    | '/components/word-cloud'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
     | '/queries/$queryId'
@@ -765,9 +965,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/components_'
     | '/*'
     | '/_app'
-    | '/components_'
     | '/login'
     | '/vignette'
     | '/logout'
@@ -779,6 +979,15 @@ export interface FileRouteTypes {
     | '/_app/queries'
     | '/_app/subcorpora'
     | '/_app/admin'
+    | '/components_/association-matrix'
+    | '/components_/ellipsis'
+    | '/components_/error'
+    | '/components_/graph'
+    | '/components_/input'
+    | '/components_/meta-frequency'
+    | '/components_/time-series'
+    | '/components_/toggle-bar'
+    | '/components_/word-cloud'
     | '/_app/constellations_/$constellationId'
     | '/_app/keyword-analysis_/$analysisId'
     | '/_app/queries_/$queryId'
@@ -799,9 +1008,9 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ComponentsRouteRoute: typeof ComponentsRouteRouteWithChildren
   Route: typeof Route
   AppRoute: typeof AppRouteWithChildren
-  ComponentsRoute: typeof ComponentsRoute
   LoginRoute: typeof LoginRoute
   VignetteRoute: typeof VignetteRoute
   LogoutLazyRoute: typeof LogoutLazyRoute
@@ -809,9 +1018,9 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ComponentsRouteRoute: ComponentsRouteRouteWithChildren,
   Route: Route,
   AppRoute: AppRouteWithChildren,
-  ComponentsRoute: ComponentsRoute,
   LoginRoute: LoginRoute,
   VignetteRoute: VignetteRoute,
   LogoutLazyRoute: LogoutLazyRoute,
@@ -830,9 +1039,9 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/components_",
         "/*",
         "/_app",
-        "/components_",
         "/login",
         "/vignette",
         "/logout"
@@ -840,6 +1049,20 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/components_": {
+      "filePath": "components_/route.tsx",
+      "children": [
+        "/components_/association-matrix",
+        "/components_/ellipsis",
+        "/components_/error",
+        "/components_/graph",
+        "/components_/input",
+        "/components_/meta-frequency",
+        "/components_/time-series",
+        "/components_/toggle-bar",
+        "/components_/word-cloud"
+      ]
     },
     "/*": {
       "filePath": "*.tsx"
@@ -868,9 +1091,6 @@ export const routeTree = rootRoute
         "/_app/discoursemes_/new",
         "/_app/discoursemes_/$discoursemeId_/new-description"
       ]
-    },
-    "/components_": {
-      "filePath": "components_.tsx"
     },
     "/login": {
       "filePath": "login.tsx"
@@ -912,6 +1132,42 @@ export const routeTree = rootRoute
     "/_app/admin": {
       "filePath": "_app/admin.tsx",
       "parent": "/_app"
+    },
+    "/components_/association-matrix": {
+      "filePath": "components_/association-matrix.tsx",
+      "parent": "/components_"
+    },
+    "/components_/ellipsis": {
+      "filePath": "components_/ellipsis.tsx",
+      "parent": "/components_"
+    },
+    "/components_/error": {
+      "filePath": "components_/error.tsx",
+      "parent": "/components_"
+    },
+    "/components_/graph": {
+      "filePath": "components_/graph.tsx",
+      "parent": "/components_"
+    },
+    "/components_/input": {
+      "filePath": "components_/input.tsx",
+      "parent": "/components_"
+    },
+    "/components_/meta-frequency": {
+      "filePath": "components_/meta-frequency.tsx",
+      "parent": "/components_"
+    },
+    "/components_/time-series": {
+      "filePath": "components_/time-series.tsx",
+      "parent": "/components_"
+    },
+    "/components_/toggle-bar": {
+      "filePath": "components_/toggle-bar.tsx",
+      "parent": "/components_"
+    },
+    "/components_/word-cloud": {
+      "filePath": "components_/word-cloud.tsx",
+      "parent": "/components_"
     },
     "/_app/constellations_/$constellationId": {
       "filePath": "_app/constellations_/$constellationId/route.tsx",
