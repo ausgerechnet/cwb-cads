@@ -622,7 +622,7 @@ export default function WordCloud({
             throw new Error(`Could not find discourseme id for ${word.id}`)
           }
           onUpdateDiscourseme?.(discoursemeId, word?.item)
-        } else {
+        } else if (word.item !== hoveredElement.item) {
           onNewDiscourseme?.([word.item, hoveredElement.item])
         }
         return
@@ -726,7 +726,7 @@ export default function WordCloud({
     <div className={cn('relative', className)}>
       <svg
         ref={svgRef}
-        className="absolute h-full w-full overflow-visible rounded-md outline outline-1 outline-black/10 dark:outline-white/5"
+        className="absolute h-full w-full overflow-visible rounded-md"
       >
         <defs>
           <mask id="highlight-mask">

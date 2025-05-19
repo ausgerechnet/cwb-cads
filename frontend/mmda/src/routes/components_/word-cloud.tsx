@@ -10,6 +10,56 @@ export const Route = createFileRoute('/components_/word-cloud')({
 function WordCloudComponents() {
   return (
     <>
+      <Block componentName="WordCloud" componentTag="WordCloud">
+        <div className="relative grid aspect-video max-w-[1200px] grid-cols-[5rem_1fr_5rem] grid-rows-[5rem_1fr_5rem] overflow-hidden outline-dotted outline-1 outline-pink-500">
+          <WordCloud
+            onNewDiscourseme={(event) => {
+              console.log('onNewDiscourseme', event)
+            }}
+            words={[
+              {
+                x: 0,
+                y: 0,
+                item: 'Hello',
+                source: 'items',
+                significance: 0.5,
+              },
+              {
+                x: -0.9,
+                y: -0.9,
+                item: 'World',
+                source: 'items',
+                significance: 0.2,
+              },
+              {
+                x: -0,
+                y: -0.1,
+                item: 'Hi',
+                source: 'items',
+                significance: 0.19,
+              },
+              {
+                x: -0.1,
+                y: -0,
+                item: 'Godmorgon',
+                source: 'items',
+                significance: 0.2,
+              },
+              {
+                x: 0.9,
+                y: 0.9,
+                item: '!',
+                source: 'items',
+                significance: 0.1,
+              },
+              ...randomWords,
+            ]}
+            semanticMapId={0}
+            className="col-start-2 row-start-2 h-full w-full"
+          />
+        </div>
+      </Block>
+
       <Block componentName="WordCloudPreview" componentTag="WordCloudPreview">
         <div className="relative overflow-hidden">
           <WordCloudPreview
@@ -44,38 +94,19 @@ function WordCloudComponents() {
           />
         </div>
       </Block>
-
-      <Block componentName="WordCloud" componentTag="WordCloud">
-        <div className="relative grid aspect-video max-w-[1200px] grid-cols-[5rem_1fr_5rem] grid-rows-[5rem_1fr_5rem] overflow-hidden outline outline-1 outline-yellow-300">
-          <WordCloud
-            words={[
-              {
-                x: 0,
-                y: 0,
-                item: 'Hello',
-                source: 'items',
-                significance: 0.5,
-              },
-              {
-                x: -0.9,
-                y: -0.9,
-                item: 'World',
-                source: 'items',
-                significance: 0.2,
-              },
-              {
-                x: 0.9,
-                y: 0.9,
-                item: '!',
-                source: 'items',
-                significance: 0.1,
-              },
-            ]}
-            semanticMapId={0}
-            className="col-start-2 row-start-2 h-full w-full"
-          />
-        </div>
-      </Block>
     </>
   )
+}
+
+const randomWords = Array.from({ length: 100 }, (_, i) => ({
+  x: rnd(i) * 0.5 + 0.5,
+  y: rnd(i + 1) * 0.5 + 0.5,
+  item: `Word ${i}`,
+  source: 'items',
+  significance: rnd(i),
+}))
+
+function rnd(seed: number) {
+  const x = Math.sin(seed) * 1_000_000
+  return x - Math.floor(x)
 }
