@@ -13,6 +13,7 @@ from flask import current_app
 from pandas import DataFrame, read_sql
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import exists
+from sqlalchemy import select
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
@@ -317,18 +318,18 @@ def filter_matches(focus_query, filter_queries, window, overlap):
         # Apply filtering based on overlap mode
         if overlap == "partial":
             matches = matches.filter(
-                exists().where(Matches.match == match_subquery.c.match_pos) |
-                exists().where(Matches.match == matchend_subquery.c.match_pos)
+                Matches.match.in_(select(match_subquery.c.match_pos)) |
+                Matches.match.in_(select(matchend_subquery.c.match_pos))
             )
         elif overlap == "full":
             matches = matches.filter(
-                exists().where(Matches.match == match_subquery.c.match_pos),
-                exists().where(Matches.matchend == matchend_subquery.c.match_pos)
+                Matches.match.in_(select(match_subquery.c.match_pos)) |
+                Matches.match.in_(select(matchend_subquery.c.match_pos))
             )
         elif overlap == "match":
-            matches = matches.filter(exists().where(Matches.match == match_subquery.c.match_pos))
+            matches = matches.filter(Matches.match.in_(select(match_subquery.c.match_pos)))
         elif overlap == "matchend":
-            matches = matches.filter(exists().where(Matches.matchend == matchend_subquery.c.match_pos))
+            matches = matches.filter(Matches.match.in_(select(matchend_subquery.c.match_pos)))
         else:
             raise ValueError("filter_matches :: filtering cotext: overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
