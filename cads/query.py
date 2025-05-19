@@ -127,24 +127,37 @@ def get_or_create_query_assisted(corpus_id, subcorpus_id, items, p, s,
         # NB context of focus is not saved as subcorpus
         pass
 
-    # TODO check reasonable filtering
+    filters = [
+        Query.corpus_id == corpus_id,
+        Query.cqp_query == cqp_query,
+        Query.s == s
+    ]
+
     if subcorpus_id is None:
-        query = Query.query.filter_by(
-            corpus_id=corpus_id,
-            cqp_query=cqp_query,
-            # match_strategy=json_data.get('match_strategy'),
-            # filter_sequence=None,  → filter properly
-            s=s
-        ).first()
+        filters.append(Query.subcorpus_id.is_(None))
     else:
-        query = Query.query.filter_by(
-            corpus_id=corpus_id,
-            subcorpus_id=subcorpus_id,
-            cqp_query=cqp_query,
-            # match_strategy=json_data.get('match_strategy'),
-            # filter_sequence=None,  → filter properly
-            s=s
-        ).first()
+        filters.append(Query.subcorpus_id == subcorpus_id)
+
+    query = db.session.query(Query).filter(*filters).first()
+
+    # # TODO check reasonable filtering
+    # if subcorpus_id is None:
+    #     query = Query.query.filter_by(
+    #         corpus_id=corpus_id,
+    #         cqp_query=cqp_query,
+    #         # match_strategy=json_data.get('match_strategy'),
+    #         # filter_sequence=None,  → filter properly
+    #         s=s
+    #     ).first()
+    # else:
+    #     query = Query.query.filter_by(
+    #         corpus_id=corpus_id,
+    #         subcorpus_id=subcorpus_id,
+    #         cqp_query=cqp_query,
+    #         # match_strategy=json_data.get('match_strategy'),
+    #         # filter_sequence=None,  → filter properly
+    #         s=s
+    #     ).first()
 
     if query is None:
 
