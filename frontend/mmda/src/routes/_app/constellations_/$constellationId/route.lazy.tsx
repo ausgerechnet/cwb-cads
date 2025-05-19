@@ -141,7 +141,7 @@ function ConstellationDetail() {
 
         {description?.id !== undefined &&
           constellationDiscoursemes.length > 1 && (
-            <Card className="my-4 p-4">
+            <Card className="my-4 p-1">
               <DescriptionAssociation
                 constellationId={constellationId}
                 descriptionId={description.id}
