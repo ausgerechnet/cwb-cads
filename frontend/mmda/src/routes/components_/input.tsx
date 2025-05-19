@@ -5,7 +5,7 @@ import { SelectMulti } from '@cads/shared/components/select-multi'
 import { InputGrowable } from '@cads/shared/components/input-growable'
 import { LabelBox } from '@cads/shared/components/label-box'
 import { Input } from '@cads/shared/components/ui/input'
-import { InputRange } from '@cads/shared/components/input-range'
+import { RangeSlider } from '@cads/shared/components/range-slider'
 import {
   Select,
   SelectContent,
@@ -16,6 +16,7 @@ import {
 } from '@cads/shared/components/ui/select'
 
 import { Block } from './-block'
+import { Slider } from '@cads/shared/components/ui/slider'
 
 export const Route = createFileRoute('/components_/input')({
   component: InputComponents,
@@ -91,8 +92,12 @@ function InputComponents() {
         </div>
       </Block>
 
-      <Block componentTag="InputRange">
-        <InputRange min={-50} max={1_000} value={range} onChange={setRange} />
+      <Block componentTag="Slider">
+        <Slider min={-50} max={1_000} />
+      </Block>
+
+      <Block componentTag="RangeSlider">
+        <RangeSlider min={-50} max={1_000} value={range} onChange={setRange} />
       </Block>
     </>
   )

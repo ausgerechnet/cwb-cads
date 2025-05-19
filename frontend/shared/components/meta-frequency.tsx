@@ -4,7 +4,7 @@ import { cn } from '../lib/utils'
 import { formatNumber } from '../lib/format-number'
 import { ErrorMessage } from './error-message'
 import { GraphRange, XAxisVertical } from './graph'
-import { InputRange } from './input-range'
+import { RangeSlider } from './range-slider'
 import { ComplexSelect } from './select-complex'
 import { Input } from './ui/input'
 
@@ -48,7 +48,7 @@ export function MetaFrequencyNumericInput({
         value={value}
       />
 
-      <InputRange
+      <RangeSlider
         min={min}
         max={max}
         value={value}
@@ -182,7 +182,7 @@ export function MetaFrequencyDatetimeInput({
           XAxisComponent={XAxisVertical}
         />
 
-        <InputRange
+        <RangeSlider
           min={0}
           max={frequencies.length - 1}
           value={indexValue}
