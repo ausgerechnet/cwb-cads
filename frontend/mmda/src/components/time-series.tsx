@@ -72,7 +72,7 @@ export function TimeSeries({
           onChange?.(label)
         }}
         value={data.findIndex((d) => d.label === value)}
-        className="col-span-3 w-full"
+        className="col-span-3 w-full px-2"
       />
 
       <div className="bg-muted relative col-span-full col-start-1 pt-2">
