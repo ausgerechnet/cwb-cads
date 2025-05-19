@@ -64,8 +64,14 @@ def ccc_semmap_update(semantic_map, items):
     if len(new_items) > 0:
         current_app.logger.debug(f'ccc_semmap_update :: creating coordinates for {len(new_items)} new items')
         semspace = SemanticSpace(semantic_map.embeddings, normalise=True)
-        semspace.coordinates = coordinates[['x', 'y']]
-        new_coordinates = semspace.add(new_items)
+
+        if len(coordinates) == 0:
+            # create new semantic map
+            new_coordinates = semspace.generate2d(new_items, method=semantic_map.method, parameters=None)
+        else:
+            semspace.coordinates = coordinates[['x', 'y']]
+            new_coordinates = semspace.add(new_items)
+
         new_coordinates.index.name = 'item'
         new_coordinates['semantic_map_id'] = semantic_map.id
         new_coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
