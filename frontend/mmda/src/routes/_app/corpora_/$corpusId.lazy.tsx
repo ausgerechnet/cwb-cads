@@ -241,7 +241,8 @@ function MetaOverview() {
 
       {dataPoints.length > 0 ? (
         <GraphRange
-          className={cn('h-[28rem] pt-3', isFetching && 'animate-pulse')}
+          className={cn('rounded-lg p-3', isFetching && 'animate-pulse')}
+          graphClassName="h-[28rem]"
           dataPoints={dataPoints}
           pointStyle="bar"
           viewportY={[0]}

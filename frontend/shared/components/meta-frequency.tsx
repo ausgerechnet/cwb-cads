@@ -3,7 +3,7 @@ import { CheckSquareIcon, SquareIcon } from 'lucide-react'
 import { cn } from '../lib/utils'
 import { formatNumber } from '../lib/format-number'
 import { ErrorMessage } from './error-message'
-import { GraphRange } from './graph'
+import { GraphRange, XAxisVertical } from './graph'
 import { InputRange } from './input-range'
 import { ComplexSelect } from './select-complex'
 import { Input } from './ui/input'
@@ -170,6 +170,7 @@ export function MetaFrequencyDatetimeInput({
     <>
       <div className={cn('bg-muted rounded-lg p-2', className)}>
         <GraphRange
+          graphClassName="h-[28rem]"
           dataPoints={frequencies.map(({ value, nrTokens }, index) => ({
             // Mapping the index onto the x-axis
             position: [index, nrTokens] satisfies [number, number],
@@ -178,6 +179,7 @@ export function MetaFrequencyDatetimeInput({
           pointStyle="bar"
           viewportY={[0]}
           value={indexValue}
+          XAxisComponent={XAxisVertical}
         />
 
         <InputRange

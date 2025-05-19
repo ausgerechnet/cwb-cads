@@ -169,7 +169,10 @@ function SubcorpusNew() {
                 frequency.bin_unicode,
               nrSpans: frequency.nr_spans,
               nrTokens: frequency.nr_tokens,
-            })) ?? [],
+            }))
+            .toSorted(({ value: a }, { value: b }) =>
+              a === b ? 0 : String(a) < String(b) ? -1 : 1,
+            ) ?? [],
         legalFrequencyValues:
           data.pages
             .flatMap((page) => page.frequencies)
@@ -454,7 +457,10 @@ function SubcorpusNew() {
                 <ToggleBar
                   options={['hour', 'day', 'week', 'month', 'year']}
                   value={timeInterval}
-                  onChange={(value) => setTimeInterval(value)}
+                  onChange={(value) => {
+                    form.resetField('bins_datetime')
+                    setTimeInterval(value)
+                  }}
                 />
               )}
 
@@ -474,13 +480,14 @@ function SubcorpusNew() {
                       <FormControl>
                         <MetaFrequencyDatetimeInput
                           frequencies={frequencies as Frequency<string>[]}
-                          onChange={field.onChange}
+                          onChange={(value) => field.onChange([value])}
                           timeInterval={timeInterval}
                           value={
-                            field.value?.[0] ?? [
+                            field.value?.[0] ??
+                            ([
                               String(frequencies.at(0)?.value),
                               String(frequencies.at(-1)?.value),
-                            ]
+                            ].toSorted() as [string, string])
                           }
                         />
                       </FormControl>
