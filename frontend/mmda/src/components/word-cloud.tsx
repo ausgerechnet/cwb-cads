@@ -413,23 +413,37 @@ export default function WordCloud({
           .data(wordData)
           .attr('x1', (d) => d.x)
           .attr('y1', (d) => d.y)
+
         textGroup
           .data(wordData)
           .select('text')
           .attr('x', (d) => d.x)
           .attr('y', (d) => d.y)
+          .attr('class', (d) => {
+            const { minimumSignificance } = getMinimumSignificance()
+            const isFilterItem = d.source === 'items' && d.item === filterItem
+            const isSmall =
+              d.significance < minimumSignificance && !isFilterItem
+            return cn('pointer-events-none', isSmall && 'opacity-25')
+          })
+
         textGroup
           .data(wordData)
           .select('rect')
           .attr('x', (d) => d.x)
           .attr('y', (d) => d.y)
           .attr('class', (d) => {
+            const { minimumSignificance } = getMinimumSignificance()
             const isFilterItem = d.source === 'items' && d.item === filterItem
             const isDragging = !!d.isDragging
+            const isSmall =
+              d.significance < minimumSignificance && !isFilterItem
+
             return cn(
               `cursor-grab dark:fill-white/10 fill-black/5 hover:fill-primary/50 dark:hover:fill-primary/50`,
               isDragging && 'pointer-events-none animate-pulse',
               isFilterItem && 'stroke-primary',
+              isSmall && 'pointer-events-none opacity-25',
             )
           })
         textGroup
@@ -490,13 +504,16 @@ export default function WordCloud({
       )
     }
 
-    function render(preventSimulation = false) {
-      const k = transformationState.k
+    function getMinimumSignificance() {
+      const { k } = transformationState
       const kNormalized = getNormalizedScale(k)
-      let minimumSignificance = 0
-      if (kNormalized < 0.2) {
-        minimumSignificance = topSignificanceValues
-      }
+      const minimumSignificance = kNormalized < 0.2 ? topSignificanceValues : 0
+      return { minimumSignificance, kNormalized }
+    }
+
+    function render(preventSimulation = false) {
+      const { k } = transformationState
+      const { minimumSignificance, kNormalized } = getMinimumSignificance()
       updateHash(kNormalized, transformationState.x, transformationState.y)
 
       miniMap.attr(
@@ -515,12 +532,7 @@ export default function WordCloud({
         .attr('transform', transformationState)
         .attr('stroke-width', 1 / k)
 
-      textGroup.attr('transform', transformationState).attr('opacity', (d) => {
-        if (d.source === 'items') {
-          return d.significance >= minimumSignificance ? 1 : 0.1
-        }
-        return 1
-      })
+      textGroup.attr('transform', transformationState)
 
       textGroup
         .filter((d) => d.source !== 'discoursemes')
@@ -551,6 +563,7 @@ export default function WordCloud({
       if (preventSimulation) return
       simulation.alpha(0.3).restart()
       simulation.force('collide')?.radius((d) => {
+        const isFilterItem = d.source === 'items' && d.item === filterItem
         switch (d.source) {
           case 'discoursemes':
             return (
@@ -558,7 +571,9 @@ export default function WordCloud({
               discoursemeRadiusMin
             )
           default:
-            return d.significance < minimumSignificance ? 5 : (d.width + 5) / k
+            return d.significance < minimumSignificance && !isFilterItem
+              ? 5
+              : (d.width + 5) / k
         }
       })
     }
