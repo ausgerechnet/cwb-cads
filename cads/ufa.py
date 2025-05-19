@@ -4,7 +4,7 @@
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Float, Integer, String
 from apiflask.validators import OneOf
-from association_measures.comparisons import rbo, gwets_ac1, cohens_kappa
+from association_measures.comparisons import cohens_kappa, gwets_ac1, rbo
 
 from .database import CollocationItemScore, KeywordItemScore
 from .users import auth

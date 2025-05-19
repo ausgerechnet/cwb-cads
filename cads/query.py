@@ -11,9 +11,9 @@ from ccc.collocates import dump2cooc
 from ccc.utils import format_cqp_query
 from flask import current_app
 from pandas import DataFrame, read_sql
+from sqlalchemy import select
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import exists
-from sqlalchemy import select
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
@@ -297,16 +297,15 @@ def filter_matches(focus_query, filter_queries, window, overlap):
     for key, fq in filter_queries.items():
         current_app.logger.debug(f"filter_matches :: filtering cotext: {key}")
 
-        # Define alias for Matches (to avoid conflicts in joins)
+        # define alias for matches (to avoid conflicts in joins)
         matches_alias = aliased(Matches)
 
-        # Subqueries to check for match and matchend presence
+        # subqueries to check for presence of match and matchend, respectively
         match_subquery = (
             db.session.query(cotext_lines.c.match_pos)
             .join(matches_alias, (matches_alias.query_id == fq.id) & (matches_alias.match == cotext_lines.c.cpos))
             .subquery()
         )
-
         matchend_subquery = (
             db.session.query(cotext_lines.c.match_pos)
             .join(matches_alias, (matches_alias.query_id == fq.id) & (matches_alias.matchend == cotext_lines.c.cpos))
@@ -315,7 +314,7 @@ def filter_matches(focus_query, filter_queries, window, overlap):
 
         current_app.logger.debug(f"filter_matches :: filtering cotext: overlap mode: {overlap}")
 
-        # Apply filtering based on overlap mode
+        # apply filtering based on overlap mode
         if overlap == "partial":
             matches = matches.filter(
                 Matches.match.in_(select(match_subquery.c.match_pos)) |
@@ -323,13 +322,17 @@ def filter_matches(focus_query, filter_queries, window, overlap):
             )
         elif overlap == "full":
             matches = matches.filter(
-                Matches.match.in_(select(match_subquery.c.match_pos)) |
+                Matches.match.in_(select(match_subquery.c.match_pos)),
                 Matches.match.in_(select(matchend_subquery.c.match_pos))
             )
         elif overlap == "match":
-            matches = matches.filter(Matches.match.in_(select(match_subquery.c.match_pos)))
+            matches = matches.filter(
+                Matches.match.in_(select(match_subquery.c.match_pos))
+            )
         elif overlap == "matchend":
-            matches = matches.filter(Matches.match.in_(select(matchend_subquery.c.match_pos)))
+            matches = matches.filter(
+                Matches.match.in_(select(matchend_subquery.c.match_pos))
+            )
         else:
             raise ValueError("filter_matches :: filtering cotext: overlap must be one of 'match', 'matchend', 'partial', or 'full'")
 
