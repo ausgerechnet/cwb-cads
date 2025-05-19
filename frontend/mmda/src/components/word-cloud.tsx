@@ -599,11 +599,10 @@ export default function WordCloud({
       homeStrength = 1
       simulation.force('collide')?.strength?.(1)
       simulation.force('link')?.strength?.(1)
-      this.classList.remove('pointer-events-none')
+      event.subject.isDragging = false
       if (new Date().getTime() - dragStartTime < 200) return
       event.subject.fx = null
       event.subject.fy = null
-      event.subject.isDragging = false
       word.originX = word.x = event.x
       word.originY = word.y = event.y
       const newX = (event.x / (width - boardPadding)) * 2
