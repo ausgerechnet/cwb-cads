@@ -127,8 +127,6 @@ export function useUfa() {
       !isFetchingItems,
   })
 
-  console.log('ufa description id', ufaDescriptionId)
-
   const {
     data: description,
     isLoading: isLoadingDescription,

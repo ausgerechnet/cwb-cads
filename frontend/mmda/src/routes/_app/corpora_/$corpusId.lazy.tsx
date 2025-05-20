@@ -1,13 +1,35 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { createLazyFileRoute, Link } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import {
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
+import { createLazyFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { PlusIcon } from 'lucide-react'
 
-import { corpusById, subcorpusCollections } from '@cads/shared/queries'
+import {
+  corpusById,
+  corpusMeta,
+  corpusMetaFrequencies,
+  subcorpusCollections,
+} from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@cads/shared/components/ui/card'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
 import { parseAnnotations } from '@cads/shared/lib/parse-annotations'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cads/shared/components/ui/select'
+import { ErrorMessage } from '@cads/shared/components/error-message'
+import { ToggleBar } from '@cads/shared/components/toggle-bar'
+import { Input } from '@cads/shared/components/ui/input'
+import { GraphRange, XAxisVertical } from '@cads/shared/components/graph'
 
 export const Route = createLazyFileRoute('/_app/corpora_/$corpusId')({
   component: CorpusDetail,
@@ -78,6 +100,213 @@ function CorpusDetail() {
           Create Partition
         </Link>
       </Card>
+
+      <MetaOverview />
     </AppPageFrame>
+  )
+}
+
+function MetaOverview() {
+  const corpusId = parseInt(Route.useParams().corpusId)
+  const search = Route.useSearch()
+
+  const [nr, setNr] = useState<'tokens' | 'spans'>('tokens')
+  const [filterValue, setFilterValue] = useState('')
+  const [timeInterval, setTimeInterval] = useState<
+    'hour' | 'day' | 'week' | 'month' | 'year'
+  >('week')
+  const navigate = useNavigate()
+  const { key, level } = search.meta ?? {}
+  const { data, hasNextPage, fetchNextPage, error, isFetching } =
+    useInfiniteQuery({
+      ...corpusMetaFrequencies(corpusId, level as string, key as string, {
+        pageSize: 100,
+        timeInterval,
+      }),
+      select: (data) => ({
+        ...data,
+        valueType: data.pages[0]?.value_type,
+        nrItems: data.pages[0]?.nr_items ?? 0,
+        loadedItems: data.pages.reduce(
+          (acc, page) => acc + page.frequencies.length,
+          0,
+        ),
+        frequencies:
+          data.pages
+            .flatMap((page) => page.frequencies)
+            .map((frequency) => ({
+              value:
+                frequency.bin_boolean ??
+                frequency.bin_datetime ??
+                frequency.bin_numeric ??
+                frequency.bin_unicode,
+              nrSpans: frequency.nr_spans,
+              nrTokens: frequency.nr_tokens,
+            })) ?? [],
+        legalFrequencyValues:
+          data.pages
+            .flatMap((page) => page.frequencies)
+            .map(
+              (frequency) =>
+                frequency.bin_boolean ??
+                frequency.bin_datetime ??
+                frequency.bin_numeric ??
+                frequency.bin_unicode,
+            ) ?? [],
+      }),
+      retry: 0,
+      enabled: Boolean(level) && Boolean(key),
+    })
+
+  const dataPoints =
+    data?.frequencies
+      .filter(({ value }) => String(value).includes(filterValue))
+      .map((frequency, index) => ({
+        position: [
+          index,
+          nr === 'spans' ? frequency.nrSpans : frequency.nrTokens,
+        ] satisfies [number, number],
+        label: String(frequency.value ?? 'n.a.'),
+      })) ?? []
+
+  useEffect(() => {
+    if (hasNextPage) {
+      fetchNextPage()
+    }
+  }, [hasNextPage, fetchNextPage])
+
+  return (
+    <Card className="col-span-full flex flex-col gap-2 p-4">
+      <h2 className="text-lg font-bold">Meta Frequencies</h2>
+
+      <div className="flex gap-2">
+        <MetaSelector
+          value={search.meta}
+          onChange={(value) => {
+            setFilterValue('')
+            navigate({
+              replace: true,
+              to: '.',
+              params: (p) => p,
+              search: (s) => ({
+                ...s,
+                meta: value,
+              }),
+            })
+          }}
+          corpusId={corpusId}
+          className="w-max"
+        />
+
+        {data?.valueType === 'datetime' && (
+          <Select
+            value={timeInterval}
+            onValueChange={(value) => {
+              setTimeInterval(
+                value as 'hour' | 'day' | 'week' | 'month' | 'year',
+              )
+            }}
+          >
+            <SelectTrigger className="w-max">
+              <SelectValue placeholder="Time Interval" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectGroup>
+                {['hour', 'day', 'week', 'month', 'year'].map((interval) => (
+                  <SelectItem key={interval} value={interval}>
+                    {interval}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        )}
+
+        <ToggleBar
+          options={['tokens', 'spans'] as const}
+          className="ml-0 mr-auto w-max"
+          value={nr}
+          onChange={setNr}
+        />
+
+        <Input
+          value={filterValue}
+          onChange={(e) => setFilterValue(e.target.value)}
+          placeholder="Filter"
+        />
+      </div>
+
+      <ErrorMessage error={error} />
+
+      {dataPoints.length > 0 ? (
+        <GraphRange
+          className={cn('rounded-lg p-3', isFetching && 'animate-pulse')}
+          graphClassName="h-[28rem]"
+          dataPoints={dataPoints}
+          pointStyle="bar"
+          viewportY={[0]}
+          XAxisComponent={XAxisVertical}
+          hideRange={dataPoints.length < 50}
+        />
+      ) : (
+        <div className="text-muted-foreground bg-muted flex h-24 place-content-center place-items-center rounded-lg italic">
+          No data available
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function MetaSelector({
+  className,
+  corpusId,
+  value,
+  onChange,
+}: {
+  className?: string
+  corpusId: number
+  value?: {
+    level: string
+    key: string
+  }
+  onChange?: (value: { level: string; key: string }) => void
+}) {
+  const { data: meta } = useQuery(corpusMeta(corpusId))
+
+  const annotationPairs = meta?.levels
+    .map(({ level, annotations }) =>
+      annotations.map(({ key, value_type }) => ({
+        level,
+        key,
+        valueType: value_type,
+      })),
+    )
+    .flat()
+  const currentValue = value ? `${value.level}-/-${value.key}` : undefined
+
+  return (
+    <Select
+      value={currentValue}
+      onValueChange={(value) => {
+        const [level, key] = value.split('-/-')
+        onChange?.({ level, key })
+      }}
+    >
+      <SelectTrigger className={className}>
+        <SelectValue placeholder="Select Annotation" />
+      </SelectTrigger>
+
+      <SelectContent>
+        <SelectGroup>
+          {annotationPairs?.map(({ level, key, valueType }) => (
+            <SelectItem key={`${level}-/-${key}`} value={`${level}-/-${key}`}>
+              {level}: {key}{' '}
+              <span className="text-muted-foreground italic">{valueType}</span>
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   )
 }

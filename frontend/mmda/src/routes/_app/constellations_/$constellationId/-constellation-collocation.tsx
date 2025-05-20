@@ -182,6 +182,7 @@ export function Collocation({
             ))}
         </TableBody>
       </Table>
+
       <Pagination
         totalRows={collocationItems?.nr_items ?? 0}
         setPageSize={(size) => setFilter('ccPageSize', size)}

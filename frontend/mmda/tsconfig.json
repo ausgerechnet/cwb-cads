@@ -22,11 +22,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@cads/shared/lib/utils": ["../shared/utils"],
-    },
+      "@cads/shared/lib/utils": ["../shared/utils"]
+    }
   },
-  "references": [
-    { "path": "./tsconfig.node.json" },
-  ],
-  "include": ["src"]
+  "references": [{ "path": "./tsconfig.node.json" }],
+  "include": ["src", "../shared/components/graph"]
 }

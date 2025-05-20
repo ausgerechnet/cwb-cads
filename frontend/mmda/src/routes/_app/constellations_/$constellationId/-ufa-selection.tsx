@@ -56,7 +56,6 @@ export function UfaSelection({ className }: { className?: string }) {
           value={ufaTimeSpan}
           onChange={setUfaTimeSpan}
           className={cn('mb-4', isLoading && 'opacity-0')}
-          zoom
         />
         {isLoading && (
           <div className="bg-muted absolute inset-0 animate-pulse rounded-lg" />

@@ -11,7 +11,7 @@ const PageComponent =
         return null
       }
     : lazy(() =>
-        import('@/components/component-overview').then((res) => ({
+        import('./-component-overview').then((res) => ({
           default: res.ComponentOverview,
         })),
       )

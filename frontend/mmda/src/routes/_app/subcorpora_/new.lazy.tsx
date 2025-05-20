@@ -65,8 +65,8 @@ const SubcorpusPut = z.object({
   level: z.string(),
   name: z.string(),
   bins_unicode: z.array(z.string()).nullable(),
-  bins_datetime: z.array(z.array(z.string()).nullable()).nullable(),
-  bins_numeric: z.array(z.array(z.number()).nullable()).nullable(),
+  bins_datetime: z.array(z.tuple([z.string(), z.string()])).nullable(),
+  bins_numeric: z.array(z.tuple([z.number(), z.number()])).nullable(),
   bins_boolean: z.array(z.boolean()).nullable(),
 })
 
@@ -169,7 +169,10 @@ function SubcorpusNew() {
                 frequency.bin_unicode,
               nrSpans: frequency.nr_spans,
               nrTokens: frequency.nr_tokens,
-            })) ?? [],
+            }))
+            .toSorted(({ value: a }, { value: b }) =>
+              a === b ? 0 : String(a) < String(b) ? -1 : 1,
+            ) ?? [],
         legalFrequencyValues:
           data.pages
             .flatMap((page) => page.frequencies)
@@ -409,7 +412,8 @@ function SubcorpusNew() {
                         <FormControl>
                           <MetaFrequencyNumericInput
                             frequencies={frequencies as Frequency<number>[]}
-                            onChange={field.onChange}
+                            onChange={(value) => field.onChange([value])}
+                            value={field.value?.[0] ?? [0, 0]}
                           />
                         </FormControl>
 
@@ -453,7 +457,10 @@ function SubcorpusNew() {
                 <ToggleBar
                   options={['hour', 'day', 'week', 'month', 'year']}
                   value={timeInterval}
-                  onChange={(value) => setTimeInterval(value)}
+                  onChange={(value) => {
+                    form.resetField('bins_datetime')
+                    setTimeInterval(value)
+                  }}
                 />
               )}
 
@@ -473,8 +480,15 @@ function SubcorpusNew() {
                       <FormControl>
                         <MetaFrequencyDatetimeInput
                           frequencies={frequencies as Frequency<string>[]}
-                          onChange={field.onChange}
+                          onChange={(value) => field.onChange([value])}
                           timeInterval={timeInterval}
+                          value={
+                            field.value?.[0] ??
+                            ([
+                              String(frequencies.at(0)?.value),
+                              String(frequencies.at(-1)?.value),
+                            ].toSorted() as [string, string])
+                          }
                         />
                       </FormControl>
 
