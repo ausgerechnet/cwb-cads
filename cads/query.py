@@ -16,13 +16,14 @@ from sqlalchemy.orm import aliased
 
 from . import db
 from .breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
-from .collocation import CollocationIn, CollocationOut, get_or_create_counts
+from .collocation import CollocationIn, CollocationOut, put_counts
 from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .database import (Breakdown, Collocation, Corpus, Cotext, CotextLines,
                        Matches, Query, get_or_create)
 from .semantic_map import ccc_semmap_init
 from .users import auth
+from .utils import paginate_dataframe, translate_flags
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
 
@@ -93,30 +94,18 @@ def ccc_query(query, return_df=True):
     return matches_df
 
 
-def get_flags(ignore_case, ignore_diacritics):
-    """translate boolean flags into one string (%cd)
-
-    """
-    flags = ''
-    if ignore_case or ignore_diacritics:
-        flags = '%'
-        if ignore_case:
-            flags += 'c'
-        if ignore_diacritics:
-            flags += 'd'
-    return flags
-
-
 def get_or_create_query_assisted(corpus_id, subcorpus_id, items, p, s,
                                  escape, ignore_case, ignore_diacritics,
                                  focus_query=None, execute=True):
-    """
+    """create a query in assisted mode
+    - will retrieve query if a query with the same arguments already exists
+    - runs ccc_query if execute is True
 
     """
     corpus = db.get_or_404(Corpus, corpus_id)
     s = corpus.s_default if s is None else s
 
-    flags = get_flags(ignore_case, ignore_diacritics)
+    flags = translate_flags(ignore_case, ignore_diacritics)
     cqp_query = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
 
     current_app.logger.debug(f'get_or_create_query_assisted :: items "{items}" in corpus "{corpus.cwb_id}"')
@@ -161,11 +150,11 @@ def get_or_create_query_assisted(corpus_id, subcorpus_id, items, p, s,
     return query
 
 
-def iterative_query(focus_query, filter_queries, window, overlap='partial'):
-    """Create a new query (and corresponding matches) based on filtered matches of focus query.
-    Retrieve if already exists.
+def get_or_create_query_iterative(focus_query, filter_queries, window, overlap='partial'):
+    """create a new query (and corresponding matches) based on filtered matches of focus query.
+    - will retrieve query if a query with the same arguments already exists
+    - runs ccc_query otherwise
 
-    TODO include in ccc_query
     """
 
     filter_sequence = "S" + str(focus_query.s) + "W" + str(window) + "O" + overlap + \
@@ -202,7 +191,7 @@ def iterative_query(focus_query, filter_queries, window, overlap='partial'):
         # create matches
         matches = filter_matches(focus_query, filter_queries, window, overlap)
         if matches is None:
-            return
+            return query
         df_matches = read_sql(matches.statement, con=db.engine)[['contextid', 'match', 'matchend']]
         df_matches['query_id'] = query.id
         df_matches.to_sql('matches', con=db.engine, if_exists='append', index=False)
@@ -212,6 +201,7 @@ def iterative_query(focus_query, filter_queries, window, overlap='partial'):
 
 def get_or_create_cotext(query, window, context_break):
     """get or create cotext of query specified by window and context_break
+    - for given context_break, will match to one with window >= provided window
 
     """
 
@@ -233,9 +223,9 @@ def get_or_create_cotext(query, window, context_break):
         db.session.add(cotext)
         db.session.commit()
 
+        # create temporary ccc subcorpus
         corpus = query.corpus.ccc()
-
-        subcorpus_context = corpus.subcorpus(
+        subcorpus_cotext = corpus.subcorpus(
             subcorpus_name=None,
             df_dump=matches_df,
             overwrite=False
@@ -246,7 +236,7 @@ def get_or_create_cotext(query, window, context_break):
         )
 
         current_app.logger.debug("get_or_create_cotext :: .. dump2cooc")
-        df_cooc = dump2cooc(subcorpus_context.df, rm_nodes=False, drop_duplicates=False)
+        df_cooc = dump2cooc(subcorpus_cotext.df, rm_nodes=False, drop_duplicates=False)
         df_cooc = df_cooc.rename({'match': 'match_pos'}, axis=1).reset_index(drop=True)
         df_cooc['cotext_id'] = cotext.id
 
@@ -262,7 +252,7 @@ def get_or_create_cotext(query, window, context_break):
 
 
 def filter_matches(focus_query, filter_queries, window, overlap):
-    """Filter matches of focus query according to presence of filter queries in window (and focus_query.s)
+    """filter matches of focus query according to presence of filter queries in window (and focus_query.s)
 
     :param Query focus_query:
     :param dict(Query) filter_queries:
@@ -340,6 +330,9 @@ def filter_matches(focus_query, filter_queries, window, overlap):
 
 
 def get_concordance_lines(query_id, query_data):
+    """
+
+    """
 
     query = db.get_or_404(Query, query_id)
     corpus = query.corpus
@@ -401,35 +394,10 @@ def get_concordance_lines(query_id, query_data):
     return concordance
 
 
-def paginate_dataframe(df, sort_by, sort_order, page_number, page_size):
-    """paginate a pandas DataFrame.
+def get_query_meta_freq_breakdown(query, level, key, p, nr_bins, time_interval):
+    """
 
     """
-    # Sort DataFrame
-    ascending = sort_order == "ascending"
-    df_sorted = df.sort_values(by=sort_by, ascending=ascending)
-
-    # Get total records and pages
-    total_records = len(df_sorted)
-    total_pages = (total_records + page_size - 1) // page_size  # Equivalent to ceil(total_records / page_size)
-
-    # Slice DataFrame for pagination
-    start_idx = (page_number - 1) * page_size
-    end_idx = start_idx + page_size
-    df_paginated = df_sorted.iloc[start_idx:end_idx]
-
-    # Pagination metadata
-    metadata = {
-        "total": total_records,
-        "pages": total_pages,
-        "page_number": page_number,
-        "page_size": page_size,
-    }
-
-    return df_paginated, metadata
-
-
-def get_query_meta_freq_breakdown(query, level, key, p, nr_bins, time_interval):
 
     # TODO support for numeric / datetime
 
@@ -571,7 +539,7 @@ class QueryMetaFrequenciesOut(Schema):
 @bp.output(QueryOut)
 @bp.auth_required(auth)
 def create(json_data, query_data):
-    """Create new query.
+    """Create new CQP query.
 
     """
 
@@ -670,6 +638,7 @@ def get_queries():
 
     """
 
+    # TODO filter by (provided) user_id
     queries = Query.query.all()
 
     return [QueryOut().dump(query) for query in queries], 200
@@ -683,12 +652,13 @@ def get_query(query_id):
 
     """
 
+    # TODO queries belong to users
     query = db.get_or_404(Query, query_id)
 
     return QueryOut().dump(query), 200
 
 
-# TODO!
+# TODO
 # @bp.patch('/<id>')
 # @bp.input(QueryIn(partial=True))
 # @bp.output(QueryOut)
@@ -696,7 +666,6 @@ def get_query(query_id):
 # def patch_query(id, data):
 
 #     # TODO: delete matches
-#     # TODO: queries belong to users
 
 #     # user_id = auth.current_user.id
 
@@ -719,6 +688,7 @@ def delete_query(query_id):
     """Delete query.
 
     """
+    # TODO queries belong to users
 
     query = db.get_or_404(Query, query_id)
     db.session.delete(query)
@@ -727,6 +697,7 @@ def delete_query(query_id):
     return 'Deletion successful.', 200
 
 
+# TODO
 # @bp.post('/<id>/execute')
 # @bp.output(QueryOut)
 # @bp.auth_required(auth)
@@ -818,8 +789,8 @@ def concordance_line(query_id, match_id, query_data):
 @bp.input(BreakdownIn, location='query')
 @bp.output(BreakdownOut)
 @bp.auth_required(auth)
-def get_breakdown(query_id, query_data):
-    """Get breakdown of query. Will create if it doesn't exist.
+def get_or_create_breakdown(query_id, query_data):
+    """Get breakdown of query (create if doesn't exist). TODO should be PUT instead?
 
     """
 
@@ -844,7 +815,7 @@ def get_breakdown(query_id, query_data):
 @bp.output(QueryMetaFrequenciesOut)
 @bp.auth_required(auth)
 def get_meta(query_id, query_data):
-    """Get meta distribution of query. NB: only works with categorical data, other types will be forced to categorical.
+    """Get meta distribution of query. TODO only works with categorical data, other types will be forced to categorical.
 
     """
 
@@ -898,7 +869,7 @@ def get_meta(query_id, query_data):
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
 def get_or_create_collocation(query_id, json_data):
-    """Get collocation analysis of query; create if necessary.
+    """Get collocation analysis of query (create if doesn't exist). TODO should be PUT instead?
 
     """
 
@@ -913,21 +884,25 @@ def get_or_create_collocation(query_id, json_data):
     semantic_map_id = json_data.get('semantic_map_id', None)
     semantic_map_init = json_data.get('semantic_map_init', True)
 
-    # filtering
+    # filtered query?
     filter_item = json_data.pop('filter_item', None)
     filter_item_p_att = json_data.pop('filter_item_p_att', None)
     filter_overlap = json_data.pop('filter_overlap', 'partial')
     filter_queries = dict()
     if filter_item:
         filter_queries['_FILTER'] = get_or_create_query_assisted(
-            query.corpus_id, None, [filter_item], filter_item_p_att, query.s,
-            True, False, False
+            query.corpus_id, None, [filter_item], filter_item_p_att, query.s, True, False, False
         )
     if len(filter_queries) > 0:
-        query = iterative_query(query, filter_queries, window, filter_overlap)
-        if query is None:
-            abort(406, 'empty iterative query')
+        query = get_or_create_query_iterative(
+            query, filter_queries, window, filter_overlap
+        )
 
+    # zero matches?
+    if query.zero_matches:
+        abort(406, 'query has no matches')
+
+    # create collocation if doesn't exist
     collocation = Collocation.query.filter_by(
         query_id=query.id,
         p=p,
@@ -949,12 +924,12 @@ def get_or_create_collocation(query_id, json_data):
     else:
         current_app.logger.debug("collocation object already exists")
 
-    ret = get_or_create_counts(collocation, remove_focus_cpos=True)
-    if isinstance(ret, bool):
-        if not ret:
-            current_app.logger.error("collocation analysis based on empty cotext")
-            abort(406, 'empty cotext')
+    # create counts
+    counts_status = put_counts(collocation, remove_focus_cpos=True)
+    if not counts_status:
+        abort(406, 'specified cotext is empty')
 
+    # init semantic map
     if semantic_map_init:
         ccc_semmap_init(collocation, semantic_map_id)
 

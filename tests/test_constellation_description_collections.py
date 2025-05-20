@@ -232,6 +232,7 @@ def test_constellation_description_collection_ufa(client, auth):
         pprint(collocation_collection.json)
 
 
+@pytest.mark.now
 def test_constellation_description_collection_ufa_empty(client, auth):
 
     auth_header = auth.login()

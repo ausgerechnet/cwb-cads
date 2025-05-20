@@ -20,6 +20,53 @@ def time_it(func):
     return wrapper
 
 
+def paginate_dataframe(df, sort_by, sort_order, page_number, page_size):
+    """paginate a pandas DataFrame.
+
+    """
+
+    # sort DataFrame
+    if sort_order not in ['ascending', 'descending']:
+        raise ValueError()
+    ascending = sort_order == "ascending"
+    df_sorted = df.sort_values(by=sort_by, ascending=ascending)
+
+    # get total records and pages
+    total_records = len(df_sorted)
+    total_pages = (total_records + page_size - 1) // page_size  # ceil(total_records / page_size)
+
+    # slice DataFrame for pagination
+    start_idx = (page_number - 1) * page_size
+    end_idx = start_idx + page_size
+    df_paginated = df_sorted.iloc[start_idx:end_idx]
+
+    # pagination metadata
+    metadata = {
+        "total": total_records,
+        "pages": total_pages,
+        "page_number": page_number,
+        "page_size": page_size,
+    }
+
+    return df_paginated, metadata
+
+
+def translate_flags(ignore_case, ignore_diacritics):
+    """translate boolean flags into one string (%cd)
+
+    TODO move to cwb-ccc
+
+    """
+    flags = ''
+    if ignore_case or ignore_diacritics:
+        flags = '%'
+        if ignore_case:
+            flags += 'c'
+        if ignore_diacritics:
+            flags += 'd'
+    return flags
+
+
 AMS_DICT = {
     # preferred: LRC
     'conservative_log_ratio': 'Conservative LR',

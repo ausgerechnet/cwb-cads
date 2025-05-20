@@ -214,7 +214,7 @@ def test_query_breakdown(client, auth):
                             },
                             headers=auth_header)
 
-        breakdown = client.get(url_for('query.get_breakdown', query_id=query.json['id'], p='lemma',
+        breakdown = client.get(url_for('query.get_or_create_breakdown', query_id=query.json['id'], p='lemma',
                                        # page_size=100, page_number=1, filter_item='Beifall',
                                        # sort_by_p_att='word', sort_by_offset=-2, sort_order='ascending', window=8
                                        ),

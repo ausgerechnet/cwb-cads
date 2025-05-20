@@ -15,12 +15,13 @@ from .. import db
 from ..breakdown import ccc_breakdown
 from ..collocation import (CollocationIn, CollocationItemOut,
                            CollocationItemsIn, CollocationItemsOut,
-                           CollocationOut, get_or_create_counts)
+                           CollocationOut, put_counts)
 from ..database import (Breakdown, Collocation, CollocationItem,
                         CollocationItemScore, CotextLines, Matches, Query,
                         get_or_create)
 from ..query import (ccc_query, get_or_create_cotext,
-                     get_or_create_query_assisted, iterative_query)
+                     get_or_create_query_assisted,
+                     get_or_create_query_iterative)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from ..users import auth
 from .constellation_description import expand_scores_dataframe
@@ -58,7 +59,7 @@ def get_or_create_coll(description,
     # filter?
     if len(filter_queries) > 0:
         current_app.logger.debug("second-order collocation mode")
-        focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
+        focus_query = get_or_create_query_iterative(focus_query, filter_queries, window, description.overlap)
         get_or_create(
             DiscoursemeDescription,
             discourseme_id=focus_discourseme_id,
@@ -108,11 +109,9 @@ def get_or_create_coll(description,
     else:
         current_app.logger.debug("collocation object already exists")
 
-    ret = get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
-    if isinstance(ret, bool):
-        if not ret:
-            current_app.logger.error("collocation analysis based on empty cotext")
-            return ret
+    counts_status = put_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+    if not counts_status:
+        current_app.logger.error("collocation analysis based on empty cotext")
     else:
         set_collocation_discourseme_scores(collocation,
                                            [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
@@ -711,7 +710,7 @@ def create_collocation(constellation_id, description_id, json_data):
 
     # filter?
     if len(filter_queries) > 0:
-        focus_query = iterative_query(focus_query, filter_queries, window, description.overlap)
+        focus_query = get_or_create_query_iterative(focus_query, filter_queries, window, description.overlap)
         # we create a new discourseme description for the filtered focus discourseme here
         get_or_create(
             DiscoursemeDescription,
@@ -739,11 +738,10 @@ def create_collocation(constellation_id, description_id, json_data):
     db.session.add(collocation)
     db.session.commit()
 
-    ret = get_or_create_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
-    if isinstance(ret, bool):
-        if not ret:
-            current_app.logger.error("collocation analysis based on empty cotext")
-            abort(406, 'empty cotext')
+    counts_status = put_counts(collocation, remove_focus_cpos=False, include_negative=include_negative)
+    if not counts_status:
+        current_app.logger.error("collocation analysis based on empty cotext")
+        abort(406, 'empty cotext')
     set_collocation_discourseme_scores(collocation,
                                        [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
                                        overlap=description.overlap)

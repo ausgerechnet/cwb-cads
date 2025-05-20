@@ -56,38 +56,41 @@ def get_filtered_cotext(focus_query, window, s_break, remove_focus_cpos=True):
     return df_cooc
 
 
-def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=False, delete_old=False):
-    """make sure that CollocationItems exist for collocation analysis = query + context
+def put_counts(collocation, remove_focus_cpos=True, include_negative=False, recount=False):
+    """make sure that CollocationItems (counts and scores) exist for collocation analysis = query + context
+    only creates if does not already exist (and recount is False)
 
+    returns True except if cotext is empty (then False)
     """
 
-    current_app.logger.debug("get_or_create_counts :: getting counts")
+    current_app.logger.debug("put_counts :: getting counts")
     old = CollocationItem.query.filter_by(collocation_id=collocation.id)
     if old.first():
-        current_app.logger.debug("get_or_create_counts :: counts already exist")
-        if not delete_old:
-            return True
-        else:
-            current_app.logger.debug("get_or_create_counts :: deleting counts")
+        current_app.logger.debug("put_counts :: counts already exist")
+        if recount:
+            current_app.logger.debug("put_counts :: deleting counts")
             CollocationItem.query.filter_by(collocation_id=collocation.id).delete()
             db.session.commit()
             current_app.logger.debug("deleted")
+        else:
+            return True
 
     # parse parameters
     focus_query = collocation._query
     window = collocation.window
     s_break = collocation.s_break
-    if focus_query.subcorpus and collocation.marginals == 'local':
-        corpus = collocation._query.subcorpus.ccc()
-    else:
-        corpus = collocation._query.corpus.ccc()
 
-    current_app.logger.debug(f'get_or_create_counts :: getting context of query {focus_query.id}')
+    # create and return
+    current_app.logger.debug(f'put_counts :: getting context of query {focus_query.id}')
     df_cooc = get_filtered_cotext(focus_query, window, s_break, remove_focus_cpos)
     if df_cooc is None:
         return False
 
-    current_app.logger.debug(f'get_or_create_counts :: counting items in context for window {window}')
+    current_app.logger.debug(f'put_counts :: counting items in context for window {window}')
+    if focus_query.subcorpus and collocation.marginals == 'local':
+        corpus = collocation._query.subcorpus.ccc()
+    else:
+        corpus = collocation._query.corpus.ccc()
     # create context counts of items for window
     f = corpus.counts.cpos(df_cooc['cpos'], [collocation.p])[['freq']].rename(columns={'freq': 'f'})
     # add marginals
@@ -97,12 +100,12 @@ def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=F
     counts['f1'] = len(df_cooc)
     counts['N'] = corpus.size()
 
-    current_app.logger.debug(f'get_or_create_counts :: saving {len(counts)} items to database')
+    current_app.logger.debug(f'put_counts :: saving {len(counts)} items to database')
     counts['collocation_id'] = collocation.id
     counts.reset_index().to_sql('collocation_item', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
-    current_app.logger.debug('get_or_create_counts :: adding scores')
+    current_app.logger.debug('put_counts :: adding scores')
     counts = DataFrame([vars(s) for s in collocation.items], columns=['id', 'f', 'f1', 'f2', 'N']).set_index('id')
     scores = measures.score(counts, freq=True, digits=6, boundary='poisson', vocab=len(counts)).reset_index()
     if not include_negative:
@@ -111,11 +114,11 @@ def get_or_create_counts(collocation, remove_focus_cpos=True, include_negative=F
     scores = scores.melt(id_vars=['id'], var_name='measure', value_name='score').rename({'id': 'collocation_item_id'}, axis=1)
     scores['collocation_id'] = collocation.id
 
-    current_app.logger.debug('get_or_create_counts :: saving scores')
+    current_app.logger.debug('put_counts :: saving scores')
     scores.to_sql('collocation_item_score', con=db.engine, if_exists='append', index=False)
     db.session.commit()
 
-    return scores
+    return True
 
 
 ################

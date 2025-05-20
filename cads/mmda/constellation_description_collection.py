@@ -52,7 +52,7 @@ def calculate_ufa(collection, window, p, marginals, include_negative, semantic_m
                   filter_discourseme_ids, filter_item, filter_item_p_att, sort_by, max_depth):
 
     # get collocation objects
-    current_app.logger.debug('calculate_ufa :: getting collocation items')
+    current_app.logger.debug('calculate_ufa :: getting collocation objects')
     collocations = list()
     for description in collection.constellation_descriptions:
 
@@ -63,36 +63,38 @@ def calculate_ufa(collection, window, p, marginals, include_negative, semantic_m
             focus_discourseme_id,
             filter_discourseme_ids, filter_item, filter_item_p_att
         )
-        if collocation:
-            collocation.focus_discourseme_id = focus_discourseme_id
-        collocations.append(collocation)
-        if semantic_map_id is None and collocation:
+        collocation.focus_discourseme_id = focus_discourseme_id
+
+        if semantic_map_id is None and not collocation._query.zero_matches:
             # use same map for following analyses
             semantic_map_id = collocation.semantic_map_id
 
+        collocations.append(collocation)
+
     # calculate RBO scores
     current_app.logger.debug('calculate_ufa :: calculating RBO and fitting GAM')
-    xs = list()
+    xs = list()                 # time_str of right collocation analysis
     scores = list()
     for i in range(1, len(collocations)):
-        left = collocations[i-1]
-        right = collocations[i]
+        collocation_left = collocations[i-1]
+        collocation_right = collocations[i]
         description_left = collection.constellation_descriptions[i-1]
         description_right = collection.constellation_descriptions[i]
         xs.append(description_right.subcorpus.name)
-        if not left or not right:
+        if not collocation_left._query.zero_matches or collocation_right._query.zero_matches:
             scores.append(0)    # no overlap between empty sets (None will not work with smoothing)
         else:
-            scores.append(calculate_rbo(description_left, left, description_right, right, sort_by=sort_by, number=max_depth))
+            scores.append(calculate_rbo(description_left, collocation_left, description_right, collocation_right, sort_by=sort_by, number=max_depth))
 
+    # GAM smoothing
     if collection.subcorpus_collection.time_interval in ['month', 'year']:
         seconds = [datetime.fromisoformat(time_str + "-01").timestamp() for time_str in xs]
     else:
         seconds = [datetime.fromisoformat(time_str).timestamp() for time_str in xs]
     predictions = gam_smoothing(DataFrame({'x': seconds, 'score': scores}))
 
-    current_app.logger.debug('calculate_ufa :: formatting output')
     # create output format
+    current_app.logger.debug('calculate_ufa :: formatting output')
     ufa = list()
     for i, score, x, row in zip(range(1, len(collocations)), scores, xs, predictions.iterrows()):
         collocation_left = collocations[i-1]

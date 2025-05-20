@@ -9703,7 +9703,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create new query.",
+        "summary": "Create new CQP query.",
         "tags": [
           "Query"
         ]
@@ -10010,7 +10010,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get breakdown of query. Will create if it doesn't exist.",
+        "summary": "Get breakdown of query (create if doesn't exist). TODO should be PUT instead?",
         "tags": [
           "Query"
         ]
@@ -10084,7 +10084,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get collocation analysis of query; create if necessary.",
+        "summary": "Get collocation analysis of query (create if doesn't exist). TODO should be PUT instead?",
         "tags": [
           "Query"
         ]
@@ -10709,7 +10709,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get meta distribution of query. NB: only works with categorical data, other types will be forced to categorical.",
+        "summary": "Get meta distribution of query. TODO only works with categorical data, other types will be forced to categorical.",
         "tags": [
           "Query"
         ]

@@ -1,4 +1,4 @@
- #!/usr/bin/python3
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -18,9 +18,9 @@ from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..corpus import rename_meta_freq
 from ..database import Breakdown, Corpus, Query, get_or_create
 from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
-                     QueryMetaFrequencyOut, get_query_meta_freq_breakdown,
-                     paginate_dataframe)
+                     QueryMetaFrequencyOut, get_query_meta_freq_breakdown)
 from ..users import auth
+from ..utils import paginate_dataframe
 from .database import (CollocationDiscoursemeItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem)
