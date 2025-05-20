@@ -22,11 +22,13 @@ import { Route as IndexImport } from './routes/index'
 import { Route as ComponentsWordCloudImport } from './routes/components_/word-cloud'
 import { Route as ComponentsToggleBarImport } from './routes/components_/toggle-bar'
 import { Route as ComponentsTimeSeriesImport } from './routes/components_/time-series'
+import { Route as ComponentsTableImport } from './routes/components_/table'
 import { Route as ComponentsMetaFrequencyImport } from './routes/components_/meta-frequency'
 import { Route as ComponentsInputImport } from './routes/components_/input'
 import { Route as ComponentsGraphImport } from './routes/components_/graph'
 import { Route as ComponentsErrorImport } from './routes/components_/error'
 import { Route as ComponentsEllipsisImport } from './routes/components_/ellipsis'
+import { Route as ComponentsDiscoursemeBreakdownImport } from './routes/components_/discourseme-breakdown'
 import { Route as ComponentsAssociationMatrixImport } from './routes/components_/association-matrix'
 import { Route as AppAdminImport } from './routes/_app/admin'
 import { Route as AppSubcorporaRouteImport } from './routes/_app/subcorpora/route'
@@ -119,6 +121,12 @@ const ComponentsTimeSeriesRoute = ComponentsTimeSeriesImport.update({
   getParentRoute: () => ComponentsRouteRoute,
 } as any)
 
+const ComponentsTableRoute = ComponentsTableImport.update({
+  id: '/table',
+  path: '/table',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
 const ComponentsMetaFrequencyRoute = ComponentsMetaFrequencyImport.update({
   id: '/meta-frequency',
   path: '/meta-frequency',
@@ -148,6 +156,13 @@ const ComponentsEllipsisRoute = ComponentsEllipsisImport.update({
   path: '/ellipsis',
   getParentRoute: () => ComponentsRouteRoute,
 } as any)
+
+const ComponentsDiscoursemeBreakdownRoute =
+  ComponentsDiscoursemeBreakdownImport.update({
+    id: '/discourseme-breakdown',
+    path: '/discourseme-breakdown',
+    getParentRoute: () => ComponentsRouteRoute,
+  } as any)
 
 const ComponentsAssociationMatrixRoute =
   ComponentsAssociationMatrixImport.update({
@@ -463,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentsAssociationMatrixImport
       parentRoute: typeof ComponentsRouteImport
     }
+    '/components_/discourseme-breakdown': {
+      id: '/components_/discourseme-breakdown'
+      path: '/discourseme-breakdown'
+      fullPath: '/components/discourseme-breakdown'
+      preLoaderRoute: typeof ComponentsDiscoursemeBreakdownImport
+      parentRoute: typeof ComponentsRouteImport
+    }
     '/components_/ellipsis': {
       id: '/components_/ellipsis'
       path: '/ellipsis'
@@ -496,6 +518,13 @@ declare module '@tanstack/react-router' {
       path: '/meta-frequency'
       fullPath: '/components/meta-frequency'
       preLoaderRoute: typeof ComponentsMetaFrequencyImport
+      parentRoute: typeof ComponentsRouteImport
+    }
+    '/components_/table': {
+      id: '/components_/table'
+      path: '/table'
+      fullPath: '/components/table'
+      preLoaderRoute: typeof ComponentsTableImport
       parentRoute: typeof ComponentsRouteImport
     }
     '/components_/time-series': {
@@ -631,11 +660,13 @@ declare module '@tanstack/react-router' {
 
 interface ComponentsRouteRouteChildren {
   ComponentsAssociationMatrixRoute: typeof ComponentsAssociationMatrixRoute
+  ComponentsDiscoursemeBreakdownRoute: typeof ComponentsDiscoursemeBreakdownRoute
   ComponentsEllipsisRoute: typeof ComponentsEllipsisRoute
   ComponentsErrorRoute: typeof ComponentsErrorRoute
   ComponentsGraphRoute: typeof ComponentsGraphRoute
   ComponentsInputRoute: typeof ComponentsInputRoute
   ComponentsMetaFrequencyRoute: typeof ComponentsMetaFrequencyRoute
+  ComponentsTableRoute: typeof ComponentsTableRoute
   ComponentsTimeSeriesRoute: typeof ComponentsTimeSeriesRoute
   ComponentsToggleBarRoute: typeof ComponentsToggleBarRoute
   ComponentsWordCloudRoute: typeof ComponentsWordCloudRoute
@@ -643,11 +674,13 @@ interface ComponentsRouteRouteChildren {
 
 const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
   ComponentsAssociationMatrixRoute: ComponentsAssociationMatrixRoute,
+  ComponentsDiscoursemeBreakdownRoute: ComponentsDiscoursemeBreakdownRoute,
   ComponentsEllipsisRoute: ComponentsEllipsisRoute,
   ComponentsErrorRoute: ComponentsErrorRoute,
   ComponentsGraphRoute: ComponentsGraphRoute,
   ComponentsInputRoute: ComponentsInputRoute,
   ComponentsMetaFrequencyRoute: ComponentsMetaFrequencyRoute,
+  ComponentsTableRoute: ComponentsTableRoute,
   ComponentsTimeSeriesRoute: ComponentsTimeSeriesRoute,
   ComponentsToggleBarRoute: ComponentsToggleBarRoute,
   ComponentsWordCloudRoute: ComponentsWordCloudRoute,
@@ -769,11 +802,13 @@ export interface FileRoutesByFullPath {
   '/subcorpora': typeof AppSubcorporaRouteRoute
   '/admin': typeof AppAdminRoute
   '/components/association-matrix': typeof ComponentsAssociationMatrixRoute
+  '/components/discourseme-breakdown': typeof ComponentsDiscoursemeBreakdownRoute
   '/components/ellipsis': typeof ComponentsEllipsisRoute
   '/components/error': typeof ComponentsErrorRoute
   '/components/graph': typeof ComponentsGraphRoute
   '/components/input': typeof ComponentsInputRoute
   '/components/meta-frequency': typeof ComponentsMetaFrequencyRoute
+  '/components/table': typeof ComponentsTableRoute
   '/components/time-series': typeof ComponentsTimeSeriesRoute
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
@@ -811,11 +846,13 @@ export interface FileRoutesByTo {
   '/subcorpora': typeof AppSubcorporaRouteRoute
   '/admin': typeof AppAdminRoute
   '/components/association-matrix': typeof ComponentsAssociationMatrixRoute
+  '/components/discourseme-breakdown': typeof ComponentsDiscoursemeBreakdownRoute
   '/components/ellipsis': typeof ComponentsEllipsisRoute
   '/components/error': typeof ComponentsErrorRoute
   '/components/graph': typeof ComponentsGraphRoute
   '/components/input': typeof ComponentsInputRoute
   '/components/meta-frequency': typeof ComponentsMetaFrequencyRoute
+  '/components/table': typeof ComponentsTableRoute
   '/components/time-series': typeof ComponentsTimeSeriesRoute
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
@@ -854,11 +891,13 @@ export interface FileRoutesById {
   '/_app/subcorpora': typeof AppSubcorporaRouteRoute
   '/_app/admin': typeof AppAdminRoute
   '/components_/association-matrix': typeof ComponentsAssociationMatrixRoute
+  '/components_/discourseme-breakdown': typeof ComponentsDiscoursemeBreakdownRoute
   '/components_/ellipsis': typeof ComponentsEllipsisRoute
   '/components_/error': typeof ComponentsErrorRoute
   '/components_/graph': typeof ComponentsGraphRoute
   '/components_/input': typeof ComponentsInputRoute
   '/components_/meta-frequency': typeof ComponentsMetaFrequencyRoute
+  '/components_/table': typeof ComponentsTableRoute
   '/components_/time-series': typeof ComponentsTimeSeriesRoute
   '/components_/toggle-bar': typeof ComponentsToggleBarRoute
   '/components_/word-cloud': typeof ComponentsWordCloudRoute
@@ -898,11 +937,13 @@ export interface FileRouteTypes {
     | '/subcorpora'
     | '/admin'
     | '/components/association-matrix'
+    | '/components/discourseme-breakdown'
     | '/components/ellipsis'
     | '/components/error'
     | '/components/graph'
     | '/components/input'
     | '/components/meta-frequency'
+    | '/components/table'
     | '/components/time-series'
     | '/components/toggle-bar'
     | '/components/word-cloud'
@@ -939,11 +980,13 @@ export interface FileRouteTypes {
     | '/subcorpora'
     | '/admin'
     | '/components/association-matrix'
+    | '/components/discourseme-breakdown'
     | '/components/ellipsis'
     | '/components/error'
     | '/components/graph'
     | '/components/input'
     | '/components/meta-frequency'
+    | '/components/table'
     | '/components/time-series'
     | '/components/toggle-bar'
     | '/components/word-cloud'
@@ -980,11 +1023,13 @@ export interface FileRouteTypes {
     | '/_app/subcorpora'
     | '/_app/admin'
     | '/components_/association-matrix'
+    | '/components_/discourseme-breakdown'
     | '/components_/ellipsis'
     | '/components_/error'
     | '/components_/graph'
     | '/components_/input'
     | '/components_/meta-frequency'
+    | '/components_/table'
     | '/components_/time-series'
     | '/components_/toggle-bar'
     | '/components_/word-cloud'
@@ -1054,11 +1099,13 @@ export const routeTree = rootRoute
       "filePath": "components_/route.tsx",
       "children": [
         "/components_/association-matrix",
+        "/components_/discourseme-breakdown",
         "/components_/ellipsis",
         "/components_/error",
         "/components_/graph",
         "/components_/input",
         "/components_/meta-frequency",
+        "/components_/table",
         "/components_/time-series",
         "/components_/toggle-bar",
         "/components_/word-cloud"
@@ -1137,6 +1184,10 @@ export const routeTree = rootRoute
       "filePath": "components_/association-matrix.tsx",
       "parent": "/components_"
     },
+    "/components_/discourseme-breakdown": {
+      "filePath": "components_/discourseme-breakdown.tsx",
+      "parent": "/components_"
+    },
     "/components_/ellipsis": {
       "filePath": "components_/ellipsis.tsx",
       "parent": "/components_"
@@ -1155,6 +1206,10 @@ export const routeTree = rootRoute
     },
     "/components_/meta-frequency": {
       "filePath": "components_/meta-frequency.tsx",
+      "parent": "/components_"
+    },
+    "/components_/table": {
+      "filePath": "components_/table.tsx",
       "parent": "/components_"
     },
     "/components_/time-series": {

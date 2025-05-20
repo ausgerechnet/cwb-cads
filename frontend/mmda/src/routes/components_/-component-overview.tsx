@@ -14,6 +14,10 @@ export function ComponentOverview() {
             <SubLink to="/components/time-series">TimeSeries</SubLink>
             <SubLink to="/components/meta-frequency">MetaFrequency</SubLink>
             <SubLink to="/components/toggle-bar">ToggleBar</SubLink>
+            <SubLink to="/components/table">Table</SubLink>
+            <SubLink to="/components/discourseme-breakdown">
+              DiscoursemeBreakdown
+            </SubLink>
             <SubLink to="/components/association-matrix">
               AssociationMatrix
             </SubLink>

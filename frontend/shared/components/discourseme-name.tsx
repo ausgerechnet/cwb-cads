@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { discoursemesList } from '@cads/shared/queries'
+import { discoursemesList } from '../queries'
 
 /**
  * Display the name of a discourseme by its ID. The name is fetched from the API if necessary.

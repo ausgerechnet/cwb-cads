@@ -20,7 +20,7 @@ import { SelectMulti } from '@cads/shared/components/select-multi'
 import { discoursemesList } from '@cads/shared/queries'
 import { useDescription } from './-use-description'
 import { Link } from '@tanstack/react-router'
-import { DiscoursemeName } from '@/components/discourseme-name'
+import { DiscoursemeName } from '@cads/shared/components/discourseme-name'
 import {
   Tooltip,
   TooltipContent,
