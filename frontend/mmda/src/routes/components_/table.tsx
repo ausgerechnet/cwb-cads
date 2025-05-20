@@ -87,7 +87,6 @@ function TableComponents() {
               ),
             },
             { accessorKey: 'value', header: 'Value' },
-            { accessorKey: 'value', header: 'Value' },
           ]}
           rows={[
             { id: 1, name: 'Row 1, Cell 1', value: 'Row 1, Cell 2' },

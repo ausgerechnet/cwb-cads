@@ -7,6 +7,7 @@ import {
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { Home, Info, User, ScrollText } from 'lucide-react'
+import { z } from 'zod'
 
 import { userIdentify } from '@cads/shared/queries'
 import { ModeToggle } from '@cads/shared/components/mode-toggle'
@@ -16,11 +17,17 @@ import {
   NavigationMenuList,
 } from '@cads/shared/components/ui/navigation-menu'
 import { Toaster } from '@cads/shared/components/ui/sonner'
+import { DiscoursemeCollocateTableSearch } from '@/components/discourseme-collocate-table'
+import { DiscoursemeBreakdownSearch } from '@/components/discourseme-breakdown'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
 }>()({
   component: RootComponent,
+  validateSearch: z
+    .object({})
+    .merge(DiscoursemeCollocateTableSearch)
+    .merge(DiscoursemeBreakdownSearch),
 })
 
 // Lazy load devtools in development, but omit in production
