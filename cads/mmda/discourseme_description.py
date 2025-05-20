@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+ #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -241,9 +241,9 @@ class DiscoursemeDescriptionOut(Schema):
 class DiscoursemeScoresOut(Schema):
 
     discourseme_id = Integer(required=True)
-    item_scores = Nested(CollocationItemOut(many=True), required=True)
-    unigram_item_scores = Nested(CollocationItemOut(many=True), required=True)
-    global_scores = Nested(CollocationScoreOut(many=True), required=True)
+    item_scores = Nested(CollocationItemOut(many=True), required=True, allow_none=True)
+    unigram_item_scores = Nested(CollocationItemOut(many=True), required=True, allow_none=True)
+    global_scores = Nested(CollocationScoreOut(many=True), required=True, allow_none=True)
 
 
 class DiscoursemeDescriptionSimilarOut(Schema):

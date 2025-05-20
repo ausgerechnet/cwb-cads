@@ -1636,18 +1636,21 @@
             "items": {
               "$ref": "#/components/schemas/CollocationScoreOut"
             },
+            "nullable": true,
             "type": "array"
           },
           "item_scores": {
             "items": {
               "$ref": "#/components/schemas/CollocationItemOut"
             },
+            "nullable": true,
             "type": "array"
           },
           "unigram_item_scores": {
             "items": {
               "$ref": "#/components/schemas/CollocationItemOut"
             },
+            "nullable": true,
             "type": "array"
           }
         },
@@ -2720,7 +2723,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev52"
+    "version": "0.3.0.dev53"
   },
   "openapi": "3.0.2",
   "paths": {

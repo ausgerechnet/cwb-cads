@@ -89,7 +89,6 @@ def test_constellation_concordance(client, auth):
             assert discoursemes[1]['id'] in discourseme_ids
 
 
-@pytest.mark.now
 def test_constellation_concordance_filter_item(client, auth):
 
     auth_header = auth.login()
@@ -120,11 +119,13 @@ def test_constellation_concordance_filter_item(client, auth):
         concordance = client.get(url_for('mmda.constellation.description.concordance_lines',
                                          constellation_id=constellation.json['id'],
                                          description_id=description.json['id'],
-                                         filter_item="CDU"),
+                                         filter_item="Zuruf"),
                                  follow_redirects=True,
                                  headers=auth_header)
 
         assert concordance.status_code == 200
+
+        print(concordance.json['nr_lines'])
 
         # for line in concordance.json['lines']:
         #     # make sure every line contains focus query
@@ -182,6 +183,7 @@ def test_constellation_concordance_line(client, auth):
         assert concordance_line.status_code == 200
 
 
+# @pytest.mark.now
 def test_constellation_concordance_filter(client, auth):
 
     auth_header = auth.login()
@@ -498,7 +500,7 @@ def test_associations_nan(client, auth):
         assert associations.json['scaled_scores'][0]['score'] is None
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_discourseme_get_breakdown(client, auth):
 
     auth_header = auth.login()
@@ -536,3 +538,62 @@ def test_discourseme_get_breakdown(client, auth):
                                headers=auth_header)
         assert breakdown.status_code == 200
         assert breakdown.json['items'][0]['freq'] == 14
+
+
+@pytest.mark.now
+def test_constellation_concordance_filter2(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # get discoursemes
+        discoursemes = client.get(url_for('mmda.discourseme.get_discoursemes'),
+                                  headers=auth_header).json
+
+        # constellation
+        constellation = client.post(url_for('mmda.constellation.create_constellation'),
+                                    json={
+                                        'name': 'factions',
+                                        'comment': 'union and FDP',
+                                        'discourseme_ids': [discourseme['id'] for discourseme in discoursemes[0:2]]
+                                    },
+                                    headers=auth_header)
+        assert constellation.status_code == 200
+
+        description = client.post(url_for('mmda.constellation.description.create_description', constellation_id=constellation.json['id']),
+                                  json={
+                                      'corpus_id': 1
+                                  },
+                                  headers=auth_header)
+        assert description.status_code == 200
+
+        concordance = client.get(url_for('mmda.constellation.description.concordance_lines',
+                                         constellation_id=constellation.json['id'],
+                                         description_id=description.json['id'],
+                                         focus_discourseme_id=discoursemes[0]['id']),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+
+        assert concordance.status_code == 200
+
+        for line in concordance.json['lines']:
+            # make sure every line contains focus query
+            discourseme_ids = [d['discourseme_id'] for d in line['discourseme_ranges']]
+            assert discoursemes[0]['id'] in discourseme_ids
+
+        concordance = client.get(url_for('mmda.constellation.description.concordance_lines',
+                                         constellation_id=constellation.json['id'],
+                                         description_id=description.json['id'],
+                                         focus_discourseme_id=discoursemes[0]['id'],
+                                         filter_discourseme_ids=[discoursemes[1]['id']]),
+                                 follow_redirects=True,
+                                 headers=auth_header)
+
+        assert concordance.status_code == 200
+
+        for line in concordance.json['lines']:
+            # make sure every line contains focus query and filter query
+            discourseme_ids = [d['discourseme_id'] for d in line['discourseme_ranges']]
+            assert discoursemes[0]['id'] in discourseme_ids
+            assert discoursemes[1]['id'] in discourseme_ids

@@ -134,7 +134,8 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     # discourseme scores (calculated here to hide unigram breakdown if requested)
     discourseme_scores = get_collocation_discourseme_scores(collocation.id, [d.id for d in description.discourseme_descriptions])
     for s in discourseme_scores:
-        s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
+        if s['item_scores']:
+            s['item_scores'] = [CollocationItemOut().dump(sc) for sc in s['item_scores']]
     discourseme_scores = [DiscoursemeScoresOut().dump(s) for s in discourseme_scores]
 
     # hide focus
@@ -193,7 +194,8 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
         # make sure there's coordinates for all requested items and discourseme items
         requested_items = [item['item'] for item in items]
         for discourseme_score in discourseme_scores:
-            requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
+            if discourseme_score['item_scores']:
+                requested_items.extend([d['item'] for d in discourseme_score['item_scores']])
         ccc_semmap_update(collocation.semantic_map, requested_items)
         coordinates = [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
 
@@ -507,6 +509,10 @@ def get_collocation_discourseme_scores(collocation_id, discourseme_description_i
         )
         df_discourseme_items = DataFrame([vars(s) for s in discourseme_items], columns=['item', 'f', 'f1', 'f2', 'N'])
         if len(df_discourseme_items) == 0:
+            discourseme_scores.append({'discourseme_id': discourseme_id,
+                                       'global_scores': None,
+                                       'item_scores': None,
+                                       'unigram_item_scores': None})
             continue
         df_discourseme_items['discourseme_id'] = discourseme_id
 
