@@ -129,26 +129,26 @@ const ConcordanceOut = z
     page_size: z.number().int(),
   })
   .passthrough()
-const AnnotationsOut = z
+const CorpusAnnotationsOut = z
   .object({
     key: z.string(),
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
   .passthrough()
-const LevelOut = z
-  .object({ annotations: z.array(AnnotationsOut), level: z.string() })
+const CorpusLevelOut = z
+  .object({ annotations: z.array(CorpusAnnotationsOut), level: z.string() })
   .passthrough()
-const MetaOut = z
-  .object({ corpus_id: z.number().int(), levels: z.array(LevelOut) })
+const CorpusLevelsOut = z
+  .object({ corpus_id: z.number().int(), levels: z.array(CorpusLevelOut) })
   .passthrough()
-const MetaIn = z
+const CorpusAnnotationsIn = z
   .object({
     key: z.string(),
     level: z.string(),
     value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
   .passthrough()
-const MetaFrequencyOut = z
+const CorpusMetaFrequencyOut = z
   .object({
     bin_boolean: z.boolean().nullish(),
     bin_datetime: z.string().nullish(),
@@ -158,9 +158,9 @@ const MetaFrequencyOut = z
     nr_tokens: z.number().int(),
   })
   .passthrough()
-const MetaFrequenciesOut = z
+const CorpusMetaFrequenciesOut = z
   .object({
-    frequencies: z.array(MetaFrequencyOut),
+    frequencies: z.array(CorpusMetaFrequencyOut),
     nr_items: z.number().int(),
     page_count: z.number().int(),
     page_number: z.number().int(),
@@ -351,6 +351,22 @@ const ConstellationDescriptionIn = z
     subcorpus_id: z.number().int().optional(),
   })
   .passthrough()
+const ConstellationDescriptionCollectionOut = z
+  .object({
+    constellation_descriptions: z.array(ConstellationDescriptionOut),
+    id: z.number().int(),
+    match_strategy: z
+      .enum(['longest', 'shortest', 'standard'])
+      .optional()
+      .default('longest'),
+    overlap: z
+      .enum(['partial', 'full', 'match', 'matchend'])
+      .optional()
+      .default('partial'),
+    s: z.string().nullable(),
+    subcorpus_collection_id: z.number().int(),
+  })
+  .passthrough()
 const ConstellationDescriptionCollectionIn = z
   .object({
     match_strategy: z
@@ -365,21 +381,16 @@ const ConstellationDescriptionCollectionIn = z
     subcorpus_collection_id: z.number().int(),
   })
   .passthrough()
-const ConstellationDescriptionCollectionOut = z
+const DiscoursemeIDs = z
+  .object({ discourseme_ids: z.array(z.number().int()) })
+  .passthrough()
+const DiscoursemeIn = z
   .object({
-    constellation_descriptions: z.array(ConstellationDescriptionOut),
-    id: z.number().int(),
-    match_strategy: z
-      .enum(['longest', 'shortest', 'standard'])
-      .optional()
-      .default('longest'),
-    overlap: z
-      .enum(['partial', 'full', 'match', 'matchend'])
-      .optional()
-      .default('partial'),
-    s: z.string().nullish(),
-    subcorpus_collection_id: z.number().int(),
+    comment: z.string().nullable(),
+    name: z.string().nullable(),
+    template: z.array(DiscoursemeItem).nullable().default([]),
   })
+  .partial()
   .passthrough()
 const ConstellationCollocationIn = z
   .object({
@@ -414,39 +425,34 @@ const ConstellationCollocationOut = z
     window: z.number().int(),
   })
   .passthrough()
-const ConfidenceIntervalOut = z
+const UFAConfidenceIntervalOut = z
   .object({
     lower_90: z.number().nullable(),
     lower_95: z.number().nullable(),
-    median: z.number().nullable(),
+    smooth: z.number().nullable(),
     upper_90: z.number().nullable(),
     upper_95: z.number().nullable(),
   })
-  .partial()
   .passthrough()
 const UFAScoreOut = z
   .object({
     collocation_id_left: z.number().int().nullable(),
     collocation_id_right: z.number().int().nullable(),
-    confidence: ConfidenceIntervalOut,
     description_id_left: z.number().int(),
     description_id_right: z.number().int(),
     score: z.number().nullable(),
+    score_confidence: UFAConfidenceIntervalOut,
     x_label: z.string(),
   })
-  .partial()
   .passthrough()
-const ConstellationDescriptionCollectionCollocationOut = z
+const UFAOut = z
   .object({
     collocations: z.array(ConstellationCollocationOut),
-    ufa: z.array(UFAScoreOut).optional(),
+    ufa: z.array(UFAScoreOut),
   })
   .passthrough()
-const ConstellationDiscoursemeDescriptionIn = z
-  .object({
-    discourseme_description_ids: z.array(z.number().int()).default([]),
-  })
-  .partial()
+const DiscoursemeDescriptionIDs = z
+  .object({ discourseme_description_ids: z.array(z.number().int()) })
   .passthrough()
 const ConstellationDescriptionOutUpdate = z
   .object({
@@ -458,9 +464,6 @@ const ConstellationDescriptionOutUpdate = z
     subcorpus_id: z.number().int().nullable(),
   })
   .partial()
-  .passthrough()
-const Generated = z
-  .object({ discourseme_ids: z.array(z.number().int()) })
   .passthrough()
 const ConstellationAssociationItemOut = z
   .object({
@@ -479,6 +482,25 @@ const ConstellationAssociationOut = z
     scores: z.array(ConstellationAssociationItemOut),
   })
   .passthrough()
+const ConstellationBreakdownItemOut = z
+  .object({
+    breakdown_id: z.number().int(),
+    discourseme_id: z.number().int(),
+    freq: z.number().int(),
+    id: z.number().int().nullable(),
+    ipm: z.number(),
+    item: z.string(),
+    nr_tokens: z.number().int(),
+    source: z.enum(['discourseme', 'discourseme_item']),
+  })
+  .passthrough()
+const ConstellationBreakdownOut = z
+  .object({
+    constellation_description_id: z.number().int(),
+    items: z.array(ConstellationBreakdownItemOut),
+    p: z.string(),
+  })
+  .passthrough()
 const DiscoursemeCoordinatesOut = z
   .object({
     discourseme_id: z.number().int(),
@@ -492,9 +514,9 @@ const DiscoursemeCoordinatesOut = z
 const DiscoursemeScoresOut = z
   .object({
     discourseme_id: z.number().int(),
-    global_scores: z.array(CollocationScoreOut),
-    item_scores: z.array(CollocationItemOut),
-    unigram_item_scores: z.array(CollocationItemOut),
+    global_scores: z.array(CollocationScoreOut).nullable(),
+    item_scores: z.array(CollocationItemOut).nullable(),
+    unigram_item_scores: z.array(CollocationItemOut).nullable(),
   })
   .passthrough()
 const ConstellationCollocationItemsOut = z
@@ -534,14 +556,6 @@ const ConstellationMapOut = z
     sort_by: z.string(),
   })
   .passthrough()
-const DiscoursemeIn = z
-  .object({
-    comment: z.string().nullable(),
-    name: z.string().nullable(),
-    template: z.array(DiscoursemeItem).nullable().default([]),
-  })
-  .partial()
-  .passthrough()
 const ConstellationKeywordIn = z
   .object({
     corpus_id_reference: z.number().int(),
@@ -566,6 +580,9 @@ const ConstellationKeywordItemsOut = z
     page_size: z.number().int(),
     sort_by: z.string(),
   })
+  .passthrough()
+const Generated = z
+  .object({ discourseme_description_ids: z.array(z.number().int()) })
   .passthrough()
 const DiscoursemeCoordinatesIn = z
   .object({
@@ -595,7 +612,7 @@ const DiscoursemeDescriptionIn = z
   })
   .passthrough()
 const DiscoursemeItemsIn = z
-  .object({ p: z.string().nullish(), surface: z.array(z.string()) })
+  .object({ items: z.array(z.string()), p: z.string().nullish() })
   .passthrough()
 const BreakdownItemsOut = z
   .object({
@@ -621,6 +638,31 @@ const DiscoursemeDescriptionSimilarOut = z
     p: z.string(),
     similarity: z.number(),
     surface: z.string(),
+  })
+  .passthrough()
+const QueryMetaFrequencyOut = z
+  .object({
+    bin_boolean: z.boolean().nullish(),
+    bin_datetime: z.string().nullish(),
+    bin_numeric: z.unknown().nullish(),
+    bin_unicode: z.string().nullish(),
+    item: z.string().optional(),
+    nr_ipm: z.number().optional(),
+    nr_matches: z.number().int().optional(),
+    nr_spans: z.number().int(),
+    nr_tokens: z.number().int(),
+  })
+  .passthrough()
+const QueryMetaFrequenciesOut = z
+  .object({
+    frequencies: z.array(QueryMetaFrequencyOut),
+    nr_items: z.number().int(),
+    page_count: z.number().int(),
+    page_number: z.number().int(),
+    page_size: z.number().int(),
+    sort_by: z.string(),
+    sort_order: z.string(),
+    value_type: z.enum(['datetime', 'numeric', 'boolean', 'unicode']),
   })
   .passthrough()
 const QueryOut = z
@@ -659,16 +701,6 @@ const CollocationIn = z
     semantic_map_id: z.number().int().nullish().default(null),
     semantic_map_init: z.boolean().optional().default(true),
     window: z.number().int().optional().default(10),
-  })
-  .passthrough()
-const QueryMetaOut = z
-  .object({
-    frequency: z.number().int(),
-    ipm: z.number(),
-    item: z.string(),
-    nr_texts: z.number().int(),
-    nr_tokens: z.number().int(),
-    value: z.string(),
   })
   .passthrough()
 const SemanticMapIn = z
@@ -716,6 +748,19 @@ const SlotQueryIn = z
     slots: z.array(AnchorSlot).optional(),
   })
   .passthrough()
+const UFAComparisonOut = z
+  .object({
+    collocation_id_left: z.number().int().optional(),
+    collocation_id_right: z.number().int().optional(),
+    keyword_id_left: z.number().int().optional(),
+    keyword_id_right: z.number().int().optional(),
+    max_depth: z.number().int(),
+    measure: z.string(),
+    p: z.number(),
+    score: z.number(),
+    sort_by: z.string(),
+  })
+  .passthrough()
 const UserOut = z
   .object({ id: z.number().int(), username: z.string() })
   .passthrough()
@@ -759,12 +804,12 @@ export const schemas = {
   TokenOut,
   ConcordanceLineOut,
   ConcordanceOut,
-  AnnotationsOut,
-  LevelOut,
-  MetaOut,
-  MetaIn,
-  MetaFrequencyOut,
-  MetaFrequenciesOut,
+  CorpusAnnotationsOut,
+  CorpusLevelOut,
+  CorpusLevelsOut,
+  CorpusAnnotationsIn,
+  CorpusMetaFrequencyOut,
+  CorpusMetaFrequenciesOut,
   SubCorpusOut,
   SubCorpusCollectionOut,
   SubCorpusCollectionIn,
@@ -782,26 +827,29 @@ export const schemas = {
   DiscoursemeDescriptionOut,
   ConstellationDescriptionOut,
   ConstellationDescriptionIn,
-  ConstellationDescriptionCollectionIn,
   ConstellationDescriptionCollectionOut,
+  ConstellationDescriptionCollectionIn,
+  DiscoursemeIDs,
+  DiscoursemeIn,
   ConstellationCollocationIn,
   ConstellationCollocationOut,
-  ConfidenceIntervalOut,
+  UFAConfidenceIntervalOut,
   UFAScoreOut,
-  ConstellationDescriptionCollectionCollocationOut,
-  ConstellationDiscoursemeDescriptionIn,
+  UFAOut,
+  DiscoursemeDescriptionIDs,
   ConstellationDescriptionOutUpdate,
-  Generated,
   ConstellationAssociationItemOut,
   ConstellationAssociationOut,
+  ConstellationBreakdownItemOut,
+  ConstellationBreakdownOut,
   DiscoursemeCoordinatesOut,
   DiscoursemeScoresOut,
   ConstellationCollocationItemsOut,
   ConstellationMapItemOut,
   ConstellationMapOut,
-  DiscoursemeIn,
   ConstellationKeywordIn,
   ConstellationKeywordItemsOut,
+  Generated,
   DiscoursemeCoordinatesIn,
   DiscoursemeInUpdate,
   DiscoursemeDescriptionIn,
@@ -809,16 +857,18 @@ export const schemas = {
   BreakdownItemsOut,
   BreakdownOut,
   DiscoursemeDescriptionSimilarOut,
+  QueryMetaFrequencyOut,
+  QueryMetaFrequenciesOut,
   QueryOut,
   QueryIn,
   CollocationIn,
-  QueryMetaOut,
   SemanticMapIn,
   CoordinatesIn,
   AnchorCorrection,
   AnchorSlot,
   SlotQueryOut,
   SlotQueryIn,
+  UFAComparisonOut,
   UserOut,
   UserRegister,
   UserIn,
@@ -1177,7 +1227,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: MetaOut,
+    response: CorpusLevelsOut,
     errors: [
       {
         status: 401,
@@ -1199,7 +1249,7 @@ const endpoints = makeApi([
       {
         name: 'body',
         type: 'Body',
-        schema: MetaIn,
+        schema: CorpusAnnotationsIn,
       },
       {
         name: 'id',
@@ -1207,7 +1257,7 @@ const endpoints = makeApi([
         schema: z.string(),
       },
     ],
-    response: AnnotationsOut,
+    response: CorpusAnnotationsOut,
     errors: [
       {
         status: 401,
@@ -1291,7 +1341,7 @@ const endpoints = makeApi([
           .default('day'),
       },
     ],
-    response: MetaFrequenciesOut,
+    response: CorpusMetaFrequenciesOut,
     errors: [
       {
         status: 401,
@@ -2057,7 +2107,7 @@ Subcorpora can be built iteratively as long as working on the same level.`,
       {
         name: 'body',
         type: 'Body',
-        schema: ConstellationDiscoursemeDescriptionIn,
+        schema: DiscoursemeDescriptionIDs,
       },
       {
         name: 'constellation_id',
@@ -2092,13 +2142,12 @@ Subcorpora can be built iteratively as long as working on the same level.`,
   {
     method: 'patch',
     path: '/mmda/constellation/:constellation_id/description/:description_id/add-discoursemes',
-    description: `(3) adding them to the constellation description`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: Generated,
+        schema: DiscoursemeIDs,
       },
       {
         name: 'constellation_id',
@@ -2157,6 +2206,41 @@ Subcorpora can be built iteratively as long as working on the same level.`,
         status: 404,
         description: `Not found`,
         schema: HTTPError,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/breakdown/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'p',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationBreakdownOut,
+    errors: [
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
       },
     ],
   },
@@ -2488,6 +2572,7 @@ Subcorpora can be built iteratively as long as working on the same level.`,
   {
     method: 'get',
     path: '/mmda/constellation/:constellation_id/description/:description_id/concordance/',
+    description: `TODO re-write using ..query.get_concordance_lines`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2696,7 +2781,7 @@ Subcorpora can be built iteratively as long as working on the same level.`,
   {
     method: 'post',
     path: '/mmda/constellation/:constellation_id/description/:description_id/discourseme-description',
-    description: `(1) create a discourseme with provided template items
+    description: `(1) create a discourseme with provided items
 (2) create a suitable description in the constellation description corpus
 (3) link discourseme to constellation
 (4) link discourseme description and constellation description`,
@@ -2740,11 +2825,6 @@ Subcorpora can be built iteratively as long as working on the same level.`,
   {
     method: 'put',
     path: '/mmda/constellation/:constellation_id/description/:description_id/discourseme-description',
-    description: `# does discourseme already exist
-# is discourseme already linked to constellation
-# does discourseme description already exist
-# is item already in discourseme description
-# is discourseme description already linked to constellation description`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3105,7 +3185,47 @@ Subcorpora can be built iteratively as long as working on the same level.`,
       {
         name: 'body',
         type: 'Body',
-        schema: ConstellationDiscoursemeDescriptionIn,
+        schema: Generated,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionOutUpdate,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:constellation_id/description/:description_id/remove-discoursemes',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIDs,
       },
       {
         name: 'constellation_id',
@@ -3218,6 +3338,31 @@ Subcorpora can be built iteratively as long as working on the same level.`,
     ],
   },
   {
+    method: 'get',
+    path: '/mmda/constellation/:constellation_id/description/collection/',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.array(ConstellationDescriptionCollectionOut),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+    ],
+  },
+  {
     method: 'post',
     path: '/mmda/constellation/:constellation_id/description/collection/',
     description: `Create constellation description collection.`,
@@ -3304,7 +3449,7 @@ Subcorpora can be built iteratively as long as working on the same level.`,
         schema: z.string(),
       },
     ],
-    response: ConstellationDescriptionCollectionOut,
+    response: z.unknown(),
     errors: [
       {
         status: 401,
@@ -3349,8 +3494,132 @@ Subcorpora can be built iteratively as long as working on the same level.`,
     ],
   },
   {
+    method: 'patch',
+    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id/add-discoursemes',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIDs,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id/discourseme-description',
+    description: `(1) create a discourseme with provided items
+(2) create a suitable description in the constellation description corpus
+(3) link discourseme to constellation
+(4) link discourseme description and constellation description`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id/remove-discoursemes',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIDs,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'collection_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ConstellationDescriptionCollectionOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'put',
-    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id/collocation',
+    path: '/mmda/constellation/:constellation_id/description/collection/:collection_id/ufa',
     requestFormat: 'json',
     parameters: [
       {
@@ -3368,8 +3637,58 @@ Subcorpora can be built iteratively as long as working on the same level.`,
         type: 'Path',
         schema: z.string(),
       },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'max_depth',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
     ],
-    response: ConstellationDescriptionCollectionCollocationOut,
+    response: UFAOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/mmda/constellation/:constellation_id/description/collection/:description_id/discourseme-description',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: DiscoursemeIn,
+      },
+      {
+        name: 'constellation_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: DiscoursemeOut,
     errors: [
       {
         status: 401,
@@ -3674,51 +3993,6 @@ Subcorpora can be built iteratively as long as working on the same level.`,
   },
   {
     method: 'patch',
-    path: '/mmda/discourseme/:discourseme_id/description/:description_id/add-item',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: DiscoursemeItem,
-      },
-      {
-        name: 'discourseme_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'description_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'update_discourseme',
-        type: 'Query',
-        schema: z.boolean().optional().default(true),
-      },
-    ],
-    response: DiscoursemeDescriptionOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
-      },
-      {
-        status: 422,
-        description: `Validation error`,
-        schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'patch',
     path: '/mmda/discourseme/:discourseme_id/description/:description_id/add-items',
     requestFormat: 'json',
     parameters: [
@@ -3853,14 +4127,108 @@ Subcorpora can be built iteratively as long as working on the same level.`,
     ],
   },
   {
+    method: 'get',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/meta',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'discourseme_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'description_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'subcorpus_id',
+        type: 'Query',
+        schema: z.number().int().nullish().default(null),
+      },
+      {
+        name: 'level',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'key',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'p',
+        type: 'Query',
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum(['bin', 'nr_ipm', 'nr_matches', 'nr_tokens', 'nr_spans'])
+          .optional()
+          .default('nr_ipm'),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'nr_bins',
+        type: 'Query',
+        schema: z.number().int().optional().default(30),
+      },
+      {
+        name: 'time_interval',
+        type: 'Query',
+        schema: z
+          .enum(['hour', 'day', 'week', 'month', 'year'])
+          .optional()
+          .default('day'),
+      },
+    ],
+    response: QueryMetaFrequenciesOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
     method: 'patch',
-    path: '/mmda/discourseme/:discourseme_id/description/:description_id/remove-item',
+    path: '/mmda/discourseme/:discourseme_id/description/:description_id/remove-items',
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: DiscoursemeItem,
+        schema: DiscoursemeItemsIn,
       },
       {
         name: 'discourseme_id',
@@ -3894,31 +4262,6 @@ Subcorpora can be built iteratively as long as working on the same level.`,
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/mmda/discourseme/:discourseme_id/template',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'discourseme_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DiscoursemeOut,
-    errors: [
-      {
-        status: 401,
-        description: `Authentication error`,
-        schema: HTTPError,
-      },
-      {
-        status: 404,
-        description: `Not found`,
-        schema: HTTPError,
       },
     ],
   },
@@ -4296,13 +4639,17 @@ Subcorpora can be built iteratively as long as working on the same level.`,
   {
     method: 'get',
     path: '/query/:query_id/meta',
-    description: `TODO: implement correctly, this does not allow pagination etc.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'query_id',
         type: 'Path',
         schema: z.string(),
+      },
+      {
+        name: 'subcorpus_id',
+        type: 'Query',
+        schema: z.number().int().nullish().default(null),
       },
       {
         name: 'level',
@@ -4317,10 +4664,49 @@ Subcorpora can be built iteratively as long as working on the same level.`,
       {
         name: 'p',
         type: 'Query',
-        schema: z.string().optional().default('word'),
+        schema: z.string().optional().default('lemma'),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum(['bin', 'nr_ipm', 'nr_matches', 'nr_tokens', 'nr_spans'])
+          .optional()
+          .default('nr_ipm'),
+      },
+      {
+        name: 'sort_order',
+        type: 'Query',
+        schema: z
+          .enum(['ascending', 'descending'])
+          .optional()
+          .default('descending'),
+      },
+      {
+        name: 'page_size',
+        type: 'Query',
+        schema: z.number().int().optional().default(10),
+      },
+      {
+        name: 'page_number',
+        type: 'Query',
+        schema: z.number().int().optional().default(1),
+      },
+      {
+        name: 'nr_bins',
+        type: 'Query',
+        schema: z.number().int().optional().default(30),
+      },
+      {
+        name: 'time_interval',
+        type: 'Query',
+        schema: z
+          .enum(['hour', 'day', 'week', 'month', 'year'])
+          .optional()
+          .default('day'),
       },
     ],
-    response: z.array(QueryMetaOut),
+    response: QueryMetaFrequenciesOut,
     errors: [
       {
         status: 401,
@@ -4599,6 +4985,88 @@ Subcorpora can be built iteratively as long as working on the same level.`,
   },
   {
     method: 'get',
+    path: '/ufa/score',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'collocation_id_left',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'collocation_id_right',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'keyword_id_left',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'keyword_id_right',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'max_depth',
+        type: 'Query',
+        schema: z.number().int().optional().default(50),
+      },
+      {
+        name: 'p',
+        type: 'Query',
+        schema: z.number().optional().default(0.95),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z
+          .enum([
+            'conservative_log_ratio',
+            'O11',
+            'E11',
+            'ipm',
+            'ipm_expected',
+            'log_likelihood',
+            'z_score',
+            't_score',
+            'simple_ll',
+            'dice',
+            'log_ratio',
+            'min_sensitivity',
+            'liddell',
+            'mutual_information',
+            'local_mutual_information',
+          ])
+          .optional()
+          .default('conservative_log_ratio'),
+      },
+      {
+        name: 'measure',
+        type: 'Query',
+        schema: z
+          .enum(['rbo', 'gwets_ac1', 'cohens_kappa'])
+          .optional()
+          .default('rbo'),
+      },
+    ],
+    response: UFAComparisonOut,
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 422,
+        description: `Validation error`,
+        schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/user/',
     requestFormat: 'json',
     response: z.array(UserOut),
@@ -4632,6 +5100,31 @@ Subcorpora can be built iteratively as long as working on the same level.`,
         status: 422,
         description: `Validation error`,
         schema: ValidationError,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/user/:id',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.unknown(),
+    errors: [
+      {
+        status: 401,
+        description: `Authentication error`,
+        schema: HTTPError,
+      },
+      {
+        status: 404,
+        description: `Not found`,
+        schema: HTTPError,
       },
     ],
   },
@@ -4699,7 +5192,7 @@ Subcorpora can be built iteratively as long as working on the same level.`,
     method: 'get',
     path: '/user/identify',
     requestFormat: 'json',
-    response: z.unknown(),
+    response: UserOut,
     errors: [
       {
         status: 401,

@@ -28,6 +28,7 @@ import { Route as ComponentsInputImport } from './routes/components_/input'
 import { Route as ComponentsGraphImport } from './routes/components_/graph'
 import { Route as ComponentsErrorImport } from './routes/components_/error'
 import { Route as ComponentsEllipsisImport } from './routes/components_/ellipsis'
+import { Route as ComponentsDiscoursemeCollocateTableImport } from './routes/components_/discourseme-collocate-table'
 import { Route as ComponentsDiscoursemeBreakdownImport } from './routes/components_/discourseme-breakdown'
 import { Route as ComponentsAssociationMatrixImport } from './routes/components_/association-matrix'
 import { Route as AppAdminImport } from './routes/_app/admin'
@@ -156,6 +157,13 @@ const ComponentsEllipsisRoute = ComponentsEllipsisImport.update({
   path: '/ellipsis',
   getParentRoute: () => ComponentsRouteRoute,
 } as any)
+
+const ComponentsDiscoursemeCollocateTableRoute =
+  ComponentsDiscoursemeCollocateTableImport.update({
+    id: '/discourseme-collocate-table',
+    path: '/discourseme-collocate-table',
+    getParentRoute: () => ComponentsRouteRoute,
+  } as any)
 
 const ComponentsDiscoursemeBreakdownRoute =
   ComponentsDiscoursemeBreakdownImport.update({
@@ -485,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentsDiscoursemeBreakdownImport
       parentRoute: typeof ComponentsRouteImport
     }
+    '/components_/discourseme-collocate-table': {
+      id: '/components_/discourseme-collocate-table'
+      path: '/discourseme-collocate-table'
+      fullPath: '/components/discourseme-collocate-table'
+      preLoaderRoute: typeof ComponentsDiscoursemeCollocateTableImport
+      parentRoute: typeof ComponentsRouteImport
+    }
     '/components_/ellipsis': {
       id: '/components_/ellipsis'
       path: '/ellipsis'
@@ -661,6 +676,7 @@ declare module '@tanstack/react-router' {
 interface ComponentsRouteRouteChildren {
   ComponentsAssociationMatrixRoute: typeof ComponentsAssociationMatrixRoute
   ComponentsDiscoursemeBreakdownRoute: typeof ComponentsDiscoursemeBreakdownRoute
+  ComponentsDiscoursemeCollocateTableRoute: typeof ComponentsDiscoursemeCollocateTableRoute
   ComponentsEllipsisRoute: typeof ComponentsEllipsisRoute
   ComponentsErrorRoute: typeof ComponentsErrorRoute
   ComponentsGraphRoute: typeof ComponentsGraphRoute
@@ -675,6 +691,8 @@ interface ComponentsRouteRouteChildren {
 const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
   ComponentsAssociationMatrixRoute: ComponentsAssociationMatrixRoute,
   ComponentsDiscoursemeBreakdownRoute: ComponentsDiscoursemeBreakdownRoute,
+  ComponentsDiscoursemeCollocateTableRoute:
+    ComponentsDiscoursemeCollocateTableRoute,
   ComponentsEllipsisRoute: ComponentsEllipsisRoute,
   ComponentsErrorRoute: ComponentsErrorRoute,
   ComponentsGraphRoute: ComponentsGraphRoute,
@@ -803,6 +821,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRoute
   '/components/association-matrix': typeof ComponentsAssociationMatrixRoute
   '/components/discourseme-breakdown': typeof ComponentsDiscoursemeBreakdownRoute
+  '/components/discourseme-collocate-table': typeof ComponentsDiscoursemeCollocateTableRoute
   '/components/ellipsis': typeof ComponentsEllipsisRoute
   '/components/error': typeof ComponentsErrorRoute
   '/components/graph': typeof ComponentsGraphRoute
@@ -847,6 +866,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/components/association-matrix': typeof ComponentsAssociationMatrixRoute
   '/components/discourseme-breakdown': typeof ComponentsDiscoursemeBreakdownRoute
+  '/components/discourseme-collocate-table': typeof ComponentsDiscoursemeCollocateTableRoute
   '/components/ellipsis': typeof ComponentsEllipsisRoute
   '/components/error': typeof ComponentsErrorRoute
   '/components/graph': typeof ComponentsGraphRoute
@@ -892,6 +912,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRoute
   '/components_/association-matrix': typeof ComponentsAssociationMatrixRoute
   '/components_/discourseme-breakdown': typeof ComponentsDiscoursemeBreakdownRoute
+  '/components_/discourseme-collocate-table': typeof ComponentsDiscoursemeCollocateTableRoute
   '/components_/ellipsis': typeof ComponentsEllipsisRoute
   '/components_/error': typeof ComponentsErrorRoute
   '/components_/graph': typeof ComponentsGraphRoute
@@ -938,6 +959,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/components/association-matrix'
     | '/components/discourseme-breakdown'
+    | '/components/discourseme-collocate-table'
     | '/components/ellipsis'
     | '/components/error'
     | '/components/graph'
@@ -981,6 +1003,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/components/association-matrix'
     | '/components/discourseme-breakdown'
+    | '/components/discourseme-collocate-table'
     | '/components/ellipsis'
     | '/components/error'
     | '/components/graph'
@@ -1024,6 +1047,7 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/components_/association-matrix'
     | '/components_/discourseme-breakdown'
+    | '/components_/discourseme-collocate-table'
     | '/components_/ellipsis'
     | '/components_/error'
     | '/components_/graph'
@@ -1100,6 +1124,7 @@ export const routeTree = rootRoute
       "children": [
         "/components_/association-matrix",
         "/components_/discourseme-breakdown",
+        "/components_/discourseme-collocate-table",
         "/components_/ellipsis",
         "/components_/error",
         "/components_/graph",
@@ -1186,6 +1211,10 @@ export const routeTree = rootRoute
     },
     "/components_/discourseme-breakdown": {
       "filePath": "components_/discourseme-breakdown.tsx",
+      "parent": "/components_"
+    },
+    "/components_/discourseme-collocate-table": {
+      "filePath": "components_/discourseme-collocate-table.tsx",
       "parent": "/components_"
     },
     "/components_/ellipsis": {

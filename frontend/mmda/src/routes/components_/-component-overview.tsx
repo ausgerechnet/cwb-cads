@@ -18,6 +18,9 @@ export function ComponentOverview() {
             <SubLink to="/components/discourseme-breakdown">
               DiscoursemeBreakdown
             </SubLink>
+            <SubLink to="/components/discourseme-collocate-table">
+              DiscoursemeCollocateTable
+            </SubLink>
             <SubLink to="/components/association-matrix">
               AssociationMatrix
             </SubLink>

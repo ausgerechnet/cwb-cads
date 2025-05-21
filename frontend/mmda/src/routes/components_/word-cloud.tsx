@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+
 import WordCloud from '../../components/word-cloud'
 import { WordCloudPreview } from '../../components/word-cloud-preview'
 import { Block } from './-block'
@@ -8,15 +10,28 @@ export const Route = createFileRoute('/components_/word-cloud')({
 })
 
 function WordCloudComponents() {
+  const [events, setEvents] = useState<string[]>([])
+
   return (
     <>
       <Block componentName="WordCloud" componentTag="WordCloud">
         <div className="relative grid aspect-video max-w-[1200px] grid-cols-[5rem_1fr_5rem] grid-rows-[5rem_1fr_5rem] overflow-hidden outline-dotted outline-1 outline-pink-500">
           <WordCloud
-            onNewDiscourseme={(event) => {
-              console.log('onNewDiscourseme', event)
+            onNewDiscourseme={(...event) => {
+              setEvents((prev) => [...prev, `New Discourseme: ${event}`])
+            }}
+            onUpdateDiscourseme={(...event) => {
+              setEvents((prev) => [...prev, `Update Discourseme: ${event}`])
             }}
             words={[
+              {
+                x: 0.1,
+                y: 0.1,
+                item: 'Greetings',
+                source: 'discoursemes',
+                discoursemeId: 42,
+                significance: 1,
+              },
               {
                 x: 0,
                 y: 0,
@@ -58,6 +73,14 @@ function WordCloudComponents() {
             className="col-start-2 row-start-2 h-full w-full"
           />
         </div>
+
+        <ul className="mt-4">
+          {events.map((event, index) => (
+            <li key={index} className="rounded text-sm text-gray-500">
+              {event}
+            </li>
+          ))}
+        </ul>
       </Block>
 
       <Block componentName="WordCloudPreview" componentTag="WordCloudPreview">

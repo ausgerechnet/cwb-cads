@@ -440,10 +440,11 @@ export default function WordCloud({
               d.significance < minimumSignificance && !isFilterItem
 
             return cn(
-              `cursor-grab dark:fill-white/10 fill-black/5 hover:fill-primary/50 dark:hover:fill-primary/50`,
+              `cursor-grab dark:fill-slate-600 fill-slate-300 hover:fill-primary/50 dark:hover:fill-primary/50`,
               isDragging && 'pointer-events-none animate-pulse',
               isFilterItem && 'stroke-primary',
-              isSmall && 'pointer-events-none opacity-25',
+              isSmall &&
+                'pointer-events-none fill-slate-100 dark:fill-slate-900 opacity-50',
             )
           })
         textGroup
@@ -585,6 +586,18 @@ export default function WordCloud({
     function zoomed({ transform }: { transform: d3.ZoomTransform }) {
       const isSameZoom = transform.k === transformationState.k
       transformationState = transform
+
+      if (!isSameZoom) {
+        textGroup
+          .filter((d) => {
+            const { minimumSignificance } = getMinimumSignificance()
+            const isFilterItem = d.source === 'items' && d.item === filterItem
+            const isSmall =
+              d.significance < minimumSignificance && !isFilterItem
+            return !isSmall
+          })
+          .raise(Infinity)
+      }
 
       render(isSameZoom)
     }

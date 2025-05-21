@@ -1,19 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { z } from 'zod'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import {
-  AlertCircle,
-  ArrowLeftIcon,
-  Loader2,
-  Loader2Icon,
-  Plus,
-  Trash2Icon,
-  XIcon,
-} from 'lucide-react'
+import { ArrowLeftIcon, Loader2Icon, Trash2Icon, XIcon } from 'lucide-react'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 
 import { cn } from '@cads/shared/lib/utils'
 import {
@@ -32,28 +21,6 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { ComplexSelect } from '@cads/shared/components/select-complex'
 import { LoaderBig } from '@cads/shared/components/loader-big'
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from '@cads/shared/components/ui/dialog'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@cads/shared/components/ui/tooltip'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@cads/shared/components/ui/form'
-import { ItemsInput } from '@cads/shared/components/ui/items-input'
-import { Alert, AlertDescription } from '@cads/shared/components/ui/alert'
-import { required_error } from '@cads/shared/lib/strings'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import {
   Collapsible,
@@ -67,6 +34,7 @@ import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { ConstellationCollocationFilter } from './-constellation-filter'
+import { AttachNewDiscourseme } from './-attach-new-discourseme'
 
 export function SemanticMapCollocations({
   constellationId,
@@ -138,7 +106,7 @@ export function SemanticMapCollocations({
   const onUpdateDiscourseme = useCallback(
     (discoursemeId: number, surface: string) => {
       const descriptionId = description?.discourseme_descriptions.find(
-        ({ id }) => id === discoursemeId,
+        ({ discourseme_id }) => discourseme_id === discoursemeId,
       )?.id
       if (descriptionId === undefined) {
         throw new Error(
@@ -200,9 +168,9 @@ export function SemanticMapCollocations({
         <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />
       )}
       <div className="col-start-2 row-start-3 self-start justify-self-start">
-        <ErrorMessage error={errorCollocation} />
-        <ErrorMessage error={errorNewDiscourseme} />
-        <ErrorMessage error={errorAddItem} />
+        <ErrorMessage
+          error={[errorCollocation, errorNewDiscourseme, errorAddItem]}
+        />
       </div>
     </div>
   )
@@ -233,22 +201,31 @@ function ConstellationDiscoursemesEditor({
     const discoursemeItems = mapData
       .filter(({ source }) => source === 'discourseme_items')
       .toSorted((a, b) => a.item.localeCompare(b.item))
-    const discoursemes = mapData
-      .filter(({ source }) => source === 'discoursemes')
-      .map((discourseme) => {
-        const descriptionId =
-          constellationDescription?.discourseme_descriptions.find(
-            ({ discourseme_id }) =>
-              discourseme_id === discourseme.discourseme_id,
-          )?.id
-        const items = discoursemeItems.filter(
-          ({ discourseme_id }) => discourseme_id === discourseme.discourseme_id,
-        )
-        return { ...discourseme, descriptionId, items }
-      })
+    const discoursemes: {
+      discoursemeId: number
+      item: string
+      descriptionId: number
+      items: string[]
+    }[] =
+      constellationDescription?.discourseme_descriptions?.map(
+        (description) => ({
+          discoursemeId: description.discourseme_id,
+          item:
+            allDiscoursemes.find(
+              (discourseme) => discourseme.id === description.discourseme_id,
+            )?.name ?? 'n.a.',
+          descriptionId: description.id,
+          items: description.items
+            .map(({ surface }) => surface)
+            .filter(
+              (surface): surface is string => typeof surface === 'string',
+            ),
+        }),
+      ) ?? []
 
     return { discoursemes, itemCount: discoursemeItems.length }
   }, [
+    allDiscoursemes,
     collocationItemsMap?.map,
     constellationDescription?.discourseme_descriptions,
   ])
@@ -295,7 +272,7 @@ function ConstellationDiscoursemesEditor({
       )}
       <ScrollArea className="flex-grow">
         {discoursemeData.discoursemes.map(
-          ({ discourseme_id: discoursemeId, items, item, descriptionId }) => {
+          ({ discoursemeId, items, item, descriptionId }) => {
             if (discoursemeId === null) {
               throw new Error(
                 `Encountered item with source "description_items" that has no "discourseme_id": ${item}`,
@@ -355,6 +332,7 @@ function ConstellationDiscoursemesEditor({
                         )}
                       </Button>
                     </CollapsibleTrigger>
+
                     <Button
                       variant="ghost"
                       size="icon"
@@ -370,10 +348,9 @@ function ConstellationDiscoursemesEditor({
                   </h4>
                   <CollapsibleContent>
                     <ul className="px-2">
-                      {/* TODO: sometimes items are duplicates. why? */}
-                      {items.map(({ item, discourseme_id }, index) => (
+                      {items.map((item, index) => (
                         <li
-                          key={`${item} ${discourseme_id}` + index}
+                          key={`${item} ${discoursemeId}` + index}
                           className="group/description hover:bg-muted flex items-center justify-between rounded pl-1 leading-tight"
                         >
                           {item}
@@ -562,119 +539,5 @@ function AddDescriptionItem({
         }}
       />
     </>
-  )
-}
-
-const Discourseme = z.object({
-  surfaces: z.array(z.string({ required_error }), { required_error }),
-})
-
-type Discourseme = z.infer<typeof Discourseme>
-
-function AttachNewDiscourseme({
-  className,
-  constellationId,
-  constellationDescriptionId,
-  p,
-}: {
-  className?: string
-  constellationId: number
-  constellationDescriptionId: number
-  p: string
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-  const {
-    mutate: postNewDiscourseme,
-    isPending,
-    error,
-  } = useMutation({
-    ...createDiscoursemeForConstellationDescription,
-    onError: (...args) => {
-      createDiscoursemeForConstellationDescription.onError?.(...args)
-      toast.error('Failed to create discourseme')
-    },
-    onSuccess: (data, ...rest) => {
-      createDiscoursemeForConstellationDescription.onSuccess?.(data, ...rest)
-      toast.success('Discourseme created and attached')
-      setIsOpen(false)
-    },
-  })
-
-  const form = useForm<Discourseme>({
-    resolver: zodResolver(Discourseme),
-    disabled: isPending,
-    defaultValues: {
-      surfaces: [],
-    },
-  })
-
-  useEffect(() => {
-    if (!isOpen) form.reset()
-  }, [isOpen, form])
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(className, 'aspect-square')}
-              >
-                Create new Discourseme to add
-                <Plus className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Create a new discourseme</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <DialogContent>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit((discourseme) =>
-              postNewDiscourseme({
-                surfaces: discourseme.surfaces,
-                constellationId,
-                constellationDescriptionId,
-                p,
-              }),
-            )}
-          >
-            <fieldset disabled={isPending} className="flex flex-col gap-4">
-              <FormField
-                control={form.control}
-                name="surfaces"
-                render={({ field }) => (
-                  <FormItem className="col-span-full">
-                    <FormLabel>Items</FormLabel>
-                    <FormControl>
-                      <ItemsInput
-                        onChange={field.onChange}
-                        defaultValue={field.value}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={isPending}>
-                {isPending && (
-                  <Loader2 className="animation-spin mr-2 h-4 w-4" />
-                )}
-                New Discourseme
-              </Button>
-              {error && (
-                <Alert>
-                  <AlertCircle className="mr-2 h-4 w-4" />
-                  <AlertDescription>{error.message}</AlertDescription>
-                </Alert>
-              )}
-            </fieldset>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
   )
 }
