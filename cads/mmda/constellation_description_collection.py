@@ -3,7 +3,7 @@
 
 from datetime import datetime
 
-from apiflask import APIBlueprint, Schema
+from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Float, Integer, Nested, String
 from apiflask.validators import OneOf
 from association_measures.comparisons import rbo
@@ -53,6 +53,8 @@ def calculate_ufa(collection, window, p, marginals, include_negative, semantic_m
 
     # get collocation objects
     current_app.logger.debug('calculate_ufa :: getting collocation objects')
+    if len(collection.constellation_descriptions) < 2:
+        return None
     collocations = list()
     for description in collection.constellation_descriptions:
 
@@ -412,10 +414,13 @@ def get_or_create_ufa(constellation_id, collection_id, json_data, query_data):
     filter_item = json_data.get('filter_item')
     filter_item_p_att = json_data.get('filter_item_p_att')
 
-    collocation_collection = calculate_ufa(collection, window, p, marginals, include_negative, semantic_map_id, focus_discourseme_id,
-                                           filter_discourseme_ids, filter_item, filter_item_p_att, sort_by, max_depth)
+    ufa = calculate_ufa(collection, window, p, marginals, include_negative, semantic_map_id, focus_discourseme_id,
+                        filter_discourseme_ids, filter_item, filter_item_p_att, sort_by, max_depth)
 
-    return UFAOut().dump(collocation_collection), 200
+    if ufa is None:
+        return abort(406, 'not enough subcorpora for UFA')
+
+    return UFAOut().dump(ufa), 200
 
 
 #########################
