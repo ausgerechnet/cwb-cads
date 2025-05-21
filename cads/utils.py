@@ -4,6 +4,18 @@
 from functools import wraps
 from timeit import default_timer
 
+from numpy import log
+
+
+def scale_score(score, score_max, method='linear', logarithmic=False):
+
+    if logarithmic:
+        return log(score) / log(score_max)
+    if method == 'linear':
+        return score / score_max
+    else:
+        raise ValueError()
+
 
 def time_it(func):
     """

@@ -91,7 +91,7 @@ def test_create_subcorpus_unicode(client, auth):
         assert subcorpus.status_code == 200
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_create_subcorpus_subcorpus(client, auth):
 
     auth_header = auth.login()
@@ -636,3 +636,45 @@ def test_create_subcorpus_subcorpus_collection(client, auth):
                                  content_type='application/json',
                                  headers=auth_header)
         assert collections.status_code == 200
+
+
+@pytest.mark.now
+def test_create_subcorpus_collection_nans(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+
+        client.get("/")
+
+        corpora = client.get(url_for('corpus.get_corpora'),
+                             content_type='application/json',
+                             headers=auth_header)
+        assert corpora.status_code == 200
+
+        corpus = client.get(url_for('corpus.get_corpus', id=corpora.json[0]['id']),
+                            content_type='application/json',
+                            headers=auth_header)
+        assert corpus.status_code == 200
+
+        pprint(corpus.json)
+
+        meta = client.put(url_for('corpus.set_meta', id=corpora.json[0]['id']),
+                          json={
+                              'level': 'sitzung', 'key': 'date', 'value_type': 'datetime'
+                          },
+                          content_type='application/json',
+                          headers=auth_header)
+        assert meta.status_code == 200
+
+        pprint(meta.json)
+
+        collection = client.put(url_for('corpus.create_subcorpus_collection', id=corpora.json[0]['id']),
+                                json={
+                                    'level': 'sitzung', 'key': 'date', 'time_interval': 'hour', 'name': 'hours'
+                                },
+                                content_type='application/json',
+                                headers=auth_header)
+        pprint(collection.json)
+
+        assert collection.status_code == 200

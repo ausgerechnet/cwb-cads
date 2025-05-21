@@ -71,6 +71,7 @@ def test_constellation_collocation_put(client, auth):
         assert collocation.status_code == 200
 
 
+@pytest.mark.now
 def test_constellation_collocation_scaled_scores(client, auth):
 
     auth_header = auth.login()
@@ -102,13 +103,6 @@ def test_constellation_collocation_scaled_scores(client, auth):
                                   },
                                   headers=auth_header)
         assert description.status_code == 200
-        # print(url_for('mmda.constellation.description.collocation.create_collocation',
-        #               constellation_id=constellation.json['id'],
-        #               description_id=description.json['id']))
-
-        # print(url_for('mmda.constellation.description.collocation.get_or_create_collocation',
-        #               constellation_id=constellation.json['id'],
-        #               description_id=description.json['id']))
 
         collocation = client.post(url_for('mmda.constellation.description.collocation.create_collocation',
                                           constellation_id=constellation.json['id'],
@@ -131,6 +125,17 @@ def test_constellation_collocation_scaled_scores(client, auth):
         assert coll.status_code == 200
 
         assert 'scaled_scores' in coll.json['items'][0]
+        from pprint import pprint
+        pprint(coll.json['items'][0])
+
+        coll = client.get(url_for('mmda.constellation.description.collocation.get_collocation_map',
+                                  constellation_id=constellation.json['id'],
+                                  description_id=description.json['id'],
+                                  collocation_id=collocation.json['id'],
+                                  page_size=10, sort_by='z_score'),
+                          headers=auth_header)
+        assert coll.status_code == 200
+        pprint(coll.json)
 
 
 def test_constellation_collocation(client, auth):
@@ -874,8 +879,7 @@ def test_constellation_collocation_coordinates(client, auth):
         assert len(collocation_items.json['discourseme_coordinates']) == len(discoursemes)
 
 
-@pytest.mark.now
-def test_constellation_collocation_missing(client, auth):
+def test_constellation_collocation_map_nan(client, auth):
 
     auth_header = auth.login()
     with client:

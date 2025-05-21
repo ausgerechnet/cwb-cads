@@ -24,7 +24,7 @@ from ..query import (ccc_query, get_or_create_cotext,
                      get_or_create_query_iterative)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from ..users import auth
-from ..utils import AMS_CUTOFF
+from ..utils import AMS_CUTOFF, scale_score
 from .constellation_description import expand_scores_dataframe
 from .constellation_description_semantic_map import get_discourseme_coordinates
 from .database import (CollocationDiscoursemeItem, Constellation,
@@ -260,10 +260,10 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
     nr_items = scores.total
     page_count = scores.pages
 
+    # no item scores?
     if nr_items == 0:
-        current_app.logger.error("zero collocates")
-        _map = []
-
+        current_app.logger.warning("zero item collocates")
+        df_scores = DataFrame()
     else:
         # format
         df_scores = DataFrame([vars(s) for s in scores], columns=['collocation_item_id'])
@@ -272,60 +272,62 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         df_scores['discourseme_id'] = None
         df_scores['source'] = 'items'
 
-        # combine
-        discourseme_scores = get_collocation_discourseme_scores_2(
-            collocation.id,
-            [desc.id for desc in description.discourseme_descriptions]
-        )
-        df_discourseme_item_scores = discourseme_scores['item_scores']
-        df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
-        df_discourseme_global_scores = discourseme_scores['global_scores']
+    # discourseme_scores
+    discourseme_scores = get_collocation_discourseme_scores_2(
+        collocation.id,
+        [desc.id for desc in description.discourseme_descriptions]
+    )
+    df_discourseme_item_scores = discourseme_scores['item_scores']
+    df_discourseme_unigram_item_scores = discourseme_scores['unigram_item_scores']
+    df_discourseme_global_scores = discourseme_scores['global_scores']
+    nr_discourseme_items = len(df_discourseme_item_scores)
 
-        if len(df_discourseme_item_scores) == 0:
-            current_app.logger.error("zero discourseme collocates")
-            _map = []
+    if nr_discourseme_items == 0:
+        current_app.logger.warning("zero discourseme collocates")
 
-        else:
-            # scale
-            max_disc_score = max([
-                df_discourseme_item_scores[sort_by].max(),
-                df_discourseme_unigram_item_scores[sort_by].max(),
-                df_discourseme_global_scores[sort_by].max(),
-            ])
-            if isnan(max_disc_score) or max_disc_score == 0:
-                max_disc_score = 1
-            df_discourseme_item_scores[f'{sort_by}_scaled'] = df_discourseme_item_scores[sort_by] / max_disc_score
-            df_discourseme_unigram_item_scores[f'{sort_by}_scaled'] = df_discourseme_unigram_item_scores[sort_by] / max_disc_score
-            df_discourseme_global_scores[f'{sort_by}_scaled'] = df_discourseme_global_scores[sort_by] / max_disc_score
+    _map = []
+    if nr_items != 0 or nr_discourseme_items != 0:
 
-            # coordinates
-            if collocation.semantic_map:
+        # coordinates
+        if collocation.semantic_map:
 
-                # make sure there's coordinates for all requested items
-                requested_items = list(df_scores['item'].values)
-                requested_items += list(df_discourseme_item_scores['item'].values)
-                requested_items += list(df_discourseme_unigram_item_scores['item'])
-                ccc_semmap_update(collocation.semantic_map, list(set(requested_items)))
-                coordinates = DataFrame(
-                    [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
-                )
-                df_scores = merge(df_scores, coordinates, on='item', how='left')
-                df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
-                df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
+            # make sure there's coordinates for all requested items
+            requested_items = list(df_scores['item'].values)
+            requested_items += list(df_discourseme_item_scores['item'].values)
+            requested_items += list(df_discourseme_unigram_item_scores['item'])
+            ccc_semmap_update(collocation.semantic_map, list(set(requested_items)))
+            coordinates = DataFrame(
+                [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
+            )
+            df_scores = merge(df_scores, coordinates, on='item', how='left')
+            df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
+            df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
 
-                # discourseme coordinates
-                discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
-                discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
-                df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
+            # discourseme coordinates
+            discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
+            discourseme_coordinates = DataFrame([DiscoursemeCoordinatesOut().dump(c) for c in discourseme_coordinates])
+            df_discourseme_global_scores = merge(df_discourseme_global_scores, discourseme_coordinates, on='discourseme_id', how='left')
 
-            df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
-            df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
-            df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
-            df = df.rename({sort_by: 'score', f'{sort_by}_scaled': 'scaled_score'}, axis=1)
-            df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score', 'scaled_score']]
-            df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+        # concatenate
+        df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
 
-            _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
+        # set user coordinates
+        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
+        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
+
+        # select columns
+        df = df.rename({sort_by: 'score'}, axis=1)
+        df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score']]
+        df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+
+        # scale scores
+        score_max = df['score'].max()
+        if isnan(score_max) or score_max == 0:
+            score_max = 1
+        df['scaled_score'] = scale_score(df['score'], score_max, logarithmic=(sort_by == 'log_likelihood'))
+
+        # create output
+        _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
 
     collocation_map = {
         'id': collocation.id,
@@ -870,6 +872,7 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
     set_collocation_discourseme_scores(
         collocation, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None], overlap=description.overlap
     )
+    # TODO remove scaling
     collocation_items = get_collo_items(
         description, collocation, page_size, page_number, sort_order, sort_by, hide_focus, hide_filter, query_coord['return_coordinates']
     )
