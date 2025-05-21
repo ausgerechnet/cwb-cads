@@ -68,6 +68,7 @@ export const updateDiscourseme: MutationOptions<
   }
 > = {
   mutationFn: ({ discoursemeId, discoursemePatch }) =>
+    // @ts-expect-error - deeply nested types
     apiClient.patch('/mmda/discourseme/:discourseme_id', discoursemePatch, {
       params: { discourseme_id: discoursemeId.toString() },
     }),
@@ -143,8 +144,8 @@ export const addDescriptionItem: MutationOptions<
 > = {
   mutationFn({ discoursemeId, descriptionId, p, surface }) {
     return apiClient.patch(
-      '/mmda/discourseme/:discourseme_id/description/:description_id/add-item',
-      { p, surface },
+      '/mmda/discourseme/:discourseme_id/description/:description_id/add-items',
+      { p, items: [surface] },
       {
         params: {
           discourseme_id: discoursemeId.toString(),
@@ -178,8 +179,8 @@ export const removeDescriptionItem: MutationOptions<
 > = {
   mutationFn({ discoursemeId, descriptionId, p, surface }) {
     return apiClient.patch(
-      '/mmda/discourseme/:discourseme_id/description/:description_id/remove-item',
-      { p, surface },
+      '/mmda/discourseme/:discourseme_id/description/:description_id/remove-items',
+      { p, items: [surface] },
       {
         params: {
           discourseme_id: discoursemeId.toString(),
@@ -902,7 +903,7 @@ export const constellationDescriptionCollectionCollocation = (
     ],
     queryFn: ({ signal }) =>
       apiClient.put(
-        '/mmda/constellation/:constellation_id/description/collection/:collection_id/collocation',
+        '/mmda/constellation/:constellation_id/description/collection/:collection_id/ufa',
         {
           filter_discourseme_ids,
           filter_item,

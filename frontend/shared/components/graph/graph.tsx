@@ -68,6 +68,7 @@ export function Graph<T extends number | [number, number]>({
   const maxCharactersInValue = useMemo(
     () =>
       Math.max(
+        0,
         ...(dataPoints ?? [{ position: [0, 0] }])
           .map(({ position: [_, y] }) => formatY(y).length)
           .filter((value) => !isNaN(value)),

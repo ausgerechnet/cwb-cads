@@ -557,7 +557,7 @@ export const logOut: MutationOptions = {
     localStorage.removeItem('refresh-token')
   },
   onSuccess: () => {
-    queryClient.setQueryData(userIdentify.queryKey, null)
+    queryClient.setQueryData(userIdentify.queryKey, undefined)
     void queryClient.invalidateQueries(userIdentify)
   },
 }
