@@ -192,6 +192,7 @@ class CollocationItemsOut(Schema):
     page_size = Integer(required=True)
     page_number = Integer(required=True)
     page_count = Integer(required=True)
+    min_score = Float(required=False, dump_default=None, allow_none=True)
 
     items = Nested(CollocationItemOut(many=True), required=True, dump_default=[])
     coordinates = Nested(CoordinatesOut(many=True), required=True, dump_default=[])

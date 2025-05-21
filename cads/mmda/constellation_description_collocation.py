@@ -219,15 +219,13 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     return collocation_items
 
 
-def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None):
+def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score):
     """
 
     NB min_score is exclusive
     """
 
-    # cut-off
-    if min_score is None:
-        min_score = AMS_CUTOFF.get(sort_by, 0)
+    min_score = AMS_CUTOFF.get(sort_by, 0) if min_score is None else min_score
 
     # filter out all items that are included in any discourseme unigram breakdown
     blacklist = []
@@ -337,7 +335,8 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         'page_size': page_size,
         'page_number': page_number,
         'page_count': page_count,
-        'map': _map
+        'map': _map,
+        'min_score': min_score
     }
 
     return collocation_map

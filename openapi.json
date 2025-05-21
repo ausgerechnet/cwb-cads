@@ -184,6 +184,10 @@
             },
             "type": "array"
           },
+          "min_score": {
+            "nullable": true,
+            "type": "number"
+          },
           "nr_items": {
             "type": "integer"
           },
@@ -546,6 +550,10 @@
               "$ref": "#/components/schemas/CollocationItemOut"
             },
             "type": "array"
+          },
+          "min_score": {
+            "nullable": true,
+            "type": "number"
           },
           "nr_items": {
             "type": "integer"
@@ -2723,7 +2731,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev54"
+    "version": "0.3.0.dev55"
   },
   "openapi": "3.0.2",
   "paths": {
