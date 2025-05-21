@@ -58,7 +58,6 @@ export function DiscoursemeBreakdown({
   const navigate = useNavigate()
 
   const discoursemes = useMemo((): Discourseme[] => {
-    console.log('breakdown', breakdown)
     return breakdown.items
       .filter((item) => item.source === 'discourseme')
       .map(({ freq, ipm, discourseme_id: id }) => {
