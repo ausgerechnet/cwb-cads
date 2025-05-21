@@ -103,9 +103,9 @@ def calculate_ufa(collection, window, p, marginals, include_negative, semantic_m
         description_right = collection.constellation_descriptions[i]
 
         ufa_score = {
-            'collocation_id_left': collocation_left.id if collocation_left else None,
+            'collocation_id_left': collocation_left.id,
             'description_id_left': description_left.id,
-            'collocation_id_right': collocation_right.id if collocation_right else None,
+            'collocation_id_right': collocation_right.id,
             'description_id_right': description_right.id,
             'x_label': x,
             'score': score,

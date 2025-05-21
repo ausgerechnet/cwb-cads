@@ -166,6 +166,7 @@ class CollocationItemsIn(Schema):
     sort_by = String(required=False, load_default='conservative_log_ratio', validate=OneOf(AMS_DICT.keys()))
     page_size = Integer(required=False, load_default=10)
     page_number = Integer(required=False, load_default=1)
+    min_score = Float(required=False, load_default=None, allow_none=True)
 
 
 class CollocationScoreOut(Schema):

@@ -68,24 +68,30 @@ def translate_flags(ignore_case, ignore_diacritics):
 
 
 AMS_DICT = {
+    # raw frequencies
+    'O11': 'freq.',
+    'E11': 'exp. freq.',
+    'ipm': 'IPM',
+    'ipm_expected': 'exp. IPM',
     # preferred: LRC
-    'conservative_log_ratio': 'Conservative LR',
-    # frequencies
-    'O11': 'obs.',
-    'E11': 'exp.',
-    'ipm': 'IPM (obs.)',
-    'ipm_expected': 'IPM (exp.)',
+    'conservative_log_ratio': 'LRC',
     # asymptotic hypothesis tests
     'log_likelihood': 'LLR',
     'z_score': 'z-score',
     't_score': 't-score',
-    'simple_ll': 'simple LL',
+    'simple_ll': 'simple LLR',
     # point estimates of association strength
     'dice': 'Dice',
     'log_ratio': 'log-ratio',
-    'min_sensitivity': 'min. sensitivity',
+    'min_sensitivity': 'MS',
     'liddell': 'Liddell',
     # information theory
     'mutual_information': 'MI',
     'local_mutual_information': 'local MI',
+}
+
+
+AMS_CUTOFF = {
+    'conservative_log_ratio': 0,
+    'log_likelihood': 10.83,
 }

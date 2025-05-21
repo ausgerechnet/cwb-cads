@@ -2723,7 +2723,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev53"
+    "version": "0.3.0.dev54"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -2922,11 +2922,11 @@
             "schema": {
               "default": "conservative_log_ratio",
               "enum": [
-                "conservative_log_ratio",
                 "O11",
                 "E11",
                 "ipm",
                 "ipm_expected",
+                "conservative_log_ratio",
                 "log_likelihood",
                 "z_score",
                 "t_score",
@@ -2957,6 +2957,16 @@
             "schema": {
               "default": 1,
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_score",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "number"
             }
           }
         ],
@@ -4514,11 +4524,11 @@
             "schema": {
               "default": "conservative_log_ratio",
               "enum": [
-                "conservative_log_ratio",
                 "O11",
                 "E11",
                 "ipm",
                 "ipm_expected",
+                "conservative_log_ratio",
                 "log_likelihood",
                 "z_score",
                 "t_score",
@@ -6706,11 +6716,11 @@
             "schema": {
               "default": "conservative_log_ratio",
               "enum": [
-                "conservative_log_ratio",
                 "O11",
                 "E11",
                 "ipm",
                 "ipm_expected",
+                "conservative_log_ratio",
                 "log_likelihood",
                 "z_score",
                 "t_score",
@@ -6741,6 +6751,16 @@
             "schema": {
               "default": 1,
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_score",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "number"
             }
           }
         ],
@@ -6844,11 +6864,11 @@
             "schema": {
               "default": "conservative_log_ratio",
               "enum": [
-                "conservative_log_ratio",
                 "O11",
                 "E11",
                 "ipm",
                 "ipm_expected",
+                "conservative_log_ratio",
                 "log_likelihood",
                 "z_score",
                 "t_score",
@@ -6879,6 +6899,16 @@
             "schema": {
               "default": 1,
               "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_score",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "number"
             }
           }
         ],
@@ -7895,11 +7925,11 @@
             "schema": {
               "default": "conservative_log_ratio",
               "enum": [
-                "conservative_log_ratio",
                 "O11",
                 "E11",
                 "ipm",
                 "ipm_expected",
+                "conservative_log_ratio",
                 "log_likelihood",
                 "z_score",
                 "t_score",
@@ -8033,11 +8063,11 @@
             "schema": {
               "default": "conservative_log_ratio",
               "enum": [
-                "conservative_log_ratio",
                 "O11",
                 "E11",
                 "ipm",
                 "ipm_expected",
+                "conservative_log_ratio",
                 "log_likelihood",
                 "z_score",
                 "t_score",
@@ -11218,11 +11248,11 @@
             "schema": {
               "default": "conservative_log_ratio",
               "enum": [
-                "conservative_log_ratio",
                 "O11",
                 "E11",
                 "ipm",
                 "ipm_expected",
+                "conservative_log_ratio",
                 "log_likelihood",
                 "z_score",
                 "t_score",

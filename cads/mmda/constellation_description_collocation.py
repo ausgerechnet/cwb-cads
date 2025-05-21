@@ -24,6 +24,7 @@ from ..query import (ccc_query, get_or_create_cotext,
                      get_or_create_query_iterative)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from ..users import auth
+from ..utils import AMS_CUTOFF
 from .constellation_description import expand_scores_dataframe
 from .constellation_description_semantic_map import get_discourseme_coordinates
 from .database import (CollocationDiscoursemeItem, Constellation,
@@ -218,7 +219,15 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     return collocation_items
 
 
-def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by):
+def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None):
+    """
+
+    NB min_score is exclusive
+    """
+
+    # cut-off
+    if min_score is None:
+        min_score = AMS_CUTOFF.get(sort_by, 0)
 
     # filter out all items that are included in any discourseme unigram breakdown
     blacklist = []
@@ -236,7 +245,8 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
         CollocationItemScore.measure == sort_by,
-        ~ CollocationItemScore.collocation_item_id.in_(blacklist)
+        CollocationItemScore.score > min_score,
+        ~ CollocationItemScore.collocation_item_id.in_(blacklist),
     )
     # order
     if sort_order == 'ascending':
@@ -877,13 +887,14 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
     page_number = query_data.pop('page_number')
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
+    min_score = query_data.pop('min_score')
 
     # discourseme scores (set here to use for creating blacklist if necessary)
     set_collocation_discourseme_scores(
         collocation, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None], overlap=description.overlap
     )
     collocation_map = get_collo_map(
-        description, collocation, page_size, page_number, sort_order, sort_by
+        description, collocation, page_size, page_number, sort_order, sort_by, min_score
     )
 
     return ConstellationMapOut().dump(collocation_map), 200
