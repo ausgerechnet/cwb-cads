@@ -3,9 +3,10 @@ import { ComponentProps } from 'react'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { WordCloudLink } from '@/components/word-cloud-link'
 
+import { Route } from './route'
 import { useAnalysisSelection } from './-use-analysis-selection'
 import { useCollocation } from './-use-collocation'
-import { Route } from './route'
+import { useDescription } from './-use-description'
 import { useKeywordAnalysis } from './-use-keyword-analysis'
 import { useUfa } from './-use-ufa'
 
@@ -25,9 +26,10 @@ export function SemanticMapLink() {
   }
 }
 
-function CollocationLink({ descriptionId }: { descriptionId?: number }) {
+function CollocationLink() {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { analysisSelection } = useAnalysisSelection()
+  const descriptionId = useDescription()?.description?.id
   const { mapItems, error } = useCollocation(constellationId, descriptionId)
 
   if (error) {

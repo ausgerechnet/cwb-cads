@@ -1,15 +1,22 @@
-import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
+import { useRouterState } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
   constellationCollocationItems,
   constellationCollocation,
   constellationCollocationVisualisation,
 } from '@cads/shared/queries'
+import { useFilterSelection } from './-use-filter-selection.ts'
 
 export function useCollocation(
   constellationId: number,
   descriptionId?: number,
 ) {
+  // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
+  const showsSemanticMap =
+    useRouterState().matches.find((match) =>
+      match.routeId.endsWith('semantic-map'),
+    ) !== undefined
+
   const {
     secondary,
     clContextBreak,
@@ -40,7 +47,8 @@ export function useCollocation(
       focusDiscourseme !== undefined &&
       descriptionId !== undefined &&
       clContextBreak !== undefined &&
-      secondary !== undefined,
+      secondary !== undefined &&
+      showsSemanticMap,
   })
 
   const {
