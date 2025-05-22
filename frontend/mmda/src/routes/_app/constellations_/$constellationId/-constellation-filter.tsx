@@ -31,7 +31,6 @@ import {
   ContextBreakInput,
   FilterItemInput,
   PrimaryInput,
-  SecondaryInput,
   SortByOffsetInput,
   SortOrderInput,
   WindowSizeInput,
@@ -68,8 +67,6 @@ export function ConstellationCollocationFilter({
       <WindowSizeInput />
 
       <ContextBreakInput />
-
-      <SecondaryInput />
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-xs">Association Measure</span>

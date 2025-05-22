@@ -85,10 +85,11 @@ function useConcordanceFilters(
   //   throw new Error(`Invalid secondary: ${secondaryInput}`)
 
   const clFilterItemPAtt = legalDefaultValue(
-    'lemma',
-    layers,
     clFilterItemPAttInput,
+    layers,
+    'lemma',
   )
+
   const clContextBreak = legalDefaultValue(
     clContextBreakInput,
     structureAttributes,

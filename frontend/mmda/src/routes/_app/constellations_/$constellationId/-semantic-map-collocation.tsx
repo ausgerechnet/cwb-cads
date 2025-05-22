@@ -35,15 +35,14 @@ import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { ConstellationCollocationFilter } from './-constellation-filter'
 import { AttachNewDiscourseme } from './-attach-new-discourseme'
+import { useAnalysisSelection } from './-use-analysis-selection'
 
 export function SemanticMapCollocations({
   constellationId,
 }: {
   constellationId: number
 }) {
-  const { secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
+  const { analysisLayer: secondary } = useAnalysisSelection()
   const { description } = useDescription()
   const {
     mapItems,
@@ -183,8 +182,9 @@ function ConstellationDiscoursemesEditor({
   className?: string
   constellationId: number
 }) {
-  const { corpusId, focusDiscourseme, clFilterDiscoursemeIds, secondary } =
+  const { corpusId, focusDiscourseme, clFilterDiscoursemeIds } =
     useFilterSelection('/_app/constellations_/$constellationId')
+  const { analysisLayer: secondary } = useAnalysisSelection()
   if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
   const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)
@@ -490,9 +490,7 @@ function AddDescriptionItem({
     isPending: isAddingItem,
     error: errorAddItem,
   } = useMutation(addDescriptionItem)
-  const { secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
+  const { analysisLayer: secondary } = useAnalysisSelection()
   const { description } = useDescription()
   const { mapItems: collocationItemsMap } = useCollocation(
     constellationId,

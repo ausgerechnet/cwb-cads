@@ -17,6 +17,7 @@ import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation'
+import { useAnalysisSelection } from './-use-analysis-selection'
 
 const measureOrder = [
   'conservative_log_ratio',
@@ -66,8 +67,8 @@ export function Collocation({
     clFilterItem,
     ccSortOrder,
     ccSortBy,
-    secondary,
   } = useFilterSelection('/_app/constellations_/$constellationId')
+  const { analysisLayer } = useAnalysisSelection()
   const { error, isLoading, collocationItems } = useCollocation(
     constellationId,
     descriptionId,
@@ -106,20 +107,19 @@ export function Collocation({
                     to=""
                     params={(p) => p}
                     search={(s) => {
-                      if (isCurrent) {
-                        return {
-                          ...s,
-                          ccSortOrder:
-                            ccSortOrder === 'descending'
-                              ? 'ascending'
-                              : 'descending',
-                        }
-                      }
-                      return {
-                        ...s,
-                        ccSortBy: measure,
-                        ccSortOrder: 'ascending',
-                      }
+                      return isCurrent
+                        ? {
+                            ...s,
+                            ccSortOrder:
+                              ccSortOrder === 'descending'
+                                ? 'ascending'
+                                : 'descending',
+                          }
+                        : {
+                            ...s,
+                            ccSortBy: measure,
+                            ccSortOrder: 'ascending',
+                          }
                     }}
                   >
                     {isCurrent && ccSortOrder === 'ascending' && (
@@ -163,7 +163,7 @@ export function Collocation({
                       ...s,
                       clPageIndex: 0,
                       clFilterItem: item,
-                      clFilterItemPAtt: secondary,
+                      clFilterItemPAtt: analysisLayer,
                     })}
                   >
                     {item}

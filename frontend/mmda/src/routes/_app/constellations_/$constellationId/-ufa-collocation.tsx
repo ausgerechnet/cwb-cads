@@ -19,6 +19,7 @@ import { Skeleton } from '@cads/shared/components/ui/skeleton'
 
 import { useUfa } from './-use-ufa'
 import { useFilterSelection } from './-use-filter-selection'
+import { useAnalysisSelection } from './-use-analysis-selection'
 
 const measureOrder = [
   'conservative_log_ratio',
@@ -58,12 +59,12 @@ export function UfaCollocation() {
   const {
     setFilter,
     clFilterItem,
-    secondary,
     ccPageSize,
     ccSortBy,
     ccSortOrder,
     ccPageNumber,
   } = useFilterSelection('/_app/constellations_/$constellationId')
+  const { analysisLayer } = useAnalysisSelection()
   const { collocationItems, isLoading, errors } = useUfa()
 
   const maxPageNumber = isLoading
@@ -161,7 +162,7 @@ export function UfaCollocation() {
                       ...s,
                       clPageIndex: 0,
                       clFilterItem: item,
-                      clFilterItemPAtt: secondary,
+                      clFilterItemPAtt: analysisLayer,
                     })}
                   >
                     {item}

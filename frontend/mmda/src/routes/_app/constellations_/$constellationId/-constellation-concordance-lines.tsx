@@ -332,11 +332,10 @@ function ConstellationConcordanceLinesCollocation({
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
-  const { focusDiscourseme } = useAnalysisSelection()
+  const { focusDiscourseme, analysisLayer: secondary } = useAnalysisSelection()
 
   const {
     primary,
-    secondary,
     windowSize,
     clPageSize,
     clPageIndex,
