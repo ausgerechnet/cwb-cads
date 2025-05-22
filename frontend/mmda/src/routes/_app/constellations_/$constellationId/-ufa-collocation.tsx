@@ -16,44 +16,14 @@ import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Pagination } from '@cads/shared/components/pagination'
 import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import {
+  useMeasureSelection,
+  MeasureSelect,
+} from '@cads/shared/components/measures'
 
 import { useUfa } from './-use-ufa'
 import { useFilterSelection } from './-use-filter-selection'
 import { useAnalysisSelection } from './-use-analysis-selection'
-
-const measureOrder = [
-  'conservative_log_ratio',
-  'O11',
-  'E11',
-  'ipm',
-  'log_likelihood',
-  'z_score',
-  't_score',
-  'simple_ll',
-  'dice',
-  'log_ratio',
-  'min_sensitivity',
-  'liddell',
-  'mutual_information',
-  'local_mutual_information',
-] as const
-
-const measureMap: Record<(typeof measureOrder)[number], string> = {
-  conservative_log_ratio: 'Cons. Log Ratio',
-  O11: 'O11',
-  E11: 'E11',
-  ipm: 'ipm',
-  log_likelihood: 'Log Likelihood',
-  z_score: 'Z Score',
-  t_score: 'T Score',
-  simple_ll: 'Simple LL',
-  dice: 'dice',
-  log_ratio: 'Log Ratio',
-  min_sensitivity: 'Min Sensitivity',
-  liddell: 'Liddell',
-  mutual_information: 'Mutual Info.',
-  local_mutual_information: 'Local Mutual Info.',
-}
 
 export function UfaCollocation() {
   const {
@@ -64,6 +34,7 @@ export function UfaCollocation() {
     ccSortOrder,
     ccPageNumber,
   } = useFilterSelection('/_app/constellations_/$constellationId')
+  const { selectedMeasures, measureNameMap } = useMeasureSelection()
   const { analysisLayer } = useAnalysisSelection()
   const { collocationItems, isLoading, errors } = useUfa()
 
@@ -89,9 +60,12 @@ export function UfaCollocation() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Item</TableHead>
+            <TableHead className="flex items-center">
+              <MeasureSelect />
+              <span className="my-auto">Item</span>
+            </TableHead>
 
-            {measureOrder.map((measure) => {
+            {selectedMeasures.map((measure) => {
               const isCurrent = ccSortBy === measure
               return (
                 <TableHead key={measure} className="text-right">
@@ -122,10 +96,12 @@ export function UfaCollocation() {
                     {isCurrent && ccSortOrder === 'ascending' && (
                       <ArrowDownIcon className="h-3 w-3" />
                     )}
+
                     {isCurrent && ccSortOrder === 'descending' && (
                       <ArrowUpIcon className="h-3 w-3" />
                     )}
-                    {measureMap[measure]}
+
+                    {measureNameMap.get(measure)}
                   </Link>
                 </TableHead>
               )
@@ -137,7 +113,10 @@ export function UfaCollocation() {
           {isLoading && (
             <Repeat count={ccPageSize}>
               <TableRow>
-                <TableCell colSpan={measureOrder.length + 1} className="py-1">
+                <TableCell
+                  colSpan={selectedMeasures.length + 1}
+                  className="py-1"
+                >
                   <Skeleton className="h-4 w-full" />
                 </TableCell>
               </TableRow>
@@ -170,7 +149,7 @@ export function UfaCollocation() {
                   </Link>
                 </TableCell>
 
-                {measureOrder.map((measure) => (
+                {selectedMeasures.map((measure) => (
                   <TableCell
                     key={measure}
                     className="py-1 text-right font-mono"

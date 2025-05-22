@@ -18,44 +18,14 @@ import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { DiscoursemeName } from '@cads/shared/components/discourseme-name'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { Button } from '@cads/shared/components/ui/button'
-
-// TODO: very WET, extract this
-const measureOrder = [
-  'conservative_log_ratio',
-  'O11',
-  'E11',
-  'ipm',
-  'log_likelihood',
-  'z_score',
-  't_score',
-  'simple_ll',
-  'dice',
-  'log_ratio',
-  'min_sensitivity',
-  'liddell',
-  'mutual_information',
-  'local_mutual_information',
-] as const
-
-const measureMap: Record<(typeof measureOrder)[number], string> = {
-  conservative_log_ratio: 'Cons. Log Ratio',
-  O11: 'O11',
-  E11: 'E11',
-  ipm: 'ipm',
-  log_likelihood: 'Log Likelihood',
-  z_score: 'Z Score',
-  t_score: 'T Score',
-  simple_ll: 'Simple LL',
-  dice: 'dice',
-  log_ratio: 'Log Ratio',
-  min_sensitivity: 'Min Sensitivity',
-  liddell: 'Liddell',
-  mutual_information: 'Mutual Info.',
-  local_mutual_information: 'Local Mutual Info.',
-}
+import {
+  measures,
+  MeasureSelect,
+  useMeasureSelection,
+} from '@cads/shared/components/measures'
 
 export const DiscoursemeCollocateTableSearch = z.object({
-  dctSortBy: z.enum(measureOrder).optional(),
+  dctSortBy: z.enum(measures).optional(),
   dctSortOrder: z.enum(['ascending', 'descending']).optional(),
   dctHidden: z.array(z.number().int().positive()).optional(),
 })
@@ -78,8 +48,9 @@ export function DiscoursemeCollocateTable({
   isLoading?: boolean
   className?: string
 }) {
+  const { selectedMeasures, measures, measureNameMap } = useMeasureSelection()
   const {
-    dctSortBy = 'conservative_log_ratio',
+    dctSortBy = selectedMeasures[0] ?? measures[0],
     dctSortOrder = 'descending',
     dctHidden,
   } = useSearch({ from: '__root__' })
@@ -135,8 +106,12 @@ export function DiscoursemeCollocateTable({
     <Table className={className}>
       <TableHeader>
         <TableRow>
-          <TableHead>Item</TableHead>
-          {measureOrder.map((measure) => {
+          <TableHead className="flex items-center">
+            <MeasureSelect />
+            <span className="my-auto">Item</span>
+          </TableHead>
+
+          {selectedMeasures.map((measure) => {
             const isCurrent = dctSortBy === measure
             return (
               <TableHead key={measure} className="text-right">
@@ -174,10 +149,12 @@ export function DiscoursemeCollocateTable({
                   {isCurrent && dctSortOrder === 'ascending' && (
                     <ArrowDownIcon className="h-3 w-3" />
                   )}
+
                   {isCurrent && dctSortOrder === 'descending' && (
                     <ArrowUpIcon className="h-3 w-3" />
                   )}
-                  {measureMap[measure]}
+
+                  {measureNameMap.get(measure)}
                 </Button>
               </TableHead>
             )
@@ -189,7 +166,7 @@ export function DiscoursemeCollocateTable({
         {isLoading && (
           <Repeat count={15}>
             <TableRow>
-              <TableCell colSpan={measureOrder.length + 1} className="py-1">
+              <TableCell colSpan={measures.length + 1} className="py-1">
                 <Skeleton className="h-4 w-full" />
               </TableCell>
             </TableRow>
@@ -225,7 +202,7 @@ export function DiscoursemeCollocateTable({
                   <DiscoursemeName discoursemeId={id} />
                 </TableCell>
 
-                {measureOrder.map((measure) => (
+                {selectedMeasures.map((measure) => (
                   <TableCell
                     key={measure}
                     className="py-1 text-right font-mono"
@@ -245,7 +222,7 @@ export function DiscoursemeCollocateTable({
                     {item}
                   </TableCell>
 
-                  {measureOrder.map((measure) => (
+                  {selectedMeasures.map((measure) => (
                     <TableCell
                       key={measure}
                       className="py-1 text-right font-mono"

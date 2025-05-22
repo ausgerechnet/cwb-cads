@@ -28,6 +28,7 @@ export function ComponentOverview() {
             <SubLink to="/components/ellipsis">Ellipsis</SubLink>
             <SubLink to="/components/input">Input</SubLink>
             <SubLink to="/components/error">Error</SubLink>
+            <SubLink to="/components/measure">MeasureSelect</SubLink>
           </ul>
         </nav>
 

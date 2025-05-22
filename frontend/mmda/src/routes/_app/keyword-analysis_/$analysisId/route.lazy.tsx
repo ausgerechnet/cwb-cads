@@ -32,6 +32,7 @@ import { cn } from '@cads/shared/lib/utils'
 import { LoaderBig } from '@cads/shared/components/loader-big'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { schemas } from '@cads/shared/api-client'
+import { useMeasureSelection } from '@cads/shared/components/measures'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
@@ -41,41 +42,6 @@ import { QueryFilter } from './-query-filter'
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
   { component: KeywordAnalysis },
 )
-
-// TODO: Duplicate! extract!
-const measures = [
-  'conservative_log_ratio',
-  'O11',
-  'E11',
-  'ipm',
-  'log_likelihood',
-  'z_score',
-  't_score',
-  'simple_ll',
-  'dice',
-  'log_ratio',
-  'min_sensitivity',
-  'liddell',
-  'mutual_information',
-  'local_mutual_information',
-] as const
-
-const measureMap: Record<(typeof measures)[number], string> = {
-  conservative_log_ratio: 'Cons. Log Ratio',
-  O11: 'O11',
-  E11: 'E11',
-  ipm: 'ipm',
-  log_likelihood: 'Log Likelihood',
-  z_score: 'Z Score',
-  t_score: 'T Score',
-  simple_ll: 'Simple LL',
-  dice: 'dice',
-  log_ratio: 'Log Ratio',
-  min_sensitivity: 'Min Sensitivity',
-  liddell: 'Liddell',
-  mutual_information: 'Mutual Info.',
-  local_mutual_information: 'Local Mutual Info.',
-}
 
 function KeywordAnalysis() {
   // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
@@ -271,6 +237,7 @@ function DrawerContent() {
           />
         )}
       </div>
+
       {query && (
         <>
           <ErrorMessage error={queryError} />
@@ -293,6 +260,8 @@ function MapContent({
   ccSortBy: string
 }) {
   const navigate = useNavigate()
+
+  const { measures, measureNameMap } = useMeasureSelection()
 
   const words = keywordItems.map(({ item, scaled_scores }) => {
     const { x = 0, y = 0 } = coordinates.find((c) => c.item === item) ?? {}
@@ -323,6 +292,7 @@ function MapContent({
       >
         Back to Keyword Analysis
       </Link>
+
       <label>
         <Select
           onValueChange={(ccSortBy) => {
@@ -337,11 +307,12 @@ function MapContent({
           <SelectTrigger className="w-full">
             <SelectValue placeholder="No Query Layer Selected" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectGroup>
               {measures.map((measure) => (
                 <SelectItem key={measure} value={measure}>
-                  {measureMap[measure]}
+                  {measureNameMap.get(measure)}
                 </SelectItem>
               ))}
             </SelectGroup>

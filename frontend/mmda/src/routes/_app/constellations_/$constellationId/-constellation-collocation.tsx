@@ -18,40 +18,10 @@ import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation'
 import { useAnalysisSelection } from './-use-analysis-selection'
-
-const measureOrder = [
-  'conservative_log_ratio',
-  'O11',
-  'E11',
-  'ipm',
-  'log_likelihood',
-  'z_score',
-  't_score',
-  'simple_ll',
-  'dice',
-  'log_ratio',
-  'min_sensitivity',
-  'liddell',
-  'mutual_information',
-  'local_mutual_information',
-] as const
-
-const measureMap: Record<(typeof measureOrder)[number], string> = {
-  conservative_log_ratio: 'Cons. Log Ratio',
-  O11: 'O11',
-  E11: 'E11',
-  ipm: 'ipm',
-  log_likelihood: 'Log Likelihood',
-  z_score: 'Z Score',
-  t_score: 'T Score',
-  simple_ll: 'Simple LL',
-  dice: 'dice',
-  log_ratio: 'Log Ratio',
-  min_sensitivity: 'Min Sensitivity',
-  liddell: 'Liddell',
-  mutual_information: 'Mutual Info.',
-  local_mutual_information: 'Local Mutual Info.',
-}
+import {
+  MeasureSelect,
+  useMeasureSelection,
+} from '@cads/shared/components/measures'
 
 export function Collocation({
   constellationId,
@@ -68,6 +38,7 @@ export function Collocation({
     ccSortOrder,
     ccSortBy,
   } = useFilterSelection('/_app/constellations_/$constellationId')
+  const { selectedMeasures, measureNameMap } = useMeasureSelection()
   const { analysisLayer } = useAnalysisSelection()
   const { error, isLoading, collocationItems } = useCollocation(
     constellationId,
@@ -94,8 +65,12 @@ export function Collocation({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Item</TableHead>
-            {measureOrder.map((measure) => {
+            <TableHead className="flex items-center">
+              <MeasureSelect />
+              <span className="my-auto">Item</span>
+            </TableHead>
+
+            {selectedMeasures.map((measure) => {
               const isCurrent = ccSortBy === measure
               return (
                 <TableHead key={measure} className="text-right">
@@ -125,26 +100,33 @@ export function Collocation({
                     {isCurrent && ccSortOrder === 'ascending' && (
                       <ArrowDownIcon className="h-3 w-3" />
                     )}
+
                     {isCurrent && ccSortOrder === 'descending' && (
                       <ArrowUpIcon className="h-3 w-3" />
                     )}
-                    {measureMap[measure]}
+
+                    {measureNameMap.get(measure)}
                   </Link>
                 </TableHead>
               )
             })}
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {isLoading && (
             <Repeat count={ccPageSize}>
               <TableRow>
-                <TableCell colSpan={measureOrder.length + 1} className="py-1">
+                <TableCell
+                  colSpan={selectedMeasures.length + 1}
+                  className="py-1"
+                >
                   <Skeleton className="h-4 w-full" />
                 </TableCell>
               </TableRow>
             </Repeat>
           )}
+
           {!isLoading &&
             (collocationItems?.items ?? []).map(({ item, scores = [] }) => (
               <TableRow
@@ -170,7 +152,8 @@ export function Collocation({
                     {item === clFilterItem && <CheckIcon className="h-3 w-3" />}
                   </Link>
                 </TableCell>
-                {measureOrder.map((measure) => (
+
+                {selectedMeasures.map((measure) => (
                   <TableCell
                     key={measure}
                     className="py-1 text-right font-mono"

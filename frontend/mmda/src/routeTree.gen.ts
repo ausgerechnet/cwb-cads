@@ -24,6 +24,7 @@ import { Route as ComponentsToggleBarImport } from './routes/components_/toggle-
 import { Route as ComponentsTimeSeriesImport } from './routes/components_/time-series'
 import { Route as ComponentsTableImport } from './routes/components_/table'
 import { Route as ComponentsMetaFrequencyImport } from './routes/components_/meta-frequency'
+import { Route as ComponentsMeasureImport } from './routes/components_/measure'
 import { Route as ComponentsInputImport } from './routes/components_/input'
 import { Route as ComponentsGraphImport } from './routes/components_/graph'
 import { Route as ComponentsErrorImport } from './routes/components_/error'
@@ -131,6 +132,12 @@ const ComponentsTableRoute = ComponentsTableImport.update({
 const ComponentsMetaFrequencyRoute = ComponentsMetaFrequencyImport.update({
   id: '/meta-frequency',
   path: '/meta-frequency',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsMeasureRoute = ComponentsMeasureImport.update({
+  id: '/measure',
+  path: '/measure',
   getParentRoute: () => ComponentsRouteRoute,
 } as any)
 
@@ -528,6 +535,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentsInputImport
       parentRoute: typeof ComponentsRouteImport
     }
+    '/components_/measure': {
+      id: '/components_/measure'
+      path: '/measure'
+      fullPath: '/components/measure'
+      preLoaderRoute: typeof ComponentsMeasureImport
+      parentRoute: typeof ComponentsRouteImport
+    }
     '/components_/meta-frequency': {
       id: '/components_/meta-frequency'
       path: '/meta-frequency'
@@ -681,6 +695,7 @@ interface ComponentsRouteRouteChildren {
   ComponentsErrorRoute: typeof ComponentsErrorRoute
   ComponentsGraphRoute: typeof ComponentsGraphRoute
   ComponentsInputRoute: typeof ComponentsInputRoute
+  ComponentsMeasureRoute: typeof ComponentsMeasureRoute
   ComponentsMetaFrequencyRoute: typeof ComponentsMetaFrequencyRoute
   ComponentsTableRoute: typeof ComponentsTableRoute
   ComponentsTimeSeriesRoute: typeof ComponentsTimeSeriesRoute
@@ -697,6 +712,7 @@ const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
   ComponentsErrorRoute: ComponentsErrorRoute,
   ComponentsGraphRoute: ComponentsGraphRoute,
   ComponentsInputRoute: ComponentsInputRoute,
+  ComponentsMeasureRoute: ComponentsMeasureRoute,
   ComponentsMetaFrequencyRoute: ComponentsMetaFrequencyRoute,
   ComponentsTableRoute: ComponentsTableRoute,
   ComponentsTimeSeriesRoute: ComponentsTimeSeriesRoute,
@@ -826,6 +842,7 @@ export interface FileRoutesByFullPath {
   '/components/error': typeof ComponentsErrorRoute
   '/components/graph': typeof ComponentsGraphRoute
   '/components/input': typeof ComponentsInputRoute
+  '/components/measure': typeof ComponentsMeasureRoute
   '/components/meta-frequency': typeof ComponentsMetaFrequencyRoute
   '/components/table': typeof ComponentsTableRoute
   '/components/time-series': typeof ComponentsTimeSeriesRoute
@@ -871,6 +888,7 @@ export interface FileRoutesByTo {
   '/components/error': typeof ComponentsErrorRoute
   '/components/graph': typeof ComponentsGraphRoute
   '/components/input': typeof ComponentsInputRoute
+  '/components/measure': typeof ComponentsMeasureRoute
   '/components/meta-frequency': typeof ComponentsMetaFrequencyRoute
   '/components/table': typeof ComponentsTableRoute
   '/components/time-series': typeof ComponentsTimeSeriesRoute
@@ -917,6 +935,7 @@ export interface FileRoutesById {
   '/components_/error': typeof ComponentsErrorRoute
   '/components_/graph': typeof ComponentsGraphRoute
   '/components_/input': typeof ComponentsInputRoute
+  '/components_/measure': typeof ComponentsMeasureRoute
   '/components_/meta-frequency': typeof ComponentsMetaFrequencyRoute
   '/components_/table': typeof ComponentsTableRoute
   '/components_/time-series': typeof ComponentsTimeSeriesRoute
@@ -964,6 +983,7 @@ export interface FileRouteTypes {
     | '/components/error'
     | '/components/graph'
     | '/components/input'
+    | '/components/measure'
     | '/components/meta-frequency'
     | '/components/table'
     | '/components/time-series'
@@ -1008,6 +1028,7 @@ export interface FileRouteTypes {
     | '/components/error'
     | '/components/graph'
     | '/components/input'
+    | '/components/measure'
     | '/components/meta-frequency'
     | '/components/table'
     | '/components/time-series'
@@ -1052,6 +1073,7 @@ export interface FileRouteTypes {
     | '/components_/error'
     | '/components_/graph'
     | '/components_/input'
+    | '/components_/measure'
     | '/components_/meta-frequency'
     | '/components_/table'
     | '/components_/time-series'
@@ -1129,6 +1151,7 @@ export const routeTree = rootRoute
         "/components_/error",
         "/components_/graph",
         "/components_/input",
+        "/components_/measure",
         "/components_/meta-frequency",
         "/components_/table",
         "/components_/time-series",
@@ -1231,6 +1254,10 @@ export const routeTree = rootRoute
     },
     "/components_/input": {
       "filePath": "components_/input.tsx",
+      "parent": "/components_"
+    },
+    "/components_/measure": {
+      "filePath": "components_/measure.tsx",
       "parent": "/components_"
     },
     "/components_/meta-frequency": {

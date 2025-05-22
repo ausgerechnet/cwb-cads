@@ -36,6 +36,7 @@ import {
   WindowSizeInput,
 } from '@cads/shared/components/concordances'
 import { LabelBox } from '@cads/shared/components/label-box'
+import { measures } from '@cads/shared/components/measures'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationCollocationFilter({
@@ -82,23 +83,7 @@ export function ConstellationCollocationFilter({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {/* TODO: extract! */}
-              {[
-                'conservative_log_ratio',
-                'O11',
-                'E11',
-                'ipm',
-                'log_likelihood',
-                'z_score',
-                't_score',
-                'simple_ll',
-                'dice',
-                'log_ratio',
-                'min_sensitivity',
-                'liddell',
-                'mutual_information',
-                'local_mutual_information',
-              ].map((value) => (
+              {measures.map((value) => (
                 <SelectItem key={value} value={value}>
                   {value.replaceAll('_', ' ')}
                 </SelectItem>

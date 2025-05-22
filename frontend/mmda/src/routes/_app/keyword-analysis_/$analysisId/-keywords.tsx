@@ -18,40 +18,10 @@ import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { keywordAnalysisItemsById } from '@cads/shared/queries'
-
-const measureOrder = [
-  'conservative_log_ratio',
-  'O11',
-  'E11',
-  'ipm',
-  'log_likelihood',
-  'z_score',
-  't_score',
-  'simple_ll',
-  'dice',
-  'log_ratio',
-  'min_sensitivity',
-  'liddell',
-  'mutual_information',
-  'local_mutual_information',
-] as const
-
-const measureMap: Record<(typeof measureOrder)[number], string> = {
-  conservative_log_ratio: 'Cons. Log Ratio',
-  O11: 'O11',
-  E11: 'E11',
-  ipm: 'ipm',
-  log_likelihood: 'Log Likelihood',
-  z_score: 'Z Score',
-  t_score: 'T Score',
-  simple_ll: 'Simple LL',
-  dice: 'dice',
-  log_ratio: 'Log Ratio',
-  min_sensitivity: 'Min Sensitivity',
-  liddell: 'Liddell',
-  mutual_information: 'Mutual Info.',
-  local_mutual_information: 'Local Mutual Info.',
-}
+import {
+  MeasureSelect,
+  useMeasureSelection,
+} from '@cads/shared/components/measures'
 
 // TODO: This component is duplicated. Should be extracted to a shared component.
 export function KeywordTable({ analysisId }: { analysisId: number }) {
@@ -64,6 +34,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
     ccSortBy,
     secondary,
   } = useFilterSelection('/_app/keyword-analysis_/$analysisId')
+  const { selectedMeasures, measureNameMap } = useMeasureSelection()
 
   const {
     data: collocationItems, // TODO: Rename, it's not a collocation
@@ -98,8 +69,12 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Item</TableHead>
-            {measureOrder.map((measure) => {
+            <TableHead className="flex items-center">
+              <MeasureSelect />
+              <span className="my-auto">Item</span>
+            </TableHead>
+
+            {selectedMeasures.map((measure) => {
               const isCurrent = ccSortBy === measure
               return (
                 <TableHead key={measure} className="text-right">
@@ -110,46 +85,52 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                     )}
                     to=""
                     params={(p) => p}
-                    search={(s) => {
-                      if (isCurrent) {
-                        return {
-                          ...s,
-                          ccSortOrder:
-                            ccSortOrder === 'descending'
-                              ? 'ascending'
-                              : 'descending',
-                        }
-                      }
-                      return {
-                        ...s,
-                        ccSortBy: measure,
-                        ccSortOrder: 'ascending',
-                      }
-                    }}
+                    search={(s) =>
+                      isCurrent
+                        ? {
+                            ...s,
+                            ccSortOrder:
+                              ccSortOrder === 'descending'
+                                ? 'ascending'
+                                : 'descending',
+                          }
+                        : {
+                            ...s,
+                            ccSortBy: measure,
+                            ccSortOrder: 'ascending',
+                          }
+                    }
                   >
-                    {measureMap[measure]}
                     {isCurrent && ccSortOrder === 'ascending' && (
                       <ArrowUpIcon className="h-3 w-3" />
                     )}
+
                     {isCurrent && ccSortOrder === 'descending' && (
                       <ArrowDownIcon className="h-3 w-3" />
                     )}
+
+                    {measureNameMap.get(measure)}
                   </Link>
                 </TableHead>
               )
             })}
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {isLoading && (
             <Repeat count={ccPageSize}>
               <TableRow>
-                <TableCell colSpan={measureOrder.length + 1} className="py-1">
+                <TableCell
+                  colSpan={selectedMeasures.length + 1}
+                  className="py-1"
+                >
                   <Skeleton className="h-4 w-full" />
                 </TableCell>
               </TableRow>
             </Repeat>
           )}
+
           {!isLoading &&
             (collocationItems?.items ?? []).map(({ item, scores = [] }) => (
               <TableRow
@@ -175,7 +156,8 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                     {item === clFilterItem && <CheckIcon className="h-3 w-3" />}
                   </Link>
                 </TableCell>
-                {measureOrder.map((measure) => (
+
+                {selectedMeasures.map((measure) => (
                   <TableCell
                     key={measure}
                     className="py-1 text-right font-mono"
@@ -187,6 +169,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
             ))}
         </TableBody>
       </Table>
+
       <Pagination
         totalRows={collocationItems?.nr_items ?? 0}
         setPageSize={(size) => setFilter('ccPageSize', size)}

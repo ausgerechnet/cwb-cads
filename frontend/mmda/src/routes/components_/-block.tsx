@@ -18,9 +18,11 @@ export function Block({
     <section className={cn('mb-14', className)}>
       <Headline2 className="mb-4">{componentName || componentTag}</Headline2>
 
-      <code className="bg-muted text-muted-foreground mb-2 mt-1 inline-block rounded px-1 py-0.5">
-        &lt;{componentTag}... /&gt;
-      </code>
+      <div>
+        <code className="bg-muted text-muted-foreground mb-2 mt-1 inline-block rounded px-1 py-0.5">
+          &lt;{componentTag}... /&gt;
+        </code>
+      </div>
 
       {children}
     </section>
