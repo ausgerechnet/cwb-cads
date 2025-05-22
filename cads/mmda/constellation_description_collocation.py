@@ -290,9 +290,9 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         if collocation.semantic_map:
 
             # make sure there's coordinates for all requested items
-            requested_items = list(df_scores['item'].values)
-            requested_items += list(df_discourseme_item_scores['item'].values)
-            requested_items += list(df_discourseme_unigram_item_scores['item'])
+            requested_items = (list(df_scores['item'].values) if len(df_scores) > 0 else [])
+            requested_items += (list(df_discourseme_item_scores['item'].values) if len(df_discourseme_item_scores) > 0 else [])
+            requested_items += (list(df_discourseme_unigram_item_scores['item']) if len(df_discourseme_unigram_item_scores) > 0 else [])
             ccc_semmap_update(collocation.semantic_map, list(set(requested_items)))
             coordinates = DataFrame(
                 [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
@@ -322,7 +322,7 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         score_max = df['score'].max()
         if isnan(score_max) or score_max == 0:
             score_max = 1
-        df['scaled_score'] = scale_score(df['score'], score_max, logarithmic=(sort_by == 'log_likelihood'))
+        df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, logarithmic=(sort_by == 'log_likelihood')))
 
         # create output
         _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
