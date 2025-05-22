@@ -9,10 +9,17 @@ from numpy import log
 
 def scale_score(score, score_max, method='linear', logarithmic=False):
 
+    if score == 0:
+        return 0
+
+    sgn = -1 if score < 0 else +1
+    score = abs(score)
+    score_max = abs(score_max)
+
     if logarithmic:
-        return log(score) / log(score_max)
+        return sgn * log(score) / log(score_max)
     if method == 'linear':
-        return score / score_max
+        return sgn * score / score_max
     else:
         raise ValueError()
 
