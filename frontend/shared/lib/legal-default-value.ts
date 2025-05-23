@@ -1,18 +1,14 @@
-// This utility type will be part of TypeScript 5.4
-type NoInfer<T> = T & { [K in keyof T]: T[K] }
-
-export function legalDefaultValue<T, V>(
-  defaultValue: T,
-  legalValues: V[] | undefined,
-  fallback: NoInfer<V> | undefined = undefined,
-): V | undefined {
+export function defaultValue<T>(
+  legalValues: (T | undefined)[] | undefined,
+  ...potentialValues: (T | undefined)[]
+): T | undefined {
   if (!legalValues) {
-    return fallback
+    return undefined
   }
-  // @ts-expect-error this function checks exactly for what TS complains about
-  if (!legalValues.includes(fallback)) {
-    fallback = legalValues[0]
+  for (const value of potentialValues) {
+    if (legalValues.includes(value)) {
+      return value
+    }
   }
-  // @ts-expect-error this function checks exactly for what TS complains about
-  return legalValues.includes(defaultValue) ? defaultValue : fallback
+  return legalValues[0]
 }

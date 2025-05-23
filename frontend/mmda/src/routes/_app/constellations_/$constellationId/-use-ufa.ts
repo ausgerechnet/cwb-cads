@@ -25,7 +25,8 @@ export function useUfa() {
     analysisSelection?.analysisType === 'ufa'
       ? analysisSelection.partition
       : undefined
-  const { focusDiscourseme, analysisLayer } = analysisSelection ?? {}
+  const { focusDiscourseme, analysisLayer } =
+    analysisSelection?.analysisType === 'ufa' ? analysisSelection : {}
 
   function setUfaTimeSpan(ufaTimeSpan: string) {
     navigate({

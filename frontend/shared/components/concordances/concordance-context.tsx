@@ -5,7 +5,7 @@ import { useNavigate } from '@tanstack/react-router'
 
 import { type ConcordanceFilterSchema } from './concordance-filter-schema'
 import { schemas } from '../../api-client'
-import { legalDefaultValue } from '../../lib/legal-default-value'
+import { defaultValue } from '../../lib/legal-default-value'
 import { clamp } from '../../lib/clamp'
 
 export type ConcordanceContextValue = {
@@ -78,21 +78,17 @@ function useConcordanceFilters(
   } = params
   const navigate = useNavigate()
 
-  const primary = legalDefaultValue(primaryInput, layers, 'word')
+  const primary = defaultValue(layers, primaryInput, 'word')
   // if (primary === undefined) throw new Error(`Invalid primary: ${primaryInput}`)
-  const secondary = legalDefaultValue(secondaryInput, layers, 'lemma')
+  const secondary = defaultValue(layers, secondaryInput, 'lemma')
   // if (secondary === undefined)
   //   throw new Error(`Invalid secondary: ${secondaryInput}`)
 
-  const clFilterItemPAtt = legalDefaultValue(
-    clFilterItemPAttInput,
-    layers,
-    'lemma',
-  )
+  const clFilterItemPAtt = defaultValue(layers, clFilterItemPAttInput, 'lemma')
 
-  const clContextBreak = legalDefaultValue(
-    clContextBreakInput,
+  const clContextBreak = defaultValue(
     structureAttributes,
+    clContextBreakInput,
     'text',
   )
 
@@ -135,10 +131,10 @@ function useConcordanceFilters(
     setWindowSize: (size: number) =>
       updateFilters({ windowSize: clamp(size, 1, 100) }),
     setPrimary: (primary: string) =>
-      updateFilters({ primary: legalDefaultValue(primary, layers) }),
+      updateFilters({ primary: defaultValue(layers, primary) }),
     setSecondary: (secondary: string) =>
       updateFilters({
-        secondary: legalDefaultValue(secondary, layers),
+        secondary: defaultValue(layers, secondary),
       }),
     setContextBreak: (contextBreak: string) =>
       updateFilters({ clContextBreak: contextBreak }),
