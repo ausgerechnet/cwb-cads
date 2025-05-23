@@ -36,6 +36,7 @@ import {
 } from '@cads/shared/components/concordances'
 import { LabelBox } from '@cads/shared/components/label-box'
 import { measures } from '@cads/shared/components/measures'
+import { useAnalysisSelection } from './-use-analysis-selection'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationCollocationFilter({
@@ -57,6 +58,8 @@ export function ConstellationCollocationFilter({
     ccFilterDiscoursemeIds.length !== clFilterDiscoursemeIds.length ||
     ccFilterDiscoursemeIds.some((id) => !clFilterDiscoursemeIds.includes(id))
 
+  const { analysisType } = useAnalysisSelection()
+
   return (
     <div
       className={cn(
@@ -64,7 +67,7 @@ export function ConstellationCollocationFilter({
         className,
       )}
     >
-      <WindowSizeInput />
+      {analysisType !== 'keyword' && <WindowSizeInput />}
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-xs">Association Measure</span>
@@ -185,8 +188,17 @@ export function ConstellationConcordanceFilter({
 }: {
   className?: string
 }) {
+  const { analysisType } = useAnalysisSelection()
   return (
-    <div className={cn('z-10 mb-8 grid grid-cols-6 gap-2', className)}>
+    <div
+      className={cn(
+        'z-10 mb-8 grid grid-cols-6 gap-2',
+        analysisType === 'keyword' && 'grid-cols-7',
+        className,
+      )}
+    >
+      {analysisType === 'keyword' && <WindowSizeInput />}
+
       <LabelBox labelText="Filter Discoursemes" className="col-span-2">
         <FilterDiscoursemes className="w-full" />
       </LabelBox>
