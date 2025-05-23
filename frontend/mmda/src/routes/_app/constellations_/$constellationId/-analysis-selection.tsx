@@ -18,10 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@cads/shared/components/ui/select'
-
-import { useDescription } from './-use-description'
-import { useAnalysisSelection } from './-use-analysis-selection'
 import { buttonVariants } from '@cads/shared/components/ui/button'
+
+import { useAnalysisSelection } from './-use-analysis-selection'
+import { useDescription } from './-use-description'
 
 export function AnalysisSelection({ className }: { className?: string }) {
   'use no memo'
@@ -36,6 +36,7 @@ export function AnalysisSelection({ className }: { className?: string }) {
             ['collocation', 'Collocation Analysis'],
             ['ufa', 'UFA'],
             ['keyword', 'Keyword Analysis'],
+            ['associations', 'Associations'],
           ] as const
         }
         value={analysisType}
@@ -69,14 +70,20 @@ export function AnalysisSelection({ className }: { className?: string }) {
           <FocusDiscoursemeInput className="col-span-full" />
         </>
       )}
+
+      {analysisType === 'associations' && (
+        <>
+          <CorpusInput className="col-span-full" />
+        </>
+      )}
     </Card>
   )
 }
 
-function CorpusInput() {
+function CorpusInput({ className }: { className?: string }) {
   const { corpusId, subcorpusId, setCorpus } = useAnalysisSelection()
   return (
-    <LabelBox labelText="Corpus or Subcorpus">
+    <LabelBox labelText="Corpus or Subcorpus" className={className}>
       <SelectSubcorpus
         className="w-full"
         onChange={setCorpus}

@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import * as d3 from 'd3'
-import { ChevronDownIcon } from 'lucide-react'
 
 import { cn } from '../lib/utils'
 import { formatNumber } from '../lib/format-number'
@@ -8,7 +7,6 @@ import { getColorForNumber } from '../lib/get-color-for-number'
 import { useDebouncedValue } from '../lib/use-debounced-value'
 import { ComplexSelect } from './select-complex'
 import { ToggleBar } from './toggle-bar'
-import { Button } from './ui/button'
 
 type Association = {
   node: number
@@ -59,7 +57,6 @@ export function AssociationMatrix({
 
   const [measure, setMeasure] = useState<string>(measures[0]!)
   const [view, setView] = useState<'table' | 'graph'>('table')
-  const [isMinimized, setIsMinimized] = useState(false)
 
   const filteredAssociations = associations
     .filter((a) => a.measure === measure)
@@ -68,47 +65,28 @@ export function AssociationMatrix({
   return (
     <div className={className}>
       <div className="flex items-center gap-4">
-        {isMinimized ? (
-          <span className="ml-2">Associations</span>
-        ) : (
-          <>
-            <ComplexSelect
-              items={measureItems}
-              itemId={measure}
-              onChange={(newValue) => {
-                if (!newValue) return
-                setMeasure(newValue)
-              }}
-            />
+        <ComplexSelect
+          items={measureItems}
+          itemId={measure}
+          onChange={(newValue) => {
+            if (!newValue) return
+            setMeasure(newValue)
+          }}
+        />
 
-            <div className="flex gap-0">
-              <ToggleBar<'table' | 'graph'>
-                options={[
-                  ['table', 'Table'],
-                  ['graph', 'Graph'],
-                ]}
-                value={view}
-                onChange={setView}
-              />
-            </div>
-          </>
-        )}
-
-        <Button
-          variant="outline"
-          onClick={() => setIsMinimized((prev) => !prev)}
-          className="ml-auto"
-        >
-          {isMinimized ? 'Show' : 'Hide'}
-          <ChevronDownIcon
-            className={cn('ml-2 h-4 w-4 transition-transform', {
-              'rotate-180': isMinimized,
-            })}
+        <div className="flex gap-0">
+          <ToggleBar<'table' | 'graph'>
+            options={[
+              ['table', 'Table'],
+              ['graph', 'Graph'],
+            ]}
+            value={view}
+            onChange={setView}
           />
-        </Button>
+        </div>
       </div>
 
-      {view === 'table' && !isMinimized && (
+      {view === 'table' && (
         <AssociationTable
           itemIds={itemIds}
           associations={filteredAssociations}
@@ -116,7 +94,7 @@ export function AssociationMatrix({
         />
       )}
 
-      {view === 'graph' && !isMinimized && (
+      {view === 'graph' && (
         <AssociationGraph
           itemIds={itemIds}
           associations={filteredAssociations}

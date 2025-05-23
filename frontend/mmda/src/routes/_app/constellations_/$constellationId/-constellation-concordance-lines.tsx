@@ -24,7 +24,19 @@ export function ConstellationConcordanceLines({
   constellationId: number
   className?: string
 }) {
-  const { analysisSelection: { analysisType } = {} } = useAnalysisSelection()
+  const {
+    analysisSelection: { analysisType } = {},
+    analysisType: analysisTypeSelection,
+  } = useAnalysisSelection()
+
+  // Associations view can never show concordance lines
+  if (analysisTypeSelection === 'associations') {
+    return (
+      <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
+        Concordance lines are not available in associations view.
+      </div>
+    )
+  }
 
   if (analysisType === undefined) {
     return (

@@ -21,11 +21,13 @@ export function DiscoursemeList({
   descriptionId,
   discoursemes,
   constellationDiscoursemes,
+  className,
 }: {
   constellationId: number
   descriptionId: number
   discoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
   constellationDiscoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
+  className?: string
 }) {
   const nonSelectedDiscoursemes = discoursemes.filter(
     (discourseme) =>
@@ -39,7 +41,12 @@ export function DiscoursemeList({
   const [isEditMode, setIsEditMode] = useState(false)
 
   return (
-    <Card className="mx-0 grid w-full grid-cols-1 grid-rows-[min-content_1fr] gap-x-4 gap-y-0 p-4">
+    <Card
+      className={cn(
+        'mx-0 grid w-full grid-cols-1 grid-rows-[min-content_1fr] gap-x-4 gap-y-0 p-4',
+        className,
+      )}
+    >
       <div className="mb-2 flex place-items-center font-bold">
         Discoursemes
         <Button

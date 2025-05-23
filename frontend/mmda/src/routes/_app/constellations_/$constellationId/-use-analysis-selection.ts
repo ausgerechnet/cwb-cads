@@ -6,7 +6,7 @@ import { corpusById, subcorpusCollections } from '@cads/shared/queries'
 
 import { Route } from './route'
 
-const AnalysisType = z.enum(['collocation', 'keyword', 'ufa'])
+const AnalysisType = z.enum(['collocation', 'keyword', 'ufa', 'associations'])
 type AnalysisType = z.infer<typeof AnalysisType>
 
 export const AnalysisSchema = z.object({
@@ -29,6 +29,10 @@ export const AnalysisSchema = z.object({
 
 type AnalysisSelection =
   | {
+      /**
+       * The type of analysis to be performed
+       * This will be undefined if the analysis selection is not WHOLLY complete.
+       */
       analysisType: 'collocation'
       corpusId: number
       subcorpusId?: number
@@ -52,6 +56,11 @@ type AnalysisSelection =
       analysisLayer: string
       partition: number
       focusDiscourseme: number
+    }
+  | {
+      analysisType: 'associations'
+      corpusId: number
+      subcorpusId?: number
     }
 
 export function useAnalysisSelection() {
@@ -101,6 +110,11 @@ export function useAnalysisSelection() {
     'lemma',
   )
 
+  /**
+   * Contains the current analysis selection if all required parameters are set.
+   * Will be `undefined` if the selection is incomplete.
+   * Guaranteed to be a valid selection if defined.
+   */
   let analysisSelection: AnalysisSelection | undefined = undefined
   switch (analysisType) {
     case 'collocation':
@@ -155,11 +169,28 @@ export function useAnalysisSelection() {
         }
       }
       break
+    case 'associations':
+      if (corpusId !== undefined) {
+        analysisSelection = {
+          analysisType,
+          corpusId,
+          subcorpusId,
+        }
+      }
+      break
   }
 
   return {
     errors: [errorLayers, errorReferenceLayers, subcorpusCollectionsError],
+    /**
+     * Contains the currently selected analysis type even if the selection is incomplete.
+     */
     analysisType,
+    /**
+     * Contains the current analysis selection if all required parameters are set.
+     * Will be `undefined` if the selection is incomplete.
+     * Guaranteed to be a valid selection if defined.
+     */
     analysisSelection,
     analysisLayer,
     corpusId,
@@ -250,6 +281,13 @@ export function useAnalysisSelection() {
                 analysisType,
                 focusDiscourseme: undefined,
                 partition: undefined,
+              }
+            case 'associations':
+              // let's keep all settings!
+              // That makes it easier to quickly switch back from the associations view
+              return {
+                ...s,
+                analysisType,
               }
             default:
               throw new Error(`Invalid analysis type ${analysisType}`)

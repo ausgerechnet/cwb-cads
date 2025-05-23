@@ -17,6 +17,7 @@ import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { ConcordanceFilterProvider } from '@cads/shared/components/concordances'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { buttonVariants } from '@cads/shared/components/ui/button'
+import { cn } from '@cads/shared/lib/utils'
 
 import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
 import { ConstellationCollocationFilter } from './-constellation-filter'
@@ -50,7 +51,10 @@ function ConstellationDetail() {
   const params = Route.useSearch()
   const constellationId = parseInt(Route.useParams().constellationId)
 
-  const { analysisSelection: { analysisType } = {} } = useAnalysisSelection()
+  const {
+    analysisSelection: { analysisType } = {},
+    analysisType: analysisTypeSelection,
+  } = useAnalysisSelection()
   const { corpusId, subcorpusId } = useAnalysisSelection()
 
   const { setFilter, isConcordanceVisible } = useFilterSelection(
@@ -130,26 +134,34 @@ function ConstellationDetail() {
           <AnalysisSelection />
 
           <DiscoursemeList
+            className={cn({
+              'col-span-2': analysisTypeSelection === 'associations',
+            })}
             constellationId={constellationId}
             descriptionId={description?.id as number}
             discoursemes={discoursemes}
             constellationDiscoursemes={constellationDiscoursemes}
           />
 
-          <SemanticMapLink />
+          {analysisTypeSelection !== 'associations' && <SemanticMapLink />}
         </div>
 
-        {description?.id !== undefined &&
-          constellationDiscoursemes.length > 1 && (
-            <Card className="my-4 p-1">
+        {analysisTypeSelection === 'associations' && (
+          <Card className="my-4 p-1">
+            {constellationId !== undefined && description?.id !== undefined ? (
               <DescriptionAssociation
                 constellationId={constellationId}
                 descriptionId={description.id}
               />
-            </Card>
-          )}
+            ) : (
+              <p className="text-muted-foreground my-5 text-center italic">
+                Select a corpus/subcorpus
+              </p>
+            )}
+          </Card>
+        )}
 
-        {analysisType && (
+        {analysisType && analysisType !== 'associations' && (
           <ConstellationCollocationFilter className="sticky top-14 mb-8" />
         )}
 
