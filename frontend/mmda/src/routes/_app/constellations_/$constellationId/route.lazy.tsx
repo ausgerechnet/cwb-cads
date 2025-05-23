@@ -34,6 +34,7 @@ import { KeywordTable } from './-keyword-table'
 import { UfaSelection } from './-ufa-selection'
 import { SemanticMapKeyword } from './-semantic-map-keyword'
 import { SemanticMapUfa } from './-semantic-map-ufa'
+import { Breakdown } from './-breakdown'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -135,7 +136,9 @@ function ConstellationDetail() {
 
           <DiscoursemeList
             className={cn({
-              'col-span-2': analysisTypeSelection === 'associations',
+              'col-span-2':
+                analysisTypeSelection === 'associations' ||
+                analysisTypeSelection === 'breakdown',
             })}
             constellationId={constellationId}
             descriptionId={description?.id as number}
@@ -161,9 +164,11 @@ function ConstellationDetail() {
           </Card>
         )}
 
-        {analysisType && analysisType !== 'associations' && (
-          <ConstellationCollocationFilter className="sticky top-14 mb-8" />
-        )}
+        {analysisType &&
+          analysisType !== 'associations' &&
+          analysisType !== 'breakdown' && (
+            <ConstellationCollocationFilter className="sticky top-14 mb-8" />
+          )}
 
         {analysisType === 'collocation' && (
           <Collocation
@@ -175,6 +180,8 @@ function ConstellationDetail() {
         {analysisType === 'keyword' && <KeywordTable />}
 
         {analysisType === 'ufa' && <UfaSelection />}
+
+        {analysisType === 'breakdown' && <Breakdown />}
       </AppPageFrameSemanticMap>
     </ConcordanceFilterProvider>
   )

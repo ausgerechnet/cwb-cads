@@ -28,7 +28,7 @@ export const DiscoursemeBreakdownSearch = z.object({
 const measureOrder = ['O11', 'ipm'] as const
 
 const measureMap: Record<(typeof measureOrder)[number], string> = {
-  O11: 'O11',
+  O11: 'frequency',
   ipm: 'IPM',
 }
 

@@ -29,11 +29,14 @@ export function ConstellationConcordanceLines({
     analysisType: analysisTypeSelection,
   } = useAnalysisSelection()
 
-  // Associations view can never show concordance lines
-  if (analysisTypeSelection === 'associations') {
+  // Associations and breakdown view can never show concordance lines
+  if (
+    analysisTypeSelection === 'associations' ||
+    analysisTypeSelection === 'breakdown'
+  ) {
     return (
       <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
-        Concordance lines are not available in associations view.
+        Concordance lines are not available in {analysisTypeSelection} view.
       </div>
     )
   }

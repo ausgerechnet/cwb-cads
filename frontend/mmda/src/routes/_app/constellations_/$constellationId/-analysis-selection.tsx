@@ -37,6 +37,7 @@ export function AnalysisSelection({ className }: { className?: string }) {
             ['ufa', 'UFA'],
             ['keyword', 'Keyword Analysis'],
             ['associations', 'Associations'],
+            ['breakdown', 'Breakdown'],
           ] as const
         }
         value={analysisType}
@@ -74,6 +75,13 @@ export function AnalysisSelection({ className }: { className?: string }) {
       {analysisType === 'associations' && (
         <>
           <CorpusInput className="col-span-full" />
+        </>
+      )}
+
+      {analysisType === 'breakdown' && (
+        <>
+          <CorpusInput />
+          <AnalysisLayerInput />
         </>
       )}
     </Card>

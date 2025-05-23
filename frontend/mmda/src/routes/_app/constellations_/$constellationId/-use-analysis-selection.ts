@@ -6,7 +6,13 @@ import { corpusById, subcorpusCollections } from '@cads/shared/queries'
 
 import { Route } from './route'
 
-const AnalysisType = z.enum(['collocation', 'keyword', 'ufa', 'associations'])
+const AnalysisType = z.enum([
+  'collocation',
+  'keyword',
+  'ufa',
+  'associations',
+  'breakdown',
+])
 type AnalysisType = z.infer<typeof AnalysisType>
 
 export const AnalysisSchema = z.object({
@@ -61,6 +67,12 @@ type AnalysisSelection =
       analysisType: 'associations'
       corpusId: number
       subcorpusId?: number
+    }
+  | {
+      analysisType: 'breakdown'
+      corpusId: number
+      subcorpusId?: number
+      analysisLayer: string
     }
 
 export function useAnalysisSelection() {
@@ -166,6 +178,16 @@ export function useAnalysisSelection() {
           partition,
           analysisLayer,
           focusDiscourseme,
+        }
+      }
+      break
+    case 'breakdown':
+      if (corpusId !== undefined && analysisLayer !== undefined) {
+        analysisSelection = {
+          analysisType,
+          corpusId,
+          subcorpusId,
+          analysisLayer,
         }
       }
       break
@@ -282,6 +304,8 @@ export function useAnalysisSelection() {
                 focusDiscourseme: undefined,
                 partition: undefined,
               }
+            case 'breakdown':
+            // fallthrough
             case 'associations':
               // let's keep all settings!
               // That makes it easier to quickly switch back from the associations view
