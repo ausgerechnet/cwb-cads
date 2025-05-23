@@ -1,5 +1,5 @@
 import { Fragment } from 'react'
-import { FilterIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpIcon, FilterIcon } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 
 import {
@@ -15,7 +15,7 @@ import {
   FilterSchema,
   useFilterSelection,
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import { SelectMulti } from '@cads/shared/components/select-multi'
 import { discoursemesList } from '@cads/shared/queries'
 import { useDescription } from './-use-description'
@@ -61,37 +61,8 @@ export function ConstellationCollocationFilter({
   const { analysisType } = useAnalysisSelection()
 
   return (
-    <div
-      className={cn(
-        'bg-background z-10 grid grid-flow-col gap-2 [grid-auto-columns:1fr]',
-        className,
-      )}
-    >
-      {analysisType !== 'keyword' && <WindowSizeInput />}
-
-      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-xs">Association Measure</span>
-        <Select
-          value={ccSortBy}
-          onValueChange={(value) => {
-            const sortBy = FilterSchema.shape.ccSortBy.parse(value)
-            setFilter('ccSortBy', sortBy)
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Association Measure" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {measures.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value.replaceAll('_', ' ')}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
+    <div className={cn('bg-background z-10 flex gap-2', className)}>
+      {analysisType !== 'keyword' && <WindowSizeInput className="w-52" />}
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-xs">Filter Discoursemes</span>
@@ -151,33 +122,53 @@ export function ConstellationCollocationFilter({
       </div>
 
       {!hideSortOrder && (
-        <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-          <span className="text-xs">Sort Order</span>
+        <>
+          <div className="flex w-52 flex-col gap-1 whitespace-nowrap">
+            <span className="text-xs">Association Measure</span>
+            <Select
+              value={ccSortBy}
+              onValueChange={(value) => {
+                const sortBy = FilterSchema.shape.ccSortBy.parse(value)
+                setFilter('ccSortBy', sortBy)
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Association Measure" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {measures.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {value.replaceAll('_', ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select
-            value={ccSortOrder}
-            onValueChange={(value) =>
-              setFilter(
-                'ccSortOrder',
-                FilterSchema.shape.ccSortOrder.parse(value),
-              )
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sort Order" />
-            </SelectTrigger>
+          <div className="flex w-36 shrink flex-col gap-1 whitespace-nowrap">
+            <span className="text-xs">Sort Order</span>
 
-            <SelectContent>
-              <SelectGroup>
-                {['ascending', 'descending'].map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                setFilter(
+                  'ccSortOrder',
+                  ccSortOrder === 'ascending' ? 'descending' : 'ascending',
+                )
+              }}
+            >
+              {ccSortOrder === 'ascending' ? (
+                <ArrowUpIcon className="-ml-2 mr-2 h-4 w-4" />
+              ) : (
+                <ArrowDownIcon className="-ml-2 mr-2 h-4 w-4" />
+              )}
+              {ccSortOrder}
+            </Button>
+          </div>
+        </>
       )}
     </div>
   )

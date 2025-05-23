@@ -250,7 +250,12 @@ function TokenRender({
       <Tooltip>
         <TooltipTrigger asChild>
           <button
-            onClick={() => onItemClick(token)}
+            onClick={() =>
+              onItemClick({
+                primary: token.primary,
+                secondary: token.secondary,
+              })
+            }
             className={cn(
               'hover:bg-muted hover:ring-muted relative cursor-pointer rounded-md px-0.5 hover:ring-2',
               token.out_of_window && 'text-muted-foreground/70',

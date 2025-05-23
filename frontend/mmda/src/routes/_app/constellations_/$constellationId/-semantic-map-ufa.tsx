@@ -190,10 +190,7 @@ export function SemanticMapUfa({
           <ArrowLeftIcon />
         </Link>
 
-        <ConstellationCollocationFilter
-          className="grow rounded-xl p-2 shadow"
-          hideSortOrder
-        />
+        <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
       </div>
       <ConstellationDiscoursemesEditor
         constellationId={constellationId}
@@ -315,28 +312,32 @@ function ConstellationDiscoursemesEditor({
                   >
                     <CollapsibleTrigger asChild>
                       <Button
-                        className="-ml-1 mb-1 flex h-auto flex-grow justify-start gap-2 p-2 pl-1"
+                        className="-ml-1 mb-1 flex h-auto flex-grow flex-wrap justify-start gap-2 p-2 pl-1"
                         variant="ghost"
                       >
                         <span
-                          className="aspect-square w-5 rounded-full"
+                          className="aspect-square w-4 rounded-full"
                           style={{
                             backgroundColor: getColorForNumber(discoursemeId),
                           }}
                         />
+
                         <DiscoursemeName
                           discoursemeId={discoursemeId}
                           item={item}
                           key={item}
                         />
+
                         <span className="text-muted-foreground">
                           {items.length} items
                         </span>
+
                         {focusDiscourseme === discoursemeId && (
                           <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
                             Focus
                           </span>
                         )}
+
                         {clFilterDiscoursemeIds.includes(discoursemeId) && (
                           <span className="inline-flex items-center gap-0.5 rounded-xl bg-blue-100 px-2 py-0.5 text-sm text-blue-800 has-[a:hover]:bg-blue-200 dark:bg-blue-700 dark:text-blue-100 has-[a:hover]:dark:bg-blue-900">
                             Filter

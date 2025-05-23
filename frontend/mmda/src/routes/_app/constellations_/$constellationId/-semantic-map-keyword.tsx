@@ -190,22 +190,22 @@ export function SemanticMapKeyword({
           <ArrowLeftIcon />
         </Link>
 
-        <ConstellationCollocationFilter
-          className="grow rounded-xl p-2 shadow"
-          hideSortOrder
-        />
+        <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
       </div>
+
       <ConstellationDiscoursemesEditor
         constellationId={constellationId}
         className="relative col-start-3 row-start-3"
       />
+
       {isFetching && (
         <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />
       )}
+
       <div className="col-start-2 row-start-3 self-start justify-self-start">
-        <ErrorMessage error={errorCollocation} />
-        <ErrorMessage error={errorNewDiscourseme} />
-        <ErrorMessage error={errorAddItem} />
+        <ErrorMessage
+          error={[errorCollocation, errorNewDiscourseme, errorAddItem]}
+        />
       </div>
     </div>
   )
@@ -289,13 +289,16 @@ function ConstellationDiscoursemesEditor({
         <span>
           <strong>Corpus:</strong> {corpusName ?? <>...</>}
         </span>
+
         <span>{itemCount ?? '...'} Items</span>
       </div>
+
       {constellationDescriptionId === undefined && (
         <div className="flex w-full flex-grow place-content-center place-items-center">
           <Loader2Icon className="h-6 w-6 animate-spin" />
         </div>
       )}
+
       <ScrollArea className="flex-grow">
         {discoursemeData.discoursemes.map(
           ({ discourseme_id: discoursemeId, items, item, descriptionId }) => {
@@ -304,6 +307,7 @@ function ConstellationDiscoursemesEditor({
                 `Encountered item with source "description_items" that has no "discourseme_id": ${item}`,
               )
             }
+
             return (
               <Collapsible key={discoursemeId}>
                 <div className="flex flex-col">
@@ -324,19 +328,23 @@ function ConstellationDiscoursemesEditor({
                             backgroundColor: getColorForNumber(discoursemeId),
                           }}
                         />
+
                         <DiscoursemeName
                           discoursemeId={discoursemeId}
                           item={item}
                           key={item}
                         />
+
                         <span className="text-muted-foreground">
                           {items.length} items
                         </span>
+
                         {focusDiscourseme === discoursemeId && (
                           <span className="ml-1 inline-block rounded-xl bg-amber-100 px-2 py-0.5 text-sm text-amber-800 dark:bg-amber-700 dark:text-amber-100">
                             Focus
                           </span>
                         )}
+
                         {clFilterDiscoursemeIds.includes(discoursemeId) && (
                           <span className="inline-flex items-center gap-0.5 rounded-xl bg-blue-100 px-2 py-0.5 text-sm text-blue-800 has-[a:hover]:bg-blue-200 dark:bg-blue-700 dark:text-blue-100 has-[a:hover]:dark:bg-blue-900">
                             Filter
@@ -358,6 +366,7 @@ function ConstellationDiscoursemesEditor({
                         )}
                       </Button>
                     </CollapsibleTrigger>
+
                     <Button
                       variant="ghost"
                       size="icon"
@@ -371,6 +380,7 @@ function ConstellationDiscoursemesEditor({
                       {/*  TODO: Handle case when this is the filter discourseme*/}
                     </Button>
                   </h4>
+
                   <CollapsibleContent>
                     <ul className="px-2">
                       {/* TODO: sometimes items are duplicates. why? */}
@@ -380,6 +390,7 @@ function ConstellationDiscoursemesEditor({
                           className="group/description hover:bg-muted flex items-center justify-between rounded pl-1 leading-tight"
                         >
                           {item}
+
                           <button
                             className="hover:text-destructive-foreground hover:bg-destructive m-1 ml-auto mr-1 rounded opacity-0 group-hover/description:opacity-100"
                             disabled={isRemovingItem}
@@ -400,6 +411,7 @@ function ConstellationDiscoursemesEditor({
                         </li>
                       ))}
                     </ul>
+
                     {descriptionId !== undefined && (
                       <AddDescriptionItem
                         constellationId={constellationId}
@@ -414,6 +426,7 @@ function ConstellationDiscoursemesEditor({
           },
         )}
       </ScrollArea>
+
       <div className="bg-muted flex flex-col gap-1 border-t p-2">
         <DiscoursemeSelect
           undefinedName="Select Discourseme to add to constellation"
@@ -433,6 +446,7 @@ function ConstellationDiscoursemesEditor({
             })
           }}
         />
+
         {constellationDescriptionId !== undefined &&
           secondary !== undefined && (
             <AttachNewDiscourseme

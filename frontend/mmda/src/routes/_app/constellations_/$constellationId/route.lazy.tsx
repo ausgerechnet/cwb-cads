@@ -167,7 +167,10 @@ function ConstellationDetail() {
         {analysisType &&
           analysisType !== 'associations' &&
           analysisType !== 'breakdown' && (
-            <ConstellationCollocationFilter className="sticky top-14 mb-8" />
+            <ConstellationCollocationFilter
+              className="sticky top-14 mb-8"
+              hideSortOrder
+            />
           )}
 
         {analysisType === 'collocation' && (
