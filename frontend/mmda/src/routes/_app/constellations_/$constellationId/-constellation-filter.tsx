@@ -28,7 +28,6 @@ import {
   TooltipTrigger,
 } from '@cads/shared/components/ui/tooltip'
 import {
-  ContextBreakInput,
   FilterItemInput,
   PrimaryInput,
   SortByOffsetInput,
@@ -66,8 +65,6 @@ export function ConstellationCollocationFilter({
       )}
     >
       <WindowSizeInput />
-
-      <ContextBreakInput />
 
       <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
         <span className="text-xs">Association Measure</span>

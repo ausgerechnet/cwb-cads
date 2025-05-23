@@ -22,6 +22,7 @@ import { buttonVariants } from '@cads/shared/components/ui/button'
 
 import { useAnalysisSelection } from './-use-analysis-selection'
 import { useDescription } from './-use-description'
+import { ContextBreakInput } from '@cads/shared/components/concordances'
 
 export function AnalysisSelection({ className }: { className?: string }) {
   'use no memo'
@@ -49,7 +50,8 @@ export function AnalysisSelection({ className }: { className?: string }) {
         <>
           <CorpusInput />
           <AnalysisLayerInput />
-          <FocusDiscoursemeInput className="col-span-full" />
+          <FocusDiscoursemeInput />
+          <ContextBreakInput />
         </>
       )}
 
@@ -68,7 +70,8 @@ export function AnalysisSelection({ className }: { className?: string }) {
           <AnalysisLayerInput />
           <ReferenceCorpusInput />
           <ReferenceLayerInput />
-          <FocusDiscoursemeInput className="col-span-full" />
+          <FocusDiscoursemeInput />
+          <ContextBreakInput />
         </>
       )}
 

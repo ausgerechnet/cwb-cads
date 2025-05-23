@@ -44,6 +44,7 @@ type AnalysisSelection =
       subcorpusId?: number
       analysisLayer: string
       focusDiscourseme: number
+      contextBreak?: string
     }
   | {
       analysisType: 'keyword'
@@ -54,6 +55,7 @@ type AnalysisSelection =
       referenceSubcorpusId?: number
       referenceLayer: string
       focusDiscourseme: number
+      contextBreak?: string
     }
   | {
       analysisType: 'ufa'
