@@ -347,44 +347,18 @@ export const constellationDescriptionBreakdown = (
       'constellation-description-breakdown',
       { constellationId, descriptionId, p },
     ],
-    queryFn: async ({ signal }) => {
-      // TODO: this is a workaround to mitigate a small type error in the backend
-      const { data } = await apiClient.axios.get(
-        `/mmda/constellation/${constellationId}/description/${descriptionId}/breakdown/?p=${p}`,
-        { signal },
-      )
-      return {
-        ...data,
-        // eslint-disable-next-line
-        // @ts-ignore - hacky workaround, will be fixed soon
-        items: data.items.map((item: any) => ({
-          ...item,
-          source:
-            {
-              // eslint-disable-next-line
-              // @ts-ignore
-              discoursemes: 'discourseme',
-              // eslint-disable-next-line
-              // @ts-ignore
-              discourseme_items: 'discourseme_item',
-              // eslint-disable-next-line
-              // @ts-ignore
-            }[item.source as string] ?? item.source,
-        })),
-      }
-
-      // apiClient.get(
-      //   '/mmda/constellation/:constellation_id/description/:description_id/breakdown/',
-      //   {
-      //     params: {
-      //       constellation_id: constellationId.toString(),
-      //       description_id: descriptionId.toString(),
-      //     },
-      //     queries: { p },
-      //     signal,
-      //   },
-      // ),
-    },
+    queryFn: async ({ signal }) =>
+      apiClient.get(
+        '/mmda/constellation/:constellation_id/description/:description_id/breakdown/',
+        {
+          params: {
+            constellation_id: constellationId.toString(),
+            description_id: descriptionId.toString(),
+          },
+          queries: { p },
+          signal,
+        },
+      ),
   })
 
 export const constellationDescriptionFor = ({

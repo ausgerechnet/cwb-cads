@@ -59,7 +59,7 @@ export function DiscoursemeBreakdown({
 
   const discoursemes = useMemo((): Discourseme[] => {
     return breakdown.items
-      .filter((item) => item.source === 'discourseme')
+      .filter((item) => item.source === 'discoursemes')
       .map(({ freq, ipm, discourseme_id: id }) => {
         const scores = {
           O11: freq,
@@ -74,7 +74,7 @@ export function DiscoursemeBreakdown({
                 .filter(
                   (item) =>
                     item.discourseme_id === id &&
-                    item.source === 'discourseme_item',
+                    item.source === 'discourseme_items',
                 )
                 .map(({ item, freq, ipm }) => ({
                   item,

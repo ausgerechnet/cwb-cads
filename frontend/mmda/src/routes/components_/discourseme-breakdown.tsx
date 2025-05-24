@@ -28,7 +28,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'Braunkohle',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 4,
@@ -38,7 +38,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 13.35113484646195,
       item: 'Kohle',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 4,
@@ -48,7 +48,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 20.026702269692922,
       item: 'Steinkohle',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 4,
@@ -58,7 +58,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'Öl',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 4,
@@ -68,7 +68,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 46.72897196261682,
       item: '(fossile) Rohstoffe',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 7,
@@ -78,7 +78,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 13.35113484646195,
       item: 'Anpassung',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 7,
@@ -88,7 +88,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 33.37783711615487,
       item: 'Bewältigung',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 7,
@@ -98,7 +98,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 206.9425901201602,
       item: 'Maßnahme',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 7,
@@ -108,7 +108,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'bewältigen',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 7,
@@ -118,7 +118,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 260.347129506008,
       item: 'Anpassung',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 2,
@@ -128,7 +128,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'Kernkraftwerk',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 2,
@@ -138,7 +138,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'Atomkraft',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 3,
@@ -148,7 +148,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 33.37783711615487,
       item: 'Ausbau',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 3,
@@ -158,7 +158,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 126.83578104138851,
       item: 'Förderung',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 3,
@@ -168,7 +168,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 20.026702269692922,
       item: 'ausbauen',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 3,
@@ -178,7 +178,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 180.2403204272363,
       item: 'Ausbau',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 8,
@@ -188,7 +188,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 13.35113484646195,
       item: 'Ausstieg',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 8,
@@ -198,7 +198,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'aussteigen',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 8,
@@ -208,7 +208,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 20.026702269692922,
       item: 'Ausstieg',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 9,
@@ -218,7 +218,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 20.026702269692922,
       item: 'Windenergie',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 9,
@@ -228,7 +228,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 20.026702269692922,
       item: 'Erneuerbare Energien',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 10,
@@ -238,7 +238,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 20.026702269692922,
       item: 'Bekämpfung',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 10,
@@ -248,7 +248,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 46.72897196261682,
       item: 'Kampf',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 10,
@@ -258,7 +258,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 13.35113484646195,
       item: 'aufhalten',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 10,
@@ -268,7 +268,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 93.45794392523364,
       item: 'bekämpfen',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 10,
@@ -278,7 +278,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 173.56475300400533,
       item: 'Kampf',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 1,
@@ -288,7 +288,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 0,
       item: 'Klimawandel',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 11,
@@ -298,7 +298,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 13.35113484646195,
       item: 'Armut',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 11,
@@ -308,7 +308,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 13.35113484646195,
       item: 'Mangel',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 12,
@@ -318,7 +318,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 0,
       item: 'Ursachen',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 5,
@@ -328,7 +328,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'Verursacher',
       nr_tokens: 149800,
-      source: 'discourseme_item',
+      source: 'discourseme_items',
     },
     {
       breakdown_id: 5,
@@ -338,7 +338,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 6.675567423230975,
       item: 'Verursacher',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
     {
       breakdown_id: 6,
@@ -348,7 +348,7 @@ const breakdown: z.infer<typeof schemas.ConstellationBreakdownOut> = {
       ipm: 0,
       item: 'Wetter',
       nr_tokens: 149800,
-      source: 'discourseme',
+      source: 'discoursemes',
     },
   ],
   p: 'lemma',
