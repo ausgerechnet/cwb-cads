@@ -125,7 +125,7 @@ class ConstellationBreakdownItemOut(Schema):
 
     id = Integer(required=True, allow_none=True)
     discourseme_id = Integer(required=True)
-    source = String(required=True, validate=OneOf(['discourseme', 'discourseme_item']))
+    source = String(required=True, validate=OneOf(['discoursemes', 'discourseme_items']))
     breakdown_id = Integer(required=True)
     item = String(required=True)
     freq = Integer(required=True)
