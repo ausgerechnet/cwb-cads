@@ -30,6 +30,7 @@ import {
 import {
   FilterItemInput,
   PrimaryInput,
+  SecondaryInput,
   SortByOffsetInput,
   SortOrderInput,
   WindowSizeInput,
@@ -184,7 +185,7 @@ export function ConstellationConcordanceFilter({
     <div
       className={cn(
         'z-10 mb-8 grid grid-cols-6 gap-2',
-        analysisType === 'keyword' && 'grid-cols-7',
+        analysisType === 'keyword' && 'grid-cols-8',
         className,
       )}
     >
@@ -199,6 +200,8 @@ export function ConstellationConcordanceFilter({
       <SortOrderInput />
 
       <PrimaryInput />
+
+      {analysisType === 'keyword' && <SecondaryInput />}
 
       <FilterItemInput />
     </div>
