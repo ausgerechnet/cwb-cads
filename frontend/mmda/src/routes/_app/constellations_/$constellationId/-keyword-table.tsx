@@ -41,8 +41,8 @@ export function KeywordTable() {
     clFilterItem,
     ccSortOrder,
     ccSortBy,
-    secondary,
   } = useFilterSelection('/_app/constellations_/$constellationId')
+  const { analysisLayer } = useAnalysisSelection()
   const { selectedMeasures, measureNameMap } = useMeasureSelection()
 
   if (analysisSelection?.analysisType !== 'keyword') {
@@ -170,7 +170,7 @@ export function KeywordTable() {
                       ...s,
                       clPageIndex: 0,
                       clFilterItem: item,
-                      clFilterItemPAtt: secondary,
+                      clFilterItemPAtt: analysisLayer,
                     })}
                   >
                     {item}

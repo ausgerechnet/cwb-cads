@@ -81,8 +81,8 @@ export function Collocation({
                     )}
                     to=""
                     params={(p) => p}
-                    search={(s) => {
-                      return isCurrent
+                    search={(s) =>
+                      isCurrent
                         ? {
                             ...s,
                             ccSortOrder:
@@ -95,7 +95,7 @@ export function Collocation({
                             ccSortBy: measure,
                             ccSortOrder: 'ascending',
                           }
-                    }}
+                    }
                   >
                     {isCurrent && ccSortOrder === 'ascending' && (
                       <ArrowDownIcon className="h-3 w-3" />
