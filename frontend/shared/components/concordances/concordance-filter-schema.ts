@@ -6,6 +6,7 @@ export const ConcordanceFilterSchema = z.object({
   secondary: z.string().optional().catch(undefined),
   clContextBreak: z.string().optional().catch(undefined),
   clFilterDiscoursemeIds: z.number().int().array().optional().catch([]),
+  clFocusDiscoursemeId: z.number().int().optional().catch(undefined),
   clSortOrder: z
     .enum(['ascending', 'descending', 'random', 'first'] as const)
     .optional()

@@ -18,7 +18,6 @@ import {
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import { SelectMulti } from '@cads/shared/components/select-multi'
 import { discoursemesList } from '@cads/shared/queries'
-import { useDescription } from './-use-description'
 import { Link } from '@tanstack/react-router'
 import { DiscoursemeName } from '@cads/shared/components/discourseme-name'
 import {
@@ -33,11 +32,16 @@ import {
   SecondaryInput,
   SortByOffsetInput,
   SortOrderInput,
+  useConcordanceFilterContext,
   WindowSizeInput,
 } from '@cads/shared/components/concordances'
 import { LabelBox } from '@cads/shared/components/label-box'
 import { measures } from '@cads/shared/components/measures'
+import { ErrorMessage } from '@cads/shared/components/error-message'
+
 import { useAnalysisSelection } from './-use-analysis-selection'
+import { useDescription } from './-use-description'
+import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 
 // TODO: Unify this with -query-filter.tsx
 export function ConstellationCollocationFilter({
@@ -65,9 +69,10 @@ export function ConstellationCollocationFilter({
     <div className={cn('bg-background z-10 flex gap-2', className)}>
       {analysisType !== 'keyword' && <WindowSizeInput className="w-52" />}
 
-      <div className="flex flex-grow flex-col gap-1 whitespace-nowrap">
-        <span className="text-xs">Filter Discoursemes</span>
-
+      <LabelBox
+        labelText="Filter Discoursemes"
+        className="w-full max-w-[50rem]"
+      >
         <div className="flex gap-2">
           <ul className="border-input my-0 flex min-h-10 grow flex-wrap gap-1 overflow-hidden overflow-ellipsis rounded-md border px-3 py-2">
             {ccFilterDiscoursemeIds.map((id, index, { length }) => (
@@ -120,7 +125,7 @@ export function ConstellationCollocationFilter({
             </TooltipProvider>
           )}
         </div>
-      </div>
+      </LabelBox>
 
       {!hideSortOrder && (
         <>
@@ -185,11 +190,19 @@ export function ConstellationConcordanceFilter({
     <div
       className={cn(
         'z-10 mb-8 grid grid-cols-6 gap-2',
-        analysisType === 'keyword' && 'grid-cols-8',
+        analysisType === 'keyword' && 'grid-cols-9',
         className,
       )}
     >
-      {analysisType === 'keyword' && <WindowSizeInput />}
+      {analysisType === 'keyword' && (
+        <>
+          {' '}
+          <WindowSizeInput />
+          <LabelBox labelText="Focus Discourseme">
+            <FocusDiscourseme />
+          </LabelBox>
+        </>
+      )}
 
       <LabelBox labelText="Filter Discoursemes" className="col-span-2">
         <FilterDiscoursemes className="w-full" />
@@ -205,6 +218,35 @@ export function ConstellationConcordanceFilter({
 
       <FilterItemInput />
     </div>
+  )
+}
+
+function FocusDiscourseme({ className }: { className?: string }) {
+  const { clFocusDiscoursemeId, setFocusDiscoursemeId } =
+    useConcordanceFilterContext()
+  const { description } = useDescription()
+  const {
+    data: allDiscoursemes = [],
+    isFetching,
+    error,
+  } = useQuery(discoursemesList)
+  const constellationIds = (description?.discourseme_descriptions ?? []).map(
+    (d) => d.discourseme_id,
+  )
+  const discoursemes = allDiscoursemes.filter((d) =>
+    constellationIds.includes(d.id),
+  )
+
+  if (error) return <ErrorMessage error={error} />
+
+  return (
+    <DiscoursemeSelect
+      discoursemes={discoursemes}
+      discoursemeId={clFocusDiscoursemeId}
+      onChange={setFocusDiscoursemeId}
+      className={cn('w-full', isFetching && 'animate-pulse', className)}
+      disabled={isFetching}
+    />
   )
 }
 

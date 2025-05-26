@@ -219,8 +219,6 @@ function ConstellationConcordanceLinesKeyword({
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
-  const { focusDiscourseme } = useAnalysisSelection()
-
   const {
     primary,
     secondary,
@@ -233,6 +231,7 @@ function ConstellationConcordanceLinesKeyword({
     clFilterItemPAtt,
     clFilterDiscoursemeIds,
     clContextBreak,
+    clFocusDiscoursemeId,
     setPageSize,
     setPageIndex,
     setFilterItem,
@@ -240,7 +239,7 @@ function ConstellationConcordanceLinesKeyword({
 
   const descriptionId = useDescription()?.description?.id
   const enabled =
-    focusDiscourseme !== undefined &&
+    clFocusDiscoursemeId !== undefined &&
     descriptionId !== undefined &&
     primary !== undefined &&
     secondary !== undefined
@@ -253,7 +252,7 @@ function ConstellationConcordanceLinesKeyword({
     ...constellationConcordances(
       constellationId,
       descriptionId!,
-      focusDiscourseme!,
+      clFocusDiscoursemeId!,
       {
         primary,
         secondary,
@@ -282,7 +281,7 @@ function ConstellationConcordanceLinesKeyword({
         constellationId,
         descriptionId!,
         matchId,
-        focusDiscourseme!,
+        clFocusDiscoursemeId!,
         {
           window: windowSize,
           extendedWindow: 100,
@@ -293,10 +292,10 @@ function ConstellationConcordanceLinesKeyword({
     [
       constellationId,
       descriptionId,
-      focusDiscourseme,
       primary,
       secondary,
       windowSize,
+      clFocusDiscoursemeId,
     ],
   )
 

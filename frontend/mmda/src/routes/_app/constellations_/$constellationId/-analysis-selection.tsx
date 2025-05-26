@@ -70,8 +70,7 @@ export function AnalysisSelection({ className }: { className?: string }) {
           <AnalysisLayerInput />
           <ReferenceCorpusInput />
           <ReferenceLayerInput />
-          <FocusDiscoursemeInput />
-          <ContextBreakInput />
+          <ContextBreakInput className="col-span-full" />
         </>
       )}
 

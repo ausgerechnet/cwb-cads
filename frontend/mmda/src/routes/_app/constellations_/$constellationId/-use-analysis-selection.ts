@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { corpusById, subcorpusCollections } from '@cads/shared/queries'
 
 import { Route } from './route'
+import { defaultValue } from '@cads/shared/lib/legal-default-value'
 
 const AnalysisType = z.enum([
   'collocation',
@@ -54,7 +55,6 @@ type AnalysisSelection =
       referenceCorpusId: number
       referenceSubcorpusId?: number
       referenceLayer: string
-      focusDiscourseme: number
       contextBreak?: string
     }
   | {
@@ -151,8 +151,7 @@ export function useAnalysisSelection() {
         corpusId !== undefined &&
         referenceCorpusId !== undefined &&
         analysisLayer !== undefined &&
-        referenceLayer !== undefined &&
-        focusDiscourseme !== undefined
+        referenceLayer !== undefined
       ) {
         analysisSelection = {
           analysisType,
@@ -162,7 +161,6 @@ export function useAnalysisSelection() {
           referenceSubcorpusId,
           referenceLayer,
           analysisLayer,
-          focusDiscourseme,
         }
       }
       break
@@ -321,19 +319,4 @@ export function useAnalysisSelection() {
         },
       }),
   }
-}
-
-function defaultValue<T>(
-  legalValues: (T | undefined)[] | undefined,
-  ...potentialValues: (T | undefined)[]
-): T | undefined {
-  if (!legalValues) {
-    return undefined
-  }
-  for (const value of potentialValues) {
-    if (legalValues.includes(value)) {
-      return value
-    }
-  }
-  return legalValues[0]
 }

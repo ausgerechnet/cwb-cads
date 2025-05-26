@@ -74,6 +74,7 @@ function useConcordanceFilters(
     clPageIndex = 0,
     clPageSize = 5,
     clFilterItem,
+    clFocusDiscoursemeId,
     clFilterItemPAtt: clFilterItemPAttInput,
   } = params
   const navigate = useNavigate()
@@ -113,6 +114,7 @@ function useConcordanceFilters(
     secondary,
     clContextBreak,
     clFilterDiscoursemeIds,
+    clFocusDiscoursemeId,
     clSortOrder,
     clSortByOffset,
     clPageIndex,
@@ -151,5 +153,7 @@ function useConcordanceFilters(
         clPageIndex: 0,
       })
     },
+    setFocusDiscoursemeId: (focusDiscoursemeId?: number | undefined) =>
+      updateFilters({ clFocusDiscoursemeId: focusDiscoursemeId }),
   }
 }

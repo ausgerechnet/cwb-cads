@@ -35,18 +35,16 @@ export function DiscoursemeSelect({
       },
       ...discoursemes
         .filter(({ id }) => id !== undefined)
-        .map((discourseme) => ({
-          id: discourseme.id as number,
-          name: discourseme.name ?? '',
-          searchValue: `${discourseme.id} ${discourseme.name} ${
-            (discourseme.template ?? [])
-              .map((item) => item.surface)
-              .join(' ') ?? ''
+        .map(({ id, template, name }) => ({
+          id: id as number,
+          name: name ?? '',
+          searchValue: `${id} ${name} ${
+            (template ?? []).map((item) => item.surface).join(' ') ?? ''
           }`
             .toLowerCase()
             .slice(0, 200)
             .replace(/\s+/g, '_'),
-          renderValue: <span>{discourseme.name}</span>,
+          renderValue: <span>{name}</span>,
         })),
     ],
     [discoursemes, undefinedName],

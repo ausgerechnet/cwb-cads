@@ -35,7 +35,7 @@ export function ToggleBar<T extends string>({
               if (value === undefined) setSelected(optionValue)
               onChange?.(optionValue)
             }}
-            className="ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=inactive]:hover:bg-background/80 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
+            className="ring-offset-background focus-visible:ring-ring data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=inactive]:hover:bg-background/80 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm"
             data-state={optionValue === selectedValue ? 'active' : 'inactive'}
             type="button"
           >
