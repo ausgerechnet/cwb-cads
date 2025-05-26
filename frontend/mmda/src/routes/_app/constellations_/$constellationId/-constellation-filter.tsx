@@ -69,10 +69,7 @@ export function ConstellationCollocationFilter({
     <div className={cn('bg-background z-10 flex gap-2', className)}>
       {analysisType !== 'keyword' && <WindowSizeInput className="w-52" />}
 
-      <LabelBox
-        labelText="Filter Discoursemes"
-        className="w-full max-w-[50rem]"
-      >
+      <LabelBox labelText="Filter Discoursemes" className="w-full">
         <div className="flex gap-2">
           <ul className="border-input my-0 flex min-h-10 grow flex-wrap gap-1 overflow-hidden overflow-ellipsis rounded-md border px-3 py-2">
             {ccFilterDiscoursemeIds.map((id, index, { length }) => (
@@ -128,9 +125,40 @@ export function ConstellationCollocationFilter({
       </LabelBox>
 
       {!hideSortOrder && (
-        <>
-          <div className="flex w-52 flex-col gap-1 whitespace-nowrap">
-            <span className="text-xs">Association Measure</span>
+        <LabelBox labelText="Association Measure">
+          <div className="flex items-center gap-1">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="flex-grow-0"
+                    onClick={() => {
+                      setFilter(
+                        'ccSortOrder',
+                        ccSortOrder === 'ascending'
+                          ? 'descending'
+                          : 'ascending',
+                      )
+                    }}
+                  >
+                    {ccSortOrder === 'ascending' ? (
+                      <ArrowUpIcon className="h-4 w-4" />
+                    ) : (
+                      <ArrowDownIcon className="h-4 w-4" />
+                    )}
+                    {/* {ccSortOrder === 'ascending' ? 'asc' : 'desc'} */}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {ccSortOrder === 'ascending'
+                    ? 'Sort by ascending association measure'
+                    : 'Sort by descending association measure'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             <Select
               value={ccSortBy}
               onValueChange={(value) => {
@@ -152,29 +180,7 @@ export function ConstellationCollocationFilter({
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex w-36 shrink flex-col gap-1 whitespace-nowrap">
-            <span className="text-xs">Sort Order</span>
-
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setFilter(
-                  'ccSortOrder',
-                  ccSortOrder === 'ascending' ? 'descending' : 'ascending',
-                )
-              }}
-            >
-              {ccSortOrder === 'ascending' ? (
-                <ArrowUpIcon className="-ml-2 mr-2 h-4 w-4" />
-              ) : (
-                <ArrowDownIcon className="-ml-2 mr-2 h-4 w-4" />
-              )}
-              {ccSortOrder}
-            </Button>
-          </div>
-        </>
+        </LabelBox>
       )}
     </div>
   )
