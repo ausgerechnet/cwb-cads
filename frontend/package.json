@@ -6,7 +6,7 @@
     "dev:spheroscope": "npm run dev --workspace @cads/spheroscope",
     "build": "npm run build --workspace @cads/mmda --workspace @cads/spheroscope",
     "preview": "npx serve --single mmda/dist",
-    "test": "npm run test --workspaces",
+    "test": "npm run test --workspaces -- run",
     "lint": "npm run lint --workspaces",
     "format": "npm run format --workspaces",
     "typecheck": "npm run typecheck --workspace @cads/mmda --workspace @cads/spheroscope",
