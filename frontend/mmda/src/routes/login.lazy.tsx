@@ -52,12 +52,12 @@ function Login() {
     },
   })
 
-  const isLoggedIn = Boolean(
-    useQuery({
-      ...userIdentify,
-      refetchInterval: 10_000,
-    }).data,
-  )
+  const { data: user, error: errorIdentify } = useQuery({
+    ...userIdentify,
+    refetchInterval: 10_000,
+  })
+
+  const isLoggedIn = !!user?.id && !errorIdentify
 
   useEffect(() => {
     if (isLoggedIn) {
