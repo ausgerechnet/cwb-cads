@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
+import { XIcon } from 'lucide-react'
+
 import { LabelBox } from '../label-box'
 import { Slider } from '../ui/slider'
 import { Button } from '../ui/button'
 import { cn } from '../../lib/utils'
-
 import { useConcordanceFilterContext } from './concordance-context'
 import {
   Select,
@@ -13,18 +15,61 @@ import {
   SelectValue,
 } from '../ui/select'
 import { Input } from '../ui/input'
-import { XIcon } from 'lucide-react'
 import { ToggleBar } from '../toggle-bar'
 import { SelectSingle } from '../select-single'
 
+function validateWindowSize(size: number): boolean {
+  return !isNaN(size) && size >= 1 && size <= 24
+}
+
 export function WindowSizeInput({ className }: { className?: string }) {
   const { windowSize, setWindowSize } = useConcordanceFilterContext()
+  const [currentWindowSize, setCurrentWindowSize] = useState(windowSize)
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (validateWindowSize(currentWindowSize)) {
+        setWindowSize(currentWindowSize)
+      }
+    }, 500)
+    return () => clearTimeout(timeoutId)
+  }, [currentWindowSize])
+
+  useEffect(() => {
+    setCurrentWindowSize(windowSize)
+  }, [windowSize])
+
   return (
-    <LabelBox className={className} labelText={`Window size ${windowSize}`}>
+    <LabelBox
+      className={className}
+      labelText={
+        <span className="flex items-baseline gap-1">
+          <span>Window size</span>
+
+          <Input
+            value={currentWindowSize}
+            className="h-auto w-8 p-1 py-0 text-right"
+            onChange={(e) => {
+              setCurrentWindowSize(parseInt(e.target.value))
+            }}
+            onBlur={() => {
+              if (!validateWindowSize(currentWindowSize)) {
+                setCurrentWindowSize(windowSize)
+              }
+            }}
+            min={1}
+            max={24}
+            type="number"
+          />
+        </span>
+      }
+    >
       <Slider
-        defaultValue={[windowSize]}
-        onValueChange={([newValue]) => setWindowSize(newValue)}
-        min={0}
+        value={[currentWindowSize]}
+        onValueChange={([currentWindowSize]) =>
+          setCurrentWindowSize(currentWindowSize)
+        }
+        min={1}
         max={24}
         className="my-auto"
       />
