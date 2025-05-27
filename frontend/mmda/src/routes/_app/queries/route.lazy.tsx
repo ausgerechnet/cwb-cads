@@ -21,9 +21,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@cads/shared/components/ui/popover'
-import { DefaultErrorComponent } from '@/components/default-error-component'
 import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { ButtonAlert } from '@/components/button-alert'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 import { QueriesLayout } from './-queries-layout'
 
 export const Route = createLazyFileRoute('/_app/queries')({
@@ -68,11 +68,11 @@ function Queries() {
   )
 }
 
-function QueriesError(props: ErrorComponentProps) {
+function QueriesError({ error, ...props }: ErrorComponentProps) {
   return (
     <QueriesLayout>
-      <DefaultErrorComponent
-        title="An error occurred while loading the queries."
+      <ErrorMessage
+        error={error ?? 'An error occurred while loading the queries.'}
         {...props}
       />
     </QueriesLayout>

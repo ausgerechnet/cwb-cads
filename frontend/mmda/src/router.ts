@@ -1,9 +1,9 @@
 import { createRouter } from '@tanstack/react-router'
 import { routeTree } from '@/routeTree.gen'
 
-import { DefaultErrorComponent } from '@/components/default-error-component'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
 import { queryClient } from '@cads/shared/queries'
+import { ErrorMessage } from '@cads/shared/components/error-message'
 
 const basepath = import.meta.env.VITE_ROUTER_BASEPATH || '/'
 
@@ -13,7 +13,7 @@ export const router = createRouter({
   defaultStaleTime: 0,
   defaultPreload: false,
   defaultPreloadStaleTime: 0,
-  defaultErrorComponent: DefaultErrorComponent,
+  defaultErrorComponent: ErrorMessage,
   defaultPendingComponent: DefaultPendingComponent,
   context: { queryClient },
 })
