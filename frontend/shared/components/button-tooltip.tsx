@@ -10,13 +10,15 @@ import {
 export function ButtonTooltip({
   tooltip,
   side,
+  disableHoverableContent = true,
   ...props
 }: ComponentProps<typeof Button> & {
   tooltip: ReactNode
   side?: ComponentProps<typeof TooltipContent>['side']
+  disableHoverableContent?: boolean
 }) {
   return (
-    <TooltipProvider>
+    <TooltipProvider disableHoverableContent={disableHoverableContent}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button {...props} />

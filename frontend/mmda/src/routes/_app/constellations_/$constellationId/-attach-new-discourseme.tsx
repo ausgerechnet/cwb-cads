@@ -12,12 +12,6 @@ import {
   DialogTrigger,
 } from '@cads/shared/components/ui/dialog'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@cads/shared/components/ui/tooltip'
-import {
   Form,
   FormControl,
   FormField,
@@ -31,6 +25,7 @@ import { required_error } from '@cads/shared/lib/strings'
 import { createDiscoursemeForConstellationDescription } from '@cads/shared/queries'
 import { Button } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
+import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 const Discourseme = z.object({
   surfaces: z.array(z.string({ required_error }), { required_error }),
@@ -81,22 +76,14 @@ export function AttachNewDiscourseme({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(className, 'aspect-square')}
-              >
-                Create new Discourseme to add
-                <Plus className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent>Create a new discourseme</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <DialogTrigger asChild>
+        <TextTooltip asChild tooltipText="Create a new discourseme to add">
+          <Button variant="outline" className={cn(className, 'aspect-square')}>
+            Create new Discourseme to add
+            <Plus className="h-4 w-4" />
+          </Button>
+        </TextTooltip>
+      </DialogTrigger>
       <DialogContent>
         <Form {...form}>
           <form

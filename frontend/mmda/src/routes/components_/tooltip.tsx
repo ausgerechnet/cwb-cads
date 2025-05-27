@@ -7,6 +7,7 @@ import {
 import { TextTooltip } from '@cads/shared/components/text-tooltip'
 import { createFileRoute } from '@tanstack/react-router'
 import { Block, BlockComment } from './-block'
+import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
 
 export const Route = createFileRoute('/components_/tooltip')({
   component: TooltipOverview,
@@ -55,6 +56,17 @@ function TooltipOverview() {
         <TextTooltip tooltipText="This is another text tooltip!">
           Hover me, too!
         </TextTooltip>
+      </Block>
+
+      <Block componentTag="ButtonTooltip">
+        <BlockComment>
+          The <code>ButtonTooltip</code> component is a simple wrapper around
+          the tooltip components and the <code>Button</code> component.
+        </BlockComment>
+
+        <ButtonTooltip tooltip="This is a button tooltip!" side="top">
+          Hover me
+        </ButtonTooltip>
       </Block>
     </>
   )

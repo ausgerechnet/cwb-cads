@@ -1,25 +1,34 @@
+import { type ComponentProps, type ReactNode } from 'react'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from './ui/tooltip'
-import { type ReactNode } from 'react'
 
 export function TextTooltip({
   tooltipText,
   children,
   asChild,
+  disableHoverableContent = true,
+  side,
+  delayDuration,
 }: {
   tooltipText: ReactNode
   children: ReactNode
   asChild?: boolean
+  disableHoverableContent?: boolean
+  side?: ComponentProps<typeof TooltipContent>['side']
+  delayDuration?: number
 }) {
   return (
-    <TooltipProvider>
+    <TooltipProvider
+      disableHoverableContent={disableHoverableContent}
+      delayDuration={delayDuration}
+    >
       <Tooltip>
         <TooltipTrigger asChild={asChild}>{children}</TooltipTrigger>
-        <TooltipContent>{tooltipText}</TooltipContent>
+        <TooltipContent side={side}>{tooltipText}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )

@@ -29,6 +29,7 @@ import {
 } from '@cads/shared/components/ui/collapsible'
 import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
 import { InputGrowable } from '@cads/shared/components/input-growable'
+import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
@@ -36,7 +37,6 @@ import { useFilterSelection } from './-use-filter-selection'
 import { ConstellationCollocationFilter } from './-constellation-filter'
 import { AttachNewDiscourseme } from './-attach-new-discourseme'
 import { useAnalysisSelection } from './-use-analysis-selection'
-import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 export function SemanticMapCollocations({
   constellationId,
