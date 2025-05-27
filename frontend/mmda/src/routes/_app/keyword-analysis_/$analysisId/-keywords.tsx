@@ -125,7 +125,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                   colSpan={selectedMeasures.length + 1}
                   className="py-1"
                 >
-                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-6 w-full" />
                 </TableCell>
               </TableRow>
             </Repeat>
