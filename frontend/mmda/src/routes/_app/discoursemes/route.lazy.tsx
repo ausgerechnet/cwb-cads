@@ -40,10 +40,8 @@ const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeOut>>[] = [
     header: ({ column }) => <SortButton column={column}>Name</SortButton>,
   },
   {
-    accessorKey: 'description',
-    header: ({ column }) => (
-      <SortButton column={column}>Description</SortButton>
-    ),
+    accessorKey: 'comment',
+    header: ({ column }) => <SortButton column={column}>Comment</SortButton>,
   },
   {
     accessorKey: '_items',
