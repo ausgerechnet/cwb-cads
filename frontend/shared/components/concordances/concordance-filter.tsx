@@ -39,6 +39,12 @@ export function WindowSizeInput({ className }: { className?: string }) {
     setCurrentWindowSize(windowSize)
   }, [windowSize])
 
+  function handleBlur(event) {
+    if (!validateWindowSize(currentWindowSize)) {
+      setCurrentWindowSize(windowSize)
+    }
+  }
+
   return (
     <LabelBox
       className={className}
@@ -52,11 +58,7 @@ export function WindowSizeInput({ className }: { className?: string }) {
             onChange={(e) => {
               setCurrentWindowSize(parseInt(e.target.value))
             }}
-            onBlur={() => {
-              if (!validateWindowSize(currentWindowSize)) {
-                setCurrentWindowSize(windowSize)
-              }
-            }}
+            onBlur={handleBlur}
             min={1}
             max={24}
             type="number"
@@ -69,6 +71,7 @@ export function WindowSizeInput({ className }: { className?: string }) {
         onValueChange={([currentWindowSize]) =>
           setCurrentWindowSize(currentWindowSize)
         }
+        onBlur={handleBlur}
         min={1}
         max={24}
         className="my-auto"
