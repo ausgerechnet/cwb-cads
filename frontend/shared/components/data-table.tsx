@@ -140,6 +140,7 @@ export function DataTable<RowData>({
               </TableRow>
             ))}
           </TableHeader>
+
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
@@ -181,6 +182,7 @@ export function DataTable<RowData>({
           </TableBody>
         </Table>
       </div>
+
       <PaginationForTable table={table} />
     </div>
   )

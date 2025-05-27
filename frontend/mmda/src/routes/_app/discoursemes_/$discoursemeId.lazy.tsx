@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { PlusIcon } from 'lucide-react'
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { type ColumnDef } from '@tanstack/react-table'
 
 import { schemas } from '@/rest-client'
 import {
@@ -17,6 +18,8 @@ import { cn } from '@cads/shared/lib/utils'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Card } from '@cads/shared/components/ui/card'
 import { ButtonAlert } from '@/components/button-alert'
+import { DataTable } from '@cads/shared/components/data-table'
+import { Skeleton } from '@cads/shared/components/ui/skeleton'
 
 export const Route = createLazyFileRoute('/_app/discoursemes_/$discoursemeId')({
   component: SingleDiscourseme,
@@ -79,76 +82,110 @@ function SingleDiscourseme() {
       )}
 
       <Card className="mr-auto mt-6 flex flex-col gap-2 p-4">
-        {descriptions.length > 0 && <Large>Descriptions</Large>}
+        <div className="flex items-center justify-between">
+          {descriptions.length > 0 && <Large>Descriptions</Large>}
 
-        <ul className="flex flex-col gap-2">
-          {descriptions.map((description) => (
-            <Description description={description} key={description.id!} />
-          ))}
-        </ul>
+          <Link
+            to="/discoursemes/$discoursemeId/new-description"
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            params={{ discoursemeId: discoursemeId.toString() }}
+            className={buttonVariants()}
+          >
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Create New Description
+          </Link>
+        </div>
 
-        <Link
-          to="/discoursemes/$discoursemeId/new-description"
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          params={{ discoursemeId: discoursemeId.toString() }}
-          className={cn('ml-auto mt-10', buttonVariants())}
-        >
-          <PlusIcon className="mr-2 h-4 w-4" />
-          Create New Description
-        </Link>
+        <DataTable<z.infer<typeof schemas.DiscoursemeDescriptionOut>>
+          className="mt-2"
+          columns={columns}
+          rows={descriptions}
+        />
       </Card>
     </AppPageFrame>
   )
 }
 
-function Description({
-  description,
+const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeDescriptionOut>>[] =
+  [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+    },
+    {
+      accessorKey: 'corpus_id',
+      header: 'Corpus',
+      cell: ({ row }) => {
+        return (
+          <>
+            <CorpusName
+              corpusId={row.getValue('corpus_id')}
+              subcorpusId={row.getValue('subcorpus_id')}
+            />
+          </>
+        )
+      },
+    },
+    {
+      id: 'layer',
+      header: 'Layer',
+      cell: ({ row }) =>
+        row.original.items?.find((item) => item.p)?.p ?? 'n.a.',
+    },
+    {
+      id: 'items',
+      header: 'Surfaces',
+      cell: ({ row }) => {
+        const surfaces = row.original.items
+          .map((item) => item.surface)
+          .join(', ')
+        return <span className="max-w-[200px] truncate">{surfaces}</span>
+      },
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <DeleteButton
+          descriptionId={row.original.id}
+          discoursemeId={row.original.discourseme_id}
+        />
+      ),
+      meta: { className: 'w-0' },
+    },
+  ]
+
+function CorpusName({
+  corpusId,
+  subcorpusId,
 }: {
-  description: z.infer<typeof schemas.DiscoursemeDescriptionOut>
+  corpusId: number
+  subcorpusId?: number
+}) {
+  const { data, isLoading, error } = useQuery(corpusById(corpusId, subcorpusId))
+  if (error) return <ErrorMessage error={error} />
+  if (isLoading) return <Skeleton className="h-4 w-36 max-w-full" />
+  return <span>{data?.name}</span>
+}
+
+function DeleteButton({
+  descriptionId,
+  discoursemeId,
+}: {
+  descriptionId: number
+  discoursemeId: number
 }) {
   const { mutate, isPending, error } = useMutation(deleteDiscoursemeDescription)
-  const {
-    data,
-    isLoading,
-    error: errorCorpus,
-  } = useQuery(corpusById(description.corpus_id!, description.subcorpus_id))
 
   return (
-    <li className="my-1 grid grid-cols-[1fr_min-content] gap-4 rounded-lg p-1 pl-2">
-      <div className="flex flex-col gap-2 text-sm">
-        {isLoading ? (
-          'Loading...'
-        ) : (
-          <span>
-            in <strong>{data?.name}</strong> on{' '}
-            <strong>{description.items[0]?.p}</strong>
-          </span>
-        )}
-        <div className="flex flex-wrap gap-1 text-sm">
-          {description.items?.map((i) => (
-            <span
-              key={i.surface}
-              className="outline-border no-wrap inline-block rounded-full px-2 py-0.5 text-xs outline outline-1"
-            >
-              {i.surface}
-            </span>
-          ))}
-        </div>
-      </div>
-
+    <>
       <ButtonAlert
-        onClick={() =>
-          mutate({
-            descriptionId: description.id!,
-            discoursemeId: description.discourseme_id!,
-          })
-        }
-        className="mt-auto"
+        className="ml-auto mr-0 w-min"
+        onClick={() => mutate({ descriptionId, discoursemeId })}
         disabled={isPending}
       />
 
-      <ErrorMessage error={[errorCorpus, error]} className="col-span-full" />
-    </li>
+      <ErrorMessage error={error} />
+    </>
   )
 }
