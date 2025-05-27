@@ -115,16 +115,11 @@ const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeDescriptionOut>>[] =
     },
     {
       accessorKey: 'corpus_id',
-      header: 'Corpus',
+      header: 'Corpus/Subcorpus',
       cell: ({ row }) => {
-        return (
-          <>
-            <CorpusName
-              corpusId={row.getValue('corpus_id')}
-              subcorpusId={row.getValue('subcorpus_id')}
-            />
-          </>
-        )
+        const corpusId = row.original.corpus_id
+        const subcorpusId = row.original.subcorpus_id
+        return <CorpusName corpusId={corpusId} subcorpusId={subcorpusId} />
       },
     },
     {
@@ -160,12 +155,21 @@ function CorpusName({
   subcorpusId,
 }: {
   corpusId: number
-  subcorpusId?: number
+  subcorpusId?: number | null
 }) {
   const { data, isLoading, error } = useQuery(corpusById(corpusId, subcorpusId))
   if (error) return <ErrorMessage error={error} />
   if (isLoading) return <Skeleton className="h-4 w-36 max-w-full" />
-  return <span>{data?.name}</span>
+  return (
+    <>
+      {(data?.corpus as { name?: string })?.name && (
+        <span className="text-muted-foreground">
+          {(data?.corpus as { name: string }).name}{' '}
+        </span>
+      )}
+      <span>{data?.name}</span>
+    </>
+  )
 }
 
 function DeleteButton({

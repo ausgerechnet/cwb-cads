@@ -274,14 +274,14 @@ export const queryCollocation = (
 
 // ==================== CORPORA ====================
 
-export const corpusById = (
+export function corpusById(
   corpusId: number,
   subcorpusId: number | null | undefined = null,
-) =>
-  queryOptions({
-    queryKey: ['corpus', corpusId],
+) {
+  return queryOptions({
+    queryKey: ['corpus', corpusId, subcorpusId],
     queryFn: async ({ signal }) => {
-      if (subcorpusId === null) {
+      if (subcorpusId === null || subcorpusId === undefined) {
         return apiClient.get('/corpus/:id', {
           params: { id: String(corpusId) },
           signal,
@@ -294,12 +294,10 @@ export const corpusById = (
           signal,
         },
       )
-      return {
-        ...subcorpusData.corpus,
-        ...subcorpusData,
-      }
+      return { ...subcorpusData.corpus, ...subcorpusData }
     },
   })
+}
 
 export const corpusList = queryOptions({
   queryKey: ['corpora'],
