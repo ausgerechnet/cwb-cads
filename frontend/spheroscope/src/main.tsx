@@ -8,6 +8,7 @@ import { ThemeProvider } from '../../shared/components/theme-provider'
 import { queryClient } from '@cads/shared/queries'
 import { router } from './router'
 
+import './rest-client'
 import '@cads/shared/index.css'
 
 const persister = createIDBPersister()
