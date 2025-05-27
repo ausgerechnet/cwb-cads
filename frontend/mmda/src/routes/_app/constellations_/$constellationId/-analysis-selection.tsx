@@ -27,7 +27,7 @@ import { ContextBreakInput } from '@cads/shared/components/concordances'
 export function AnalysisSelection({ className }: { className?: string }) {
   'use no memo'
 
-  const { analysisType, setAnalysisType } = useAnalysisSelection()
+  const { analysisType, setAnalysisType, corpusId } = useAnalysisSelection()
 
   return (
     <Card className={cn('grid grid-cols-2 content-start gap-2 p-4', className)}>
@@ -51,7 +51,7 @@ export function AnalysisSelection({ className }: { className?: string }) {
           <CorpusInput />
           <AnalysisLayerInput />
           <FocusDiscoursemeInput />
-          <ContextBreakInput />
+          <ContextBreakInput disabled={corpusId === undefined} />
         </>
       )}
 
@@ -70,7 +70,10 @@ export function AnalysisSelection({ className }: { className?: string }) {
           <AnalysisLayerInput />
           <ReferenceCorpusInput />
           <ReferenceLayerInput />
-          <ContextBreakInput className="col-span-full" />
+          <ContextBreakInput
+            className="col-span-full"
+            disabled={corpusId === undefined}
+          />
         </>
       )}
 

@@ -15,6 +15,7 @@ import {
 import { Input } from '../ui/input'
 import { XIcon } from 'lucide-react'
 import { ToggleBar } from '../toggle-bar'
+import { SelectSingle } from '../select-single'
 
 export function WindowSizeInput({ className }: { className?: string }) {
   const { windowSize, setWindowSize } = useConcordanceFilterContext()
@@ -102,28 +103,24 @@ export function SortOrderInput({ className }: { className?: string }) {
   )
 }
 
-export function ContextBreakInput({ className }: { className?: string }) {
+export function ContextBreakInput({
+  className,
+  disabled,
+}: {
+  className?: string
+  disabled?: boolean
+}) {
   const { clContextBreak, setContextBreak, structureAttributes } =
     useConcordanceFilterContext()
   return (
     <LabelBox className={className} labelText="Context Break">
-      <Select
+      <SelectSingle
+        placeholder="Context Break"
         value={clContextBreak}
         onValueChange={(value) => setContextBreak(value)}
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Filter Item PAttr" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {structureAttributes.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+        items={structureAttributes}
+        disabled={disabled}
+      />
     </LabelBox>
   )
 }
@@ -195,20 +192,12 @@ export function PrimaryInput({ className }: { className?: string }) {
   const { primary, setPrimary, layers } = useConcordanceFilterContext()
   return (
     <LabelBox className={className} labelText="Primary">
-      <Select value={primary} onValueChange={(value) => setPrimary(value)}>
-        <SelectTrigger>
-          <SelectValue placeholder="Primary" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {layers.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+      <SelectSingle
+        placeholder="Primary"
+        value={primary}
+        onValueChange={(value) => setPrimary(value)}
+        items={layers}
+      />
     </LabelBox>
   )
 }
