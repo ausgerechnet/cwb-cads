@@ -167,7 +167,7 @@ function AppMenuLink({
   isSmall?: boolean
 }) {
   return (
-    <TooltipProvider disableHoverableContent={!isSmall}>
+    <TooltipProvider disableHoverableContent>
       <Tooltip open={isSmall === false ? false : undefined}>
         <TooltipTrigger asChild>
           <Link
