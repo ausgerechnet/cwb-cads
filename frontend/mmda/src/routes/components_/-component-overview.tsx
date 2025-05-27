@@ -29,6 +29,7 @@ export function ComponentOverview() {
             <SubLink to="/components/input">Input</SubLink>
             <SubLink to="/components/error">Error</SubLink>
             <SubLink to="/components/measure">MeasureSelect</SubLink>
+            <SubLink to="/components/tooltip">Tooltip</SubLink>
           </ul>
         </nav>
 

@@ -20,6 +20,7 @@ import { Route as Import } from './routes/*'
 import { Route as ComponentsRouteImport } from './routes/components_/route'
 import { Route as IndexImport } from './routes/index'
 import { Route as ComponentsWordCloudImport } from './routes/components_/word-cloud'
+import { Route as ComponentsTooltipImport } from './routes/components_/tooltip'
 import { Route as ComponentsToggleBarImport } from './routes/components_/toggle-bar'
 import { Route as ComponentsTimeSeriesImport } from './routes/components_/time-series'
 import { Route as ComponentsTableImport } from './routes/components_/table'
@@ -108,6 +109,12 @@ const IndexRoute = IndexImport.update({
 const ComponentsWordCloudRoute = ComponentsWordCloudImport.update({
   id: '/word-cloud',
   path: '/word-cloud',
+  getParentRoute: () => ComponentsRouteRoute,
+} as any)
+
+const ComponentsTooltipRoute = ComponentsTooltipImport.update({
+  id: '/tooltip',
+  path: '/tooltip',
   getParentRoute: () => ComponentsRouteRoute,
 } as any)
 
@@ -570,6 +577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentsToggleBarImport
       parentRoute: typeof ComponentsRouteImport
     }
+    '/components_/tooltip': {
+      id: '/components_/tooltip'
+      path: '/tooltip'
+      fullPath: '/components/tooltip'
+      preLoaderRoute: typeof ComponentsTooltipImport
+      parentRoute: typeof ComponentsRouteImport
+    }
     '/components_/word-cloud': {
       id: '/components_/word-cloud'
       path: '/word-cloud'
@@ -700,6 +714,7 @@ interface ComponentsRouteRouteChildren {
   ComponentsTableRoute: typeof ComponentsTableRoute
   ComponentsTimeSeriesRoute: typeof ComponentsTimeSeriesRoute
   ComponentsToggleBarRoute: typeof ComponentsToggleBarRoute
+  ComponentsTooltipRoute: typeof ComponentsTooltipRoute
   ComponentsWordCloudRoute: typeof ComponentsWordCloudRoute
 }
 
@@ -717,6 +732,7 @@ const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
   ComponentsTableRoute: ComponentsTableRoute,
   ComponentsTimeSeriesRoute: ComponentsTimeSeriesRoute,
   ComponentsToggleBarRoute: ComponentsToggleBarRoute,
+  ComponentsTooltipRoute: ComponentsTooltipRoute,
   ComponentsWordCloudRoute: ComponentsWordCloudRoute,
 }
 
@@ -847,6 +863,7 @@ export interface FileRoutesByFullPath {
   '/components/table': typeof ComponentsTableRoute
   '/components/time-series': typeof ComponentsTimeSeriesRoute
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
+  '/components/tooltip': typeof ComponentsTooltipRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
@@ -893,6 +910,7 @@ export interface FileRoutesByTo {
   '/components/table': typeof ComponentsTableRoute
   '/components/time-series': typeof ComponentsTimeSeriesRoute
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
+  '/components/tooltip': typeof ComponentsTooltipRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
@@ -940,6 +958,7 @@ export interface FileRoutesById {
   '/components_/table': typeof ComponentsTableRoute
   '/components_/time-series': typeof ComponentsTimeSeriesRoute
   '/components_/toggle-bar': typeof ComponentsToggleBarRoute
+  '/components_/tooltip': typeof ComponentsTooltipRoute
   '/components_/word-cloud': typeof ComponentsWordCloudRoute
   '/_app/constellations_/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/_app/keyword-analysis_/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
@@ -988,6 +1007,7 @@ export interface FileRouteTypes {
     | '/components/table'
     | '/components/time-series'
     | '/components/toggle-bar'
+    | '/components/tooltip'
     | '/components/word-cloud'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
@@ -1033,6 +1053,7 @@ export interface FileRouteTypes {
     | '/components/table'
     | '/components/time-series'
     | '/components/toggle-bar'
+    | '/components/tooltip'
     | '/components/word-cloud'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
@@ -1078,6 +1099,7 @@ export interface FileRouteTypes {
     | '/components_/table'
     | '/components_/time-series'
     | '/components_/toggle-bar'
+    | '/components_/tooltip'
     | '/components_/word-cloud'
     | '/_app/constellations_/$constellationId'
     | '/_app/keyword-analysis_/$analysisId'
@@ -1156,6 +1178,7 @@ export const routeTree = rootRoute
         "/components_/table",
         "/components_/time-series",
         "/components_/toggle-bar",
+        "/components_/tooltip",
         "/components_/word-cloud"
       ]
     },
@@ -1274,6 +1297,10 @@ export const routeTree = rootRoute
     },
     "/components_/toggle-bar": {
       "filePath": "components_/toggle-bar.tsx",
+      "parent": "/components_"
+    },
+    "/components_/tooltip": {
+      "filePath": "components_/tooltip.tsx",
       "parent": "/components_"
     },
     "/components_/word-cloud": {
