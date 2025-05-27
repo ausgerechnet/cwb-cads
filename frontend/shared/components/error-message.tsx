@@ -19,6 +19,7 @@ export function ErrorMessage({
   if (error === null || error === undefined) {
     return null
   }
+  console.log('ErrorMessage', error)
   if (Array.isArray(error)) {
     return (
       <>
@@ -50,7 +51,7 @@ export function ErrorMessage({
 }
 
 const FlaskError = z.object({
-  error: z.string(),
+  error: z.string().optional(),
   message: z.string(),
 })
 
@@ -62,7 +63,10 @@ function getMessage(error: unknown): { title: string; message?: string } {
   try {
     // @ts-ignore
     const { error: title, message } = FlaskError.parse(error?.response?.data)
-    return { title, message }
+    if (title) {
+      return { title, message }
+    }
+    return { title: message }
   } catch {}
 
   if (typeof error === 'object' && error !== null && error instanceof Error) {

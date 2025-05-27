@@ -79,6 +79,7 @@ function Login() {
   return (
     <div className="mx-auto mt-8 max-w-sm p-2">
       <Headline1 className="mb-8">Login</Headline1>
+
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
@@ -116,6 +117,7 @@ function Login() {
           </Button>
         </form>
       </Form>
+
       <ErrorMessage error={error} className="mt-4" />
     </div>
   )
