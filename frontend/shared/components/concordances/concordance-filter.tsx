@@ -39,7 +39,7 @@ export function WindowSizeInput({ className }: { className?: string }) {
     setCurrentWindowSize(windowSize)
   }, [windowSize])
 
-  function handleBlur(event) {
+  function handleBlur() {
     if (!validateWindowSize(currentWindowSize)) {
       setCurrentWindowSize(windowSize)
     }
