@@ -62,6 +62,7 @@ import {
 } from '@cads/shared/components/ui/collapsible'
 import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
 import { InputGrowable } from '@cads/shared/components/input-growable'
+import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 import { useDescription } from './-use-description'
 import { useCollocation } from './-use-collocation'
@@ -255,6 +256,7 @@ function ConstellationDiscoursemesEditor({
     collocationItemsMap?.map,
     constellationDescription?.discourseme_descriptions,
   ])
+  console.log(discoursemeData)
   const { itemCount } = discoursemeData
 
   const constellationDescriptionId = constellationDescription?.id
@@ -384,12 +386,23 @@ function ConstellationDiscoursemesEditor({
                   <CollapsibleContent>
                     <ul className="px-2">
                       {/* TODO: sometimes items are duplicates. why? */}
-                      {items.map(({ item, discourseme_id }, index) => (
+                      {items.map(({ item, discourseme_id, score }, index) => (
                         <li
                           key={`${item} ${discourseme_id}` + index}
                           className="group/description hover:bg-muted flex items-center justify-between rounded pl-1 leading-tight"
                         >
-                          {item}
+                          <span className="vertical-align-baseline my-auto flex flex-grow items-baseline">
+                            <span>{item}</span>
+
+                            <TextTooltip
+                              tooltipText={`Score for "${item}"`}
+                              asChild
+                            >
+                              <span className="text-muted-foreground ml-auto mr-0 font-mono text-sm leading-loose">
+                                {score}
+                              </span>
+                            </TextTooltip>
+                          </span>
 
                           <button
                             className="hover:text-destructive-foreground hover:bg-destructive m-1 ml-auto mr-1 rounded opacity-0 group-hover/description:opacity-100"

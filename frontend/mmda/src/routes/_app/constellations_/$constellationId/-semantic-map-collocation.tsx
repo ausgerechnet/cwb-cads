@@ -36,6 +36,7 @@ import { useFilterSelection } from './-use-filter-selection'
 import { ConstellationCollocationFilter } from './-constellation-filter'
 import { AttachNewDiscourseme } from './-attach-new-discourseme'
 import { useAnalysisSelection } from './-use-analysis-selection'
+import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 export function SemanticMapCollocations({
   constellationId,
@@ -202,7 +203,7 @@ function ConstellationDiscoursemesEditor({
       discoursemeId: number
       item: string
       descriptionId: number
-      items: string[]
+      items: { score: number; surface: string }[]
     }[] =
       constellationDescription?.discourseme_descriptions?.map(
         (description) => ({
@@ -213,9 +214,19 @@ function ConstellationDiscoursemesEditor({
             )?.name ?? 'n.a.',
           descriptionId: description.id,
           items: description.items
-            .map(({ surface }) => surface)
+            .map(({ surface }) => ({
+              surface,
+              score:
+                discoursemeItems.find(
+                  (item) =>
+                    item.item === surface &&
+                    item.discourseme_id === description.discourseme_id,
+                )?.score ?? 0,
+            }))
             .filter(
-              (surface): surface is string => typeof surface === 'string',
+              (item): item is { surface: string; score: number } =>
+                typeof item.surface === 'string' &&
+                typeof item.score === 'number',
             ),
         }),
       ) ?? []
@@ -349,14 +360,25 @@ function ConstellationDiscoursemesEditor({
                   </h4>
                   <CollapsibleContent>
                     <ul className="px-2">
-                      {items.map((item, index) => (
+                      {items.map(({ surface, score }, index) => (
                         <li
-                          key={`${item} ${discoursemeId}` + index}
+                          key={`${surface} ${discoursemeId}` + index}
                           className="group/description hover:bg-muted flex items-center justify-between rounded pl-1 leading-tight"
                         >
-                          {item}
+                          <span className="vertical-align-baseline my-auto flex flex-grow items-baseline">
+                            <span>{surface}</span>
+
+                            <TextTooltip
+                              tooltipText={`Score for "${item}"`}
+                              asChild
+                            >
+                              <span className="text-muted-foreground ml-auto mr-0 font-mono text-sm leading-loose">
+                                {score}
+                              </span>
+                            </TextTooltip>
+                          </span>
                           <button
-                            className="hover:text-destructive-foreground hover:bg-destructive m-1 ml-auto mr-1 rounded opacity-0 group-hover/description:opacity-100"
+                            className="hover:text-destructive-foreground hover:bg-destructive m-1 mr-1 rounded opacity-0 group-hover/description:opacity-100"
                             disabled={isRemovingItem}
                             onClick={() => {
                               if (descriptionId === undefined) {
@@ -366,7 +388,7 @@ function ConstellationDiscoursemesEditor({
                                 discoursemeId,
                                 descriptionId,
                                 p: secondary!,
-                                surface: item,
+                                surface: surface,
                               })
                             }}
                           >

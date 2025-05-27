@@ -68,6 +68,7 @@ import { useCollocation } from './-use-collocation'
 import { useFilterSelection } from './-use-filter-selection'
 import { ConstellationCollocationFilter } from './-constellation-filter'
 import { useUfa } from './-use-ufa'
+import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 export function SemanticMapUfa({
   constellationId,
@@ -375,12 +376,23 @@ function ConstellationDiscoursemesEditor({
                   <CollapsibleContent>
                     <ul className="px-2">
                       {/* TODO: sometimes items are duplicates. why? */}
-                      {items.map(({ item, discourseme_id }, index) => (
+                      {items.map(({ item, discourseme_id, score }, index) => (
                         <li
                           key={`${item} ${discourseme_id}` + index}
                           className="group/description hover:bg-muted flex items-center justify-between rounded pl-1 leading-tight"
                         >
-                          {item}
+                          <span className="vertical-align-baseline my-auto flex flex-grow items-baseline">
+                            <span>{item}</span>
+                            <TextTooltip
+                              tooltipText={`Score for "${item}"`}
+                              asChild
+                            >
+                              <span className="text-muted-foreground ml-auto mr-0 font-mono text-sm leading-loose">
+                                {score}
+                              </span>
+                            </TextTooltip>
+                          </span>
+
                           <button
                             className="hover:text-destructive-foreground hover:bg-destructive m-1 ml-auto mr-1 rounded opacity-0 group-hover/description:opacity-100"
                             disabled={isRemovingItem}
