@@ -19,7 +19,6 @@ export function ErrorMessage({
   if (error === null || error === undefined) {
     return null
   }
-  console.log('ErrorMessage', error)
   if (Array.isArray(error)) {
     return (
       <>

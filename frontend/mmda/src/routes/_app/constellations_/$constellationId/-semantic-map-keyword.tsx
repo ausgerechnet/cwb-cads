@@ -250,7 +250,6 @@ function ConstellationDiscoursemesEditor({
     collocationItemsMap?.map,
     constellationDescription?.discourseme_descriptions,
   ])
-  console.log(discoursemeData)
   const { itemCount } = discoursemeData
 
   const constellationDescriptionId = constellationDescription?.id
