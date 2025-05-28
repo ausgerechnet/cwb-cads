@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PlusIcon } from 'lucide-react'
+import { PencilIcon, PlusIcon } from 'lucide-react'
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -20,12 +20,16 @@ import { Card } from '@cads/shared/components/ui/card'
 import { ButtonAlert } from '@/components/button-alert'
 import { DataTable } from '@cads/shared/components/data-table'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { DiscoursemeFieldEditor } from './-discourseme-field-editor'
+import { useId } from 'react'
 
 export const Route = createLazyFileRoute('/_app/discoursemes_/$discoursemeId')({
   component: SingleDiscourseme,
 })
 
 function SingleDiscourseme() {
+  const nameInputId = useId()
+  const commentInputId = useId()
   const discoursemeId = parseInt(Route.useParams().discoursemeId)
   const { data: discourseme } = useSuspenseQuery(discoursemeById(discoursemeId))
   const { data: descriptions } = useSuspenseQuery(
@@ -37,7 +41,30 @@ function SingleDiscourseme() {
 
   return (
     <AppPageFrame
-      title={name ? `Discourseme: ${name}` : 'Discourseme'}
+      title={
+        name ? (
+          <>
+            Discourseme:{' '}
+            <label
+              htmlFor={nameInputId}
+              className={cn(
+                buttonVariants({ variant: 'ghost', size: 'icon' }),
+                'mr-0.5 h-6 w-6 p-0 align-top',
+              )}
+            >
+              <PencilIcon className="h-4 w-4" />
+            </label>
+            <DiscoursemeFieldEditor
+              defaultValue={name}
+              field="name"
+              discoursemeId={discoursemeId}
+              id={nameInputId}
+            />
+          </>
+        ) : (
+          'Discourseme'
+        )
+      }
       cta={{
         label: 'New description',
         nav: {
@@ -48,16 +75,25 @@ function SingleDiscourseme() {
         },
       }}
     >
-      <Card className="grid max-w-lg grid-cols-[auto,1fr] gap-4 gap-y-0.5 p-4">
-        <strong>Comment:</strong>
-        <span>
-          {comment ? (
-            comment
-          ) : (
-            <span className="text-muted-foreground italic">n.a.</span>
-          )}
+      <Card className="grid max-w-5xl grid-cols-[auto,1fr] gap-4 gap-y-0.5 p-4">
+        <label
+          htmlFor={commentInputId}
+          className="hover:bg-muted cursor-pointer rounded-md"
+        >
+          <strong className="flex items-baseline">
+            Comment
+            <PencilIcon className="ml-1 h-3 w-3" />
+          </strong>
+        </label>
+        <span className="flex justify-between">
+          <DiscoursemeFieldEditor
+            defaultValue={comment ?? ''}
+            field="comment"
+            discoursemeId={discoursemeId}
+            id={commentInputId}
+          />
         </span>
-        <strong>Template:</strong>
+        <strong>Template</strong>
         {template.length > 0 && (
           <div>{template.map((t) => t.surface).join(', ')}</div>
         )}
@@ -81,7 +117,7 @@ function SingleDiscourseme() {
         </div>
       )}
 
-      <Card className="mr-auto mt-6 flex flex-col gap-2 p-4">
+      <Card className="mr-auto mt-6 flex w-full max-w-5xl flex-col gap-2 p-4">
         <div className="flex items-center justify-between">
           {descriptions.length > 0 && <Large>Descriptions</Large>}
 

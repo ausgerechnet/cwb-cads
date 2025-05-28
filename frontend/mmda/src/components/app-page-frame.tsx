@@ -13,7 +13,7 @@ export function AppPageFrame({
   classNameContainer,
   classNameContent,
 }: {
-  title?: string
+  title?: ReactNode
   cta?: {
     nav: ComponentProps<typeof Link>
     label: ReactNode
