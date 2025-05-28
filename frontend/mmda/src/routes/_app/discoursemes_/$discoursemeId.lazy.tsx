@@ -175,6 +175,10 @@ const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeDescriptionOut>>[] =
       },
     },
     {
+      accessorKey: 'query_id',
+      header: 'Query ID',
+    },
+    {
       id: 'actions',
       cell: ({ row }) => (
         <DeleteButton

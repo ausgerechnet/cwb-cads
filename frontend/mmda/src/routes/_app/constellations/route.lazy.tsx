@@ -22,6 +22,7 @@ import {
 } from '@cads/shared/components/ui/popover'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { ButtonAlert } from '@/components/button-alert'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 
 export const Route = createLazyFileRoute('/_app/constellations')({
   component: ConstellationOverview,
@@ -74,6 +75,26 @@ const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
     enableSorting: true,
     header: ({ column }) => (
       <SortButton column={column}>Description</SortButton>
+    ),
+  },
+  {
+    id: 'discoursemes',
+    header: 'Discoursemes',
+    cell: ({ row }) => (
+      <>
+        {row.original.discoursemes.map(({ name, id }, index, { length }) => (
+          <span key={id} className="mr-2">
+            <span
+              className="my-auto mr-0.5 inline-block h-2 w-2 rounded-full"
+              style={{
+                backgroundColor: getColorForNumber(id),
+              }}
+            />
+            {name}
+            {index < length - 1 && ','}
+          </span>
+        ))}
+      </>
     ),
   },
   {
