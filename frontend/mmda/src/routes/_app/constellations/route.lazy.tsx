@@ -135,7 +135,7 @@ function QuickActions({ constellationId }: { constellationId: number }) {
         onClick={(event) => event.stopPropagation()}
       >
         <Link
-          to=""
+          to="/constellations/$constellationId"
           params={{ constellationId: String(constellationId) }}
           search={(s) => s}
           className={cn(
