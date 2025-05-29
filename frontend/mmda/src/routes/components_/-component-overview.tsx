@@ -25,6 +25,7 @@ export function ComponentOverview() {
               AssociationMatrix
             </SubLink>
             <SubLink to="/components/word-cloud">WordCloud</SubLink>
+            <SubLink to="/components/word-cloud-alt">WordCloudAlt</SubLink>
             <SubLink to="/components/ellipsis">Ellipsis</SubLink>
             <SubLink to="/components/input">Input</SubLink>
             <SubLink to="/components/error">Error</SubLink>

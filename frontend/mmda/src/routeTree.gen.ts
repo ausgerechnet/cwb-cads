@@ -19,6 +19,7 @@ import { Route as AppImport } from './routes/_app'
 import { Route as Import } from './routes/*'
 import { Route as ComponentsRouteImport } from './routes/components_/route'
 import { Route as IndexImport } from './routes/index'
+import { Route as ComponentsWordCloudAltImport } from './routes/components_/word-cloud-alt'
 import { Route as ComponentsWordCloudImport } from './routes/components_/word-cloud'
 import { Route as ComponentsTooltipImport } from './routes/components_/tooltip'
 import { Route as ComponentsToggleBarImport } from './routes/components_/toggle-bar'
@@ -104,6 +105,12 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const ComponentsWordCloudAltRoute = ComponentsWordCloudAltImport.update({
+  id: '/word-cloud-alt',
+  path: '/word-cloud-alt',
+  getParentRoute: () => ComponentsRouteRoute,
 } as any)
 
 const ComponentsWordCloudRoute = ComponentsWordCloudImport.update({
@@ -591,6 +598,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentsWordCloudImport
       parentRoute: typeof ComponentsRouteImport
     }
+    '/components_/word-cloud-alt': {
+      id: '/components_/word-cloud-alt'
+      path: '/word-cloud-alt'
+      fullPath: '/components/word-cloud-alt'
+      preLoaderRoute: typeof ComponentsWordCloudAltImport
+      parentRoute: typeof ComponentsRouteImport
+    }
     '/_app/constellations_/$constellationId': {
       id: '/_app/constellations_/$constellationId'
       path: '/constellations/$constellationId'
@@ -716,6 +730,7 @@ interface ComponentsRouteRouteChildren {
   ComponentsToggleBarRoute: typeof ComponentsToggleBarRoute
   ComponentsTooltipRoute: typeof ComponentsTooltipRoute
   ComponentsWordCloudRoute: typeof ComponentsWordCloudRoute
+  ComponentsWordCloudAltRoute: typeof ComponentsWordCloudAltRoute
 }
 
 const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
@@ -734,6 +749,7 @@ const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
   ComponentsToggleBarRoute: ComponentsToggleBarRoute,
   ComponentsTooltipRoute: ComponentsTooltipRoute,
   ComponentsWordCloudRoute: ComponentsWordCloudRoute,
+  ComponentsWordCloudAltRoute: ComponentsWordCloudAltRoute,
 }
 
 const ComponentsRouteRouteWithChildren = ComponentsRouteRoute._addFileChildren(
@@ -865,6 +881,7 @@ export interface FileRoutesByFullPath {
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
   '/components/tooltip': typeof ComponentsTooltipRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
+  '/components/word-cloud-alt': typeof ComponentsWordCloudAltRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -912,6 +929,7 @@ export interface FileRoutesByTo {
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
   '/components/tooltip': typeof ComponentsTooltipRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
+  '/components/word-cloud-alt': typeof ComponentsWordCloudAltRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -960,6 +978,7 @@ export interface FileRoutesById {
   '/components_/toggle-bar': typeof ComponentsToggleBarRoute
   '/components_/tooltip': typeof ComponentsTooltipRoute
   '/components_/word-cloud': typeof ComponentsWordCloudRoute
+  '/components_/word-cloud-alt': typeof ComponentsWordCloudAltRoute
   '/_app/constellations_/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/_app/keyword-analysis_/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/_app/queries_/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -1009,6 +1028,7 @@ export interface FileRouteTypes {
     | '/components/toggle-bar'
     | '/components/tooltip'
     | '/components/word-cloud'
+    | '/components/word-cloud-alt'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
     | '/queries/$queryId'
@@ -1055,6 +1075,7 @@ export interface FileRouteTypes {
     | '/components/toggle-bar'
     | '/components/tooltip'
     | '/components/word-cloud'
+    | '/components/word-cloud-alt'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
     | '/queries/$queryId'
@@ -1101,6 +1122,7 @@ export interface FileRouteTypes {
     | '/components_/toggle-bar'
     | '/components_/tooltip'
     | '/components_/word-cloud'
+    | '/components_/word-cloud-alt'
     | '/_app/constellations_/$constellationId'
     | '/_app/keyword-analysis_/$analysisId'
     | '/_app/queries_/$queryId'
@@ -1179,7 +1201,8 @@ export const routeTree = rootRoute
         "/components_/time-series",
         "/components_/toggle-bar",
         "/components_/tooltip",
-        "/components_/word-cloud"
+        "/components_/word-cloud",
+        "/components_/word-cloud-alt"
       ]
     },
     "/*": {
@@ -1305,6 +1328,10 @@ export const routeTree = rootRoute
     },
     "/components_/word-cloud": {
       "filePath": "components_/word-cloud.tsx",
+      "parent": "/components_"
+    },
+    "/components_/word-cloud-alt": {
+      "filePath": "components_/word-cloud-alt.tsx",
       "parent": "/components_"
     },
     "/_app/constellations_/$constellationId": {
