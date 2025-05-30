@@ -15,7 +15,6 @@ export class CloudItem {
   label: string
   deltaX: number = 0
   deltaY: number = 0
-  #callbacks: (() => void)[] = []
   /**
    * A fixed item cannot be moved by the simulation, but may still affect other items.
    */
@@ -67,20 +66,8 @@ export class CloudItem {
   applyDelta() {
     this.x += this.deltaX
     this.y += this.deltaY
-    this.publish()
     this.deltaX = 0
     this.deltaY = 0
-  }
-
-  publish() {
-    this.#callbacks.forEach((callback) => callback())
-  }
-
-  subscribe = (callback: () => void) => {
-    this.#callbacks.push(callback)
-    return () => {
-      this.#callbacks = this.#callbacks.filter((cb) => cb !== callback)
-    }
   }
 }
 
@@ -136,10 +123,13 @@ export class Cloud {
   #alpha = 1
   #ticks = 0
   #zoom = 1
-  #repelForceFactor = 1
+  #repelForceFactor: number
   enableHomeForce = true
   enableCollisionDetection = true
   stableZoom = new Set<number>()
+  #simulationUpdateCallbacks: (() => void)[] = []
+  #isSimulatingUntilStable = false
+  #runSimulationAgain = false
 
   constructor(
     width: number,
@@ -148,7 +138,7 @@ export class Cloud {
     {
       enableHomeForce = true,
       enableCollisionDetection = true,
-      repelForceFactor = 1,
+      repelForceFactor = 0.05,
     } = {},
   ) {
     this.width = width
@@ -167,6 +157,15 @@ export class Cloud {
     this.#zoom = value
     this.#alpha = 1
     this.#ticks = 0
+  }
+
+  onSimulationUpdate(callback: () => void) {
+    this.#simulationUpdateCallbacks.push(callback)
+    return () => {
+      this.#simulationUpdateCallbacks = this.#simulationUpdateCallbacks.filter(
+        (cb) => cb !== callback,
+      )
+    }
   }
 
   setDisplaySize(displayWidth: number, displayHeight: number) {
@@ -247,13 +246,13 @@ export class Cloud {
 
           if (!wordA.isFixed) {
             const scaleFactorA = wordA.scale > wordB.scale * 2 ? 0.5 : 1
-            wordA.deltaX -= dx * 0.05 * this.#repelForceFactor * scaleFactorA
-            wordA.deltaY -= dy * 0.05 * this.#repelForceFactor * scaleFactorA
+            wordA.deltaX -= dx * this.#repelForceFactor * scaleFactorA
+            wordA.deltaY -= dy * this.#repelForceFactor * scaleFactorA
           }
           if (!wordB.isFixed) {
             const scaleFactorB = wordB.scale > wordA.scale * 2 ? 0.5 : 1
-            wordB.deltaX += dx * 0.05 * this.#repelForceFactor * scaleFactorB
-            wordB.deltaY += dy * 0.05 * this.#repelForceFactor * scaleFactorB
+            wordB.deltaX += dx * this.#repelForceFactor * scaleFactorB
+            wordB.deltaY += dy * this.#repelForceFactor * scaleFactorB
           }
 
           wordA.isColliding = true
@@ -310,9 +309,24 @@ export class Cloud {
     this.#isRunning = false
     this.words = []
     this.#ticks = 0
+    this.#simulationUpdateCallbacks = []
+    this.stableZoom.clear()
   }
 
   simulateUntilStable() {
+    if (this.#isSimulatingUntilStable) {
+      this.#runSimulationAgain = true
+      return
+    }
+    this.#simulateUntilStableLoop()
+  }
+
+  // TODO: Refactor all of this to be just one loop that takes in updates from the outside
+  async #simulateUntilStableLoop() {
+    if (this.#isSimulatingUntilStable) {
+      throw new Error('Simulation is already running')
+    }
+    this.#isSimulatingUntilStable = true
     if (this.stableZoom.has(this.#zoom)) {
       for (const word of this.words) {
         const position = word.zoomPositions.get(this.#zoom)
@@ -323,10 +337,17 @@ export class Cloud {
           word.x = word.originX
           word.y = word.originY
         }
-        word.publish()
+      }
+      this.#isSimulatingUntilStable = false
+      this.#simulationUpdateCallbacks.forEach((callback) => callback())
+      if (this.#runSimulationAgain) {
+        this.#runSimulationAgain = false
+        this.#simulateUntilStableLoop()
       }
       return
     }
+
+    const caclulationZoom = this.#zoom
 
     /*
     This runs in two steps:
@@ -349,28 +370,48 @@ export class Cloud {
       word.isFixed = false
     })
 
-    console.time('simulateUntilStable')
-    this.#repelForceFactor = 2
-    do {
+    this.#repelForceFactor = 0.1
+    while (this.#alpha > 0.0001 && this.#ticks < 5_000) {
+      if (this.#ticks % 10 === 0) {
+        // Put the resumption of the loop on the task queue
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        if (this.#zoom !== caclulationZoom) {
+          this.#isSimulatingUntilStable = false
+          this.#runSimulationAgain = false
+          this.#simulateUntilStableLoop()
+          return
+        }
+      }
       this.#simulate()
       this.#ticks++
-    } while (this.#alpha > 0.0001 && this.#ticks < 5_000)
+    }
 
     this.#alpha = 1
     this.#ticks = 0
 
-    this.#repelForceFactor = 1
+    this.#repelForceFactor = 0.1
     this.words.forEach((word) => {
       word.hasCollision = true
       word.isFixed = (word?.index ?? Infinity) <= 50
     })
 
     while (this.#alpha > 0.00001 && this.#ticks < 10_000) {
+      if (this.#ticks % 10 === 0) {
+        // Put the resumption of the loop on the task queue
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        if (this.#zoom !== caclulationZoom) {
+          this.#isSimulatingUntilStable = false
+          this.#runSimulationAgain = false
+          this.#simulateUntilStableLoop()
+          return
+        }
+      }
+      if (this.#ticks % 100 === 0) {
+        this.#simulationUpdateCallbacks.forEach((callback) => callback())
+      }
       this.#simulate()
       this.#ticks++
     }
-
-    console.timeEnd('simulateUntilStable')
 
     this.stableZoom.add(this.#zoom)
     this.words.forEach((word) => {
@@ -378,6 +419,13 @@ export class Cloud {
       word.hasCollision = true
       word.zoomPositions.set(this.#zoom, [word.x, word.y])
     })
+
+    this.#isSimulatingUntilStable = false
+    this.#simulationUpdateCallbacks.forEach((callback) => callback())
+    if (this.#runSimulationAgain) {
+      this.#runSimulationAgain = false
+      this.#simulateUntilStableLoop()
+    }
   }
 
   tick() {

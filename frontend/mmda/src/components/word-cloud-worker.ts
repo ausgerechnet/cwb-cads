@@ -46,23 +46,6 @@ function postMessage(data: CloudWorkerResponse) {
 
 let cloud: Cloud | null = null
 
-const simulateUntilStableDebounced = (() => {
-  let timeout: ReturnType<typeof setTimeout> | undefined
-  return () => {
-    if (timeout) clearTimeout(timeout)
-    if (cloud?.stableZoom.has(cloud.zoom)) {
-      cloud.simulateUntilStable()
-      publishPositions()
-      return
-    }
-    timeout = setTimeout(() => {
-      if (!cloud) return
-      cloud.simulateUntilStable()
-      publishPositions()
-    }, 100)
-  }
-})()
-
 self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
   switch (data.type) {
     case 'update': {
@@ -81,20 +64,19 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
             }),
         ),
       )
+      cloud.onSimulationUpdate(publishPositions)
       cloud.setDisplaySize(
         data.payload.displayWidth,
         data.payload.displayHeight,
       )
 
       cloud.simulateUntilStable()
-
-      publishPositions()
       break
     }
     case 'zoom': {
       if (cloud) {
         cloud.zoom = data.payload.zoom
-        simulateUntilStableDebounced()
+        cloud.simulateUntilStable()
       }
       break
     }

@@ -147,7 +147,7 @@ export function WordCloudAlt({
 
             {debug && (
               <svg
-                className="pointer-events-none absolute inset-0 h-full w-full"
+                className="pointer-events-none absolute inset-0 z-[5001] h-full w-full"
                 viewBox={`0 0 ${width} ${height}`}
               >
                 {displayWords.map((word) => (
@@ -158,7 +158,7 @@ export function WordCloudAlt({
                     y1={word.originY}
                     x2={word.x}
                     y2={word.y}
-                    className="stroke-pink-300 stroke-[1px]"
+                    className="stroke stroke-emerald-500 stroke-[1px]"
                     vectorEffect="non-scaling-stroke"
                   />
                 ))}
@@ -196,7 +196,7 @@ function Item({
     <>
       <div
         className={cn(
-          'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] transition-transform duration-500 hover:z-[500] [&:hover+*]:block',
+          'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] transition-transform duration-500 hover:z-[500!important] [&:hover+*]:block',
           `word--${word.label.replace(/\s+/g, '-')}`,
         )}
         style={{
@@ -208,7 +208,7 @@ function Item({
         <KeepScale>
           <span
             className={cn(
-              'hover:bg-primary absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center font-mono leading-none text-slate-300 mix-blend-screen outline outline-2 outline-transparent',
+              'hover:bg-primary absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 mix-blend-screen outline outline-2 outline-transparent',
               debug && word.hasNearbyElements && 'outline-yellow-800',
               debug && word.isColliding && 'bg-red-700',
               word.isBackground &&
