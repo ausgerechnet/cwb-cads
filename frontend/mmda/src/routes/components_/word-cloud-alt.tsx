@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { ComponentProps, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { Cloud, Word, WordCloudAlt } from '@/components/word-cloud-alt'
+import { WordCloudAlt } from '@/components/word-cloud-alt'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
-import { Block } from './-block'
+import { Block, BlockComment } from './-block'
 
 export const Route = createFileRoute('/components_/word-cloud-alt')({
   component: WordCloudComponents,
@@ -17,74 +17,71 @@ function WordCloudComponents() {
         <Checkbox checked={debug} onCheckedChange={() => setDebug(!debug)} />
         Debug Mode
       </label>
-      <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt cloud={cloudCollision} debug={debug} />
-      </div>
+
+      <BlockComment>
+        This simulates an extreme example with a dense cluster of items in the
+        center.
+      </BlockComment>
 
       <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt cloud={cloudClump} debug={debug} />
+        <WordCloudAlt words={wordsCluster} debug={debug} />
+      </div>
+
+      <BlockComment>
+        This is a more reasonable example with a smaller cluster of items.
+      </BlockComment>
+
+      <div className="my-3 outline outline-1 outline-pink-400">
+        <WordCloudAlt words={wordsSmallCluster} debug={debug} />
+      </div>
+
+      <BlockComment>
+        Minimal example with two overlapping items, one hneighboring item and
+        one that's far from its origin.
+      </BlockComment>
+      <div className="my-3 outline outline-1 outline-pink-400">
+        <WordCloudAlt words={wordsCollision} debug={debug} />
       </div>
     </Block>
   )
 }
 
-const cloudCollision = new Cloud(
-  2_000,
-  1_000,
-  [
-    new Word(1_300, 500, 'Neighbor', { scale: 1 }),
-    new Word(1_000, 500, 'Overlap A', { scale: 1 }),
-    new Word(1_000, 530, 'Overlap B', { scale: 1 }),
-    new Word(1_050, 350, 'TOP LEFT!!', {
-      scale: 1,
-      originX: 0,
-      originY: 0,
-    }),
-  ],
-  {
-    enableHomeForce: false,
-    repelForceFactor: 0,
-  },
-)
+const wordsCollision: ComponentProps<typeof WordCloudAlt>['words'] = [
+  { x: 1_300, y: 500, label: 'Neighbor', scale: 1 },
+  { x: 1_000, y: 500, label: 'Overlap A', scale: 1 },
+  { x: 1_000, y: 530, label: 'Overlap B', scale: 1 },
+  { x: 1_050, y: 350, label: 'TOP LEFT!!', scale: 1, originX: 0, originY: 0 },
+]
 
-const cloudClump = new Cloud(
-  2_000,
-  1_000,
-  [
-    new Word(1_000, 500, 'Greetings'),
-    new Word(1_000, 502, 'Godmorgon'),
-    new Word(1_050, 420, 'TOP LEFT!!', { originX: 0, originY: 0 }),
-    new Word(980, 510, 'World'),
-    new Word(1_050, 480, 'Hi'),
-    new Word(1_100, 500, 'Whoop'),
-    new Word(1_200, 500, 'Discourseme'),
-    ...Array.from(
-      { length: 250 },
-      (_, i) =>
-        new Word(2_000 * rnd(i), 1_000 * rnd(i + 1), `Word ${i}`, {
-          isBackground: rnd(i * 2) < 0.3,
-          scale: rnd(i + 64) ** 2,
-        }),
-    ),
-    // big clump!
-    ...Array.from(
-      { length: 80 },
-      (_, i) =>
-        new Word(
-          900 + 200 * rnd(i),
-          400 + 200 * rnd(i + 1),
-          `Word ${i + 250}`,
-          {
-            isBackground: rnd(i * 2) < 0.8,
-            scale: rnd(i + 64) ** 2,
-          },
-        ),
-    ),
-  ],
-  {
-    enableHomeForce: true,
-  },
-)
+const wordsCluster: ComponentProps<typeof WordCloudAlt>['words'] = [
+  { x: 1_000, y: 500, label: 'Greetings', scale: 1 },
+  { x: 1_000, y: 502, label: 'Godmorgon', scale: 0.8 },
+  { x: 1_050, y: 420, label: 'TOP LEFT!!', scale: 0.5, originX: 0, originY: 0 },
+  { x: 980, y: 510, label: 'World', scale: 0.6 },
+  { x: 1_050, y: 480, label: 'Hi', scale: 0.3 },
+  { x: 1_100, y: 500, label: 'Whoop', scale: 0.4 },
+  ...Array.from({ length: 250 }, (_, i) => ({
+    x: 2_000 * rnd(i),
+    y: 1_000 * rnd(i + 1),
+    label: `Word ${i}`,
+    scale: rnd(i ** 2 + 64) ** 4,
+    isBackground: rnd(i * 2) < 0.3,
+  })),
+  // circular cluster around the center
+  ...Array.from({ length: 50 }, (_, i) => {
+    const angle = rnd(i) * Math.PI * 2
+    const radius = rnd(i + 1) * 200
+    return {
+      x: 1_000 + radius * Math.cos(angle),
+      y: 500 + radius * Math.sin(angle),
+      label: `Cluster ${i}`,
+      scale: rnd(i) ** 5,
+      isBackground: false,
+    }
+  }),
+]
+
+const wordsSmallCluster = wordsCluster.filter((_, i) => rnd(i) < 0.3)
 
 function rnd(seed: number) {
   const x = Math.sin(seed) * 1_000_000
