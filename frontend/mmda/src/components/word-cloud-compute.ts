@@ -105,7 +105,6 @@ export class Discourseme extends CloudItem {
     options?: {
       originX?: number
       originY?: number
-      isBackground?: boolean
       scale?: number
     },
   ) {
@@ -136,6 +135,7 @@ export class Cloud {
     height: number,
     words: Word[] = [],
     {
+      backgroundCutOff = 0.5,
       enableHomeForce = true,
       enableCollisionDetection = true,
       repelForceFactor = 0.05,
@@ -146,11 +146,20 @@ export class Cloud {
     this.words = words.toSorted((a, b) => b.scale - a.scale)
     this.words.forEach((word, index) => {
       word.index = index
+      word.isBackground = word.scale < backgroundCutOff
     })
     this.enableHomeForce = enableHomeForce
     this.enableCollisionDetection = enableCollisionDetection
     this.#repelForceFactor = repelForceFactor
     this.tick()
+  }
+
+  set backgroundCutOff(value: number) {
+    this.stableZoom.clear()
+    this.words.forEach((word) => {
+      word.isBackground = word.scale < value
+    })
+    this.#simulationUpdateCallbacks.forEach((callback) => callback())
   }
 
   set zoom(value: number) {

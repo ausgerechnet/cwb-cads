@@ -7,12 +7,12 @@ export interface WordInput {
   originY?: number
   label: string
   scale: number
-  isBackground?: boolean
 }
 
 export interface WordDisplay extends Required<WordInput> {
-  hasNearbyElements?: boolean
-  isColliding?: boolean
+  isBackground: boolean
+  hasNearbyElements: boolean
+  isColliding: boolean
   displayHeight: number
   displayWidth: number
   index: number
@@ -27,6 +27,12 @@ export type CloudWorkerMessage =
         displayHeight: number
         displayWidth: number
         words: WordInput[]
+      }
+    }
+  | {
+      type: 'update_cutoff'
+      payload: {
+        cutOff: number
       }
     }
   | {
@@ -58,7 +64,6 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
           (word) =>
             new Word(word.x, word.y, word.label, {
               scale: word.scale,
-              isBackground: word.isBackground,
               originX: word.originX,
               originY: word.originY,
             }),
@@ -71,6 +76,13 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
       )
 
       cloud.simulateUntilStable()
+      break
+    }
+    case 'update_cutoff': {
+      if (cloud) {
+        cloud.backgroundCutOff = data.payload.cutOff
+        cloud.simulateUntilStable()
+      }
       break
     }
     case 'zoom': {

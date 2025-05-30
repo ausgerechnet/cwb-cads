@@ -7,17 +7,19 @@ import {
 
 import { cn } from '@cads/shared/lib/utils'
 import {
-  CloudWorkerMessage,
-  CloudWorkerResponse,
-  WordDisplay,
+  type CloudWorkerMessage,
+  type CloudWorkerResponse,
+  type WordDisplay,
 } from './word-cloud-worker'
 import { calculateWordDimensions } from './word-cloud-compute'
+import { Slider } from '@cads/shared/components/ui/slider'
 
 export function WordCloudAlt({
   words,
   width = 2_000,
   height = 1_000,
   debug = false,
+  defaultCutOff = 0.5,
 }: {
   width?: number
   height?: number
@@ -31,11 +33,13 @@ export function WordCloudAlt({
     isBackground?: boolean
   }[]
   debug?: boolean
+  defaultCutOff?: number
 }) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [zoom, setZoom] = useState(1)
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isReady, setIsReady] = useState(false)
+  const [cutOff, setCutOff] = useState(defaultCutOff)
 
   const toDisplayCoordinates = useCallback(
     (x: number, y: number): [number, number] => [
@@ -61,6 +65,8 @@ export function WordCloudAlt({
         displayX: toDisplayCoordinates(word.x, word.y)[0],
         displayY: toDisplayCoordinates(word.x, word.y)[1],
         index: 0,
+        isColliding: false,
+        hasNearbyElements: false,
       }
     }),
   )
@@ -168,6 +174,23 @@ export function WordCloudAlt({
         </TransformComponent>
       </TransformWrapper>
 
+      <Slider
+        className="absolute bottom-2 left-1/2 z-50 w-[300px] -translate-x-1/2"
+        value={[cutOff]}
+        onValueChange={(value) => {
+          setCutOff(value[0])
+          if (worker) {
+            worker.postMessage({
+              type: 'update_cutoff',
+              payload: { cutOff: value[0] },
+            } satisfies CloudWorkerMessage)
+          }
+        }}
+        min={0}
+        max={1}
+        step={0.01}
+      />
+
       {debug && (
         <div className="absolute left-2 top-2 z-40 bg-black/50">
           Zoom: {zoom.toFixed(2)}
@@ -209,7 +232,7 @@ function Item({
           <span
             className={cn(
               'hover:bg-primary absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 mix-blend-screen outline outline-2 outline-transparent',
-              debug && word.hasNearbyElements && 'outline-yellow-800',
+              debug && word.hasNearbyElements && 'outline-red-700',
               debug && word.isColliding && 'bg-red-700',
               word.isBackground &&
                 'pointer-events-none bg-slate-900 text-slate-700 outline-0',
@@ -222,6 +245,16 @@ function Item({
             }}
           >
             {word.label}
+            {debug && (
+              <span
+                className={cn(
+                  'absolute left-0 top-0 bg-black/30 p-0.5 text-xs text-white',
+                  word.isBackground && 'opacity-50',
+                )}
+              >
+                {word.scale.toFixed(2)}
+              </span>
+            )}
             {debug && !word.isBackground && (
               <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
             )}
