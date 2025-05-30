@@ -29,7 +29,7 @@ export function WordCloudAlt({
     originX?: number
     originY?: number
     label: string
-    scale: number
+    score: number
     isBackground?: boolean
   }[]
   debug?: boolean
@@ -53,7 +53,7 @@ export function WordCloudAlt({
     words.map((word) => {
       const [displayWidth, displayHeight] = calculateWordDimensions(
         word.label,
-        word.scale,
+        word.score,
       )
       return {
         ...word,
@@ -107,7 +107,7 @@ export function WordCloudAlt({
           originX: word.originX,
           originY: word.originY,
           label: word.label,
-          scale: word.scale,
+          score: word.score,
           isBackground: word.isBackground,
         })),
       },
@@ -225,7 +225,7 @@ function Item({
         style={{
           ['--x' as string]: `${displayX}px`,
           ['--y' as string]: `${displayY}px`,
-          zIndex: word.isBackground ? 0 : Math.floor(word.scale * 100) + 10,
+          zIndex: word.isBackground ? 0 : Math.floor(word.score * 100) + 10,
         }}
       >
         <KeepScale>
@@ -239,7 +239,7 @@ function Item({
             )}
             style={{
               // transform: `translate(-50%, -50%)`,
-              fontSize: `${12 + 20 * word.scale}px`,
+              fontSize: `${12 + 20 * word.score}px`,
               width: word.displayWidth,
               height: word.displayHeight - 6,
             }}
@@ -252,7 +252,7 @@ function Item({
                   word.isBackground && 'opacity-50',
                 )}
               >
-                {word.scale.toFixed(2)}
+                {word.score.toFixed(2)}
               </span>
             )}
             {debug && !word.isBackground && (

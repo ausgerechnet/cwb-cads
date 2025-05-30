@@ -1,9 +1,9 @@
 export function calculateWordDimensions(
   word: string,
-  scale: number,
+  score: number,
 ): [number, number] {
-  const baseWidth = word.length * (10 + 10 * scale)
-  const baseHeight = 20 + scale * 20
+  const baseWidth = word.length * (10 + 10 * score)
+  const baseHeight = 20 + score * 20
   return [baseWidth, baseHeight]
 }
 
@@ -30,7 +30,10 @@ export class CloudItem {
    * They are automatically non-colliding and have a fixed position.
    */
   isBackground: boolean = false
-  scale: number = 1
+  /**
+   * Relative score of the item, must be between 0 and 1.
+   */
+  score: number = 1
   index?: number
 
   constructor(
@@ -41,12 +44,12 @@ export class CloudItem {
       originX,
       originY,
       isBackground,
-      scale = 0,
+      score = 0,
     }: {
       originX?: number
       originY?: number
       isBackground?: boolean
-      scale?: number
+      score?: number
     } = {},
   ) {
     this.originX = originX ?? x
@@ -55,7 +58,10 @@ export class CloudItem {
     this.y = y
     this.label = item
     this.isBackground = isBackground ?? false
-    this.scale = scale
+    this.score = score
+    if (score < 0 || score > 1) {
+      throw new Error('Score must be between 0 and 1')
+    }
   }
 
   applyFactor(alpha: number) {
@@ -84,13 +90,13 @@ export class Word extends CloudItem {
       originX?: number
       originY?: number
       isBackground?: boolean
-      scale?: number
+      score?: number
     },
   ) {
     super(x, y, item, options)
     ;[this.displayWidth, this.displayHeight] = calculateWordDimensions(
       item,
-      options?.scale ?? 0,
+      options?.score ?? 0,
     )
   }
 }
@@ -105,7 +111,7 @@ export class Discourseme extends CloudItem {
     options?: {
       originX?: number
       originY?: number
-      scale?: number
+      score?: number
     },
   ) {
     super(x, y, item, options)
@@ -143,10 +149,10 @@ export class Cloud {
   ) {
     this.width = width
     this.height = height
-    this.words = words.toSorted((a, b) => b.scale - a.scale)
+    this.words = words.toSorted((a, b) => b.score - a.score)
     this.words.forEach((word, index) => {
       word.index = index
-      word.isBackground = word.scale < backgroundCutOff
+      word.isBackground = word.score < backgroundCutOff
     })
     this.enableHomeForce = enableHomeForce
     this.enableCollisionDetection = enableCollisionDetection
@@ -157,7 +163,7 @@ export class Cloud {
   set backgroundCutOff(value: number) {
     this.stableZoom.clear()
     this.words.forEach((word) => {
-      word.isBackground = word.scale < value
+      word.isBackground = word.score < value
     })
     this.#simulationUpdateCallbacks.forEach((callback) => callback())
   }
@@ -254,12 +260,12 @@ export class Cloud {
           const dy = wordB.y - wordA.y
 
           if (!wordA.isFixed) {
-            const scaleFactorA = wordA.scale > wordB.scale * 2 ? 0.5 : 1
+            const scaleFactorA = wordA.score > wordB.score * 2 ? 0.5 : 1
             wordA.deltaX -= dx * this.#repelForceFactor * scaleFactorA
             wordA.deltaY -= dy * this.#repelForceFactor * scaleFactorA
           }
           if (!wordB.isFixed) {
-            const scaleFactorB = wordB.scale > wordA.scale * 2 ? 0.5 : 1
+            const scaleFactorB = wordB.score > wordA.score * 2 ? 0.5 : 1
             wordB.deltaX += dx * this.#repelForceFactor * scaleFactorB
             wordB.deltaY += dy * this.#repelForceFactor * scaleFactorB
           }

@@ -47,24 +47,24 @@ function WordCloudComponents() {
 }
 
 const wordsCollision: ComponentProps<typeof WordCloudAlt>['words'] = [
-  { x: 1_300, y: 500, label: 'Neighbor', scale: 1 },
-  { x: 1_000, y: 500, label: 'Overlap A', scale: 1 },
-  { x: 1_000, y: 530, label: 'Overlap B', scale: 1 },
-  { x: 1_050, y: 350, label: 'TOP LEFT!!', scale: 1, originX: 0, originY: 0 },
+  { x: 1_300, y: 500, label: 'Neighbor', score: 1 },
+  { x: 1_000, y: 500, label: 'Overlap A', score: 1 },
+  { x: 1_000, y: 530, label: 'Overlap B', score: 1 },
+  { x: 1_050, y: 350, label: 'TOP LEFT!!', score: 1, originX: 0, originY: 0 },
 ]
 
 const wordsCluster: ComponentProps<typeof WordCloudAlt>['words'] = [
-  { x: 1_000, y: 500, label: 'Greetings', scale: 1 },
-  { x: 1_000, y: 502, label: 'Godmorgon', scale: 0.8 },
-  { x: 1_050, y: 420, label: 'TOP LEFT!!', scale: 0.5, originX: 0, originY: 0 },
-  { x: 980, y: 510, label: 'World', scale: 0.6 },
-  { x: 1_050, y: 480, label: 'Hi', scale: 0.3 },
-  { x: 1_100, y: 500, label: 'Whoop', scale: 0.4 },
+  { x: 1_000, y: 500, label: 'Greetings', score: 1 },
+  { x: 1_000, y: 502, label: 'Godmorgon', score: 0.8 },
+  { x: 1_050, y: 420, label: 'TOP LEFT!!', score: 0.5, originX: 0, originY: 0 },
+  { x: 980, y: 510, label: 'World', score: 0.6 },
+  { x: 1_050, y: 480, label: 'Hi', score: 0.3 },
+  { x: 1_100, y: 500, label: 'Whoop', score: 0.4 },
   ...Array.from({ length: 250 }, (_, i) => ({
     x: 2_000 * rnd(i),
     y: 1_000 * rnd(i + 1),
     label: `Word ${i}`,
-    scale: rnd(i ** 2 + 64) ** 4,
+    score: rnd(i ** 2 + 64) ** 4,
     isBackground: rnd(i * 2) < 0.3,
   })),
   // circular cluster around the center
@@ -75,7 +75,7 @@ const wordsCluster: ComponentProps<typeof WordCloudAlt>['words'] = [
       x: 1_000 + radius * Math.cos(angle),
       y: 500 + radius * Math.sin(angle),
       label: `Cluster ${i}`,
-      scale: rnd(i) ** 5,
+      score: rnd(i) ** 5,
       isBackground: false,
     }
   }),

@@ -6,7 +6,7 @@ export interface WordInput {
   originX?: number
   originY?: number
   label: string
-  scale: number
+  score: number
 }
 
 export interface WordDisplay extends Required<WordInput> {
@@ -63,7 +63,7 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
         words.map(
           (word) =>
             new Word(word.x, word.y, word.label, {
-              scale: word.scale,
+              score: word.score,
               originX: word.originX,
               originY: word.originY,
             }),
@@ -104,7 +104,7 @@ function publishPositions() {
       label: word.label,
       originX: word.originX ?? word.x,
       originY: word.originY ?? word.y,
-      scale: word.scale ?? 1,
+      score: word.score ?? 1,
       isBackground: word.isBackground ?? false,
       hasNearbyElements: word.hasNearbyElements,
       isColliding: word.isColliding,
