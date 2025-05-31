@@ -35,6 +35,7 @@ export class CloudItem {
    */
   score: number = 1
   index?: number
+  zoomPositions: Map<number, [number, number]> = new Map()
 
   constructor(
     x: number,
@@ -78,9 +79,8 @@ export class CloudItem {
 }
 
 export class Word extends CloudItem {
-  displayWidth: number = 0
-  displayHeight: number = 0
-  zoomPositions: Map<number, [number, number]> = new Map()
+  readonly displayWidth: number = 0
+  readonly displayHeight: number = 0
 
   constructor(
     x: number,
@@ -102,12 +102,15 @@ export class Word extends CloudItem {
 }
 
 export class Discourseme extends CloudItem {
-  radius: number = 20
+  readonly displayWidth: number = 0
+  readonly displayHeight: number = 0
+  readonly id: number
 
   constructor(
     x: number,
     y: number,
     item: string,
+    id: number,
     options?: {
       originX?: number
       originY?: number
@@ -115,6 +118,11 @@ export class Discourseme extends CloudItem {
     },
   ) {
     super(x, y, item, options)
+    this.id = id
+    ;[this.displayWidth, this.displayHeight] = calculateWordDimensions(
+      item,
+      options?.score ?? 0,
+    )
   }
 }
 
@@ -122,6 +130,8 @@ export class Cloud {
   width: number
   height: number
   words: Word[]
+  discoursemes: Discourseme[] = []
+  #allItems: CloudItem[] = []
   #isRunning = true
   displayWidth = 0
   displayHeight = 0
@@ -140,6 +150,7 @@ export class Cloud {
     width: number,
     height: number,
     words: Word[] = [],
+    discoursemes: Discourseme[] = [],
     {
       backgroundCutOff = 0.5,
       enableHomeForce = true,
@@ -154,6 +165,11 @@ export class Cloud {
       word.index = index
       word.isBackground = word.score < backgroundCutOff
     })
+    this.discoursemes = discoursemes.toSorted((a, b) => b.score - a.score)
+    this.discoursemes.forEach((discourseme, index) => {
+      discourseme.index = index
+    })
+    this.#allItems = [...this.words, ...this.discoursemes]
     this.enableHomeForce = enableHomeForce
     this.enableCollisionDetection = enableCollisionDetection
     this.#repelForceFactor = repelForceFactor
@@ -242,50 +258,50 @@ export class Cloud {
   }
 
   #simulateCollisions() {
-    for (let i = 0; i < this.words.length; i++) {
-      const wordA = this.words[i]
+    for (let i = 0; i < this.#allItems.length; i++) {
+      const wordA = this.#allItems[i]
       if (wordA.isBackground || !wordA.hasCollision) continue
 
-      for (let j = i + 1; j < this.words.length; j++) {
-        const wordB = this.words[j]
-        if (
-          wordB.isBackground ||
-          !wordB.hasCollision ||
-          (wordA.isFixed && wordB.isFixed)
-        )
-          continue
-
-        if (this.overlaps(wordA, wordB)) {
-          const dx = wordB.x - wordA.x
-          const dy = wordB.y - wordA.y
-
-          if (!wordA.isFixed) {
-            const scaleFactorA = wordA.score > wordB.score * 2 ? 0.5 : 1
-            wordA.deltaX -= dx * this.#repelForceFactor * scaleFactorA
-            wordA.deltaY -= dy * this.#repelForceFactor * scaleFactorA
-          }
-          if (!wordB.isFixed) {
-            const scaleFactorB = wordB.score > wordA.score * 2 ? 0.5 : 1
-            wordB.deltaX += dx * this.#repelForceFactor * scaleFactorB
-            wordB.deltaY += dy * this.#repelForceFactor * scaleFactorB
-          }
-
-          wordA.isColliding = true
-          wordB.isColliding = true
-          wordA.hasNearbyElements = true
-          wordB.hasNearbyElements = true
-        } else if (this.hasNearbyElements(wordA, wordB)) {
-          wordA.hasNearbyElements = true
-          wordB.hasNearbyElements = true
-        }
+      for (let j = i + 1; j < this.#allItems.length; j++) {
+        const wordB = this.#allItems[j]
+        this.#simulateCollisionBetweenItems(wordA, wordB)
       }
     }
   }
 
+  #simulateCollisionBetweenItems(itemA: CloudItem, itemB: CloudItem) {
+    if (itemA.isBackground || itemB.isBackground) return
+    if (itemA.isFixed && itemB.isFixed) return
+
+    if (this.overlaps(itemA as Word, itemB as Word)) {
+      const dx = itemB.x - itemA.x || 0.01 // if two items are at the same position, we still want to apply a force
+      const dy = itemB.y - itemA.y || 0.01 // ^-- this
+
+      if (!itemA.isFixed) {
+        const scaleFactorA = itemA.score > itemB.score * 2 ? 0.5 : 1
+        itemA.deltaX -= dx * this.#repelForceFactor * scaleFactorA
+        itemA.deltaY -= dy * this.#repelForceFactor * scaleFactorA
+      }
+      if (!itemB.isFixed) {
+        const scaleFactorB = itemB.score > itemA.score * 2 ? 0.5 : 1
+        itemB.deltaX += dx * this.#repelForceFactor * scaleFactorB
+        itemB.deltaY += dy * this.#repelForceFactor * scaleFactorB
+      }
+
+      itemA.isColliding = true
+      itemB.isColliding = true
+      itemA.hasNearbyElements = true
+      itemB.hasNearbyElements = true
+    } else if (this.hasNearbyElements(itemA as Word, itemB as Word)) {
+      itemA.hasNearbyElements = true
+      itemB.hasNearbyElements = true
+    }
+  }
+
   #simulate() {
-    for (const word of this.words) {
-      word.hasNearbyElements = false
-      word.isColliding = false
+    for (const item of this.#allItems) {
+      item.hasNearbyElements = false
+      item.isColliding = false
     }
 
     if (this.enableCollisionDetection) {
@@ -294,7 +310,7 @@ export class Cloud {
 
     // determine if we should slow down
     const averageDelta =
-      this.words.reduce(
+      this.#allItems.reduce(
         (acc, word) => acc + Math.abs(word.deltaX) + Math.abs(word.deltaY),
         0,
       ) / this.words.length
@@ -304,8 +320,8 @@ export class Cloud {
     }
 
     // apply slowdown factor
-    this.words.forEach((word) => {
-      word.applyFactor(this.#alpha)
+    this.#allItems.forEach((item) => {
+      item.applyFactor(this.#alpha)
     })
 
     // apply home force which is NOT affected by the slowdown factor
@@ -314,9 +330,9 @@ export class Cloud {
     }
 
     // apply forces to each word
-    this.words.forEach((word) => {
-      if (word.isFixed) return
-      word.applyDelta()
+    this.#allItems.forEach((item) => {
+      if (item.isFixed) return
+      item.applyDelta()
     })
   }
 
@@ -336,7 +352,7 @@ export class Cloud {
     this.#simulateUntilStableLoop()
   }
 
-  // TODO: Refactor all of this to be just one loop that takes in updates from the outside
+  // TODO: Refactor all of this to be just one loop that takes in updates from the outside and reduce repetition
   async #simulateUntilStableLoop() {
     if (this.#isSimulatingUntilStable) {
       throw new Error('Simulation is already running')
@@ -366,14 +382,25 @@ export class Cloud {
 
     /*
     This runs in two steps:
-    1. First, we simulate the cloud with a higher repel force factor for the 50 largest words.
-    2. Then, we simulate the cloud with a lower repel force factor for all words. The 50 largest words are fixed in place to avoid them being moved around.
+    1. First we simulate just the discoursemes
+    2. Then, we simulate the cloud with a higher repel force factor for the 50 largest words.
+    3. Then, we simulate the cloud with a lower repel force factor for all words. The 50 largest words are fixed in place to avoid them being moved around.
     This tries to ensure that the most important items don't veer off too much from their original positions
     */
-    this.#isRunning = false
+    // Step 1
+    this.#isRunning = true
     this.#alpha = 1
     this.#ticks = 0
-
+    this.discoursemes.forEach((discourseme) => {
+      discourseme.deltaX = 0
+      discourseme.deltaY = 0
+      discourseme.isColliding = true
+      discourseme.hasNearbyElements = false
+      discourseme.x = discourseme.originX
+      discourseme.y = discourseme.originY
+      discourseme.hasCollision = true
+      discourseme.isFixed = false
+    })
     this.words.forEach((word) => {
       word.deltaX = 0
       word.deltaY = 0
@@ -381,6 +408,35 @@ export class Cloud {
       word.hasNearbyElements = false
       word.x = word.originX
       word.y = word.originY
+      word.hasCollision = false
+      word.isFixed = true
+    })
+
+    this.#repelForceFactor = 0.01
+    while (this.#alpha > 0.01 && this.#ticks < 5_000) {
+      if (this.#ticks % 10 === 0) {
+        // Put the resumption of the loop on the task queue
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        if (this.#zoom !== caclulationZoom) {
+          this.#isSimulatingUntilStable = false
+          this.#runSimulationAgain = false
+          this.#simulateUntilStableLoop()
+          return
+        }
+      }
+      this.#simulate()
+      this.#ticks++
+    }
+
+    // Step 2
+    this.#isRunning = false
+    this.#alpha = 1
+    this.#ticks = 0
+
+    this.discoursemes.forEach((discourseme) => {
+      discourseme.isFixed = true
+    })
+    this.words.forEach((word) => {
       word.hasCollision = (word?.index ?? Infinity) <= 50
       word.isFixed = false
     })
@@ -404,6 +460,7 @@ export class Cloud {
     this.#alpha = 1
     this.#ticks = 0
 
+    // Step 3
     this.#repelForceFactor = 0.1
     this.words.forEach((word) => {
       word.hasCollision = true

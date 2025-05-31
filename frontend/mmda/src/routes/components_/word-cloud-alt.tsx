@@ -11,11 +11,20 @@ export const Route = createFileRoute('/components_/word-cloud-alt')({
 
 function WordCloudComponents() {
   const [debug, setDebug] = useState(false)
+  const [addDiscoursemes, setAddDiscoursemes] = useState(true)
   return (
     <Block componentTag="WordCloudAlt">
       <label className="flex cursor-pointer items-center gap-2">
         <Checkbox checked={debug} onCheckedChange={() => setDebug(!debug)} />
         Debug Mode
+      </label>
+
+      <label className="flex cursor-pointer items-center gap-2">
+        <Checkbox
+          checked={addDiscoursemes}
+          onCheckedChange={() => setAddDiscoursemes(!addDiscoursemes)}
+        />
+        Add Discoursemes
       </label>
 
       <BlockComment>
@@ -24,7 +33,11 @@ function WordCloudComponents() {
       </BlockComment>
 
       <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt words={wordsCluster} debug={debug} />
+        <WordCloudAlt
+          words={wordsCluster}
+          debug={debug}
+          discoursemes={addDiscoursemes ? discoursemes : []}
+        />
       </div>
 
       <BlockComment>
@@ -32,7 +45,11 @@ function WordCloudComponents() {
       </BlockComment>
 
       <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt words={wordsSmallCluster} debug={debug} />
+        <WordCloudAlt
+          words={wordsSmallCluster}
+          debug={debug}
+          discoursemes={addDiscoursemes ? discoursemes : []}
+        />
       </div>
 
       <BlockComment>
@@ -40,11 +57,45 @@ function WordCloudComponents() {
         one that's far from its origin.
       </BlockComment>
       <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt words={wordsCollision} debug={debug} />
+        <WordCloudAlt
+          words={wordsCollision}
+          debug={debug}
+          discoursemes={addDiscoursemes ? discoursemes : []}
+        />
       </div>
     </Block>
   )
 }
+
+const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
+  {
+    id: 1,
+    label: 'Klimawandel',
+    x: 1_000,
+    y: 500,
+    score: 1,
+    originX: 1_000,
+    originY: 500,
+  },
+  {
+    id: 2,
+    label: 'Irgendwas anderes',
+    x: 1_000,
+    y: 600,
+    score: 0.8,
+    originX: 1_000,
+    originY: 600,
+  },
+  {
+    id: 3,
+    label: 'Overlapping Discourseme',
+    x: 1_030,
+    y: 610,
+    score: 0.6,
+    originX: 1_000,
+    originY: 610,
+  },
+]
 
 const wordsCollision: ComponentProps<typeof WordCloudAlt>['words'] = [
   { x: 1_300, y: 500, label: 'Neighbor', score: 1 },

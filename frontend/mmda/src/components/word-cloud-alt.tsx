@@ -6,16 +6,19 @@ import {
 } from 'react-zoom-pan-pinch'
 
 import { cn } from '@cads/shared/lib/utils'
+import { Slider } from '@cads/shared/components/ui/slider'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import {
+  DiscoursemeDisplay,
   type CloudWorkerMessage,
   type CloudWorkerResponse,
   type WordDisplay,
 } from './word-cloud-worker'
 import { calculateWordDimensions } from './word-cloud-compute'
-import { Slider } from '@cads/shared/components/ui/slider'
 
 export function WordCloudAlt({
-  words,
+  words = [],
+  discoursemes = [],
   width = 2_000,
   height = 1_000,
   debug = false,
@@ -23,7 +26,7 @@ export function WordCloudAlt({
 }: {
   width?: number
   height?: number
-  words: {
+  words?: {
     x: number
     y: number
     originX?: number
@@ -31,6 +34,15 @@ export function WordCloudAlt({
     label: string
     score: number
     isBackground?: boolean
+  }[]
+  discoursemes?: {
+    id: number
+    x: number
+    y: number
+    originX?: number
+    originY?: number
+    label: string
+    score: number
   }[]
   debug?: boolean
   defaultCutOff?: number
@@ -70,6 +82,29 @@ export function WordCloudAlt({
       }
     }),
   )
+  const [displayDiscoursemes, setDisplayDiscoursemes] = useState<
+    DiscoursemeDisplay[]
+  >(() =>
+    discoursemes.map((discourseme) => {
+      const [displayWidth, displayHeight] = calculateWordDimensions(
+        discourseme.label,
+        discourseme.score,
+      )
+      return {
+        ...discourseme,
+        originX: discourseme.originX ?? discourseme.x,
+        originY: discourseme.originY ?? discourseme.y,
+        isBackground: false,
+        displayWidth,
+        displayHeight,
+        displayX: toDisplayCoordinates(discourseme.x, discourseme.y)[0],
+        displayY: toDisplayCoordinates(discourseme.x, discourseme.y)[1],
+        index: 0,
+        isColliding: false,
+        hasNearbyElements: false,
+      }
+    }),
+  )
 
   useEffect(() => {
     const worker = new Worker(
@@ -84,6 +119,7 @@ export function WordCloudAlt({
           break
         case 'update_positions':
           setDisplayWords(event.data.words)
+          setDisplayDiscoursemes(event.data.discoursemes)
           break
         default:
           console.warn('Unknown message type from worker:', event.data)
@@ -110,9 +146,18 @@ export function WordCloudAlt({
           score: word.score,
           isBackground: word.isBackground,
         })),
+        discoursemes: discoursemes.map((discourseme) => ({
+          id: discourseme.id,
+          x: discourseme.x,
+          y: discourseme.y,
+          originX: discourseme.originX,
+          originY: discourseme.originY,
+          label: discourseme.label,
+          score: discourseme.score,
+        })),
       },
     } satisfies CloudWorkerMessage)
-  }, [worker, words, width, height, isReady, container])
+  }, [worker, words, width, height, isReady, container, discoursemes])
 
   return (
     <div className="relative aspect-[2/1]" ref={setContainer}>
@@ -144,9 +189,18 @@ export function WordCloudAlt({
           >
             {displayWords.map((word) => (
               <Item
-                key={word.label}
                 word={word}
                 debug={debug}
+                toDisplayCoordinates={toDisplayCoordinates}
+              />
+            ))}
+
+            {displayDiscoursemes.map((discourseme) => (
+              <Item
+                key={discourseme.label}
+                word={{ ...discourseme, isBackground: false }}
+                debug={debug}
+                discoursemeId={discourseme.id}
                 toDisplayCoordinates={toDisplayCoordinates}
               />
             ))}
@@ -202,10 +256,12 @@ export function WordCloudAlt({
 
 function Item({
   word,
+  discoursemeId,
   toDisplayCoordinates,
   debug = false,
 }: {
   word: WordDisplay
+  discoursemeId?: number
   toDisplayCoordinates: (x: number, y: number) => [number, number]
   debug?: boolean
 }) {
@@ -236,12 +292,25 @@ function Item({
               debug && word.isColliding && 'bg-red-700',
               word.isBackground &&
                 'pointer-events-none bg-slate-900 text-slate-700 outline-0',
+              discoursemeId !== undefined &&
+                'outline outline-1 outline-current',
             )}
             style={{
               // transform: `translate(-50%, -50%)`,
               fontSize: `${12 + 20 * word.score}px`,
               width: word.displayWidth,
               height: word.displayHeight - 6,
+              ...(discoursemeId === undefined
+                ? {}
+                : {
+                    backgroundColor: getColorForNumber(
+                      discoursemeId,
+                      0.9,
+                      0.1,
+                      0.3,
+                    ),
+                    color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
+                  }),
             }}
           >
             {word.label}

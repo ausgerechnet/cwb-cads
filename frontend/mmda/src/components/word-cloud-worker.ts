@@ -1,4 +1,4 @@
-import { Cloud, Word } from './word-cloud-compute'
+import { Cloud, Discourseme, Word } from './word-cloud-compute'
 
 export interface WordInput {
   x: number
@@ -9,8 +9,20 @@ export interface WordInput {
   score: number
 }
 
+export interface DiscoursemeInput extends WordInput {
+  id: number
+}
+
 export interface WordDisplay extends Required<WordInput> {
   isBackground: boolean
+  hasNearbyElements: boolean
+  isColliding: boolean
+  displayHeight: number
+  displayWidth: number
+  index: number
+}
+
+export interface DiscoursemeDisplay extends Required<DiscoursemeInput> {
   hasNearbyElements: boolean
   isColliding: boolean
   displayHeight: number
@@ -27,6 +39,7 @@ export type CloudWorkerMessage =
         displayHeight: number
         displayWidth: number
         words: WordInput[]
+        discoursemes: DiscoursemeInput[]
       }
     }
   | {
@@ -43,7 +56,11 @@ export type CloudWorkerMessage =
     }
 
 export type CloudWorkerResponse =
-  | { type: 'update_positions'; words: WordDisplay[] }
+  | {
+      type: 'update_positions'
+      words: WordDisplay[]
+      discoursemes: DiscoursemeDisplay[]
+    }
   | { type: 'ready' }
 
 function postMessage(data: CloudWorkerResponse) {
@@ -55,7 +72,7 @@ let cloud: Cloud | null = null
 self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
   switch (data.type) {
     case 'update': {
-      const { width, height, words } = data.payload
+      const { width, height, words, discoursemes } = data.payload
       cloud?.destroy()
       cloud = new Cloud(
         width,
@@ -67,6 +84,20 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
               originX: word.originX,
               originY: word.originY,
             }),
+        ),
+        discoursemes.map(
+          (discourseme) =>
+            new Discourseme(
+              discourseme.x,
+              discourseme.y,
+              discourseme.label,
+              discourseme.id,
+              {
+                score: discourseme.score,
+                originX: discourseme.originX,
+                originY: discourseme.originY,
+              },
+            ),
         ),
       )
       cloud.onSimulationUpdate(publishPositions)
@@ -113,7 +144,27 @@ function publishPositions() {
       index: word.index ?? 0,
     }),
   )
-  postMessage({ type: 'update_positions', words: displayWords })
+  const displayDiscoursemes = cloud.discoursemes.map(
+    (discourseme): DiscoursemeDisplay => ({
+      x: discourseme.x,
+      y: discourseme.y,
+      label: discourseme.label,
+      originX: discourseme.originX ?? discourseme.x,
+      originY: discourseme.originY ?? discourseme.y,
+      score: discourseme.score ?? 1,
+      id: discourseme.id,
+      hasNearbyElements: discourseme.hasNearbyElements,
+      isColliding: discourseme.isColliding,
+      displayHeight: discourseme.displayHeight,
+      displayWidth: discourseme.displayWidth,
+      index: discourseme.index ?? 0,
+    }),
+  )
+  postMessage({
+    type: 'update_positions',
+    words: displayWords,
+    discoursemes: displayDiscoursemes,
+  })
 }
 
 postMessage({ type: 'ready' })
