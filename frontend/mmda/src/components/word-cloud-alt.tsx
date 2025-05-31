@@ -216,17 +216,21 @@ export function WordCloudAlt({
           })
         }}
         wheel={{ step: 0.1, smoothStep: 0.001 }}
-        panning={{ velocityDisabled: true, excluded: ['no-pan'] }}
+        panning={{ velocityDisabled: false, excluded: ['no-pan'] }}
         disabled={isDragging}
         limitToBounds
         minPositionX={0}
       >
         <TransformComponent
-          contentClass="w-full"
-          wrapperClass={cn(
-            'w-full overflow-visible',
-            hideOverflow && 'overflow-hidden',
-          )}
+          contentStyle={{
+            width: '100%',
+            height: '100%',
+          }}
+          wrapperStyle={{
+            overflow: hideOverflow ? 'hidden' : 'visible',
+            width: '100%',
+            height: '100%',
+          }}
         >
           <DndContext
             onDragStart={() => setIsDragging(true)}
@@ -360,7 +364,7 @@ export function WordCloudAlt({
 
               {debug && (
                 <svg
-                  className="pointer-events-none absolute inset-0 z-[5001] h-full w-full"
+                  className="pointer-events-none absolute inset-0 z-[5001] h-full w-full touch-none"
                   viewBox={`0 0 ${width} ${height}`}
                 >
                   {displayWords.map((word) => (
@@ -438,11 +442,11 @@ function Item({
     <>
       <div
         className={cn(
-          'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] [&:hover+*]:block',
+          'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
           `word--${word.label.replace(/\s+/g, '-')}`,
           !isDragging && 'transition-transform duration-500',
-          isDragging && 'z-[5001!important] opacity-50',
-          !word.isBackground && 'no-pan',
+          isDragging && 'z-[5001!important] opacity-50 will-change-transform',
+          !word.isBackground && 'no-pan touch-none',
         )}
         style={{
           ['--x' as string]: `${displayX + (transform?.x ?? 0) / zoom}px`,
@@ -468,14 +472,13 @@ function Item({
             <span
               ref={setNodeRef}
               className={cn(
-                'absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 mix-blend-screen outline outline-2 outline-transparent',
+                'absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 outline-transparent',
                 debug && word.hasNearbyElements && 'outline-red-700',
                 debug && word.isColliding && 'bg-red-700',
                 word.isBackground && 'bg-slate-900 text-slate-700 outline-0',
                 discoursemeId !== undefined &&
                   'outline outline-1 outline-current',
-                isDraggingOther &&
-                  'hover:z-[500!important] hover:bg-yellow-500',
+                isDraggingOther && 'hover:bg-yellow-500',
                 !isDraggingOther && 'hover:bg-primary',
               )}
               style={{
