@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { HTMLAttributes, useCallback, useEffect, useState } from 'react'
 import {
   TransformWrapper,
   TransformComponent,
   KeepScale,
 } from 'react-zoom-pan-pinch'
+import { DndContext, useDndContext, useDraggable } from '@dnd-kit/core'
 
 import { cn } from '@cads/shared/lib/utils'
 import { Slider } from '@cads/shared/components/ui/slider'
@@ -16,6 +17,23 @@ import {
 } from './word-cloud-worker'
 import { calculateWordDimensions } from './word-cloud-compute'
 
+export type WordCloudEvent =
+  | { type: 'new_discourseme'; surfaces: string[] }
+  | { type: 'add_to_discourseme'; discoursemeId: number; surface: string }
+  | { type: 'update_surface_position'; surface: string; x: number; y: number }
+  | {
+      type: 'update_discourseme_position'
+      discoursemeId: number
+      x: number
+      y: number
+    }
+
+function isDiscoursemeDisplay(
+  item: WordDisplay | DiscoursemeDisplay,
+): item is DiscoursemeDisplay {
+  return 'discoursemeId' in item
+}
+
 export function WordCloudAlt({
   words = [],
   discoursemes = [],
@@ -23,6 +41,7 @@ export function WordCloudAlt({
   height = 1_000,
   debug = false,
   defaultCutOff = 0.5,
+  onChange,
 }: {
   width?: number
   height?: number
@@ -36,7 +55,7 @@ export function WordCloudAlt({
     isBackground?: boolean
   }[]
   discoursemes?: {
-    id: number
+    discoursemeId: number
     x: number
     y: number
     originX?: number
@@ -46,17 +65,29 @@ export function WordCloudAlt({
   }[]
   debug?: boolean
   defaultCutOff?: number
+  onChange?: (event: WordCloudEvent) => void
 }) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [zoom, setZoom] = useState(1)
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isReady, setIsReady] = useState(false)
   const [cutOff, setCutOff] = useState(defaultCutOff)
+  const [isDragging, setIsDragging] = useState(false)
+  // Tracks the currently hovered item -- useDroppable would be an alternative option, but causes a noticeable performance hit
+  const [hoverItem, setHoverItem] = useState<string | null>(null)
 
   const toDisplayCoordinates = useCallback(
     (x: number, y: number): [number, number] => [
       (x / width) * (container?.clientWidth ?? width),
       (y / height) * (container?.clientHeight ?? height),
+    ],
+    [width, height, container],
+  )
+
+  const toOriginalCoordinates = useCallback(
+    (displayX: number, displayY: number): [number, number] => [
+      (displayX / (container?.clientWidth ?? width)) * width,
+      (displayY / (container?.clientHeight ?? height)) * height,
     ],
     [width, height, container],
   )
@@ -69,6 +100,7 @@ export function WordCloudAlt({
       )
       return {
         ...word,
+        id: `word::${word.label}`,
         originX: word.originX ?? word.x,
         originY: word.originY ?? word.y,
         isBackground: word.isBackground ?? false,
@@ -92,6 +124,7 @@ export function WordCloudAlt({
       )
       return {
         ...discourseme,
+        id: `discourseme::${discourseme.label}::${discourseme.discoursemeId}`,
         originX: discourseme.originX ?? discourseme.x,
         originY: discourseme.originY ?? discourseme.y,
         isBackground: false,
@@ -130,6 +163,7 @@ export function WordCloudAlt({
 
   useEffect(() => {
     if (!worker || !isReady || !container) return
+    console.log('Updating worker data')
     worker.postMessage({
       type: 'update',
       payload: {
@@ -138,6 +172,7 @@ export function WordCloudAlt({
         displayWidth: container.clientWidth,
         displayHeight: container.clientHeight,
         words: words.map((word) => ({
+          id: `word::${word.label}`,
           x: word.x,
           y: word.y,
           originX: word.originX,
@@ -147,7 +182,8 @@ export function WordCloudAlt({
           isBackground: word.isBackground,
         })),
         discoursemes: discoursemes.map((discourseme) => ({
-          id: discourseme.id,
+          id: `discourseme::${discourseme.label}::${discourseme.discoursemeId}`,
+          discoursemeId: discourseme.discoursemeId,
           x: discourseme.x,
           y: discourseme.y,
           originX: discourseme.originX,
@@ -177,54 +213,160 @@ export function WordCloudAlt({
         }}
         wheel={{ step: 0.1, smoothStep: 0.001 }}
         panning={{ velocityDisabled: true, excluded: ['no-pan'] }}
+        disabled={isDragging}
         limitToBounds
         minPositionX={0}
       >
         <TransformComponent contentClass="w-full" wrapperClass="w-full">
-          <div
-            className="relative w-full min-w-[500px] outline outline-1 outline-yellow-300"
-            style={{
-              aspectRatio: `${width} / ${height}`,
+          <DndContext
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={(event) => {
+              const id = event.active.id
+              const itemA =
+                displayWords.find((item) => item.id === id) ??
+                displayDiscoursemes.find((item) => item.id === id)
+              const itemB =
+                displayWords.find((item) => item.id === hoverItem) ??
+                displayDiscoursemes.find((item) => item.id === hoverItem)
+              if (
+                itemA &&
+                itemB &&
+                itemA.id !== itemB.id &&
+                !(isDiscoursemeDisplay(itemA) && isDiscoursemeDisplay(itemB))
+              ) {
+                if (isDiscoursemeDisplay(itemB)) {
+                  onChange?.({
+                    type: 'add_to_discourseme',
+                    discoursemeId: itemB.discoursemeId,
+                    surface: itemA.label,
+                  })
+                } else if (isDiscoursemeDisplay(itemA)) {
+                  onChange?.({
+                    type: 'add_to_discourseme',
+                    discoursemeId: itemA.discoursemeId,
+                    surface: itemB.label,
+                  })
+                } else {
+                  onChange?.({
+                    type: 'new_discourseme',
+                    surfaces: [itemA.label, itemB.label],
+                  })
+                }
+              } else if (itemA) {
+                const [deltaX, deltaY] = toOriginalCoordinates(
+                  event.delta.x,
+                  event.delta.y,
+                )
+                const newOriginalX = itemA.x + deltaX / zoom
+                const newOriginalY = itemA.y + deltaY / zoom
+
+                if (isDiscoursemeDisplay(itemA)) {
+                  setDisplayDiscoursemes((discoursemes) =>
+                    discoursemes.map((discourseme) =>
+                      discourseme.id === itemA.id
+                        ? {
+                            ...discourseme,
+                            originX: newOriginalX,
+                            originY: newOriginalY,
+                            x: newOriginalX,
+                            y: newOriginalY,
+                          }
+                        : discourseme,
+                    ),
+                  )
+
+                  onChange?.({
+                    type: 'update_discourseme_position',
+                    discoursemeId: itemA.discoursemeId,
+                    x: newOriginalX,
+                    y: newOriginalY,
+                  })
+                } else {
+                  setDisplayWords((words) =>
+                    words.map((word) =>
+                      word.id === itemA.id
+                        ? {
+                            ...word,
+                            originX: newOriginalX,
+                            originY: newOriginalY,
+                            x: newOriginalX,
+                            y: newOriginalY,
+                          }
+                        : word,
+                    ),
+                  )
+
+                  onChange?.({
+                    type: 'update_surface_position',
+                    surface: itemA.label,
+                    x: newOriginalX,
+                    y: newOriginalY,
+                  })
+                }
+              }
+              setIsDragging(false)
             }}
           >
-            {displayWords.map((word) => (
-              <Item
-                word={word}
-                debug={debug}
-                toDisplayCoordinates={toDisplayCoordinates}
-              />
-            ))}
+            <div
+              className="bg-muted/50 relative w-full min-w-[500px] rounded-lg outline-1"
+              style={{
+                aspectRatio: `${width} / ${height}`,
+              }}
+            >
+              {displayWords.map((word) => (
+                <Item
+                  key={word.label}
+                  word={word}
+                  debug={debug}
+                  toDisplayCoordinates={toDisplayCoordinates}
+                  zoom={zoom}
+                  onMouseOver={() => {
+                    setHoverItem(word.id)
+                  }}
+                  onMouseOut={() => {
+                    setHoverItem(null)
+                  }}
+                />
+              ))}
 
-            {displayDiscoursemes.map((discourseme) => (
-              <Item
-                key={discourseme.label}
-                word={{ ...discourseme, isBackground: false }}
-                debug={debug}
-                discoursemeId={discourseme.id}
-                toDisplayCoordinates={toDisplayCoordinates}
-              />
-            ))}
+              {displayDiscoursemes.map((discourseme) => (
+                <Item
+                  key={discourseme.label}
+                  word={{ ...discourseme, isBackground: false }}
+                  debug={debug}
+                  discoursemeId={discourseme.discoursemeId}
+                  toDisplayCoordinates={toDisplayCoordinates}
+                  zoom={zoom}
+                  onMouseOver={() => {
+                    setHoverItem(discourseme.id)
+                  }}
+                  onMouseOut={() => {
+                    setHoverItem(null)
+                  }}
+                />
+              ))}
 
-            {debug && (
-              <svg
-                className="pointer-events-none absolute inset-0 z-[5001] h-full w-full"
-                viewBox={`0 0 ${width} ${height}`}
-              >
-                {displayWords.map((word) => (
-                  <line
-                    key={word.label}
-                    data-for-word={word.label}
-                    x1={word.originX}
-                    y1={word.originY}
-                    x2={word.x}
-                    y2={word.y}
-                    className="stroke stroke-emerald-500 stroke-[1px]"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                ))}
-              </svg>
-            )}
-          </div>
+              {debug && (
+                <svg
+                  className="pointer-events-none absolute inset-0 z-[5001] h-full w-full"
+                  viewBox={`0 0 ${width} ${height}`}
+                >
+                  {displayWords.map((word) => (
+                    <line
+                      key={word.label}
+                      data-for-word={word.label}
+                      x1={word.originX}
+                      y1={word.originY}
+                      x2={word.x}
+                      y2={word.y}
+                      className="stroke stroke-emerald-500 stroke-[1px]"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
+                </svg>
+              )}
+            </div>
+          </DndContext>
         </TransformComponent>
       </TransformWrapper>
 
@@ -259,12 +401,19 @@ function Item({
   discoursemeId,
   toDisplayCoordinates,
   debug = false,
+  zoom,
+  ...props
 }: {
   word: WordDisplay
   discoursemeId?: number
   toDisplayCoordinates: (x: number, y: number) => [number, number]
   debug?: boolean
-}) {
+  zoom: number
+} & HTMLAttributes<HTMLDivElement>) {
+  const { active } = useDndContext()
+  const isDraggingOther = Boolean(active?.id) && active?.id !== word.id
+  const { attributes, listeners, setNodeRef, isDragging, transform } =
+    useDraggable({ id: word.id, disabled: isDraggingOther })
   const [displayX, displayY] = toDisplayCoordinates(word.x, word.y)
   const [displayOriginX, displayOriginY] = toDisplayCoordinates(
     word.originX ?? word.x,
@@ -275,65 +424,87 @@ function Item({
     <>
       <div
         className={cn(
-          'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] transition-transform duration-500 hover:z-[500!important] [&:hover+*]:block',
+          'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] [&:hover+*]:block',
           `word--${word.label.replace(/\s+/g, '-')}`,
+          !isDragging && 'transition-transform duration-500',
+          isDragging && 'z-[5001!important] opacity-50',
+          !word.isBackground && 'no-pan',
         )}
         style={{
-          ['--x' as string]: `${displayX}px`,
-          ['--y' as string]: `${displayY}px`,
+          ['--x' as string]: `${displayX + (transform?.x ?? 0) / zoom}px`,
+          ['--y' as string]: `${displayY + (transform?.y ?? 0) / zoom}px`,
           zIndex: word.isBackground ? 0 : Math.floor(word.score * 100) + 10,
         }}
+        {...attributes}
+        {...listeners}
+        {...props}
       >
         <KeepScale>
-          <span
+          <div
             className={cn(
-              'hover:bg-primary absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 mix-blend-screen outline outline-2 outline-transparent',
-              debug && word.hasNearbyElements && 'outline-red-700',
-              debug && word.isColliding && 'bg-red-700',
-              word.isBackground &&
-                'pointer-events-none bg-slate-900 text-slate-700 outline-0',
-              discoursemeId !== undefined &&
-                'outline outline-1 outline-current',
+              'absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2',
+              isDragging && 'pointer-events-none',
+              word.isBackground ? 'pointer-events-none' : 'cursor-move',
             )}
             style={{
-              // transform: `translate(-50%, -50%)`,
-              fontSize: `${12 + 20 * word.score}px`,
               width: word.displayWidth,
               height: word.displayHeight - 6,
-              ...(discoursemeId === undefined
-                ? {}
-                : {
-                    backgroundColor: getColorForNumber(
-                      discoursemeId,
-                      0.9,
-                      0.1,
-                      0.3,
-                    ),
-                    color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
-                  }),
             }}
           >
-            {word.label}
-            {debug && (
-              <span
-                className={cn(
-                  'absolute left-0 top-0 bg-black/30 p-0.5 text-xs text-white',
-                  word.isBackground && 'opacity-50',
-                )}
-              >
-                {word.score.toFixed(2)}
-              </span>
-            )}
-            {debug && !word.isBackground && (
-              <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
-            )}
-          </span>
+            <span
+              ref={setNodeRef}
+              className={cn(
+                'absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 mix-blend-screen outline outline-2 outline-transparent',
+                debug && word.hasNearbyElements && 'outline-red-700',
+                debug && word.isColliding && 'bg-red-700',
+                word.isBackground && 'bg-slate-900 text-slate-700 outline-0',
+                discoursemeId !== undefined &&
+                  'outline outline-1 outline-current',
+                isDraggingOther &&
+                  'hover:z-[500!important] hover:bg-yellow-500',
+                !isDraggingOther && 'hover:bg-primary',
+              )}
+              style={{
+                // transform: `translate(-50%, -50%)`,
+                fontSize: `${12 + 20 * word.score}px`,
+                ...(discoursemeId === undefined
+                  ? {}
+                  : {
+                      backgroundColor: getColorForNumber(
+                        discoursemeId,
+                        0.9,
+                        0.1,
+                        0.3,
+                      ),
+                      color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
+                    }),
+              }}
+            >
+              {word.label}
+              {debug && (
+                <span
+                  className={cn(
+                    'absolute left-0 top-0 bg-black/30 p-0.5 text-xs text-white',
+                    word.isBackground && 'opacity-50',
+                  )}
+                >
+                  {word.score.toFixed(2)}
+                </span>
+              )}
+              {debug && !word.isBackground && (
+                <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
+              )}
+            </span>
+          </div>
         </KeepScale>
       </div>
 
       {!word.isBackground && (
         <div
-          className="pointer-events-none absolute z-[500] hidden"
+          className={cn(
+            'pointer-events-none absolute z-[500]',
+            !isDragging && 'hidden',
+          )}
           style={{
             left: displayOriginX,
             top: displayOriginY,

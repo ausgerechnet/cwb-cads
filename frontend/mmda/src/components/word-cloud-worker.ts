@@ -1,6 +1,7 @@
 import { Cloud, Discourseme, Word } from './word-cloud-compute'
 
 export interface WordInput {
+  id: string
   x: number
   y: number
   originX?: number
@@ -10,7 +11,7 @@ export interface WordInput {
 }
 
 export interface DiscoursemeInput extends WordInput {
-  id: number
+  discoursemeId: number
 }
 
 export interface WordDisplay extends Required<WordInput> {
@@ -79,7 +80,7 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
         height,
         words.map(
           (word) =>
-            new Word(word.x, word.y, word.label, {
+            new Word(word.x, word.y, word.label, word.id, {
               score: word.score,
               originX: word.originX,
               originY: word.originY,
@@ -92,6 +93,7 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
               discourseme.y,
               discourseme.label,
               discourseme.id,
+              discourseme.discoursemeId,
               {
                 score: discourseme.score,
                 originX: discourseme.originX,
@@ -130,6 +132,7 @@ function publishPositions() {
   if (!cloud) return
   const displayWords = cloud.words.map(
     (word): WordDisplay => ({
+      id: word.id,
       x: word.x,
       y: word.y,
       label: word.label,
@@ -152,6 +155,7 @@ function publishPositions() {
       originX: discourseme.originX ?? discourseme.x,
       originY: discourseme.originY ?? discourseme.y,
       score: discourseme.score ?? 1,
+      discoursemeId: discourseme.discoursemeId,
       id: discourseme.id,
       hasNearbyElements: discourseme.hasNearbyElements,
       isColliding: discourseme.isColliding,

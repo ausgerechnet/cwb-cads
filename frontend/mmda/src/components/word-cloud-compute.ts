@@ -8,6 +8,7 @@ export function calculateWordDimensions(
 }
 
 export class CloudItem {
+  id: string
   originX: number
   originY: number
   x: number
@@ -41,6 +42,7 @@ export class CloudItem {
     x: number,
     y: number,
     item: string,
+    id: string,
     {
       originX,
       originY,
@@ -53,6 +55,7 @@ export class CloudItem {
       score?: number
     } = {},
   ) {
+    this.id = id
     this.originX = originX ?? x
     this.originY = originY ?? y
     this.x = x
@@ -86,6 +89,7 @@ export class Word extends CloudItem {
     x: number,
     y: number,
     item: string,
+    id: string,
     options?: {
       originX?: number
       originY?: number
@@ -93,7 +97,7 @@ export class Word extends CloudItem {
       score?: number
     },
   ) {
-    super(x, y, item, options)
+    super(x, y, item, id, options)
     ;[this.displayWidth, this.displayHeight] = calculateWordDimensions(
       item,
       options?.score ?? 0,
@@ -104,21 +108,22 @@ export class Word extends CloudItem {
 export class Discourseme extends CloudItem {
   readonly displayWidth: number = 0
   readonly displayHeight: number = 0
-  readonly id: number
+  readonly discoursemeId: number
 
   constructor(
     x: number,
     y: number,
     item: string,
-    id: number,
+    id: string,
+    discoursemeId: number,
     options?: {
       originX?: number
       originY?: number
       score?: number
     },
   ) {
-    super(x, y, item, options)
-    this.id = id
+    super(x, y, item, id, options)
+    this.discoursemeId = discoursemeId
     ;[this.displayWidth, this.displayHeight] = calculateWordDimensions(
       item,
       options?.score ?? 0,
@@ -359,14 +364,14 @@ export class Cloud {
     }
     this.#isSimulatingUntilStable = true
     if (this.stableZoom.has(this.#zoom)) {
-      for (const word of this.words) {
-        const position = word.zoomPositions.get(this.#zoom)
+      for (const item of this.#allItems) {
+        const position = item.zoomPositions.get(this.#zoom)
         if (position) {
-          word.x = position[0]
-          word.y = position[1]
+          item.x = position[0]
+          item.y = position[1]
         } else {
-          word.x = word.originX
-          word.y = word.originY
+          item.x = item.originX
+          item.y = item.originY
         }
       }
       this.#isSimulatingUntilStable = false
@@ -478,7 +483,7 @@ export class Cloud {
           return
         }
       }
-      if (this.#ticks % 100 === 0) {
+      if (this.#ticks % 500 === 0) {
         this.#simulationUpdateCallbacks.forEach((callback) => callback())
       }
       this.#simulate()
@@ -486,10 +491,10 @@ export class Cloud {
     }
 
     this.stableZoom.add(this.#zoom)
-    this.words.forEach((word) => {
-      word.isFixed = false
-      word.hasCollision = true
-      word.zoomPositions.set(this.#zoom, [word.x, word.y])
+    this.#allItems.forEach((item) => {
+      item.isFixed = false
+      item.hasCollision = true
+      item.zoomPositions.set(this.#zoom, [item.x, item.y])
     })
 
     this.#isSimulatingUntilStable = false
