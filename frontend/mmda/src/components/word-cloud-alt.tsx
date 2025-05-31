@@ -35,14 +35,17 @@ function isDiscoursemeDisplay(
 }
 
 export function WordCloudAlt({
+  className,
   words = [],
   discoursemes = [],
   width = 2_000,
   height = 1_000,
   debug = false,
   defaultCutOff = 0.5,
+  hideOverflow = false,
   onChange,
 }: {
+  className?: string
   width?: number
   height?: number
   words?: {
@@ -65,6 +68,7 @@ export function WordCloudAlt({
   }[]
   debug?: boolean
   defaultCutOff?: number
+  hideOverflow?: boolean
   onChange?: (event: WordCloudEvent) => void
 }) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -196,7 +200,7 @@ export function WordCloudAlt({
   }, [worker, words, width, height, isReady, container, discoursemes])
 
   return (
-    <div className="relative aspect-[2/1]" ref={setContainer}>
+    <div className={cn('relative aspect-[2/1]', className)} ref={setContainer}>
       <TransformWrapper
         initialScale={1}
         onTransformed={(event) => {
@@ -217,9 +221,17 @@ export function WordCloudAlt({
         limitToBounds
         minPositionX={0}
       >
-        <TransformComponent contentClass="w-full" wrapperClass="w-full">
+        <TransformComponent
+          contentClass="w-full"
+          wrapperClass={cn(
+            'w-full overflow-visible',
+            hideOverflow && 'overflow-hidden',
+          )}
+        >
           <DndContext
             onDragStart={() => setIsDragging(true)}
+            onDragAbort={() => setIsDragging(false)}
+            onDragCancel={() => setIsDragging(false)}
             onDragEnd={(event) => {
               const id = event.active.id
               const itemA =
@@ -390,6 +402,8 @@ export function WordCloudAlt({
       {debug && (
         <div className="absolute left-2 top-2 z-40 bg-black/50">
           Zoom: {zoom.toFixed(2)}
+          <br />
+          isDragging: {isDragging ? 'true' : 'false'}
         </div>
       )}
     </div>

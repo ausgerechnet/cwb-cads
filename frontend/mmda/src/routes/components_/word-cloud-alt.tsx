@@ -1,8 +1,10 @@
 import { ComponentProps, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ExpandIcon } from 'lucide-react'
 
 import { WordCloudAlt, WordCloudEvent } from '@/components/word-cloud-alt'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
+import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Block, BlockComment } from './-block'
 
 export const Route = createFileRoute('/components_/word-cloud-alt')({
@@ -19,26 +21,41 @@ function WordCloudComponents() {
 
   return (
     <Block componentTag="WordCloudAlt">
-      <label className="flex cursor-pointer items-center gap-2">
-        <Checkbox checked={debug} onCheckedChange={() => setDebug(!debug)} />
-        Debug Mode
-      </label>
+      <div className="my-2 grid w-max grid-cols-[auto_auto] gap-8">
+        <div>
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={debug}
+              onCheckedChange={() => setDebug(!debug)}
+            />
+            Debug Mode
+          </label>
 
-      <label className="flex cursor-pointer items-center gap-2">
-        <Checkbox
-          checked={addDiscoursemes}
-          onCheckedChange={() => setAddDiscoursemes(!addDiscoursemes)}
-        />
-        Add Discoursemes
-      </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={addDiscoursemes}
+              onCheckedChange={() => setAddDiscoursemes(!addDiscoursemes)}
+            />
+            Add Discoursemes
+          </label>
 
-      <label className="flex cursor-pointer items-center gap-2">
-        <Checkbox
-          checked={addMoreWords}
-          onCheckedChange={() => setAddMoreWords(!addMoreWords)}
-        />
-        Add more words
-      </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={addMoreWords}
+              onCheckedChange={() => setAddMoreWords(!addMoreWords)}
+            />
+            Add more words
+          </label>
+        </div>
+
+        <Link
+          to="/components/word-cloud-alt/full"
+          className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+        >
+          <ExpandIcon className="mr-2 h-4 w-4" />
+          Fullscreen Demo
+        </Link>
+      </div>
 
       <BlockComment>
         This simulates an extreme example with a dense cluster of items in the
@@ -47,6 +64,7 @@ function WordCloudComponents() {
 
       <div className="my-3 outline outline-1 outline-pink-400">
         <WordCloudAlt
+          hideOverflow
           words={addMoreWords ? [...wordsCluster, ...moreWords] : wordsCluster}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
@@ -61,6 +79,7 @@ function WordCloudComponents() {
 
       <div className="my-3 outline outline-1 outline-pink-400">
         <WordCloudAlt
+          hideOverflow
           words={[...wordsSmallCluster, ...(addMoreWords ? moreWords : [])]}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
@@ -76,6 +95,7 @@ function WordCloudComponents() {
 
       <div className="my-3 outline outline-1 outline-pink-400">
         <WordCloudAlt
+          hideOverflow
           words={[...wordsCollision, ...(addMoreWords ? moreWords : [])]}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
