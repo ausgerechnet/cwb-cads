@@ -33,9 +33,7 @@ function WordCloudAltFullscreen() {
         </label>
       </div>
 
-      <div className="z-10 col-start-3 row-start-3 shadow">
-        <div className="bg-muted h-96 w-full rounded-lg outline outline-1 outline-slate-600/60" />
-      </div>
+      <div className="bg-muted z-10 col-start-3 row-start-3 h-96 w-full self-start rounded-lg shadow outline outline-1 outline-slate-600/60" />
 
       <WordCloudAlt
         className="col-start-2 row-start-3 self-center"

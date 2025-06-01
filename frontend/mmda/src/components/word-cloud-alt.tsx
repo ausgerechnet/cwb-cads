@@ -1,4 +1,10 @@
-import { HTMLAttributes, useCallback, useEffect, useState } from 'react'
+import {
+  HTMLAttributes,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   TransformWrapper,
   TransformComponent,
@@ -80,12 +86,24 @@ export function WordCloudAlt({
   // Tracks the currently hovered item -- useDroppable would be an alternative option, but causes a noticeable performance hit
   const [hoverItem, setHoverItem] = useState<string | null>(null)
 
+  const [containerWidth, containerHeight] = useMemo(() => {
+    if (!container) return [100, 100]
+    let { clientHeight, clientWidth } = container
+    // the container contains the actual word cloud which has a fixed aspect ratio, so downscale the width and height accordingly
+    if (clientWidth / clientHeight > width / height) {
+      clientWidth = (clientHeight * width) / height
+    } else {
+      clientHeight = (clientWidth * height) / width
+    }
+    return [clientWidth, clientHeight]
+  }, [container, width, height])
+
   const toDisplayCoordinates = useCallback(
     (x: number, y: number): [number, number] => [
-      (x / width) * (container?.clientWidth ?? width),
-      (y / height) * (container?.clientHeight ?? height),
+      (x / width) * containerWidth,
+      (y / height) * containerHeight,
     ],
-    [width, height, container],
+    [width, containerWidth, height, containerHeight],
   )
 
   const toOriginalCoordinates = useCallback(
@@ -200,7 +218,7 @@ export function WordCloudAlt({
   }, [worker, words, width, height, isReady, container, discoursemes])
 
   return (
-    <div className={cn('relative aspect-[2/1]', className)} ref={setContainer}>
+    <div className={cn('relative h-full w-full', className)} ref={setContainer}>
       <TransformWrapper
         initialScale={1}
         onTransformed={(event) => {
@@ -221,7 +239,13 @@ export function WordCloudAlt({
         limitToBounds
         minPositionX={0}
       >
+        {/* The before pseudo element provides some additional space to "grab onto" */}
+        {/* We use the *Style props instead of the *Class props to avoid specificity clashes which dangerously might only show up in prod */}
         <TransformComponent
+          contentClass={cn(
+            "before:absolute before:-inset-[500px] before:content-['']",
+            debug && 'before:bg-blue-500/50',
+          )}
           contentStyle={{
             width: '100%',
             height: '100%',
@@ -324,63 +348,70 @@ export function WordCloudAlt({
             }}
           >
             <div
-              className="bg-muted/50 relative w-full min-w-[500px] rounded-lg outline-1"
-              style={{
-                aspectRatio: `${width} / ${height}`,
-              }}
-            >
-              {displayWords.map((word) => (
-                <Item
-                  key={word.label}
-                  word={word}
-                  debug={debug}
-                  toDisplayCoordinates={toDisplayCoordinates}
-                  zoom={zoom}
-                  onMouseOver={() => {
-                    setHoverItem(word.id)
-                  }}
-                  onMouseOut={() => {
-                    setHoverItem(null)
-                  }}
-                />
-              ))}
-
-              {displayDiscoursemes.map((discourseme) => (
-                <Item
-                  key={discourseme.label}
-                  word={{ ...discourseme, isBackground: false }}
-                  debug={debug}
-                  discoursemeId={discourseme.discoursemeId}
-                  toDisplayCoordinates={toDisplayCoordinates}
-                  zoom={zoom}
-                  onMouseOver={() => {
-                    setHoverItem(discourseme.id)
-                  }}
-                  onMouseOut={() => {
-                    setHoverItem(null)
-                  }}
-                />
-              ))}
-
-              {debug && (
-                <svg
-                  className="pointer-events-none absolute inset-0 z-[5001] h-full w-full touch-none"
-                  viewBox={`0 0 ${width} ${height}`}
-                >
-                  {displayWords.map((word) => (
-                    <line
-                      key={word.label}
-                      data-for-word={word.label}
-                      x1={word.originX}
-                      y1={word.originY}
-                      x2={word.x}
-                      y2={word.y}
-                      className="stroke stroke-emerald-500 stroke-[1px]"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  ))}
-                </svg>
+              className={cn(
+                'absolute grid h-full w-full place-items-center',
+                debug && 'bg-pink-500/50',
               )}
+            >
+              <div
+                className="bg-muted/50 relative w-full min-w-[500px] rounded-lg outline-1"
+                style={{
+                  aspectRatio: `${width} / ${height}`,
+                }}
+              >
+                {displayWords.map((word) => (
+                  <Item
+                    key={word.label}
+                    word={word}
+                    debug={debug}
+                    toDisplayCoordinates={toDisplayCoordinates}
+                    zoom={zoom}
+                    onMouseOver={() => {
+                      setHoverItem(word.id)
+                    }}
+                    onMouseOut={() => {
+                      setHoverItem(null)
+                    }}
+                  />
+                ))}
+
+                {displayDiscoursemes.map((discourseme) => (
+                  <Item
+                    key={discourseme.label}
+                    word={{ ...discourseme, isBackground: false }}
+                    debug={debug}
+                    discoursemeId={discourseme.discoursemeId}
+                    toDisplayCoordinates={toDisplayCoordinates}
+                    zoom={zoom}
+                    onMouseOver={() => {
+                      setHoverItem(discourseme.id)
+                    }}
+                    onMouseOut={() => {
+                      setHoverItem(null)
+                    }}
+                  />
+                ))}
+
+                {debug && (
+                  <svg
+                    className="pointer-events-none absolute inset-0 z-[5001] h-full w-full touch-none"
+                    viewBox={`0 0 ${width} ${height}`}
+                  >
+                    {displayWords.map((word) => (
+                      <line
+                        key={word.label}
+                        data-for-word={word.label}
+                        x1={word.originX}
+                        y1={word.originY}
+                        x2={word.x}
+                        y2={word.y}
+                        className="stroke stroke-emerald-500 stroke-[1px]"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                    ))}
+                  </svg>
+                )}
+              </div>
             </div>
           </DndContext>
         </TransformComponent>
@@ -444,9 +475,12 @@ function Item({
         className={cn(
           'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
           `word--${word.label.replace(/\s+/g, '-')}`,
-          !isDragging && 'transition-transform duration-500',
-          isDragging && 'z-[5001!important] opacity-50 will-change-transform',
-          !word.isBackground && 'no-pan touch-none',
+          {
+            'z-[5001!important] opacity-50 will-change-transform': isDragging,
+            'transition-transform duration-500': !isDragging,
+            'pointer-events-none': word.isBackground,
+            'no-pan touch-none': !word.isBackground,
+          },
         )}
         style={{
           ['--x' as string]: `${displayX + (transform?.x ?? 0) / zoom}px`,
@@ -461,8 +495,10 @@ function Item({
           <div
             className={cn(
               'absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2',
-              isDragging && 'pointer-events-none',
-              word.isBackground ? 'pointer-events-none' : 'cursor-move',
+              {
+                'bg-red-500/50': debug && word.isColliding,
+                'bg-blue-500/50': debug && word.hasNearbyElements,
+              },
             )}
             style={{
               width: word.displayWidth,
@@ -473,13 +509,15 @@ function Item({
               ref={setNodeRef}
               className={cn(
                 'absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 outline-transparent',
-                debug && word.hasNearbyElements && 'outline-red-700',
-                debug && word.isColliding && 'bg-red-700',
-                word.isBackground && 'bg-slate-900 text-slate-700 outline-0',
-                discoursemeId !== undefined &&
-                  'outline outline-1 outline-current',
-                isDraggingOther && 'hover:bg-yellow-500',
-                !isDraggingOther && 'hover:bg-primary',
+                {
+                  'outline-red-700': debug && word.hasNearbyElements,
+                  'bg-red-700': debug && word.isColliding,
+                  'bg-slate-900 text-slate-700 outline-0': word.isBackground,
+                  'outline outline-1 outline-current':
+                    discoursemeId !== undefined,
+                  'hover:bg-yellow-500': isDraggingOther,
+                  'hover:bg-primary': !isDraggingOther,
+                },
               )}
               style={{
                 // transform: `translate(-50%, -50%)`,
@@ -519,7 +557,7 @@ function Item({
       {!word.isBackground && (
         <div
           className={cn(
-            'pointer-events-none absolute z-[500]',
+            'pointer-events-none absolute z-[5002]',
             !isDragging && 'hidden',
           )}
           style={{

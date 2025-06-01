@@ -65,6 +65,7 @@ function WordCloudComponents() {
       <div className="my-3 outline outline-1 outline-pink-400">
         <WordCloudAlt
           hideOverflow
+          className="aspect-[2/1]"
           words={addMoreWords ? [...wordsCluster, ...moreWords] : wordsCluster}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
@@ -80,6 +81,7 @@ function WordCloudComponents() {
       <div className="my-3 outline outline-1 outline-pink-400">
         <WordCloudAlt
           hideOverflow
+          className="aspect-[2/1]"
           words={[...wordsSmallCluster, ...(addMoreWords ? moreWords : [])]}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
@@ -96,6 +98,7 @@ function WordCloudComponents() {
       <div className="my-3 outline outline-1 outline-pink-400">
         <WordCloudAlt
           hideOverflow
+          className="aspect-[2/1]"
           words={[...wordsCollision, ...(addMoreWords ? moreWords : [])]}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
