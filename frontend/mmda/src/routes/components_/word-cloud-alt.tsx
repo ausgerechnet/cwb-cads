@@ -159,68 +159,68 @@ const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
   {
     discoursemeId: 1,
     label: 'Klimawandel',
-    x: 1_000,
-    y: 500,
+    x: 0,
+    y: 0,
     score: 1,
-    originX: 1_000,
-    originY: 500,
+    originX: 0,
+    originY: 0,
   },
   {
     discoursemeId: 2,
     label: 'Irgendwas anderes',
-    x: 1_000,
-    y: 600,
+    x: 0,
+    y: 0.01,
     score: 0.8,
-    originX: 1_000,
-    originY: 600,
+    originX: 0.01,
+    originY: 0.05,
   },
   {
     discoursemeId: 3,
     label: 'Overlapping Discourseme',
-    x: 1_030,
-    y: 610,
+    x: 0.1,
+    y: -0.2,
     score: 0.6,
-    originX: 1_000,
-    originY: 610,
+    originX: 0.1,
+    originY: -0.2,
   },
 ]
 
 const wordsCollision = [
-  { x: 1_300, y: 500, label: 'Neighbor', score: 1 },
-  { x: 1_000, y: 500, label: 'Overlap A', score: 1 },
-  { x: 1_000, y: 530, label: 'Overlap B', score: 1 },
-  { x: 1_050, y: 350, label: 'TOP LEFT!!', score: 1, originX: 0, originY: 0 },
+  { x: 0.1, y: 0, label: 'Neighbor', score: 1 },
+  { x: 0, y: 0, label: 'Overlap A', score: 1 },
+  { x: 0, y: 0.55, label: 'Overlap B', score: 1 },
+  { x: 0, y: 0, label: 'TOP LEFT!!', score: 1, originX: -1, originY: -1 },
   {
-    x: 1_050,
-    y: 350,
+    x: 0.5,
+    y: 0.5,
     label: 'BOTTOM RIGHT!!',
     score: 1,
-    originX: 2_000,
-    originY: 1_000,
+    originX: 1,
+    originY: 1,
   },
 ] satisfies ComponentProps<typeof WordCloudAlt>['words']
 
 const wordsCluster = [
-  { x: 1_000, y: 500, label: 'Greetings', score: 1 },
-  { x: 1_000, y: 502, label: 'Godmorgon', score: 0.8 },
-  { x: 1_050, y: 420, label: 'TOP LEFT!!', score: 0.5, originX: 0, originY: 0 },
-  { x: 980, y: 510, label: 'World', score: 0.6 },
-  { x: 1_050, y: 480, label: 'Hi', score: 0.3 },
-  { x: 1_100, y: 500, label: 'Whoop', score: 0.4 },
+  { x: 0, y: 0, label: 'Greetings', score: 1 },
+  { x: 0, y: 0.01, label: 'Godmorgon', score: 0.8 },
+  { x: -0.9, y: -0.9, label: 'TOP LEFT!!', score: 0.5, originX: 0, originY: 0 },
+  { x: 0.5, y: 0, label: 'World', score: 0.6 },
+  { x: 0, y: 0.1, label: 'Hi', score: 0.3 },
+  { x: -0.5, y: 0.9, label: 'Whoop', score: 0.4 },
   ...Array.from({ length: 200 }, (_, i) => ({
-    x: 2_000 * rnd(i),
-    y: 1_000 * rnd(i + 1),
+    x: 2 * rnd(i) - 1,
+    y: 2 * rnd(i + 1) - 1,
     label: `Word ${i}`,
     score: rnd(i ** 2 + 64) ** 4,
     isBackground: rnd(i * 2) < 0.3,
   })),
   // circular cluster around the center
-  ...Array.from({ length: 50 }, (_, i) => {
+  ...Array.from({ length: 100 }, (_, i) => {
     const angle = rnd(i) * Math.PI * 2
-    const radius = rnd(i + 1) * 200
+    const radius = rnd(i + 1) * 0.1
     return {
-      x: 1_000 + radius * Math.cos(angle),
-      y: 500 + radius * Math.sin(angle),
+      x: radius * Math.cos(angle),
+      y: radius * Math.sin(angle),
       label: `Cluster ${i}`,
       score: rnd(i) ** 5,
       isBackground: false,
@@ -229,8 +229,8 @@ const wordsCluster = [
 ] satisfies ComponentProps<typeof WordCloudAlt>['words']
 
 const moreWords = Array.from({ length: 100 }, (_, i) => ({
-  x: 2_000 * rnd(i),
-  y: 1_000 * rnd(i + 1),
+  x: 2 * rnd(i) - 1,
+  y: 2 * rnd(i + 1) - 1,
   label: `Additional Word ${i}`,
   score: rnd(i ** 2 + 64) ** 4,
   isBackground: rnd(i * 2) < 0.8,

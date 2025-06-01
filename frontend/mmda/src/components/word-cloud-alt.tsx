@@ -11,6 +11,7 @@ import { cn } from '@cads/shared/lib/utils'
 import { Slider } from '@cads/shared/components/ui/slider'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { Button } from '@cads/shared/components/ui/button'
+import { clamp } from '@cads/shared/lib/clamp'
 import {
   DiscoursemeDisplay,
   type CloudWorkerMessage,
@@ -40,16 +41,14 @@ export function WordCloudAlt({
   className,
   words = [],
   discoursemes = [],
-  width = 2_000,
-  height = 1_000,
+  aspectRatio = 2 / 1,
   debug = false,
   defaultCutOff = 0.5,
   hideOverflow = false,
   onChange,
 }: {
   className?: string
-  width?: number
-  height?: number
+  aspectRatio?: number
   words?: {
     x: number
     y: number
@@ -76,7 +75,7 @@ export function WordCloudAlt({
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [[containerWidth, containerHeight], setContainerSize] = useState<
     [number, number]
-  >([100, 100])
+  >([200, 100])
   const [zoom, setZoom] = useState(1)
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isReady, setIsReady] = useState(false)
@@ -88,40 +87,35 @@ export function WordCloudAlt({
   useEffect(() => {
     if (!container) return
     function handleResize() {
-      let { clientHeight, clientWidth } = container!
-      // the container contains the actual word cloud which has a fixed aspect ratio, so downscale the width and height accordingly
-      if (clientWidth / clientHeight > width / height) {
-        clientWidth = (clientHeight * width) / height
-      } else {
-        clientHeight = (clientWidth * height) / width
-      }
+      const { clientHeight, clientWidth } = container!
       worker?.postMessage({
         type: 'update_size',
-        payload: { displayWidth: clientWidth, displayHeight: clientHeight },
+        payload: {
+          displayWidth: container!.clientWidth,
+          displayHeight: clientHeight,
+        },
       } satisfies CloudWorkerMessage)
       setContainerSize([clientWidth, clientHeight])
     }
-    const resizeObserver = new ResizeObserver(() => {
-      handleResize()
-    })
+    const resizeObserver = new ResizeObserver(() => handleResize())
     resizeObserver.observe(container)
     return () => resizeObserver.disconnect()
-  }, [container, height, width, worker])
+  }, [container, aspectRatio, worker])
 
   const toDisplayCoordinates = useCallback(
     (x: number, y: number): [number, number] => [
-      (x / width) * containerWidth,
-      (y / height) * containerHeight,
+      ((x + 1) / 2) * containerWidth,
+      ((y + 1) / 2) * containerHeight,
     ],
-    [width, containerWidth, height, containerHeight],
+    [containerWidth, containerHeight],
   )
 
   const toOriginalCoordinates = useCallback(
     (displayX: number, displayY: number): [number, number] => [
-      (displayX / containerWidth) * width,
-      (displayY / containerHeight) * height,
+      clamp((displayX / containerWidth) * 2, -1, 1),
+      clamp((displayY / containerHeight) * 2, -1, 1),
     ],
-    [containerWidth, width, containerHeight, height],
+    [containerWidth, containerHeight],
   )
 
   const [displayWords, setDisplayWords] = useState<WordDisplay[]>(() =>
@@ -198,8 +192,8 @@ export function WordCloudAlt({
     worker.postMessage({
       type: 'update',
       payload: {
-        width,
-        height,
+        width: 2,
+        height: 2,
         displayWidth: container.clientWidth,
         displayHeight: container.clientHeight,
         words: words.map((word) => ({
@@ -212,10 +206,10 @@ export function WordCloudAlt({
         })),
       },
     } satisfies CloudWorkerMessage)
-  }, [worker, words, width, height, isReady, container, discoursemes])
+  }, [worker, words, isReady, container, discoursemes])
 
   return (
-    <div className={cn('relative h-full w-full', className)} ref={setContainer}>
+    <div className={cn('relative h-full w-full', className)}>
       <TransformWrapper
         initialScale={1}
         onTransformed={(event) => {
@@ -350,10 +344,9 @@ export function WordCloudAlt({
                   )}
                 >
                   <div
+                    ref={setContainer}
                     className="bg-muted/50 relative w-full rounded-lg outline-1"
-                    style={{
-                      aspectRatio: `${width} / ${height}`,
-                    }}
+                    style={{ aspectRatio }}
                   >
                     {displayWords.map((word) => (
                       <Item
@@ -391,15 +384,15 @@ export function WordCloudAlt({
                     {debug && (
                       <svg
                         className="pointer-events-none absolute inset-0 z-[5001] h-full w-full touch-none"
-                        viewBox={`0 0 ${width} ${height}`}
+                        viewBox={`-1 -1 ${aspectRatio} ${aspectRatio}`}
                       >
                         {displayWords.map((word) => (
                           <line
                             key={word.label}
                             data-for-word={word.label}
-                            x1={word.originX}
+                            x1={word.originX * aspectRatio}
                             y1={word.originY}
-                            x2={word.x}
+                            x2={word.x * aspectRatio}
                             y2={word.y}
                             className="stroke stroke-emerald-500 stroke-[1px]"
                             vectorEffect="non-scaling-stroke"
@@ -467,11 +460,13 @@ function Item({
   toDisplayCoordinates: (x: number, y: number) => [number, number]
   debug?: boolean
   zoom: number
-} & HTMLAttributes<HTMLDivElement>) {
+} & HTMLAttributes<HTMLButtonElement>) {
   const { active } = useDndContext()
   const isDraggingOther = Boolean(active?.id) && active?.id !== word.id
-  const { attributes, listeners, setNodeRef, isDragging, transform } =
-    useDraggable({ id: word.id, disabled: isDraggingOther })
+  const { listeners, setNodeRef, isDragging, transform } = useDraggable({
+    id: word.id,
+    disabled: isDraggingOther,
+  })
   const [displayX, displayY] = toDisplayCoordinates(word.x, word.y)
   const [displayOriginX, displayOriginY] = toDisplayCoordinates(
     word.originX ?? word.x,
@@ -480,9 +475,9 @@ function Item({
 
   return (
     <>
-      <div
+      <button
         className={cn(
-          'absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
+          'group absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
           `word--${word.label.replace(/\s+/g, '-')}`,
           {
             'z-[5001!important] opacity-50 will-change-transform': isDragging,
@@ -496,7 +491,6 @@ function Item({
           ['--y' as string]: `${displayY + (transform?.y ?? 0) / zoom}px`,
           zIndex: word.isBackground ? 0 : Math.floor(word.score * 100) + 10,
         }}
-        {...attributes}
         {...listeners}
         {...props}
       >
@@ -517,7 +511,8 @@ function Item({
             <span
               ref={setNodeRef}
               className={cn(
-                'absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 outline-transparent',
+                'outline-background/10 absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2',
+                'group-focus-visible:outline-white/50',
                 {
                   'outline-red-700': debug && word.hasNearbyElements,
                   'bg-red-700': debug && word.isColliding,
@@ -545,6 +540,7 @@ function Item({
               }}
             >
               {word.label}
+
               {debug && (
                 <span
                   className={cn(
@@ -555,13 +551,14 @@ function Item({
                   {word.score.toFixed(2)}
                 </span>
               )}
+
               {debug && !word.isBackground && (
                 <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
               )}
             </span>
           </div>
         </KeepScale>
-      </div>
+      </button>
 
       {!word.isBackground && (
         <div
