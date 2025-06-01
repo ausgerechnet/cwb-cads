@@ -44,6 +44,13 @@ export type CloudWorkerMessage =
       }
     }
   | {
+      type: 'update_size'
+      payload: {
+        displayHeight: number
+        displayWidth: number
+      }
+    }
+  | {
       type: 'update_cutoff'
       payload: {
         cutOff: number
@@ -109,6 +116,16 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
       )
 
       cloud.simulateUntilStable()
+      break
+    }
+    case 'update_size': {
+      if (cloud) {
+        cloud.setDisplaySize(
+          data.payload.displayWidth,
+          data.payload.displayHeight,
+        )
+        cloud.simulateUntilStable()
+      }
       break
     }
     case 'update_cutoff': {

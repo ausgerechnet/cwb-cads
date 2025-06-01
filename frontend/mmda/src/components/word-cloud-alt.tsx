@@ -1,10 +1,4 @@
-import {
-  HTMLAttributes,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { HTMLAttributes, useCallback, useEffect, useState } from 'react'
 import {
   TransformWrapper,
   TransformComponent,
@@ -78,6 +72,9 @@ export function WordCloudAlt({
   onChange?: (event: WordCloudEvent) => void
 }) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
+  const [[containerWidth, containerHeight], setContainerSize] = useState<
+    [number, number]
+  >([100, 100])
   const [zoom, setZoom] = useState(1)
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isReady, setIsReady] = useState(false)
@@ -86,17 +83,28 @@ export function WordCloudAlt({
   // Tracks the currently hovered item -- useDroppable would be an alternative option, but causes a noticeable performance hit
   const [hoverItem, setHoverItem] = useState<string | null>(null)
 
-  const [containerWidth, containerHeight] = useMemo(() => {
-    if (!container) return [100, 100]
-    let { clientHeight, clientWidth } = container
-    // the container contains the actual word cloud which has a fixed aspect ratio, so downscale the width and height accordingly
-    if (clientWidth / clientHeight > width / height) {
-      clientWidth = (clientHeight * width) / height
-    } else {
-      clientHeight = (clientWidth * height) / width
+  useEffect(() => {
+    if (!container) return
+    function handleResize() {
+      let { clientHeight, clientWidth } = container!
+      // the container contains the actual word cloud which has a fixed aspect ratio, so downscale the width and height accordingly
+      if (clientWidth / clientHeight > width / height) {
+        clientWidth = (clientHeight * width) / height
+      } else {
+        clientHeight = (clientWidth * height) / width
+      }
+      worker?.postMessage({
+        type: 'update_size',
+        payload: { displayWidth: clientWidth, displayHeight: clientHeight },
+      } satisfies CloudWorkerMessage)
+      setContainerSize([clientWidth, clientHeight])
     }
-    return [clientWidth, clientHeight]
-  }, [container, width, height])
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize()
+    })
+    resizeObserver.observe(container)
+    return () => resizeObserver.disconnect()
+  }, [container, height, width, worker])
 
   const toDisplayCoordinates = useCallback(
     (x: number, y: number): [number, number] => [
@@ -108,10 +116,10 @@ export function WordCloudAlt({
 
   const toOriginalCoordinates = useCallback(
     (displayX: number, displayY: number): [number, number] => [
-      (displayX / (container?.clientWidth ?? width)) * width,
-      (displayY / (container?.clientHeight ?? height)) * height,
+      (displayX / containerWidth) * width,
+      (displayY / containerHeight) * height,
     ],
-    [width, height, container],
+    [containerWidth, width, containerHeight, height],
   )
 
   const [displayWords, setDisplayWords] = useState<WordDisplay[]>(() =>
@@ -185,7 +193,6 @@ export function WordCloudAlt({
 
   useEffect(() => {
     if (!worker || !isReady || !container) return
-    console.log('Updating worker data')
     worker.postMessage({
       type: 'update',
       payload: {
@@ -195,23 +202,11 @@ export function WordCloudAlt({
         displayHeight: container.clientHeight,
         words: words.map((word) => ({
           id: `word::${word.label}`,
-          x: word.x,
-          y: word.y,
-          originX: word.originX,
-          originY: word.originY,
-          label: word.label,
-          score: word.score,
-          isBackground: word.isBackground,
+          ...word,
         })),
         discoursemes: discoursemes.map((discourseme) => ({
           id: `discourseme::${discourseme.label}::${discourseme.discoursemeId}`,
-          discoursemeId: discourseme.discoursemeId,
-          x: discourseme.x,
-          y: discourseme.y,
-          originX: discourseme.originX,
-          originY: discourseme.originY,
-          label: discourseme.label,
-          score: discourseme.score,
+          ...discourseme,
         })),
       },
     } satisfies CloudWorkerMessage)
@@ -246,10 +241,7 @@ export function WordCloudAlt({
             "before:absolute before:-inset-[500px] before:content-['']",
             debug && 'before:bg-blue-500/50',
           )}
-          contentStyle={{
-            width: '100%',
-            height: '100%',
-          }}
+          contentStyle={{ width: '100%', height: '100%' }}
           wrapperStyle={{
             overflow: hideOverflow ? 'hidden' : 'visible',
             width: '100%',
@@ -354,7 +346,7 @@ export function WordCloudAlt({
               )}
             >
               <div
-                className="bg-muted/50 relative w-full min-w-[500px] rounded-lg outline-1"
+                className="bg-muted/50 relative w-full rounded-lg outline-1"
                 style={{
                   aspectRatio: `${width} / ${height}`,
                 }}
@@ -439,6 +431,8 @@ export function WordCloudAlt({
           Zoom: {zoom.toFixed(2)}
           <br />
           isDragging: {isDragging ? 'true' : 'false'}
+          <br />
+          Container Dimensions: {containerWidth} x {containerHeight}
         </div>
       )}
     </div>
