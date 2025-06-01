@@ -5,10 +5,12 @@ import {
   KeepScale,
 } from 'react-zoom-pan-pinch'
 import { DndContext, useDndContext, useDraggable } from '@dnd-kit/core'
+import { FullscreenIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { Slider } from '@cads/shared/components/ui/slider'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
+import { Button } from '@cads/shared/components/ui/button'
 import {
   DiscoursemeDisplay,
   type CloudWorkerMessage,
@@ -234,179 +236,192 @@ export function WordCloudAlt({
         limitToBounds
         minPositionX={0}
       >
-        {/* The before pseudo element provides some additional space to "grab onto" */}
-        {/* We use the *Style props instead of the *Class props to avoid specificity clashes which dangerously might only show up in prod */}
-        <TransformComponent
-          contentClass={cn(
-            "before:absolute before:-inset-[500px] before:content-['']",
-            debug && 'before:bg-blue-500/50',
-          )}
-          contentStyle={{ width: '100%', height: '100%' }}
-          wrapperStyle={{
-            overflow: hideOverflow ? 'hidden' : 'visible',
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <DndContext
-            onDragStart={() => setIsDragging(true)}
-            onDragAbort={() => setIsDragging(false)}
-            onDragCancel={() => setIsDragging(false)}
-            onDragEnd={(event) => {
-              const id = event.active.id
-              const itemA =
-                displayWords.find((item) => item.id === id) ??
-                displayDiscoursemes.find((item) => item.id === id)
-              const itemB =
-                displayWords.find((item) => item.id === hoverItem) ??
-                displayDiscoursemes.find((item) => item.id === hoverItem)
-              if (
-                itemA &&
-                itemB &&
-                itemA.id !== itemB.id &&
-                !(isDiscoursemeDisplay(itemA) && isDiscoursemeDisplay(itemB))
-              ) {
-                if (isDiscoursemeDisplay(itemB)) {
-                  onChange?.({
-                    type: 'add_to_discourseme',
-                    discoursemeId: itemB.discoursemeId,
-                    surface: itemA.label,
-                  })
-                } else if (isDiscoursemeDisplay(itemA)) {
-                  onChange?.({
-                    type: 'add_to_discourseme',
-                    discoursemeId: itemA.discoursemeId,
-                    surface: itemB.label,
-                  })
-                } else {
-                  onChange?.({
-                    type: 'new_discourseme',
-                    surfaces: [itemA.label, itemB.label],
-                  })
-                }
-              } else if (itemA) {
-                const [deltaX, deltaY] = toOriginalCoordinates(
-                  event.delta.x,
-                  event.delta.y,
-                )
-                const newOriginalX = itemA.x + deltaX / zoom
-                const newOriginalY = itemA.y + deltaY / zoom
-
-                if (isDiscoursemeDisplay(itemA)) {
-                  setDisplayDiscoursemes((discoursemes) =>
-                    discoursemes.map((discourseme) =>
-                      discourseme.id === itemA.id
-                        ? {
-                            ...discourseme,
-                            originX: newOriginalX,
-                            originY: newOriginalY,
-                            x: newOriginalX,
-                            y: newOriginalY,
-                          }
-                        : discourseme,
-                    ),
-                  )
-
-                  onChange?.({
-                    type: 'update_discourseme_position',
-                    discoursemeId: itemA.discoursemeId,
-                    x: newOriginalX,
-                    y: newOriginalY,
-                  })
-                } else {
-                  setDisplayWords((words) =>
-                    words.map((word) =>
-                      word.id === itemA.id
-                        ? {
-                            ...word,
-                            originX: newOriginalX,
-                            originY: newOriginalY,
-                            x: newOriginalX,
-                            y: newOriginalY,
-                          }
-                        : word,
-                    ),
-                  )
-
-                  onChange?.({
-                    type: 'update_surface_position',
-                    surface: itemA.label,
-                    x: newOriginalX,
-                    y: newOriginalY,
-                  })
-                }
-              }
-              setIsDragging(false)
-            }}
-          >
-            <div
-              className={cn(
-                'absolute grid h-full w-full place-items-center',
-                debug && 'bg-pink-500/50',
+        {({ centerView }) => (
+          <>
+            <TransformComponent
+              contentClass={cn(
+                "before:absolute before:-inset-[500px] before:content-['']",
+                debug && 'before:bg-blue-500/50',
               )}
+              contentStyle={{ width: '100%', height: '100%' }}
+              wrapperStyle={{
+                overflow: hideOverflow ? 'hidden' : 'visible',
+                width: '100%',
+                height: '100%',
+              }}
             >
-              <div
-                className="bg-muted/50 relative w-full rounded-lg outline-1"
-                style={{
-                  aspectRatio: `${width} / ${height}`,
+              <DndContext
+                onDragStart={() => setIsDragging(true)}
+                onDragAbort={() => setIsDragging(false)}
+                onDragCancel={() => setIsDragging(false)}
+                onDragEnd={(event) => {
+                  const id = event.active.id
+                  const itemA =
+                    displayWords.find((item) => item.id === id) ??
+                    displayDiscoursemes.find((item) => item.id === id)
+                  const itemB =
+                    displayWords.find((item) => item.id === hoverItem) ??
+                    displayDiscoursemes.find((item) => item.id === hoverItem)
+                  if (
+                    itemA &&
+                    itemB &&
+                    itemA.id !== itemB.id &&
+                    !(
+                      isDiscoursemeDisplay(itemA) && isDiscoursemeDisplay(itemB)
+                    )
+                  ) {
+                    if (isDiscoursemeDisplay(itemB)) {
+                      onChange?.({
+                        type: 'add_to_discourseme',
+                        discoursemeId: itemB.discoursemeId,
+                        surface: itemA.label,
+                      })
+                    } else if (isDiscoursemeDisplay(itemA)) {
+                      onChange?.({
+                        type: 'add_to_discourseme',
+                        discoursemeId: itemA.discoursemeId,
+                        surface: itemB.label,
+                      })
+                    } else {
+                      onChange?.({
+                        type: 'new_discourseme',
+                        surfaces: [itemA.label, itemB.label],
+                      })
+                    }
+                  } else if (itemA) {
+                    const [deltaX, deltaY] = toOriginalCoordinates(
+                      event.delta.x,
+                      event.delta.y,
+                    )
+                    const newOriginalX = itemA.x + deltaX / zoom
+                    const newOriginalY = itemA.y + deltaY / zoom
+
+                    if (isDiscoursemeDisplay(itemA)) {
+                      setDisplayDiscoursemes((discoursemes) =>
+                        discoursemes.map((discourseme) =>
+                          discourseme.id === itemA.id
+                            ? {
+                                ...discourseme,
+                                originX: newOriginalX,
+                                originY: newOriginalY,
+                                x: newOriginalX,
+                                y: newOriginalY,
+                              }
+                            : discourseme,
+                        ),
+                      )
+
+                      onChange?.({
+                        type: 'update_discourseme_position',
+                        discoursemeId: itemA.discoursemeId,
+                        x: newOriginalX,
+                        y: newOriginalY,
+                      })
+                    } else {
+                      setDisplayWords((words) =>
+                        words.map((word) =>
+                          word.id === itemA.id
+                            ? {
+                                ...word,
+                                originX: newOriginalX,
+                                originY: newOriginalY,
+                                x: newOriginalX,
+                                y: newOriginalY,
+                              }
+                            : word,
+                        ),
+                      )
+
+                      onChange?.({
+                        type: 'update_surface_position',
+                        surface: itemA.label,
+                        x: newOriginalX,
+                        y: newOriginalY,
+                      })
+                    }
+                  }
+                  setIsDragging(false)
                 }}
               >
-                {displayWords.map((word) => (
-                  <Item
-                    key={word.label}
-                    word={word}
-                    debug={debug}
-                    toDisplayCoordinates={toDisplayCoordinates}
-                    zoom={zoom}
-                    onMouseOver={() => {
-                      setHoverItem(word.id)
+                <div
+                  className={cn(
+                    'absolute grid h-full w-full place-items-center',
+                    debug && 'bg-pink-500/50',
+                  )}
+                >
+                  <div
+                    className="bg-muted/50 relative w-full rounded-lg outline-1"
+                    style={{
+                      aspectRatio: `${width} / ${height}`,
                     }}
-                    onMouseOut={() => {
-                      setHoverItem(null)
-                    }}
-                  />
-                ))}
-
-                {displayDiscoursemes.map((discourseme) => (
-                  <Item
-                    key={discourseme.label}
-                    word={{ ...discourseme, isBackground: false }}
-                    debug={debug}
-                    discoursemeId={discourseme.discoursemeId}
-                    toDisplayCoordinates={toDisplayCoordinates}
-                    zoom={zoom}
-                    onMouseOver={() => {
-                      setHoverItem(discourseme.id)
-                    }}
-                    onMouseOut={() => {
-                      setHoverItem(null)
-                    }}
-                  />
-                ))}
-
-                {debug && (
-                  <svg
-                    className="pointer-events-none absolute inset-0 z-[5001] h-full w-full touch-none"
-                    viewBox={`0 0 ${width} ${height}`}
                   >
                     {displayWords.map((word) => (
-                      <line
+                      <Item
                         key={word.label}
-                        data-for-word={word.label}
-                        x1={word.originX}
-                        y1={word.originY}
-                        x2={word.x}
-                        y2={word.y}
-                        className="stroke stroke-emerald-500 stroke-[1px]"
-                        vectorEffect="non-scaling-stroke"
+                        word={word}
+                        debug={debug}
+                        toDisplayCoordinates={toDisplayCoordinates}
+                        zoom={zoom}
+                        onMouseOver={() => {
+                          setHoverItem(word.id)
+                        }}
+                        onMouseOut={() => {
+                          setHoverItem(null)
+                        }}
                       />
                     ))}
-                  </svg>
-                )}
-              </div>
-            </div>
-          </DndContext>
-        </TransformComponent>
+
+                    {displayDiscoursemes.map((discourseme) => (
+                      <Item
+                        key={discourseme.label}
+                        word={{ ...discourseme, isBackground: false }}
+                        debug={debug}
+                        discoursemeId={discourseme.discoursemeId}
+                        toDisplayCoordinates={toDisplayCoordinates}
+                        zoom={zoom}
+                        onMouseOver={() => {
+                          setHoverItem(discourseme.id)
+                        }}
+                        onMouseOut={() => {
+                          setHoverItem(null)
+                        }}
+                      />
+                    ))}
+
+                    {debug && (
+                      <svg
+                        className="pointer-events-none absolute inset-0 z-[5001] h-full w-full touch-none"
+                        viewBox={`0 0 ${width} ${height}`}
+                      >
+                        {displayWords.map((word) => (
+                          <line
+                            key={word.label}
+                            data-for-word={word.label}
+                            x1={word.originX}
+                            y1={word.originY}
+                            x2={word.x}
+                            y2={word.y}
+                            className="stroke stroke-emerald-500 stroke-[1px]"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        ))}
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              </DndContext>
+            </TransformComponent>
+
+            <Button
+              onClick={() => centerView(1)}
+              className="absolute bottom-1 left-1 z-[5002]"
+              variant="secondary"
+              size="icon"
+            >
+              <FullscreenIcon className="h-5 w-5" />
+            </Button>
+          </>
+        )}
       </TransformWrapper>
 
       <Slider
