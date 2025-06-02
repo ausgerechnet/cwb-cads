@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ComponentProps, useState } from 'react'
+import { ComponentProps, useCallback, useState } from 'react'
 import { ShrinkIcon } from 'lucide-react'
 
 import { WordCloudAlt } from '@/components/word-cloud-alt'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
+import { WordCloudEvent } from '@/components/word-cloud-alt/word-cloud-alt'
 
 export const Route = createFileRoute('/components/word-cloud-alt/full')({
   component: WordCloudAltFullscreen,
@@ -12,6 +13,24 @@ export const Route = createFileRoute('/components/word-cloud-alt/full')({
 
 function WordCloudAltFullscreen() {
   const [debug, setDebug] = useState(false)
+  const [filterItem, setFilterItem] = useState<string | null>(null)
+  const [filterDiscoursemeId, setFilterDiscoursemeId] = useState<number | null>(
+    null,
+  )
+  const [events, setEvents] = useState<WordCloudEvent[]>([])
+
+  const handleChange = useCallback((event: WordCloudEvent) => {
+    switch (event.type) {
+      case 'set_filter_item':
+        setFilterItem(event.item)
+        break
+      case 'set_filter_discourseme_id':
+        setFilterDiscoursemeId(event.discoursemeId)
+        break
+    }
+    setEvents((prev) => [...prev, event])
+  }, [])
+
   return (
     <div className="grid h-[calc(100svh-3.5rem)] grid-cols-[10rem_1fr_15rem_0] grid-rows-[0_auto_1fr_1rem] content-stretch gap-4 overflow-hidden">
       <div className="bg-muted z-10 col-start-1 row-span-full border-r-[1px] border-slate-600/60 shadow" />
@@ -33,14 +52,28 @@ function WordCloudAltFullscreen() {
         </label>
       </div>
 
-      <div className="bg-muted z-10 col-start-3 row-start-3 h-96 w-full self-start rounded-lg shadow outline outline-1 outline-slate-600/60" />
+      <div className="bg-muted z-10 col-start-3 row-start-3 h-96 w-full self-start rounded-lg shadow outline outline-1 outline-slate-600/60">
+        {debug && (
+          <>
+            <strong>Events</strong>
+            {events.map(({ type, ...data }, index) => (
+              <div
+                key={index}
+                className="text-xs text-white"
+              >{`${type} - ${JSON.stringify(data)}`}</div>
+            ))}
+          </>
+        )}
+      </div>
 
       <WordCloudAlt
         className="col-start-2 row-start-3 self-center"
         words={wordsCluster}
         discoursemes={discoursemes}
+        filterItem={filterItem}
+        filterDiscoursemeId={filterDiscoursemeId}
         debug={debug}
-        onChange={(event) => console.log('Event A:', event)}
+        onChange={handleChange}
       />
     </div>
   )

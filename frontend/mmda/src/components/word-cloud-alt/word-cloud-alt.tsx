@@ -29,6 +29,8 @@ export type WordCloudEvent =
       x: number
       y: number
     }
+  | { type: 'set_filter_item'; item: string | null }
+  | { type: 'set_filter_discourseme_id'; discoursemeId: number | null }
 
 function isDiscoursemeDisplay(
   item: WordDisplay | DiscoursemeDisplay,
@@ -40,6 +42,8 @@ export function WordCloudAlt({
   className,
   words = [],
   discoursemes = [],
+  filterItem = null,
+  filterDiscoursemeId = null,
   aspectRatio = 2 / 1,
   debug = false,
   defaultCutOff = 0.5,
@@ -61,16 +65,18 @@ export function WordCloudAlt({
     label: string
     score: number
   }[]
+  filterItem?: string | null
+  filterDiscoursemeId?: number | null
   debug?: boolean
   defaultCutOff?: number
   hideOverflow?: boolean
   onChange?: (event: WordCloudEvent) => void
 }) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
-  const [containerWidth, containerHeight] = useElementDimensions(
-    container,
-    [200, 100],
-  )
+  const [containerWidth, containerHeight] = useElementDimensions(container, [
+    window.innerWidth,
+    window.innerHeight,
+  ])
   const [displayType, setDisplayType] = useState<'rectangle' | 'dot'>(
     'rectangle',
   )
@@ -154,6 +160,37 @@ export function WordCloudAlt({
         hasNearbyElements: false,
       }
     }),
+  )
+
+  const handleSelect = useCallback(
+    (
+      item:
+        | { type: 'word'; item: string }
+        | { type: 'discourseme'; discoursemeId: number },
+    ) => {
+      if (item.type === 'word') {
+        onChange?.({
+          type: 'set_filter_item',
+          item: item.item === filterItem ? null : item.item,
+        })
+      } else if (item.type === 'discourseme') {
+        onChange?.({
+          type: 'set_filter_discourseme_id',
+          discoursemeId:
+            item.discoursemeId === filterDiscoursemeId
+              ? null
+              : item.discoursemeId,
+        })
+      }
+    },
+    [filterDiscoursemeId, filterItem, onChange],
+  )
+
+  const handleHover = useCallback((itemId: string) => setHoverItem(itemId), [])
+  const handleLeave = useCallback(
+    (itemId: string) =>
+      setHoverItem((current) => (current === itemId ? null : current)),
+    [],
   )
 
   useEffect(() => {
@@ -410,30 +447,32 @@ export function WordCloudAlt({
                     {displayWords.map((word) => (
                       <Item
                         key={word.label}
+                        isSelected={word.label === filterItem}
                         displayType={displayType}
                         word={word}
                         debug={debug}
                         toDisplayCoordinates={toDisplayCoordinates}
                         zoom={zoom}
-                        onMouseOver={() => setHoverItem(word.id)}
-                        onMouseOut={() => setHoverItem(null)}
+                        onSelect={handleSelect}
+                        onHover={handleHover}
+                        onLeave={handleLeave}
                       />
                     ))}
 
                     {displayDiscoursemes.map((discourseme) => (
                       <Item
                         key={discourseme.label}
+                        isSelected={
+                          discourseme.discoursemeId === filterDiscoursemeId
+                        }
+                        onSelect={handleSelect}
+                        onHover={handleHover}
+                        onLeave={handleLeave}
                         word={{ ...discourseme, isBackground: false }}
                         debug={debug}
                         discoursemeId={discourseme.discoursemeId}
                         toDisplayCoordinates={toDisplayCoordinates}
                         zoom={zoom}
-                        onMouseOver={() => {
-                          setHoverItem(discourseme.id)
-                        }}
-                        onMouseOut={() => {
-                          setHoverItem(null)
-                        }}
                       />
                     ))}
 

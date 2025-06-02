@@ -1,6 +1,5 @@
 import { KeepScale } from 'react-zoom-pan-pinch'
 import { useDndContext, useDraggable } from '@dnd-kit/core'
-import { type HTMLAttributes } from 'react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { WordDisplay } from './word-cloud-worker'
@@ -13,15 +12,26 @@ export function Item({
   debug = false,
   displayType = 'rectangle',
   zoom,
-  ...props
+  isSelected,
+  onHover,
+  onLeave,
+  onSelect,
 }: {
   word: WordDisplay
   discoursemeId?: number
   toDisplayCoordinates: (x: number, y: number) => [number, number]
   debug?: boolean
   zoom: number
+  isSelected: boolean
   displayType?: 'rectangle' | 'dot'
-} & HTMLAttributes<HTMLButtonElement>) {
+  onHover?: (id: string) => void
+  onLeave?: (id: string) => void
+  onSelect?: (
+    item:
+      | { type: 'word'; item: string }
+      | { type: 'discourseme'; discoursemeId: number },
+  ) => void
+}) {
   const { active } = useDndContext()
   const isDraggingOther = Boolean(active?.id) && active?.id !== word.id
   const { listeners, setNodeRef, isDragging, transform } = useDraggable({
@@ -39,12 +49,13 @@ export function Item({
 
   return (
     <>
-      <button
+      <div
         className={cn(
           'group absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
           `word--${word.label.replace(/\s+/g, '-')}`,
           {
-            'z-[5001!important] opacity-50 will-change-transform': isDragging,
+            'pointer-events-none z-[5001!important] opacity-50 will-change-transform':
+              isDragging,
             'transition-transform duration-500': !isDragging,
             'pointer-events-none': word.isBackground || displayType === 'dot',
             'no-pan touch-none': !word.isBackground,
@@ -55,84 +66,102 @@ export function Item({
           ['--y' as string]: `${displayY + (transform?.y ?? 0) / zoom}px`,
           zIndex: word.isBackground ? 0 : Math.floor(word.score * 100) + 10,
         }}
-        {...listeners}
-        {...props}
       >
         <KeepScale>
           <div
+            ref={setNodeRef}
             className={cn(
-              'absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2',
+              'absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2',
               {
                 'bg-red-500/50': debug && word.isColliding,
                 'bg-blue-500/50': debug && word.hasNearbyElements,
-                'h-2 w-2 rounded-full': displayType === 'dot',
+                'h-2 w-2 rounded-full bg-slate-300 text-opacity-0 opacity-50':
+                  displayType === 'dot',
+                'border-primary border-1 border': isSelected,
+                'bg-slate-700 opacity-30':
+                  displayType === 'dot' && word.isBackground,
               },
             )}
-            style={
-              displayType === 'rectangle'
+            style={{
+              scale:
+                displayType === 'dot' ? `${word.score * 200 + 100}%` : '100%',
+              ...(displayType === 'rectangle'
                 ? {
                     width: word.displayWidth,
                     height: word.displayHeight - 6,
                   }
-                : {}
-            }
+                : {}),
+            }}
           >
-            <span
-              ref={setNodeRef}
-              className={cn(
-                'outline-background/10 absolute left-0 top-0 flex h-full w-full origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 transition-transform delay-300 duration-500',
-                'group-focus-visible:outline-white/50',
-                {
-                  'outline-red-700': debug && word.hasNearbyElements,
-                  'bg-red-700': debug && word.isColliding,
-                  'bg-slate-900 text-slate-700 outline-0': word.isBackground,
-                  'outline outline-1 outline-current':
-                    discoursemeId !== undefined,
-                  'hover:bg-yellow-500': isDraggingOther,
-                  'hover:bg-primary': !isDraggingOther,
-                  'rounded-full bg-slate-300 text-opacity-0 opacity-50 outline-0':
-                    displayType === 'dot',
-                  'bg-slate-700 opacity-30':
-                    displayType === 'dot' && word.isBackground,
-                },
-              )}
-              style={{
-                fontSize: `${12 + 20 * word.score}px`,
-                scale:
-                  displayType === 'dot' ? `${word.score * 200 + 100}%` : '100%',
-                ...(discoursemeId === undefined
-                  ? {}
-                  : {
-                      backgroundColor: getColorForNumber(
-                        discoursemeId,
-                        0.9,
-                        0.1,
-                        0.3,
-                      ),
-                      color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
-                    }),
-              }}
-            >
-              {word.label}
+            {!word.isBackground && displayType === 'rectangle' && (
+              <button
+                onClick={() => {
+                  if (discoursemeId !== undefined) {
+                    onSelect?.({ type: 'discourseme', discoursemeId })
+                  } else {
+                    onSelect?.({ type: 'word', item: word.label })
+                  }
+                }}
+              >
+                {isSelected ? 'X' : 'O'}
+              </button>
+            )}
 
-              {debug && (
-                <span
-                  className={cn(
-                    'absolute left-0 top-0 bg-black/30 p-0.5 text-xs text-white',
-                    word.isBackground && 'opacity-50',
-                  )}
-                >
-                  {word.score.toFixed(2)}
-                </span>
-              )}
+            {displayType === 'rectangle' && (
+              <button
+                ref={setNodeRef}
+                {...listeners}
+                className={cn(
+                  'outline-background/10 flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 transition-transform delay-300 duration-500',
+                  'group-focus-visible:outline-white/50',
+                  {
+                    'outline-red-700': debug && word.hasNearbyElements,
+                    'bg-red-700': debug && word.isColliding,
+                    'bg-slate-900 text-slate-700 outline-0': word.isBackground,
+                    'outline outline-1 outline-current':
+                      discoursemeId !== undefined,
+                    'hover:bg-yellow-500': isDraggingOther,
+                    'hover:bg-primary': !isDraggingOther,
+                  },
+                )}
+                onMouseOver={() => onHover?.(word.id)}
+                onMouseLeave={() => onLeave?.(word.id)}
+                style={{
+                  fontSize: `${12 + 20 * word.score}px`,
+                  ...(discoursemeId === undefined
+                    ? {}
+                    : {
+                        backgroundColor: getColorForNumber(
+                          discoursemeId,
+                          0.9,
+                          0.1,
+                          0.3,
+                        ),
+                        color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
+                      }),
+                }}
+              >
+                {word.label}
 
-              {debug && !word.isBackground && (
-                <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
-              )}
-            </span>
+                {debug && (
+                  <span
+                    className={cn(
+                      'absolute left-0 top-0 bg-black/30 p-0.5 text-xs text-white',
+                      word.isBackground && 'opacity-50',
+                    )}
+                  >
+                    {word.score.toFixed(2)}
+                  </span>
+                )}
+
+                {debug && !word.isBackground && (
+                  <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
+                )}
+              </button>
+            )}
           </div>
         </KeepScale>
-      </button>
+      </div>
 
       <div
         className={cn(

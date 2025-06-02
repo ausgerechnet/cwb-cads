@@ -2,7 +2,7 @@ export function calculateWordDimensions(
   word: string,
   score: number,
 ): [number, number] {
-  const baseWidth = word.length * (10 + 10 * score)
+  const baseWidth = word.length * (10 + 10 * score) + 14
   const baseHeight = 20 + score * 20
   return [baseWidth, baseHeight]
 }
