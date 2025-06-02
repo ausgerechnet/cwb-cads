@@ -3,6 +3,7 @@ import {
   TransformWrapper,
   TransformComponent,
   KeepScale,
+  MiniMap,
 } from 'react-zoom-pan-pinch'
 import { DndContext, useDndContext, useDraggable } from '@dnd-kit/core'
 import { FullscreenIcon } from 'lucide-react'
@@ -232,6 +233,49 @@ export function WordCloudAlt({
       >
         {({ centerView }) => (
           <>
+            <Button
+              onClick={() => centerView(1)}
+              className="absolute bottom-1 left-1 z-[5002]"
+              variant="secondary"
+              size="icon"
+            >
+              <FullscreenIcon className="h-5 w-5" />
+            </Button>
+
+            <Slider
+              className="absolute bottom-2 left-1/2 z-50 w-[300px] -translate-x-1/2"
+              value={[cutOff]}
+              onValueChange={(value) => {
+                setCutOff(value[0])
+                if (worker) {
+                  worker.postMessage({
+                    type: 'update_cutoff',
+                    payload: { cutOff: value[0] },
+                  } satisfies CloudWorkerMessage)
+                }
+              }}
+              min={0}
+              max={1}
+              step={0.01}
+            />
+            <WordCloudMiniMap
+              className="bg-background/90 absolute left-2 top-2 z-[2000]"
+              aspectRatio={aspectRatio}
+              displayWords={displayWords}
+              displayDiscoursemes={displayDiscoursemes}
+              toDisplayCoordinates={toDisplayCoordinates}
+            />
+
+            {debug && (
+              <div className="absolute right-2 top-2 z-[2000] bg-black/50">
+                Zoom: {zoom.toFixed(2)}
+                <br />
+                isDragging: {isDragging ? 'true' : 'false'}
+                <br />
+                Container Dimensions: {containerWidth} x {containerHeight}
+              </div>
+            )}
+
             <TransformComponent
               contentClass={cn(
                 "before:absolute before:-inset-[500px] before:content-['']",
@@ -339,14 +383,17 @@ export function WordCloudAlt({
               >
                 <div
                   className={cn(
-                    'absolute grid h-full w-full place-items-center',
+                    '@container absolute flex h-full w-full items-center justify-center',
                     debug && 'bg-pink-500/50',
                   )}
                 >
                   <div
                     ref={setContainer}
-                    className="bg-muted/50 relative w-full rounded-lg outline-1"
-                    style={{ aspectRatio }}
+                    className="bg-muted/50 relative max-h-full max-w-full rounded-lg outline-1"
+                    style={{
+                      aspectRatio,
+                      width: `clamp(0px, 100cqw, calc(${aspectRatio} * 100cqh))`,
+                    }}
                   >
                     {displayWords.map((word) => (
                       <Item
@@ -355,12 +402,8 @@ export function WordCloudAlt({
                         debug={debug}
                         toDisplayCoordinates={toDisplayCoordinates}
                         zoom={zoom}
-                        onMouseOver={() => {
-                          setHoverItem(word.id)
-                        }}
-                        onMouseOut={() => {
-                          setHoverItem(null)
-                        }}
+                        onMouseOver={() => setHoverItem(word.id)}
+                        onMouseOut={() => setHoverItem(null)}
                       />
                     ))}
 
@@ -404,45 +447,74 @@ export function WordCloudAlt({
                 </div>
               </DndContext>
             </TransformComponent>
-
-            <Button
-              onClick={() => centerView(1)}
-              className="absolute bottom-1 left-1 z-[5002]"
-              variant="secondary"
-              size="icon"
-            >
-              <FullscreenIcon className="h-5 w-5" />
-            </Button>
           </>
         )}
       </TransformWrapper>
+    </div>
+  )
+}
 
-      <Slider
-        className="absolute bottom-2 left-1/2 z-50 w-[300px] -translate-x-1/2"
-        value={[cutOff]}
-        onValueChange={(value) => {
-          setCutOff(value[0])
-          if (worker) {
-            worker.postMessage({
-              type: 'update_cutoff',
-              payload: { cutOff: value[0] },
-            } satisfies CloudWorkerMessage)
-          }
-        }}
-        min={0}
-        max={1}
-        step={0.01}
-      />
-
-      {debug && (
-        <div className="absolute left-2 top-2 z-40 bg-black/50">
-          Zoom: {zoom.toFixed(2)}
-          <br />
-          isDragging: {isDragging ? 'true' : 'false'}
-          <br />
-          Container Dimensions: {containerWidth} x {containerHeight}
+function WordCloudMiniMap({
+  className,
+  aspectRatio,
+  displayWords,
+  displayDiscoursemes,
+  toDisplayCoordinates,
+}: {
+  className?: string
+  aspectRatio: number
+  displayWords: WordDisplay[]
+  displayDiscoursemes: DiscoursemeDisplay[]
+  toDisplayCoordinates: (x: number, y: number) => [number, number]
+}) {
+  return (
+    <div className={className}>
+      <MiniMap
+        className="outline-muted-foreground/20 rounded outline outline-1"
+        borderColor="hsl(var(--primary))"
+      >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div
+            className="bg-muted/50 relative max-h-full max-w-full"
+            style={{
+              aspectRatio,
+              width: `clamp(0px, 100cqw, calc(${aspectRatio} * 100cqh))`,
+            }}
+          >
+            {displayWords.map(({ originX, originY, id }) => {
+              const [x, y] = toDisplayCoordinates(originX, originY)
+              return (
+                <span
+                  key={id}
+                  className="absolute h-5 w-5 rounded-full bg-white/20"
+                  style={{ left: x, top: y }}
+                />
+              )
+            })}
+            {displayDiscoursemes.map(
+              ({ originX, originY, id, discoursemeId }) => {
+                const [x, y] = toDisplayCoordinates(originX, originY)
+                return (
+                  <span
+                    key={id}
+                    className="absolute h-24 w-24 rounded-full bg-white/20"
+                    style={{
+                      left: x,
+                      top: y,
+                      backgroundColor: getColorForNumber(
+                        discoursemeId,
+                        0.5,
+                        1,
+                        0.5,
+                      ),
+                    }}
+                  />
+                )
+              },
+            )}
+          </div>
         </div>
-      )}
+      </MiniMap>
     </div>
   )
 }
