@@ -42,6 +42,7 @@ export function WordCloudAlt({
   className,
   words = [],
   discoursemes = [],
+  padding: [paddingX = 0, paddingY = 0] = [0, 0],
   filterItem = null,
   filterDiscoursemeId = null,
   aspectRatio = 2 / 1,
@@ -65,6 +66,7 @@ export function WordCloudAlt({
     label: string
     score: number
   }[]
+  padding?: [number, number]
   filterItem?: string | null
   filterDiscoursemeId?: number | null
   debug?: boolean
@@ -101,18 +103,18 @@ export function WordCloudAlt({
 
   const toDisplayCoordinates = useCallback(
     (x: number, y: number): [number, number] => [
-      ((x + 1) / 2) * containerWidth,
-      ((y + 1) / 2) * containerHeight,
+      ((x + 1) / 2) * (containerWidth - paddingX) + paddingX / 2,
+      ((y + 1) / 2) * (containerHeight - paddingY) + paddingY / 2,
     ],
-    [containerWidth, containerHeight],
+    [containerWidth, paddingX, containerHeight, paddingY],
   )
 
   const toOriginalCoordinates = useCallback(
     (displayX: number, displayY: number): [number, number] => [
-      clamp((displayX / containerWidth) * 2, -1, 1),
-      clamp((displayY / containerHeight) * 2, -1, 1),
+      clamp((displayX / (containerWidth - paddingX)) * 2, -1, 1),
+      clamp((displayY / (containerHeight - paddingY)) * 2, -1, 1),
     ],
-    [containerWidth, containerHeight],
+    [containerWidth, paddingX, containerHeight, paddingY],
   )
 
   const [displayWords, setDisplayWords] = useState<WordDisplay[]>(() =>
@@ -380,8 +382,8 @@ export function WordCloudAlt({
                       event.delta.x,
                       event.delta.y,
                     )
-                    const newOriginalX = itemA.x + deltaX / zoom
-                    const newOriginalY = itemA.y + deltaY / zoom
+                    const newOriginalX = clamp(itemA.x + deltaX / zoom, -1, 1)
+                    const newOriginalY = clamp(itemA.y + deltaY / zoom, -1, 1)
 
                     if (isDiscoursemeDisplay(itemA)) {
                       setDisplayDiscoursemes((discoursemes) =>

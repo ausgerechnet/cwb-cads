@@ -74,6 +74,7 @@ function WordCloudAltFullscreen() {
         filterDiscoursemeId={filterDiscoursemeId}
         debug={debug}
         onChange={handleChange}
+        padding={[250, 100]}
       />
     </div>
   )
