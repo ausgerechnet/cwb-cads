@@ -65,7 +65,7 @@ export function Item({
               {
                 'bg-red-500/50': debug && word.isColliding,
                 'bg-blue-500/50': debug && word.hasNearbyElements,
-                'h-5 w-5 rounded-full': displayType === 'dot',
+                'h-2 w-2 rounded-full': displayType === 'dot',
               },
             )}
             style={
@@ -80,7 +80,7 @@ export function Item({
             <span
               ref={setNodeRef}
               className={cn(
-                'outline-background/10 absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2',
+                'outline-background/10 absolute left-0 top-0 flex h-full w-full origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 transition-transform delay-300 duration-500',
                 'group-focus-visible:outline-white/50',
                 {
                   'outline-red-700': debug && word.hasNearbyElements,
@@ -97,8 +97,9 @@ export function Item({
                 },
               )}
               style={{
-                // transform: `translate(-50%, -50%)`,
                 fontSize: `${12 + 20 * word.score}px`,
+                scale:
+                  displayType === 'dot' ? `${word.score * 200 + 100}%` : '100%',
                 ...(discoursemeId === undefined
                   ? {}
                   : {

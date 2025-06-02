@@ -37,7 +37,7 @@ function WordCloudAltFullscreen() {
 
       <WordCloudAlt
         className="col-start-2 row-start-3 self-center"
-        words={[...wordsCluster, ...moreWords]}
+        words={wordsCluster}
         discoursemes={discoursemes}
         debug={debug}
         onChange={(event) => console.log('Event A:', event)}
@@ -53,8 +53,6 @@ const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
     x: 0,
     y: 0,
     score: 1,
-    originX: 0,
-    originY: 0,
   },
   {
     discoursemeId: 2,
@@ -62,8 +60,6 @@ const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
     x: 0,
     y: 0.01,
     score: 0.8,
-    originX: 0.01,
-    originY: 0.05,
   },
   {
     discoursemeId: 3,
@@ -71,26 +67,17 @@ const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
     x: 0.1,
     y: -0.2,
     score: 0.6,
-    originX: 0.1,
-    originY: -0.2,
   },
 ]
 
 const wordsCluster = [
   { x: 0, y: 0, label: 'Greetings', score: 1 },
   { x: 0, y: 0.01, label: 'Godmorgon', score: 0.8 },
-  {
-    x: -0.9,
-    y: -0.9,
-    label: 'TOP LEFT!!',
-    score: 0.5,
-    originX: -1,
-    originY: -1,
-  },
+  { x: -1, y: -1, label: 'TOP LEFT!!', score: 0.5 },
   { x: 0.5, y: 0, label: 'World', score: 0.6 },
   { x: 0, y: 0.1, label: 'Hi', score: 0.3 },
   { x: -0.5, y: 0.9, label: 'Whoop', score: 0.4 },
-  ...Array.from({ length: 200 }, (_, i) => ({
+  ...Array.from({ length: 400 }, (_, i) => ({
     x: 2 * rnd(i) - 1,
     y: 2 * rnd(i + 1) - 1,
     label: `Word ${i}`,
@@ -110,14 +97,6 @@ const wordsCluster = [
     }
   }),
 ] satisfies ComponentProps<typeof WordCloudAlt>['words']
-
-const moreWords = Array.from({ length: 100 }, (_, i) => ({
-  x: 2 * rnd(i) - 1,
-  y: 2 * rnd(i + 1) - 1,
-  label: `Additional Word ${i}`,
-  score: rnd(i ** 2 + 64) ** 4,
-  isBackground: rnd(i * 2) < 0.8,
-}))
 
 function rnd(seed: number) {
   const x = Math.sin(seed) * 1_000_000

@@ -165,8 +165,6 @@ const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
     x: 0,
     y: 0,
     score: 1,
-    originX: 0,
-    originY: 0,
   },
   {
     discoursemeId: 2,
@@ -174,8 +172,6 @@ const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
     x: 0,
     y: 0.01,
     score: 0.8,
-    originX: 0.01,
-    originY: 0.05,
   },
   {
     discoursemeId: 3,
@@ -183,8 +179,6 @@ const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
     x: 0.1,
     y: -0.2,
     score: 0.6,
-    originX: 0.1,
-    originY: -0.2,
   },
 ]
 
@@ -192,21 +186,14 @@ const wordsCollision = [
   { x: 0.1, y: 0, label: 'Neighbor', score: 1 },
   { x: 0, y: 0, label: 'Overlap A', score: 1 },
   { x: 0, y: 0.55, label: 'Overlap B', score: 1 },
-  { x: 0, y: 0, label: 'TOP LEFT!!', score: 1, originX: -1, originY: -1 },
-  {
-    x: 0.5,
-    y: 0.5,
-    label: 'BOTTOM RIGHT!!',
-    score: 1,
-    originX: 1,
-    originY: 1,
-  },
+  { x: -1, y: -1, label: 'TOP LEFT!!', score: 1 },
+  { x: 1, y: 1, label: 'BOTTOM RIGHT!!', score: 1 },
 ] satisfies ComponentProps<typeof WordCloudAlt>['words']
 
 const wordsCluster = [
   { x: 0, y: 0, label: 'Greetings', score: 1 },
   { x: 0, y: 0.01, label: 'Godmorgon', score: 0.8 },
-  { x: -0.9, y: -0.9, label: 'TOP LEFT!!', score: 0.5, originX: 0, originY: 0 },
+  { x: -1, y: -1, label: 'TOP LEFT!!', score: 0.5 },
   { x: 0.5, y: 0, label: 'World', score: 0.6 },
   { x: 0, y: 0.1, label: 'Hi', score: 0.3 },
   { x: -0.5, y: 0.9, label: 'Whoop', score: 0.4 },
@@ -232,11 +219,11 @@ const wordsCluster = [
 ] satisfies ComponentProps<typeof WordCloudAlt>['words']
 
 const moreWords = Array.from({ length: 100 }, (_, i) => ({
-  x: 2 * rnd(i) - 1,
-  y: 2 * rnd(i + 1) - 1,
+  x: 2 * rnd(i + 1_000) - 1,
+  y: 2 * rnd(i + 1_000 + 1) - 1,
   label: `Additional Word ${i}`,
-  score: rnd(i ** 2 + 64) ** 4,
-  isBackground: rnd(i * 2) < 0.8,
+  score: rnd((i + 1_000) ** 2 + 64) ** 4,
+  isBackground: rnd((i + 1_000) * 2) < 0.8,
 }))
 
 const wordsSmallCluster = wordsCluster.filter((_, i) => rnd(i) < 0.3)

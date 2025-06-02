@@ -51,18 +51,13 @@ export function WordCloudAlt({
   words?: {
     x: number
     y: number
-    originX?: number
-    originY?: number
     label: string
     score: number
-    isBackground?: boolean
   }[]
   discoursemes?: {
     discoursemeId: number
     x: number
     y: number
-    originX?: number
-    originY?: number
     label: string
     score: number
   }[]
@@ -124,9 +119,9 @@ export function WordCloudAlt({
       return {
         ...word,
         id: `word::${word.label}`,
-        originX: word.originX ?? word.x,
-        originY: word.originY ?? word.y,
-        isBackground: word.isBackground ?? false,
+        originX: word.x,
+        originY: word.y,
+        isBackground: word.score < cutOff,
         displayWidth,
         displayHeight,
         displayX: toDisplayCoordinates(word.x, word.y)[0],
@@ -148,8 +143,8 @@ export function WordCloudAlt({
       return {
         ...discourseme,
         id: `discourseme::${discourseme.label}::${discourseme.discoursemeId}`,
-        originX: discourseme.originX ?? discourseme.x,
-        originY: discourseme.originY ?? discourseme.y,
+        originX: discourseme.x,
+        originY: discourseme.y,
         isBackground: false,
         displayWidth,
         displayHeight,
