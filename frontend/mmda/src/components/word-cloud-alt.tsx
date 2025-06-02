@@ -6,12 +6,11 @@ import {
   MiniMap,
 } from 'react-zoom-pan-pinch'
 import { DndContext, useDndContext, useDraggable } from '@dnd-kit/core'
-import { FullscreenIcon } from 'lucide-react'
+import { DotIcon, FullscreenIcon, RectangleHorizontalIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { Slider } from '@cads/shared/components/ui/slider'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
-import { Button } from '@cads/shared/components/ui/button'
 import { clamp } from '@cads/shared/lib/clamp'
 import {
   DiscoursemeDisplay,
@@ -20,6 +19,8 @@ import {
   type WordDisplay,
 } from './word-cloud-worker'
 import { calculateWordDimensions } from './word-cloud-compute'
+import { ToggleBar } from '@cads/shared/components/toggle-bar'
+import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
 
 export type WordCloudEvent =
   | { type: 'new_discourseme'; surfaces: string[] }
@@ -77,6 +78,9 @@ export function WordCloudAlt({
   const [[containerWidth, containerHeight], setContainerSize] = useState<
     [number, number]
   >([200, 100])
+  const [displayType, setDisplayType] = useState<'rectangle' | 'dot'>(
+    'rectangle',
+  )
   const [zoom, setZoom] = useState(1)
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isReady, setIsReady] = useState(false)
@@ -84,6 +88,18 @@ export function WordCloudAlt({
   const [isDragging, setIsDragging] = useState(false)
   // Tracks the currently hovered item -- useDroppable would be an alternative option, but causes a noticeable performance hit
   const [hoverItem, setHoverItem] = useState<string | null>(null)
+
+  useEffect(() => {
+    function handleKeydown(event: KeyboardEvent) {
+      console.log('Keydown event:', event)
+      if (event.altKey && event.shiftKey && event.key === 'S') {
+        event.preventDefault()
+        setDisplayType((prev) => (prev === 'rectangle' ? 'dot' : 'rectangle'))
+      }
+    }
+    window.addEventListener('keydown', handleKeydown)
+    return () => window.removeEventListener('keydown', handleKeydown)
+  }, [])
 
   useEffect(() => {
     if (!container) return
@@ -233,14 +249,35 @@ export function WordCloudAlt({
       >
         {({ centerView }) => (
           <>
-            <Button
-              onClick={() => centerView(1)}
-              className="absolute bottom-1 left-1 z-[5002]"
-              variant="secondary"
-              size="icon"
-            >
-              <FullscreenIcon className="h-5 w-5" />
-            </Button>
+            <CenterButton centerView={centerView} />
+
+            <ToggleBar
+              className="absolute bottom-1 left-16 z-[5002] w-min"
+              options={[
+                [
+                  'rectangle',
+                  <RectangleHorizontalIcon className="h-4 w-4" />,
+                  <>
+                    Display as text
+                    <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+                      alt + shift + s
+                    </kbd>
+                  </>,
+                ],
+                [
+                  'dot',
+                  <DotIcon className="h-4 w-4" />,
+                  <>
+                    Display as dots
+                    <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+                      alt + shift + s
+                    </kbd>
+                  </>,
+                ],
+              ]}
+              value={displayType}
+              onChange={setDisplayType}
+            />
 
             <Slider
               className="absolute bottom-2 left-1/2 z-50 w-[300px] -translate-x-1/2"
@@ -398,6 +435,7 @@ export function WordCloudAlt({
                     {displayWords.map((word) => (
                       <Item
                         key={word.label}
+                        displayType={displayType}
                         word={word}
                         debug={debug}
                         toDisplayCoordinates={toDisplayCoordinates}
@@ -451,6 +489,37 @@ export function WordCloudAlt({
         )}
       </TransformWrapper>
     </div>
+  )
+}
+
+function CenterButton({ centerView }: { centerView: (zoom?: number) => void }) {
+  useEffect(() => {
+    function handleKeydown(event: KeyboardEvent) {
+      if (event.altKey && event.shiftKey && event.key === 'Z') {
+        event.preventDefault()
+        centerView(1)
+      }
+    }
+    window.addEventListener('keydown', handleKeydown)
+    return () => window.removeEventListener('keydown', handleKeydown)
+  }, [centerView])
+  return (
+    <ButtonTooltip
+      onClick={() => centerView(1)}
+      className="absolute bottom-1 left-1 z-[5002]"
+      variant="secondary"
+      size="icon"
+      tooltip={
+        <>
+          Center view{' '}
+          <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+            alt + shift + z
+          </kbd>
+        </>
+      }
+    >
+      <FullscreenIcon className="h-5 w-5" />
+    </ButtonTooltip>
   )
 }
 
@@ -524,6 +593,7 @@ function Item({
   discoursemeId,
   toDisplayCoordinates,
   debug = false,
+  displayType = 'rectangle',
   zoom,
   ...props
 }: {
@@ -532,6 +602,7 @@ function Item({
   toDisplayCoordinates: (x: number, y: number) => [number, number]
   debug?: boolean
   zoom: number
+  displayType?: 'rectangle' | 'dot'
 } & HTMLAttributes<HTMLButtonElement>) {
   const { active } = useDndContext()
   const isDraggingOther = Boolean(active?.id) && active?.id !== word.id
@@ -539,11 +610,14 @@ function Item({
     id: word.id,
     disabled: isDraggingOther,
   })
-  const [displayX, displayY] = toDisplayCoordinates(word.x, word.y)
   const [displayOriginX, displayOriginY] = toDisplayCoordinates(
     word.originX ?? word.x,
     word.originY ?? word.y,
   )
+  const [displayX, displayY] =
+    displayType === 'dot'
+      ? [displayOriginX, displayOriginY]
+      : toDisplayCoordinates(word.x, word.y)
 
   return (
     <>
@@ -554,7 +628,7 @@ function Item({
           {
             'z-[5001!important] opacity-50 will-change-transform': isDragging,
             'transition-transform duration-500': !isDragging,
-            'pointer-events-none': word.isBackground,
+            'pointer-events-none': word.isBackground || displayType === 'dot',
             'no-pan touch-none': !word.isBackground,
           },
         )}
@@ -573,12 +647,17 @@ function Item({
               {
                 'bg-red-500/50': debug && word.isColliding,
                 'bg-blue-500/50': debug && word.hasNearbyElements,
+                'h-5 w-5 rounded-full': displayType === 'dot',
               },
             )}
-            style={{
-              width: word.displayWidth,
-              height: word.displayHeight - 6,
-            }}
+            style={
+              displayType === 'rectangle'
+                ? {
+                    width: word.displayWidth,
+                    height: word.displayHeight - 6,
+                  }
+                : {}
+            }
           >
             <span
               ref={setNodeRef}
@@ -593,6 +672,10 @@ function Item({
                     discoursemeId !== undefined,
                   'hover:bg-yellow-500': isDraggingOther,
                   'hover:bg-primary': !isDraggingOther,
+                  'rounded-full bg-slate-300 text-opacity-0 opacity-50 outline-0':
+                    displayType === 'dot',
+                  'bg-slate-700 opacity-30':
+                    displayType === 'dot' && word.isBackground,
                 },
               )}
               style={{
@@ -632,25 +715,23 @@ function Item({
         </KeepScale>
       </button>
 
-      {!word.isBackground && (
-        <div
-          className={cn(
-            'pointer-events-none absolute z-[5002]',
-            !isDragging && 'hidden',
-          )}
-          style={{
-            left: displayOriginX,
-            top: displayOriginY,
-          }}
-        >
-          <KeepScale>
-            <span className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2">
-              <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-500" />
-              <span className="absolute left-1/4 top-1/4 h-1/2 w-1/2 rounded-full bg-emerald-500 outline outline-1 outline-white" />
-            </span>
-          </KeepScale>
-        </div>
-      )}
+      <div
+        className={cn(
+          'pointer-events-none absolute z-[5002]',
+          (!isDragging || word.isBackground) && 'hidden',
+        )}
+        style={{
+          left: displayOriginX,
+          top: displayOriginY,
+        }}
+      >
+        <KeepScale>
+          <span className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2">
+            <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-500" />
+            <span className="absolute left-1/4 top-1/4 h-1/2 w-1/2 rounded-full bg-emerald-500 outline outline-1 outline-white" />
+          </span>
+        </KeepScale>
+      </div>
     </>
   )
 }
