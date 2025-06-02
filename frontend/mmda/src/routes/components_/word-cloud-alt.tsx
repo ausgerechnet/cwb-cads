@@ -2,7 +2,10 @@ import { ComponentProps, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ExpandIcon } from 'lucide-react'
 
-import { WordCloudAlt, WordCloudEvent } from '@/components/word-cloud-alt'
+import {
+  WordCloudAlt,
+  WordCloudEvent,
+} from '@/components/word-cloud-alt/word-cloud-alt'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Block, BlockComment } from './-block'

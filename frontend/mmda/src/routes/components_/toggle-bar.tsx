@@ -9,7 +9,7 @@ export const Route = createFileRoute('/components_/toggle-bar')({
 function ToggleBarComponents() {
   return (
     <Block componentTag="ToggleBar">
-      <ToggleBar
+      <ToggleBar<'opt-1' | 'Option 2' | 'Option 3'>
         onChange={(value) => console.log('Selected:', value)}
         options={[['opt-1', 'Option 1'], 'Option 2', 'Option 3']}
         defaultValue="opt-1"

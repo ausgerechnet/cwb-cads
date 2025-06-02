@@ -1,0 +1,155 @@
+import { KeepScale } from 'react-zoom-pan-pinch'
+import { useDndContext, useDraggable } from '@dnd-kit/core'
+import { type HTMLAttributes } from 'react'
+
+import { cn } from '@cads/shared/lib/utils'
+import { WordDisplay } from './word-cloud-worker'
+import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
+
+export function Item({
+  word,
+  discoursemeId,
+  toDisplayCoordinates,
+  debug = false,
+  displayType = 'rectangle',
+  zoom,
+  ...props
+}: {
+  word: WordDisplay
+  discoursemeId?: number
+  toDisplayCoordinates: (x: number, y: number) => [number, number]
+  debug?: boolean
+  zoom: number
+  displayType?: 'rectangle' | 'dot'
+} & HTMLAttributes<HTMLButtonElement>) {
+  const { active } = useDndContext()
+  const isDraggingOther = Boolean(active?.id) && active?.id !== word.id
+  const { listeners, setNodeRef, isDragging, transform } = useDraggable({
+    id: word.id,
+    disabled: isDraggingOther,
+  })
+  const [displayOriginX, displayOriginY] = toDisplayCoordinates(
+    word.originX ?? word.x,
+    word.originY ?? word.y,
+  )
+  const [displayX, displayY] =
+    displayType === 'dot'
+      ? [displayOriginX, displayOriginY]
+      : toDisplayCoordinates(word.x, word.y)
+
+  return (
+    <>
+      <button
+        className={cn(
+          'group absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
+          `word--${word.label.replace(/\s+/g, '-')}`,
+          {
+            'z-[5001!important] opacity-50 will-change-transform': isDragging,
+            'transition-transform duration-500': !isDragging,
+            'pointer-events-none': word.isBackground || displayType === 'dot',
+            'no-pan touch-none': !word.isBackground,
+          },
+        )}
+        style={{
+          ['--x' as string]: `${displayX + (transform?.x ?? 0) / zoom}px`,
+          ['--y' as string]: `${displayY + (transform?.y ?? 0) / zoom}px`,
+          zIndex: word.isBackground ? 0 : Math.floor(word.score * 100) + 10,
+        }}
+        {...listeners}
+        {...props}
+      >
+        <KeepScale>
+          <div
+            className={cn(
+              'absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2',
+              {
+                'bg-red-500/50': debug && word.isColliding,
+                'bg-blue-500/50': debug && word.hasNearbyElements,
+                'h-5 w-5 rounded-full': displayType === 'dot',
+              },
+            )}
+            style={
+              displayType === 'rectangle'
+                ? {
+                    width: word.displayWidth,
+                    height: word.displayHeight - 6,
+                  }
+                : {}
+            }
+          >
+            <span
+              ref={setNodeRef}
+              className={cn(
+                'outline-background/10 absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2',
+                'group-focus-visible:outline-white/50',
+                {
+                  'outline-red-700': debug && word.hasNearbyElements,
+                  'bg-red-700': debug && word.isColliding,
+                  'bg-slate-900 text-slate-700 outline-0': word.isBackground,
+                  'outline outline-1 outline-current':
+                    discoursemeId !== undefined,
+                  'hover:bg-yellow-500': isDraggingOther,
+                  'hover:bg-primary': !isDraggingOther,
+                  'rounded-full bg-slate-300 text-opacity-0 opacity-50 outline-0':
+                    displayType === 'dot',
+                  'bg-slate-700 opacity-30':
+                    displayType === 'dot' && word.isBackground,
+                },
+              )}
+              style={{
+                // transform: `translate(-50%, -50%)`,
+                fontSize: `${12 + 20 * word.score}px`,
+                ...(discoursemeId === undefined
+                  ? {}
+                  : {
+                      backgroundColor: getColorForNumber(
+                        discoursemeId,
+                        0.9,
+                        0.1,
+                        0.3,
+                      ),
+                      color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
+                    }),
+              }}
+            >
+              {word.label}
+
+              {debug && (
+                <span
+                  className={cn(
+                    'absolute left-0 top-0 bg-black/30 p-0.5 text-xs text-white',
+                    word.isBackground && 'opacity-50',
+                  )}
+                >
+                  {word.score.toFixed(2)}
+                </span>
+              )}
+
+              {debug && !word.isBackground && (
+                <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
+              )}
+            </span>
+          </div>
+        </KeepScale>
+      </button>
+
+      <div
+        className={cn(
+          'pointer-events-none absolute z-[5002]',
+          (!isDragging || word.isBackground) && 'hidden',
+        )}
+        style={{
+          left: displayOriginX,
+          top: displayOriginY,
+        }}
+      >
+        <KeepScale>
+          <span className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2">
+            <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-500" />
+            <span className="absolute left-1/4 top-1/4 h-1/2 w-1/2 rounded-full bg-emerald-500 outline outline-1 outline-white" />
+          </span>
+        </KeepScale>
+      </div>
+    </>
+  )
+}

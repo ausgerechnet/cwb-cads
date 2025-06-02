@@ -1,17 +1,13 @@
-import { HTMLAttributes, useCallback, useEffect, useState } from 'react'
-import {
-  TransformWrapper,
-  TransformComponent,
-  KeepScale,
-  MiniMap,
-} from 'react-zoom-pan-pinch'
-import { DndContext, useDndContext, useDraggable } from '@dnd-kit/core'
-import { DotIcon, FullscreenIcon, RectangleHorizontalIcon } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
+import { DndContext } from '@dnd-kit/core'
+import { DotIcon, RectangleHorizontalIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { Slider } from '@cads/shared/components/ui/slider'
-import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { clamp } from '@cads/shared/lib/clamp'
+import { ToggleBar } from '@cads/shared/components/toggle-bar'
+import { useElementDimensions } from '@cads/shared/lib/use-element-dimensions'
 import {
   DiscoursemeDisplay,
   type CloudWorkerMessage,
@@ -19,8 +15,9 @@ import {
   type WordDisplay,
 } from './word-cloud-worker'
 import { calculateWordDimensions } from './word-cloud-compute'
-import { ToggleBar } from '@cads/shared/components/toggle-bar'
-import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
+import { CenterButton } from './center-button'
+import { WordCloudMiniMap } from './word-cloud-mini-map'
+import { Item } from './item'
 
 export type WordCloudEvent =
   | { type: 'new_discourseme'; surfaces: string[] }
@@ -75,9 +72,10 @@ export function WordCloudAlt({
   onChange?: (event: WordCloudEvent) => void
 }) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
-  const [[containerWidth, containerHeight], setContainerSize] = useState<
-    [number, number]
-  >([200, 100])
+  const [containerWidth, containerHeight] = useElementDimensions(
+    container,
+    [200, 100],
+  )
   const [displayType, setDisplayType] = useState<'rectangle' | 'dot'>(
     'rectangle',
   )
@@ -100,24 +98,6 @@ export function WordCloudAlt({
     window.addEventListener('keydown', handleKeydown)
     return () => window.removeEventListener('keydown', handleKeydown)
   }, [])
-
-  useEffect(() => {
-    if (!container) return
-    function handleResize() {
-      const { clientHeight, clientWidth } = container!
-      worker?.postMessage({
-        type: 'update_size',
-        payload: {
-          displayWidth: container!.clientWidth,
-          displayHeight: clientHeight,
-        },
-      } satisfies CloudWorkerMessage)
-      setContainerSize([clientWidth, clientHeight])
-    }
-    const resizeObserver = new ResizeObserver(() => handleResize())
-    resizeObserver.observe(container)
-    return () => resizeObserver.disconnect()
-  }, [container, aspectRatio, worker])
 
   const toDisplayCoordinates = useCallback(
     (x: number, y: number): [number, number] => [
@@ -295,6 +275,7 @@ export function WordCloudAlt({
               max={1}
               step={0.01}
             />
+
             <WordCloudMiniMap
               className="bg-background/90 absolute left-2 top-2 z-[2000]"
               aspectRatio={aspectRatio}
@@ -489,249 +470,5 @@ export function WordCloudAlt({
         )}
       </TransformWrapper>
     </div>
-  )
-}
-
-function CenterButton({ centerView }: { centerView: (zoom?: number) => void }) {
-  useEffect(() => {
-    function handleKeydown(event: KeyboardEvent) {
-      if (event.altKey && event.shiftKey && event.key === 'Z') {
-        event.preventDefault()
-        centerView(1)
-      }
-    }
-    window.addEventListener('keydown', handleKeydown)
-    return () => window.removeEventListener('keydown', handleKeydown)
-  }, [centerView])
-  return (
-    <ButtonTooltip
-      onClick={() => centerView(1)}
-      className="absolute bottom-1 left-1 z-[5002]"
-      variant="secondary"
-      size="icon"
-      tooltip={
-        <>
-          Center view{' '}
-          <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
-            alt + shift + z
-          </kbd>
-        </>
-      }
-    >
-      <FullscreenIcon className="h-5 w-5" />
-    </ButtonTooltip>
-  )
-}
-
-function WordCloudMiniMap({
-  className,
-  aspectRatio,
-  displayWords,
-  displayDiscoursemes,
-  toDisplayCoordinates,
-}: {
-  className?: string
-  aspectRatio: number
-  displayWords: WordDisplay[]
-  displayDiscoursemes: DiscoursemeDisplay[]
-  toDisplayCoordinates: (x: number, y: number) => [number, number]
-}) {
-  return (
-    <div className={className}>
-      <MiniMap
-        className="outline-muted-foreground/20 rounded outline outline-1"
-        borderColor="hsl(var(--primary))"
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div
-            className="bg-muted/50 relative max-h-full max-w-full"
-            style={{
-              aspectRatio,
-              width: `clamp(0px, 100cqw, calc(${aspectRatio} * 100cqh))`,
-            }}
-          >
-            {displayWords.map(({ originX, originY, id }) => {
-              const [x, y] = toDisplayCoordinates(originX, originY)
-              return (
-                <span
-                  key={id}
-                  className="absolute h-5 w-5 rounded-full bg-white/20"
-                  style={{ left: x, top: y }}
-                />
-              )
-            })}
-            {displayDiscoursemes.map(
-              ({ originX, originY, id, discoursemeId }) => {
-                const [x, y] = toDisplayCoordinates(originX, originY)
-                return (
-                  <span
-                    key={id}
-                    className="absolute h-24 w-24 rounded-full bg-white/20"
-                    style={{
-                      left: x,
-                      top: y,
-                      backgroundColor: getColorForNumber(
-                        discoursemeId,
-                        0.5,
-                        1,
-                        0.5,
-                      ),
-                    }}
-                  />
-                )
-              },
-            )}
-          </div>
-        </div>
-      </MiniMap>
-    </div>
-  )
-}
-
-function Item({
-  word,
-  discoursemeId,
-  toDisplayCoordinates,
-  debug = false,
-  displayType = 'rectangle',
-  zoom,
-  ...props
-}: {
-  word: WordDisplay
-  discoursemeId?: number
-  toDisplayCoordinates: (x: number, y: number) => [number, number]
-  debug?: boolean
-  zoom: number
-  displayType?: 'rectangle' | 'dot'
-} & HTMLAttributes<HTMLButtonElement>) {
-  const { active } = useDndContext()
-  const isDraggingOther = Boolean(active?.id) && active?.id !== word.id
-  const { listeners, setNodeRef, isDragging, transform } = useDraggable({
-    id: word.id,
-    disabled: isDraggingOther,
-  })
-  const [displayOriginX, displayOriginY] = toDisplayCoordinates(
-    word.originX ?? word.x,
-    word.originY ?? word.y,
-  )
-  const [displayX, displayY] =
-    displayType === 'dot'
-      ? [displayOriginX, displayOriginY]
-      : toDisplayCoordinates(word.x, word.y)
-
-  return (
-    <>
-      <button
-        className={cn(
-          'group absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
-          `word--${word.label.replace(/\s+/g, '-')}`,
-          {
-            'z-[5001!important] opacity-50 will-change-transform': isDragging,
-            'transition-transform duration-500': !isDragging,
-            'pointer-events-none': word.isBackground || displayType === 'dot',
-            'no-pan touch-none': !word.isBackground,
-          },
-        )}
-        style={{
-          ['--x' as string]: `${displayX + (transform?.x ?? 0) / zoom}px`,
-          ['--y' as string]: `${displayY + (transform?.y ?? 0) / zoom}px`,
-          zIndex: word.isBackground ? 0 : Math.floor(word.score * 100) + 10,
-        }}
-        {...listeners}
-        {...props}
-      >
-        <KeepScale>
-          <div
-            className={cn(
-              'absolute left-0 top-0 -translate-x-1/2 -translate-y-1/2',
-              {
-                'bg-red-500/50': debug && word.isColliding,
-                'bg-blue-500/50': debug && word.hasNearbyElements,
-                'h-5 w-5 rounded-full': displayType === 'dot',
-              },
-            )}
-            style={
-              displayType === 'rectangle'
-                ? {
-                    width: word.displayWidth,
-                    height: word.displayHeight - 6,
-                  }
-                : {}
-            }
-          >
-            <span
-              ref={setNodeRef}
-              className={cn(
-                'outline-background/10 absolute left-0 top-0 flex h-full w-full cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2',
-                'group-focus-visible:outline-white/50',
-                {
-                  'outline-red-700': debug && word.hasNearbyElements,
-                  'bg-red-700': debug && word.isColliding,
-                  'bg-slate-900 text-slate-700 outline-0': word.isBackground,
-                  'outline outline-1 outline-current':
-                    discoursemeId !== undefined,
-                  'hover:bg-yellow-500': isDraggingOther,
-                  'hover:bg-primary': !isDraggingOther,
-                  'rounded-full bg-slate-300 text-opacity-0 opacity-50 outline-0':
-                    displayType === 'dot',
-                  'bg-slate-700 opacity-30':
-                    displayType === 'dot' && word.isBackground,
-                },
-              )}
-              style={{
-                // transform: `translate(-50%, -50%)`,
-                fontSize: `${12 + 20 * word.score}px`,
-                ...(discoursemeId === undefined
-                  ? {}
-                  : {
-                      backgroundColor: getColorForNumber(
-                        discoursemeId,
-                        0.9,
-                        0.1,
-                        0.3,
-                      ),
-                      color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
-                    }),
-              }}
-            >
-              {word.label}
-
-              {debug && (
-                <span
-                  className={cn(
-                    'absolute left-0 top-0 bg-black/30 p-0.5 text-xs text-white',
-                    word.isBackground && 'opacity-50',
-                  )}
-                >
-                  {word.score.toFixed(2)}
-                </span>
-              )}
-
-              {debug && !word.isBackground && (
-                <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
-              )}
-            </span>
-          </div>
-        </KeepScale>
-      </button>
-
-      <div
-        className={cn(
-          'pointer-events-none absolute z-[5002]',
-          (!isDragging || word.isBackground) && 'hidden',
-        )}
-        style={{
-          left: displayOriginX,
-          top: displayOriginY,
-        }}
-      >
-        <KeepScale>
-          <span className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2">
-            <span className="absolute h-full w-full animate-ping rounded-full bg-emerald-500" />
-            <span className="absolute left-1/4 top-1/4 h-1/2 w-1/2 rounded-full bg-emerald-500 outline outline-1 outline-white" />
-          </span>
-        </KeepScale>
-      </div>
-    </>
   )
 }
