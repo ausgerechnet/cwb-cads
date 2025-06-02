@@ -84,7 +84,6 @@ export function WordCloudAlt({
 
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
-      console.log('Keydown event:', event)
       if (event.altKey && event.shiftKey && event.key === 'S') {
         event.preventDefault()
         setDisplayType((prev) => (prev === 'rectangle' ? 'dot' : 'rectangle'))
