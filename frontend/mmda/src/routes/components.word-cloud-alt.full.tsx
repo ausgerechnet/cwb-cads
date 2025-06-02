@@ -52,17 +52,33 @@ function WordCloudAltFullscreen() {
         </label>
       </div>
 
-      <div className="bg-muted z-10 col-start-3 row-start-3 h-96 w-full self-start rounded-lg shadow outline outline-1 outline-slate-600/60">
+      <div className="bg-muted relative z-10 col-start-3 row-start-3 h-96 w-full self-start rounded-lg shadow outline outline-1 outline-slate-600/60">
         {debug && (
-          <>
+          <div className="absolute h-full w-full overflow-auto p-1 [scrollbar-width:thin]">
             <strong>Events</strong>
             {events.map(({ type, ...data }, index) => (
-              <div
-                key={index}
-                className="text-xs text-white"
-              >{`${type} - ${JSON.stringify(data)}`}</div>
+              <div key={index} className="my-1 text-xs text-white">
+                <span className="font-bold">{type}</span>
+                <br />
+                {Object.entries(data).map(([key, value]) => (
+                  <div>
+                    {key}:{' '}
+                    {value === null ? (
+                      <span className="text-muted-foreground italic">null</span>
+                    ) : typeof value === 'number' ? (
+                      Number.isInteger(value) ? (
+                        value
+                      ) : (
+                        value.toFixed(4)
+                      )
+                    ) : (
+                      value
+                    )}
+                  </div>
+                ))}
+              </div>
             ))}
-          </>
+          </div>
         )}
       </div>
 
