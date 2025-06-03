@@ -31,6 +31,21 @@ export type WordCloudEvent =
   | { type: 'set_filter_item'; item: string | null }
   | { type: 'set_filter_discourseme_id'; discoursemeId: number | null }
 
+export type WordCloudWordIn = {
+  x: number
+  y: number
+  label: string
+  score: number
+}
+
+export type WordCloudDiscoursemeIn = {
+  discoursemeId: number
+  x: number
+  y: number
+  label: string
+  score: number
+}
+
 function isDiscoursemeDisplay(
   item: WordDisplay | DiscoursemeDisplay,
 ): item is DiscoursemeDisplay {
@@ -52,19 +67,8 @@ export function WordCloudAlt({
 }: {
   className?: string
   aspectRatio?: number
-  words?: {
-    x: number
-    y: number
-    label: string
-    score: number
-  }[]
-  discoursemes?: {
-    discoursemeId: number
-    x: number
-    y: number
-    label: string
-    score: number
-  }[]
+  words?: WordCloudWordIn[]
+  discoursemes?: WordCloudDiscoursemeIn[]
   padding?: [number, number]
   filterItem?: string | null
   filterDiscoursemeId?: number | null
@@ -274,7 +278,7 @@ export function WordCloudAlt({
             return newZoom
           })
         }}
-        wheel={{ step: 0.1, smoothStep: 0.001 }}
+        wheel={{ step: 0.1, smoothStep: 0.005 }}
         panning={{ velocityDisabled: false, excluded: ['no-pan'] }}
         disabled={isDragging}
         limitToBounds

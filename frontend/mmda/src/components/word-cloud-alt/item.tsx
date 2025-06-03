@@ -55,16 +55,15 @@ export function Item({
       >
         <div
           ref={setNodeRef}
+          aria-disabled={word.isBackground}
+          aria-selected={isSelected}
           className={cn(
-            'absolute left-0 top-0 flex origin-center -translate-x-1/2 -translate-y-1/2',
+            'aria-selected:outline-primary group/item absolute left-0 top-0 flex origin-center -translate-x-1/2 -translate-y-1/2 rounded-lg outline outline-transparent aria-selected:outline-2',
             {
               'bg-red-500/50': debug && word.isColliding,
               'bg-blue-500/50': debug && word.hasNearbyElements,
-              'h-2 w-2 rounded-full bg-slate-300 text-opacity-0 opacity-50':
+              'h-2 w-2 rounded-full bg-slate-300 text-opacity-0 opacity-50 aria-disabled:bg-slate-700 aria-disabled:opacity-30':
                 displayType === 'dot',
-              'border-primary border-1 border': isSelected,
-              'bg-slate-700 opacity-30':
-                displayType === 'dot' && word.isBackground,
             },
           )}
           style={{
@@ -83,12 +82,11 @@ export function Item({
               ref={setNodeRef}
               {...listeners}
               className={cn(
-                'outline-background/10 flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 transition-transform delay-300 duration-500',
+                'outline-background/10 flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 transition-transform delay-300 duration-500 group-aria-disabled/item:bg-slate-800 group-aria-disabled/item:text-slate-700 group-aria-disabled/item:outline-0',
                 'group-focus-visible:outline-white/50',
                 {
                   'outline-red-700': debug && word.hasNearbyElements,
                   'bg-red-700': debug && word.isColliding,
-                  'bg-slate-900 text-slate-700 outline-0': word.isBackground,
                   'outline outline-1 outline-current':
                     discoursemeId !== undefined,
                   'hover:bg-yellow-500': isDraggingOther,
@@ -150,6 +148,7 @@ function Container({
   zoom,
   isDragging,
   displayType,
+  className,
   children,
 }: {
   isDraggingOther: boolean
@@ -159,6 +158,7 @@ function Container({
   y: number
   zoom: number
   displayType: 'rectangle' | 'dot'
+  className?: string
   children: ReactNode
 }) {
   const { transform } = useDraggable({
@@ -176,6 +176,7 @@ function Container({
           'pointer-events-none': word.isBackground || displayType === 'dot',
           'no-pan touch-none': !word.isBackground,
         },
+        className,
       )}
       style={{
         ['--x' as string]: `${x + (transform?.x ?? 0) / zoom}px`,
@@ -199,11 +200,9 @@ function OriginDot({
 }) {
   return (
     <div
-      className={cn(
-        'pointer-events-none absolute z-[5002]',
-        isHidden && 'hidden',
-      )}
+      className="pointer-events-none absolute z-[5002] aria-hidden:hidden"
       style={{ left: x, top: y }}
+      aria-hidden={isHidden}
     >
       <KeepScale>
         <span className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2">
