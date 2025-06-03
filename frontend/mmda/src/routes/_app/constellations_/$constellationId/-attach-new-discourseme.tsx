@@ -9,6 +9,7 @@ import { AlertCircle, Loader2, Plus } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
   DialogTrigger,
 } from '@cads/shared/components/ui/dialog'
 import {
@@ -25,7 +26,6 @@ import { required_error } from '@cads/shared/lib/strings'
 import { createDiscoursemeForConstellationDescription } from '@cads/shared/queries'
 import { Button } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
-import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 const Discourseme = z.object({
   surfaces: z.array(z.string({ required_error }), { required_error }),
@@ -77,14 +77,13 @@ export function AttachNewDiscourseme({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <TextTooltip asChild tooltipText="Create a new Discourseme">
-          <Button variant="outline" className={cn(className, 'aspect-square')}>
-            Create new Discourseme to add
-            <Plus className="h-4 w-4" />
-          </Button>
-        </TextTooltip>
+        <Button variant="outline" className={cn(className, 'aspect-square')}>
+          Create new Discourseme to add
+          <Plus className="h-4 w-4" />
+        </Button>
       </DialogTrigger>
       <DialogContent>
+        <DialogTitle>New Discourseme</DialogTitle>
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit((discourseme) =>
