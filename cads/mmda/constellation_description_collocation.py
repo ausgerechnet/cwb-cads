@@ -297,9 +297,16 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
             coordinates = DataFrame(
                 [CoordinatesOut().dump(coordinates) for coordinates in collocation.semantic_map.coordinates if coordinates.item in requested_items]
             )
-            df_scores = merge(df_scores, coordinates, on='item', how='left')
-            df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
-            df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
+            if len(df_scores) > 0:
+                df_scores = merge(df_scores, coordinates, on='item', how='left')
+            else:
+                df_scores = DataFrame()
+            if len(df_discourseme_item_scores) > 0:
+                df_discourseme_item_scores = merge(df_discourseme_item_scores, coordinates, on='item', how='left')
+                df_discourseme_unigram_item_scores = merge(df_discourseme_unigram_item_scores, coordinates, on='item', how='left')
+            else:
+                df_discourseme_item_scores = DataFrame()
+                df_discourseme_unigram_item_scores = DataFrame()
 
             # discourseme coordinates
             discourseme_coordinates = get_discourseme_coordinates(collocation.semantic_map, description.discourseme_descriptions, collocation.p)
