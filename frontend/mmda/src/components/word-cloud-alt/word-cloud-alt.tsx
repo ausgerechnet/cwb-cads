@@ -459,7 +459,7 @@ export function WordCloudAlt({
                         onSelect={handleSelect}
                         onHover={handleHover}
                         onLeave={handleLeave}
-                        word={{ ...discourseme, isBackground: false }}
+                        word={discourseme}
                         debug={debug}
                         discoursemeId={discourseme.discoursemeId}
                         toDisplayCoordinates={toDisplayCoordinates}

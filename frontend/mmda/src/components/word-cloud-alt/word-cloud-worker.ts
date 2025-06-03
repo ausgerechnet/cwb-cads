@@ -15,7 +15,7 @@ export interface DiscoursemeInput extends WordInput {
 }
 
 export interface WordDisplay extends Required<WordInput> {
-  isBackground: boolean
+  isBackground?: boolean
   hasNearbyElements: boolean
   isColliding: boolean
   displayHeight: number
