@@ -30,7 +30,7 @@ function WordCloudAltFullscreen() {
         setFilterDiscoursemeId(event.discoursemeId)
         break
     }
-    setEvents((prev) => [...prev, event])
+    setEvents((prev) => [event, ...prev])
   }, [])
 
   return (
@@ -105,7 +105,7 @@ function WordCloudAltFullscreen() {
         debug={debug}
         cutOff={cutOff}
         onChange={handleChange}
-        padding={[250, 100]}
+        padding={[0, 0]}
       />
     </div>
   )

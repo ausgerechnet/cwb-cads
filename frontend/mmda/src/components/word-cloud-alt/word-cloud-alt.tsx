@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { DndContext } from '@dnd-kit/core'
 import { DotIcon, RectangleHorizontalIcon } from 'lucide-react'
@@ -73,6 +73,7 @@ export function WordCloudAlt({
   hideOverflow?: boolean
   onChange?: (event: WordCloudEvent) => void
 }) {
+  const dragStartRef = useRef<Date | null>(null)
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [containerWidth, containerHeight] = useElementDimensions(container, [
     window.innerWidth,
@@ -186,6 +187,10 @@ export function WordCloudAlt({
     [filterDiscoursemeId, filterItem, onChange],
   )
 
+  const handleDragStart = useCallback(() => {
+    dragStartRef.current = new Date()
+    setIsDragging(true)
+  }, [])
   const handleHover = useCallback((itemId: string) => setHoverItem(itemId), [])
   const handleLeave = useCallback(
     (itemId: string) =>
@@ -329,10 +334,14 @@ export function WordCloudAlt({
               }}
             >
               <DndContext
-                onDragStart={() => setIsDragging(true)}
+                onDragStart={handleDragStart}
                 onDragAbort={() => setIsDragging(false)}
                 onDragCancel={() => setIsDragging(false)}
                 onDragEnd={(event) => {
+                  const wasShortDrag = dragStartRef.current
+                    ? new Date().getTime() - dragStartRef.current.getTime() <
+                      250
+                    : false
                   const id = event.active.id
                   const itemA =
                     displayWords.find((item) => item.id === id) ??
@@ -340,6 +349,15 @@ export function WordCloudAlt({
                   const itemB =
                     displayWords.find((item) => item.id === hoverItem) ??
                     displayDiscoursemes.find((item) => item.id === hoverItem)
+                  const [deltaX, deltaY] = toOriginalCoordinates(
+                    event.delta.x,
+                    event.delta.y,
+                  )
+                  const minimumMoveDistance = 20 // Minimum distance to consider it a move
+                  const wasMoved =
+                    Math.abs(event.delta.x) > minimumMoveDistance ||
+                    Math.abs(event.delta.y) > minimumMoveDistance
+
                   if (
                     itemA &&
                     itemB &&
@@ -366,11 +384,7 @@ export function WordCloudAlt({
                         surfaces: [itemA.label, itemB.label],
                       })
                     }
-                  } else if (itemA) {
-                    const [deltaX, deltaY] = toOriginalCoordinates(
-                      event.delta.x,
-                      event.delta.y,
-                    )
+                  } else if (itemA && wasMoved) {
                     const newOriginalX = clamp(itemA.x + deltaX / zoom, -1, 1)
                     const newOriginalY = clamp(itemA.y + deltaY / zoom, -1, 1)
 
@@ -417,6 +431,15 @@ export function WordCloudAlt({
                         y: newOriginalY,
                       })
                     }
+                  } else if (itemA && !wasMoved && wasShortDrag) {
+                    handleSelect(
+                      isDiscoursemeDisplay(itemA)
+                        ? {
+                            type: 'discourseme',
+                            discoursemeId: itemA.discoursemeId,
+                          }
+                        : { type: 'word', item: itemA.label },
+                    )
                   }
                   setIsDragging(false)
                 }}
@@ -444,7 +467,6 @@ export function WordCloudAlt({
                         debug={debug}
                         toDisplayCoordinates={toDisplayCoordinates}
                         zoom={zoom}
-                        onSelect={handleSelect}
                         onHover={handleHover}
                         onLeave={handleLeave}
                       />
@@ -456,7 +478,6 @@ export function WordCloudAlt({
                         isSelected={
                           discourseme.discoursemeId === filterDiscoursemeId
                         }
-                        onSelect={handleSelect}
                         onHover={handleHover}
                         onLeave={handleLeave}
                         word={discourseme}

@@ -3,8 +3,8 @@ import { KeepScale } from 'react-zoom-pan-pinch'
 import { useDndContext, useDraggable } from '@dnd-kit/core'
 
 import { cn } from '@cads/shared/lib/utils'
-import { WordDisplay } from './word-cloud-worker'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
+import { WordDisplay } from './word-cloud-worker'
 
 export function Item({
   word,
@@ -16,7 +16,6 @@ export function Item({
   isSelected,
   onHover,
   onLeave,
-  onSelect,
 }: {
   word: WordDisplay
   discoursemeId?: number
@@ -27,11 +26,6 @@ export function Item({
   displayType?: 'rectangle' | 'dot'
   onHover?: (id: string) => void
   onLeave?: (id: string) => void
-  onSelect?: (
-    item:
-      | { type: 'word'; item: string }
-      | { type: 'discourseme'; discoursemeId: number },
-  ) => void
 }) {
   const { active } = useDndContext()
   const isDraggingOther = Boolean(active?.id) && active?.id !== word.id
@@ -62,7 +56,7 @@ export function Item({
         <div
           ref={setNodeRef}
           className={cn(
-            'absolute left-0 top-0 flex -translate-x-1/2 -translate-y-1/2',
+            'absolute left-0 top-0 flex origin-center -translate-x-1/2 -translate-y-1/2',
             {
               'bg-red-500/50': debug && word.isColliding,
               'bg-blue-500/50': debug && word.hasNearbyElements,
@@ -84,20 +78,6 @@ export function Item({
               : {}),
           }}
         >
-          {!word.isBackground && displayType === 'rectangle' && (
-            <button
-              onClick={() => {
-                if (discoursemeId !== undefined) {
-                  onSelect?.({ type: 'discourseme', discoursemeId })
-                } else {
-                  onSelect?.({ type: 'word', item: word.label })
-                }
-              }}
-            >
-              {isSelected ? 'X' : 'O'}
-            </button>
-          )}
-
           {displayType === 'rectangle' && (
             <button
               ref={setNodeRef}
