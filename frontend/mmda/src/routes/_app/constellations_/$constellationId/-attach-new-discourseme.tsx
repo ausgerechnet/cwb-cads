@@ -77,7 +77,7 @@ export function AttachNewDiscourseme({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <TextTooltip asChild tooltipText="Create a new discourseme to add">
+        <TextTooltip asChild tooltipText="Create a new Discourseme">
           <Button variant="outline" className={cn(className, 'aspect-square')}>
             Create new Discourseme to add
             <Plus className="h-4 w-4" />
