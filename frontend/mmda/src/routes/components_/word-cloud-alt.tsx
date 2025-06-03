@@ -72,7 +72,8 @@ function WordCloudComponents() {
           words={addMoreWords ? [...wordsCluster, ...moreWords] : wordsCluster}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
-          onChange={(event) => setEventsA((prev) => [...prev, { ...event }])}
+          onChange={(event) => setEventsA((prev) => [event, ...prev])}
+          padding={[200, 100]}
         />
       </div>
       <WordCloudEvents events={eventsA} />
@@ -88,7 +89,8 @@ function WordCloudComponents() {
           words={[...wordsSmallCluster, ...(addMoreWords ? moreWords : [])]}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
-          onChange={(event) => setEventsB((prev) => [...prev, { ...event }])}
+          onChange={(event) => setEventsB((prev) => [event, ...prev])}
+          padding={[200, 100]}
         />
       </div>
       <WordCloudEvents events={eventsB} />
@@ -105,7 +107,8 @@ function WordCloudComponents() {
           words={[...wordsCollision, ...(addMoreWords ? moreWords : [])]}
           debug={debug}
           discoursemes={addDiscoursemes ? discoursemes : []}
-          onChange={(event) => setEventsC((prev) => [...prev, { ...event }])}
+          onChange={(event) => setEventsC((prev) => [event, ...prev])}
+          padding={[200, 100]}
         />
       </div>
       <WordCloudEvents events={eventsC} />

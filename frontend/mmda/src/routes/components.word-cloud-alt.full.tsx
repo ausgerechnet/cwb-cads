@@ -105,7 +105,7 @@ function WordCloudAltFullscreen() {
         debug={debug}
         cutOff={cutOff}
         onChange={handleChange}
-        padding={[0, 0]}
+        padding={[300, 150]}
       />
     </div>
   )

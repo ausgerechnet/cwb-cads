@@ -221,14 +221,14 @@ export function WordCloudAlt({
   }, [])
 
   useEffect(() => {
-    if (!worker || !isReady || !container) return
+    if (!worker || !isReady) return
     worker.postMessage({
       type: 'update',
       payload: {
         width: 2,
         height: 2,
-        displayWidth: container.clientWidth,
-        displayHeight: container.clientHeight,
+        displayWidth: containerWidth - paddingX,
+        displayHeight: containerHeight - paddingY,
         words: words.map((word) => ({
           id: `word::${word.label}`,
           ...word,
@@ -239,7 +239,16 @@ export function WordCloudAlt({
         })),
       },
     } satisfies CloudWorkerMessage)
-  }, [worker, words, isReady, container, discoursemes])
+  }, [
+    worker,
+    words,
+    isReady,
+    discoursemes,
+    containerWidth,
+    containerHeight,
+    paddingX,
+    paddingY,
+  ])
 
   useEffect(() => {
     if (!worker || !isReady) return
@@ -458,6 +467,16 @@ export function WordCloudAlt({
                       width: `clamp(0px, 100cqw, calc(${aspectRatio} * 100cqh))`,
                     }}
                   >
+                    <div
+                      id="bla"
+                      className="outline-border pointer-events-none absolute touch-none rounded-lg outline-dotted outline-1"
+                      style={{
+                        left: paddingX / 2,
+                        top: paddingY / 2,
+                        width: `calc(100% - ${paddingX}px)`,
+                        height: `calc(100% - ${paddingY}px)`,
+                      }}
+                    />
                     {displayWords.map((word) => (
                       <Item
                         key={word.label}
@@ -490,8 +509,14 @@ export function WordCloudAlt({
 
                     {debug && (
                       <svg
-                        className="pointer-events-none absolute inset-0 z-[5001] h-full w-full touch-none"
+                        className="pointer-events-none absolute z-[5001] touch-none"
                         viewBox={`-1 -1 ${aspectRatio} ${aspectRatio}`}
+                        style={{
+                          left: paddingX / 2,
+                          top: paddingY / 2,
+                          width: `calc(100% - ${paddingX}px)`,
+                          height: `calc(100% - ${paddingY}px)`,
+                        }}
                       >
                         {displayWords.map((word) => (
                           <line
