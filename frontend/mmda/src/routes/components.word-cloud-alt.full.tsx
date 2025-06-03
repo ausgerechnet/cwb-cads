@@ -6,6 +6,7 @@ import { WordCloudAlt } from '@/components/word-cloud-alt'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
 import { WordCloudEvent } from '@/components/word-cloud-alt/word-cloud-alt'
+import { Slider } from '@cads/shared/components/ui/slider'
 
 export const Route = createFileRoute('/components/word-cloud-alt/full')({
   component: WordCloudAltFullscreen,
@@ -18,6 +19,7 @@ function WordCloudAltFullscreen() {
     null,
   )
   const [events, setEvents] = useState<WordCloudEvent[]>([])
+  const [cutOff, setCutOff] = useState(0.1)
 
   const handleChange = useCallback((event: WordCloudEvent) => {
     switch (event.type) {
@@ -46,9 +48,21 @@ function WordCloudAltFullscreen() {
           Back to Component Overview
         </Link>
 
-        <label className="flex cursor-pointer items-center gap-2">
+        <label className="flex shrink-0 cursor-pointer items-center gap-2">
           <Checkbox checked={debug} onCheckedChange={() => setDebug(!debug)} />
           Debug Mode
+        </label>
+
+        <label className="my-auto flex items-center gap-2 whitespace-nowrap">
+          Cut Off:
+          <Slider
+            className="w-48"
+            value={[cutOff]}
+            onValueChange={(value) => setCutOff(value[0])}
+            min={0}
+            max={1}
+            step={0.01}
+          />
         </label>
       </div>
 
@@ -89,6 +103,7 @@ function WordCloudAltFullscreen() {
         filterItem={filterItem}
         filterDiscoursemeId={filterDiscoursemeId}
         debug={debug}
+        cutOff={cutOff}
         onChange={handleChange}
         padding={[250, 100]}
       />

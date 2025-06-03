@@ -4,7 +4,6 @@ import { DndContext } from '@dnd-kit/core'
 import { DotIcon, RectangleHorizontalIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
-import { Slider } from '@cads/shared/components/ui/slider'
 import { clamp } from '@cads/shared/lib/clamp'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
 import { useElementDimensions } from '@cads/shared/lib/use-element-dimensions'
@@ -47,7 +46,7 @@ export function WordCloudAlt({
   filterDiscoursemeId = null,
   aspectRatio = 2 / 1,
   debug = false,
-  defaultCutOff = 0.5,
+  cutOff = 0.5,
   hideOverflow = false,
   onChange,
 }: {
@@ -70,7 +69,7 @@ export function WordCloudAlt({
   filterItem?: string | null
   filterDiscoursemeId?: number | null
   debug?: boolean
-  defaultCutOff?: number
+  cutOff?: number
   hideOverflow?: boolean
   onChange?: (event: WordCloudEvent) => void
 }) {
@@ -85,7 +84,6 @@ export function WordCloudAlt({
   const [zoom, setZoom] = useState(1)
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isReady, setIsReady] = useState(false)
-  const [cutOff, setCutOff] = useState(defaultCutOff)
   const [isDragging, setIsDragging] = useState(false)
   // Tracks the currently hovered item -- useDroppable would be an alternative option, but causes a noticeable performance hit
   const [hoverItem, setHoverItem] = useState<string | null>(null)
@@ -238,6 +236,14 @@ export function WordCloudAlt({
     } satisfies CloudWorkerMessage)
   }, [worker, words, isReady, container, discoursemes])
 
+  useEffect(() => {
+    if (!worker || !isReady) return
+    worker.postMessage({
+      type: 'update_cutoff',
+      payload: { cutOff },
+    } satisfies CloudWorkerMessage)
+  }, [worker, isReady, cutOff])
+
   return (
     <div className={cn('relative h-full w-full', className)}>
       <TransformWrapper
@@ -290,23 +296,6 @@ export function WordCloudAlt({
               ]}
               value={displayType}
               onChange={setDisplayType}
-            />
-
-            <Slider
-              className="absolute bottom-2 left-1/2 z-50 w-[300px] -translate-x-1/2"
-              value={[cutOff]}
-              onValueChange={(value) => {
-                setCutOff(value[0])
-                if (worker) {
-                  worker.postMessage({
-                    type: 'update_cutoff',
-                    payload: { cutOff: value[0] },
-                  } satisfies CloudWorkerMessage)
-                }
-              }}
-              min={0}
-              max={1}
-              step={0.01}
             />
 
             <WordCloudMiniMap
