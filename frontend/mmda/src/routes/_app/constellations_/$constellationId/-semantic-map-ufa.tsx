@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon, Loader2Icon, Trash2Icon, XIcon } from 'lucide-react'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
@@ -13,13 +13,11 @@ import {
   createDiscoursemeForConstellationDescription,
   corpusById,
   removeDescriptionItem,
-  updateDiscourseme,
 } from '@cads/shared/queries'
 import { Button, buttonVariants } from '@cads/shared/components/ui/button'
 import WordCloud from '@/components/word-cloud'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
-import { ComplexSelect } from '@cads/shared/components/select-complex'
 import { LoaderBig } from '@cads/shared/components/loader-big'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import {
@@ -28,7 +26,6 @@ import {
   CollapsibleTrigger,
 } from '@cads/shared/components/ui/collapsible'
 import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
-import { InputGrowable } from '@cads/shared/components/input-growable'
 import { TextTooltip } from '@cads/shared/components/text-tooltip'
 
 import { useDescription } from './-use-description'
@@ -37,6 +34,8 @@ import { useFilterSelection } from './-use-filter-selection'
 import { ConstellationCollocationFilter } from './-constellation-filter'
 import { useUfa } from './-use-ufa'
 import { AttachNewDiscourseme } from './-attach-new-discourseme'
+import { DiscoursemeNameEdit } from './-discourseme-name-edit'
+import { AddDescriptionItem } from './-add-description-item'
 
 export function SemanticMapUfa({
   constellationId,
@@ -145,6 +144,7 @@ export function SemanticMapUfa({
             onUpdateDiscourseme={onUpdateDiscourseme}
           />
         )}
+
       <div className="relative col-span-2 col-start-2 row-start-2 flex gap-3">
         <Link
           to="/constellations/$constellationId"
@@ -291,7 +291,7 @@ function ConstellationDiscoursemesEditor({
                           }}
                         />
 
-                        <DiscoursemeName
+                        <DiscoursemeNameEdit
                           discoursemeId={discoursemeId}
                           item={item}
                           key={item}
@@ -424,127 +424,5 @@ function ConstellationDiscoursemesEditor({
           )}
       </div>
     </div>
-  )
-}
-
-function DiscoursemeName({
-  discoursemeId,
-  item,
-}: {
-  discoursemeId: number
-  item: string
-}) {
-  const [currentValue, setCurrentValue] = useState(item)
-  const { mutate: patchDiscourseme, isPending } = useMutation({
-    ...updateDiscourseme,
-    onSuccess: (...args) => {
-      updateDiscourseme.onSuccess?.(...args)
-      setCurrentValue(args[0].name ?? item)
-      toast.success('Discourseme renamed')
-    },
-    onError: (...args) => {
-      updateDiscourseme.onError?.(...args)
-      toast.error('Failed to rename discourseme')
-    },
-  })
-  const renameDiscourseme = function (discoursemeId: number, name: string) {
-    if (name === currentValue || !item) return
-    patchDiscourseme({ discoursemeId, discoursemePatch: { name } })
-  }
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault()
-        const newName = new FormData(e.target as HTMLFormElement).get(
-          'discoursemeName',
-        ) as string
-        renameDiscourseme(discoursemeId, newName)
-      }}
-      onClick={(e) => {
-        e.stopPropagation()
-      }}
-    >
-      <InputGrowable
-        type="text"
-        defaultValue={item}
-        name="discoursemeName"
-        onBlur={(e) => {
-          renameDiscourseme(discoursemeId, e.target.value)
-        }}
-        disabled={isPending}
-        autoComplete="off"
-        autoSave="off"
-        className="outline-muted-foreground left-2 w-auto rounded border-none bg-transparent outline-none outline-0 outline-offset-1 hover:bg-white focus:ring-0 focus-visible:bg-white focus-visible:outline-1 disabled:opacity-50 dark:hover:bg-black/25 dark:focus-visible:bg-black/25"
-        classNameLabel="-my-1 p-1 -mx-1 min-w-[3ch]"
-        required
-      />
-    </form>
-  )
-}
-
-function AddDescriptionItem({
-  discoursemeDescriptionId,
-  discoursemeId,
-  constellationId,
-}: {
-  discoursemeDescriptionId: number
-  discoursemeId: number
-  constellationId: number
-}) {
-  const {
-    mutate: addItem,
-    isPending: isAddingItem,
-    error: errorAddItem,
-  } = useMutation(addDescriptionItem)
-  const { secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
-  const { description } = useDescription()
-  const { mapItems: collocationItemsMap } = useCollocation(
-    constellationId,
-    description?.id,
-  )
-
-  const mapItems = useMemo(
-    () =>
-      (collocationItemsMap?.map ?? [])
-        .filter(({ source }) => source === 'items')
-        .map(({ item }) => ({
-          id: item,
-          name: item,
-          searchValue: item,
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [collocationItemsMap],
-  )
-
-  return (
-    <>
-      <ErrorMessage error={errorAddItem} />
-      <ComplexSelect
-        className="m-2"
-        selectMessage="Select description item to add"
-        disabled={isAddingItem}
-        items={mapItems}
-        onChange={(itemId) => {
-          if (itemId === undefined) return
-          const surface = mapItems.find(({ id }) => id === itemId)?.name
-          if (surface === undefined || secondary === undefined) {
-            console.warn('Could not add item, missing values', {
-              surface,
-              secondary,
-            })
-            return
-          }
-          return void addItem({
-            discoursemeId,
-            descriptionId: discoursemeDescriptionId,
-            surface: surface,
-            p: secondary,
-          })
-        }}
-      />
-    </>
   )
 }
