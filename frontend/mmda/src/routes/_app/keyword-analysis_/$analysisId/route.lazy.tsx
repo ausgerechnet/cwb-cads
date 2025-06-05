@@ -27,12 +27,12 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { WordCloudPreview } from '@/components/word-cloud-preview'
 import { Card } from '@cads/shared/components/ui/card'
-import WordCloud from '@/components/word-cloud'
 import { cn } from '@cads/shared/lib/utils'
 import { LoaderBig } from '@cads/shared/components/loader-big'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { schemas } from '@cads/shared/api-client'
 import { useMeasureSelection } from '@cads/shared/components/measures'
+import { WordCloudAlt, type WordCloudWordIn } from '@/components/word-cloud-alt'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
@@ -259,30 +259,22 @@ function MapContent({
   isLoading: boolean
   ccSortBy: string
 }) {
+  const { clFilterItem } = Route.useSearch()
   const navigate = useNavigate()
 
   const { measures, measureNameMap } = useMeasureSelection()
 
-  const words = keywordItems.map(({ item, scaled_scores }) => {
+  const words = keywordItems.map(({ item, scaled_scores }): WordCloudWordIn => {
     const { x = 0, y = 0 } = coordinates.find((c) => c.item === item) ?? {}
     const score = scaled_scores.find((s) => s.measure === ccSortBy)?.score
-    if (score === undefined)
+    if (score === undefined) {
       throw new Error(`Score not found for "${item}" for measure "${ccSortBy}"`)
-    return {
-      id: item,
-      x,
-      y,
-      originX: x,
-      originY: y,
-      source: 'items',
-      significance: score,
-      radius: 0, // TODO: Radius should be calculated in the word cloud component
-      item,
     }
+    return { label: item, x, y, score }
   })
 
   return (
-    <div className="grid flex-grow grid-cols-[min-content_1fr] grid-rows-[min-content_1fr] gap-8">
+    <div className="z-10 grid flex-grow grid-cols-[min-content_1fr] grid-rows-[min-content_1fr] gap-8">
       <Link
         to="/keyword-analysis/$analysisId"
         from="/keyword-analysis/$analysisId/semantic-map"
@@ -323,7 +315,11 @@ function MapContent({
         {isLoading ? (
           <LoaderBig className="place-self-center self-center justify-self-center" />
         ) : (
-          <WordCloud words={words} className="h-full w-full" />
+          <WordCloudAlt
+            words={words}
+            className="h-full w-full"
+            filterItem={clFilterItem}
+          />
         )}
       </div>
     </div>
