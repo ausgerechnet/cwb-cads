@@ -61,7 +61,7 @@ export function WordCloudAlt({
   filterDiscoursemeIds,
   aspectRatio = 2 / 1,
   debug = false,
-  cutOff = 0.5,
+  cutOff = 0,
   hideOverflow = false,
   onChange,
 }: {

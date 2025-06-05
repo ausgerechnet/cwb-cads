@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { getCollocationItems, queryCollocation } from '@cads/shared/queries'
+import { type WordCloudWordIn } from '@/components/word-cloud-alt'
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { Route } from './route'
 import { useMemo } from 'react'
@@ -72,26 +73,21 @@ export function useCollocation() {
 
   const words = useMemo(
     () =>
-      (mapItems?.items ?? []).map(({ item, scaled_scores }) => {
-        const { x = 0, y = 0 } =
-          mapItems?.coordinates.find((c) => c.item === item) ?? {}
-        const score = scaled_scores?.find((s) => s.measure === ccSortBy)?.score
-        if (score === undefined)
-          throw new Error(
-            `Score not found for "${item}" for measure "${ccSortBy}"`,
-          )
-        return {
-          id: item,
-          x,
-          y,
-          originX: x,
-          originY: y,
-          source: 'items',
-          significance: score,
-          radius: 0, // TODO: Radius should be calculated in the word cloud component
-          item,
-        }
-      }),
+      (mapItems?.items ?? []).map(
+        ({ item, scaled_scores }): WordCloudWordIn => {
+          const { x = 0, y = 0 } =
+            mapItems?.coordinates.find((c) => c.item === item) ?? {}
+          const score = scaled_scores?.find(
+            (s) => s.measure === ccSortBy,
+          )?.score
+          if (score === undefined) {
+            throw new Error(
+              `Score not found for "${item}" for measure "${ccSortBy}"`,
+            )
+          }
+          return { label: item, x, y, score }
+        },
+      ),
     [mapItems, ccSortBy],
   )
 

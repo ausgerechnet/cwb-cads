@@ -213,7 +213,7 @@ function OriginDot({
 }) {
   return (
     <div
-      className="pointer-events-none absolute z-[5002] aria-hidden:hidden"
+      className="pointer-events-none absolute z-[11000] aria-hidden:hidden"
       style={{ left: x, top: y }}
       aria-hidden={isHidden}
     >

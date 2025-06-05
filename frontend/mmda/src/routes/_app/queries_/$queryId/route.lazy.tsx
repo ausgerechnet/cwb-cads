@@ -6,10 +6,15 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery, useMutation } from '@tanstack/react-query'
 import { AlertCircle, MapIcon } from 'lucide-react'
 
-import { corpusById, queryBreakdownForP, queryById } from '@cads/shared/queries'
+import {
+  corpusById,
+  queryBreakdownForP,
+  queryById,
+  putSemanticMapCoordinates,
+} from '@cads/shared/queries'
 import { errorString } from '@cads/shared/lib/error-string'
 import { AppPageFrame } from '@/components/app-page-frame'
 import {
@@ -22,9 +27,12 @@ import { Card } from '@cads/shared/components/ui/card'
 import { WordCloudPreview } from '@/components/word-cloud-preview'
 import { cn } from '@cads/shared/lib/utils'
 import { buttonVariants } from '@cads/shared/components/ui/button'
-import WordCloud from '@/components/word-cloud'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
-import { ConcordanceFilterProvider } from '@cads/shared/components/concordances'
+import {
+  ConcordanceFilterProvider,
+  useConcordanceFilterContext,
+} from '@cads/shared/components/concordances'
+import { WordCloudAlt, type WordCloudEvent } from '@/components/word-cloud-alt'
 
 import { QueryConcordanceLines } from './-query-concordance-lines'
 import { QueryFrequencyBreakdown } from './-query-frequency-breakdown'
@@ -62,6 +70,15 @@ function SingleQuery() {
     select: (data) => data?.items?.map((item) => item.item as string) ?? [],
   })
   const { words } = useCollocation()
+  const preview =
+    words?.map(
+      (item) =>
+        ({
+          x: item.x,
+          y: item.y,
+          item: item.label,
+        }) as const,
+    ) ?? []
 
   const contextBreak = search.contextBreak ?? corpus.s_atts?.[0] ?? ''
 
@@ -130,10 +147,12 @@ function SingleQuery() {
             <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
               <WordCloudPreview
                 className="absolute h-full w-full scale-110 transition-all group-hover/map-link:scale-100 group-hover/map-link:opacity-75 group-focus-visible/map-link:scale-100"
-                items={words}
+                items={preview}
               />
+
               <div className="bg-muted/70 group-focus-visible/map-link:bg-muted/90 group-hover/map-link:bg-muted/90 transition-color relative flex gap-3 rounded p-2">
                 <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
+
                 <span>Semantic Map</span>
               </div>
             </Card>
@@ -148,6 +167,28 @@ function SingleQuery() {
 
 function MapContent() {
   const { words, semanticMapId } = useCollocation()
+  const { secondary, clFilterItem, setFilterItem } =
+    useConcordanceFilterContext()
+  const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
+
+  function handleChange(event: WordCloudEvent) {
+    switch (event.type) {
+      case 'update_surface_position': {
+        if (semanticMapId === undefined || semanticMapId === null) return
+        updateCoordinates({
+          semanticMapId,
+          item: event.surface,
+          x_user: event.x,
+          y_user: event.y,
+        })
+        break
+      }
+      case 'set_filter_item': {
+        setFilterItem(event.item ?? undefined, secondary)
+        break
+      }
+    }
+  }
   return (
     <>
       <div className="overflow-hidden">
@@ -163,11 +204,12 @@ function MapContent() {
         >
           To Query
         </Link>
-        <div className="relative h-[calc(100svh-11rem)]">
-          <WordCloud
+        <div className="relative z-0 h-[calc(100svh-11rem)]">
+          <WordCloudAlt
             words={words}
-            semanticMapId={semanticMapId}
             className="absolute inset-0"
+            onChange={handleChange}
+            filterItem={clFilterItem}
           />
         </div>
       </div>
