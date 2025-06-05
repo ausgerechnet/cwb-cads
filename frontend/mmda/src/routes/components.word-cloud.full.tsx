@@ -8,7 +8,7 @@ import { Checkbox } from '@cads/shared/components/ui/checkbox'
 import { WordCloudEvent } from '@/components/word-cloud-alt/word-cloud-alt'
 import { Slider } from '@cads/shared/components/ui/slider'
 
-export const Route = createFileRoute('/components/word-cloud-alt/full')({
+export const Route = createFileRoute('/components/word-cloud/full')({
   component: WordCloudAltFullscreen,
 })
 
@@ -37,7 +37,7 @@ function WordCloudAltFullscreen() {
 
       <div className="bg-muted z-10 col-span-2 col-start-2 row-start-2 flex gap-4 rounded-lg p-1 shadow outline outline-1 outline-slate-600/60">
         <Link
-          to="/components/word-cloud-alt"
+          to="/components/word-cloud"
           className={buttonVariants({
             size: 'sm',
           })}

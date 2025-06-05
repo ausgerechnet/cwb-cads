@@ -19,7 +19,6 @@ import { Route as AppImport } from './routes/_app'
 import { Route as Import } from './routes/*'
 import { Route as ComponentsRouteImport } from './routes/components_/route'
 import { Route as IndexImport } from './routes/index'
-import { Route as ComponentsWordCloudAltImport } from './routes/components_/word-cloud-alt'
 import { Route as ComponentsWordCloudImport } from './routes/components_/word-cloud'
 import { Route as ComponentsTooltipImport } from './routes/components_/tooltip'
 import { Route as ComponentsToggleBarImport } from './routes/components_/toggle-bar'
@@ -42,7 +41,7 @@ import { Route as AppKeywordAnalysisRouteImport } from './routes/_app/keyword-an
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
 import { Route as AppCorporaRouteImport } from './routes/_app/corpora/route'
 import { Route as AppConstellationsRouteImport } from './routes/_app/constellations/route'
-import { Route as ComponentsWordCloudAltFullImport } from './routes/components.word-cloud-alt.full'
+import { Route as ComponentsWordCloudFullImport } from './routes/components.word-cloud.full'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppSubcorporaSubcorpusIdImport } from './routes/_app/subcorpora_/$subcorpusId'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
@@ -106,12 +105,6 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
-} as any)
-
-const ComponentsWordCloudAltRoute = ComponentsWordCloudAltImport.update({
-  id: '/word-cloud-alt',
-  path: '/word-cloud-alt',
-  getParentRoute: () => ComponentsRouteRoute,
 } as any)
 
 const ComponentsWordCloudRoute = ComponentsWordCloudImport.update({
@@ -271,13 +264,11 @@ const AppDiscoursemesNewLazyRoute = AppDiscoursemesNewLazyImport.update({
   import('./routes/_app/discoursemes_/new.lazy').then((d) => d.Route),
 )
 
-const ComponentsWordCloudAltFullRoute = ComponentsWordCloudAltFullImport.update(
-  {
-    id: '/components/word-cloud-alt/full',
-    path: '/components/word-cloud-alt/full',
-    getParentRoute: () => rootRoute,
-  } as any,
-)
+const ComponentsWordCloudFullRoute = ComponentsWordCloudFullImport.update({
+  id: '/components/word-cloud/full',
+  path: '/components/word-cloud/full',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
   id: '/subcorpora_/new',
@@ -607,13 +598,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComponentsWordCloudImport
       parentRoute: typeof ComponentsRouteImport
     }
-    '/components_/word-cloud-alt': {
-      id: '/components_/word-cloud-alt'
-      path: '/word-cloud-alt'
-      fullPath: '/components/word-cloud-alt'
-      preLoaderRoute: typeof ComponentsWordCloudAltImport
-      parentRoute: typeof ComponentsRouteImport
-    }
     '/_app/constellations_/$constellationId': {
       id: '/_app/constellations_/$constellationId'
       path: '/constellations/$constellationId'
@@ -684,11 +668,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubcorporaNewImport
       parentRoute: typeof AppImport
     }
-    '/components/word-cloud-alt/full': {
-      id: '/components/word-cloud-alt/full'
-      path: '/components/word-cloud-alt/full'
-      fullPath: '/components/word-cloud-alt/full'
-      preLoaderRoute: typeof ComponentsWordCloudAltFullImport
+    '/components/word-cloud/full': {
+      id: '/components/word-cloud/full'
+      path: '/components/word-cloud/full'
+      fullPath: '/components/word-cloud/full'
+      preLoaderRoute: typeof ComponentsWordCloudFullImport
       parentRoute: typeof rootRoute
     }
     '/_app/discoursemes_/new': {
@@ -746,7 +730,6 @@ interface ComponentsRouteRouteChildren {
   ComponentsToggleBarRoute: typeof ComponentsToggleBarRoute
   ComponentsTooltipRoute: typeof ComponentsTooltipRoute
   ComponentsWordCloudRoute: typeof ComponentsWordCloudRoute
-  ComponentsWordCloudAltRoute: typeof ComponentsWordCloudAltRoute
 }
 
 const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
@@ -765,7 +748,6 @@ const ComponentsRouteRouteChildren: ComponentsRouteRouteChildren = {
   ComponentsToggleBarRoute: ComponentsToggleBarRoute,
   ComponentsTooltipRoute: ComponentsTooltipRoute,
   ComponentsWordCloudRoute: ComponentsWordCloudRoute,
-  ComponentsWordCloudAltRoute: ComponentsWordCloudAltRoute,
 }
 
 const ComponentsRouteRouteWithChildren = ComponentsRouteRoute._addFileChildren(
@@ -897,7 +879,6 @@ export interface FileRoutesByFullPath {
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
   '/components/tooltip': typeof ComponentsTooltipRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
-  '/components/word-cloud-alt': typeof ComponentsWordCloudAltRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -908,7 +889,7 @@ export interface FileRoutesByFullPath {
   '/queries/new': typeof AppQueriesNewRoute
   '/subcorpora/$subcorpusId': typeof AppSubcorporaSubcorpusIdRoute
   '/subcorpora/new': typeof AppSubcorporaNewRoute
-  '/components/word-cloud-alt/full': typeof ComponentsWordCloudAltFullRoute
+  '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/discoursemes/new': typeof AppDiscoursemesNewLazyRoute
   '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
@@ -946,7 +927,6 @@ export interface FileRoutesByTo {
   '/components/toggle-bar': typeof ComponentsToggleBarRoute
   '/components/tooltip': typeof ComponentsTooltipRoute
   '/components/word-cloud': typeof ComponentsWordCloudRoute
-  '/components/word-cloud-alt': typeof ComponentsWordCloudAltRoute
   '/constellations/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/keyword-analysis/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/queries/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -957,7 +937,7 @@ export interface FileRoutesByTo {
   '/queries/new': typeof AppQueriesNewRoute
   '/subcorpora/$subcorpusId': typeof AppSubcorporaSubcorpusIdRoute
   '/subcorpora/new': typeof AppSubcorporaNewRoute
-  '/components/word-cloud-alt/full': typeof ComponentsWordCloudAltFullRoute
+  '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/discoursemes/new': typeof AppDiscoursemesNewLazyRoute
   '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
@@ -996,7 +976,6 @@ export interface FileRoutesById {
   '/components_/toggle-bar': typeof ComponentsToggleBarRoute
   '/components_/tooltip': typeof ComponentsTooltipRoute
   '/components_/word-cloud': typeof ComponentsWordCloudRoute
-  '/components_/word-cloud-alt': typeof ComponentsWordCloudAltRoute
   '/_app/constellations_/$constellationId': typeof AppConstellationsConstellationIdRouteRouteWithChildren
   '/_app/keyword-analysis_/$analysisId': typeof AppKeywordAnalysisAnalysisIdRouteRouteWithChildren
   '/_app/queries_/$queryId': typeof AppQueriesQueryIdRouteRouteWithChildren
@@ -1007,7 +986,7 @@ export interface FileRoutesById {
   '/_app/queries_/new': typeof AppQueriesNewRoute
   '/_app/subcorpora_/$subcorpusId': typeof AppSubcorporaSubcorpusIdRoute
   '/_app/subcorpora_/new': typeof AppSubcorporaNewRoute
-  '/components/word-cloud-alt/full': typeof ComponentsWordCloudAltFullRoute
+  '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/_app/discoursemes_/new': typeof AppDiscoursemesNewLazyRoute
   '/_app/constellations_/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/_app/discoursemes_/$discoursemeId_/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
@@ -1047,7 +1026,6 @@ export interface FileRouteTypes {
     | '/components/toggle-bar'
     | '/components/tooltip'
     | '/components/word-cloud'
-    | '/components/word-cloud-alt'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
     | '/queries/$queryId'
@@ -1058,7 +1036,7 @@ export interface FileRouteTypes {
     | '/queries/new'
     | '/subcorpora/$subcorpusId'
     | '/subcorpora/new'
-    | '/components/word-cloud-alt/full'
+    | '/components/word-cloud/full'
     | '/discoursemes/new'
     | '/constellations/$constellationId/semantic-map'
     | '/discoursemes/$discoursemeId/new-description'
@@ -1095,7 +1073,6 @@ export interface FileRouteTypes {
     | '/components/toggle-bar'
     | '/components/tooltip'
     | '/components/word-cloud'
-    | '/components/word-cloud-alt'
     | '/constellations/$constellationId'
     | '/keyword-analysis/$analysisId'
     | '/queries/$queryId'
@@ -1106,7 +1083,7 @@ export interface FileRouteTypes {
     | '/queries/new'
     | '/subcorpora/$subcorpusId'
     | '/subcorpora/new'
-    | '/components/word-cloud-alt/full'
+    | '/components/word-cloud/full'
     | '/discoursemes/new'
     | '/constellations/$constellationId/semantic-map'
     | '/discoursemes/$discoursemeId/new-description'
@@ -1143,7 +1120,6 @@ export interface FileRouteTypes {
     | '/components_/toggle-bar'
     | '/components_/tooltip'
     | '/components_/word-cloud'
-    | '/components_/word-cloud-alt'
     | '/_app/constellations_/$constellationId'
     | '/_app/keyword-analysis_/$analysisId'
     | '/_app/queries_/$queryId'
@@ -1154,7 +1130,7 @@ export interface FileRouteTypes {
     | '/_app/queries_/new'
     | '/_app/subcorpora_/$subcorpusId'
     | '/_app/subcorpora_/new'
-    | '/components/word-cloud-alt/full'
+    | '/components/word-cloud/full'
     | '/_app/discoursemes_/new'
     | '/_app/constellations_/$constellationId/semantic-map'
     | '/_app/discoursemes_/$discoursemeId_/new-description'
@@ -1171,7 +1147,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   VignetteRoute: typeof VignetteRoute
   LogoutLazyRoute: typeof LogoutLazyRoute
-  ComponentsWordCloudAltFullRoute: typeof ComponentsWordCloudAltFullRoute
+  ComponentsWordCloudFullRoute: typeof ComponentsWordCloudFullRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -1182,7 +1158,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   VignetteRoute: VignetteRoute,
   LogoutLazyRoute: LogoutLazyRoute,
-  ComponentsWordCloudAltFullRoute: ComponentsWordCloudAltFullRoute,
+  ComponentsWordCloudFullRoute: ComponentsWordCloudFullRoute,
 }
 
 export const routeTree = rootRoute
@@ -1204,7 +1180,7 @@ export const routeTree = rootRoute
         "/login",
         "/vignette",
         "/logout",
-        "/components/word-cloud-alt/full"
+        "/components/word-cloud/full"
       ]
     },
     "/": {
@@ -1226,8 +1202,7 @@ export const routeTree = rootRoute
         "/components_/time-series",
         "/components_/toggle-bar",
         "/components_/tooltip",
-        "/components_/word-cloud",
-        "/components_/word-cloud-alt"
+        "/components_/word-cloud"
       ]
     },
     "/*": {
@@ -1355,10 +1330,6 @@ export const routeTree = rootRoute
       "filePath": "components_/word-cloud.tsx",
       "parent": "/components_"
     },
-    "/components_/word-cloud-alt": {
-      "filePath": "components_/word-cloud-alt.tsx",
-      "parent": "/components_"
-    },
     "/_app/constellations_/$constellationId": {
       "filePath": "_app/constellations_/$constellationId/route.tsx",
       "parent": "/_app",
@@ -1408,8 +1379,8 @@ export const routeTree = rootRoute
       "filePath": "_app/subcorpora_/new.tsx",
       "parent": "/_app"
     },
-    "/components/word-cloud-alt/full": {
-      "filePath": "components.word-cloud-alt.full.tsx"
+    "/components/word-cloud/full": {
+      "filePath": "components.word-cloud.full.tsx"
     },
     "/_app/discoursemes_/new": {
       "filePath": "_app/discoursemes_/new.lazy.tsx",
