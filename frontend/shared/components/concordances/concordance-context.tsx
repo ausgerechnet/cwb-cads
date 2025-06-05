@@ -146,7 +146,15 @@ function useConcordanceFilters(
       updateFilters({ clSortOrder: sortOrder }),
     setSortByOffset: (sortByOffset: number) =>
       updateFilters({ clSortByOffset: sortByOffset }),
-    setFilterItem: (filterItem: string | undefined, filterItemPAtt: string) => {
+    setFilterItem: (
+      filterItem: string | undefined,
+      filterItemPAtt: string | undefined,
+    ) => {
+      if (filterItem !== undefined && filterItemPAtt === undefined) {
+        throw new Error(
+          `filterItemPAtt must be defined when filterItem is defined, got: ${filterItemPAtt}`,
+        )
+      }
       updateFilters({
         clFilterItem: filterItem,
         clFilterItemPAtt: filterItemPAtt,

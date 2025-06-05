@@ -161,6 +161,7 @@ export class Cloud {
       enableHomeForce = true,
       enableCollisionDetection = true,
       repelForceFactor = 0.05,
+      zoom = 1,
     } = {},
   ) {
     this.width = width
@@ -178,6 +179,7 @@ export class Cloud {
     this.enableHomeForce = enableHomeForce
     this.enableCollisionDetection = enableCollisionDetection
     this.#repelForceFactor = repelForceFactor
+    this.#zoom = zoom
     this.tick()
   }
 
@@ -193,6 +195,10 @@ export class Cloud {
     this.#zoom = value
     this.#alpha = 1
     this.#ticks = 0
+  }
+
+  get zoom() {
+    return this.#zoom
   }
 
   onSimulationUpdate(callback: () => void) {

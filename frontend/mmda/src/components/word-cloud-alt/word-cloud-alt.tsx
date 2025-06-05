@@ -29,7 +29,7 @@ export type WordCloudEvent =
       y: number
     }
   | { type: 'set_filter_item'; item: string | null }
-  | { type: 'set_filter_discourseme_id'; discoursemeId: number | null }
+  | { type: 'set_filter_discourseme_ids'; discoursemeIds: number[] }
 
 export type WordCloudWordIn = {
   x: number
@@ -56,9 +56,9 @@ export function WordCloudAlt({
   className,
   words = [],
   discoursemes = [],
-  padding: [paddingX = 0, paddingY = 0] = [0, 0],
+  padding: [paddingX = 0, paddingY = 0] = [300, 100],
   filterItem = null,
-  filterDiscoursemeId = null,
+  filterDiscoursemeIds,
   aspectRatio = 2 / 1,
   debug = false,
   cutOff = 0.5,
@@ -71,7 +71,7 @@ export function WordCloudAlt({
   discoursemes?: WordCloudDiscoursemeIn[]
   padding?: [number, number]
   filterItem?: string | null
-  filterDiscoursemeId?: number | null
+  filterDiscoursemeIds?: number[]
   debug?: boolean
   cutOff?: number
   hideOverflow?: boolean
@@ -180,15 +180,14 @@ export function WordCloudAlt({
         })
       } else if (item.type === 'discourseme') {
         onChange?.({
-          type: 'set_filter_discourseme_id',
-          discoursemeId:
-            item.discoursemeId === filterDiscoursemeId
-              ? null
-              : item.discoursemeId,
+          type: 'set_filter_discourseme_ids',
+          discoursemeIds: filterDiscoursemeIds?.includes(item.discoursemeId)
+            ? filterDiscoursemeIds.filter((id) => id !== item.discoursemeId)
+            : [...(filterDiscoursemeIds ?? []), item.discoursemeId],
         })
       }
     },
-    [filterDiscoursemeId, filterItem, onChange],
+    [filterDiscoursemeIds, filterItem, onChange],
   )
 
   const handleDragStart = useCallback(() => {
@@ -229,6 +228,7 @@ export function WordCloudAlt({
     worker.postMessage({
       type: 'update',
       payload: {
+        cutOff,
         width: 2,
         height: 2,
         displayWidth: containerWidth - paddingX,
@@ -252,15 +252,8 @@ export function WordCloudAlt({
     containerHeight,
     paddingX,
     paddingY,
+    cutOff,
   ])
-
-  useEffect(() => {
-    if (!worker || !isReady) return
-    worker.postMessage({
-      type: 'update_cutoff',
-      payload: { cutOff },
-    } satisfies CloudWorkerMessage)
-  }, [worker, isReady, cutOff])
 
   return (
     <div className={cn('relative h-full w-full', className)}>
@@ -283,6 +276,7 @@ export function WordCloudAlt({
         disabled={isDragging}
         limitToBounds
         minPositionX={0}
+        maxScale={15}
       >
         {({ centerView }) => (
           <>
@@ -375,6 +369,7 @@ export function WordCloudAlt({
                     itemA &&
                     itemB &&
                     itemA.id !== itemB.id &&
+                    !wasShortDrag &&
                     !(
                       isDiscoursemeDisplay(itemA) && isDiscoursemeDisplay(itemB)
                     )
@@ -499,7 +494,9 @@ export function WordCloudAlt({
                       <Item
                         key={discourseme.label}
                         isSelected={
-                          discourseme.discoursemeId === filterDiscoursemeId
+                          filterDiscoursemeIds?.includes(
+                            discourseme.discoursemeId,
+                          ) ?? false
                         }
                         onHover={handleHover}
                         onLeave={handleLeave}

@@ -15,9 +15,7 @@ export const Route = createFileRoute('/components/word-cloud-alt/full')({
 function WordCloudAltFullscreen() {
   const [debug, setDebug] = useState(false)
   const [filterItem, setFilterItem] = useState<string | null>(null)
-  const [filterDiscoursemeId, setFilterDiscoursemeId] = useState<number | null>(
-    null,
-  )
+  const [filterDiscoursemeIds, setFilterDiscoursemeIds] = useState<number[]>([])
   const [events, setEvents] = useState<WordCloudEvent[]>([])
   const [cutOff, setCutOff] = useState(0.1)
 
@@ -26,8 +24,8 @@ function WordCloudAltFullscreen() {
       case 'set_filter_item':
         setFilterItem(event.item)
         break
-      case 'set_filter_discourseme_id':
-        setFilterDiscoursemeId(event.discoursemeId)
+      case 'set_filter_discourseme_ids':
+        setFilterDiscoursemeIds(event.discoursemeIds)
         break
     }
     setEvents((prev) => [event, ...prev])
@@ -101,7 +99,7 @@ function WordCloudAltFullscreen() {
         words={wordsCluster}
         discoursemes={discoursemes}
         filterItem={filterItem}
-        filterDiscoursemeId={filterDiscoursemeId}
+        filterDiscoursemeIds={filterDiscoursemeIds}
         debug={debug}
         cutOff={cutOff}
         onChange={handleChange}

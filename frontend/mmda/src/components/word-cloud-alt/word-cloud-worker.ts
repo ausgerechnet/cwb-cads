@@ -39,6 +39,7 @@ export type CloudWorkerMessage =
         height: number
         displayHeight: number
         displayWidth: number
+        cutOff: number
         words: WordInput[]
         discoursemes: DiscoursemeInput[]
       }
@@ -48,12 +49,6 @@ export type CloudWorkerMessage =
       payload: {
         displayHeight: number
         displayWidth: number
-      }
-    }
-  | {
-      type: 'update_cutoff'
-      payload: {
-        cutOff: number
       }
     }
   | {
@@ -80,7 +75,8 @@ let cloud: Cloud | null = null
 self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
   switch (data.type) {
     case 'update': {
-      const { width, height, words, discoursemes } = data.payload
+      const { cutOff, width, height, words, discoursemes } = data.payload
+      const zoom = cloud?.zoom ?? 1
       cloud?.destroy()
       cloud = new Cloud(
         width,
@@ -108,6 +104,7 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
               },
             ),
         ),
+        { backgroundCutOff: cutOff, zoom },
       )
       cloud.onSimulationUpdate(publishPositions)
       cloud.setDisplaySize(
@@ -124,13 +121,6 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
           data.payload.displayWidth,
           data.payload.displayHeight,
         )
-        cloud.simulateUntilStable()
-      }
-      break
-    }
-    case 'update_cutoff': {
-      if (cloud) {
-        cloud.backgroundCutOff = data.payload.cutOff
         cloud.simulateUntilStable()
       }
       break

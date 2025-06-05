@@ -41,6 +41,7 @@ export function Item({
     displayType === 'dot'
       ? [displayOriginX, displayOriginY]
       : toDisplayCoordinates(word.x, word.y)
+  const isDiscourseme = discoursemeId !== undefined
 
   return (
     <>
@@ -52,6 +53,7 @@ export function Item({
         isDraggingOther={isDraggingOther}
         zoom={zoom}
         isDragging={isDragging}
+        isDiscourseme={isDiscourseme}
       >
         <div
           ref={setNodeRef}
@@ -90,6 +92,8 @@ export function Item({
                   'outline outline-1 outline-current':
                     discoursemeId !== undefined,
                   'hover:bg-yellow-500': isDraggingOther,
+                  'bg-[var(--discourseme-bg)] text-[var(--discourseme-text)]':
+                    isDiscourseme,
                   'hover:bg-primary': !isDraggingOther,
                 },
               )}
@@ -100,13 +104,18 @@ export function Item({
                 ...(discoursemeId === undefined
                   ? {}
                   : {
-                      backgroundColor: getColorForNumber(
+                      ['--discourseme-bg']: getColorForNumber(
                         discoursemeId,
                         0.9,
                         0.1,
                         0.3,
                       ),
-                      color: getColorForNumber(discoursemeId, 1, 0.8, 0.7),
+                      ['--discourseme-text']: getColorForNumber(
+                        discoursemeId,
+                        1,
+                        0.8,
+                        0.7,
+                      ),
                     }),
               }}
             >
@@ -145,6 +154,7 @@ function Container({
   x,
   y,
   isDraggingOther,
+  isDiscourseme,
   zoom,
   isDragging,
   displayType,
@@ -156,6 +166,7 @@ function Container({
   word: WordDisplay
   x: number
   y: number
+  isDiscourseme: boolean
   zoom: number
   displayType: 'rectangle' | 'dot'
   className?: string
@@ -168,7 +179,7 @@ function Container({
   return (
     <div
       className={cn(
-        'group absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[1000!important] [&:hover+*]:block',
+        'group absolute left-0 top-0 translate-x-[calc(var(--x)-50%)] translate-y-[calc(var(--y)-50%)] touch-none hover:z-[6000!important] [&:hover+*]:block',
         {
           'pointer-events-none z-[5001!important] opacity-50 will-change-transform':
             isDragging,
@@ -181,7 +192,9 @@ function Container({
       style={{
         ['--x' as string]: `${x + (transform?.x ?? 0) / zoom}px`,
         ['--y' as string]: `${y + (transform?.y ?? 0) / zoom}px`,
-        zIndex: word.isBackground ? 0 : Math.floor(word.score * 100) + 10,
+        zIndex: word.isBackground
+          ? 0
+          : (isDiscourseme ? 1_000 : 0) + Math.floor(word.score * 100) + 10,
       }}
     >
       <KeepScale>{children}</KeepScale>
