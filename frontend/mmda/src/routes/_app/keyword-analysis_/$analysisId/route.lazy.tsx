@@ -7,6 +7,7 @@ import {
 import { z } from 'zod'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { MapIcon, XIcon } from 'lucide-react'
+import { useMemo } from 'react'
 
 import {
   getQueryAssisted,
@@ -62,7 +63,7 @@ function KeywordAnalysis() {
   )
 
   const {
-    data: { items = [], coordinates = [] } = {},
+    data: { items, coordinates } = {},
     isLoading: isLoadingMap,
     error: errorMapItems,
   } = useQuery({
@@ -254,8 +255,8 @@ function MapContent({
   isLoading,
   ccSortBy,
 }: {
-  keywordItems: z.infer<typeof schemas.KeywordItemOut>[]
-  coordinates: z.infer<typeof schemas.CoordinatesOut>[]
+  keywordItems: z.infer<typeof schemas.KeywordItemOut>[] | undefined
+  coordinates: z.infer<typeof schemas.CoordinatesOut>[] | undefined
   isLoading: boolean
   ccSortBy: string
 }) {
@@ -264,14 +265,20 @@ function MapContent({
 
   const { measures, measureNameMap } = useMeasureSelection()
 
-  const words = keywordItems.map(({ item, scaled_scores }): WordCloudWordIn => {
-    const { x = 0, y = 0 } = coordinates.find((c) => c.item === item) ?? {}
-    const score = scaled_scores.find((s) => s.measure === ccSortBy)?.score
-    if (score === undefined) {
-      throw new Error(`Score not found for "${item}" for measure "${ccSortBy}"`)
-    }
-    return { label: item, x, y, score }
-  })
+  const words = useMemo(
+    () =>
+      keywordItems?.map(({ item, scaled_scores }): WordCloudWordIn => {
+        const { x = 0, y = 0 } = coordinates?.find((c) => c.item === item) ?? {}
+        const score = scaled_scores.find((s) => s.measure === ccSortBy)?.score
+        if (score === undefined) {
+          throw new Error(
+            `Score not found for "${item}" for measure "${ccSortBy}"`,
+          )
+        }
+        return { label: item, x, y, score }
+      }) ?? [],
+    [ccSortBy, coordinates, keywordItems],
+  )
 
   return (
     <div className="z-10 grid flex-grow grid-cols-[min-content_1fr] grid-rows-[min-content_1fr] gap-8">

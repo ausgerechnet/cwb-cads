@@ -52,10 +52,13 @@ function isDiscoursemeDisplay(
   return 'discoursemeId' in item
 }
 
+const emptyDiscoursemes: WordCloudDiscoursemeIn[] = []
+const emptyWords: WordCloudWordIn[] = []
+
 export function WordCloud({
   className,
-  words = [],
-  discoursemes = [],
+  words = emptyWords,
+  discoursemes = emptyDiscoursemes,
   padding: [paddingX = 0, paddingY = 0] = [300, 100],
   filterItem = null,
   filterDiscoursemeIds,
