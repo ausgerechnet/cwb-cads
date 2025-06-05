@@ -15,11 +15,11 @@ import { buttonVariants } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { LoaderBig } from '@cads/shared/components/loader-big'
 import {
-  WordCloudAlt,
+  WordCloud,
   type WordCloudWordIn,
   type WordCloudDiscoursemeIn,
   type WordCloudEvent,
-} from '@/components/word-cloud-alt'
+} from '@/components/word-cloud'
 import { useConcordanceFilterContext } from '@cads/shared/components/concordances'
 
 import { useDescription } from './-use-description'
@@ -172,7 +172,7 @@ export function SemanticMapCollocations({
       {semantic_map_id !== undefined &&
         semantic_map_id !== null &&
         Boolean(mapItems) && (
-          <WordCloudAlt
+          <WordCloud
             className={cn(
               'z-0 col-start-2 row-start-3 self-stretch justify-self-stretch',
               { 'pointer-events-none opacity-50': isFetching },

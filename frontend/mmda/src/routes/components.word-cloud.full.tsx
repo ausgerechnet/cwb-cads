@@ -2,17 +2,17 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ComponentProps, useCallback, useState } from 'react'
 import { ShrinkIcon } from 'lucide-react'
 
-import { WordCloudAlt } from '@/components/word-cloud-alt'
+import { WordCloud } from '@/components/word-cloud'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
-import { WordCloudEvent } from '@/components/word-cloud-alt/word-cloud-alt'
+import { WordCloudEvent } from '@/components/word-cloud'
 import { Slider } from '@cads/shared/components/ui/slider'
 
 export const Route = createFileRoute('/components/word-cloud/full')({
-  component: WordCloudAltFullscreen,
+  component: WordCloudFullscreen,
 })
 
-function WordCloudAltFullscreen() {
+function WordCloudFullscreen() {
   const [debug, setDebug] = useState(false)
   const [filterItem, setFilterItem] = useState<string | null>(null)
   const [filterDiscoursemeIds, setFilterDiscoursemeIds] = useState<number[]>([])
@@ -94,7 +94,7 @@ function WordCloudAltFullscreen() {
         )}
       </div>
 
-      <WordCloudAlt
+      <WordCloud
         className="col-start-2 row-start-3 self-center"
         words={wordsCluster}
         discoursemes={discoursemes}
@@ -109,7 +109,7 @@ function WordCloudAltFullscreen() {
   )
 }
 
-const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
+const discoursemes: ComponentProps<typeof WordCloud>['discoursemes'] = [
   {
     discoursemeId: 1,
     label: 'Klimawandel',
@@ -159,7 +159,7 @@ const wordsCluster = [
       isBackground: false,
     }
   }),
-] satisfies ComponentProps<typeof WordCloudAlt>['words']
+] satisfies ComponentProps<typeof WordCloud>['words']
 
 function rnd(seed: number) {
   const x = Math.sin(seed) * 1_000_000

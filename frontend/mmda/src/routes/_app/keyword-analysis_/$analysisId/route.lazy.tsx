@@ -32,7 +32,7 @@ import { LoaderBig } from '@cads/shared/components/loader-big'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { schemas } from '@cads/shared/api-client'
 import { useMeasureSelection } from '@cads/shared/components/measures'
-import { WordCloudAlt, type WordCloudWordIn } from '@/components/word-cloud-alt'
+import { WordCloud, type WordCloudWordIn } from '@/components/word-cloud'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
@@ -315,7 +315,7 @@ function MapContent({
         {isLoading ? (
           <LoaderBig className="place-self-center self-center justify-self-center" />
         ) : (
-          <WordCloudAlt
+          <WordCloud
             words={words}
             className="h-full w-full"
             filterItem={clFilterItem}

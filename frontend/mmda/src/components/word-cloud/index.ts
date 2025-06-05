@@ -1,6 +1,6 @@
 export {
-  WordCloudAlt,
+  WordCloud,
   type WordCloudEvent,
   type WordCloudWordIn,
   type WordCloudDiscoursemeIn,
-} from './word-cloud-alt'
+} from './word-cloud'

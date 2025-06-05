@@ -2,10 +2,7 @@ import { ComponentProps, useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ExpandIcon } from 'lucide-react'
 
-import {
-  WordCloudAlt,
-  WordCloudEvent,
-} from '@/components/word-cloud-alt/word-cloud-alt'
+import { WordCloud, WordCloudEvent } from '@/components/word-cloud'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Block, BlockComment } from './-block'
@@ -23,7 +20,7 @@ function WordCloudComponents() {
   const [eventsC, setEventsC] = useState<WordCloudEvent[]>([])
 
   return (
-    <Block componentTag="WordCloudAlt">
+    <Block componentTag="WordCloud">
       <div className="my-2 grid w-max grid-cols-[auto_auto] gap-8">
         <div>
           <label className="flex cursor-pointer items-center gap-2">
@@ -66,7 +63,7 @@ function WordCloudComponents() {
       </BlockComment>
 
       <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt
+        <WordCloud
           hideOverflow
           className="aspect-[2/1]"
           words={addMoreWords ? [...wordsCluster, ...moreWords] : wordsCluster}
@@ -83,7 +80,7 @@ function WordCloudComponents() {
       </BlockComment>
 
       <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt
+        <WordCloud
           hideOverflow
           className="aspect-[2/1]"
           words={[...wordsSmallCluster, ...(addMoreWords ? moreWords : [])]}
@@ -101,7 +98,7 @@ function WordCloudComponents() {
       </BlockComment>
 
       <div className="my-3 outline outline-1 outline-pink-400">
-        <WordCloudAlt
+        <WordCloud
           hideOverflow
           className="aspect-[2/1]"
           words={[...wordsCollision, ...(addMoreWords ? moreWords : [])]}
@@ -161,7 +158,7 @@ function WordCloudEvents({ events }: { events: WordCloudEvent[] }) {
   )
 }
 
-const discoursemes: ComponentProps<typeof WordCloudAlt>['discoursemes'] = [
+const discoursemes: ComponentProps<typeof WordCloud>['discoursemes'] = [
   {
     discoursemeId: 1,
     label: 'Klimawandel',
@@ -191,7 +188,7 @@ const wordsCollision = [
   { x: 0, y: 0.55, label: 'Overlap B', score: 1 },
   { x: -1, y: -1, label: 'TOP LEFT!!', score: 1 },
   { x: 1, y: 1, label: 'BOTTOM RIGHT!!', score: 1 },
-] satisfies ComponentProps<typeof WordCloudAlt>['words']
+] satisfies ComponentProps<typeof WordCloud>['words']
 
 const wordsCluster = [
   { x: 0, y: 0, label: 'Greetings', score: 1 },
@@ -219,7 +216,7 @@ const wordsCluster = [
       isBackground: false,
     }
   }),
-] satisfies ComponentProps<typeof WordCloudAlt>['words']
+] satisfies ComponentProps<typeof WordCloud>['words']
 
 const moreWords = Array.from({ length: 100 }, (_, i) => ({
   x: 2 * rnd(i + 1_000) - 1,

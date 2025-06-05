@@ -52,7 +52,7 @@ function isDiscoursemeDisplay(
   return 'discoursemeId' in item
 }
 
-export function WordCloudAlt({
+export function WordCloud({
   className,
   words = [],
   discoursemes = [],

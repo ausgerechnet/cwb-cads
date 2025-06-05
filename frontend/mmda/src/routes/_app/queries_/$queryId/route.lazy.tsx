@@ -32,7 +32,7 @@ import {
   ConcordanceFilterProvider,
   useConcordanceFilterContext,
 } from '@cads/shared/components/concordances'
-import { WordCloudAlt, type WordCloudEvent } from '@/components/word-cloud-alt'
+import { WordCloud, type WordCloudEvent } from '@/components/word-cloud'
 
 import { QueryConcordanceLines } from './-query-concordance-lines'
 import { QueryFrequencyBreakdown } from './-query-frequency-breakdown'
@@ -205,7 +205,7 @@ function MapContent() {
           To Query
         </Link>
         <div className="relative z-0 h-[calc(100svh-11rem)]">
-          <WordCloudAlt
+          <WordCloud
             words={words}
             className="absolute inset-0"
             onChange={handleChange}

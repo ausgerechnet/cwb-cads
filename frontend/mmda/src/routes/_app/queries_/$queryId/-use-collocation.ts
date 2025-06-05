@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { getCollocationItems, queryCollocation } from '@cads/shared/queries'
-import { type WordCloudWordIn } from '@/components/word-cloud-alt'
+import { type WordCloudWordIn } from '@/components/word-cloud'
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { Route } from './route'
 import { useMemo } from 'react'
