@@ -111,8 +111,6 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
         data.payload.displayWidth,
         data.payload.displayHeight,
       )
-
-      cloud.simulateUntilStable()
       break
     }
     case 'update_size': {
@@ -121,14 +119,12 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
           data.payload.displayWidth,
           data.payload.displayHeight,
         )
-        cloud.simulateUntilStable()
       }
       break
     }
     case 'zoom': {
       if (cloud) {
         cloud.zoom = data.payload.zoom
-        cloud.simulateUntilStable()
       }
       break
     }
