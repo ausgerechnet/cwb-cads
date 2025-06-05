@@ -45,15 +45,21 @@ export function WordCloudMiniMap({
                 return (
                   <span
                     key={id}
-                    className="absolute h-24 w-24 rounded-full bg-white/20"
+                    className="absolute h-24 w-24 rounded-full border-[0.5rem] bg-white/20"
                     style={{
                       left: x,
                       top: y,
                       backgroundColor: getColorForNumber(
                         discoursemeId,
-                        0.5,
+                        0.1,
                         1,
                         0.5,
+                      ),
+                      borderColor: getColorForNumber(
+                        discoursemeId,
+                        0.5,
+                        1,
+                        0.8,
                       ),
                     }}
                   />
