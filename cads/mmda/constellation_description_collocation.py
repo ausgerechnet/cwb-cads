@@ -141,28 +141,32 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     blacklist = []
     if hide_focus:
         focus_discourseme_description = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
-        focus_unigrams = [i for i in chain.from_iterable(
-            [a.split(" ") for a in focus_discourseme_description.breakdown(collocation.p).index]
-        )]
-        blacklist_focus = CollocationItem.query.filter(
-            CollocationItem.collocation_id == collocation.id,
-            CollocationItem.item.in_(focus_unigrams)
-        )
-        blacklist += [b.id for b in blacklist_focus]
+        bd = focus_discourseme_description.breakdown(collocation.p)
+        if bd is not None:
+            focus_unigrams = [i for i in chain.from_iterable(
+                [a.split(" ") for a in bd.index]
+            )]
+            blacklist_focus = CollocationItem.query.filter(
+                CollocationItem.collocation_id == collocation.id,
+                CollocationItem.item.in_(focus_unigrams)
+            )
+            blacklist += [b.id for b in blacklist_focus]
 
     # hide filter
     if hide_filter and focus_query.filter_sequence is not None:
         filter_query_ids = [int(x) for x in focus_query.filter_sequence.lstrip("Q-").split("-")[1:]]
         filter_descriptions = [d for d in description.discourseme_descriptions if d.query_id in filter_query_ids]
         for desc in filter_descriptions:
-            desc_unigrams = [i for i in chain.from_iterable(
-                [a.split(" ") for a in desc.breakdown(collocation.p).index]
-            )]
-            blacklist_desc = CollocationItem.query.filter(
-                CollocationItem.collocation_id == collocation.id,
-                CollocationItem.item.in_(desc_unigrams)
-            )
-            blacklist += [b.id for b in blacklist_desc]
+            bd = desc.breakdown(collocation.p)
+            if bd is not None:
+                desc_unigrams = [i for i in chain.from_iterable(
+                    [a.split(" ") for a in bd.index]
+                )]
+                blacklist_desc = CollocationItem.query.filter(
+                    CollocationItem.collocation_id == collocation.id,
+                    CollocationItem.item.in_(desc_unigrams)
+                )
+                blacklist += [b.id for b in blacklist_desc]
 
     # item scores
     scores = CollocationItemScore.query.filter(
