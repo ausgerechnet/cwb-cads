@@ -15,9 +15,11 @@ const emptyArray: Item[] = [] as const
 export function WordCloudPreview({
   items = emptyArray,
   className,
+  aspectRatio = 1 / 1,
 }: {
   items?: Item[]
   className?: string
+  aspectRatio?: number
 }) {
   const filteredItems = items.filter((item, index, allItems) => {
     for (let i = 0; i < index; i++) {
@@ -42,14 +44,14 @@ export function WordCloudPreview({
   return (
     <svg
       className={cn('aspect-[2/1]', className)}
-      viewBox="-200 -100 400 200"
+      viewBox={`${-100 * aspectRatio} -100 ${200 * aspectRatio} 200`}
       preserveAspectRatio="xMidYMid meet"
     >
       {(filteredItems ?? []).map(({ x, y, item, discourseme_id, source }) => {
         const isDiscourseme = source === 'discoursemes'
         return (
           <circle
-            cx={x * 200}
+            cx={x * 100 * aspectRatio}
             cy={y * 100}
             r={isDiscourseme ? 4 : 2}
             key={`${item}_${discourseme_id}`}

@@ -1064,8 +1064,13 @@ export const createDiscoursemeForConstellationDescription: MutationOptions<
         )
       },
     )
+    void queryClient.invalidateQueries({ queryKey: ['discoursemes'] })
+    void queryClient.invalidateQueries({ queryKey: ['constellation'] })
     void queryClient.invalidateQueries({
       queryKey: ['constellation-collocation-visualisation-map'],
+    })
+    void queryClient.invalidateQueries({
+      queryKey: ['constellation-description'],
     })
     void queryClient.invalidateQueries({
       queryKey: ['constellation-collocations'],

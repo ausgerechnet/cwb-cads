@@ -41,6 +41,7 @@ import { Route as AppKeywordAnalysisRouteImport } from './routes/_app/keyword-an
 import { Route as AppDiscoursemesRouteImport } from './routes/_app/discoursemes/route'
 import { Route as AppCorporaRouteImport } from './routes/_app/corpora/route'
 import { Route as AppConstellationsRouteImport } from './routes/_app/constellations/route'
+import { Route as ComponentsWordCloudFullImport } from './routes/components.word-cloud.full'
 import { Route as AppSubcorporaNewImport } from './routes/_app/subcorpora_/new'
 import { Route as AppSubcorporaSubcorpusIdImport } from './routes/_app/subcorpora_/$subcorpusId'
 import { Route as AppQueriesNewImport } from './routes/_app/queries_/new'
@@ -262,6 +263,12 @@ const AppDiscoursemesNewLazyRoute = AppDiscoursemesNewLazyImport.update({
 } as any).lazy(() =>
   import('./routes/_app/discoursemes_/new.lazy').then((d) => d.Route),
 )
+
+const ComponentsWordCloudFullRoute = ComponentsWordCloudFullImport.update({
+  id: '/components/word-cloud/full',
+  path: '/components/word-cloud/full',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const AppSubcorporaNewRoute = AppSubcorporaNewImport.update({
   id: '/subcorpora_/new',
@@ -661,6 +668,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSubcorporaNewImport
       parentRoute: typeof AppImport
     }
+    '/components/word-cloud/full': {
+      id: '/components/word-cloud/full'
+      path: '/components/word-cloud/full'
+      fullPath: '/components/word-cloud/full'
+      preLoaderRoute: typeof ComponentsWordCloudFullImport
+      parentRoute: typeof rootRoute
+    }
     '/_app/discoursemes_/new': {
       id: '/_app/discoursemes_/new'
       path: '/discoursemes/new'
@@ -875,6 +889,7 @@ export interface FileRoutesByFullPath {
   '/queries/new': typeof AppQueriesNewRoute
   '/subcorpora/$subcorpusId': typeof AppSubcorporaSubcorpusIdRoute
   '/subcorpora/new': typeof AppSubcorporaNewRoute
+  '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/discoursemes/new': typeof AppDiscoursemesNewLazyRoute
   '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
@@ -922,6 +937,7 @@ export interface FileRoutesByTo {
   '/queries/new': typeof AppQueriesNewRoute
   '/subcorpora/$subcorpusId': typeof AppSubcorporaSubcorpusIdRoute
   '/subcorpora/new': typeof AppSubcorporaNewRoute
+  '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/discoursemes/new': typeof AppDiscoursemesNewLazyRoute
   '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
@@ -970,6 +986,7 @@ export interface FileRoutesById {
   '/_app/queries_/new': typeof AppQueriesNewRoute
   '/_app/subcorpora_/$subcorpusId': typeof AppSubcorporaSubcorpusIdRoute
   '/_app/subcorpora_/new': typeof AppSubcorporaNewRoute
+  '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/_app/discoursemes_/new': typeof AppDiscoursemesNewLazyRoute
   '/_app/constellations_/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
   '/_app/discoursemes_/$discoursemeId_/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
@@ -1019,6 +1036,7 @@ export interface FileRouteTypes {
     | '/queries/new'
     | '/subcorpora/$subcorpusId'
     | '/subcorpora/new'
+    | '/components/word-cloud/full'
     | '/discoursemes/new'
     | '/constellations/$constellationId/semantic-map'
     | '/discoursemes/$discoursemeId/new-description'
@@ -1065,6 +1083,7 @@ export interface FileRouteTypes {
     | '/queries/new'
     | '/subcorpora/$subcorpusId'
     | '/subcorpora/new'
+    | '/components/word-cloud/full'
     | '/discoursemes/new'
     | '/constellations/$constellationId/semantic-map'
     | '/discoursemes/$discoursemeId/new-description'
@@ -1111,6 +1130,7 @@ export interface FileRouteTypes {
     | '/_app/queries_/new'
     | '/_app/subcorpora_/$subcorpusId'
     | '/_app/subcorpora_/new'
+    | '/components/word-cloud/full'
     | '/_app/discoursemes_/new'
     | '/_app/constellations_/$constellationId/semantic-map'
     | '/_app/discoursemes_/$discoursemeId_/new-description'
@@ -1127,6 +1147,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   VignetteRoute: typeof VignetteRoute
   LogoutLazyRoute: typeof LogoutLazyRoute
+  ComponentsWordCloudFullRoute: typeof ComponentsWordCloudFullRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -1137,6 +1158,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   VignetteRoute: VignetteRoute,
   LogoutLazyRoute: LogoutLazyRoute,
+  ComponentsWordCloudFullRoute: ComponentsWordCloudFullRoute,
 }
 
 export const routeTree = rootRoute
@@ -1157,7 +1179,8 @@ export const routeTree = rootRoute
         "/_app",
         "/login",
         "/vignette",
-        "/logout"
+        "/logout",
+        "/components/word-cloud/full"
       ]
     },
     "/": {
@@ -1355,6 +1378,9 @@ export const routeTree = rootRoute
     "/_app/subcorpora_/new": {
       "filePath": "_app/subcorpora_/new.tsx",
       "parent": "/_app"
+    },
+    "/components/word-cloud/full": {
+      "filePath": "components.word-cloud.full.tsx"
     },
     "/_app/discoursemes_/new": {
       "filePath": "_app/discoursemes_/new.lazy.tsx",

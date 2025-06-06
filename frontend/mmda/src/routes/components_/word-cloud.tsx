@@ -1,133 +1,232 @@
-import { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { ComponentProps, useState } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ExpandIcon } from 'lucide-react'
 
-import WordCloud from '../../components/word-cloud'
-import { WordCloudPreview } from '../../components/word-cloud-preview'
-import { Block } from './-block'
+import { WordCloud, WordCloudEvent } from '@/components/word-cloud'
+import { Checkbox } from '@cads/shared/components/ui/checkbox'
+import { buttonVariants } from '@cads/shared/components/ui/button'
+import { Block, BlockComment } from './-block'
 
 export const Route = createFileRoute('/components_/word-cloud')({
   component: WordCloudComponents,
 })
 
 function WordCloudComponents() {
-  const [events, setEvents] = useState<string[]>([])
+  const [debug, setDebug] = useState(false)
+  const [addMoreWords, setAddMoreWords] = useState(false)
+  const [addDiscoursemes, setAddDiscoursemes] = useState(true)
+  const [eventsA, setEventsA] = useState<WordCloudEvent[]>([])
+  const [eventsB, setEventsB] = useState<WordCloudEvent[]>([])
+  const [eventsC, setEventsC] = useState<WordCloudEvent[]>([])
 
   return (
-    <>
-      <Block componentName="WordCloud" componentTag="WordCloud">
-        <div className="relative grid aspect-video max-w-[1200px] grid-cols-[5rem_1fr_5rem] grid-rows-[5rem_1fr_5rem] overflow-hidden outline-dotted outline-1 outline-pink-500">
-          <WordCloud
-            onNewDiscourseme={(...event) => {
-              setEvents((prev) => [...prev, `New Discourseme: ${event}`])
-            }}
-            onUpdateDiscourseme={(...event) => {
-              setEvents((prev) => [...prev, `Update Discourseme: ${event}`])
-            }}
-            words={[
-              {
-                x: 0.1,
-                y: 0.1,
-                item: 'Greetings',
-                source: 'discoursemes',
-                discoursemeId: 42,
-                significance: 1,
-              },
-              {
-                x: 0,
-                y: 0,
-                item: 'Hello',
-                source: 'items',
-                significance: 0.5,
-              },
-              {
-                x: -0.9,
-                y: -0.9,
-                item: 'World',
-                source: 'items',
-                significance: 0.2,
-              },
-              {
-                x: -0,
-                y: -0.1,
-                item: 'Hi',
-                source: 'items',
-                significance: 0.19,
-              },
-              {
-                x: -0.1,
-                y: -0,
-                item: 'Godmorgon',
-                source: 'items',
-                significance: 0.2,
-              },
-              {
-                x: 0.9,
-                y: 0.9,
-                item: '!',
-                source: 'items',
-                significance: 0.1,
-              },
-              ...randomWords,
-            ]}
-            semanticMapId={0}
-            className="col-start-2 row-start-2 h-full w-full"
-          />
+    <Block componentTag="WordCloud">
+      <div className="my-2 grid w-max grid-cols-[auto_auto] gap-8">
+        <div>
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={debug}
+              onCheckedChange={() => setDebug(!debug)}
+            />
+            Debug Mode
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={addDiscoursemes}
+              onCheckedChange={() => setAddDiscoursemes(!addDiscoursemes)}
+            />
+            Add Discoursemes
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox
+              checked={addMoreWords}
+              onCheckedChange={() => setAddMoreWords(!addMoreWords)}
+            />
+            Add more words
+          </label>
         </div>
 
-        <ul className="mt-4">
-          {events.map((event, index) => (
-            <li key={index} className="rounded text-sm text-gray-500">
-              {event}
-            </li>
-          ))}
-        </ul>
-      </Block>
+        <Link
+          to="/components/word-cloud/full"
+          className={buttonVariants({ variant: 'secondary', size: 'sm' })}
+        >
+          <ExpandIcon className="mr-2 h-4 w-4" />
+          Fullscreen Demo
+        </Link>
+      </div>
 
-      <Block componentName="WordCloudPreview" componentTag="WordCloudPreview">
-        <div className="relative overflow-hidden">
-          <WordCloudPreview
-            items={[
-              {
-                x: 0.5,
-                y: 0.5,
-                item: 'Hello',
-                source: 'keywords',
-              },
-              {
-                x: 0.5,
-                y: 0.5,
-                item: 'Hello', // Should be filtered out
-                source: 'keywords',
-              },
-              {
-                x: 0.25,
-                y: 0.75,
-                item: 'World',
-                source: 'keywords',
-              },
-              {
-                x: 0.2,
-                y: 0.2,
-                item: 'Whoop',
-                source: 'discoursemes',
-                discourseme_id: 1,
-              },
-            ]}
-            className="aspect-[2/1] h-96 max-w-full bg-white/5"
-          />
-        </div>
-      </Block>
-    </>
+      <BlockComment>
+        This simulates an extreme example with a dense cluster of items in the
+        center.
+      </BlockComment>
+
+      <div className="my-3 outline outline-1 outline-pink-400">
+        <WordCloud
+          hideOverflow
+          className="aspect-[2/1]"
+          words={addMoreWords ? [...wordsCluster, ...moreWords] : wordsCluster}
+          debug={debug}
+          discoursemes={addDiscoursemes ? discoursemes : []}
+          onChange={(event) => setEventsA((prev) => [event, ...prev])}
+          padding={[200, 100]}
+        />
+      </div>
+      <WordCloudEvents events={eventsA} />
+
+      <BlockComment>
+        This is a more reasonable example with a smaller cluster of items.
+      </BlockComment>
+
+      <div className="my-3 outline outline-1 outline-pink-400">
+        <WordCloud
+          hideOverflow
+          className="aspect-[2/1]"
+          words={[...wordsSmallCluster, ...(addMoreWords ? moreWords : [])]}
+          debug={debug}
+          discoursemes={addDiscoursemes ? discoursemes : []}
+          onChange={(event) => setEventsB((prev) => [event, ...prev])}
+          padding={[200, 100]}
+        />
+      </div>
+      <WordCloudEvents events={eventsB} />
+
+      <BlockComment>
+        Minimal example with two overlapping items, one hneighboring item and
+        one that's far from its origin.
+      </BlockComment>
+
+      <div className="my-3 outline outline-1 outline-pink-400">
+        <WordCloud
+          hideOverflow
+          className="aspect-[2/1]"
+          words={[...wordsCollision, ...(addMoreWords ? moreWords : [])]}
+          debug={debug}
+          discoursemes={addDiscoursemes ? discoursemes : []}
+          onChange={(event) => setEventsC((prev) => [event, ...prev])}
+          padding={[200, 100]}
+        />
+      </div>
+      <WordCloudEvents events={eventsC} />
+    </Block>
   )
 }
 
-const randomWords = Array.from({ length: 100 }, (_, i) => ({
-  x: rnd(i) * 0.5 + 0.5,
-  y: rnd(i + 1) * 0.5 + 0.5,
-  item: `Word ${i}`,
-  source: 'items',
-  significance: rnd(i),
+function WordCloudEvents({ events }: { events: WordCloudEvent[] }) {
+  return (
+    <div className="mb-5">
+      <h3 className="text-lg font-semibold">
+        {events.length ? 'Events:' : 'No events yet'}
+      </h3>
+
+      {Boolean(events.length) && (
+        <ul className="list-disc pl-5">
+          {events.map((event, index) => (
+            <li key={index}>
+              {event.type === 'update_discourseme_position' && (
+                <span>
+                  Update Discourseme: {event.discoursemeId} | X:{' '}
+                  {event.x.toFixed(3)} Y: {event.y.toFixed(3)}
+                </span>
+              )}
+
+              {event.type === 'update_surface_position' && (
+                <span>
+                  Update Surface Position: {event.surface} | X:{' '}
+                  {event.x.toFixed(3)} Y: {event.y.toFixed(3)}
+                </span>
+              )}
+
+              {event.type === 'add_to_discourseme' && (
+                <span>
+                  Add to Discourseme: {event.surface}, Discourseme ID:{' '}
+                  {event.discoursemeId}
+                </span>
+              )}
+
+              {event.type === 'new_discourseme' && (
+                <span>
+                  New Discourseme: Surfaces {event.surfaces.join(', ')}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+const discoursemes: ComponentProps<typeof WordCloud>['discoursemes'] = [
+  {
+    discoursemeId: 1,
+    label: 'Klimawandel',
+    x: 0,
+    y: 0,
+    score: 1,
+  },
+  {
+    discoursemeId: 2,
+    label: 'Irgendwas anderes',
+    x: 0,
+    y: 0.01,
+    score: 0.8,
+  },
+  {
+    discoursemeId: 3,
+    label: 'Overlapping Discourseme',
+    x: 0.1,
+    y: -0.2,
+    score: 0.6,
+  },
+]
+
+const wordsCollision = [
+  { x: 0.1, y: 0, label: 'Neighbor', score: 1 },
+  { x: 0, y: 0, label: 'Overlap A', score: 1 },
+  { x: 0, y: 0.55, label: 'Overlap B', score: 1 },
+  { x: -1, y: -1, label: 'TOP LEFT!!', score: 1 },
+  { x: 1, y: 1, label: 'BOTTOM RIGHT!!', score: 1 },
+] satisfies ComponentProps<typeof WordCloud>['words']
+
+const wordsCluster = [
+  { x: 0, y: 0, label: 'Greetings', score: 1 },
+  { x: 0, y: 0.01, label: 'Godmorgon', score: 0.8 },
+  { x: -1, y: -1, label: 'TOP LEFT!!', score: 0.5 },
+  { x: 0.5, y: 0, label: 'World', score: 0.6 },
+  { x: 0, y: 0.1, label: 'Hi', score: 0.3 },
+  { x: -0.5, y: 0.9, label: 'Whoop', score: 0.4 },
+  ...Array.from({ length: 200 }, (_, i) => ({
+    x: 2 * rnd(i) - 1,
+    y: 2 * rnd(i + 1) - 1,
+    label: `Word ${i}`,
+    score: rnd(i ** 2 + 64) ** 4,
+    isBackground: rnd(i * 2) < 0.3,
+  })),
+  // circular cluster around the center
+  ...Array.from({ length: 100 }, (_, i) => {
+    const angle = rnd(i) * Math.PI * 2
+    const radius = rnd(i + 1) * 0.1
+    return {
+      x: radius * Math.cos(angle),
+      y: radius * Math.sin(angle),
+      label: `Cluster ${i}`,
+      score: rnd(i) ** 5,
+      isBackground: false,
+    }
+  }),
+] satisfies ComponentProps<typeof WordCloud>['words']
+
+const moreWords = Array.from({ length: 100 }, (_, i) => ({
+  x: 2 * rnd(i + 1_000) - 1,
+  y: 2 * rnd(i + 1_000 + 1) - 1,
+  label: `Additional Word ${i}`,
+  score: rnd((i + 1_000) ** 2 + 64) ** 4,
+  isBackground: rnd((i + 1_000) * 2) < 0.8,
 }))
+
+const wordsSmallCluster = wordsCluster.filter((_, i) => rnd(i) < 0.3)
 
 function rnd(seed: number) {
   const x = Math.sin(seed) * 1_000_000
