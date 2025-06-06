@@ -5,10 +5,7 @@ export function DevTools() {
   return (
     <>
       <ReactQueryDevtools buttonPosition="bottom-right" />
-      <TanStackRouterDevtools
-        position="bottom-right"
-        toggleButtonProps={{ style: { bottom: 70 } }}
-      />
+      <TanStackRouterDevtools position="top-left" />
     </>
   )
 }
