@@ -15,7 +15,7 @@ from .database import (Collocation, CollocationItem, CollocationItemScore,
 from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap_init,
                            ccc_semmap_update)
 from .users import auth
-from .utils import AMS_DICT
+from .utils import AMS_DICT, AMS_CUTOFF
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
 
@@ -259,9 +259,13 @@ def get_collocation_items(id, query_data):
     sort_by = query_data.pop('sort_by')
 
     # scores
+    min_score = query_data.pop('min_score')
+    min_score = AMS_CUTOFF.get(sort_by, 0) if min_score is None else min_score
+
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
-        CollocationItemScore.measure == sort_by
+        CollocationItemScore.measure == sort_by,
+        CollocationItemScore.score > min_score
     )
 
     # order
