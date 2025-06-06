@@ -28,7 +28,9 @@ export function TextTooltip({
     >
       <Tooltip>
         <TooltipTrigger asChild={asChild}>{children}</TooltipTrigger>
-        <TooltipContent side={side}>{tooltipText}</TooltipContent>
+        {tooltipText !== undefined && (
+          <TooltipContent side={side}>{tooltipText}</TooltipContent>
+        )}
       </Tooltip>
     </TooltipProvider>
   )

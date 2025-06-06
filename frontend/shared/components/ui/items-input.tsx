@@ -24,7 +24,7 @@ export function ItemsInput({
       container.querySelectorAll('button') ?? [],
     ) as HTMLButtonElement[]
     if (document.activeElement === input && input.selectionStart === 0) {
-      if (offset < 0) {
+      if (offset < 0 && buttons.length > 0) {
         buttons[buttons.length - 1].focus?.()
       }
       return
@@ -54,13 +54,12 @@ export function ItemsInput({
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
       event.preventDefault()
-      setItems((items) => {
-        const newItems = items.includes(value.trim())
-          ? items
-          : [...items, value.trim()]
-        onChange?.(newItems)
-        return newItems
-      })
+      if (value.trim() === '') return
+      const newItems = items.includes(value.trim())
+        ? items
+        : [...items, value.trim()]
+      setItems(newItems)
+      onChange?.(newItems)
       setValue('')
     }
     if (event.key === 'Backspace' && value === '') {
@@ -69,10 +68,10 @@ export function ItemsInput({
   }
 
   function removeItem(button: HTMLButtonElement, item: string) {
-    const newItems = items.filter((i) => i !== item)
     if (button === document.activeElement) {
       moveFocus(1)
     }
+    const newItems = items.filter((i) => i !== item)
     setItems(newItems)
     onChange?.(newItems)
   }
@@ -89,6 +88,7 @@ export function ItemsInput({
     >
       {items.map((item) => (
         <button
+          type="button"
           key={item}
           tabIndex={-1}
           className="bg-muted hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground focus-visible:ring-destructive focus-visible:ring-offset-background my-1 flex items-center self-center rounded-xl py-1 pl-1 pr-2 text-sm leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"

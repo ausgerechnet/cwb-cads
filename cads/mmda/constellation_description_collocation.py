@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from itertools import chain
-from math import isnan
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from association_measures import measures
 from flask import abort, current_app
-from pandas import DataFrame, concat, merge, to_numeric
+from pandas import DataFrame, concat, merge, to_numeric, qcut
 from sqlalchemy import select
 
 from .. import db
@@ -331,9 +330,12 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
 
         # scale scores
         score_max = df['score'].max()
-        if isnan(score_max) or score_max == 0:
-            score_max = 1
         df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, logarithmic=(sort_by == 'log_likelihood')))
+
+        # score distribution / deciles
+        score_dist = df[['score', 'scaled_score']].sort_values(by='score')
+        score_dist['decile'] = qcut(score_dist['score'], q=min(10, score_dist.shape[0]), labels=False) + 1
+        score_dist = score_dist.drop_duplicates().to_dict(orient='records')
 
         # create output
         _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
@@ -347,7 +349,8 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         'page_number': page_number,
         'page_count': page_count,
         'map': _map,
-        'min_score': min_score
+        'min_score': min_score,
+        'score_deciles': score_dist
     }
 
     return collocation_map
@@ -650,6 +653,12 @@ class ConstellationCollocationIn(CollocationIn):
 
 
 # OUTPUT
+class ScoreDeciles(Schema):
+    score = Float(required=True)
+    scaled_score = Float(required=True)
+    decile = Integer(required=True)
+
+
 class ConstellationCollocationOut(CollocationOut):
 
     focus_discourseme_id = Integer(required=True)
@@ -683,6 +692,7 @@ class ConstellationMapOut(Schema):
     page_number = Integer(required=True)
     page_count = Integer(required=True)
     map = Nested(ConstellationMapItemOut(many=True))
+    score_deciles = Nested(ScoreDeciles(many=True))
 
 
 #################
