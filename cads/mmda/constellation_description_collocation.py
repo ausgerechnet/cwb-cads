@@ -330,7 +330,7 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
 
         # score distribution / deciles
         score_dist = df[['score', 'scaled_score']].sort_values(by='score')
-        score_dist['decile'] = qcut(score_dist['score'], q=min(10, score_dist.shape[0]), labels=False) + 1
+        score_dist['decile'] = qcut(score_dist['score'], q=10, labels=False, duplicates='drop') + 1
         score_dist = score_dist.drop_duplicates().to_dict(orient='records')
 
         # create output
