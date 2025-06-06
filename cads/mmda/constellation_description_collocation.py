@@ -36,6 +36,30 @@ from .discourseme_description import (DiscoursemeCoordinatesOut,
 bp = APIBlueprint('collocation', __name__, url_prefix='/<description_id>/collocation')
 
 
+def get_score_deciles(scores, method='sigmoid'):
+
+    raw_scores = [s.score for s in scores]
+    df = DataFrame({'score': raw_scores})
+
+    score_max = max(abs(s) for s in raw_scores) if raw_scores else 1
+    df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, method=method, sigmoid_k=score_max))
+
+    quantiles = [i / 10 for i in range(11)]
+    score_q = df['score'].quantile(quantiles).to_dict()
+    scaled_q = df['scaled_score'].quantile(quantiles).to_dict()
+
+    decile_list = [
+        {
+            'decile': int(q * 10),
+            'score': round(score_q[q], 3),
+            'scaled_score': round(scaled_q[q], 3)
+        }
+        for q in quantiles
+    ]
+
+    return decile_list, score_max
+
+
 def get_or_create_coll(description,
                        window, p, marginals, include_negative,
                        semantic_map_id,
@@ -250,6 +274,10 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         ~ CollocationItemScore.collocation_item_id.in_(blacklist),
     )
 
+    # TODO this is highly inefficient cause we're calculating the distribution separately from the retrieved scores
+    logarithmic = sort_by == 'log_likelihood'
+    decile_list, score_max = get_score_deciles(scores, method='sigmoid')
+
     # order
     if sort_order == 'ascending':
         scores = scores.order_by(CollocationItemScore.score)
@@ -329,23 +357,7 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
 
         # scale scores
-        score_max = df['score'].max()
-        df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, logarithmic=(sort_by == 'log_likelihood')))
-
-        # score distribution / deciles
-        quantiles = [i / 10 for i in range(11)]
-        score_q = df['score'].quantile(quantiles).to_dict()
-        scaled_q = df['scaled_score'].quantile(quantiles).to_dict()
-
-        # Align and combine into list
-        decile_list = [
-            {
-                'decile': int(k * 10),
-                'score': round(score_q[k], 6),
-                'scaled_score': round(scaled_q[k], 6)
-            }
-            for k in quantiles
-        ]
+        df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, logarithmic=logarithmic))
 
         # create output
         _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]

@@ -2,14 +2,24 @@
 # -*- coding: utf-8 -*-
 
 from functools import wraps
-from math import isnan
+from math import log, isnan, exp
 from timeit import default_timer
 
-from numpy import log
 
+def scale_score(score, score_max, method='sigmoid', logarithmic=False, sigmoid_k=1):
+    """
+    Scale a score either linearly or with a generalized sigmoid.
 
-def scale_score(score, score_max, method='linear', logarithmic=False):
+    Parameters:
+        score (float): Input score.
+        score_max (float): Maximum reference value (must be > 0).
+        method (str): 'linear' or 'sigmoid'.
+        logarithmic (bool): Apply log transform before scaling.
+        sigmoid_k (float): Steepness parameter for sigmoid (only used for 'sigmoid').
 
+    Returns:
+        float: Scaled score in range [-1, 1] (sigmoid bounded), or linearly scaled.
+    """
     if isnan(score_max) or score_max == 0:
         score_max = 1
 
@@ -22,13 +32,20 @@ def scale_score(score, score_max, method='linear', logarithmic=False):
     score_max = abs(score_max)
 
     if logarithmic:
-        score_max = log(score_max)
         score = log(score)
+        score_max = log(score_max)
 
     if method == 'linear':
-        return sgn * score / score_max
+        return sgn * (score / score_max)
+
+    elif method == 'sigmoid':
+        # normalised input in [0, 1], then passed to sigmoid
+        x = score / score_max
+        y = 2 / (1 + exp(-sigmoid_k * x)) - 1  # scaled sigmoid in [-1, 1]
+        return sgn * y
+
     else:
-        raise ValueError()
+        raise ValueError(f"Unknown method: {method}")
 
 
 def time_it(func):
