@@ -7,7 +7,7 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from association_measures import measures
 from flask import abort, current_app
-from pandas import DataFrame, concat, merge, to_numeric, qcut
+from pandas import DataFrame, concat, merge, to_numeric
 from sqlalchemy import select
 
 from .. import db
@@ -333,9 +333,19 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, logarithmic=(sort_by == 'log_likelihood')))
 
         # score distribution / deciles
-        score_dist = df[['score', 'scaled_score']].sort_values(by='score')
-        score_dist['decile'] = qcut(score_dist['score'], q=10, labels=False, duplicates='drop') + 1
-        score_dist = score_dist.drop_duplicates().to_dict(orient='records')
+        quantiles = [i / 10 for i in range(11)]
+        score_q = df['score'].quantile(quantiles).to_dict()
+        scaled_q = df['scaled_score'].quantile(quantiles).to_dict()
+
+        # Align and combine into list
+        decile_list = [
+            {
+                'decile': int(k * 10),
+                'score': round(score_q[k], 6),
+                'scaled_score': round(scaled_q[k], 6)
+            }
+            for k in quantiles
+        ]
 
         # create output
         _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
@@ -350,7 +360,7 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         'page_count': page_count,
         'map': _map,
         'min_score': min_score,
-        'score_deciles': score_dist
+        'score_deciles': decile_list
     }
 
     return collocation_map
@@ -654,9 +664,9 @@ class ConstellationCollocationIn(CollocationIn):
 
 # OUTPUT
 class ScoreDeciles(Schema):
+    decile = Integer(required=True)
     score = Float(required=True)
     scaled_score = Float(required=True)
-    decile = Integer(required=True)
 
 
 class ConstellationCollocationOut(CollocationOut):

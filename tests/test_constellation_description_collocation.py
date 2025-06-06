@@ -71,7 +71,6 @@ def test_constellation_collocation_put(client, auth):
         assert collocation.status_code == 200
 
 
-@pytest.mark.now
 def test_constellation_collocation_scaled_scores(client, auth):
 
     auth_header = auth.login()
@@ -135,7 +134,7 @@ def test_constellation_collocation_scaled_scores(client, auth):
                                   page_size=10, sort_by='z_score'),
                           headers=auth_header)
         assert coll.status_code == 200
-        pprint(coll.json)
+        pprint(coll.json['score_deciles'])
 
 
 def test_constellation_collocation(client, auth):
@@ -767,6 +766,7 @@ def test_constellation_collocation_empty_queries(client, auth):
         assert collocation_items.status_code == 200
 
 
+@pytest.mark.now
 def test_constellation_collocation_map(client, auth):
 
     auth_header = auth.login()
@@ -821,6 +821,9 @@ def test_constellation_collocation_map(client, auth):
 
         assert coll.json['map'][0]['discourseme_id'] is None
         assert coll.json['map'][9]['discourseme_id'] is None
+
+        from pprint import pprint
+        pprint(coll.json['score_deciles'])
 
 
 def test_constellation_collocation_coordinates(client, auth):
