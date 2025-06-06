@@ -71,11 +71,9 @@ const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
     meta: { className: 'w-72' },
   },
   {
-    accessorKey: 'description',
+    accessorKey: 'comment',
     enableSorting: true,
-    header: ({ column }) => (
-      <SortButton column={column}>Description</SortButton>
-    ),
+    header: ({ column }) => <SortButton column={column}>Comment</SortButton>,
   },
   {
     id: 'discoursemes',
