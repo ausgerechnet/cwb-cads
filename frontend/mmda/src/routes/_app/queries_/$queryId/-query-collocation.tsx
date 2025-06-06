@@ -1,4 +1,5 @@
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Table,
@@ -8,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from '@cads/shared/components/ui/table'
-import { Link } from '@tanstack/react-router'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
 import { Pagination } from '@cads/shared/components/pagination'
@@ -18,6 +18,7 @@ import {
   MeasureSelect,
   useMeasureSelection,
 } from '@cads/shared/components/measures'
+import { SortButtonLink } from '@cads/shared/components/data-table'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { useCollocation } from './-use-collocation'
@@ -53,13 +54,16 @@ export function QueryCollocation() {
 
             {selectedMeasures.map((measure) => {
               const isCurrent = ccSortBy === measure
+              const isSorted = isCurrent
+                ? ccSortOrder === 'descending'
+                  ? 'asc'
+                  : 'desc'
+                : 'hide'
               return (
                 <TableHead key={measure} className="text-right">
-                  <Link
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      '-mx-2 inline-flex h-auto gap-1 px-2 leading-none',
-                    )}
+                  <SortButtonLink
+                    isSorted={isSorted}
+                    replace
                     to=""
                     params={(p) => p}
                     search={(s) => {
@@ -79,16 +83,8 @@ export function QueryCollocation() {
                       }
                     }}
                   >
-                    {isCurrent && ccSortOrder === 'ascending' && (
-                      <ArrowDownIcon className="h-3 w-3" />
-                    )}
-
-                    {isCurrent && ccSortOrder === 'descending' && (
-                      <ArrowUpIcon className="h-3 w-3" />
-                    )}
-
                     {measureNameMap.get(measure)}
-                  </Link>
+                  </SortButtonLink>
                 </TableHead>
               )
             })}

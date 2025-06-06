@@ -148,9 +148,9 @@ export function ConstellationCollocationFilter({
                     ) : (
                       <ArrowDownIcon className="h-4 w-4" />
                     )}
-                    {/* {ccSortOrder === 'ascending' ? 'asc' : 'desc'} */}
                   </Button>
                 </TooltipTrigger>
+
                 <TooltipContent side="bottom">
                   {ccSortOrder === 'ascending'
                     ? 'Sort by ascending association measure'

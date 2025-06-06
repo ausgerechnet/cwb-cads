@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { cn } from '@cads/shared/lib/utils'
 
@@ -20,6 +20,7 @@ import {
   useMeasureSelection,
   MeasureSelect,
 } from '@cads/shared/components/measures'
+import { SortButtonLink } from '@cads/shared/components/data-table'
 
 import { useUfa } from './-use-ufa'
 import { useFilterSelection } from './-use-filter-selection'
@@ -67,14 +68,20 @@ export function UfaCollocation() {
 
             {selectedMeasures.map((measure) => {
               const isCurrent = ccSortBy === measure
+              const isSorted = isCurrent
+                ? ccSortOrder === 'ascending'
+                  ? 'asc'
+                  : 'desc'
+                : 'hide'
               return (
                 <TableHead key={measure} className="text-right">
-                  <Link
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      '-mx-2 inline-flex h-auto gap-1 px-2 leading-none',
-                    )}
-                    to=""
+                  {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment*/}
+                  {/* @ts-ignore */}
+                  <SortButtonLink
+                    isSorted={isSorted}
+                    replace
+                    to="/constellations/$constellationId"
+                    from="/constellations/$constellationId"
                     params={(p) => p}
                     search={(s) => {
                       if (isCurrent) {
@@ -93,16 +100,8 @@ export function UfaCollocation() {
                       }
                     }}
                   >
-                    {isCurrent && ccSortOrder === 'ascending' && (
-                      <ArrowDownIcon className="h-3 w-3" />
-                    )}
-
-                    {isCurrent && ccSortOrder === 'descending' && (
-                      <ArrowUpIcon className="h-3 w-3" />
-                    )}
-
                     {measureNameMap.get(measure)}
-                  </Link>
+                  </SortButtonLink>
                 </TableHead>
               )
             })}

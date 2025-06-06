@@ -1,7 +1,12 @@
 'use no memo'
 import { useEffect, useMemo } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
-import { ReactNode, useNavigate } from '@tanstack/react-router'
+import {
+  Link,
+  ReactNode,
+  useNavigate,
+  type LinkProps,
+} from '@tanstack/react-router'
 import {
   ColumnDef,
   SortingColumn,
@@ -22,7 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table'
-import { Button } from './ui/button'
+import { Button, buttonVariants } from './ui/button'
 import { PaginationForTable } from './pagination'
 import { safeJsonParse } from '../lib/safe-json-parse'
 import { cn } from '../lib/utils'
@@ -233,7 +238,14 @@ export function SortButtonView({
   children: ReactNode
   onClick?: () => void
   className?: string
-  isSorted?: false | 'asc' | 'desc'
+  /**
+   * Indicates the sorting state of the column.
+   * - `false`: not sorted
+   * - `'asc'`: sorted in ascending order
+   * - `'desc'`: sorted in descending order
+   * - `'hide'`: not sorted and icon is hidden
+   */
+  isSorted?: false | 'asc' | 'desc' | 'hide'
 }) {
   return (
     <Button
@@ -249,5 +261,45 @@ export function SortButtonView({
         <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
       )}
     </Button>
+  )
+}
+
+export function SortButtonLink<T>({
+  className,
+  children,
+  isSorted = false,
+  ...props
+}: Omit<LinkProps<T>, 'children'> & {
+  /**
+   * Indicates the sorting state of the column.
+   * - `false`: not sorted
+   * - `'asc'`: sorted in ascending order
+   * - `'desc'`: sorted in descending order
+   * - `'hide'`: not sorted and icon is hidden
+   */
+  isSorted?: false | 'asc' | 'desc' | 'hide'
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <Link
+      to={props.to}
+      from={props.from}
+      replace={props.replace}
+      params={props.params}
+      search={props.search}
+      className={cn(
+        buttonVariants({ variant: 'ghost', size: 'sm' }),
+        '-m-3',
+        className,
+      )}
+    >
+      {children}
+      {isSorted === 'asc' && <ArrowUp className="ml-2 h-4 w-4" />}
+      {isSorted === 'desc' && <ArrowDown className="ml-2 h-4 w-4" />}
+      {isSorted === false && (
+        <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
+      )}
+    </Link>
   )
 }

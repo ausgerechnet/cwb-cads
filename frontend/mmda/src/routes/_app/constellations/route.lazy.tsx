@@ -134,6 +134,7 @@ function QuickActions({ constellationId }: { constellationId: number }) {
       >
         <Link
           to="/constellations/$constellationId"
+          from="/constellations/$constellationId"
           params={{ constellationId: String(constellationId) }}
           search={(s) => s}
           className={cn(

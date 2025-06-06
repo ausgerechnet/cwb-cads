@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon } from 'lucide-react'
+import { CheckIcon } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { cn } from '@cads/shared/lib/utils'
 import { ErrorMessage } from '@cads/shared/components/error-message'
@@ -22,6 +22,7 @@ import {
   MeasureSelect,
   useMeasureSelection,
 } from '@cads/shared/components/measures'
+import { SortButtonLink } from '@cads/shared/components/data-table'
 
 // TODO: This component is duplicated. Should be extracted to a shared component.
 export function KeywordTable({ analysisId }: { analysisId: number }) {
@@ -76,14 +77,18 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
 
             {selectedMeasures.map((measure) => {
               const isCurrent = ccSortBy === measure
+              const isSorted = isCurrent
+                ? ccSortOrder === 'ascending'
+                  ? 'asc'
+                  : 'desc'
+                : 'hide'
               return (
                 <TableHead key={measure} className="text-right">
-                  <Link
-                    className={cn(
-                      buttonVariants({ variant: 'ghost' }),
-                      '-mx-2 inline-flex h-auto gap-1 px-2 leading-none',
-                    )}
-                    to=""
+                  <SortButtonLink
+                    isSorted={isSorted}
+                    replace
+                    to="/keyword-analysis/$analysisId"
+                    from="/keyword-analysis/$analysisId"
                     params={(p) => p}
                     search={(s) =>
                       isCurrent
@@ -101,16 +106,8 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
                           }
                     }
                   >
-                    {isCurrent && ccSortOrder === 'ascending' && (
-                      <ArrowUpIcon className="h-3 w-3" />
-                    )}
-
-                    {isCurrent && ccSortOrder === 'descending' && (
-                      <ArrowDownIcon className="h-3 w-3" />
-                    )}
-
                     {measureNameMap.get(measure)}
-                  </Link>
+                  </SortButtonLink>
                 </TableHead>
               )
             })}

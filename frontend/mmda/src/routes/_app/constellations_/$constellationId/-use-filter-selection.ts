@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { z } from 'zod'
 import { useQuery } from '@tanstack/react-query'
 import { corpusById } from '@cads/shared/queries'
+import { measures } from '@cads/shared/components/measures'
 
 export const FilterSchema = z.object({
   pAtt: z.string().optional(),
@@ -27,25 +28,7 @@ export const FilterSchema = z.object({
     .enum(['ascending', 'descending'] as const)
     .optional()
     .catch('descending'),
-  ccSortBy: z
-    .enum([
-      'conservative_log_ratio',
-      'O11',
-      'E11',
-      'ipm',
-      'log_likelihood',
-      'z_score',
-      't_score',
-      'simple_ll',
-      'dice',
-      'log_ratio',
-      'min_sensitivity',
-      'liddell',
-      'mutual_information',
-      'local_mutual_information',
-    ] as const)
-    .optional()
-    .catch(undefined),
+  ccSortBy: z.enum(measures).optional().catch(undefined),
   semanticMapId: z.number().optional().catch(undefined),
   // TODO: probably should be here, because it's fixed for queries for example
   corpusId: z.number().optional().catch(undefined),

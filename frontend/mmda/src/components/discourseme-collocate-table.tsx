@@ -1,6 +1,5 @@
 import { Fragment, useMemo } from 'react'
 import { z } from 'zod'
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 
 import { schemas } from '@cads/shared/api-client'
@@ -17,12 +16,12 @@ import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { DiscoursemeName } from '@cads/shared/components/discourseme-name'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
-import { Button } from '@cads/shared/components/ui/button'
 import {
   measures,
   MeasureSelect,
   useMeasureSelection,
 } from '@cads/shared/components/measures'
+import { SortButtonView } from '@cads/shared/components/data-table'
 
 export const DiscoursemeCollocateTableSearch = z.object({
   dctSortBy: z.enum(measures).optional(),
@@ -39,6 +38,7 @@ type Discourseme = {
   }[]
 }
 
+// TODO: Shares a lot with DiscoursemeBreakdown; consider refactoring to a common component
 export function DiscoursemeCollocateTable({
   discoursemeScores,
   isLoading,
@@ -113,11 +113,15 @@ export function DiscoursemeCollocateTable({
 
           {selectedMeasures.map((measure) => {
             const isCurrent = dctSortBy === measure
+            const isSorted = isCurrent
+              ? dctSortOrder === 'ascending'
+                ? 'asc'
+                : 'desc'
+              : 'hide'
             return (
               <TableHead key={measure} className="text-right">
-                <Button
-                  variant="ghost"
-                  className="-mx-2 inline-flex h-auto gap-1 px-2 leading-none"
+                <SortButtonView
+                  isSorted={isSorted}
                   onClick={() => {
                     navigate({
                       replace: true,
@@ -146,16 +150,8 @@ export function DiscoursemeCollocateTable({
                     })
                   }}
                 >
-                  {isCurrent && dctSortOrder === 'ascending' && (
-                    <ArrowDownIcon className="h-3 w-3" />
-                  )}
-
-                  {isCurrent && dctSortOrder === 'descending' && (
-                    <ArrowUpIcon className="h-3 w-3" />
-                  )}
-
                   {measureNameMap.get(measure)}
-                </Button>
+                </SortButtonView>
               </TableHead>
             )
           })}
