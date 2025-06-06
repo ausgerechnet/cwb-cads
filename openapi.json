@@ -1008,6 +1008,12 @@
           "page_size": {
             "type": "integer"
           },
+          "score_deciles": {
+            "items": {
+              "$ref": "#/components/schemas/ScoreDeciles"
+            },
+            "type": "array"
+          },
           "semantic_map_id": {
             "type": "integer"
           },
@@ -2146,6 +2152,25 @@
         ],
         "type": "object"
       },
+      "ScoreDeciles": {
+        "properties": {
+          "decile": {
+            "type": "integer"
+          },
+          "scaled_score": {
+            "type": "number"
+          },
+          "score": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "decile",
+          "scaled_score",
+          "score"
+        ],
+        "type": "object"
+      },
       "SemanticMapIn": {
         "properties": {
           "collocation_ids": {
@@ -2731,7 +2756,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev56"
+    "version": "0.3.0.dev57"
   },
   "openapi": "3.0.2",
   "paths": {
