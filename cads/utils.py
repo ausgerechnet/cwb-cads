@@ -6,6 +6,18 @@ from math import log, isnan, exp
 from timeit import default_timer
 
 
+def scaled_sigmoid(score, score_max, k=1):
+
+    if score_max == 0:
+        return 0
+    # midpoint = score_max / 2
+    midpoint = 0
+    scale = score_max / 5
+    x = (score - midpoint) / scale
+
+    return 2 / (1 + exp(-k * x)) - 1
+
+
 def scale_score(score, score_max, method='sigmoid', logarithmic=False, sigmoid_k=1):
     """
     Scale a score either linearly or with a generalized sigmoid.
@@ -39,10 +51,7 @@ def scale_score(score, score_max, method='sigmoid', logarithmic=False, sigmoid_k
         return sgn * (score / score_max)
 
     elif method == 'sigmoid':
-        # normalised input in [0, 1], then passed to sigmoid
-        x = score / score_max
-        y = 2 / (1 + exp(-sigmoid_k * x)) - 1  # scaled sigmoid in [-1, 1]
-        return sgn * y
+        return sgn * scaled_sigmoid(score, score_max)
 
     else:
         raise ValueError(f"Unknown method: {method}")
