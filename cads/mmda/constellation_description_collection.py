@@ -83,7 +83,7 @@ def calculate_ufa(collection, window, p, marginals, include_negative, semantic_m
         description_left = collection.constellation_descriptions[i-1]
         description_right = collection.constellation_descriptions[i]
         xs.append(description_right.subcorpus.name)
-        if not collocation_left._query.zero_matches or collocation_right._query.zero_matches:
+        if collocation_left._query.zero_matches or collocation_right._query.zero_matches:
             scores.append(0)    # no overlap between empty sets (None will not work with smoothing)
         else:
             scores.append(calculate_rbo(description_left, collocation_left, description_right, collocation_right, sort_by=sort_by, number=max_depth))
