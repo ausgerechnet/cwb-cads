@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { DndContext } from '@dnd-kit/core'
-import { DotIcon, RectangleHorizontalIcon } from 'lucide-react'
+import {
+  EyeClosedIcon,
+  DotIcon,
+  PaintbrushVerticalIcon,
+  RectangleHorizontalIcon,
+} from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { clamp } from '@cads/shared/lib/clamp'
@@ -81,6 +86,7 @@ export function WordCloud({
   onChange?: (event: WordCloudEvent) => void
 }) {
   const dragStartRef = useRef<Date | null>(null)
+  const [enablePositionalColor, setEnablePositionColor] = useState(false)
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [containerWidth, containerHeight] = useElementDimensions(container, [
     window.innerWidth,
@@ -101,6 +107,10 @@ export function WordCloud({
       if (event.altKey && event.shiftKey && event.key === 'S') {
         event.preventDefault()
         setDisplayType((prev) => (prev === 'rectangle' ? 'dot' : 'rectangle'))
+      }
+      if (event.altKey && event.shiftKey && event.key === 'K') {
+        event.preventDefault()
+        setEnablePositionColor((prev) => !prev)
       }
     }
     window.addEventListener('keydown', handleKeydown)
@@ -236,10 +246,7 @@ export function WordCloud({
         height: 2,
         displayWidth: containerWidth - paddingX,
         displayHeight: containerHeight - paddingY,
-        words: words.map((word) => ({
-          id: `word::${word.label}`,
-          ...word,
-        })),
+        words: words.map((word) => ({ id: `word::${word.label}`, ...word })),
         discoursemes: discoursemes.map((discourseme) => ({
           id: `discourseme::${discourseme.label}::${discourseme.discoursemeId}`,
           ...discourseme,
@@ -311,6 +318,34 @@ export function WordCloud({
               ]}
               value={displayType}
               onChange={setDisplayType}
+            />
+
+            <ToggleBar
+              className="absolute bottom-1 left-32 z-[5002] w-min"
+              options={[
+                [
+                  'colored',
+                  <PaintbrushVerticalIcon className="h-4 w-4" />,
+                  <>
+                    Colored by position
+                    <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+                      alt + shift + k
+                    </kbd>
+                  </>,
+                ],
+                [
+                  'monochrome',
+                  <EyeClosedIcon className="h-4 w-4" />,
+                  <>
+                    Monochrome items
+                    <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+                      alt + shift + k
+                    </kbd>
+                  </>,
+                ],
+              ]}
+              value={enablePositionalColor ? 'colored' : 'monochrome'}
+              onChange={(value) => setEnablePositionColor(value === 'colored')}
             />
 
             <WordCloudMiniMap
@@ -490,6 +525,7 @@ export function WordCloud({
                         zoom={zoom}
                         onHover={handleHover}
                         onLeave={handleLeave}
+                        enablePositionalColor={enablePositionalColor}
                       />
                     ))}
 

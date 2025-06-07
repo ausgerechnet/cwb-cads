@@ -89,10 +89,7 @@ export function ConstellationCollocationFilter({
                 <TooltipTrigger asChild>
                   <Link
                     className={cn(
-                      buttonVariants({
-                        variant: 'default',
-                        size: 'sm',
-                      }),
+                      buttonVariants({ variant: 'default', size: 'sm' }),
                       'my-auto ml-auto',
                     )}
                     to=""
@@ -125,7 +122,7 @@ export function ConstellationCollocationFilter({
       </LabelBox>
 
       {!hideSortOrder && (
-        <LabelBox labelText="Association Measure">
+        <LabelBox labelText="Association Measure" className="w-72 min-w-max">
           <div className="flex items-center gap-1">
             <TooltipProvider>
               <Tooltip>

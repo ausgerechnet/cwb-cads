@@ -546,6 +546,13 @@ const ConstellationMapItemOut = z
     y: z.number(),
   })
   .passthrough()
+const ScoreDeciles = z
+  .object({
+    decile: z.number().int(),
+    scaled_score: z.number(),
+    score: z.number(),
+  })
+  .passthrough()
 const ConstellationMapOut = z
   .object({
     id: z.number().int(),
@@ -554,6 +561,7 @@ const ConstellationMapOut = z
     page_count: z.number().int(),
     page_number: z.number().int(),
     page_size: z.number().int(),
+    score_deciles: z.array(ScoreDeciles).optional(),
     semantic_map_id: z.number().int(),
     sort_by: z.string(),
   })
@@ -848,6 +856,7 @@ export const schemas = {
   DiscoursemeScoresOut,
   ConstellationCollocationItemsOut,
   ConstellationMapItemOut,
+  ScoreDeciles,
   ConstellationMapOut,
   ConstellationKeywordIn,
   ConstellationKeywordItemsOut,
