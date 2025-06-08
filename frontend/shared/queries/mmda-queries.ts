@@ -679,7 +679,7 @@ export const removeConstellationDiscourseme: MutationOptions<
 export const addConstellationDiscourseme: MutationOptions<
   z.infer<typeof schemas.ConstellationDescriptionOutUpdate>,
   Error,
-  { constellationId: number; discoursemeId: number; descriptionId: number }
+  { constellationId: number; discoursemeId: number }
 > = {
   mutationFn: async ({
     constellationId,

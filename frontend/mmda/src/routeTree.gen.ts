@@ -55,7 +55,14 @@ import { Route as AppConstellationsConstellationIdRouteImport } from './routes/_
 import { Route as AppQueriesQueryIdSemanticMapImport } from './routes/_app/queries_/$queryId/semantic-map'
 import { Route as AppKeywordAnalysisAnalysisIdSemanticMapImport } from './routes/_app/keyword-analysis_/$analysisId/semantic-map'
 import { Route as AppDiscoursemesDiscoursemeIdNewDescriptionImport } from './routes/_app/discoursemes_/$discoursemeId_/new-description'
-import { Route as AppConstellationsConstellationIdSemanticMapImport } from './routes/_app/constellations_/$constellationId/semantic-map'
+import { Route as AppConstellationsConstellationIdUfaRouteImport } from './routes/_app/constellations_/$constellationId/ufa/route'
+import { Route as AppConstellationsConstellationIdKeywordAnalysisRouteImport } from './routes/_app/constellations_/$constellationId/keyword-analysis/route'
+import { Route as AppConstellationsConstellationIdCollocationAnalysisRouteImport } from './routes/_app/constellations_/$constellationId/collocation-analysis/route'
+import { Route as AppConstellationsConstellationIdBreakdownRouteImport } from './routes/_app/constellations_/$constellationId/breakdown/route'
+import { Route as AppConstellationsConstellationIdAssociationsRouteImport } from './routes/_app/constellations_/$constellationId/associations/route'
+import { Route as AppConstellationsConstellationIdUfaSemanticMapImport } from './routes/_app/constellations_/$constellationId/ufa/semantic-map'
+import { Route as AppConstellationsConstellationIdKeywordAnalysisSemanticMapImport } from './routes/_app/constellations_/$constellationId/keyword-analysis/semantic-map'
+import { Route as AppConstellationsConstellationIdCollocationAnalysisSemanticMapImport } from './routes/_app/constellations_/$constellationId/collocation-analysis/semantic-map'
 
 // Create Virtual Routes
 
@@ -384,11 +391,78 @@ const AppDiscoursemesDiscoursemeIdNewDescriptionRoute =
     ).then((d) => d.Route),
   )
 
-const AppConstellationsConstellationIdSemanticMapRoute =
-  AppConstellationsConstellationIdSemanticMapImport.update({
+const AppConstellationsConstellationIdUfaRouteRoute =
+  AppConstellationsConstellationIdUfaRouteImport.update({
+    id: '/ufa',
+    path: '/ufa',
+    getParentRoute: () => AppConstellationsConstellationIdRouteRoute,
+  } as any).lazy(() =>
+    import(
+      './routes/_app/constellations_/$constellationId/ufa/route.lazy'
+    ).then((d) => d.Route),
+  )
+
+const AppConstellationsConstellationIdKeywordAnalysisRouteRoute =
+  AppConstellationsConstellationIdKeywordAnalysisRouteImport.update({
+    id: '/keyword-analysis',
+    path: '/keyword-analysis',
+    getParentRoute: () => AppConstellationsConstellationIdRouteRoute,
+  } as any).lazy(() =>
+    import(
+      './routes/_app/constellations_/$constellationId/keyword-analysis/route.lazy'
+    ).then((d) => d.Route),
+  )
+
+const AppConstellationsConstellationIdCollocationAnalysisRouteRoute =
+  AppConstellationsConstellationIdCollocationAnalysisRouteImport.update({
+    id: '/collocation-analysis',
+    path: '/collocation-analysis',
+    getParentRoute: () => AppConstellationsConstellationIdRouteRoute,
+  } as any).lazy(() =>
+    import(
+      './routes/_app/constellations_/$constellationId/collocation-analysis/route.lazy'
+    ).then((d) => d.Route),
+  )
+
+const AppConstellationsConstellationIdBreakdownRouteRoute =
+  AppConstellationsConstellationIdBreakdownRouteImport.update({
+    id: '/breakdown',
+    path: '/breakdown',
+    getParentRoute: () => AppConstellationsConstellationIdRouteRoute,
+  } as any)
+
+const AppConstellationsConstellationIdAssociationsRouteRoute =
+  AppConstellationsConstellationIdAssociationsRouteImport.update({
+    id: '/associations',
+    path: '/associations',
+    getParentRoute: () => AppConstellationsConstellationIdRouteRoute,
+  } as any).lazy(() =>
+    import(
+      './routes/_app/constellations_/$constellationId/associations/route.lazy'
+    ).then((d) => d.Route),
+  )
+
+const AppConstellationsConstellationIdUfaSemanticMapRoute =
+  AppConstellationsConstellationIdUfaSemanticMapImport.update({
     id: '/semantic-map',
     path: '/semantic-map',
-    getParentRoute: () => AppConstellationsConstellationIdRouteRoute,
+    getParentRoute: () => AppConstellationsConstellationIdUfaRouteRoute,
+  } as any)
+
+const AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute =
+  AppConstellationsConstellationIdKeywordAnalysisSemanticMapImport.update({
+    id: '/semantic-map',
+    path: '/semantic-map',
+    getParentRoute: () =>
+      AppConstellationsConstellationIdKeywordAnalysisRouteRoute,
+  } as any)
+
+const AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute =
+  AppConstellationsConstellationIdCollocationAnalysisSemanticMapImport.update({
+    id: '/semantic-map',
+    path: '/semantic-map',
+    getParentRoute: () =>
+      AppConstellationsConstellationIdCollocationAnalysisRouteRoute,
   } as any)
 
 // Populate the FileRoutesByPath interface
@@ -682,11 +756,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDiscoursemesNewLazyImport
       parentRoute: typeof AppImport
     }
-    '/_app/constellations_/$constellationId/semantic-map': {
-      id: '/_app/constellations_/$constellationId/semantic-map'
-      path: '/semantic-map'
-      fullPath: '/constellations/$constellationId/semantic-map'
-      preLoaderRoute: typeof AppConstellationsConstellationIdSemanticMapImport
+    '/_app/constellations_/$constellationId/associations': {
+      id: '/_app/constellations_/$constellationId/associations'
+      path: '/associations'
+      fullPath: '/constellations/$constellationId/associations'
+      preLoaderRoute: typeof AppConstellationsConstellationIdAssociationsRouteImport
+      parentRoute: typeof AppConstellationsConstellationIdRouteImport
+    }
+    '/_app/constellations_/$constellationId/breakdown': {
+      id: '/_app/constellations_/$constellationId/breakdown'
+      path: '/breakdown'
+      fullPath: '/constellations/$constellationId/breakdown'
+      preLoaderRoute: typeof AppConstellationsConstellationIdBreakdownRouteImport
+      parentRoute: typeof AppConstellationsConstellationIdRouteImport
+    }
+    '/_app/constellations_/$constellationId/collocation-analysis': {
+      id: '/_app/constellations_/$constellationId/collocation-analysis'
+      path: '/collocation-analysis'
+      fullPath: '/constellations/$constellationId/collocation-analysis'
+      preLoaderRoute: typeof AppConstellationsConstellationIdCollocationAnalysisRouteImport
+      parentRoute: typeof AppConstellationsConstellationIdRouteImport
+    }
+    '/_app/constellations_/$constellationId/keyword-analysis': {
+      id: '/_app/constellations_/$constellationId/keyword-analysis'
+      path: '/keyword-analysis'
+      fullPath: '/constellations/$constellationId/keyword-analysis'
+      preLoaderRoute: typeof AppConstellationsConstellationIdKeywordAnalysisRouteImport
+      parentRoute: typeof AppConstellationsConstellationIdRouteImport
+    }
+    '/_app/constellations_/$constellationId/ufa': {
+      id: '/_app/constellations_/$constellationId/ufa'
+      path: '/ufa'
+      fullPath: '/constellations/$constellationId/ufa'
+      preLoaderRoute: typeof AppConstellationsConstellationIdUfaRouteImport
       parentRoute: typeof AppConstellationsConstellationIdRouteImport
     }
     '/_app/discoursemes_/$discoursemeId_/new-description': {
@@ -709,6 +811,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/queries/$queryId/semantic-map'
       preLoaderRoute: typeof AppQueriesQueryIdSemanticMapImport
       parentRoute: typeof AppQueriesQueryIdRouteImport
+    }
+    '/_app/constellations_/$constellationId/collocation-analysis/semantic-map': {
+      id: '/_app/constellations_/$constellationId/collocation-analysis/semantic-map'
+      path: '/semantic-map'
+      fullPath: '/constellations/$constellationId/collocation-analysis/semantic-map'
+      preLoaderRoute: typeof AppConstellationsConstellationIdCollocationAnalysisSemanticMapImport
+      parentRoute: typeof AppConstellationsConstellationIdCollocationAnalysisRouteImport
+    }
+    '/_app/constellations_/$constellationId/keyword-analysis/semantic-map': {
+      id: '/_app/constellations_/$constellationId/keyword-analysis/semantic-map'
+      path: '/semantic-map'
+      fullPath: '/constellations/$constellationId/keyword-analysis/semantic-map'
+      preLoaderRoute: typeof AppConstellationsConstellationIdKeywordAnalysisSemanticMapImport
+      parentRoute: typeof AppConstellationsConstellationIdKeywordAnalysisRouteImport
+    }
+    '/_app/constellations_/$constellationId/ufa/semantic-map': {
+      id: '/_app/constellations_/$constellationId/ufa/semantic-map'
+      path: '/semantic-map'
+      fullPath: '/constellations/$constellationId/ufa/semantic-map'
+      preLoaderRoute: typeof AppConstellationsConstellationIdUfaSemanticMapImport
+      parentRoute: typeof AppConstellationsConstellationIdUfaRouteImport
     }
   }
 }
@@ -754,14 +877,71 @@ const ComponentsRouteRouteWithChildren = ComponentsRouteRoute._addFileChildren(
   ComponentsRouteRouteChildren,
 )
 
+interface AppConstellationsConstellationIdCollocationAnalysisRouteRouteChildren {
+  AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute: typeof AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute
+}
+
+const AppConstellationsConstellationIdCollocationAnalysisRouteRouteChildren: AppConstellationsConstellationIdCollocationAnalysisRouteRouteChildren =
+  {
+    AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute:
+      AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute,
+  }
+
+const AppConstellationsConstellationIdCollocationAnalysisRouteRouteWithChildren =
+  AppConstellationsConstellationIdCollocationAnalysisRouteRoute._addFileChildren(
+    AppConstellationsConstellationIdCollocationAnalysisRouteRouteChildren,
+  )
+
+interface AppConstellationsConstellationIdKeywordAnalysisRouteRouteChildren {
+  AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute: typeof AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute
+}
+
+const AppConstellationsConstellationIdKeywordAnalysisRouteRouteChildren: AppConstellationsConstellationIdKeywordAnalysisRouteRouteChildren =
+  {
+    AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute:
+      AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute,
+  }
+
+const AppConstellationsConstellationIdKeywordAnalysisRouteRouteWithChildren =
+  AppConstellationsConstellationIdKeywordAnalysisRouteRoute._addFileChildren(
+    AppConstellationsConstellationIdKeywordAnalysisRouteRouteChildren,
+  )
+
+interface AppConstellationsConstellationIdUfaRouteRouteChildren {
+  AppConstellationsConstellationIdUfaSemanticMapRoute: typeof AppConstellationsConstellationIdUfaSemanticMapRoute
+}
+
+const AppConstellationsConstellationIdUfaRouteRouteChildren: AppConstellationsConstellationIdUfaRouteRouteChildren =
+  {
+    AppConstellationsConstellationIdUfaSemanticMapRoute:
+      AppConstellationsConstellationIdUfaSemanticMapRoute,
+  }
+
+const AppConstellationsConstellationIdUfaRouteRouteWithChildren =
+  AppConstellationsConstellationIdUfaRouteRoute._addFileChildren(
+    AppConstellationsConstellationIdUfaRouteRouteChildren,
+  )
+
 interface AppConstellationsConstellationIdRouteRouteChildren {
-  AppConstellationsConstellationIdSemanticMapRoute: typeof AppConstellationsConstellationIdSemanticMapRoute
+  AppConstellationsConstellationIdAssociationsRouteRoute: typeof AppConstellationsConstellationIdAssociationsRouteRoute
+  AppConstellationsConstellationIdBreakdownRouteRoute: typeof AppConstellationsConstellationIdBreakdownRouteRoute
+  AppConstellationsConstellationIdCollocationAnalysisRouteRoute: typeof AppConstellationsConstellationIdCollocationAnalysisRouteRouteWithChildren
+  AppConstellationsConstellationIdKeywordAnalysisRouteRoute: typeof AppConstellationsConstellationIdKeywordAnalysisRouteRouteWithChildren
+  AppConstellationsConstellationIdUfaRouteRoute: typeof AppConstellationsConstellationIdUfaRouteRouteWithChildren
 }
 
 const AppConstellationsConstellationIdRouteRouteChildren: AppConstellationsConstellationIdRouteRouteChildren =
   {
-    AppConstellationsConstellationIdSemanticMapRoute:
-      AppConstellationsConstellationIdSemanticMapRoute,
+    AppConstellationsConstellationIdAssociationsRouteRoute:
+      AppConstellationsConstellationIdAssociationsRouteRoute,
+    AppConstellationsConstellationIdBreakdownRouteRoute:
+      AppConstellationsConstellationIdBreakdownRouteRoute,
+    AppConstellationsConstellationIdCollocationAnalysisRouteRoute:
+      AppConstellationsConstellationIdCollocationAnalysisRouteRouteWithChildren,
+    AppConstellationsConstellationIdKeywordAnalysisRouteRoute:
+      AppConstellationsConstellationIdKeywordAnalysisRouteRouteWithChildren,
+    AppConstellationsConstellationIdUfaRouteRoute:
+      AppConstellationsConstellationIdUfaRouteRouteWithChildren,
   }
 
 const AppConstellationsConstellationIdRouteRouteWithChildren =
@@ -891,10 +1071,17 @@ export interface FileRoutesByFullPath {
   '/subcorpora/new': typeof AppSubcorporaNewRoute
   '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/discoursemes/new': typeof AppDiscoursemesNewLazyRoute
-  '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
+  '/constellations/$constellationId/associations': typeof AppConstellationsConstellationIdAssociationsRouteRoute
+  '/constellations/$constellationId/breakdown': typeof AppConstellationsConstellationIdBreakdownRouteRoute
+  '/constellations/$constellationId/collocation-analysis': typeof AppConstellationsConstellationIdCollocationAnalysisRouteRouteWithChildren
+  '/constellations/$constellationId/keyword-analysis': typeof AppConstellationsConstellationIdKeywordAnalysisRouteRouteWithChildren
+  '/constellations/$constellationId/ufa': typeof AppConstellationsConstellationIdUfaRouteRouteWithChildren
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
   '/keyword-analysis/$analysisId/semantic-map': typeof AppKeywordAnalysisAnalysisIdSemanticMapRoute
   '/queries/$queryId/semantic-map': typeof AppQueriesQueryIdSemanticMapRoute
+  '/constellations/$constellationId/collocation-analysis/semantic-map': typeof AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute
+  '/constellations/$constellationId/keyword-analysis/semantic-map': typeof AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute
+  '/constellations/$constellationId/ufa/semantic-map': typeof AppConstellationsConstellationIdUfaSemanticMapRoute
 }
 
 export interface FileRoutesByTo {
@@ -939,10 +1126,17 @@ export interface FileRoutesByTo {
   '/subcorpora/new': typeof AppSubcorporaNewRoute
   '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/discoursemes/new': typeof AppDiscoursemesNewLazyRoute
-  '/constellations/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
+  '/constellations/$constellationId/associations': typeof AppConstellationsConstellationIdAssociationsRouteRoute
+  '/constellations/$constellationId/breakdown': typeof AppConstellationsConstellationIdBreakdownRouteRoute
+  '/constellations/$constellationId/collocation-analysis': typeof AppConstellationsConstellationIdCollocationAnalysisRouteRouteWithChildren
+  '/constellations/$constellationId/keyword-analysis': typeof AppConstellationsConstellationIdKeywordAnalysisRouteRouteWithChildren
+  '/constellations/$constellationId/ufa': typeof AppConstellationsConstellationIdUfaRouteRouteWithChildren
   '/discoursemes/$discoursemeId/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
   '/keyword-analysis/$analysisId/semantic-map': typeof AppKeywordAnalysisAnalysisIdSemanticMapRoute
   '/queries/$queryId/semantic-map': typeof AppQueriesQueryIdSemanticMapRoute
+  '/constellations/$constellationId/collocation-analysis/semantic-map': typeof AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute
+  '/constellations/$constellationId/keyword-analysis/semantic-map': typeof AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute
+  '/constellations/$constellationId/ufa/semantic-map': typeof AppConstellationsConstellationIdUfaSemanticMapRoute
 }
 
 export interface FileRoutesById {
@@ -988,10 +1182,17 @@ export interface FileRoutesById {
   '/_app/subcorpora_/new': typeof AppSubcorporaNewRoute
   '/components/word-cloud/full': typeof ComponentsWordCloudFullRoute
   '/_app/discoursemes_/new': typeof AppDiscoursemesNewLazyRoute
-  '/_app/constellations_/$constellationId/semantic-map': typeof AppConstellationsConstellationIdSemanticMapRoute
+  '/_app/constellations_/$constellationId/associations': typeof AppConstellationsConstellationIdAssociationsRouteRoute
+  '/_app/constellations_/$constellationId/breakdown': typeof AppConstellationsConstellationIdBreakdownRouteRoute
+  '/_app/constellations_/$constellationId/collocation-analysis': typeof AppConstellationsConstellationIdCollocationAnalysisRouteRouteWithChildren
+  '/_app/constellations_/$constellationId/keyword-analysis': typeof AppConstellationsConstellationIdKeywordAnalysisRouteRouteWithChildren
+  '/_app/constellations_/$constellationId/ufa': typeof AppConstellationsConstellationIdUfaRouteRouteWithChildren
   '/_app/discoursemes_/$discoursemeId_/new-description': typeof AppDiscoursemesDiscoursemeIdNewDescriptionRoute
   '/_app/keyword-analysis_/$analysisId/semantic-map': typeof AppKeywordAnalysisAnalysisIdSemanticMapRoute
   '/_app/queries_/$queryId/semantic-map': typeof AppQueriesQueryIdSemanticMapRoute
+  '/_app/constellations_/$constellationId/collocation-analysis/semantic-map': typeof AppConstellationsConstellationIdCollocationAnalysisSemanticMapRoute
+  '/_app/constellations_/$constellationId/keyword-analysis/semantic-map': typeof AppConstellationsConstellationIdKeywordAnalysisSemanticMapRoute
+  '/_app/constellations_/$constellationId/ufa/semantic-map': typeof AppConstellationsConstellationIdUfaSemanticMapRoute
 }
 
 export interface FileRouteTypes {
@@ -1038,10 +1239,17 @@ export interface FileRouteTypes {
     | '/subcorpora/new'
     | '/components/word-cloud/full'
     | '/discoursemes/new'
-    | '/constellations/$constellationId/semantic-map'
+    | '/constellations/$constellationId/associations'
+    | '/constellations/$constellationId/breakdown'
+    | '/constellations/$constellationId/collocation-analysis'
+    | '/constellations/$constellationId/keyword-analysis'
+    | '/constellations/$constellationId/ufa'
     | '/discoursemes/$discoursemeId/new-description'
     | '/keyword-analysis/$analysisId/semantic-map'
     | '/queries/$queryId/semantic-map'
+    | '/constellations/$constellationId/collocation-analysis/semantic-map'
+    | '/constellations/$constellationId/keyword-analysis/semantic-map'
+    | '/constellations/$constellationId/ufa/semantic-map'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1085,10 +1293,17 @@ export interface FileRouteTypes {
     | '/subcorpora/new'
     | '/components/word-cloud/full'
     | '/discoursemes/new'
-    | '/constellations/$constellationId/semantic-map'
+    | '/constellations/$constellationId/associations'
+    | '/constellations/$constellationId/breakdown'
+    | '/constellations/$constellationId/collocation-analysis'
+    | '/constellations/$constellationId/keyword-analysis'
+    | '/constellations/$constellationId/ufa'
     | '/discoursemes/$discoursemeId/new-description'
     | '/keyword-analysis/$analysisId/semantic-map'
     | '/queries/$queryId/semantic-map'
+    | '/constellations/$constellationId/collocation-analysis/semantic-map'
+    | '/constellations/$constellationId/keyword-analysis/semantic-map'
+    | '/constellations/$constellationId/ufa/semantic-map'
   id:
     | '__root__'
     | '/'
@@ -1132,10 +1347,17 @@ export interface FileRouteTypes {
     | '/_app/subcorpora_/new'
     | '/components/word-cloud/full'
     | '/_app/discoursemes_/new'
-    | '/_app/constellations_/$constellationId/semantic-map'
+    | '/_app/constellations_/$constellationId/associations'
+    | '/_app/constellations_/$constellationId/breakdown'
+    | '/_app/constellations_/$constellationId/collocation-analysis'
+    | '/_app/constellations_/$constellationId/keyword-analysis'
+    | '/_app/constellations_/$constellationId/ufa'
     | '/_app/discoursemes_/$discoursemeId_/new-description'
     | '/_app/keyword-analysis_/$analysisId/semantic-map'
     | '/_app/queries_/$queryId/semantic-map'
+    | '/_app/constellations_/$constellationId/collocation-analysis/semantic-map'
+    | '/_app/constellations_/$constellationId/keyword-analysis/semantic-map'
+    | '/_app/constellations_/$constellationId/ufa/semantic-map'
   fileRoutesById: FileRoutesById
 }
 
@@ -1334,7 +1556,11 @@ export const routeTree = rootRoute
       "filePath": "_app/constellations_/$constellationId/route.tsx",
       "parent": "/_app",
       "children": [
-        "/_app/constellations_/$constellationId/semantic-map"
+        "/_app/constellations_/$constellationId/associations",
+        "/_app/constellations_/$constellationId/breakdown",
+        "/_app/constellations_/$constellationId/collocation-analysis",
+        "/_app/constellations_/$constellationId/keyword-analysis",
+        "/_app/constellations_/$constellationId/ufa"
       ]
     },
     "/_app/keyword-analysis_/$analysisId": {
@@ -1386,9 +1612,34 @@ export const routeTree = rootRoute
       "filePath": "_app/discoursemes_/new.lazy.tsx",
       "parent": "/_app"
     },
-    "/_app/constellations_/$constellationId/semantic-map": {
-      "filePath": "_app/constellations_/$constellationId/semantic-map.tsx",
+    "/_app/constellations_/$constellationId/associations": {
+      "filePath": "_app/constellations_/$constellationId/associations/route.tsx",
       "parent": "/_app/constellations_/$constellationId"
+    },
+    "/_app/constellations_/$constellationId/breakdown": {
+      "filePath": "_app/constellations_/$constellationId/breakdown/route.tsx",
+      "parent": "/_app/constellations_/$constellationId"
+    },
+    "/_app/constellations_/$constellationId/collocation-analysis": {
+      "filePath": "_app/constellations_/$constellationId/collocation-analysis/route.tsx",
+      "parent": "/_app/constellations_/$constellationId",
+      "children": [
+        "/_app/constellations_/$constellationId/collocation-analysis/semantic-map"
+      ]
+    },
+    "/_app/constellations_/$constellationId/keyword-analysis": {
+      "filePath": "_app/constellations_/$constellationId/keyword-analysis/route.tsx",
+      "parent": "/_app/constellations_/$constellationId",
+      "children": [
+        "/_app/constellations_/$constellationId/keyword-analysis/semantic-map"
+      ]
+    },
+    "/_app/constellations_/$constellationId/ufa": {
+      "filePath": "_app/constellations_/$constellationId/ufa/route.tsx",
+      "parent": "/_app/constellations_/$constellationId",
+      "children": [
+        "/_app/constellations_/$constellationId/ufa/semantic-map"
+      ]
     },
     "/_app/discoursemes_/$discoursemeId_/new-description": {
       "filePath": "_app/discoursemes_/$discoursemeId_/new-description.tsx",
@@ -1401,6 +1652,18 @@ export const routeTree = rootRoute
     "/_app/queries_/$queryId/semantic-map": {
       "filePath": "_app/queries_/$queryId/semantic-map.tsx",
       "parent": "/_app/queries_/$queryId"
+    },
+    "/_app/constellations_/$constellationId/collocation-analysis/semantic-map": {
+      "filePath": "_app/constellations_/$constellationId/collocation-analysis/semantic-map.tsx",
+      "parent": "/_app/constellations_/$constellationId/collocation-analysis"
+    },
+    "/_app/constellations_/$constellationId/keyword-analysis/semantic-map": {
+      "filePath": "_app/constellations_/$constellationId/keyword-analysis/semantic-map.tsx",
+      "parent": "/_app/constellations_/$constellationId/keyword-analysis"
+    },
+    "/_app/constellations_/$constellationId/ufa/semantic-map": {
+      "filePath": "_app/constellations_/$constellationId/ufa/semantic-map.tsx",
+      "parent": "/_app/constellations_/$constellationId/ufa"
     }
   }
 }

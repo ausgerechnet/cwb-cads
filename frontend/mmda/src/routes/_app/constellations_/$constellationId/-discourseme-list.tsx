@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { useMutation, useIsMutating } from '@tanstack/react-query'
+import {
+  useMutation,
+  useIsMutating,
+  useSuspenseQuery,
+  useQuery,
+} from '@tanstack/react-query'
 import { Loader2Icon, PencilIcon, PencilOffIcon, XIcon } from 'lucide-react'
 import { z } from 'zod'
 
@@ -10,25 +15,22 @@ import { Button } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import {
+  discoursemesList,
   addConstellationDiscourseme,
+  constellationById,
   removeConstellationDiscourseme,
 } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 
-export function DiscoursemeList({
-  constellationId,
-  descriptionId,
-  discoursemes,
-  constellationDiscoursemes,
-  className,
-}: {
-  constellationId: number
-  descriptionId: number
-  discoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
-  constellationDiscoursemes: z.infer<typeof schemas.DiscoursemeOut>[]
-  className?: string
-}) {
+import { Route } from './route'
+
+export function DiscoursemeList({ className }: { className?: string }) {
+  const { data: discoursemes = [] } = useQuery(discoursemesList)
+  const constellationId = parseInt(Route.useParams().constellationId)
+  const {
+    data: { discoursemes: constellationDiscoursemes = [] },
+  } = useSuspenseQuery(constellationById(constellationId))
   const nonSelectedDiscoursemes = discoursemes.filter(
     (discourseme) =>
       !constellationDiscoursemes?.find(({ id }) => id === discourseme.id),
@@ -79,7 +81,6 @@ export function DiscoursemeList({
             addDiscourseme({
               discoursemeId: discoursemeId as number,
               constellationId,
-              descriptionId,
             })
           }}
         />

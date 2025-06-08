@@ -48,7 +48,7 @@ function ConstellationOverview() {
           // be changed. Then this check can be removed.
           if (constellationId === null) return
           navigate({
-            to: `/constellations/$constellationId`,
+            to: `/constellations/$constellationId/collocation-analysis`,
             params: { constellationId },
           })
         }}
@@ -133,8 +133,8 @@ function QuickActions({ constellationId }: { constellationId: number }) {
         onClick={(event) => event.stopPropagation()}
       >
         <Link
-          to="/constellations/$constellationId"
-          from="/constellations/$constellationId"
+          to="/constellations/$constellationId/collocation-analysis"
+          from="/constellations/$constellationId/collocation-analysis"
           params={{ constellationId: String(constellationId) }}
           search={(s) => s}
           className={cn(

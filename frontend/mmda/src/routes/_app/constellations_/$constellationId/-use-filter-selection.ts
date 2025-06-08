@@ -43,7 +43,6 @@ type FilterSchema = z.infer<typeof FilterSchema>
 export function useFilterSelection(
   path:
     | '/_app/constellations_/$constellationId'
-    | '/_app/constellations_/$constellationId/semantic-map'
     | '/_app/keyword-analysis_/$analysisId'
     | '/_app/queries_/$queryId',
 ) {

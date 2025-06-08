@@ -1,40 +1,10 @@
 import { useMemo } from 'react'
-import { useSuspenseQuery, useQuery } from '@tanstack/react-query'
-import {
-  createLazyFileRoute,
-  Link,
-  useRouterState,
-} from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { createLazyFileRoute, Outlet } from '@tanstack/react-router'
 
-import { Card } from '@cads/shared/components/ui/card'
-import { Headline3, Muted } from '@cads/shared/components/ui/typography'
-import {
-  constellationById,
-  discoursemesList,
-  corpusById,
-} from '@cads/shared/queries'
-import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { ConcordanceFilterProvider } from '@cads/shared/components/concordances'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { buttonVariants } from '@cads/shared/components/ui/button'
-import { cn } from '@cads/shared/lib/utils'
-
-import { ConstellationConcordanceLines } from './-constellation-concordance-lines'
-import { ConstellationCollocationFilter } from './-constellation-filter'
-import { Collocation } from './-constellation-collocation'
-import { SemanticMapCollocations } from './-semantic-map-collocation'
-import { useDescription } from './-use-description'
-import { useFilterSelection } from './-use-filter-selection'
-import { DiscoursemeList } from './-discourseme-list'
-import { AnalysisSelection } from './-analysis-selection'
-import { useAnalysisSelection } from './-use-analysis-selection'
-import { DescriptionAssociation } from './-description-association'
-import { SemanticMapLink } from './-semantic-map-link'
-import { KeywordTable } from './-keyword-table'
-import { UfaSelection } from './-ufa-selection'
-import { SemanticMapKeyword } from './-semantic-map-keyword'
-import { SemanticMapUfa } from './-semantic-map-ufa'
-import { Breakdown } from './-breakdown'
+import { corpusById } from '@cads/shared/queries'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId',
@@ -43,30 +13,9 @@ export const Route = createLazyFileRoute(
 })
 
 function ConstellationDetail() {
-  // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
-  const showsSemanticMap =
-    useRouterState().matches.find(
-      (match) =>
-        match.routeId === '/_app/constellations_/$constellationId/semantic-map',
-    ) !== undefined
-  const params = Route.useSearch()
-  const constellationId = parseInt(Route.useParams().constellationId)
-
-  const {
-    analysisSelection: { analysisType } = {},
-    analysisType: analysisTypeSelection,
-  } = useAnalysisSelection()
-  const { corpusId, subcorpusId } = useAnalysisSelection()
-
-  const { setFilter, isConcordanceVisible } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
-
-  const {
-    data: { comment, name, discoursemes: constellationDiscoursemes = [] },
-  } = useSuspenseQuery(constellationById(constellationId))
-  const { description } = useDescription()
-  const { data: discoursemes = [] } = useQuery(discoursemesList)
+  const searchParams = Route.useSearch()
+  const { corpusId, subcorpusId } = Route.useSearch()
+  // const constellationId = parseInt(Route.useParams().constellationId)
 
   const { data: corpus, error: corpusError } = useQuery({
     ...corpusById(corpusId!, subcorpusId),
@@ -79,113 +28,13 @@ function ConstellationDetail() {
 
   return (
     <ConcordanceFilterProvider
-      params={params}
+      params={searchParams}
       layers={layers}
       structureAttributes={structureAttributes}
     >
-      <AppPageFrameSemanticMap
-        title="Constellation"
-        showsSemanticMap={showsSemanticMap}
-        mapContent={
-          <>
-            {analysisType === 'collocation' && (
-              <SemanticMapCollocations constellationId={constellationId} />
-            )}
+      <ErrorMessage error={corpusError} />
 
-            {analysisType === 'keyword' && (
-              <SemanticMapKeyword constellationId={constellationId} />
-            )}
-
-            {analysisType === 'ufa' && (
-              <SemanticMapUfa constellationId={constellationId} />
-            )}
-
-            {!analysisType && (
-              <div className="flex gap-4 p-4">
-                <Link
-                  to="/constellations/$constellationId"
-                  from="/constellations/$constellationId/semantic-map"
-                  params={(p) => p}
-                  search={(s) => s}
-                  className={buttonVariants()}
-                >
-                  Back{' '}
-                </Link>
-
-                <ErrorMessage error="Please go back and select an analysis type" />
-              </div>
-            )}
-          </>
-        }
-        drawerContent={
-          <ConstellationConcordanceLines constellationId={constellationId} />
-        }
-        isDrawerVisible={isConcordanceVisible}
-        onDrawerToggle={(isVisible) =>
-          setFilter('isConcordanceVisible', isVisible)
-        }
-      >
-        <ErrorMessage error={corpusError} />
-
-        <Headline3 className="border-0">{name}</Headline3>
-
-        {comment && <Muted>{comment}</Muted>}
-
-        <div className="mb-8 mt-4 grid grid-cols-[2fr_1fr_minmax(10rem,1fr)] gap-4">
-          <AnalysisSelection />
-
-          <DiscoursemeList
-            className={cn({
-              'col-span-2':
-                analysisTypeSelection === 'associations' ||
-                analysisTypeSelection === 'breakdown',
-            })}
-            constellationId={constellationId}
-            descriptionId={description?.id as number}
-            discoursemes={discoursemes}
-            constellationDiscoursemes={constellationDiscoursemes}
-          />
-
-          {analysisTypeSelection !== 'associations' && <SemanticMapLink />}
-        </div>
-
-        {analysisTypeSelection === 'associations' && (
-          <Card className="my-4 p-1">
-            {constellationId !== undefined && description?.id !== undefined ? (
-              <DescriptionAssociation
-                constellationId={constellationId}
-                descriptionId={description.id}
-              />
-            ) : (
-              <p className="text-muted-foreground my-5 text-center italic">
-                Select a corpus/subcorpus
-              </p>
-            )}
-          </Card>
-        )}
-
-        {analysisType &&
-          analysisType !== 'associations' &&
-          analysisType !== 'breakdown' && (
-            <ConstellationCollocationFilter
-              className="sticky top-14 mb-8"
-              hideSortOrder
-            />
-          )}
-
-        {analysisType === 'collocation' && (
-          <Collocation
-            constellationId={constellationId}
-            descriptionId={description?.id}
-          />
-        )}
-
-        {analysisType === 'keyword' && <KeywordTable />}
-
-        {analysisType === 'ufa' && <UfaSelection />}
-
-        {analysisType === 'breakdown' && <Breakdown />}
-      </AppPageFrameSemanticMap>
+      <Outlet />
     </ConcordanceFilterProvider>
   )
 }

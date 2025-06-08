@@ -60,7 +60,7 @@ export function ComplexSelect<IdType extends string | number>({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-w-96 p-0">
+      <PopoverContent className="w-80 max-w-96 p-0" align="start">
         <Command>
           <CommandInput placeholder={placeholder} />
           <CommandEmpty>{emptyMessage}</CommandEmpty>

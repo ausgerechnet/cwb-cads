@@ -1,9 +1,5 @@
 import { lazy } from 'react'
-import {
-  Outlet,
-  ScrollRestoration,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { Home, Info, User, ScrollText } from 'lucide-react'
@@ -19,6 +15,7 @@ import {
 import { Toaster } from '@cads/shared/components/ui/sonner'
 import { DiscoursemeCollocateTableSearch } from '@/components/discourseme-collocate-table'
 import { DiscoursemeBreakdownSearch } from '@/components/discourseme-breakdown'
+import { measures } from '@cads/shared/components/measures'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -27,7 +24,53 @@ export const Route = createRootRouteWithContext<{
   validateSearch: z
     .object({})
     .merge(DiscoursemeCollocateTableSearch)
-    .merge(DiscoursemeBreakdownSearch),
+    .merge(DiscoursemeBreakdownSearch)
+    .merge(
+      z.object({
+        clContextBreak: z.string().optional().catch(undefined),
+        contextBreak: z.string().optional().catch(undefined),
+        clFilterDiscoursemeIds: z.number().int().array().optional().catch([]),
+        clSortOrder: z
+          .enum(['ascending', 'descending', 'random', 'first'] as const)
+          .optional()
+          .catch(undefined),
+        clSortByOffset: z.number().int().optional().catch(undefined),
+        clPageSize: z.number().positive().int().optional().catch(undefined),
+        clPageIndex: z.number().nonnegative().int().optional().catch(undefined),
+        clFilterItem: z.string().optional().catch(undefined),
+        clFilterItemPAtt: z.string().optional().catch(undefined),
+
+        ccFilterDiscoursemeIds: z.number().int().array().optional().catch([]),
+        ccPageNumber: z
+          .number()
+          .nonnegative()
+          .int()
+          .optional()
+          .catch(undefined),
+        ccSortOrder: z
+          .enum(['ascending', 'descending'] as const)
+          .optional()
+          .catch('descending'),
+        ccSortBy: z.enum(measures).optional().catch(undefined),
+        semanticMapId: z.number().optional().catch(undefined),
+
+        corpusId: z.number().optional().catch(undefined),
+        subcorpusId: z.number().optional().catch(undefined),
+        focusDiscourseme: z.number().optional().catch(undefined),
+        isConcordanceVisible: z.boolean().optional().catch(true),
+
+        pAtt: z.string().optional(),
+        windowSize: z
+          .number()
+          .positive()
+          .min(2)
+          .int()
+          .optional()
+          .catch(undefined),
+        primary: z.string().optional(),
+        secondary: z.string().optional().catch(undefined),
+      }),
+    ),
 })
 
 // Lazy load devtools in development, but omit in production
@@ -93,7 +136,6 @@ function RootComponent() {
         </NavigationMenu>
       </header>
       <Outlet />
-      <ScrollRestoration getKey={(location) => location.pathname} />
       <Toaster />
       <Devtools />
     </>

@@ -68,6 +68,7 @@ function useConcordanceFilters(
     primary: primaryInput,
     secondary: secondaryInput,
     clContextBreak: clContextBreakInput,
+    contextBreak,
     clFilterDiscoursemeIds,
     clSortOrder = 'random',
     clSortByOffset = 0,
@@ -90,6 +91,7 @@ function useConcordanceFilters(
   const clContextBreak = defaultValue(
     structureAttributes,
     clContextBreakInput,
+    contextBreak,
     'text',
   )
 

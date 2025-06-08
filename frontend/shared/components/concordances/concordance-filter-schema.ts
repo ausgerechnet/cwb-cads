@@ -4,7 +4,10 @@ export const ConcordanceFilterSchema = z.object({
   windowSize: z.number().positive().min(2).int().optional().catch(undefined),
   primary: z.string().optional().catch(undefined),
   secondary: z.string().optional().catch(undefined),
+
   clContextBreak: z.string().optional().catch(undefined),
+  contextBreak: z.string().optional().catch(undefined),
+
   clFilterDiscoursemeIds: z.number().int().array().optional().catch([]),
   clFocusDiscoursemeId: z.number().int().optional().catch(undefined),
   clSortOrder: z

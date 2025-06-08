@@ -256,7 +256,7 @@ export function SecondaryInput({ className }: { className?: string }) {
     <LabelBox className={className} labelText="Secondary">
       <Select value={secondary} onValueChange={(value) => setSecondary(value)}>
         <SelectTrigger>
-          <SelectValue placeholder="Primary" />
+          <SelectValue placeholder="Secondary (?)" />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
