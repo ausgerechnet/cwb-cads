@@ -135,7 +135,8 @@ export function CollocationTable({
                         buttonVariants({ variant: 'outline' }),
                         'inline-flex h-auto gap-1 px-2 py-1 leading-none',
                       )}
-                      to=""
+                      replace
+                      to="."
                       params={(p) => p}
                       search={(s) => ({
                         ...s,

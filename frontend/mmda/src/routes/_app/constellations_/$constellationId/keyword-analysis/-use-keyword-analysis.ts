@@ -8,15 +8,17 @@ import {
 import { useFilterSelection } from '../-use-filter-selection'
 import { useDescription } from '../-use-description'
 import { useKeywordSelection } from './-use-keyword-selection'
+import { Route } from './route'
 
 export function useKeywordAnalysis() {
+  const constellationId = parseInt(Route.useParams().constellationId)
   const {
     analysisLayer,
     referenceLayer,
     referenceCorpusId,
     referenceSubcorpusId,
   } = useKeywordSelection()
-  const { constellationId, description } = useDescription()
+  const { description } = useDescription()
   const { id: descriptionId } = description || {}
   const { ccSortBy } = useFilterSelection(
     '/_app/constellations_/$constellationId',
@@ -33,7 +35,11 @@ export function useKeywordAnalysis() {
       pReference: referenceLayer!,
     }),
     retry: 0,
-    enabled: descriptionId !== undefined,
+    enabled:
+      descriptionId !== undefined &&
+      referenceCorpusId !== undefined &&
+      analysisLayer !== undefined &&
+      referenceLayer !== undefined,
   })
 
   const {

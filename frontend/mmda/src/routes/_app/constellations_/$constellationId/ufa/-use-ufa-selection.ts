@@ -46,8 +46,15 @@ export function useUfaSelection() {
 
   analysisLayer = defaultValue(layers, analysisLayer, 'lemma')
 
+  const isValidSelection =
+    corpusId !== undefined &&
+    focusDiscourseme !== undefined &&
+    analysisLayer !== undefined &&
+    partition !== undefined
+
   return {
     errors: [errorLayers, subcorpusCollectionsError],
+    isValidSelection,
     analysisLayer,
     corpusId,
     subcorpusId,
@@ -79,6 +86,7 @@ export function useUfaSelection() {
           analysisLayer: undefined,
           focusDiscourseme: undefined,
           contextBreak: undefined,
+          partition: undefined,
         }),
       }),
     setFocusDiscourseme: (focusDiscourseme?: number) =>

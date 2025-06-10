@@ -33,18 +33,14 @@ import { AttachNewDiscourseme } from './-attach-new-discourseme'
 
 export function ConstellationDiscoursemesEditor({
   className,
+  analysisLayer,
 }: {
   className?: string
+  analysisLayer: string
 }) {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { corpusId, focusDiscourseme, clFilterDiscoursemeIds } =
     useFilterSelection('/_app/constellations_/$constellationId')
-  const { analysisLayer } = Route.useSearch()
-  if (!analysisLayer) {
-    throw new Error(
-      'Analysis layer is not set. Please select an analysis layer.',
-    )
-  }
   if (corpusId === undefined) throw new Error('corpusId is undefined')
   const corpusName = useQuery(corpusById(corpusId)).data?.name
   const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)

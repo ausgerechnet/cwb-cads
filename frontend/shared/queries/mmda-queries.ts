@@ -899,7 +899,7 @@ export const constellationDescriptionCollection = (
       ),
   })
 
-export const constellationDescriptionCollectionCollocation = (
+export const constellationDescriptionCollectionUfa = (
   constellationId: number,
   collectionId: number,
   {

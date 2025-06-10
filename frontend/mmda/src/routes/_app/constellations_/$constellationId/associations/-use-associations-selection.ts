@@ -1,8 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
-import { useQuery } from '@tanstack/react-query'
-
-import { corpusById } from '@cads/shared/queries'
 
 import { Route } from './route'
 
@@ -14,31 +11,14 @@ export const AssociationsSchema = z.object({
 
 export function useAssociationsSelection() {
   const navigate = useNavigate()
-  const { corpusId, subcorpusId, analysisLayer } = Route.useSearch()
+  const { corpusId, subcorpusId } = Route.useSearch()
 
-  const { data: { layers, structuredAttributes } = {}, error: errorLayers } =
-    useQuery({
-      ...corpusById(corpusId!, subcorpusId),
-      select: (corpus) => ({
-        layers: corpus.p_atts,
-        structuredAttributes: corpus.s_atts,
-      }),
-      enabled: corpusId !== undefined,
-    })
+  const isSelectionValid = corpusId !== undefined
 
   return {
-    errors: [errorLayers],
-    analysisLayer,
+    isSelectionValid,
     corpusId,
     subcorpusId,
-    layers,
-    structuredAttributes,
-    setAnalysisLayer: (layer: string) =>
-      navigate({
-        to: '.',
-        params: (p) => p,
-        search: (s) => ({ ...s, analysisLayer: layer }),
-      }),
     setCorpus: (corpusId?: number, subcorpusId?: number) =>
       navigate({
         to: '.',
@@ -47,9 +27,6 @@ export function useAssociationsSelection() {
           ...s,
           corpusId,
           subcorpusId,
-          analysisLayer: undefined,
-          focusDiscourseme: undefined,
-          contextBreak: undefined,
         }),
       }),
   }

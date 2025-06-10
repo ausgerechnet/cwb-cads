@@ -22,19 +22,17 @@ import {
 } from '@/components/word-cloud'
 
 import { useDescription } from '../-use-description'
-import { useFilterSelection } from '../-use-filter-selection'
 import { ConstellationCollocationFilter } from '../-constellation-filter'
 import { ConstellationDiscoursemesEditor } from '../-constellation-discoursemes-editor'
 import { useKeywordAnalysis } from './-use-keyword-analysis'
+import { useKeywordSelection } from './-use-keyword-selection'
 import { Route } from './route'
 
 export function KeywordSemanticMap() {
   const constellationId = parseInt(Route.useParams().constellationId)
-  const { secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
   const { description } = useDescription()
   // TODO: unify! Only thes lines differ from SemanticMapCollocations
+  const { analysisLayer, isValidSelection } = useKeywordSelection()
   const {
     mapItems,
     errors: errorCollocation,
@@ -69,6 +67,9 @@ export function KeywordSemanticMap() {
       ) ?? []
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
   // -----
+  if (!isValidSelection || !analysisLayer) {
+    throw new Error('Incomplete analysis selection, cannot render semantic map')
+  }
   const semantic_map_id = mapItems?.semantic_map_id
 
   const { mutate: postNewDiscourseme, error: errorNewDiscourseme } =
@@ -100,19 +101,19 @@ export function KeywordSemanticMap() {
       switch (event.type) {
         case 'new_discourseme': {
           const { surfaces } = event
-          if (!description || !secondary) return
+          if (!description || !analysisLayer) return
           postNewDiscourseme({
             surfaces,
             constellationId,
             constellationDescriptionId: description.id,
-            p: secondary,
+            p: analysisLayer,
             name: surfaces.join(' ').substring(0, 25),
           })
           break
         }
         case 'add_to_discourseme': {
           const { discoursemeId, surface } = event
-          if (!description || !secondary) return
+          if (!description || !analysisLayer) return
           const descriptionId = description?.discourseme_descriptions.find(
             ({ id }) => id === discoursemeId,
           )?.id
@@ -125,7 +126,7 @@ export function KeywordSemanticMap() {
             discoursemeId,
             descriptionId,
             surface,
-            p: secondary!,
+            p: analysisLayer!,
           })
           break
         }
@@ -153,7 +154,7 @@ export function KeywordSemanticMap() {
       constellationId,
       description,
       postNewDiscourseme,
-      secondary,
+      analysisLayer,
       semantic_map_id,
       updateCoordinates,
     ],
@@ -193,7 +194,10 @@ export function KeywordSemanticMap() {
         <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
       </div>
 
-      <ConstellationDiscoursemesEditor className="relative col-start-3 row-start-3" />
+      <ConstellationDiscoursemesEditor
+        className="relative col-start-3 row-start-3"
+        analysisLayer={analysisLayer}
+      />
 
       {isFetching && (
         <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />

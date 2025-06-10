@@ -7,6 +7,7 @@ import { CollocationSemanticMap } from './-semantic-map'
 import { CollocationTable } from './-collocation-table'
 import { ConstellationConcordanceLines } from './-concordance-lines'
 import { ConstellationCollocationFilter } from '../-constellation-filter'
+import { useCollocationSelection } from './-use-collocation-selection'
 import { useDescription } from '../-use-description'
 
 export const Route = createLazyFileRoute(
@@ -17,6 +18,7 @@ export const Route = createLazyFileRoute(
 
 function CollocationAnalysis() {
   const descriptionId = useDescription().description?.id
+  const { isValidSelection } = useCollocationSelection()
 
   return (
     <ConstellationLayout
@@ -25,7 +27,7 @@ function CollocationAnalysis() {
       mapContent={<CollocationSemanticMap />}
       drawerContent={<ConstellationConcordanceLines />}
     >
-      {descriptionId !== undefined && (
+      {descriptionId !== undefined && isValidSelection && (
         <>
           <ConstellationCollocationFilter className="mb-5" />
 

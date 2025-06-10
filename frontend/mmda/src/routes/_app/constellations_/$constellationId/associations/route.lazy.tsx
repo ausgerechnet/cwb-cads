@@ -3,6 +3,7 @@ import { Card } from '@cads/shared/components/ui/card'
 import { ConstellationLayout } from '../-constellation-layout'
 import { AssociationsSelection } from './-selection'
 import { DescriptionAssociations } from './-description-associations'
+import { useAssociationsSelection } from './-use-associations-selection'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId/associations',
@@ -11,6 +12,7 @@ export const Route = createLazyFileRoute(
 })
 
 function Associations() {
+  const { isSelectionValid } = useAssociationsSelection()
   return (
     <ConstellationLayout
       selectionContent={<AssociationsSelection />}
@@ -20,9 +22,11 @@ function Associations() {
         </div>
       }
     >
-      <Card className="p-4">
-        <DescriptionAssociations />
-      </Card>
+      {isSelectionValid && (
+        <Card className="p-4">
+          <DescriptionAssociations />
+        </Card>
+      )}
     </ConstellationLayout>
   )
 }

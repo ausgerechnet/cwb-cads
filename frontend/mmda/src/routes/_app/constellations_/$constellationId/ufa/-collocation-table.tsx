@@ -82,8 +82,7 @@ export function UfaCollocationTable() {
                     <SortButtonLink
                       isSorted={isSorted}
                       replace
-                      to="/constellations/$constellationId"
-                      from="/constellations/$constellationId"
+                      to="."
                       params={(p) => p}
                       search={(s) => {
                         if (isCurrent) {
@@ -136,7 +135,8 @@ export function UfaCollocationTable() {
                         buttonVariants({ variant: 'outline' }),
                         'inline-flex h-auto gap-1 px-2 py-1 leading-none',
                       )}
-                      to=""
+                      to="."
+                      replace
                       params={(p) => p}
                       search={(s) => ({
                         ...s,

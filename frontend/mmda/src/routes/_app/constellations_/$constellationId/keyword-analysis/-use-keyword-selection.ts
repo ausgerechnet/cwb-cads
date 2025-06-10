@@ -29,6 +29,7 @@ export function useKeywordSelection() {
     focusDiscourseme,
     referenceCorpusId,
     referenceSubcorpusId,
+    contextBreak,
   } = Route.useSearch()
   let { analysisLayer, referenceLayer } = Route.useSearch()
 
@@ -56,8 +57,16 @@ export function useKeywordSelection() {
     'lemma',
   )
 
+  const isValidSelection =
+    corpusId !== undefined &&
+    analysisLayer !== undefined &&
+    referenceCorpusId !== undefined &&
+    referenceLayer !== undefined &&
+    contextBreak === undefined
+
   return {
     errors: [errorLayers, errorReferenceLayers],
+    isValidSelection,
     analysisLayer,
     corpusId,
     subcorpusId,

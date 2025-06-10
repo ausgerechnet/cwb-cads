@@ -7,8 +7,7 @@ import { Route } from './route'
 
 export function KeywordMapPreview() {
   const constellationId = Route.useParams().constellationId
-  const { analysisLayer, corpusId, referenceCorpusId, referenceLayer } =
-    useKeywordSelection()
+  const { isValidSelection } = useKeywordSelection()
   const { errors, mapItems } = useKeywordAnalysis()
 
   if (errors.length) {
@@ -19,16 +18,12 @@ export function KeywordMapPreview() {
     <WordCloudLink
       to="/constellations/$constellationId/keyword-analysis/semantic-map"
       from="/constellations/$constellationId/keyword-analysis"
+      disabled={!isValidSelection}
       params={{ constellationId: constellationId.toString() }}
       search={(s) => s}
       items={mapItems?.map ?? []}
       warn={
-        corpusId !== undefined &&
-        analysisLayer !== undefined &&
-        referenceCorpusId !== undefined &&
-        referenceLayer !== undefined
-          ? null
-          : `Select a corpus, layer and reference layer`
+        isValidSelection ? null : `Select a corpus, layer and reference layer`
       }
     />
   )

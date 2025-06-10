@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   constellationCollocationItems,
   constellationDescriptionCollection,
-  constellationDescriptionCollectionCollocation,
+  constellationDescriptionCollectionUfa,
   constellationCollocationVisualisation,
   constellationDescription,
 } from '@cads/shared/queries'
@@ -48,19 +48,15 @@ export function useUfa() {
     error: errorCollectionDescriptions,
     isLoading: isLoadingDescriptions,
   } = useQuery({
-    ...constellationDescriptionCollectionCollocation(
-      constellationId,
-      collectionId!,
-      {
-        filterDiscoursemeIds,
-        filterItem: undefined,
-        filterItemPAtt: undefined,
-        focusDiscoursemeId: focusDiscourseme!,
-        p: analysisLayer!,
-        sBreak: clContextBreak!,
-        window: windowSize,
-      },
-    ),
+    ...constellationDescriptionCollectionUfa(constellationId, collectionId!, {
+      filterDiscoursemeIds,
+      filterItem: undefined,
+      filterItemPAtt: undefined,
+      focusDiscoursemeId: focusDiscourseme!,
+      p: analysisLayer!,
+      sBreak: clContextBreak!,
+      window: windowSize,
+    }),
     retry: 0,
     enabled:
       collectionId !== undefined &&

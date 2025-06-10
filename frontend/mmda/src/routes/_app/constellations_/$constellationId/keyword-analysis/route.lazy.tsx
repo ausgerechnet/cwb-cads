@@ -17,8 +17,7 @@ export const Route = createLazyFileRoute(
 })
 
 function KeywordAnalysis() {
-  const { corpusId, referenceCorpusId, analysisLayer, referenceLayer } =
-    useKeywordSelection()
+  const { isValidSelection } = useKeywordSelection()
   return (
     <ConstellationLayout
       selectionContent={<KeywordSelection />}
@@ -26,13 +25,9 @@ function KeywordAnalysis() {
       mapContent={<KeywordSemanticMap />}
       drawerContent={<ConstellationConcordanceLinesKeyword />}
     >
-      {corpusId !== undefined &&
-      referenceCorpusId !== undefined &&
-      analysisLayer !== undefined &&
-      referenceLayer !== undefined ? (
+      {isValidSelection ? (
         <>
           <ConstellationCollocationFilter hideWindowSize className="mb-5" />
-
           <KeywordTable />
         </>
       ) : null}

@@ -1,7 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ConstellationLayout } from '../-constellation-layout'
 import { BreakdownSelection } from './-selection'
-import { BreakdownAnalysisSchema } from './-use-breakdown-selection'
+import {
+  BreakdownAnalysisSchema,
+  useBreakdownSelection,
+} from './-use-breakdown-selection'
 import { BreakdownTable } from './-breakdown-table'
 
 export const Route = createFileRoute(
@@ -12,6 +15,7 @@ export const Route = createFileRoute(
 })
 
 function Breakdown() {
+  const { isValidSelection } = useBreakdownSelection()
   return (
     <ConstellationLayout
       selectionContent={<BreakdownSelection />}
@@ -21,7 +25,7 @@ function Breakdown() {
         </div>
       }
     >
-      <BreakdownTable />
+      {isValidSelection && <BreakdownTable />}
     </ConstellationLayout>
   )
 }

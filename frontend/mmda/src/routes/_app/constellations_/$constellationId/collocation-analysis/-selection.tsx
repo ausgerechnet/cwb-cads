@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@cads/shared/components/ui/select'
 import { SelectSingle } from '@cads/shared/components/select-single'
+import { cn } from '@cads/shared/lib/utils'
 
 import { useCollocationSelection } from './-use-collocation-selection'
 import { useDescription } from '../-use-description'
@@ -89,7 +90,10 @@ function FocusDiscoursemeInput({ className }: { className?: string }) {
   )
 
   return (
-    <LabelBox labelText="Focus Discourseme" className={className}>
+    <LabelBox
+      labelText="Focus Discourseme"
+      className={cn('relative', className)}
+    >
       <ErrorMessage error={errorDescription} className="col-span-full" />
 
       <DiscoursemeSelect

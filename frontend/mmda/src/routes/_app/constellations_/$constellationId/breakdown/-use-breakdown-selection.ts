@@ -29,8 +29,11 @@ export function useBreakdownSelection() {
 
   analysisLayer = defaultValue(layers, analysisLayer, 'lemma')
 
+  const isValidSelection = corpusId !== undefined && analysisLayer !== undefined
+
   return {
     errors: [errorLayers],
+    isValidSelection,
     analysisLayer,
     corpusId,
     subcorpusId,

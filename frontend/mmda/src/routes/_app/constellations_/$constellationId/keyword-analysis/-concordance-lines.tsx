@@ -111,6 +111,12 @@ export function ConstellationConcordanceLinesKeyword({
 
       <ConstellationConcordanceFilter />
 
+      {!enabled && (
+        <div className="text-muted-foreground flex h-52 w-full items-center justify-center text-center">
+          Please select a focus discourseme.
+        </div>
+      )}
+
       {enabled && secondary && (
         <>
           <div className="relative col-span-full flex flex-col gap-4">

@@ -33,8 +33,15 @@ export function useCollocationSelection() {
   analysisLayer = defaultValue(layers, analysisLayer, 'lemma')
   contextBreak = defaultValue(structuredAttributes, contextBreak)
 
+  const isValidSelection =
+    corpusId !== undefined &&
+    focusDiscourseme !== undefined &&
+    analysisLayer !== undefined &&
+    contextBreak !== undefined
+
   return {
     errors: errorLayers,
+    isValidSelection,
     analysisLayer,
     corpusId,
     subcorpusId,

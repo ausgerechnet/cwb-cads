@@ -37,7 +37,12 @@ export function CollocationSemanticMap() {
     clFilterItem,
     setFilterItem,
   } = useConcordanceFilterContext()
-  const { analysisLayer: secondary } = useCollocationSelection()
+  const { isValidSelection, analysisLayer } = useCollocationSelection()
+
+  if (!isValidSelection || !analysisLayer) {
+    throw new Error('Incomplete analysis selection, cannot render semantic map')
+  }
+
   const { description } = useDescription()
   const {
     mapItems,
@@ -100,16 +105,16 @@ export function CollocationSemanticMap() {
 
   const onNewDiscourseme = useCallback(
     (surfaces: string[]) => {
-      if (!description || !secondary) return
+      if (!description || !analysisLayer) return
       postNewDiscourseme({
         surfaces,
         constellationId,
         constellationDescriptionId: description.id,
-        p: secondary,
+        p: analysisLayer,
         name: surfaces.join(' ').substring(0, 25),
       })
     },
-    [constellationId, description, postNewDiscourseme, secondary],
+    [constellationId, description, postNewDiscourseme, analysisLayer],
   )
 
   const onUpdateDiscourseme = useCallback(
@@ -126,10 +131,10 @@ export function CollocationSemanticMap() {
         discoursemeId,
         descriptionId,
         surface,
-        p: secondary!,
+        p: analysisLayer!,
       })
     },
-    [addItem, description?.discourseme_descriptions, secondary],
+    [addItem, description?.discourseme_descriptions, analysisLayer],
   )
 
   const handleCloudChange = (event: WordCloudEvent) => {
@@ -155,7 +160,7 @@ export function CollocationSemanticMap() {
         break
       }
       case 'set_filter_item': {
-        setFilterItem(event.item ?? undefined, secondary)
+        setFilterItem(event.item ?? undefined, analysisLayer)
         break
       }
       case 'set_filter_discourseme_ids': {
@@ -201,7 +206,10 @@ export function CollocationSemanticMap() {
         <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
       </div>
 
-      <ConstellationDiscoursemesEditor className="relative col-start-3 row-start-3" />
+      <ConstellationDiscoursemesEditor
+        className="relative col-start-3 row-start-3"
+        analysisLayer={analysisLayer}
+      />
 
       {isFetching && (
         <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />

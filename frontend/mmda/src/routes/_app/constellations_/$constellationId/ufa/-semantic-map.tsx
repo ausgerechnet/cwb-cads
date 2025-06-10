@@ -22,9 +22,9 @@ import {
 } from '@/components/word-cloud'
 import { useConcordanceFilterContext } from '@cads/shared/components/concordances'
 
-import { useFilterSelection } from '../-use-filter-selection'
 import { ConstellationCollocationFilter } from '../-constellation-filter'
 import { ConstellationDiscoursemesEditor } from '../-constellation-discoursemes-editor'
+import { useUfaSelection } from './-use-ufa-selection'
 import { useUfa } from './-use-ufa'
 import { Route } from './route'
 
@@ -37,9 +37,7 @@ export function SemanticMapUfa() {
     setFilterItem,
   } = useConcordanceFilterContext()
   // TODO: unify! Only these lines differ from SemanticMapCollocations
-  const { secondary } = useFilterSelection(
-    '/_app/constellations_/$constellationId',
-  )
+  const { isValidSelection, analysisLayer } = useUfaSelection()
   const {
     mapItems,
     errors: errorCollocation,
@@ -47,6 +45,9 @@ export function SemanticMapUfa() {
     description,
   } = useUfa()
   // -----
+  if (!isValidSelection || !analysisLayer) {
+    throw new Error('Incomplete analysis selection, cannot render semantic map')
+  }
   const wordsInput =
     mapItems?.map
       ?.filter((item) => item.source === 'items')
@@ -104,16 +105,16 @@ export function SemanticMapUfa() {
 
   const onNewDiscourseme = useCallback(
     (surfaces: string[]) => {
-      if (!description || !secondary) return
+      if (!description || !analysisLayer) return
       postNewDiscourseme({
         surfaces,
         constellationId,
         constellationDescriptionId: description.id,
-        p: secondary,
+        p: analysisLayer,
         name: surfaces.join(' ').substring(0, 25),
       })
     },
-    [constellationId, description, postNewDiscourseme, secondary],
+    [constellationId, description, postNewDiscourseme, analysisLayer],
   )
 
   const onUpdateDiscourseme = useCallback(
@@ -130,10 +131,10 @@ export function SemanticMapUfa() {
         discoursemeId,
         descriptionId,
         surface,
-        p: secondary!,
+        p: analysisLayer!,
       })
     },
-    [addItem, description?.discourseme_descriptions, secondary],
+    [addItem, description?.discourseme_descriptions, analysisLayer],
   )
 
   const handleCloudChange = (event: WordCloudEvent) => {
@@ -159,7 +160,7 @@ export function SemanticMapUfa() {
         break
       }
       case 'set_filter_item': {
-        setFilterItem(event.item ?? undefined, secondary)
+        setFilterItem(event.item ?? undefined, analysisLayer)
         break
       }
       case 'set_filter_discourseme_ids': {
@@ -205,7 +206,10 @@ export function SemanticMapUfa() {
         <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
       </div>
 
-      <ConstellationDiscoursemesEditor className="relative col-start-3 row-start-3" />
+      <ConstellationDiscoursemesEditor
+        className="relative col-start-3 row-start-3"
+        analysisLayer={analysisLayer}
+      />
 
       {isFetching && (
         <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />

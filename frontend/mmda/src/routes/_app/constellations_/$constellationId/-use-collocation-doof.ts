@@ -46,8 +46,7 @@ export function useCollocation(descriptionId?: number) {
       focusDiscourseme !== undefined &&
       descriptionId !== undefined &&
       clContextBreak !== undefined &&
-      secondary !== undefined &&
-      showsSemanticMap,
+      secondary !== undefined,
   })
 
   const {
@@ -88,7 +87,8 @@ export function useCollocation(descriptionId?: number) {
     enabled:
       collocation?.id !== undefined &&
       descriptionId !== undefined &&
-      !isFetchingItems,
+      !isFetchingItems &&
+      showsSemanticMap,
   })
 
   const isLoading = isLoadingConstellation || isLoadingItemsMap || isLoadingItem

@@ -8,30 +8,34 @@ import { Card } from '@cads/shared/components/ui/card'
 
 import { useDescription } from '../-use-description'
 import { useBreakdownSelection } from './-use-breakdown-selection'
+import { Route } from './route'
 
 export function BreakdownTable() {
-  const { analysisLayer } = useBreakdownSelection()
+  const constellationId = parseInt(Route.useParams().constellationId)
+  const { analysisLayer, errors } = useBreakdownSelection()
 
-  const { constellationId, description } = useDescription()
+  const { description } = useDescription()
   const descriptionId = description?.id
 
-  const { data, isLoading, error } = useQuery(
+  const {
+    data,
+    isLoading,
+    error: breakdownError,
+  } = useQuery(
     queryOptions({
       ...constellationDescriptionBreakdown(
         constellationId,
         descriptionId!,
         analysisLayer!,
       ),
-      enabled:
-        constellationId !== undefined &&
-        descriptionId !== undefined &&
-        analysisLayer !== undefined,
+      enabled: descriptionId !== undefined && analysisLayer !== undefined,
     }),
   )
 
   return (
     <Card className="mb-8">
-      <ErrorMessage error={error} />
+      <ErrorMessage error={breakdownError} />
+      <ErrorMessage error={errors} />
 
       {isLoading && <Loader2Icon className="mx-auto my-5 animate-spin" />}
 
