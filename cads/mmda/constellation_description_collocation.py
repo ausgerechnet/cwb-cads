@@ -266,7 +266,7 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
     NB min_score is exclusive
     """
 
-    min_score = AMS_CUTOFF.get(sort_by, 0) if min_score is None else min_score
+    nat_min_score = AMS_CUTOFF.get(sort_by, 0) if min_score is None else min_score
 
     # filter out all items that are included in any discourseme unigram breakdown
     blacklist = []
@@ -284,7 +284,7 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
     scores = CollocationItemScore.query.filter(
         CollocationItemScore.collocation_id == collocation.id,
         CollocationItemScore.measure == sort_by,
-        CollocationItemScore.score > min_score,
+        CollocationItemScore.score > nat_min_score,
         ~ CollocationItemScore.collocation_item_id.in_(blacklist),
     )
 
