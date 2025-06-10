@@ -36,9 +36,8 @@ from .discourseme_description import (DiscoursemeCoordinatesOut,
 bp = APIBlueprint('collocation', __name__, url_prefix='/<description_id>/collocation')
 
 
-def get_score_deciles(scores, method='sigmoid'):
+def get_score_deciles(raw_scores, method='sigmoid'):
 
-    raw_scores = [s.score for s in scores]
     df = DataFrame({'score': raw_scores})
 
     score_max = max(abs(s) for s in raw_scores) if raw_scores else 1
@@ -58,6 +57,21 @@ def get_score_deciles(scores, method='sigmoid'):
     ]
 
     return decile_list, score_max
+
+
+def get_score_quantile_for_value(scores, value):
+    raw_scores = [s.score for s in scores]
+    if not raw_scores:
+        return None  # or raise ValueError
+
+    df = DataFrame({'score': raw_scores})
+    quantile = (df['score'] < value).mean()  # Proportion of scores less than value
+
+    return {
+        'value': value,
+        'quantile': round(quantile, 3),
+        'decile': int(quantile * 10)
+    }
 
 
 def get_or_create_coll(description,
@@ -246,7 +260,7 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     return collocation_items
 
 
-def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score):
+def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None):
     """
 
     NB min_score is exclusive
@@ -276,7 +290,14 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
 
     # TODO this is highly inefficient cause we're calculating the distribution separately from the retrieved scores
     logarithmic = sort_by == 'log_likelihood'
-    decile_list, score_max = get_score_deciles(scores, method='sigmoid')
+    raw_scores = [s.score for s in scores]
+    decile_list, score_max = get_score_deciles(raw_scores, method='sigmoid')
+    if min_score is None:  # set cut-off so that 50 are displayed
+        n = 50
+        sorted_scores = sorted(raw_scores, reverse=True)
+        if n > len(sorted_scores):
+            min_score = min(sorted_scores)
+            min_score = sorted_scores[n - 1]
 
     # order
     if sort_order == 'ascending':
