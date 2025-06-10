@@ -33,7 +33,7 @@ export function QueryCollocation() {
     secondary = 'lemma',
     setFilter,
   } = useFilterSelection('/_app/queries_/$queryId')
-  const { selectedMeasures, measureNameMap } = useMeasureSelection()
+  const { selectedMeasures, measureNameMap } = useMeasureSelection(ccSortBy)
   const { collocationItems, isLoading, errors } = useCollocation()
 
   return (

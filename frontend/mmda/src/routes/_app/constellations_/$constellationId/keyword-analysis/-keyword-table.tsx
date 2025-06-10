@@ -44,7 +44,7 @@ export function KeywordTable() {
     ccSortBy,
   } = useFilterSelection('/_app/constellations_/$constellationId')
   const { analysisLayer } = useKeywordSelection()
-  const { selectedMeasures, measureNameMap } = useMeasureSelection()
+  const { selectedMeasures, measureNameMap } = useMeasureSelection(ccSortBy)
 
   const {
     data: collocationItems, // TODO: Rename, it's not a collocation

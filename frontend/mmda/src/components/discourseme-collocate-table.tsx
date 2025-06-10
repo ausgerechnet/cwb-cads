@@ -48,12 +48,12 @@ export function DiscoursemeCollocateTable({
   isLoading?: boolean
   className?: string
 }) {
-  const { selectedMeasures, measures, measureNameMap } = useMeasureSelection()
   const {
-    dctSortBy = selectedMeasures[0] ?? measures[0],
+    dctSortBy = measures[0],
     dctSortOrder = 'descending',
     dctHidden,
   } = useSearch({ from: '__root__' })
+  const { selectedMeasures, measureNameMap } = useMeasureSelection(dctSortBy)
   const navigate = useNavigate()
 
   const discoursemes = useMemo(

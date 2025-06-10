@@ -32,7 +32,7 @@ import { cn } from '@cads/shared/lib/utils'
 import { LoaderBig } from '@cads/shared/components/loader-big'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { schemas } from '@cads/shared/api-client'
-import { useMeasureSelection } from '@cads/shared/components/measures'
+import { measures, useMeasureSelection } from '@cads/shared/components/measures'
 import { WordCloud, type WordCloudWordIn } from '@/components/word-cloud'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
@@ -258,12 +258,12 @@ function MapContent({
   keywordItems: z.infer<typeof schemas.KeywordItemOut>[] | undefined
   coordinates: z.infer<typeof schemas.CoordinatesOut>[] | undefined
   isLoading: boolean
-  ccSortBy: string
+  ccSortBy: (typeof measures)[number]
 }) {
   const { clFilterItem } = Route.useSearch()
   const navigate = useNavigate()
 
-  const { measures, measureNameMap } = useMeasureSelection()
+  const { measures, measureNameMap } = useMeasureSelection(ccSortBy)
 
   const words = useMemo(
     () =>

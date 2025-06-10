@@ -35,7 +35,7 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
     ccSortBy,
     secondary,
   } = useFilterSelection('/_app/keyword-analysis_/$analysisId')
-  const { selectedMeasures, measureNameMap } = useMeasureSelection()
+  const { selectedMeasures, measureNameMap } = useMeasureSelection(ccSortBy)
 
   const {
     data: collocationItems, // TODO: Rename, it's not a collocation

@@ -36,7 +36,8 @@ export function UfaCollocationTable() {
     ccSortOrder,
     ccPageNumber,
   } = useFilterSelection('/_app/constellations_/$constellationId')
-  const { selectedMeasures, measureNameMap } = useMeasureSelection()
+  const { selectedMeasures, measureNameMap } = useMeasureSelection(ccSortBy)
+  console.log('>> selectedMeasures', selectedMeasures)
   const { analysisLayer } = useUfaSelection()
   const { collocationItems, isLoading, errors } = useUfa()
 
