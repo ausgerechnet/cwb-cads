@@ -29,6 +29,7 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
 import { Input } from '@cads/shared/components/ui/input'
 import { GraphRange, XAxisVertical } from '@cads/shared/components/graph'
+import { formatNumber } from '@cads/shared/lib/format-number'
 
 export const Route = createLazyFileRoute('/_app/corpora_/$corpusId')({
   component: CorpusDetail,
@@ -238,6 +239,7 @@ function MetaOverview() {
           pointStyle="bar"
           viewportY={[0]}
           XAxisComponent={XAxisVertical}
+          formatY={(y) => formatNumber(Math.round(y))}
           hideRange={dataPoints.length < 50}
         />
       ) : (
