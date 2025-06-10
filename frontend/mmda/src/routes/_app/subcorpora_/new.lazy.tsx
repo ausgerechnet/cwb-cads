@@ -223,9 +223,27 @@ function SubcorpusNew() {
                     message: 'Required',
                   })
                 }
-              } else {
-                mutate(data)
+                return
               }
+              if (metaValueType === 'datetime' && timeInterval === 'year') {
+                // turn year strings into ISO date strings
+                const inputYears = [
+                  parseInt(String(data.bins_datetime?.[0]?.[0])),
+                  parseInt(String(data.bins_datetime?.[0]?.[1])),
+                ]
+                const startYear = Math.min(...inputYears)
+                const endYear = Math.max(...inputYears)
+                if (isNaN(startYear) || isNaN(endYear)) {
+                  toast.error(
+                    'Please select a valid year range for datetime bins',
+                  )
+                  return
+                }
+                data.bins_datetime = [
+                  [`${startYear}-01-01T00:00:00`, `${endYear}-12-31T23:59:59`],
+                ]
+              }
+              mutate(data)
             })}
           >
             <fieldset disabled={isPending} className="grid grid-cols-2 gap-4">
@@ -271,13 +289,9 @@ function SubcorpusNew() {
                 name="description"
                 render={({ field }) => (
                   <FormItem className="col-span-full">
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Comment</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        className="description"
-                        placeholder="Description"
-                      />
+                      <Input {...field} placeholder="Comment" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
