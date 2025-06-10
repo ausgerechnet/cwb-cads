@@ -89,7 +89,7 @@ export function useMeasureSelection(
   const [savedSelectedMeasures, setSelectedMeasures] = useState(selection)
   useEffect(() => subscribe(setSelectedMeasures), [])
   const selectedMeasures = useMemo(() => {
-    if (savedSelectedMeasures.includes(mandatoryMeasure) || !mandatoryMeasure) {
+    if (!mandatoryMeasure || savedSelectedMeasures.includes(mandatoryMeasure)) {
       return savedSelectedMeasures
     }
     return [...savedSelectedMeasures, mandatoryMeasure]
