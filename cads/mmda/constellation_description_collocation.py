@@ -735,6 +735,7 @@ class ConstellationMapOut(Schema):
     page_number = Integer(required=True)
     page_count = Integer(required=True)
     map = Nested(ConstellationMapItemOut(many=True))
+    min_score = Float(required=True)
     score_deciles = Nested(ScoreDeciles(many=True))
 
 

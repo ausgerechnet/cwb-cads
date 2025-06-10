@@ -996,6 +996,9 @@
             },
             "type": "array"
           },
+          "min_score": {
+            "type": "number"
+          },
           "nr_items": {
             "type": "integer"
           },
@@ -1023,6 +1026,7 @@
         },
         "required": [
           "id",
+          "min_score",
           "nr_items",
           "page_count",
           "page_number",
@@ -2756,7 +2760,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev58"
+    "version": "0.3.0.dev59"
   },
   "openapi": "3.0.2",
   "paths": {
