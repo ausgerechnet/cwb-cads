@@ -158,21 +158,17 @@ function SubcorpusNew() {
           (acc, page) => acc + page.frequencies.length,
           0,
         ),
-        frequencies:
-          data.pages
-            .flatMap((page) => page.frequencies)
-            .map((frequency) => ({
-              value:
-                frequency.bin_boolean ??
-                frequency.bin_datetime ??
-                frequency.bin_numeric ??
-                frequency.bin_unicode,
-              nrSpans: frequency.nr_spans,
-              nrTokens: frequency.nr_tokens,
-            }))
-            .toSorted(({ value: a }, { value: b }) =>
-              a === b ? 0 : String(a) < String(b) ? -1 : 1,
-            ) ?? [],
+        frequencies: data.pages
+          .flatMap((page) => page.frequencies)
+          .map((frequency) => ({
+            value:
+              frequency.bin_boolean ??
+              frequency.bin_datetime ??
+              frequency.bin_numeric ??
+              frequency.bin_unicode,
+            nrSpans: frequency.nr_spans,
+            nrTokens: frequency.nr_tokens,
+          })),
         legalFrequencyValues:
           data.pages
             .flatMap((page) => page.frequencies)
