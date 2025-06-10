@@ -557,6 +557,7 @@ const ConstellationMapOut = z
   .object({
     id: z.number().int(),
     map: z.array(ConstellationMapItemOut).optional(),
+    min_score: z.number(),
     nr_items: z.number().int(),
     page_count: z.number().int(),
     page_number: z.number().int(),
