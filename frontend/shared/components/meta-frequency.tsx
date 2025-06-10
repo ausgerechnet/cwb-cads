@@ -96,10 +96,22 @@ export function MetaFrequencyNumericInput({
   )
 }
 
+// Handle week format (e.g., "2023-W01")
+// This ignores leap years and assumes the first week starts on January 1st
+// it's sufficient to get the sorting right
+function getTimeForWeek(week: string): number {
+  const [year, weekNum] = week.split('-W').map(Number)
+  const firstDayOfYear = new Date(year, 0, 1)
+  const daysOffset = (weekNum - 1) * 7
+  return new Date(
+    firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000,
+  ).getTime()
+}
+
 export function MetaFrequencyDatetimeInput({
   className,
   frequencies,
-  // timeInterval,
+  timeInterval,
   onChange,
   value,
 }: {
@@ -110,7 +122,10 @@ export function MetaFrequencyDatetimeInput({
   value: [string, string]
 }) {
   const rangeData = frequencies.map((f) => {
-    const value = new Date(f.value).getTime()
+    const value =
+      timeInterval === 'week'
+        ? getTimeForWeek(f.value)
+        : new Date(f.value).getTime()
     if (isNaN(value)) {
       console.error('Invalid date:', f.value)
     }
