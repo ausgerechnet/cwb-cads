@@ -50,6 +50,7 @@ import { Card } from '@cads/shared/components/ui/card'
 import { LabelBox } from '@cads/shared/components/label-box'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
 import { useDebouncedValue } from '@cads/shared/lib/use-debounced-value'
+import { formatNumber } from '@cads/shared/lib/format-number'
 
 export const Route = createLazyFileRoute('/_app/subcorpora_/new')({
   component: SubcorpusNew,
@@ -164,7 +165,7 @@ function SubcorpusNew() {
             value:
               frequency.bin_boolean ??
               frequency.bin_datetime ??
-              frequency.bin_numeric ??
+              (frequency.bin_numeric as [number, number] | undefined) ??
               frequency.bin_unicode,
             nrSpans: frequency.nr_spans,
             nrTokens: frequency.nr_tokens,
@@ -176,7 +177,7 @@ function SubcorpusNew() {
               (frequency) =>
                 frequency.bin_boolean ??
                 frequency.bin_datetime ??
-                frequency.bin_numeric ??
+                (frequency.bin_numeric as [number, number] | undefined) ??
                 frequency.bin_unicode,
             ) ?? [],
       }),
@@ -393,13 +394,27 @@ function SubcorpusNew() {
                       type="number"
                       min={1}
                       step={1}
-                      value={String(nrBins)}
+                      required
+                      defaultValue={String(nrBins)}
                       onChange={(event) => {
-                        setNrBins(parseInt(event.target.value))
+                        // check if valid number
+                        const inputElement = event.target as HTMLInputElement
+                        if (inputElement.validity.valid) {
+                          setNrBins(parseInt(inputElement.value))
+                        }
+                      }}
+                      onBlur={(event) => {
+                        // check if valid number
+                        const inputElement = event.target as HTMLInputElement
+                        console.log('is valid', inputElement.validity.valid)
+                        if (inputElement.validity.valid) {
+                          setNrBins(parseInt(inputElement.value))
+                        } else {
+                          inputElement.value = String(nrBins)
+                        }
                       }}
                     />
                   </LabelBox>
-
                   <FormField
                     control={form.control}
                     name="bins_numeric"
@@ -407,9 +422,13 @@ function SubcorpusNew() {
                       <FormItem className="col-span-full">
                         <FormControl>
                           <MetaFrequencyNumericInput
-                            frequencies={frequencies as Frequency<number>[]}
+                            key={nrBins}
+                            frequencies={
+                              frequencies as Frequency<[number, number]>[]
+                            }
                             onChange={(value) => field.onChange([value])}
                             value={field.value?.[0] ?? [0, 0]}
+                            formatY={(value) => formatNumber(Math.round(value))}
                           />
                         </FormControl>
 
