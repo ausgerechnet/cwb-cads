@@ -228,6 +228,7 @@ function DataPoints({
         return (
           <Fragment key={index}>
             <button
+              type="button"
               className={cn(
                 'absolute bottom-0 h-full w-5 -translate-x-1/2 [&:hover+span+svg+span]:opacity-100 [&:hover+span+svg]:opacity-100 [&:hover+span]:z-10 [&:hover+span]:opacity-100',
                 pointStyle === 'circle' &&
