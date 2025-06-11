@@ -17,10 +17,20 @@ export const Route = createLazyFileRoute('/_app/subcorpora_/$subcorpusId')({
 function SubcorpusDetail() {
   const subcorpusId = parseInt(Route.useParams().subcorpusId)
   // TODO: There should be an API to get a single subcorpus by ID
-  const { data: subcorpora } = useSuspenseQuery(subcorporaList)
-  const subcorpus = subcorpora.find((s) => s.id === subcorpusId)!
-  const description = subcorpus?.description || 'No description'
-  const corpus = subcorpus.corpus!
+  const { data: subcorpora, isFetching } = useSuspenseQuery({
+    ...subcorporaList,
+    initialData: [],
+    staleTime: 0,
+  })
+  const subcorpus = subcorpora.find((s) => s.id === subcorpusId)
+  if (!subcorpus) {
+    if (!isFetching) {
+      throw new Error(`Subcorpus with ID ${subcorpusId} not found.`)
+    }
+    return null
+  }
+  const description = subcorpus?.description
+  const corpus = subcorpus!.corpus
 
   return (
     <AppPageFrame

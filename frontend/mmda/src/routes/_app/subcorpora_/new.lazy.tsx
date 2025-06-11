@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  createLazyFileRoute,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   useInfiniteQuery,
@@ -74,6 +78,7 @@ const SubcorpusPut = z.object({
 type SubcorpusPut = z.infer<typeof SubcorpusPut>
 
 function SubcorpusNew() {
+  const router = useRouter()
   const navigate = useNavigate()
   const { data: corpora, error: errorCorpusList } = useSuspenseQuery(corpusList)
   const form = useForm<SubcorpusPut>({
@@ -123,6 +128,7 @@ function SubcorpusNew() {
     ...createSubcorpus,
     onSuccess: (data, ...args) => {
       createSubcorpus.onSuccess?.(data, ...args)
+      router.invalidate()
       navigate({
         to: '/subcorpora/$subcorpusId',
         params: { subcorpusId: String(data?.id) },
@@ -143,51 +149,56 @@ function SubcorpusNew() {
   const [nrBins, setNrBins] = useState(30)
   const debouncedNrBins = useDebouncedValue(nrBins, 500)
 
-  const { data, fetchNextPage, hasNextPage, isFetching, isLoading } =
-    useInfiniteQuery({
-      ...corpusMetaFrequencies(corpusId, level, key, {
-        pageSize: 50,
-        sortBy: metaValueType === 'datetime' ? 'bin' : sortBy,
-        sortOrder: sortBy === 'bin' ? 'ascending' : 'descending',
-        timeInterval: metaValueType === 'datetime' ? timeInterval : undefined,
-        nrBins: debouncedNrBins,
-      }),
-      select: (data) => ({
-        ...data,
-        nrItems: data.pages[0]?.nr_items ?? 0,
-        loadedItems: data.pages.reduce(
-          (acc, page) => acc + page.frequencies.length,
-          0,
-        ),
-        frequencies: data.pages
+  const {
+    data: metaFrequencyData,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isLoading,
+  } = useInfiniteQuery({
+    ...corpusMetaFrequencies(corpusId, level, key, {
+      pageSize: 50,
+      sortBy: metaValueType === 'datetime' ? 'bin' : sortBy,
+      sortOrder: sortBy === 'bin' ? 'ascending' : 'descending',
+      timeInterval: metaValueType === 'datetime' ? timeInterval : undefined,
+      nrBins: debouncedNrBins,
+    }),
+    select: (data) => ({
+      ...data,
+      nrItems: data.pages[0]?.nr_items ?? 0,
+      loadedItems: data.pages.reduce(
+        (acc, page) => acc + page.frequencies.length,
+        0,
+      ),
+      frequencies: data.pages
+        .flatMap((page) => page.frequencies)
+        .map((frequency) => ({
+          value:
+            frequency.bin_boolean ??
+            frequency.bin_datetime ??
+            (frequency.bin_numeric as [number, number] | undefined) ??
+            frequency.bin_unicode,
+          nrSpans: frequency.nr_spans,
+          nrTokens: frequency.nr_tokens,
+        })),
+      legalFrequencyValues:
+        data.pages
           .flatMap((page) => page.frequencies)
-          .map((frequency) => ({
-            value:
+          .map(
+            (frequency) =>
               frequency.bin_boolean ??
               frequency.bin_datetime ??
               (frequency.bin_numeric as [number, number] | undefined) ??
               frequency.bin_unicode,
-            nrSpans: frequency.nr_spans,
-            nrTokens: frequency.nr_tokens,
-          })),
-        legalFrequencyValues:
-          data.pages
-            .flatMap((page) => page.frequencies)
-            .map(
-              (frequency) =>
-                frequency.bin_boolean ??
-                frequency.bin_datetime ??
-                (frequency.bin_numeric as [number, number] | undefined) ??
-                frequency.bin_unicode,
-            ) ?? [],
-      }),
-      retry: 0,
-      enabled: Boolean(level) && Boolean(key),
-    })
+          ) ?? [],
+    }),
+    retry: 0,
+    enabled: Boolean(level) && Boolean(key),
+  })
 
   const frequencies = useMemo(
-    () => data?.frequencies ?? [],
-    [data?.frequencies],
+    () => metaFrequencyData?.frequencies ?? [],
+    [metaFrequencyData?.frequencies],
   )
 
   useEffect(() => {
