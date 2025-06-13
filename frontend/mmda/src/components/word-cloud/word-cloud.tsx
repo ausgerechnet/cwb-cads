@@ -127,8 +127,8 @@ export function WordCloud({
 
   const toOriginalCoordinates = useCallback(
     (displayX: number, displayY: number): [number, number] => [
-      clamp((displayX / (containerWidth - paddingX)) * 2, -1, 1),
-      clamp((displayY / (containerHeight - paddingY)) * 2, -1, 1),
+      (displayX / (containerWidth - paddingX)) * 2,
+      (displayY / (containerHeight - paddingY)) * 2,
     ],
     [containerWidth, paddingX, containerHeight, paddingY],
   )

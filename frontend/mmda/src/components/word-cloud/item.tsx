@@ -127,7 +127,6 @@ export function Item({
               }}
             >
               {word.label}
-
               {debug && (
                 <span
                   className={cn(
@@ -138,7 +137,6 @@ export function Item({
                   {word.score.toFixed(2)}
                 </span>
               )}
-
               {debug && !word.isBackground && (
                 <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
               )}
