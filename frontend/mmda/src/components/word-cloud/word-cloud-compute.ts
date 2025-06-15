@@ -7,224 +7,341 @@ export function calculateWordDimensions(
   return [baseWidth, baseHeight]
 }
 
-export class CloudItem {
-  id: string
+export interface CloudItem {
+  readonly id: string
+  readonly displayWidth: number
+  readonly displayHeight: number
   originX: number
   originY: number
   x: number
   y: number
   label: string
-  deltaX: number = 0
-  deltaY: number = 0
+  deltaX: number
+  deltaY: number
   /**
    * A fixed item cannot be moved by the simulation, but may still affect other items.
    */
-  isFixed: boolean = false
+  isFixed: boolean
   /**
    * Indicates if this item has a collision with another item.
    */
-  hasCollision: boolean = false
-  hasNearbyElements: boolean = false
-  isColliding: boolean = false
+  hasCollision: boolean
+  hasNearbyElements: boolean
+  isColliding: boolean
   /**
    * Indicates if this item is a background item that should not be moved by the simulation.
    * They are automatically non-colliding and have a fixed position.
    */
-  isBackground: boolean = false
+  isBackground: boolean
   /**
    * Relative score of the item, must be between 0 and 1.
    */
-  score: number = 1
+  score: number
   index?: number
-  zoomPositions: Map<number, [number, number]> = new Map()
+}
 
-  constructor(
-    x: number,
-    y: number,
-    item: string,
-    id: string,
-    {
-      originX,
-      originY,
-      isBackground,
-      score = 0,
-    }: {
-      originX?: number
-      originY?: number
-      isBackground?: boolean
-      score?: number
-    } = {},
-  ) {
-    this.id = id
-    this.originX = originX ?? x
-    this.originY = originY ?? y
-    this.x = x
-    this.y = y
-    this.label = item
-    this.isBackground = isBackground ?? false
-    this.score = score
-    if (score < 0 || score > 1) {
-      throw new Error('Score must be between 0 and 1')
-    }
+function createCloutItem(
+  x: number,
+  y: number,
+  item: string,
+  id: string,
+  {
+    originX,
+    originY,
+    isBackground,
+    score = 0,
+  }: {
+    originX?: number
+    originY?: number
+    isBackground?: boolean
+    score?: number
+  } = {},
+): CloudItem {
+  if (score < 0 || score > 1) {
+    throw new Error('Score must be between 0 and 1')
   }
-
-  applyFactor(alpha: number) {
-    this.deltaX *= alpha
-    this.deltaY *= alpha
-  }
-
-  applyDelta() {
-    this.x += this.deltaX
-    this.y += this.deltaY
-    this.deltaX = 0
-    this.deltaY = 0
+  const [displayWidth, displayHeight] = calculateWordDimensions(item, score)
+  return {
+    id,
+    displayWidth,
+    displayHeight,
+    originX: originX ?? x,
+    originY: originY ?? y,
+    x,
+    y,
+    label: item,
+    deltaX: 0,
+    deltaY: 0,
+    isFixed: false,
+    hasCollision: false,
+    hasNearbyElements: false,
+    isColliding: false,
+    isBackground: isBackground ?? false,
+    score,
   }
 }
 
-export class Word extends CloudItem {
-  readonly displayWidth: number = 0
-  readonly displayHeight: number = 0
-
-  constructor(
-    x: number,
-    y: number,
-    item: string,
-    id: string,
-    options?: {
-      originX?: number
-      originY?: number
-      isBackground?: boolean
-      score?: number
-    },
-  ) {
-    super(x, y, item, id, options)
-    ;[this.displayWidth, this.displayHeight] = calculateWordDimensions(
-      item,
-      options?.score ?? 0,
-    )
-  }
+export interface Word extends CloudItem {
+  type: 'word'
 }
 
-export class Discourseme extends CloudItem {
-  readonly displayWidth: number = 0
-  readonly displayHeight: number = 0
+export interface Discourseme extends CloudItem {
+  type: 'discourseme'
+  isBackground: false
   readonly discoursemeId: number
+}
 
-  constructor(
-    x: number,
-    y: number,
-    item: string,
-    id: string,
-    discoursemeId: number,
-    options?: {
-      originX?: number
-      originY?: number
-      score?: number
-    },
-  ) {
-    super(x, y, item, id, options)
-    this.discoursemeId = discoursemeId
-    ;[this.displayWidth, this.displayHeight] = calculateWordDimensions(
-      item,
-      options?.score ?? 0,
-    )
+export function createWord(
+  x: number,
+  y: number,
+  item: string,
+  id: string,
+  options?: {
+    originX?: number
+    originY?: number
+    isBackground?: boolean
+    score?: number
+  },
+): Word {
+  const cloudItem = createCloutItem(x, y, item, id, options)
+  const [displayWidth, displayHeight] = calculateWordDimensions(
+    item,
+    options?.score ?? 0,
+  )
+  return {
+    type: 'word',
+    ...cloudItem,
+    displayWidth,
+    displayHeight,
   }
 }
 
-export class Cloud {
-  width: number
-  height: number
-  words: Word[]
-  discoursemes: Discourseme[] = []
+export function createDiscourseme(
+  x: number,
+  y: number,
+  item: string,
+  id: string,
+  discoursemeId: number,
+  options?: {
+    originX?: number
+    originY?: number
+    score?: number
+  },
+): Discourseme {
+  const cloudItem = createCloutItem(x, y, item, id, options)
+  const [displayWidth, displayHeight] = calculateWordDimensions(
+    item,
+    options?.score ?? 0,
+  )
+  return {
+    type: 'discourseme',
+    ...cloudItem,
+    isBackground: false,
+    discoursemeId,
+    displayWidth,
+    displayHeight,
+  }
+}
+
+class Simulation {
+  readonly zoom
+  readonly #width: number
+  readonly #height: number
+  #cutOff: number = 0.5
+  #displayWidth: number
+  #displayHeight: number
+  #words: Word[]
+  #discoursemes: Discourseme[]
   #allItems: CloudItem[] = []
-  displayWidth = 0
-  displayHeight = 0
   #alpha = 1
   #ticks = 0
-  #zoom = 1
-  #maxZoom
-  #repelForceFactor: number
-  enableCollisionDetection = true
-  stableZoom = new Set<number>()
-  #simulationUpdateCallbacks: (() => void)[] = []
-  #abortController: AbortController | null = null
-  #isSettingUp = true
-  #isDestroyed = false
+  #repelForceFactor: number = 0.05
+  #enableCollisionDetection = true
+  #isRunning = false
+  #simulationStepState: 'none' | 'discoursemes' | 'important' | 'all' = 'none'
+  #state: 'pending' | 'stable' | 'dirty' = 'pending'
+  #startTime: number = 0
+  #stableDuration: number = 0
+  #onStable: (simulation: Simulation) => void // A simulation has only one observer
 
   constructor(
     width: number,
     height: number,
-    words: Word[] = [],
-    discoursemes: Discourseme[] = [],
-    {
-      backgroundCutOff = 0.5,
-      enableCollisionDetection = true,
-      repelForceFactor = 0.05,
-      zoom = 1,
-      maxZoom = 15,
-    } = {},
+    displayWidth: number,
+    displayHeight: number,
+    words: Word[],
+    discoursemes: Discourseme[],
+    zoom: number,
+    backgroundCutOff: number,
+    onStable: (simulation: Simulation) => void,
   ) {
-    this.width = width
-    this.height = height
-    this.words = words.toSorted((a, b) => b.score - a.score)
-    this.words.forEach((word, index) => {
-      word.index = index
+    this.#width = width
+    this.#height = height
+    this.#displayWidth = displayWidth
+    this.#displayHeight = displayHeight
+    this.#words = words.toSorted((a, b) => b.score - a.score)
+    this.#discoursemes = discoursemes.toSorted((a, b) => b.score - a.score)
+    this.#allItems = [...this.#words, ...this.#discoursemes]
+    this.#words.forEach((word) => {
       word.isBackground = word.score < backgroundCutOff
     })
-    this.discoursemes = discoursemes.toSorted((a, b) => b.score - a.score)
-    this.discoursemes.forEach((discourseme, index) => {
-      discourseme.index = index
-    })
-    this.#allItems = [...this.words, ...this.discoursemes]
-    this.enableCollisionDetection = enableCollisionDetection
-    this.#repelForceFactor = repelForceFactor
-    this.#zoom = zoom
-    this.#maxZoom = maxZoom
-    void this.#initialSimulation()
+    this.#cutOff = backgroundCutOff
+    this.zoom = zoom
+    this.#onStable = onStable
+    this.#loop()
   }
 
-  set backgroundCutOff(value: number) {
-    this.stableZoom.clear()
-    this.words.forEach((word) => {
-      word.isBackground = word.score < value
-    })
-    this.#simulationUpdateCallbacks.forEach((callback) => callback())
+  get state() {
+    return this.#state
   }
 
-  set zoom(value: number) {
-    this.#zoom = value
-    this.#alpha = 1
-    this.#ticks = 0
-    if (!this.#isSettingUp) {
-      void this.#simulateUntilStable()
+  get isRunning() {
+    return this.#isRunning
+  }
+
+  get stableDuration() {
+    return this.#stableDuration
+  }
+
+  start() {
+    if (this.#isRunning) return
+    this.#startTime = Date.now()
+    this.#isRunning = true
+  }
+
+  stop() {
+    if (!this.#isRunning) return
+    this.#isRunning = false
+  }
+
+  set cutOff(cutOff: number) {
+    let didChange = false
+    this.#cutOff = cutOff
+    this.#words.forEach((word) => {
+      const isBackground = word.score < cutOff
+      if (word.isBackground !== isBackground) {
+        word.isBackground = isBackground
+        didChange = true
+      }
+    })
+    if (didChange && this.#state !== 'pending') {
+      this.#state = 'dirty'
     }
   }
 
-  get zoom() {
-    return this.#zoom
+  set displaySize([displayWidth, displayHeight]: [number, number]) {
+    if (
+      this.#displayWidth !== displayWidth ||
+      this.#displayHeight !== displayHeight
+    ) {
+      this.#displayWidth = displayWidth
+      this.#displayHeight = displayHeight
+      this.#state = 'dirty'
+    }
   }
 
-  onSimulationUpdate(callback: () => void) {
-    this.#simulationUpdateCallbacks.push(callback)
-    return () => {
-      this.#simulationUpdateCallbacks = this.#simulationUpdateCallbacks.filter(
-        (cb) => cb !== callback,
+  get words() {
+    return this.#words
+  }
+
+  set words(updateWords: Word[]) {
+    let didChange = false
+
+    for (const word of updateWords) {
+      const existingWord = this.#words.find((w) => w.id === word.id)
+      if (existingWord) {
+        // This operates under the assumption that only the word's position will change
+        if (
+          word.originX !== existingWord.originX ||
+          word.originY !== existingWord.originY
+        ) {
+          existingWord.x = word.originX
+          existingWord.y = word.originY
+          existingWord.originX = word.originX
+          existingWord.originY = word.originY
+          didChange = true
+        }
+      } else {
+        this.#words.push({ ...word, isBackground: word.score < this.#cutOff })
+        didChange = true
+      }
+    }
+
+    // Remove words that are no longer present
+    const currentWordCount = this.#words.length
+    this.#words = this.#words.filter((word) =>
+      updateWords.some((w) => w.id === word.id),
+    )
+    didChange ||= this.#words.length !== currentWordCount
+    this.#words.sort((a, b) => b.score - a.score)
+    this.#allItems = [...this.#words, ...this.#discoursemes]
+
+    if (didChange) {
+      this.#state = 'dirty'
+    }
+  }
+
+  get discoursemes() {
+    return this.#discoursemes
+  }
+
+  set discoursemes(updateDiscoursemes: Discourseme[]) {
+    let didChange = false
+    for (const discourseme of updateDiscoursemes) {
+      const existingDiscourseme = this.#discoursemes.find(
+        (d) => d.id === discourseme.id,
       )
+      if (existingDiscourseme) {
+        // This operates under the assumption that only the discourseme's position will change
+        if (
+          discourseme.originX !== existingDiscourseme.originX ||
+          discourseme.originY !== existingDiscourseme.originY
+        ) {
+          existingDiscourseme.x = discourseme.originX
+          existingDiscourseme.y = discourseme.originY
+          existingDiscourseme.originX = discourseme.originX
+          existingDiscourseme.originY = discourseme.originY
+          didChange = true
+        }
+      } else {
+        this.#discoursemes.push({ ...discourseme })
+        didChange = true
+      }
+    }
+    // Remove discoursemes that are no longer present
+    const currentDiscoursemeCount = this.#discoursemes.length
+    this.#discoursemes = this.#discoursemes.filter((discourseme) =>
+      updateDiscoursemes.some((d) => d.id === discourseme.id),
+    )
+    didChange ||= this.#discoursemes.length !== currentDiscoursemeCount
+    this.#discoursemes.sort((a, b) => b.score - a.score)
+    this.#allItems = [...this.#words, ...this.#discoursemes]
+    if (didChange) {
+      this.#simulationStepState = 'none'
+      this.#state = 'dirty'
     }
   }
 
-  setDisplaySize(displayWidth: number, displayHeight: number) {
-    this.displayWidth = displayWidth
-    this.displayHeight = displayHeight
-    if (!this.#isSettingUp) {
-      void this.#simulateUntilStable()
+  updateItemPosition(itemId: string, originX: number, originY: number) {
+    const item = this.#allItems.find((i) => i.id === itemId)
+    if (!item) {
+      console.warn(`Item with id ${itemId} not found`)
+      return
     }
+    if (item.originX === originX && item.originY === originY) {
+      return
+    }
+    item.originX = originX
+    item.originY = originY
+    item.x = originX
+    item.y = originY
+    this.#state = 'dirty'
   }
 
   toDisplayCoordinates(x: number, y: number): [number, number] {
     return [
-      (x / this.width) * this.displayWidth,
-      (y / this.height) * this.displayHeight,
+      (x / this.#width) * this.#displayWidth,
+      (y / this.#height) * this.#displayHeight,
     ]
   }
 
@@ -263,7 +380,7 @@ export class Cloud {
     const decayFactor = (decayTicks - this.#ticks) / decayTicks
     if (decayFactor <= 0) return
 
-    for (const word of this.words) {
+    for (const word of this.#words) {
       if (word.isFixed) continue
       // calculate the distance to the home position
       const dx = word.originX - word.x
@@ -271,7 +388,7 @@ export class Cloud {
       const distance = Math.sqrt(dx * dx + dy * dy)
 
       // apply a force towards the home position
-      if (distance > 50 / this.#zoom) {
+      if (distance > 50 / this.zoom) {
         const force = 5 * decayFactor
         word.deltaX += (dx / distance) * force
         word.deltaY += (dy / distance) * force
@@ -279,14 +396,14 @@ export class Cloud {
     }
   }
 
-  #simulateCollisions(zoom: number) {
+  #simulateCollisions() {
     for (let i = 0; i < this.#allItems.length; i++) {
       const wordA = this.#allItems[i]
       if (wordA.isBackground || !wordA.hasCollision) continue
 
       for (let j = i + 1; j < this.#allItems.length; j++) {
         const wordB = this.#allItems[j]
-        this.#simulateCollisionBetweenItems(wordA, wordB, zoom)
+        this.#simulateCollisionBetweenItems(wordA, wordB, this.zoom)
       }
     }
   }
@@ -324,14 +441,14 @@ export class Cloud {
     }
   }
 
-  #simulate(zoom: number) {
+  #simulateStep() {
     for (const item of this.#allItems) {
       item.hasNearbyElements = false
       item.isColliding = false
     }
 
-    if (this.enableCollisionDetection) {
-      this.#simulateCollisions(zoom)
+    if (this.#enableCollisionDetection) {
+      this.#simulateCollisions()
     }
 
     // determine if we should slow down
@@ -339,7 +456,7 @@ export class Cloud {
       this.#allItems.reduce(
         (acc, word) => acc + Math.abs(word.deltaX) + Math.abs(word.deltaY),
         0,
-      ) / this.words.length
+      ) / this.#words.length
     // to avoid flickering, we only slow down if the average delta is small or after about 5 seconds
     if (averageDelta < 1 || this.#ticks > 60 * 5) {
       this.#alpha *= 0.99
@@ -347,7 +464,8 @@ export class Cloud {
 
     // apply slowdown factor
     this.#allItems.forEach((item) => {
-      item.applyFactor(this.#alpha)
+      item.deltaX *= this.#alpha
+      item.deltaY *= this.#alpha
     })
 
     // apply home force which is NOT affected by the slowdown factor
@@ -356,214 +474,265 @@ export class Cloud {
     // apply forces to each word
     this.#allItems.forEach((item) => {
       if (item.isFixed) return
-      item.applyDelta()
+      item.x += item.deltaX
+      item.y += item.deltaY
+      item.deltaX = 0
+      item.deltaY = 0
     })
   }
 
-  destroy() {
-    this.#abortController?.abort()
-    this.#isDestroyed = true
-    this.words = []
-    this.#ticks = 0
-    this.#simulationUpdateCallbacks = []
-    this.stableZoom.clear()
-  }
+  async #loop() {
+    let alphaThreshold = 0
+    let ticksThreshold = Infinity
 
-  #publishPositions() {
-    this.#simulationUpdateCallbacks.forEach((callback) => callback())
-  }
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if (this.#isRunning && this.#state !== 'stable') {
+        const isStable =
+          this.#alpha <= alphaThreshold || this.#ticks >= ticksThreshold
 
-  // Simulate the word cloud to a stable state, starting with a zoom of 1 and then zooming out to the maximum zoom level.
-  async #initialSimulation() {
-    await this.#simulateUntilStable(1)
-    const currentzoom = this.#zoom
-    await this.#simulateUntilStable(this.#maxZoom ?? 15)
-    this.#isSettingUp = false
-    this.zoom = currentzoom // reset to the initial zoom level
-  }
+        // determine whether the current simulation step is done and go on to the next step
+        if (this.#simulationStepState === 'none' || this.#state === 'dirty') {
+          this.#state = 'pending'
+          this.#simulationStepState = 'discoursemes'
+          this.#alpha = 1
+          this.#ticks = 0
+          alphaThreshold = 0.01
+          ticksThreshold = 5_000
+          this.#discoursemes.forEach((discourseme) => {
+            discourseme.deltaX = 0
+            discourseme.deltaY = 0
+            discourseme.isColliding = true
+            discourseme.hasNearbyElements = false
+            discourseme.x = discourseme.originX
+            discourseme.y = discourseme.originY
+            discourseme.hasCollision = true
+            discourseme.isFixed = false
+          })
+          this.#words.forEach((word) => {
+            word.deltaX = 0
+            word.deltaY = 0
+            word.isColliding = false
+            word.hasNearbyElements = false
+            word.x = word.originX
+            word.y = word.originY
+            word.hasCollision = false
+            word.isFixed = true
+          })
+        } else if (this.#simulationStepState === 'discoursemes' && isStable) {
+          this.#simulationStepState = 'important'
+          this.#alpha = 1
+          this.#ticks = 0
+          alphaThreshold = 0.001
+          ticksThreshold = 3_000
+          this.#repelForceFactor = 0.1
+          this.#discoursemes.forEach((discourseme) => {
+            discourseme.isFixed = true
+            discourseme.hasCollision = true
+          })
+          this.#words.forEach((word) => {
+            word.hasCollision = (word?.index ?? Infinity) <= 50
+            word.isFixed = false
+          })
+        } else if (this.#simulationStepState === 'important' && isStable) {
+          this.#simulationStepState = 'all'
+          this.#alpha = 1
+          this.#ticks = 0
+          alphaThreshold = 0.01
+          ticksThreshold = 5_000
+          this.#repelForceFactor = 0.05
+          this.#words.forEach((word) => {
+            word.hasCollision = true
+            word.isFixed = (word?.index ?? Infinity) <= 50
+          })
+        } else if (this.#simulationStepState === 'all' && isStable) {
+          this.#simulationStepState = 'none'
+          this.#state = 'stable'
 
-  #applyPositionCache(zoom = this.#zoom) {
-    if (this.stableZoom.has(zoom)) {
-      this.#allItems.forEach((item) => {
-        const cachedPosition = item.zoomPositions.get(zoom)
-        if (cachedPosition) {
-          item.x = cachedPosition[0]
-          item.y = cachedPosition[1]
-        } else {
-          console.warn(
-            `No cached position found for item ${item.id} at zoom level ${zoom}`,
-          )
-          item.x = item.originX
-          item.y = item.originY
+          const now = Date.now()
+          this.#stableDuration = now - this.#startTime
+          this.#onStable(this)
         }
-      })
-      return true
-    }
-    return false
-  }
 
-  #cachePositions(zoom: number = this.#zoom) {
-    this.#allItems.forEach((item) => {
-      item.zoomPositions.set(zoom, [item.x, item.y])
-    })
-    this.stableZoom.add(zoom)
-  }
+        this.#simulateStep()
+        this.#ticks++
 
-  #applyInterpolatedPosition(zoom: number = this.#zoom) {
-    const closestLowerZoom: number = Math.max(
-      ...Array.from(this.stableZoom).filter((z) => z <= zoom),
-    )
-    const closestHigherZoom = Math.min(
-      ...Array.from(this.stableZoom).filter((z) => z >= zoom),
-    )
-    this.#allItems.forEach((item) => {
-      const lowerPosition = item.zoomPositions.get(closestLowerZoom)
-      const higherPosition = item.zoomPositions.get(closestHigherZoom)
-      if (lowerPosition && higherPosition) {
-        const factor =
-          (zoom - closestLowerZoom) / (closestHigherZoom - closestLowerZoom)
-        item.x =
-          lowerPosition[0] + factor * (higherPosition[0] - lowerPosition[0])
-        item.y =
-          lowerPosition[1] + factor * (higherPosition[1] - lowerPosition[1])
+        if (this.#ticks % 100 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 0))
+        }
       } else {
-        console.warn(
-          `No cached position found for item ${item.id} at zoom level ${zoom}`,
-        )
-        item.x = item.originX
-        item.y = item.originY
-      }
-    })
-    this.#publishPositions()
-  }
-
-  async #simulateUntilStable(zoom = this.#zoom, publishAfterSimulation = true) {
-    if (this.#isDestroyed) return
-    this.#abortController?.abort()
-    if (this.#applyPositionCache(zoom)) {
-      this.#publishPositions()
-      return
-    }
-    this.#applyInterpolatedPosition(zoom)
-    const abortController = new AbortController()
-    this.#abortController = abortController
-
-    try {
-      // Step 1: Simulate the discoursemes only
-      this.#alpha = 1
-      this.#ticks = 0
-      this.discoursemes.forEach((discourseme) => {
-        discourseme.deltaX = 0
-        discourseme.deltaY = 0
-        discourseme.isColliding = true
-        discourseme.hasNearbyElements = false
-        discourseme.x = discourseme.originX
-        discourseme.y = discourseme.originY
-        discourseme.hasCollision = true
-        discourseme.isFixed = false
-      })
-      this.words.forEach((word) => {
-        word.deltaX = 0
-        word.deltaY = 0
-        word.isColliding = false
-        word.hasNearbyElements = false
-        word.x = word.originX
-        word.y = word.originY
-        word.hasCollision = false
-        word.isFixed = true
-      })
-
-      await this.#simulateUntilStableLoop(
-        zoom,
-        abortController.signal,
-        0.001,
-        1_000,
-      )
-
-      // Step 2: Simulate the words with a higher repel force factor for the 50 largest words
-      this.#alpha = 1
-      this.#ticks = 0
-
-      this.discoursemes.forEach((discourseme) => {
-        discourseme.isFixed = true
-      })
-      this.words.forEach((word) => {
-        word.hasCollision = (word?.index ?? Infinity) <= 50
-        word.isFixed = false
-      })
-
-      this.#repelForceFactor = 0.1
-
-      await this.#simulateUntilStableLoop(
-        zoom,
-        abortController.signal,
-        0.001,
-        3_000,
-      )
-
-      // Step 3: Simulate the words with a lower repel force factor for all words, fixing the 50 largest words
-      this.#alpha = 1
-      this.#ticks = 0
-
-      this.#repelForceFactor = 0.1
-      this.words.forEach((word) => {
-        word.hasCollision = true
-        word.isFixed = (word?.index ?? Infinity) <= 50
-      })
-
-      await this.#simulateUntilStableLoop(
-        zoom,
-        abortController.signal,
-        0.01,
-        5_000,
-      )
-
-      this.#cachePositions(zoom)
-      if (publishAfterSimulation) {
-        this.#publishPositions()
-      }
-    } catch (e) {
-      if (!(e instanceof AbortError)) {
-        console.error('Error during simulation:', e)
-      }
-    } finally {
-      if (this.#abortController === abortController) {
-        this.#abortController = null
-      }
-    }
-  }
-
-  /**
-   * Simulates the word cloud until it is stable, meaning the alpha value is below the threshold or the ticks exceed the threshold.
-   * @param abortSignal If provided, the simulation will be aborted if the signal is aborted. If nnull, the simulation will run until it is stable and will will block the event loop.
-   * @param alphaThreshold
-   * @param ticksThreshold
-   */
-  async #simulateUntilStableLoop(
-    zoom: number,
-    abortSignal: AbortSignal | null,
-    alphaThreshold = 0.01,
-    ticksThreshold = 5_000,
-  ) {
-    let cycles = 0
-    while (this.#alpha > alphaThreshold && this.#ticks < ticksThreshold) {
-      this.#simulate(zoom)
-      this.#ticks++
-      // Check if the simulation has been aborted
-      if (abortSignal && cycles++ % 100 === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 0))
-      }
-      // Put the resumption of the loop on the task queue
-      if (abortSignal?.aborted) {
-        throw new AbortError()
+        await new Promise((resolve) => setTimeout(resolve, 10))
       }
     }
   }
 }
 
-class AbortError extends Error {
-  constructor() {
-    super('Simulation aborted')
-    this.name = 'AbortError'
+export class Cloud {
+  stableZoom = new Set<number>()
+  #simulationUpdateCallbacks: (() => void)[] = []
+  #zoom = 1
+
+  readonly zoomSteps = 0.5
+  readonly #simulations: Map<number, Simulation> = new Map()
+
+  constructor(
+    width: number,
+    height: number,
+    displayWidth: number = width,
+    displayHeight: number = height,
+    words: Word[] = [],
+    discoursemes: Discourseme[] = [],
+    { zoom = 1, backgroundCutOff = 0.5, minZoom = 1, maxZoom = 15 } = {},
+  ) {
+    if (
+      maxZoom < minZoom ||
+      Number.isInteger(maxZoom) === false ||
+      Number.isInteger(minZoom) === false
+    ) {
+      throw new Error(
+        'maxZoom and zoom must be integers and maxZoom must be greater than or equal to zoom',
+      )
+    }
+
+    this.#zoom = zoom
+
+    for (let zoom = minZoom; zoom <= maxZoom; zoom += this.zoomSteps) {
+      this.#simulations.set(
+        zoom,
+        new Simulation(
+          width,
+          height,
+          displayWidth,
+          displayHeight,
+          words.map((word) => ({ ...word })),
+          discoursemes.map((discourseme) => ({
+            ...discourseme,
+          })),
+          zoom,
+          backgroundCutOff,
+          this.#handleStableSimulation,
+        ),
+      )
+    }
+
+    this.#simulations.get(this.#zoom)!.start()
+  }
+
+  set cutOff(cutOff: number) {
+    this.#simulations.forEach((simulation) => (simulation.cutOff = cutOff))
+    this.#runAppropriateSimulation()
+  }
+
+  #handleStableSimulation = (simulation: Simulation) => {
+    if (simulation.zoom === this.#zoom) {
+      this.#publishPositions()
+    }
+    this.#runAppropriateSimulation()
+  }
+
+  #runAppropriateSimulation() {
+    const currentSimulation = this.#simulations.get(this.#zoom)!
+    if (currentSimulation.state !== 'stable') {
+      currentSimulation.start()
+      return
+    }
+
+    const unstableSims = Array.from(this.#simulations.values()).filter(
+      (sim) => sim.state !== 'stable',
+    )
+    this.#simulations.forEach((sim) => sim.stop())
+    if (unstableSims.length > 0) {
+      const closestSim = unstableSims.reduce((prev, curr) => {
+        if (curr.zoom === 15 || curr.zoom === 1) return curr // always prefer the highest or lowest zoom level if available
+        return Math.abs(curr.zoom - this.#zoom) <
+          Math.abs(prev.zoom - this.#zoom)
+          ? curr
+          : prev
+      })
+      closestSim.start()
+    }
+  }
+
+  get simulationStates() {
+    return Array.from(this.#simulations.entries()).map(([zoom, sim]) => ({
+      zoom,
+      state: sim.state,
+      isRunning: sim.isRunning,
+      stableDuration: sim.stableDuration,
+    }))
+  }
+
+  set displaySize(displaySize: [number, number]) {
+    this.#simulations.forEach(
+      (simulation) => (simulation.displaySize = displaySize),
+    )
+    this.#runAppropriateSimulation()
+  }
+
+  set zoom(zoom: number) {
+    const nearestValidZoom = Math.round(zoom / this.zoomSteps) * this.zoomSteps
+
+    if (!this.#simulations.has(nearestValidZoom)) {
+      throw new Error(
+        `No simulation found for zoom level ${nearestValidZoom}. Available zoom levels: ${Array.from(
+          this.#simulations.keys(),
+        ).join(', ')}`,
+      )
+    }
+    this.#zoom = nearestValidZoom
+
+    const activeSimulation = this.#simulations.get(nearestValidZoom)!
+    if (
+      activeSimulation.state === 'stable' ||
+      activeSimulation.state === 'dirty'
+    ) {
+      this.#publishPositions()
+    }
+    if (activeSimulation.state !== 'stable') {
+      this.#simulations.forEach((simulation) => {
+        simulation.stop()
+      })
+      activeSimulation.start()
+    }
+  }
+
+  set words(words: Word[]) {
+    this.#simulations.forEach((simulation) => (simulation.words = words))
+    this.#runAppropriateSimulation()
+  }
+
+  set discoursemes(discoursemes: Discourseme[]) {
+    this.#simulations.forEach(
+      (simulation) => (simulation.discoursemes = discoursemes),
+    )
+    this.#runAppropriateSimulation()
+  }
+
+  get words() {
+    return this.#simulations.get(this.#zoom)?.words ?? []
+  }
+
+  get discoursemes() {
+    return this.#simulations.get(this.#zoom)?.discoursemes ?? []
+  }
+
+  updateItemPosition(itemId: string, originX: number, originY: number) {
+    this.#simulations.forEach((simulation) => {
+      simulation.updateItemPosition(itemId, originX, originY)
+    })
+    this.#runAppropriateSimulation()
+  }
+
+  onSimulationUpdate(callback: () => void) {
+    this.#simulationUpdateCallbacks.push(callback)
+    return () => {
+      this.#simulationUpdateCallbacks = this.#simulationUpdateCallbacks.filter(
+        (cb) => cb !== callback,
+      )
+    }
+  }
+
+  #publishPositions() {
+    this.#simulationUpdateCallbacks.forEach((callback) => callback())
   }
 }

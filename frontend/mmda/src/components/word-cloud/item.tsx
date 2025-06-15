@@ -106,27 +106,24 @@ export function Item({
               onMouseLeave={() => onLeave?.(word.id)}
               style={{
                 fontSize: `${12 + 20 * word.score}px`,
-                ...(discoursemeId === undefined
-                  ? {}
-                  : {
-                      ['--discourseme-bg']: getColorForNumber(
-                        discoursemeId,
-                        0.9,
-                        0.1,
-                        0.3,
-                      ),
-                      ['--discourseme-text']: getColorForNumber(
-                        discoursemeId,
-                        1,
-                        0.8,
-                        0.7,
-                      ),
-                    }),
+                ['--discourseme-bg' as string]: getColorForNumber(
+                  discoursemeId ?? 0,
+                  0.9,
+                  0.1,
+                  0.3,
+                ),
+                ['--discourseme-text' as string]: getColorForNumber(
+                  discoursemeId ?? 0,
+                  1,
+                  0.8,
+                  0.7,
+                ),
                 ['--position-color-light' as string]: positionColorLight,
                 ['--position-color-dark' as string]: positionColorDark,
               }}
             >
               {word.label}
+
               {debug && (
                 <span
                   className={cn(
@@ -137,6 +134,7 @@ export function Item({
                   {word.score.toFixed(2)}
                 </span>
               )}
+
               {debug && !word.isBackground && (
                 <span className="pointer-events-none absolute left-0 top-0 h-full w-full scale-[2] outline-dotted outline-[1px] outline-gray-600" />
               )}

@@ -4,6 +4,7 @@ import { ShrinkIcon } from 'lucide-react'
 
 import { WordCloud } from '@/components/word-cloud'
 import { buttonVariants } from '@cads/shared/components/ui/button'
+import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
 import { WordCloudEvent } from '@/components/word-cloud'
 import { Slider } from '@cads/shared/components/ui/slider'
@@ -18,6 +19,10 @@ function WordCloudFullscreen() {
   const [filterDiscoursemeIds, setFilterDiscoursemeIds] = useState<number[]>([])
   const [events, setEvents] = useState<WordCloudEvent[]>([])
   const [cutOff, setCutOff] = useState(0.1)
+  const [componentWords, setComponentWords] =
+    useState<Exclude<ComponentProps<typeof WordCloud>['words'], undefined>>(
+      words,
+    )
 
   const handleChange = useCallback((event: WordCloudEvent) => {
     switch (event.type) {
@@ -30,6 +35,17 @@ function WordCloudFullscreen() {
     }
     setEvents((prev) => [event, ...prev])
   }, [])
+
+  function handleRandomItemMove() {
+    setComponentWords((prevWords) => {
+      const randdomIndex = Math.floor(Math.random() * prevWords.length)
+      const newWords = [...prevWords]
+      const x = Math.random() * 2 - 1
+      const y = Math.random() * 2 - 1
+      newWords[randdomIndex] = { ...newWords[randdomIndex], x, y }
+      return newWords
+    })
+  }
 
   return (
     <div className="grid h-[calc(100svh-3.5rem)] grid-cols-[10rem_1fr_15rem_0] grid-rows-[0_auto_1fr_1rem] content-stretch gap-4 overflow-hidden">
@@ -62,6 +78,44 @@ function WordCloudFullscreen() {
             step={0.01}
           />
         </label>
+
+        <ButtonTooltip
+          variant="link"
+          tooltip="This will randomly move a few items in the word cloud. This helps testing whether dynamic updates are handled gracefully."
+          onClick={() => {
+            handleRandomItemMove()
+            handleRandomItemMove()
+            handleRandomItemMove()
+          }}
+        >
+          Randomly move items
+        </ButtonTooltip>
+
+        <ButtonTooltip
+          variant="link"
+          tooltip="Add a few random items to the word cloud. This helps testing whether dynamic updates are handled gracefully."
+          onClick={() => {
+            setComponentWords((prevWords) => [
+              ...prevWords,
+              ...Array.from({ length: 10 }, (_, i) => ({
+                x: 2 * rnd(i) - 1,
+                y: 2 * rnd(i + 1) - 1,
+                label: `New Word ${i}`,
+                score: rnd(i ** 2 + 64) ** 4,
+              })),
+            ])
+          }}
+        >
+          Add random items
+        </ButtonTooltip>
+
+        <ButtonTooltip
+          variant="link"
+          tooltip="This will reset the word cloud to its initial state."
+          onClick={() => setComponentWords(words)}
+        >
+          Reset Word Cloud
+        </ButtonTooltip>
       </div>
 
       <div className="bg-muted relative z-10 col-start-3 row-start-3 h-96 w-full self-start rounded-lg shadow outline outline-1 outline-slate-600/60">
@@ -96,7 +150,7 @@ function WordCloudFullscreen() {
 
       <WordCloud
         className="col-start-2 row-start-3 self-center"
-        words={wordsCluster}
+        words={componentWords}
         discoursemes={discoursemes}
         filterItem={filterItem}
         filterDiscoursemeIds={filterDiscoursemeIds}
@@ -133,7 +187,7 @@ const discoursemes: ComponentProps<typeof WordCloud>['discoursemes'] = [
   },
 ]
 
-const wordsCluster = [
+const words = [
   { x: 0, y: 0, label: 'Greetings', score: 1 },
   { x: 0, y: 0.01, label: 'Godmorgon', score: 0.8 },
   { x: -1, y: -1, label: 'TOP LEFT!!', score: 0.5 },

@@ -1,4 +1,4 @@
-import { Cloud, Discourseme, Word } from './word-cloud-compute'
+import { Cloud, createDiscourseme, createWord } from './word-cloud-compute'
 
 export interface WordInput {
   id: string
@@ -45,6 +45,14 @@ export type CloudWorkerMessage =
       }
     }
   | {
+      type: 'update_position'
+      payload: {
+        id: string
+        originX: number
+        originY: number
+      }
+    }
+  | {
       type: 'update_size'
       payload: {
         displayHeight: number
@@ -64,6 +72,15 @@ export type CloudWorkerResponse =
       words: WordDisplay[]
       discoursemes: DiscoursemeDisplay[]
     }
+  | {
+      type: 'simulations'
+      simulationStates: {
+        zoom: number
+        state: 'pending' | 'stable' | 'dirty'
+        isRunning: boolean
+        stableDuration: number
+      }[]
+    }
   | { type: 'ready' }
 
 function postMessage(data: CloudWorkerResponse) {
@@ -75,50 +92,71 @@ let cloud: Cloud | null = null
 self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
   switch (data.type) {
     case 'update': {
-      const { cutOff, width, height, words, discoursemes } = data.payload
-      const zoom = cloud?.zoom ?? 1
-      cloud?.destroy()
-      cloud = new Cloud(
+      const {
+        cutOff,
         width,
         height,
-        words.map(
-          (word) =>
-            new Word(word.x, word.y, word.label, word.id, {
-              score: word.score,
-              originX: word.originX,
-              originY: word.originY,
-            }),
-        ),
-        discoursemes.map(
-          (discourseme) =>
-            new Discourseme(
-              discourseme.x,
-              discourseme.y,
-              discourseme.label,
-              discourseme.id,
-              discourseme.discoursemeId,
-              {
-                score: discourseme.score,
-                originX: discourseme.originX,
-                originY: discourseme.originY,
-              },
-            ),
-        ),
-        { backgroundCutOff: cutOff, zoom },
+        words,
+        discoursemes,
+        displayWidth,
+        displayHeight,
+      } = data.payload
+      const cloudWords = words.map((word) =>
+        createWord(word.x, word.y, word.label, word.id, {
+          score: word.score,
+          originX: word.originX,
+          originY: word.originY,
+        }),
       )
-      cloud.onSimulationUpdate(publishPositions)
-      cloud.setDisplaySize(
-        data.payload.displayWidth,
-        data.payload.displayHeight,
+      const cloudDiscoursemes = discoursemes.map((discourseme) =>
+        createDiscourseme(
+          discourseme.x,
+          discourseme.y,
+          discourseme.label,
+          discourseme.id,
+          discourseme.discoursemeId,
+          {
+            score: discourseme.score,
+            originX: discourseme.originX,
+            originY: discourseme.originY,
+          },
+        ),
       )
+      if (cloud) {
+        cloud.cutOff = cutOff
+        cloud.displaySize = [displayWidth, displayHeight]
+        cloud.words = cloudWords
+        cloud.discoursemes = cloudDiscoursemes
+      } else {
+        cloud = new Cloud(
+          width,
+          height,
+          displayWidth,
+          displayHeight,
+          cloudWords,
+          cloudDiscoursemes,
+          { backgroundCutOff: cutOff, zoom: 1 },
+        )
+        cloud.onSimulationUpdate(publishPositions)
+      }
+      break
+    }
+    case 'update_position': {
+      if (cloud) {
+        cloud.updateItemPosition(
+          data.payload.id,
+          data.payload.originX,
+          data.payload.originY,
+        )
+      }
       break
     }
     case 'update_size': {
       if (cloud) {
-        cloud.setDisplaySize(
+        cloud.displaySize = [
           data.payload.displayWidth,
           data.payload.displayHeight,
-        )
+        ]
       }
       break
     }
@@ -173,5 +211,13 @@ function publishPositions() {
     discoursemes: displayDiscoursemes,
   })
 }
+
+setInterval(() => {
+  if (!cloud) return
+  postMessage({
+    type: 'simulations',
+    simulationStates: cloud.simulationStates,
+  })
+}, 500)
 
 postMessage({ type: 'ready' })

@@ -101,6 +101,14 @@ export function WordCloud({
   const [isDragging, setIsDragging] = useState(false)
   // Tracks the currently hovered item -- useDroppable would be an alternative option, but causes a noticeable performance hit
   const [hoverItem, setHoverItem] = useState<string | null>(null)
+  const [simulationStates, setSimulationStates] = useState<
+    {
+      zoom: number
+      state: 'pending' | 'stable' | 'dirty'
+      isRunning: boolean
+      stableDuration: number
+    }[]
+  >([])
 
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
@@ -229,6 +237,9 @@ export function WordCloud({
           setDisplayWords(event.data.words)
           setDisplayDiscoursemes(event.data.discoursemes)
           break
+        case 'simulations':
+          setSimulationStates(event.data.simulationStates)
+          break
         default:
           console.warn('Unknown message type from worker:', event.data)
       }
@@ -290,10 +301,13 @@ export function WordCloud({
       >
         {({ centerView }) => (
           <>
-            <CenterButton centerView={centerView} />
+            <CenterButton
+              centerView={centerView}
+              className="absolute bottom-0 left-0 z-[5002]"
+            />
 
             <ToggleBar
-              className="absolute bottom-1 left-16 z-[5002] w-min"
+              className="absolute bottom-0 left-16 z-[5002] w-min"
               options={[
                 [
                   'rectangle',
@@ -321,7 +335,7 @@ export function WordCloud({
             />
 
             <ToggleBar
-              className="absolute bottom-1 left-32 z-[5002] w-min"
+              className="absolute bottom-0 left-32 z-[5002] w-min"
               options={[
                 [
                   'colored',
@@ -349,7 +363,7 @@ export function WordCloud({
             />
 
             <WordCloudMiniMap
-              className="bg-background/90 absolute left-2 top-2 z-[2000]"
+              className="bg-background/90 absolute left-0 top-0 z-[2000]"
               aspectRatio={aspectRatio}
               displayWords={displayWords}
               displayDiscoursemes={displayDiscoursemes}
@@ -357,12 +371,21 @@ export function WordCloud({
             />
 
             {debug && (
-              <div className="absolute right-2 top-2 z-[2000] bg-black/50">
+              <div className="absolute right-0 top-0 z-[2000] rounded bg-black/50 p-1 text-sm leading-tight">
                 Zoom: {zoom.toFixed(2)}
                 <br />
                 isDragging: {isDragging ? 'true' : 'false'}
                 <br />
                 Container Dimensions: {containerWidth} x {containerHeight}
+                <br />
+                {simulationStates.map(
+                  ({ zoom, state, isRunning, stableDuration }) => (
+                    <div key={zoom}>
+                      {zoom.toFixed(2)}: {state} {isRunning ? ' (running)' : ''}
+                      {stableDuration > 0 && <span>{stableDuration}ms</span>}
+                    </div>
+                  ),
+                )}
               </div>
             )}
 
@@ -449,6 +472,14 @@ export function WordCloud({
                         ),
                       )
 
+                      worker?.postMessage({
+                        type: 'update_position',
+                        payload: {
+                          id: itemA.id,
+                          originX: newOriginalX,
+                          originY: newOriginalY,
+                        },
+                      })
                       onChange?.({
                         type: 'update_discourseme_position',
                         discoursemeId: itemA.discoursemeId,
@@ -470,6 +501,14 @@ export function WordCloud({
                         ),
                       )
 
+                      worker?.postMessage({
+                        type: 'update_position',
+                        payload: {
+                          id: itemA.id,
+                          originX: newOriginalX,
+                          originY: newOriginalY,
+                        },
+                      })
                       onChange?.({
                         type: 'update_surface_position',
                         surface: itemA.label,
