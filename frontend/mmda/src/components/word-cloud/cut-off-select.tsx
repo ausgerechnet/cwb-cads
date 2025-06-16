@@ -74,14 +74,11 @@ export function CutOffSelect({
 
       <SelectSingle
         className="w-32"
-        value={
-          options?.find((o) => o.decile === value)?.decile.toString() ?? ''
-        }
+        value={options?.find((o) => o.decile === value)?.score.toString() ?? ''}
         onValueChange={(value) => {
           const decile = options?.find(
-            (option) => option.decile.toString() === value,
-          )?.scaled_score
-          console.log('decile', decile)
+            (option) => option.score.toString() === value,
+          )?.decile
           onChange(Number(decile))
         }}
         items={options?.map((o) => o.score.toString()) ?? []}
