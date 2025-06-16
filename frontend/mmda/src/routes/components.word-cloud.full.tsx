@@ -8,7 +8,7 @@ import { buttonVariants } from '@cads/shared/components/ui/button'
 import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
 import { WordCloudEvent } from '@/components/word-cloud'
-import { Slider } from '@cads/shared/components/ui/slider'
+import { CutOffSelect } from '@/components/word-cloud/cut-off-select'
 
 export const Route = createFileRoute('/components/word-cloud/full')({
   component: WordCloudFullscreen,
@@ -73,13 +73,21 @@ function WordCloudFullscreen() {
 
         <label className="my-auto flex items-center gap-2 whitespace-nowrap">
           Cut Off:
-          <Slider
+          <CutOffSelect
+            value={cutOff}
+            onChange={setCutOff}
             className="w-48"
-            value={[cutOff]}
-            onValueChange={(value) => setCutOff(value[0])}
-            min={0}
-            max={1}
-            step={0.01}
+            options={[
+              { decile: 1, score: 0.1, scaled_score: 0.01 },
+              { decile: 2, score: 0.2, scaled_score: 0.02 },
+              { decile: 3, score: 0.3, scaled_score: 0.03 },
+              { decile: 4, score: 0.4, scaled_score: 0.04 },
+              { decile: 5, score: 0.5, scaled_score: 0.05 },
+              { decile: 6, score: 0.6, scaled_score: 0.5 },
+              { decile: 7, score: 0.7, scaled_score: 0.7 },
+              { decile: 8, score: 0.8, scaled_score: 0.85 },
+              { decile: 9, score: 0.9, scaled_score: 0.95 },
+            ]}
           />
         </label>
 
