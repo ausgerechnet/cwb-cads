@@ -4,7 +4,7 @@ import { useDndContext, useDraggable } from '@dnd-kit/core'
 
 import { cn } from '@cads/shared/lib/utils'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
-import { WordDisplay } from './word-cloud-worker'
+import { WordDisplay } from './worker'
 
 export function Item({
   word,

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ComponentProps, useCallback, useState } from 'react'
 import { ShrinkIcon } from 'lucide-react'
 
+import { cn } from '@cads/shared/lib/utils'
 import { WordCloud } from '@/components/word-cloud'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
@@ -54,9 +55,12 @@ function WordCloudFullscreen() {
       <div className="bg-muted z-10 col-span-2 col-start-2 row-start-2 flex gap-4 rounded-lg p-1 shadow outline outline-1 outline-slate-600/60">
         <Link
           to="/components/word-cloud"
-          className={buttonVariants({
-            size: 'sm',
-          })}
+          className={cn(
+            buttonVariants({
+              size: 'sm',
+            }),
+            'h-auto',
+          )}
         >
           <ShrinkIcon className="mr-2 h-4 w-4" />
           Back to Component Overview

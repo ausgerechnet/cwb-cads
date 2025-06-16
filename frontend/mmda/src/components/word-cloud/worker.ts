@@ -1,4 +1,4 @@
-import { Cloud, createDiscourseme, createWord } from './word-cloud-compute'
+import { Cloud, createDiscourseme, createWord } from './cloud'
 
 export interface WordInput {
   id: string

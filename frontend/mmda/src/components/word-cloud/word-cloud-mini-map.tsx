@@ -1,6 +1,6 @@
 import { MiniMap } from 'react-zoom-pan-pinch'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
-import { DiscoursemeDisplay, WordDisplay } from './word-cloud-worker'
+import { DiscoursemeDisplay, WordDisplay } from './worker'
 
 export function WordCloudMiniMap({
   className,
