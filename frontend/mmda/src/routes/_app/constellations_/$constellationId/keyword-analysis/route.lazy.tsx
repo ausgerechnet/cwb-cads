@@ -27,7 +27,10 @@ function KeywordAnalysis() {
     >
       {isValidSelection ? (
         <>
-          <ConstellationCollocationFilter hideWindowSize className="mb-5" />
+          <div className="mb-5 flex items-center gap-4">
+            <ConstellationCollocationFilter hideWindowSize />
+          </div>
+
           <KeywordTable />
         </>
       ) : null}

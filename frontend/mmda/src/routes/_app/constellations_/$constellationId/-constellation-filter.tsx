@@ -43,11 +43,9 @@ import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { useDescription } from './-use-description'
 
 export function ConstellationCollocationFilter({
-  className,
   hideSortOrder = false,
   hideWindowSize = false,
 }: {
-  className?: string
   hideSortOrder?: boolean
   hideWindowSize?: boolean
 }) {
@@ -64,7 +62,7 @@ export function ConstellationCollocationFilter({
     ccFilterDiscoursemeIds.some((id) => !clFilterDiscoursemeIds.includes(id))
 
   return (
-    <div className={cn('bg-background z-10 flex gap-2', className)}>
+    <>
       {!hideWindowSize && <WindowSizeInput className="w-52" />}
 
       <LabelBox labelText="Filter Discoursemes" className="w-full">
@@ -179,7 +177,7 @@ export function ConstellationCollocationFilter({
           </div>
         </LabelBox>
       )}
-    </div>
+    </>
   )
 }
 

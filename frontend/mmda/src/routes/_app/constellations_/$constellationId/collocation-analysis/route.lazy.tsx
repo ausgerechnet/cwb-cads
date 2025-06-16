@@ -29,7 +29,9 @@ function CollocationAnalysis() {
     >
       {descriptionId !== undefined && isValidSelection && (
         <>
-          <ConstellationCollocationFilter className="mb-5" />
+          <div className="mb-5 flex items-center gap-4">
+            <ConstellationCollocationFilter />
+          </div>
 
           <CollocationTable descriptionId={descriptionId} />
         </>

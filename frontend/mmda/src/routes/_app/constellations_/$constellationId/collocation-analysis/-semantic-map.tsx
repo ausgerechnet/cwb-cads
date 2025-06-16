@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -21,6 +21,8 @@ import {
   type WordCloudEvent,
 } from '@/components/word-cloud'
 import { useConcordanceFilterContext } from '@cads/shared/components/concordances'
+import { CutOffSelect } from '@/components/word-cloud/cut-off-select'
+import { LabelBox } from '@cads/shared/components/label-box'
 
 import { useDescription } from '../-use-description'
 import { useCollocation } from '../-use-collocation-doof'
@@ -38,6 +40,7 @@ export function CollocationSemanticMap() {
     setFilterItem,
   } = useConcordanceFilterContext()
   const { isValidSelection, analysisLayer } = useCollocationSelection()
+  const [cutOffDecile, setCutOffDecile] = useState(0.5)
 
   if (!isValidSelection || !analysisLayer) {
     throw new Error('Incomplete analysis selection, cannot render semantic map')
@@ -50,6 +53,10 @@ export function CollocationSemanticMap() {
     collocation: { semantic_map_id } = {},
     error: errorCollocation,
   } = useCollocation(description?.id)
+  const cutOff =
+    1 -
+    (mapItems?.score_deciles?.find((decile) => decile.decile === cutOffDecile)
+      ?.scaled_score ?? 0.5)
   const wordsInput =
     mapItems?.map
       ?.filter((item) => item.source === 'items')
@@ -184,7 +191,7 @@ export function CollocationSemanticMap() {
             discoursemes={discoursemesInput}
             filterDiscoursemeIds={clFilterDiscoursemeIds}
             filterItem={clFilterItem}
-            cutOff={0}
+            cutOff={cutOff}
             onChange={handleCloudChange}
           />
         )}
@@ -203,7 +210,20 @@ export function CollocationSemanticMap() {
           <ArrowLeftIcon />
         </Link>
 
-        <ConstellationCollocationFilter className="grow rounded-xl p-2 shadow" />
+        <div className="bg-background z-10 flex grow gap-2 rounded-xl p-2 shadow">
+          <ConstellationCollocationFilter />
+
+          <LabelBox
+            labelText="Association Cut Off"
+            className="w-[15rem] shrink-0"
+          >
+            <CutOffSelect
+              value={cutOffDecile}
+              onChange={setCutOffDecile}
+              options={mapItems?.score_deciles ?? []}
+            />
+          </LabelBox>
+        </div>
       </div>
 
       <ConstellationDiscoursemesEditor
