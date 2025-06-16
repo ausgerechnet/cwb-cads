@@ -1,6 +1,7 @@
 import { useMemo, type ReactNode } from 'react'
 import { KeepScale } from 'react-zoom-pan-pinch'
 import { useDndContext, useDraggable } from '@dnd-kit/core'
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
@@ -66,7 +67,7 @@ export function Item({
           aria-disabled={word.isBackground}
           aria-selected={isSelected}
           className={cn(
-            'aria-selected:outline-primary group/item absolute left-0 top-0 flex origin-center -translate-x-1/2 -translate-y-1/2 rounded-lg outline outline-transparent aria-selected:outline-2',
+            'aria-selected:outline-primary group/item aria-selected:outline-3 aria-selected:shadow-primary/50 absolute left-0 top-0 flex origin-center -translate-x-1/2 -translate-y-1/2 rounded-lg outline outline-transparent aria-selected:shadow-md',
             {
               'bg-red-500/50': debug && word.isColliding,
               'bg-blue-500/50': debug && word.hasNearbyElements,
@@ -87,17 +88,19 @@ export function Item({
               ref={setNodeRef}
               {...listeners}
               className={cn(
-                'outline-background/10 flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 transition-all delay-300 duration-500 group-aria-disabled/item:bg-slate-800 group-aria-disabled/item:text-slate-700 group-aria-disabled/item:outline-0',
+                'outline-background/10 flex flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-200 text-center leading-none outline outline-2 transition-transform delay-300 duration-500 group-aria-disabled/item:bg-slate-100 group-aria-disabled/item:text-slate-400 group-aria-disabled/item:outline-0 dark:bg-slate-800 dark:text-slate-300 dark:group-aria-disabled/item:bg-slate-800 dark:group-aria-disabled/item:text-slate-700',
                 'group-focus-visible:outline-white/50',
                 {
                   'outline-red-700': debug && word.hasNearbyElements,
                   'bg-red-700': debug && word.isColliding,
                   'outline outline-1 outline-current':
                     discoursemeId !== undefined,
-                  'hover:bg-yellow-500': isDraggingOther,
-                  'bg-[var(--discourseme-bg)] text-[var(--discourseme-text)]':
+                  'hover:bg-yellow-500 dark:hover:bg-yellow-500':
+                    isDraggingOther,
+                  'bg-[var(--discourseme-text)] text-[var(--discourseme-bg)] dark:bg-[var(--discourseme-bg)] dark:text-[var(--discourseme-text)]':
                     isDiscourseme,
-                  'hover:bg-primary': !isDraggingOther,
+                  'hover:bg-primary hover:text-secondary dark:hover:bg-primary dark:hover:text-secondary':
+                    !isDraggingOther,
                   'bg-[var(--position-color-light)] text-[var(--position-color-dark)] dark:bg-[var(--position-color-dark)] dark:text-[var(--position-color-light)]':
                     enablePositionalColor,
                 },
@@ -109,20 +112,28 @@ export function Item({
                 ['--discourseme-bg' as string]: getColorForNumber(
                   discoursemeId ?? 0,
                   0.9,
-                  0.1,
+                  0.5,
                   0.3,
                 ),
                 ['--discourseme-text' as string]: getColorForNumber(
                   discoursemeId ?? 0,
                   1,
                   0.8,
-                  0.7,
+                  0.8,
                 ),
                 ['--position-color-light' as string]: positionColorLight,
                 ['--position-color-dark' as string]: positionColorDark,
               }}
             >
+              {isDiscourseme && (
+                <ChevronLeftIcon className="h-4 w-4 scale-y-[2]" />
+              )}
+
               {word.label}
+
+              {isDiscourseme && (
+                <ChevronRightIcon className="h-4 w-4 scale-y-[2]" />
+              )}
 
               {debug && (
                 <span
@@ -248,7 +259,7 @@ function getPositionColor(x: number, y: number) {
   }
 
   function darken(c: number) {
-    return Math.round(c * 0.6)
+    return Math.round(c * 0.4)
   }
 
   function toRGB(v: number) {
