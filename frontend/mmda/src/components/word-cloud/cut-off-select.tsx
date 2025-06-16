@@ -25,7 +25,7 @@ export function CutOffSelect({
 
   return (
     <div className={cn('flex gap-2', className)}>
-      <div className="border-input group/cutoff relative grid h-10 grow overflow-hidden rounded border-[1px]">
+      <div className="border-input group/cutoff bg-muted relative grid h-10 grow overflow-hidden rounded border-[1px]">
         {options
           .toSorted((a, b) => b.decile - a.decile)
           .map(({ decile, scaled_score }) => (
@@ -43,7 +43,7 @@ export function CutOffSelect({
         {options.map(({ decile, scaled_score }) => (
           <span
             key={decile}
-            className="border-muted-foreground pointer-events-none absolute top-0 h-full border-r-[1px]"
+            className="border-muted-foreground/50 pointer-events-none absolute top-0 h-full border-r-[1px]"
             style={{
               left: `${(scaled_score / max) * 100}%`,
             }}
@@ -66,7 +66,7 @@ export function CutOffSelect({
                 ) ?? []),
                 [1, [0, 10]],
               ],
-              className: 'fill-white/80',
+              className: 'dark:fill-white/50 fill-black/50',
             },
           ]}
         />
