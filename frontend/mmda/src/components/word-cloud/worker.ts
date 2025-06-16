@@ -35,8 +35,6 @@ export type CloudWorkerMessage =
   | {
       type: 'update'
       payload: {
-        width: number
-        height: number
         displayHeight: number
         displayWidth: number
         cutOff: number
@@ -92,15 +90,8 @@ let cloud: Cloud | null = null
 self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
   switch (data.type) {
     case 'update': {
-      const {
-        cutOff,
-        width,
-        height,
-        words,
-        discoursemes,
-        displayWidth,
-        displayHeight,
-      } = data.payload
+      const { cutOff, words, discoursemes, displayWidth, displayHeight } =
+        data.payload
       const cloudWords = words.map((word) =>
         createWord(word.x, word.y, word.label, word.id, {
           score: word.score,
@@ -129,8 +120,6 @@ self.onmessage = function ({ data }: MessageEvent<CloudWorkerMessage>) {
         cloud.discoursemes = cloudDiscoursemes
       } else {
         cloud = new Cloud(
-          width,
-          height,
           displayWidth,
           displayHeight,
           cloudWords,

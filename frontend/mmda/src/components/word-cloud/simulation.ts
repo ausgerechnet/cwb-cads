@@ -1,10 +1,28 @@
 export interface CloudItem {
   readonly id: string
+  /**
+   * The width of the displayed item in the word cloud.
+   */
   readonly displayWidth: number
+  /**
+   * The height of the displayed item in the word cloud.
+   */
   readonly displayHeight: number
+  /**
+   * The actual x position of the item within the word cloud
+   */
   originX: number
+  /**
+   * The actual y position of the item within the word cloud
+   */
   originY: number
+  /**
+   * The x position of the item within the word cloud after the simulation has run.
+   */
   x: number
+  /**
+   * The y position of the item within the word cloud after the simulation has run.
+   */
   y: number
   label: string
   deltaX: number
@@ -14,10 +32,16 @@ export interface CloudItem {
    */
   isFixed: boolean
   /**
-   * Indicates if this item has a collision with another item.
+   * Indicates if this item is currently colliding with one or more other items.
    */
   hasCollision: boolean
+  /**
+   * Indicates if this item has nearby elements
+   */
   hasNearbyElements: boolean
+  /**
+   * Indicates if this item MAY collide with other items.
+   */
   isColliding: boolean
   /**
    * Indicates if this item is a background item that should not be moved by the simulation.
@@ -42,29 +66,61 @@ export interface Discourseme extends CloudItem {
 }
 
 export class Simulation {
+  /**
+   * There is one simulation per zoom factor. This keeps things simpler as a user can quickly zoom in and out and we might want to cache progress within the simulation for each zoom factor.
+   */
   readonly zoom
-  readonly #width: number
-  readonly #height: number
+  /**
+   * The width of the original coordinate space. Its's 2, because x ranges from -1 to 1
+   */
+  readonly #width = 2
+  /**
+   * The height of the original coordinate space. It's 2, because y ranges from -1 to 1
+   */
+  readonly #height = 2
+  /**
+   * The cut-off value for background items. Items with a score below this value are considered background items and will not be moved by the simulation.
+   */
   #cutOff: number = 0.5
+  /**
+   * The width of the display area
+   */
   #displayWidth: number
+  /**
+   * The height of the display area
+   */
   #displayHeight: number
   #words: Word[]
   #discoursemes: Discourseme[]
+  /**
+   * All items in the simulation, including words and discoursemes.
+   */
   #allItems: CloudItem[] = []
   #alpha = 1
   #ticks = 0
   #repelForceFactor: number = 0.05
   #enableCollisionDetection = true
   #isRunning = false
+  /**
+   * The current state of the simulation step.
+   * - `none`: No simulation step is currently running
+   * - `discoursemes`: The simulation is currently processing discoursemes
+   * - `important`: The simulation is currently processing important words (top 50)
+   * - `all`: The simulation is currently processing the remaining words
+   */
   #simulationStepState: 'none' | 'discoursemes' | 'important' | 'all' = 'none'
+  /**
+   * The current state of the simulation.
+   * - `pending`: The simulation hasn't been started or stable yet
+   * - `stable`: The simulation is stable and no further changes are expected
+   * - `dirty`: The simulation has been modified and needs to be recalculated; the 'dirty' state can be displayed as an intermediate result
+   */
   #state: 'pending' | 'stable' | 'dirty' = 'pending'
   #startTime: number = 0
   #stableDuration: number = 0
   #onStable: (simulation: Simulation) => void // A simulation has only one observer
 
   constructor(
-    width: number,
-    height: number,
     displayWidth: number,
     displayHeight: number,
     words: Word[],
@@ -73,8 +129,6 @@ export class Simulation {
     backgroundCutOff: number,
     onStable: (simulation: Simulation) => void,
   ) {
-    this.#width = width
-    this.#height = height
     this.#displayWidth = displayWidth
     this.#displayHeight = displayHeight
     this.#words = words.toSorted((a, b) => b.score - a.score)

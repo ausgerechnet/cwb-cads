@@ -116,10 +116,8 @@ export class Cloud {
   readonly #simulations: Map<number, Simulation> = new Map()
 
   constructor(
-    width: number,
-    height: number,
-    displayWidth: number = width,
-    displayHeight: number = height,
+    displayWidth: number,
+    displayHeight: number,
     words: Word[] = [],
     discoursemes: Discourseme[] = [],
     { zoom = 1, backgroundCutOff = 0.5, minZoom = 1, maxZoom = 15 } = {},
@@ -140,8 +138,6 @@ export class Cloud {
       this.#simulations.set(
         zoom,
         new Simulation(
-          width,
-          height,
           displayWidth,
           displayHeight,
           words.map((word) => ({ ...word })),

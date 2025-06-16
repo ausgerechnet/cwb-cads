@@ -123,6 +123,12 @@ function WordCloudFullscreen() {
       </div>
 
       <div className="bg-muted relative z-10 col-start-3 row-start-3 h-96 w-full self-start rounded-lg shadow outline outline-1 outline-slate-600/60">
+        <div className="p-1 text-sm leading-tight">
+          Filter Item: {filterItem ?? 'None'}
+          <br />
+          Filter Discourseme Ids: {filterDiscoursemeIds.join(', ')}{' '}
+          {filterDiscoursemeIds.length === 0 && 'None'}
+        </div>
         {debug && (
           <div className="absolute h-full w-full overflow-auto p-1 [scrollbar-width:thin]">
             <strong>Events</strong>

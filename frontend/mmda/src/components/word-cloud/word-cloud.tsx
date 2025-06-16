@@ -253,8 +253,6 @@ export function WordCloud({
       type: 'update',
       payload: {
         cutOff,
-        width: 2,
-        height: 2,
         displayWidth: containerWidth - paddingX,
         displayHeight: containerHeight - paddingY,
         words: words.map((word) => ({ id: `word::${word.label}`, ...word })),
@@ -408,7 +406,7 @@ export function WordCloud({
                 onDragEnd={(event) => {
                   const wasShortDrag = dragStartRef.current
                     ? new Date().getTime() - dragStartRef.current.getTime() <
-                      250
+                      500
                     : false
                   const id = event.active.id
                   const itemA =
