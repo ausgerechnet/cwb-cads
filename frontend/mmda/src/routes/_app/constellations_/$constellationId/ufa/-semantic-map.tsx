@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -38,7 +38,7 @@ export function SemanticMapUfa() {
     clFilterItem,
     setFilterItem,
   } = useConcordanceFilterContext()
-  const [cutOffDecile, setCutOffDecile] = useState(0.5)
+  const [cutOff, setCutOff] = useState(0.5)
   // TODO: unify! Only these lines differ from SemanticMapCollocations
   const { isValidSelection, analysisLayer } = useUfaSelection()
   const {
@@ -47,11 +47,13 @@ export function SemanticMapUfa() {
     isFetching,
     description,
   } = useUfa()
+  useEffect(() => {
+    const minScore = mapItems?.min_score
+    if (typeof minScore === 'number') {
+      setCutOff(1 - minScore)
+    }
+  }, [mapItems?.min_score])
   // -----
-  const cutOff =
-    1 -
-    (mapItems?.score_deciles?.find((decile) => decile.decile === cutOffDecile)
-      ?.scaled_score ?? 0.5)
   if (!isValidSelection || !analysisLayer) {
     throw new Error('Incomplete analysis selection, cannot render semantic map')
   }
@@ -191,7 +193,7 @@ export function SemanticMapUfa() {
             discoursemes={discoursemesInput}
             filterDiscoursemeIds={clFilterDiscoursemeIds}
             filterItem={clFilterItem}
-            cutOff={cutOff}
+            cutOff={1 - cutOff}
             onChange={handleCloudChange}
           />
         )}
@@ -218,8 +220,8 @@ export function SemanticMapUfa() {
             className="w-[15rem] shrink-0"
           >
             <CutOffSelect
-              value={cutOffDecile}
-              onChange={setCutOffDecile}
+              value={cutOff}
+              onChange={setCutOff}
               options={mapItems?.score_deciles ?? []}
             />
           </LabelBox>

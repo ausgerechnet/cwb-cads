@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -33,7 +33,7 @@ import { Route } from './route'
 export function KeywordSemanticMap() {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { description } = useDescription()
-  const [cutOffDecile, setCutOffDecile] = useState(0.5)
+  const [cutOff, setCutOff] = useState(0.5)
   // TODO: unify! Only thes lines differ from SemanticMapCollocations
   const { analysisLayer, isValidSelection } = useKeywordSelection()
   const {
@@ -41,6 +41,12 @@ export function KeywordSemanticMap() {
     errors: errorCollocation,
     isFetching,
   } = useKeywordAnalysis()
+  useEffect(() => {
+    const minScore = mapItems?.min_score
+    if (typeof minScore === 'number') {
+      setCutOff(1 - minScore)
+    }
+  }, [mapItems?.min_score])
   const wordsInput =
     mapItems?.map
       ?.filter((item) => item.source === 'items')
@@ -70,10 +76,6 @@ export function KeywordSemanticMap() {
       ) ?? []
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
   // -----
-  const cutOff =
-    1 -
-    (mapItems?.score_deciles?.find((decile) => decile.decile === cutOffDecile)
-      ?.scaled_score ?? 0.5)
   if (!isValidSelection || !analysisLayer) {
     throw new Error('Incomplete analysis selection, cannot render semantic map')
   }
@@ -179,7 +181,7 @@ export function KeywordSemanticMap() {
             )}
             words={wordsInput}
             discoursemes={discoursemesInput}
-            cutOff={cutOff}
+            cutOff={1 - cutOff}
             onChange={handleCloudChange}
           />
         )}
@@ -206,8 +208,8 @@ export function KeywordSemanticMap() {
             className="w-[15rem] shrink-0"
           >
             <CutOffSelect
-              value={cutOffDecile}
-              onChange={setCutOffDecile}
+              value={cutOff}
+              onChange={setCutOff}
               options={mapItems?.score_deciles ?? []}
             />
           </LabelBox>

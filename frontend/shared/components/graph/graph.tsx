@@ -550,12 +550,12 @@ function Band({
     lowerPoints.reverse()
     const path = [
       ...pointsToCatmullRom(upperPoints, {
-        tension: 0.5,
+        tension: 0.9,
         divisions: Math.max(50, points.length * 2),
         closed: false,
       }),
       ...pointsToCatmullRom(lowerPoints, {
-        tension: 0.5,
+        tension: 0.9,
         divisions: Math.max(50, points.length * 2),
         closed: false,
       }),
