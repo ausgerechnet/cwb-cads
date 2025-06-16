@@ -88,7 +88,7 @@ export function Item({
               ref={setNodeRef}
               {...listeners}
               className={cn(
-                'outline-background/10 flex flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-200 text-center leading-none outline outline-2 transition-transform delay-300 duration-500 group-aria-disabled/item:bg-slate-100 group-aria-disabled/item:text-slate-400 group-aria-disabled/item:outline-0 dark:bg-slate-800 dark:text-slate-300 dark:group-aria-disabled/item:bg-slate-800 dark:group-aria-disabled/item:text-slate-700',
+                'outline-background/10 flex flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-200 text-center leading-none outline outline-2 transition-transform delay-300 duration-500 group-aria-disabled/item:bg-slate-100 group-aria-disabled/item:text-slate-300 group-aria-disabled/item:outline-0 dark:bg-slate-800 dark:text-slate-300 dark:group-aria-disabled/item:bg-slate-800 dark:group-aria-disabled/item:text-slate-700',
                 'group-focus-visible:outline-white/50',
                 {
                   'outline-red-700': debug && word.hasNearbyElements,
