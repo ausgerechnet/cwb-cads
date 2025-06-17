@@ -7,7 +7,7 @@ import { ComplexSelect } from '@cads/shared/components/select-complex'
 
 import { useDescription } from '../-use-description'
 import { useFilterSelection } from '../-use-filter-selection'
-import { useCollocation } from '../-use-collocation-doof'
+import { useCollocation } from '../-use-collocation'
 
 export function AddDescriptionItem({
   discoursemeDescriptionId,

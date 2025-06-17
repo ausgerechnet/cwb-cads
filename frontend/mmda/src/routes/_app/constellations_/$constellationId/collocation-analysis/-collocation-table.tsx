@@ -17,7 +17,7 @@ import { Pagination } from '@cads/shared/components/pagination'
 import { Repeat } from '@cads/shared/components/repeat'
 import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
-import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation-doof'
+import { useCollocation } from '@/routes/_app/constellations_/$constellationId/-use-collocation'
 import {
   MeasureSelect,
   useMeasureSelection,

@@ -26,7 +26,7 @@ import { CutOffSelect } from '@/components/word-cloud/cut-off-select'
 import { LabelBox } from '@cads/shared/components/label-box'
 
 import { useDescription } from '../-use-description'
-import { useCollocation } from '../-use-collocation-doof'
+import { useCollocation } from '../-use-collocation'
 import { ConstellationCollocationFilter } from '../-constellation-filter'
 import { ConstellationDiscoursemesEditor } from '../-constellation-discoursemes-editor'
 import { Route } from './route'

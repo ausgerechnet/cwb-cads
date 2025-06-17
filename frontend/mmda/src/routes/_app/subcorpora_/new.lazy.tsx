@@ -431,7 +431,6 @@ function SubcorpusNew() {
                       onBlur={(event) => {
                         // check if valid number
                         const inputElement = event.target as HTMLInputElement
-                        console.log('is valid', inputElement.validity.valid)
                         if (inputElement.validity.valid) {
                           setNrBins(parseInt(inputElement.value))
                         } else {

@@ -132,7 +132,6 @@ export function KeywordSemanticMap() {
       case 'add_to_discourseme': {
         const { discoursemeId, surface } = event
         if (!description || !analysisLayer) return
-        console.log('description', description)
         const descriptionId = description?.discourseme_descriptions.find(
           ({ discourseme_id }) => discourseme_id === discoursemeId,
         )?.id

@@ -3,7 +3,7 @@ import { WordCloudLink } from '@/components/word-cloud-link'
 
 import { useDescription } from '../-use-description'
 import { useCollocationSelection } from './-use-collocation-selection'
-import { useCollocation } from '../-use-collocation-doof'
+import { useCollocation } from '../-use-collocation'
 import { Route } from './route'
 
 export function CollocationMapPreview() {
