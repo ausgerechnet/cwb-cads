@@ -1,7 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { KeepScale } from 'react-zoom-pan-pinch'
 import { useDndContext, useDraggable } from '@dnd-kit/core'
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
@@ -125,15 +124,11 @@ export function Item({
                 ['--position-color-dark' as string]: positionColorDark,
               }}
             >
-              {isDiscourseme && (
-                <ChevronLeftIcon className="h-4 w-4 scale-y-[2]" />
-              )}
+              {isDiscourseme && <span className="mr-0.5 text-[1.5em]">‹</span>}
 
               {word.label}
 
-              {isDiscourseme && (
-                <ChevronRightIcon className="h-4 w-4 scale-y-[2]" />
-              )}
+              {isDiscourseme && <span className="ml-0.5 text-[1.5em]">›</span>}
 
               {debug && (
                 <span
