@@ -224,6 +224,7 @@ export function ConstellationDiscoursemesEditor({
                           </span>
 
                           <button
+                            type="button"
                             className="hover:text-destructive-foreground hover:bg-destructive m-1 ml-auto mr-1 rounded opacity-0 group-hover/description:opacity-100"
                             disabled={isRemovingItem}
                             onClick={() => {

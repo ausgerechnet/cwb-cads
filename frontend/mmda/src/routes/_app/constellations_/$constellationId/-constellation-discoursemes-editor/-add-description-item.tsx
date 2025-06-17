@@ -45,13 +45,16 @@ export function AddDescriptionItem({
       <ErrorMessage error={errorAddItem} />
 
       <ComplexSelect
-        className="m-2"
+        className="m-2 w-[calc(100%-1rem)]"
         selectMessage="Select description item to add"
+        allowCustomValue
         disabled={isAddingItem}
         items={mapItems}
-        onChange={(itemId) => {
+        onChange={(itemId, isCustomValue) => {
           if (itemId === undefined) return
-          const surface = mapItems.find(({ id }) => id === itemId)?.name
+          const surface = isCustomValue
+            ? itemId
+            : mapItems.find(({ id }) => id === itemId)?.name
           if (surface === undefined || secondary === undefined) {
             console.warn('Could not add item, missing values', {
               surface,
