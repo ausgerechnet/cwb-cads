@@ -51,13 +51,14 @@ function NewConstellation() {
 
 function NewConstellationForm() {
   const navigate = useNavigate()
+  const { defaultDiscoursemeIds } = Route.useSearch()
 
   const form = useForm<ConstellationFormInput>({
     resolver: zodResolver(ConstellationFormInput),
     defaultValues: {
       name: '',
       comment: '',
-      discourseme_ids: [],
+      discourseme_ids: defaultDiscoursemeIds,
     },
   })
 
