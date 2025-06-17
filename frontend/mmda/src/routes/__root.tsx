@@ -105,6 +105,14 @@ function RootComponent() {
                 Vignette
               </MenuLink>
             </NavigationMenuItem>
+            {process.env.NODE_ENV === 'development' && (
+              <NavigationMenuItem>
+                <MenuLink to="/components">
+                  <span className="mr-2 h-4 w-4">🛠️</span>
+                  Component Overview (DEV only)
+                </MenuLink>
+              </NavigationMenuItem>
+            )}
             {isLoggedIn && (
               <>
                 <NavigationMenuItem>
