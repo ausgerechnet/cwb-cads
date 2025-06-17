@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -8,6 +8,7 @@ import { cn } from '@cads/shared/lib/utils'
 import { clamp } from '@cads/shared/lib/clamp'
 import {
   putSemanticMapCoordinates,
+  putConstellationDiscoursemeCoordinates,
   addDescriptionItem,
   createDiscoursemeForConstellationDescription,
 } from '@cads/shared/queries'
@@ -50,24 +51,27 @@ export function SemanticMapUfa() {
   useEffect(() => {
     const minScore = mapItems?.min_score
     if (typeof minScore === 'number') {
-      setCutOff(1 - minScore)
+      setCutOff(minScore)
     }
   }, [mapItems?.min_score])
   // -----
   if (!isValidSelection || !analysisLayer) {
     throw new Error('Incomplete analysis selection, cannot render semantic map')
   }
-  const wordsInput =
-    mapItems?.map
-      ?.filter((item) => item.source === 'items')
-      .map(
-        (item): WordCloudWordIn => ({
-          x: item.x,
-          y: item.y,
-          label: item.item,
-          score: clamp(item.scaled_score, 0, 1),
-        }),
-      ) ?? []
+  const wordsInput = useMemo(
+    () =>
+      mapItems?.map
+        ?.filter((item) => item.source === 'items')
+        .map(
+          (item): WordCloudWordIn => ({
+            x: item.x,
+            y: item.y,
+            label: item.item,
+            score: clamp(item.scaled_score, 0, 1),
+          }),
+        ) ?? [],
+    [mapItems?.map],
+  )
   const discoursemesInput =
     mapItems?.map
       ?.filter(
@@ -85,6 +89,9 @@ export function SemanticMapUfa() {
         }),
       ) ?? []
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
+  const { mutate: updateDiscoursemeCoordinates } = useMutation(
+    putConstellationDiscoursemeCoordinates,
+  )
 
   const semantic_map_id = mapItems?.semantic_map_id
 
@@ -168,6 +175,24 @@ export function SemanticMapUfa() {
         })
         break
       }
+      case 'update_discourseme_position': {
+        const descriptionId = description?.id
+        if (
+          semantic_map_id === undefined ||
+          semantic_map_id === null ||
+          descriptionId === undefined
+        )
+          return
+        updateDiscoursemeCoordinates({
+          constellationId,
+          descriptionId,
+          semanticMapId: semantic_map_id,
+          discourseme_id: event.discoursemeId,
+          x_user: event.x,
+          y_user: event.y,
+        })
+        break
+      }
       case 'set_filter_item': {
         setFilterItem(event.item ?? undefined, analysisLayer)
         break
@@ -231,6 +256,7 @@ export function SemanticMapUfa() {
       <ConstellationDiscoursemesEditor
         className="relative col-start-3 row-start-3"
         analysisLayer={analysisLayer}
+        mapItems={mapItems?.map}
       />
 
       {isFetching && (

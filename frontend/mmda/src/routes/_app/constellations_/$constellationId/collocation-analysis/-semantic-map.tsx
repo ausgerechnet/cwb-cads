@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useMemo, useCallback, useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -8,6 +8,7 @@ import { cn } from '@cads/shared/lib/utils'
 import { clamp } from '@cads/shared/lib/clamp'
 import {
   putSemanticMapCoordinates,
+  putConstellationDiscoursemeCoordinates,
   addDescriptionItem,
   createDiscoursemeForConstellationDescription,
 } from '@cads/shared/queries'
@@ -56,37 +57,46 @@ export function CollocationSemanticMap() {
   useEffect(() => {
     const minScore = mapItems?.min_score
     if (typeof minScore === 'number') {
-      setCutOff(1 - minScore)
+      setCutOff(minScore)
     }
   }, [mapItems?.min_score])
-  const wordsInput =
-    mapItems?.map
-      ?.filter((item) => item.source === 'items')
-      .map(
-        (item): WordCloudWordIn => ({
-          x: item.x,
-          y: item.y,
-          label: item.item,
-          score: clamp(item.scaled_score, 0, 1),
-        }),
-      ) ?? []
-  const discoursemesInput =
-    mapItems?.map
-      ?.filter(
-        (item) =>
-          item.source === 'discoursemes' &&
-          typeof item.discourseme_id === 'number',
-      )
-      .map(
-        (item): WordCloudDiscoursemeIn => ({
-          x: item.x,
-          y: item.y,
-          label: item.item,
-          discoursemeId: item.discourseme_id!,
-          score: clamp(item.scaled_score, 0, 1),
-        }),
-      ) ?? []
+  const wordsInput = useMemo(
+    () =>
+      mapItems?.map
+        ?.filter((item) => item.source === 'items')
+        .map(
+          (item): WordCloudWordIn => ({
+            x: item.x,
+            y: item.y,
+            label: item.item,
+            score: clamp(item.scaled_score, 0, 1),
+          }),
+        ) ?? [],
+    [mapItems?.map],
+  )
+  const discoursemesInput = useMemo(
+    () =>
+      mapItems?.map
+        ?.filter(
+          (item) =>
+            item.source === 'discoursemes' &&
+            typeof item.discourseme_id === 'number',
+        )
+        .map(
+          (item): WordCloudDiscoursemeIn => ({
+            x: item.x,
+            y: item.y,
+            label: item.item,
+            discoursemeId: item.discourseme_id!,
+            score: clamp(item.scaled_score, 0, 1),
+          }),
+        ) ?? [],
+    [mapItems?.map],
+  )
   const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
+  const { mutate: updateDiscoursemeCoordinates } = useMutation(
+    putConstellationDiscoursemeCoordinates,
+  )
 
   const { mutate: postNewDiscourseme, error: errorNewDiscourseme } =
     useMutation({
@@ -168,6 +178,24 @@ export function CollocationSemanticMap() {
         })
         break
       }
+      case 'update_discourseme_position': {
+        const descriptionId = description?.id
+        if (
+          semantic_map_id === undefined ||
+          semantic_map_id === null ||
+          descriptionId === undefined
+        )
+          return
+        updateDiscoursemeCoordinates({
+          constellationId,
+          descriptionId,
+          semanticMapId: semantic_map_id,
+          discourseme_id: event.discoursemeId,
+          x_user: event.x,
+          y_user: event.y,
+        })
+        break
+      }
       case 'set_filter_item': {
         setFilterItem(event.item ?? undefined, analysisLayer)
         break
@@ -231,6 +259,7 @@ export function CollocationSemanticMap() {
       <ConstellationDiscoursemesEditor
         className="relative col-start-3 row-start-3"
         analysisLayer={analysisLayer}
+        mapItems={mapItems?.map}
       />
 
       {isFetching && (

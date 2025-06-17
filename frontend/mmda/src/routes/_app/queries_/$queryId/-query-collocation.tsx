@@ -38,10 +38,6 @@ export function QueryCollocation() {
 
   return (
     <div>
-      <div className="bg-destructive text-destructive-foreground mb-4 rounded-md p-2">
-        TODO: Properly wire up filter UI
-      </div>
-
       <ErrorMessage error={errors} />
 
       <Table>

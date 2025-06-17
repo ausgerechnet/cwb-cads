@@ -616,7 +616,6 @@ export const constellationCollocation = (
     ],
     staleTime: 1_000 * 60 * 5, // 5 minutes
     queryFn: async ({ signal }) => {
-      // @ts-expect-error - deeply nested types
       return apiClient.put(
         '/mmda/constellation/:constellation_id/description/:description_id/collocation/',
         {
@@ -956,6 +955,38 @@ export const constellationDescriptionCollectionUfa = (
         },
       ),
   })
+
+export const putConstellationDiscoursemeCoordinates: MutationOptions<
+  z.infer<typeof schemas.DiscoursemeCoordinatesOut>[],
+  Error,
+  z.infer<typeof schemas.DiscoursemeCoordinatesIn> & {
+    constellationId: number
+    descriptionId: number
+    semanticMapId: number
+  }
+> = {
+  mutationFn: ({
+    constellationId,
+    descriptionId,
+    semanticMapId,
+    discourseme_id,
+    x_user,
+    y_user,
+  }) => {
+    // @ts-expect-error - deeply nested types
+    return apiClient.put(
+      '/mmda/constellation/:constellation_id/description/:description_id/semantic-map/:semantic_map_id/coordinates/',
+      { discourseme_id, x_user, y_user },
+      {
+        params: {
+          constellation_id: constellationId.toString(),
+          description_id: descriptionId.toString(),
+          semantic_map_id: semanticMapId.toString(),
+        },
+      },
+    )
+  },
+}
 
 // ==================== COLLOCATIONS ====================
 

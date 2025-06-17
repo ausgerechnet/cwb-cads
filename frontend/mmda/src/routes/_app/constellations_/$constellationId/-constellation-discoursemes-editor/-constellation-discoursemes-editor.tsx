@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Loader2Icon, Trash2Icon, XIcon } from 'lucide-react'
 import { useQuery, useSuspenseQuery, useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
+import { z } from 'zod'
 
 import { CollapsibleTrigger } from '@cads/shared/components/ui/collapsible'
 import { cn } from '@cads/shared/lib/utils'
@@ -22,21 +23,26 @@ import {
 } from '@cads/shared/components/ui/collapsible'
 import { TextTooltip } from '@cads/shared/components/text-tooltip'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
+import { schemas } from '@cads/shared/api-client'
 
 import { useFilterSelection } from '../-use-filter-selection'
 import { useDescription } from '../-use-description'
-import { useCollocation } from '../-use-collocation-doof'
 import { Route } from '../route'
 import { DiscoursemeNameEdit } from './-discourseme-name-edit'
 import { AddDescriptionItem } from './-add-description-item'
 import { AttachNewDiscourseme } from './-attach-new-discourseme'
 
+const emptyArray: readonly z.infer<typeof schemas.ConstellationMapItemOut>[] =
+  []
+
 export function ConstellationDiscoursemesEditor({
   className,
   analysisLayer,
+  mapItems = emptyArray,
 }: {
   className?: string
   analysisLayer: string
+  mapItems?: readonly z.infer<typeof schemas.ConstellationMapItemOut>[]
 }) {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { corpusId, focusDiscourseme, clFilterDiscoursemeIds } =
@@ -45,18 +51,14 @@ export function ConstellationDiscoursemesEditor({
   const corpusName = useQuery(corpusById(corpusId)).data?.name
   const { data: allDiscoursemes } = useSuspenseQuery(discoursemesList)
   const { description: constellationDescription } = useDescription()
-  const { mapItems: collocationItemsMap } = useCollocation(
-    constellationDescription?.id,
-  )
   const discoursemeData = useMemo(() => {
-    const mapData = collocationItemsMap?.map
-    if (!mapData) {
+    if (!mapItems) {
       return { discoursemes: [], itemCount: null }
     }
-    const discoursemeItems = mapData
+    const discoursemeItems = mapItems
       .filter(({ source }) => source === 'discourseme_items')
       .toSorted((a, b) => a.item.localeCompare(b.item))
-    const discoursemes = mapData
+    const discoursemes = mapItems
       .filter(({ source }) => source === 'discoursemes')
       .map((discourseme) => {
         const descriptionId =
@@ -71,10 +73,7 @@ export function ConstellationDiscoursemesEditor({
       })
 
     return { discoursemes, itemCount: discoursemeItems.length }
-  }, [
-    collocationItemsMap?.map,
-    constellationDescription?.discourseme_descriptions,
-  ])
+  }, [mapItems, constellationDescription?.discourseme_descriptions])
   const { itemCount } = discoursemeData
 
   const constellationDescriptionId = constellationDescription?.id

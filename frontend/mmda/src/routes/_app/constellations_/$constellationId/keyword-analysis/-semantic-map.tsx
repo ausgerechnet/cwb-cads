@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeftIcon } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
@@ -10,6 +10,7 @@ import {
   addDescriptionItem,
   createDiscoursemeForConstellationDescription,
   putSemanticMapCoordinates,
+  putConstellationDiscoursemeCoordinates,
 } from '@cads/shared/queries'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
@@ -47,35 +48,44 @@ export function KeywordSemanticMap() {
       setCutOff(1 - minScore)
     }
   }, [mapItems?.min_score])
-  const wordsInput =
-    mapItems?.map
-      ?.filter((item) => item.source === 'items')
-      .map(
-        (item): WordCloudWordIn => ({
-          x: item.x,
-          y: item.y,
-          label: item.item,
-          score: clamp(item.scaled_score, 0, 1),
-        }),
-      ) ?? []
-  const discoursemesInput =
-    mapItems?.map
-      ?.filter(
-        (item) =>
-          item.source === 'discoursemes' &&
-          typeof item.discourseme_id === 'number',
-      )
-      .map(
-        (item): WordCloudDiscoursemeIn => ({
-          x: item.x,
-          y: item.y,
-          label: item.item,
-          discoursemeId: item.discourseme_id!,
-          score: clamp(item.scaled_score, 0, 1),
-        }),
-      ) ?? []
-  const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
+  const wordsInput = useMemo(
+    () =>
+      mapItems?.map
+        ?.filter((item) => item.source === 'items')
+        .map(
+          (item): WordCloudWordIn => ({
+            x: item.x,
+            y: item.y,
+            label: item.item,
+            score: clamp(item.scaled_score, 0, 1),
+          }),
+        ) ?? [],
+    [mapItems?.map],
+  )
+  const discoursemesInput = useMemo(
+    () =>
+      mapItems?.map
+        ?.filter(
+          (item) =>
+            item.source === 'discoursemes' &&
+            typeof item.discourseme_id === 'number',
+        )
+        .map(
+          (item): WordCloudDiscoursemeIn => ({
+            x: item.x,
+            y: item.y,
+            label: item.item,
+            discoursemeId: item.discourseme_id!,
+            score: clamp(item.scaled_score, 0, 1),
+          }),
+        ) ?? [],
+    [mapItems?.map],
+  )
   // -----
+  const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
+  const { mutate: updateDiscoursemeCoordinates } = useMutation(
+    putConstellationDiscoursemeCoordinates,
+  )
   if (!isValidSelection || !analysisLayer) {
     throw new Error('Incomplete analysis selection, cannot render semantic map')
   }
@@ -105,70 +115,74 @@ export function KeywordSemanticMap() {
     },
   })
 
-  const handleCloudChange = useCallback(
-    (event: WordCloudEvent) => {
-      switch (event.type) {
-        case 'new_discourseme': {
-          const { surfaces } = event
-          if (!description || !analysisLayer) return
-          postNewDiscourseme({
-            surfaces,
-            constellationId,
-            constellationDescriptionId: description.id,
-            p: analysisLayer,
-            name: surfaces.join(' ').substring(0, 25),
-          })
-          break
-        }
-        case 'add_to_discourseme': {
-          const { discoursemeId, surface } = event
-          if (!description || !analysisLayer) return
-          const descriptionId = description?.discourseme_descriptions.find(
-            ({ id }) => id === discoursemeId,
-          )?.id
-          if (descriptionId === undefined) {
-            throw new Error(
-              `No discourseme description found for discourseme id ${descriptionId}`,
-            )
-          }
-          addItem({
-            discoursemeId,
-            descriptionId,
-            surface,
-            p: analysisLayer!,
-          })
-          break
-        }
-        case 'update_surface_position': {
-          if (semantic_map_id === undefined) {
-            throw new Error(
-              'Semantic map ID is undefined, cannot update coordinates',
-            )
-          }
-          updateCoordinates({
-            semanticMapId: semantic_map_id,
-            item: event.surface,
-            x_user: event.x,
-            y_user: event.y,
-          })
-          break
-        }
-        case 'update_discourseme_position': {
-          throw new Error('Updating discourseme position is not supported')
-        }
+  const handleCloudChange = (event: WordCloudEvent) => {
+    switch (event.type) {
+      case 'new_discourseme': {
+        const { surfaces } = event
+        if (!description || !analysisLayer) return
+        postNewDiscourseme({
+          surfaces,
+          constellationId,
+          constellationDescriptionId: description.id,
+          p: analysisLayer,
+          name: surfaces.join(' ').substring(0, 25),
+        })
+        break
       }
-    },
-    [
-      addItem,
-      constellationId,
-      description,
-      postNewDiscourseme,
-      analysisLayer,
-      semantic_map_id,
-      updateCoordinates,
-    ],
-  )
-
+      case 'add_to_discourseme': {
+        const { discoursemeId, surface } = event
+        if (!description || !analysisLayer) return
+        console.log('description', description)
+        const descriptionId = description?.discourseme_descriptions.find(
+          ({ discourseme_id }) => discourseme_id === discoursemeId,
+        )?.id
+        if (descriptionId === undefined) {
+          throw new Error(
+            `No discourseme description found for discourseme id ${descriptionId}`,
+          )
+        }
+        addItem({
+          discoursemeId,
+          descriptionId,
+          surface,
+          p: analysisLayer!,
+        })
+        break
+      }
+      case 'update_surface_position': {
+        if (semantic_map_id === undefined) {
+          throw new Error(
+            'Semantic map ID is undefined, cannot update coordinates',
+          )
+        }
+        updateCoordinates({
+          semanticMapId: semantic_map_id,
+          item: event.surface,
+          x_user: event.x,
+          y_user: event.y,
+        })
+        break
+      }
+      case 'update_discourseme_position': {
+        const descriptionId = description?.id
+        if (
+          semantic_map_id === undefined ||
+          semantic_map_id === null ||
+          descriptionId === undefined
+        )
+          return
+        updateDiscoursemeCoordinates({
+          constellationId,
+          descriptionId,
+          semanticMapId: semantic_map_id,
+          discourseme_id: event.discoursemeId,
+          x_user: event.x,
+          y_user: event.y,
+        })
+        break
+      }
+    }
+  }
   return (
     <div className="group/map bg-muted/50 grid h-[calc(100svh-3.5rem)] flex-grow grid-cols-[1rem_1fr_25rem_1rem] grid-rows-[1rem_auto_1fr_4rem] gap-5 overflow-hidden">
       {semantic_map_id !== undefined &&
@@ -219,6 +233,7 @@ export function KeywordSemanticMap() {
       <ConstellationDiscoursemesEditor
         className="relative col-start-3 row-start-3"
         analysisLayer={analysisLayer}
+        mapItems={mapItems?.map}
       />
 
       {isFetching && (

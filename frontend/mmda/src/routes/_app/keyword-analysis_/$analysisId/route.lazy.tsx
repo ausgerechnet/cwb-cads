@@ -5,16 +5,18 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { z } from 'zod'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import { MapIcon, XIcon } from 'lucide-react'
+import { useQuery, useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { ArrowLeftIcon, MapIcon, XIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
 import {
   getQueryAssisted,
   keywordAnalysisById,
   keywordAnalysisItemsById,
+  putSemanticMapCoordinates,
 } from '@cads/shared/queries'
 import { formatNumber } from '@cads/shared/lib/format-number'
+import { LabelBox } from '@cads/shared/components/label-box'
 import {
   Select,
   SelectValue,
@@ -33,7 +35,11 @@ import { LoaderBig } from '@cads/shared/components/loader-big'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import { schemas } from '@cads/shared/api-client'
 import { measures, useMeasureSelection } from '@cads/shared/components/measures'
-import { WordCloud, type WordCloudWordIn } from '@/components/word-cloud'
+import {
+  WordCloud,
+  type WordCloudWordIn,
+  type WordCloudEvent,
+} from '@/components/word-cloud'
 
 import { useFilterSelection } from '../../constellations_/$constellationId/-use-filter-selection'
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
@@ -93,10 +99,15 @@ function KeywordAnalysis() {
           coordinates={coordinates}
           isLoading={isLoadingMap}
           ccSortBy={ccSortBy}
+          semanticMapId={analysisData?.semantic_map_id ?? null}
         />
       }
       drawerContent={<DrawerContent />}
     >
+      <div className="bg-destructive text-destructive-foreground mb-4 rounded-md p-2">
+        TODO: Properly wire up filter UI
+      </div>
+
       <div className="mb-8 flex gap-4">
         {analysisData && (
           <dl className="mr-auto inline-grid grid-cols-[auto,auto] content-start gap-x-2 gap-y-1">
@@ -254,11 +265,13 @@ function MapContent({
   coordinates,
   isLoading,
   ccSortBy,
+  semanticMapId = null,
 }: {
   keywordItems: z.infer<typeof schemas.KeywordItemOut>[] | undefined
   coordinates: z.infer<typeof schemas.CoordinatesOut>[] | undefined
   isLoading: boolean
   ccSortBy: (typeof measures)[number]
+  semanticMapId?: number | null
 }) {
   const { clFilterItem } = Route.useSearch()
   const navigate = useNavigate()
@@ -280,51 +293,88 @@ function MapContent({
     [ccSortBy, coordinates, keywordItems],
   )
 
+  const { mutate: updateCoordinates } = useMutation(putSemanticMapCoordinates)
+
+  function handleChange(event: WordCloudEvent) {
+    switch (event.type) {
+      case 'update_surface_position': {
+        if (semanticMapId === null) return
+        updateCoordinates({
+          semanticMapId,
+          item: event.surface,
+          x_user: event.x,
+          y_user: event.y,
+        })
+        break
+      }
+      case 'set_filter_item': {
+        navigate({
+          to: '',
+          params: (p) => p,
+          search: (s) => ({
+            ...s,
+            clFilterItem: event.item ?? undefined,
+          }),
+        })
+        break
+      }
+    }
+  }
+
   return (
-    <div className="z-10 grid flex-grow grid-cols-[min-content_1fr] grid-rows-[min-content_1fr] gap-8">
-      <Link
-        to="/keyword-analysis/$analysisId"
-        from="/keyword-analysis/$analysisId/semantic-map"
-        params={(p) => p}
-        search={(s) => s}
-        className={cn(buttonVariants({ variant: 'secondary' }), 'flex-shrink')}
-      >
-        Back to Keyword Analysis
-      </Link>
-
-      <label>
-        <Select
-          onValueChange={(ccSortBy) => {
-            navigate({
-              to: '',
-              params: (p) => p,
-              search: (s) => ({ ...s, ccSortBy }),
-            })
-          }}
-          value={ccSortBy}
+    <div className="group/map bg-muted/50 grid h-[calc(100svh-3.5rem)] flex-grow grid-cols-[1rem_1fr_25rem_1rem] grid-rows-[1rem_auto_1fr_4rem] gap-5 overflow-hidden">
+      <div className="relative z-20 col-span-2 col-start-2 row-start-2 flex gap-3">
+        <Link
+          to="/keyword-analysis/$analysisId"
+          from="/keyword-analysis/$analysisId/semantic-map"
+          params={(p) => p}
+          search={(s) => s}
+          className={cn(
+            buttonVariants({ variant: 'default' }),
+            'ring-offset-background focus-visible:ring-ring bg-primary text-primary-foreground hover:bg-primary/90 active inline-flex h-full shrink cursor-pointer items-center justify-center self-start justify-self-start whitespace-nowrap rounded-md px-2 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+          )}
         >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="No Query Layer Selected" />
-          </SelectTrigger>
+          <ArrowLeftIcon />
+        </Link>
 
-          <SelectContent>
-            <SelectGroup>
-              {measures.map((measure) => (
-                <SelectItem key={measure} value={measure}>
-                  {measureNameMap.get(measure)}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </label>
-      <div className="relative col-span-full grid h-full w-full self-stretch justify-self-stretch overflow-hidden pb-4">
+        <div className="bg-background z-10 flex grow gap-2 rounded-xl p-2 shadow">
+          <LabelBox labelText="Sort By" className="ml-auto min-w-96">
+            <Select
+              onValueChange={(ccSortBy) => {
+                navigate({
+                  to: '',
+                  params: (p) => p,
+                  search: (s) => ({ ...s, ccSortBy }),
+                })
+              }}
+              value={ccSortBy}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="No Query Layer Selected" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectGroup>
+                  {measures.map((measure) => (
+                    <SelectItem key={measure} value={measure}>
+                      {measureNameMap.get(measure)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </LabelBox>
+        </div>
+      </div>
+
+      <div className="relative z-0 col-span-2 col-start-2 row-start-3 h-[calc(100svh-18rem)]">
         {isLoading ? (
           <LoaderBig className="place-self-center self-center justify-self-center" />
         ) : (
           <WordCloud
             words={words}
-            className="h-full w-full"
+            className="absolute inset-0 h-full w-full"
+            onChange={handleChange}
             filterItem={clFilterItem}
           />
         )}
