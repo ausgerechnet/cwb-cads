@@ -33,15 +33,18 @@ export function useKeywordSelection() {
   } = Route.useSearch()
   let { analysisLayer, referenceLayer } = Route.useSearch()
 
-  const { data: { layers, structuredAttributes } = {}, error: errorLayers } =
-    useQuery({
-      ...corpusById(corpusId!, subcorpusId),
-      select: (corpus) => ({
-        layers: corpus.p_atts,
-        structuredAttributes: corpus.s_atts,
-      }),
-      enabled: corpusId !== undefined,
-    })
+  const {
+    data: { layers, structuredAttributes } = {},
+    isLoading,
+    error: errorLayers,
+  } = useQuery({
+    ...corpusById(corpusId!, subcorpusId),
+    select: (corpus) => ({
+      layers: corpus.p_atts,
+      structuredAttributes: corpus.s_atts,
+    }),
+    enabled: corpusId !== undefined,
+  })
 
   const { data: referenceLayers, error: errorReferenceLayers } = useQuery({
     ...corpusById(referenceCorpusId!, referenceSubcorpusId),
@@ -64,9 +67,13 @@ export function useKeywordSelection() {
     referenceLayer !== undefined &&
     contextBreak === undefined
 
+  const isFaultySelection =
+    !isValidSelection && !isLoading && !errorLayers && !errorReferenceLayers
+
   return {
     errors: [errorLayers, errorReferenceLayers],
     isValidSelection,
+    isFaultySelection,
     analysisLayer,
     corpusId,
     subcorpusId,

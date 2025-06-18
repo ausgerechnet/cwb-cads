@@ -20,15 +20,18 @@ export function useCollocationSelection() {
   const { corpusId, subcorpusId, focusDiscourseme } = Route.useSearch()
   let { analysisLayer, contextBreak } = Route.useSearch()
 
-  const { data: { layers, structuredAttributes } = {}, error: errorLayers } =
-    useQuery({
-      ...corpusById(corpusId!, subcorpusId),
-      select: (corpus) => ({
-        layers: corpus.p_atts,
-        structuredAttributes: corpus.s_atts,
-      }),
-      enabled: corpusId !== undefined,
-    })
+  const {
+    data: { layers, structuredAttributes } = {},
+    isLoading,
+    error: errorLayers,
+  } = useQuery({
+    ...corpusById(corpusId!, subcorpusId),
+    select: (corpus) => ({
+      layers: corpus.p_atts,
+      structuredAttributes: corpus.s_atts,
+    }),
+    enabled: corpusId !== undefined,
+  })
 
   analysisLayer = defaultValue(layers, analysisLayer, 'lemma')
   contextBreak = defaultValue(structuredAttributes, contextBreak)
@@ -39,9 +42,13 @@ export function useCollocationSelection() {
     analysisLayer !== undefined &&
     contextBreak !== undefined
 
+  // We need to consider the scenario that the user went with the default for the analysis layer AND the corpus query isn't done yet
+  const isFaultySelection = !isValidSelection && !isLoading && !errorLayers
+
   return {
     errors: errorLayers,
     isValidSelection,
+    isFaultySelection,
     analysisLayer,
     corpusId,
     subcorpusId,

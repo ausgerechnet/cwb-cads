@@ -52,9 +52,13 @@ export function useUfaSelection() {
     analysisLayer !== undefined &&
     partition !== undefined
 
+  const isFaultySelection =
+    !isValidSelection && !errorLayers && !subcorpusCollectionsError
+
   return {
     errors: [errorLayers, subcorpusCollectionsError],
     isValidSelection,
+    isFaultySelection,
     analysisLayer,
     corpusId,
     subcorpusId,

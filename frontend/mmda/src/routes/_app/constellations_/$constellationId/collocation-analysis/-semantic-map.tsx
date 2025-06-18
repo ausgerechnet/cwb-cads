@@ -40,12 +40,8 @@ export function CollocationSemanticMap() {
     clFilterItem,
     setFilterItem,
   } = useConcordanceFilterContext()
-  const { isValidSelection, analysisLayer } = useCollocationSelection()
+  const { isFaultySelection, analysisLayer } = useCollocationSelection()
   const [cutOff, setCutOff] = useState(0.5)
-
-  if (!isValidSelection || !analysisLayer) {
-    throw new Error('Incomplete analysis selection, cannot render semantic map')
-  }
 
   const { description } = useDescription()
   const {
@@ -209,6 +205,12 @@ export function CollocationSemanticMap() {
 
   return (
     <div className="group/map bg-muted/50 grid h-[calc(100svh-3.5rem)] flex-grow grid-cols-[1rem_1fr_25rem_1rem] grid-rows-[1rem_auto_1fr_4rem] gap-5 overflow-hidden">
+      {isFaultySelection && (
+        <ErrorMessage
+          error="The selection is incomplete."
+          className="col-start-2 row-start-3"
+        />
+      )}
       {semantic_map_id !== undefined &&
         semantic_map_id !== null &&
         Boolean(mapItems) && (
@@ -256,11 +258,13 @@ export function CollocationSemanticMap() {
         </div>
       </div>
 
-      <ConstellationDiscoursemesEditor
-        className="relative col-start-3 row-start-3"
-        analysisLayer={analysisLayer}
-        mapItems={mapItems?.map}
-      />
+      {analysisLayer !== undefined && (
+        <ConstellationDiscoursemesEditor
+          className="relative col-start-3 row-start-3"
+          analysisLayer={analysisLayer}
+          mapItems={mapItems?.map}
+        />
+      )}
 
       {isFetching && (
         <LoaderBig className="z-10 col-start-2 row-start-3 self-center justify-self-center" />
