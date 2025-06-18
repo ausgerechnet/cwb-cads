@@ -1,4 +1,3 @@
-import { lazy } from 'react'
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
@@ -16,6 +15,7 @@ import { Toaster } from '@cads/shared/components/ui/sonner'
 import { DiscoursemeCollocateTableSearch } from '@/components/discourseme-collocate-table'
 import { DiscoursemeBreakdownSearch } from '@/components/discourseme-breakdown'
 import { measures } from '@cads/shared/components/measures'
+import { DevTools } from '@/components/dev-tools'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -72,16 +72,6 @@ export const Route = createRootRouteWithContext<{
       }),
     ),
 })
-
-// Lazy load devtools in development, but omit in production
-const Devtools =
-  process.env.NODE_ENV === 'production'
-    ? () => null
-    : lazy(() =>
-        import('@/components/dev-tools').then((res) => ({
-          default: res.DevTools,
-        })),
-      )
 
 function RootComponent() {
   const { data, isLoading, error } = useQuery(userIdentify)
@@ -145,7 +135,7 @@ function RootComponent() {
       </header>
       <Outlet />
       <Toaster />
-      <Devtools />
+      <DevTools />
     </>
   )
 }
