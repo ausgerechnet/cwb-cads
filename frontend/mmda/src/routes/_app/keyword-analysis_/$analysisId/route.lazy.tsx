@@ -6,10 +6,11 @@ import {
 } from '@tanstack/react-router'
 import { z } from 'zod'
 import { useQuery, useMutation, useSuspenseQuery } from '@tanstack/react-query'
-import { ArrowLeftIcon, MapIcon, XIcon } from 'lucide-react'
+import { ArrowLeftIcon, MapIcon } from 'lucide-react'
 import { useMemo } from 'react'
 
 import {
+  corpusById,
   getQueryAssisted,
   keywordAnalysisById,
   keywordAnalysisItemsById,
@@ -25,7 +26,6 @@ import {
   SelectTrigger,
   SelectGroup,
 } from '@cads/shared/components/ui/select'
-import { Label } from '@cads/shared/components/ui/label'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { WordCloudPreview } from '@/components/word-cloud-preview'
@@ -45,6 +45,10 @@ import { useFilterSelection } from '../../constellations_/$constellationId/-use-
 import { QueryConcordanceLines } from './-keyword-concordance-lines'
 import { KeywordTable } from './-keywords'
 import { QueryFilter } from './-query-filter'
+import {
+  ConcordanceFilterProvider,
+  FilterItemInput,
+} from '@cads/shared/components/concordances'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/$analysisId')(
   { component: KeywordAnalysis },
@@ -57,15 +61,19 @@ function KeywordAnalysis() {
       (match) =>
         match.routeId === '/_app/keyword-analysis_/$analysisId/semantic-map',
     ) !== undefined
+  const searchParams = Route.useSearch()
+  const clIsVisible = Boolean(searchParams.clIsVisible)
 
   const { ccSortBy = 'conservative_log_ratio' } = useFilterSelection(
     '/_app/keyword-analysis_/$analysisId',
   )
   const navigate = useNavigate()
-  const { clIsVisible = false } = Route.useSearch()
   const analysisId = parseInt(Route.useParams().analysisId)
   const { data: analysisData } = useSuspenseQuery(
     keywordAnalysisById(analysisId),
+  )
+  const { data: corpus } = useSuspenseQuery(
+    corpusById(analysisData.corpus_id, analysisData.subcorpus_id),
   )
 
   const {
@@ -82,71 +90,74 @@ function KeywordAnalysis() {
   })
 
   return (
-    <AppPageFrameSemanticMap
-      title="Keyword Analysis"
-      showsSemanticMap={showsSemanticMap}
-      isDrawerVisible={clIsVisible}
-      onDrawerToggle={(clIsVisible) =>
-        navigate({
-          to: '',
-          params: (p) => p,
-          search: (s) => ({ ...s, clIsVisible }),
-        })
-      }
-      mapContent={
-        <MapContent
-          keywordItems={items}
-          coordinates={coordinates}
-          isLoading={isLoadingMap}
-          ccSortBy={ccSortBy}
-          semanticMapId={analysisData?.semantic_map_id ?? null}
-        />
-      }
-      drawerContent={<DrawerContent />}
+    <ConcordanceFilterProvider
+      params={searchParams}
+      layers={corpus.p_atts}
+      structureAttributes={corpus.s_atts}
     >
-      <div className="bg-destructive text-destructive-foreground mb-4 rounded-md p-2">
-        TODO: Properly wire up filter UI
-      </div>
+      <AppPageFrameSemanticMap
+        title="Keyword Analysis"
+        showsSemanticMap={showsSemanticMap}
+        isDrawerVisible={clIsVisible}
+        onDrawerToggle={(clIsVisible) =>
+          navigate({
+            to: '',
+            params: (p) => p,
+            search: (s) => ({ ...s, clIsVisible }),
+          })
+        }
+        mapContent={
+          <MapContent
+            keywordItems={items}
+            coordinates={coordinates}
+            isLoading={isLoadingMap}
+            ccSortBy={ccSortBy}
+            semanticMapId={analysisData?.semantic_map_id ?? null}
+          />
+        }
+        drawerContent={<DrawerContent />}
+      >
+        <div className="mb-8 flex gap-4">
+          {analysisData && (
+            <dl className="mr-auto inline-grid grid-cols-[auto,auto] content-start gap-x-2 gap-y-1">
+              <dt>Target Corpus Name:</dt>
+              <dd>
+                {analysisData.corpus_name} on {analysisData.p}
+              </dd>
+              <dt>Reference Corpus Name:</dt>
+              <dd>
+                {analysisData.corpus_name_reference} on{' '}
+                {analysisData.p_reference}
+              </dd>
+              <dt>Number of Items:</dt>
+              <dd>{formatNumber(analysisData.nr_items)}</dd>
+            </dl>
+          )}
 
-      <div className="mb-8 flex gap-4">
-        {analysisData && (
-          <dl className="mr-auto inline-grid grid-cols-[auto,auto] content-start gap-x-2 gap-y-1">
-            <dt>Target Corpus Name:</dt>
-            <dd>
-              {analysisData.corpus_name} on {analysisData.p}
-            </dd>
-            <dt>Reference Corpus Name:</dt>
-            <dd>
-              {analysisData.corpus_name_reference} on {analysisData.p_reference}
-            </dd>
-            <dt>Number of Items:</dt>
-            <dd>{formatNumber(analysisData.nr_items)}</dd>
-          </dl>
-        )}
+          <Link
+            to="/keyword-analysis/$analysisId/semantic-map"
+            from="/keyword-analysis/$analysisId"
+            params={(p) => p}
+            search={(s) => s}
+            className="group/map-link block aspect-[2/1] transition-opacity focus-visible:outline-none"
+          >
+            <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
+              <WordCloudPreview
+                className="absolute h-full w-full scale-110 transition-all group-hover/map-link:scale-100 group-hover/map-link:opacity-75 group-focus-visible/map-link:scale-100"
+                items={coordinates}
+              />
+              <div className="bg-muted/70 group-focus-visible/map-link:bg-muted/90 group-hover/map-link:bg-muted/90 transition-color relative flex gap-3 rounded p-2">
+                <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
+                <span>Semantic Map</span>
+              </div>
+              <ErrorMessage error={errorMapItems} />
+            </Card>
+          </Link>
+        </div>
 
-        <Link
-          to="/keyword-analysis/$analysisId/semantic-map"
-          from="/keyword-analysis/$analysisId"
-          params={(p) => p}
-          search={(s) => s}
-          className="group/map-link block aspect-[2/1] transition-opacity focus-visible:outline-none"
-        >
-          <Card className="bg-muted text-muted-foreground group-focus-visible/map-link:outline-muted-foreground group-hover/map-link:outline-muted-foreground relative mx-0 flex h-full min-h-48 w-full flex-col place-content-center place-items-center gap-2 overflow-hidden p-4 text-center outline outline-1 outline-transparent transition-all duration-200">
-            <WordCloudPreview
-              className="absolute h-full w-full scale-110 transition-all group-hover/map-link:scale-100 group-hover/map-link:opacity-75 group-focus-visible/map-link:scale-100"
-              items={coordinates}
-            />
-            <div className="bg-muted/70 group-focus-visible/map-link:bg-muted/90 group-hover/map-link:bg-muted/90 transition-color relative flex gap-3 rounded p-2">
-              <MapIcon className="mr-4 h-6 w-6 flex-shrink-0" />
-              <span>Semantic Map</span>
-            </div>
-            <ErrorMessage error={errorMapItems} />
-          </Card>
-        </Link>
-      </div>
-
-      <KeywordTable analysisId={analysisId} />
-    </AppPageFrameSemanticMap>
+        <KeywordTable analysisId={analysisId} />
+      </AppPageFrameSemanticMap>
+    </ConcordanceFilterProvider>
   )
 }
 
@@ -184,8 +195,7 @@ function DrawerContent() {
   return (
     <>
       <div className="col-span-2 flex gap-4">
-        <Label className="mb-8 grid w-min shrink grow-0 flex-col gap-1 whitespace-nowrap">
-          <span className="text-muted-foreground text-xs">Corpus</span>
+        <LabelBox labelText="Corpus">
           <Select
             value={clCorpus}
             onValueChange={(clCorpus) => {
@@ -209,51 +219,17 @@ function DrawerContent() {
               </SelectItem>
             </SelectContent>
           </Select>
-        </Label>
+        </LabelBox>
 
-        <Label className="mb-8 grid w-min shrink grow-0 flex-col gap-1 whitespace-nowrap">
-          <span className="text-muted-foreground text-xs">Filter Item</span>
-          <div className="flex flex-grow gap-1">
-            <div className="bg-muted flex min-h-10 flex-grow items-center rounded px-2">
-              {clFilterItem === undefined ? (
-                <span className="text-muted-foreground text-xs italic">
-                  None
-                </span>
-              ) : (
-                <>{clFilterItem}</>
-              )}
-            </div>
+        <FilterItemInput />
 
-            {Boolean(clFilterItem) && (
-              <Link
-                className={buttonVariants({
-                  variant: 'secondary',
-                  size: 'icon',
-                })}
-                to=""
-                params={(p) => p}
-                search={(s) => ({ ...s, clFilterItem: undefined })}
-              >
-                <XIcon className="h-4 w-4" />
-              </Link>
-            )}
-          </div>
-        </Label>
-
-        {query && (
-          <QueryFilter
-            corpusId={query.corpus_id}
-            queryId={query.id}
-            className="grow"
-            p={p}
-          />
-        )}
+        {query && <QueryFilter queryId={query.id} className="grow" />}
       </div>
 
       {query && (
         <>
           <ErrorMessage error={queryError} />
-          <QueryConcordanceLines queryId={query.id} p={p} />
+          <QueryConcordanceLines queryId={query.id} />
         </>
       )}
     </>

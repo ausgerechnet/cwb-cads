@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { CheckIcon } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+
 import { cn } from '@cads/shared/lib/utils'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
@@ -11,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@cads/shared/components/ui/table'
-import { useQuery } from '@tanstack/react-query'
+import { Card } from '@cads/shared/components/ui/card'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Pagination } from '@cads/shared/components/pagination'
 import { Repeat } from '@cads/shared/components/repeat'
@@ -65,108 +67,114 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
   const pageNumber = Math.min(ccPageNumber ?? 1, maxPageNumber ?? 1)
 
   return (
-    <div>
+    <>
       <ErrorMessage error={error} />
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="flex items-center">
-              <MeasureSelect />
-              <span className="my-auto">Item</span>
-            </TableHead>
 
-            {selectedMeasures.map((measure) => {
-              const isCurrent = ccSortBy === measure
-              const isSorted = isCurrent
-                ? ccSortOrder === 'ascending'
-                  ? 'asc'
-                  : 'desc'
-                : 'hide'
-              return (
-                <TableHead key={measure} className="text-right">
-                  <SortButtonLink
-                    isSorted={isSorted}
-                    replace
-                    to="/keyword-analysis/$analysisId"
-                    from="/keyword-analysis/$analysisId"
-                    params={(p) => p}
-                    search={(s) =>
-                      isCurrent
-                        ? {
-                            ...s,
-                            ccSortOrder:
-                              ccSortOrder === 'descending'
-                                ? 'ascending'
-                                : 'descending',
-                          }
-                        : {
-                            ...s,
-                            ccSortBy: measure,
-                            ccSortOrder: 'ascending',
-                          }
-                    }
-                  >
-                    {measureNameMap.get(measure)}
-                  </SortButtonLink>
-                </TableHead>
-              )
-            })}
-          </TableRow>
-        </TableHeader>
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="flex items-center">
+                <MeasureSelect />
+                <span className="my-auto">Item</span>
+              </TableHead>
 
-        <TableBody>
-          {isLoading && (
-            <Repeat count={ccPageSize}>
-              <TableRow>
-                <TableCell
-                  colSpan={selectedMeasures.length + 1}
-                  className="py-1"
-                >
-                  <Skeleton className="h-6 w-full" />
-                </TableCell>
-              </TableRow>
-            </Repeat>
-          )}
+              {selectedMeasures.map((measure) => {
+                const isCurrent = ccSortBy === measure
+                const isSorted = isCurrent
+                  ? ccSortOrder === 'ascending'
+                    ? 'asc'
+                    : 'desc'
+                  : 'hide'
+                return (
+                  <TableHead key={measure} className="text-right">
+                    <SortButtonLink
+                      isSorted={isSorted}
+                      replace
+                      to="/keyword-analysis/$analysisId"
+                      from="/keyword-analysis/$analysisId"
+                      params={(p) => p}
+                      search={(s) =>
+                        isCurrent
+                          ? {
+                              ...s,
+                              ccSortOrder:
+                                ccSortOrder === 'descending'
+                                  ? 'ascending'
+                                  : 'descending',
+                            }
+                          : {
+                              ...s,
+                              ccSortBy: measure,
+                              ccSortOrder: 'ascending',
+                            }
+                      }
+                    >
+                      {measureNameMap.get(measure)}
+                    </SortButtonLink>
+                  </TableHead>
+                )
+              })}
+            </TableRow>
+          </TableHeader>
 
-          {!isLoading &&
-            (collocationItems?.items ?? []).map(({ item, scores = [] }) => (
-              <TableRow
-                key={item}
-                className={cn(isLoading && 'animate-pulse', 'py-0')}
-              >
-                <TableCell className="py-1">
-                  <Link
-                    className={cn(
-                      buttonVariants({ variant: 'outline' }),
-                      'inline-flex h-auto gap-1 px-2 py-1 leading-none',
-                    )}
-                    to=""
-                    params={(p) => p}
-                    search={(s) => ({
-                      ...s,
-                      clPageIndex: 0,
-                      clFilterItem: s.clFilterItem === item ? undefined : item,
-                      clFilterItemPAtt: secondary,
-                    })}
-                  >
-                    {item}
-                    {item === clFilterItem && <CheckIcon className="h-3 w-3" />}
-                  </Link>
-                </TableCell>
-
-                {selectedMeasures.map((measure) => (
+          <TableBody>
+            {isLoading && (
+              <Repeat count={ccPageSize}>
+                <TableRow>
                   <TableCell
-                    key={measure}
-                    className="py-1 text-right font-mono"
+                    colSpan={selectedMeasures.length + 1}
+                    className="py-1"
                   >
-                    {scores.find((s) => s.measure === measure)?.score ?? 'N/A'}
+                    <Skeleton className="h-6 w-full" />
                   </TableCell>
-                ))}
-              </TableRow>
-            ))}
-        </TableBody>
-      </Table>
+                </TableRow>
+              </Repeat>
+            )}
 
+            {!isLoading &&
+              (collocationItems?.items ?? []).map(({ item, scores = [] }) => (
+                <TableRow
+                  key={item}
+                  className={cn(isLoading && 'animate-pulse', 'py-0')}
+                >
+                  <TableCell className="py-1">
+                    <Link
+                      className={cn(
+                        buttonVariants({ variant: 'outline' }),
+                        'inline-flex h-auto gap-1 px-2 py-1 leading-none',
+                      )}
+                      to=""
+                      params={(p) => p}
+                      search={(s) => ({
+                        ...s,
+                        clPageIndex: 0,
+                        clFilterItem:
+                          s.clFilterItem === item ? undefined : item,
+                        clFilterItemPAtt: secondary,
+                      })}
+                    >
+                      {item}
+                      {item === clFilterItem && (
+                        <CheckIcon className="h-3 w-3" />
+                      )}
+                    </Link>
+                  </TableCell>
+
+                  {selectedMeasures.map((measure) => (
+                    <TableCell
+                      key={measure}
+                      className="py-1 text-right font-mono"
+                    >
+                      {scores.find((s) => s.measure === measure)?.score ??
+                        'N/A'}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+      </Card>
       <Pagination
         totalRows={collocationItems?.nr_items ?? 0}
         setPageSize={(size) => setFilter('ccPageSize', size)}
@@ -175,6 +183,6 @@ export function KeywordTable({ analysisId }: { analysisId: number }) {
         pageCount={collocationItems?.page_count ?? 0}
         pageSize={ccPageSize}
       />
-    </div>
+    </>
   )
 }
