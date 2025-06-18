@@ -298,6 +298,33 @@ export const createConstellation: MutationOptions<
   },
 }
 
+// Only the name and comment, because they can be easily update without having to invalidate anything that depends on the discoursemes
+export const updateConstellationName: MutationOptions<
+  z.infer<typeof schemas.ConstellationOut>,
+  Error,
+  Pick<z.infer<typeof schemas.ConstellationInUpdate>, 'name' | 'comment'> & {
+    constellationId: number
+  }
+> = {
+  mutationFn: ({ constellationId, ...body }) =>
+    apiClient.patch('/mmda/constellation/:constellation_id', body, {
+      params: { constellation_id: constellationId.toString() },
+    }),
+  onSuccess: (constellation) => {
+    const constellationId = constellation.id
+    // Don't invalidate, just update the cache; really easy in this case
+    queryClient.setQueryData(
+      constellationById(constellationId).queryKey,
+      constellation,
+    )
+    queryClient.setQueryData(constellationList.queryKey, (oldConstellations) =>
+      oldConstellations?.map((c) =>
+        c.id === constellationId ? constellation : c,
+      ),
+    )
+  },
+}
+
 export const deleteConstellation: MutationOptions<unknown, Error, string> = {
   mutationFn: (constellationId: string) =>
     apiClient.delete('/mmda/constellation/:constellation_id', undefined, {
