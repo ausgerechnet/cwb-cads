@@ -27,6 +27,11 @@ export const Route = createRootRouteWithContext<{
     .merge(DiscoursemeBreakdownSearch)
     .merge(
       z.object({
+        debug: z.boolean().optional().catch(false),
+      }),
+    )
+    .merge(
+      z.object({
         clContextBreak: z.string().optional().catch(undefined),
         contextBreak: z.string().optional().catch(undefined),
         clFilterDiscoursemeIds: z.number().int().array().optional().catch([]),
