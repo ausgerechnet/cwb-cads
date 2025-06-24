@@ -43,6 +43,15 @@ def create_app(config=CONFIG):
     except OSError:
         app.logger.warning(f"could not create instance folder {app.instance_path}")
 
+    # init cache for SentenceTransformers
+    st_cache_dir = os.path.join(app.instance_path, 'sentence_transformers')
+    try:
+        os.makedirs(st_cache_dir, exist_ok=True)
+        os.environ['TRANSFORMERS_CACHE'] = st_cache_dir
+        os.environ['SENTENCE_TRANSFORMERS_HOME'] = st_cache_dir
+    except OSError:
+        app.logger.warning(f"could not create cache directory for sentence transformers: {st_cache_dir}")
+
     # load config
     app.config.from_object(config)
 
