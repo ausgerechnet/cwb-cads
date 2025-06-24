@@ -2,6 +2,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_API_URL: string
+  readonly VITE_ROUTER_BASEPATH: string
+  readonly VITE_ENABLE_PERSISTENT_QUERIES: string
 }
 
 interface ImportMeta {

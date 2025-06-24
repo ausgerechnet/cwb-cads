@@ -1,13 +1,26 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { constellationDescriptionFor } from '@cads/shared/queries'
-import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection.ts'
-import { Route } from '@/routes/_app/constellations_/$constellationId/route.lazy.tsx'
+import { constellationDescriptionFor, corpusById } from '@cads/shared/queries'
+import { Route } from './route'
 
 export function useDescription() {
   const constellationId = parseInt(Route.useParams().constellationId)
-  const { secondary, clContextBreak, corpusId, subcorpusId } =
-    useFilterSelection('/_app/constellations_/$constellationId')
+  const searchParams = Route.useSearch()
+  const corpusId = searchParams.corpusId
+  const subcorpusId = searchParams.subcorpusId
+  const {
+    data,
+    isLoading: isLoadingCorpus,
+    error: errorCorpus,
+  } = useQuery({
+    ...corpusById(corpusId!, subcorpusId),
+    enabled: corpusId !== undefined,
+  })
+
+  const contextBreak =
+    searchParams.contextBreak ||
+    searchParams.clContextBreak ||
+    data?.s_annotations?.[0]
 
   const {
     data: description,
@@ -19,18 +32,15 @@ export function useDescription() {
       corpusId: corpusId!,
       subcorpusId: subcorpusId,
       matchStrategy: 'longest',
-      s: clContextBreak!,
+      s: contextBreak!,
     }),
-    enabled:
-      corpusId !== undefined &&
-      secondary !== undefined &&
-      clContextBreak !== undefined,
+    enabled: corpusId !== undefined && contextBreak !== undefined,
   })
 
   return {
     constellationId,
     description,
-    isLoadingDescription,
-    errorDescription,
+    isLoadingDescription: isLoadingCorpus || isLoadingDescription,
+    errorDescription: [errorCorpus, errorDescription],
   }
 }

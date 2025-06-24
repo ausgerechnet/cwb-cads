@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import { DndContext } from '@dnd-kit/core'
-import { DotIcon, RectangleHorizontalIcon } from 'lucide-react'
+import {
+  EyeClosedIcon,
+  DotIcon,
+  PaintbrushVerticalIcon,
+  RectangleHorizontalIcon,
+  FullscreenIcon,
+} from 'lucide-react'
 
+import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
 import { cn } from '@cads/shared/lib/utils'
 import { clamp } from '@cads/shared/lib/clamp'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
@@ -12,9 +19,8 @@ import {
   type CloudWorkerMessage,
   type CloudWorkerResponse,
   type WordDisplay,
-} from './word-cloud-worker'
-import { calculateWordDimensions } from './word-cloud-compute'
-import { CenterButton } from './center-button'
+} from './worker'
+import { calculateWordDimensions } from './cloud'
 import { WordCloudMiniMap } from './word-cloud-mini-map'
 import { Item } from './item'
 
@@ -81,6 +87,7 @@ export function WordCloud({
   onChange?: (event: WordCloudEvent) => void
 }) {
   const dragStartRef = useRef<Date | null>(null)
+  const [enablePositionalColor, setEnablePositionColor] = useState(false)
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   const [containerWidth, containerHeight] = useElementDimensions(container, [
     window.innerWidth,
@@ -95,12 +102,24 @@ export function WordCloud({
   const [isDragging, setIsDragging] = useState(false)
   // Tracks the currently hovered item -- useDroppable would be an alternative option, but causes a noticeable performance hit
   const [hoverItem, setHoverItem] = useState<string | null>(null)
+  const [simulationStates, setSimulationStates] = useState<
+    {
+      zoom: number
+      state: 'pending' | 'stable' | 'dirty'
+      isRunning: boolean
+      stableDuration: number
+    }[]
+  >([])
 
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
       if (event.altKey && event.shiftKey && event.key === 'S') {
         event.preventDefault()
         setDisplayType((prev) => (prev === 'rectangle' ? 'dot' : 'rectangle'))
+      }
+      if (event.altKey && event.shiftKey && event.key === 'K') {
+        event.preventDefault()
+        setEnablePositionColor((prev) => !prev)
       }
     }
     window.addEventListener('keydown', handleKeydown)
@@ -117,8 +136,8 @@ export function WordCloud({
 
   const toOriginalCoordinates = useCallback(
     (displayX: number, displayY: number): [number, number] => [
-      clamp((displayX / (containerWidth - paddingX)) * 2, -1, 1),
-      clamp((displayY / (containerHeight - paddingY)) * 2, -1, 1),
+      (displayX / (containerWidth - paddingX)) * 2,
+      (displayY / (containerHeight - paddingY)) * 2,
     ],
     [containerWidth, paddingX, containerHeight, paddingY],
   )
@@ -205,10 +224,9 @@ export function WordCloud({
   )
 
   useEffect(() => {
-    const worker = new Worker(
-      new URL('./word-cloud-worker.ts', import.meta.url),
-      { type: 'module' },
-    )
+    const worker = new Worker(new URL('./worker.ts', import.meta.url), {
+      type: 'module',
+    })
     setWorker(worker)
     worker.onmessage = (event: MessageEvent<CloudWorkerResponse>) => {
       switch (event.data.type) {
@@ -218,6 +236,9 @@ export function WordCloud({
         case 'update_positions':
           setDisplayWords(event.data.words)
           setDisplayDiscoursemes(event.data.discoursemes)
+          break
+        case 'simulations':
+          setSimulationStates(event.data.simulationStates)
           break
         default:
           console.warn('Unknown message type from worker:', event.data)
@@ -232,14 +253,9 @@ export function WordCloud({
       type: 'update',
       payload: {
         cutOff,
-        width: 2,
-        height: 2,
         displayWidth: containerWidth - paddingX,
         displayHeight: containerHeight - paddingY,
-        words: words.map((word) => ({
-          id: `word::${word.label}`,
-          ...word,
-        })),
+        words: words.map((word) => ({ id: `word::${word.label}`, ...word })),
         discoursemes: discoursemes.map((discourseme) => ({
           id: `discourseme::${discourseme.label}::${discourseme.discoursemeId}`,
           ...discourseme,
@@ -283,10 +299,13 @@ export function WordCloud({
       >
         {({ centerView }) => (
           <>
-            <CenterButton centerView={centerView} />
+            <CenterButton
+              centerView={centerView}
+              className="absolute bottom-0 left-0 z-[5002]"
+            />
 
             <ToggleBar
-              className="absolute bottom-1 left-16 z-[5002] w-min"
+              className="absolute bottom-0 left-16 z-[5002] w-min"
               options={[
                 [
                   'rectangle',
@@ -313,8 +332,36 @@ export function WordCloud({
               onChange={setDisplayType}
             />
 
+            <ToggleBar
+              className="absolute bottom-0 left-32 z-[5002] w-min"
+              options={[
+                [
+                  'colored',
+                  <PaintbrushVerticalIcon className="h-4 w-4" />,
+                  <>
+                    Colored by position
+                    <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+                      alt + shift + k
+                    </kbd>
+                  </>,
+                ],
+                [
+                  'monochrome',
+                  <EyeClosedIcon className="h-4 w-4" />,
+                  <>
+                    Monochrome items
+                    <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+                      alt + shift + k
+                    </kbd>
+                  </>,
+                ],
+              ]}
+              value={enablePositionalColor ? 'colored' : 'monochrome'}
+              onChange={(value) => setEnablePositionColor(value === 'colored')}
+            />
+
             <WordCloudMiniMap
-              className="bg-background/90 absolute left-2 top-2 z-[2000]"
+              className="bg-background/90 absolute left-0 top-0 z-[2000]"
               aspectRatio={aspectRatio}
               displayWords={displayWords}
               displayDiscoursemes={displayDiscoursemes}
@@ -322,12 +369,21 @@ export function WordCloud({
             />
 
             {debug && (
-              <div className="absolute right-2 top-2 z-[2000] bg-black/50">
+              <div className="absolute right-0 top-0 z-[2000] rounded bg-black/50 p-1 text-sm leading-tight">
                 Zoom: {zoom.toFixed(2)}
                 <br />
                 isDragging: {isDragging ? 'true' : 'false'}
                 <br />
                 Container Dimensions: {containerWidth} x {containerHeight}
+                <br />
+                {simulationStates.map(
+                  ({ zoom, state, isRunning, stableDuration }) => (
+                    <div key={zoom}>
+                      {zoom.toFixed(2)}: {state} {isRunning ? ' (running)' : ''}
+                      {stableDuration > 0 && <span>{stableDuration}ms</span>}
+                    </div>
+                  ),
+                )}
               </div>
             )}
 
@@ -350,7 +406,7 @@ export function WordCloud({
                 onDragEnd={(event) => {
                   const wasShortDrag = dragStartRef.current
                     ? new Date().getTime() - dragStartRef.current.getTime() <
-                      250
+                      500
                     : false
                   const id = event.active.id
                   const itemA =
@@ -414,6 +470,14 @@ export function WordCloud({
                         ),
                       )
 
+                      worker?.postMessage({
+                        type: 'update_position',
+                        payload: {
+                          id: itemA.id,
+                          originX: newOriginalX,
+                          originY: newOriginalY,
+                        },
+                      })
                       onChange?.({
                         type: 'update_discourseme_position',
                         discoursemeId: itemA.discoursemeId,
@@ -435,6 +499,14 @@ export function WordCloud({
                         ),
                       )
 
+                      worker?.postMessage({
+                        type: 'update_position',
+                        payload: {
+                          id: itemA.id,
+                          originX: newOriginalX,
+                          originY: newOriginalY,
+                        },
+                      })
                       onChange?.({
                         type: 'update_surface_position',
                         surface: itemA.label,
@@ -490,6 +562,7 @@ export function WordCloud({
                         zoom={zoom}
                         onHover={handleHover}
                         onLeave={handleLeave}
+                        enablePositionalColor={enablePositionalColor}
                       />
                     ))}
 
@@ -544,5 +617,42 @@ export function WordCloud({
         )}
       </TransformWrapper>
     </div>
+  )
+}
+
+function CenterButton({
+  centerView,
+  className,
+}: {
+  centerView: (zoom?: number) => void
+  className?: string
+}) {
+  useEffect(() => {
+    function handleKeydown(event: KeyboardEvent) {
+      if (event.altKey && event.shiftKey && event.key === 'Z') {
+        event.preventDefault()
+        centerView(1)
+      }
+    }
+    window.addEventListener('keydown', handleKeydown)
+    return () => window.removeEventListener('keydown', handleKeydown)
+  }, [centerView])
+  return (
+    <ButtonTooltip
+      onClick={() => centerView(1)}
+      className={className}
+      variant="secondary"
+      size="icon"
+      tooltip={
+        <>
+          Center view{' '}
+          <kbd className="border-1 border-muted ml-2 mr-0 rounded-sm border px-1 py-0.5 text-xs">
+            alt + shift + z
+          </kbd>
+        </>
+      }
+    >
+      <FullscreenIcon className="h-5 w-5" />
+    </ButtonTooltip>
   )
 }

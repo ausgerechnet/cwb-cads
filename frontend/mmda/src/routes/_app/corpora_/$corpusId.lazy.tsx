@@ -17,7 +17,6 @@ import { AppPageFrame } from '@/components/app-page-frame'
 import { Card } from '@cads/shared/components/ui/card'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { cn } from '@cads/shared/lib/utils'
-import { parseAnnotations } from '@cads/shared/lib/parse-annotations'
 import {
   Select,
   SelectContent,
@@ -30,6 +29,7 @@ import { ErrorMessage } from '@cads/shared/components/error-message'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
 import { Input } from '@cads/shared/components/ui/input'
 import { GraphRange, XAxisVertical } from '@cads/shared/components/graph'
+import { formatNumber } from '@cads/shared/lib/format-number'
 
 export const Route = createLazyFileRoute('/_app/corpora_/$corpusId')({
   component: CorpusDetail,
@@ -41,7 +41,6 @@ function CorpusDetail() {
   const { data: corpus } = useSuspenseQuery(corpusById(corpusId))
   const { data: partitions } = useSuspenseQuery(subcorpusCollections(corpusId))
   const description = corpus?.description
-  const annotations = parseAnnotations(corpus?.s_annotations ?? [])
 
   return (
     <AppPageFrame
@@ -64,14 +63,7 @@ function CorpusDetail() {
         <strong>S Attributes:</strong>{' '}
         <span>{(corpus.s_atts ?? []).join(', ')}</span>
         <strong>S Annotations:</strong>
-        {Object.entries(annotations).map(([key, values]) => (
-          <div key={key} className="col-start-2">
-            {key}: {values.join(', ')}{' '}
-            {values.length === 0 && (
-              <span className="text-muted-foreground italic">n.a.</span>
-            )}
-          </div>
-        ))}
+        {corpus.s_annotations.join(', ')}
       </Card>
 
       <Card className="mr-auto flex flex-col gap-2 p-4">
@@ -247,6 +239,7 @@ function MetaOverview() {
           pointStyle="bar"
           viewportY={[0]}
           XAxisComponent={XAxisVertical}
+          formatY={(y) => formatNumber(Math.round(y))}
           hideRange={dataPoints.length < 50}
         />
       ) : (

@@ -48,7 +48,7 @@ function ConstellationOverview() {
           // be changed. Then this check can be removed.
           if (constellationId === null) return
           navigate({
-            to: `/constellations/$constellationId`,
+            to: `/constellations/$constellationId/collocation-analysis`,
             params: { constellationId },
           })
         }}
@@ -71,11 +71,9 @@ const columns: ColumnDef<z.infer<typeof schemas.ConstellationOut>>[] = [
     meta: { className: 'w-72' },
   },
   {
-    accessorKey: 'description',
+    accessorKey: 'comment',
     enableSorting: true,
-    header: ({ column }) => (
-      <SortButton column={column}>Description</SortButton>
-    ),
+    header: ({ column }) => <SortButton column={column}>Comment</SortButton>,
   },
   {
     id: 'discoursemes',
@@ -135,7 +133,8 @@ function QuickActions({ constellationId }: { constellationId: number }) {
         onClick={(event) => event.stopPropagation()}
       >
         <Link
-          to="/constellations/$constellationId"
+          to="/constellations/$constellationId/collocation-analysis"
+          from="/constellations/$constellationId/collocation-analysis"
           params={{ constellationId: String(constellationId) }}
           search={(s) => s}
           className={cn(

@@ -1,9 +1,4 @@
-import { lazy } from 'react'
-import {
-  Outlet,
-  ScrollRestoration,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 import { NavigationMenu } from '@radix-ui/react-navigation-menu'
 import { QueryClient, useQuery } from '@tanstack/react-query'
 import { Home, User, ScrollText } from 'lucide-react'
@@ -11,6 +6,7 @@ import { Home, User, ScrollText } from 'lucide-react'
 import { userIdentify } from '@cads/shared/queries'
 import { ModeToggle } from '@cads/shared/components/mode-toggle'
 import { MenuLink } from '@/components/menu-link'
+import { DevTools } from '@/components/dev-tools'
 import {
   NavigationMenuItem,
   NavigationMenuList,
@@ -22,16 +18,6 @@ export const Route = createRootRouteWithContext<{
 }>()({
   component: RootComponent,
 })
-
-// Lazy load devtools in development, but omit in production
-const Devtools =
-  process.env.NODE_ENV === 'production'
-    ? () => null
-    : lazy(() =>
-        import('@/components/dev-tools').then((res) => ({
-          default: res.DevTools,
-        })),
-      )
 
 function RootComponent() {
   const { data, isLoading, error } = useQuery(userIdentify)
@@ -80,9 +66,8 @@ function RootComponent() {
         </NavigationMenu>
       </header>
       <Outlet />
-      <ScrollRestoration getKey={(location) => location.pathname} />
       <Toaster />
-      <Devtools />
+      <DevTools />
     </>
   )
 }

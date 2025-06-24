@@ -7,7 +7,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { useQuery, useSuspenseQuery, useMutation } from '@tanstack/react-query'
-import { AlertCircle, MapIcon } from 'lucide-react'
+import { ArrowLeftIcon, AlertCircle, MapIcon } from 'lucide-react'
 
 import {
   corpusById,
@@ -189,31 +189,32 @@ function MapContent() {
       }
     }
   }
+
   return (
-    <>
-      <div className="overflow-hidden">
-        <Link
-          to="/queries/$queryId"
-          from="/queries/$queryId/semantic-map"
-          params={(p) => p}
-          search={(s) => s}
-          className={cn(
-            buttonVariants({ variant: 'default' }),
-            'relative z-10 mb-8 block',
-          )}
-        >
-          To Query
-        </Link>
-        <div className="relative z-0 h-[calc(100svh-11rem)]">
-          <WordCloud
-            words={words}
-            className="absolute inset-0"
-            onChange={handleChange}
-            filterItem={clFilterItem}
-          />
-        </div>
+    <div className="group/map bg-muted/50 grid h-[calc(100svh-3.5rem)] flex-grow grid-cols-[1rem_1fr_25rem_1rem] grid-rows-[1rem_auto_1fr_4rem] gap-5 overflow-hidden">
+      <Link
+        to="/queries/$queryId"
+        from="/queries/$queryId/semantic-map"
+        params={(p) => p}
+        search={(s) => s}
+        className={cn(
+          buttonVariants({ variant: 'default' }),
+          'ring-offset-background focus-visible:ring-ring bg-primary text-primary-foreground hover:bg-primary/90 active z-10 col-start-2 row-start-2 inline-flex h-full shrink cursor-pointer items-center justify-center self-start justify-self-start whitespace-nowrap rounded-md px-2 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+        )}
+      >
+        <ArrowLeftIcon className="mr-2 h-4 w-4" />
+        Back to Query
+      </Link>
+
+      <div className="relative z-0 col-span-2 col-start-2 row-start-3 h-[calc(100svh-14rem)]">
+        <WordCloud
+          words={words}
+          className="absolute inset-0"
+          onChange={handleChange}
+          filterItem={clFilterItem}
+        />
       </div>
-    </>
+    </div>
   )
 }
 

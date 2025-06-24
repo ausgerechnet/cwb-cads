@@ -1,4 +1,4 @@
-import { keywordAnalysisById } from '@cads/shared/queries'
+import { corpusById, keywordAnalysisById } from '@cads/shared/queries'
 import { createFileRoute } from '@tanstack/react-router'
 import { z } from 'zod'
 import { FilterSchema } from '../../constellations_/$constellationId/-use-filter-selection'
@@ -33,8 +33,11 @@ export const Route = createFileRoute('/_app/keyword-analysis_/$analysisId')({
       .optional()
       .catch('conservative_log_ratio'),
   }),
-  loader: ({ context: { queryClient }, params }) => {
+  loader: async ({ context: { queryClient }, params }) => {
     const analysisId = parseInt(params.analysisId)
-    return queryClient.ensureQueryData(keywordAnalysisById(analysisId))
+    const { corpus_id, subcorpus_id } = await queryClient.ensureQueryData(
+      keywordAnalysisById(analysisId),
+    )
+    await queryClient.ensureQueryData(corpusById(corpus_id, subcorpus_id))
   },
 })

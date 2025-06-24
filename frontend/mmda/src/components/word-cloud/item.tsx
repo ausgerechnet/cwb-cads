@@ -1,16 +1,17 @@
-import { type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { KeepScale } from 'react-zoom-pan-pinch'
 import { useDndContext, useDraggable } from '@dnd-kit/core'
 
 import { cn } from '@cads/shared/lib/utils'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
-import { WordDisplay } from './word-cloud-worker'
+import { WordDisplay } from './worker'
 
 export function Item({
   word,
   discoursemeId,
   toDisplayCoordinates,
   debug = false,
+  enablePositionalColor = false,
   displayType = 'rectangle',
   zoom,
   isSelected,
@@ -21,6 +22,7 @@ export function Item({
   discoursemeId?: number
   toDisplayCoordinates: (x: number, y: number) => [number, number]
   debug?: boolean
+  enablePositionalColor?: boolean
   zoom: number
   isSelected: boolean
   displayType?: 'rectangle' | 'dot'
@@ -34,14 +36,18 @@ export function Item({
     disabled: isDraggingOther,
   })
   const [displayOriginX, displayOriginY] = toDisplayCoordinates(
-    word.originX ?? word.x,
-    word.originY ?? word.y,
+    word.originX,
+    word.originY,
   )
   const [displayX, displayY] =
     displayType === 'dot'
       ? [displayOriginX, displayOriginY]
       : toDisplayCoordinates(word.x, word.y)
   const isDiscourseme = discoursemeId !== undefined
+  const [positionColorLight, positionColorDark] = useMemo(
+    () => getPositionColor(word.originX, word.originY),
+    [word.originX, word.originY],
+  )
 
   return (
     <>
@@ -60,7 +66,7 @@ export function Item({
           aria-disabled={word.isBackground}
           aria-selected={isSelected}
           className={cn(
-            'aria-selected:outline-primary group/item absolute left-0 top-0 flex origin-center -translate-x-1/2 -translate-y-1/2 rounded-lg outline outline-transparent aria-selected:outline-2',
+            'aria-selected:outline-primary group/item aria-selected:outline-3 aria-selected:shadow-primary/50 absolute left-0 top-0 flex origin-center -translate-x-1/2 -translate-y-1/2 rounded-lg outline outline-transparent aria-selected:shadow-md',
             {
               'bg-red-500/50': debug && word.isColliding,
               'bg-blue-500/50': debug && word.hasNearbyElements,
@@ -72,10 +78,7 @@ export function Item({
             scale:
               displayType === 'dot' ? `${word.score * 200 + 100}%` : '100%',
             ...(displayType === 'rectangle'
-              ? {
-                  width: word.displayWidth,
-                  height: word.displayHeight,
-                }
+              ? { width: word.displayWidth, height: word.displayHeight }
               : {}),
           }}
         >
@@ -84,42 +87,48 @@ export function Item({
               ref={setNodeRef}
               {...listeners}
               className={cn(
-                'outline-background/10 flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-800 text-center leading-none text-slate-300 outline outline-2 transition-transform delay-300 duration-500 group-aria-disabled/item:bg-slate-800 group-aria-disabled/item:text-slate-700 group-aria-disabled/item:outline-0',
+                'outline-background/10 flex flex-grow origin-center cursor-pointer select-none content-center items-center justify-center text-nowrap rounded-md bg-slate-200 text-center leading-none outline outline-2 transition-transform delay-300 duration-500 group-aria-disabled/item:bg-slate-100 group-aria-disabled/item:text-slate-300 group-aria-disabled/item:outline-0 dark:bg-slate-800 dark:text-slate-300 dark:group-aria-disabled/item:bg-slate-800 dark:group-aria-disabled/item:text-slate-700',
                 'group-focus-visible:outline-white/50',
                 {
                   'outline-red-700': debug && word.hasNearbyElements,
                   'bg-red-700': debug && word.isColliding,
                   'outline outline-1 outline-current':
                     discoursemeId !== undefined,
-                  'hover:bg-yellow-500': isDraggingOther,
-                  'bg-[var(--discourseme-bg)] text-[var(--discourseme-text)]':
+                  'hover:bg-yellow-500 dark:hover:bg-yellow-500':
+                    isDraggingOther,
+                  'bg-[var(--discourseme-text)] text-[var(--discourseme-bg)] dark:bg-[var(--discourseme-bg)] dark:text-[var(--discourseme-text)]':
                     isDiscourseme,
-                  'hover:bg-primary': !isDraggingOther,
+                  'hover:bg-primary hover:text-secondary dark:hover:bg-primary dark:hover:text-secondary':
+                    !isDraggingOther,
+                  'bg-[var(--position-color-light)] text-[var(--position-color-dark)] dark:bg-[var(--position-color-dark)] dark:text-[var(--position-color-light)]':
+                    enablePositionalColor,
                 },
               )}
               onMouseOver={() => onHover?.(word.id)}
               onMouseLeave={() => onLeave?.(word.id)}
               style={{
                 fontSize: `${12 + 20 * word.score}px`,
-                ...(discoursemeId === undefined
-                  ? {}
-                  : {
-                      ['--discourseme-bg']: getColorForNumber(
-                        discoursemeId,
-                        0.9,
-                        0.1,
-                        0.3,
-                      ),
-                      ['--discourseme-text']: getColorForNumber(
-                        discoursemeId,
-                        1,
-                        0.8,
-                        0.7,
-                      ),
-                    }),
+                ['--discourseme-bg' as string]: getColorForNumber(
+                  discoursemeId ?? 0,
+                  0.9,
+                  0.5,
+                  0.3,
+                ),
+                ['--discourseme-text' as string]: getColorForNumber(
+                  discoursemeId ?? 0,
+                  1,
+                  0.8,
+                  0.8,
+                ),
+                ['--position-color-light' as string]: positionColorLight,
+                ['--position-color-dark' as string]: positionColorDark,
               }}
             >
+              {isDiscourseme && <span className="mr-0.5 text-[1.5em]">‹</span>}
+
               {word.label}
+
+              {isDiscourseme && <span className="ml-0.5 text-[1.5em]">›</span>}
 
               {debug && (
                 <span
@@ -172,10 +181,7 @@ function Container({
   className?: string
   children: ReactNode
 }) {
-  const { transform } = useDraggable({
-    id: word.id,
-    disabled: isDraggingOther,
-  })
+  const { transform } = useDraggable({ id: word.id, disabled: isDraggingOther })
   return (
     <div
       className={cn(
@@ -225,4 +231,33 @@ function OriginDot({
       </KeepScale>
     </div>
   )
+}
+
+function getPositionColor(x: number, y: number) {
+  const r = Math.sqrt(x ** 2 + y ** 2) / Math.SQRT2
+  const g = (interpolate(y) + 1) / 2 + 0.5
+  const b = (interpolate(x) + 1) / 2 + 0.5
+
+  const base = [toRGB(r), toRGB(g), toRGB(b)]
+
+  const bright = `rgb(${base.map(brighten).join(',')})`
+  const dark = `rgb(${base.map(darken).join(',')})`
+
+  return [bright, dark]
+
+  function interpolate(v: number) {
+    return Math.sign(v) * Math.pow(Math.abs(v), 0.5)
+  }
+
+  function brighten(c: number) {
+    return Math.min(255, Math.round(c + 0.4 * (255 - c)))
+  }
+
+  function darken(c: number) {
+    return Math.round(c * 0.4)
+  }
+
+  function toRGB(v: number) {
+    return Math.round(255 * Math.min(Math.max(v, 0), 1))
+  }
 }

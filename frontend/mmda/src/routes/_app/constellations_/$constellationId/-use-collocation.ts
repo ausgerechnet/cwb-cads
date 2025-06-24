@@ -6,12 +6,10 @@ import {
   constellationCollocationVisualisation,
 } from '@cads/shared/queries'
 import { useFilterSelection } from './-use-filter-selection.ts'
+import { Route } from './route.tsx'
 
-export function useCollocation(
-  constellationId: number,
-  descriptionId?: number,
-) {
-  // TODO: update @tanstack/react-router to use `useMatch` with 'shouldThrow: false'
+export function useCollocation(descriptionId?: number) {
+  const constellationId = parseInt(Route.useParams().constellationId)
   const showsSemanticMap =
     useRouterState().matches.find((match) =>
       match.routeId.endsWith('semantic-map'),
@@ -47,13 +45,12 @@ export function useCollocation(
       focusDiscourseme !== undefined &&
       descriptionId !== undefined &&
       clContextBreak !== undefined &&
-      secondary !== undefined &&
-      showsSemanticMap,
+      secondary !== undefined,
   })
 
   const {
     data: collocationItems,
-    isLoading: isLoadingItem,
+    isLoading: isLoadingItems,
     isFetching: isFetchingItems,
     error: errorConstellation,
   } = useQuery({
@@ -89,10 +86,12 @@ export function useCollocation(
     enabled:
       collocation?.id !== undefined &&
       descriptionId !== undefined &&
-      !isFetchingItems,
+      !isLoadingItems &&
+      showsSemanticMap,
   })
 
-  const isLoading = isLoadingConstellation || isLoadingItemsMap || isLoadingItem
+  const isLoading =
+    isLoadingConstellation || isLoadingItemsMap || isLoadingItems
   const isFetching =
     isFetchingConstellation || isFetchingItemsMap || isFetchingItems
 

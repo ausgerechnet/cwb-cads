@@ -13,20 +13,22 @@ export function MetaFrequencyNumericInput({
   frequencies,
   onChange,
   value,
+  formatY,
 }: {
   className?: string
-  frequencies: Frequency<number>[]
+  frequencies: Frequency<[number, number]>[]
   onChange?: (range: [number, number]) => void
   value: [number, number]
+  formatY?: (value: number) => string
 }) {
   const [min, max] = [
-    Math.min(...frequencies.map((f) => f.value)),
-    Math.max(...frequencies.map((f) => f.value)),
+    Math.floor(Math.min(...frequencies.map(({ value }) => value).flat())),
+    Math.ceil(Math.max(...frequencies.map(({ value }) => value).flat())),
   ]
   const [selectedTokensTotal, selectedSpansTotal, tokensTotal, spansTotal] =
     frequencies.reduce(
       (acc, point) => {
-        if (point.value >= value[0] && point.value <= value[1]) {
+        if (point.value[0] >= value[0] && point.value[1] <= value[1]) {
           acc[0] += point.nrTokens
           acc[1] += point.nrSpans
         }
@@ -41,9 +43,13 @@ export function MetaFrequencyNumericInput({
     <div className={cn('bg-muted rounded-lg p-2', className)}>
       <GraphRange
         dataPoints={frequencies.map((f) => ({
-          position: [f.value, f.nrTokens] satisfies [number, number],
+          position: [
+            f.value[0] + (f.value[1] - f.value[0]),
+            f.nrTokens,
+          ] satisfies [number, number],
         }))}
         pointStyle="bar"
+        formatY={formatY}
         viewportY={[0]}
         value={value}
       />
@@ -86,9 +92,11 @@ export function MetaFrequencyNumericInput({
         />
 
         <div className="text-muted-foreground my-auto text-sm leading-tight">
+          {selectedTokensTotal !== tokensTotal && 'ca. '}
           {formatNumber(selectedTokensTotal)} / {formatNumber(tokensTotal)}{' '}
           Tokens
           <br />
+          {selectedSpansTotal !== spansTotal && 'ca. '}
           {formatNumber(selectedSpansTotal)} / {formatNumber(spansTotal)} Spans
         </div>
       </div>
@@ -96,10 +104,22 @@ export function MetaFrequencyNumericInput({
   )
 }
 
+// Handle week format (e.g., "2023-W01")
+// This ignores leap years and assumes the first week starts on January 1st
+// it's sufficient to get the sorting right
+function getTimeForWeek(week: string): number {
+  const [year, weekNum] = week.split('-W').map(Number)
+  const firstDayOfYear = new Date(year, 0, 1)
+  const daysOffset = (weekNum - 1) * 7
+  return new Date(
+    firstDayOfYear.getTime() + daysOffset * 24 * 60 * 60 * 1000,
+  ).getTime()
+}
+
 export function MetaFrequencyDatetimeInput({
   className,
   frequencies,
-  // timeInterval,
+  timeInterval,
   onChange,
   value,
 }: {
@@ -110,7 +130,10 @@ export function MetaFrequencyDatetimeInput({
   value: [string, string]
 }) {
   const rangeData = frequencies.map((f) => {
-    const value = new Date(f.value).getTime()
+    const value =
+      timeInterval === 'week'
+        ? getTimeForWeek(f.value)
+        : new Date(f.value).getTime()
     if (isNaN(value)) {
       console.error('Invalid date:', f.value)
     }

@@ -1,6 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
-import { createLazyFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  createLazyFileRoute,
+  useNavigate,
+  useRouter,
+} from '@tanstack/react-router'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   useInfiniteQuery,
@@ -50,6 +54,7 @@ import { Card } from '@cads/shared/components/ui/card'
 import { LabelBox } from '@cads/shared/components/label-box'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
 import { useDebouncedValue } from '@cads/shared/lib/use-debounced-value'
+import { formatNumber } from '@cads/shared/lib/format-number'
 
 export const Route = createLazyFileRoute('/_app/subcorpora_/new')({
   component: SubcorpusNew,
@@ -73,6 +78,7 @@ const SubcorpusPut = z.object({
 type SubcorpusPut = z.infer<typeof SubcorpusPut>
 
 function SubcorpusNew() {
+  const router = useRouter()
   const navigate = useNavigate()
   const { data: corpora, error: errorCorpusList } = useSuspenseQuery(corpusList)
   const form = useForm<SubcorpusPut>({
@@ -122,6 +128,7 @@ function SubcorpusNew() {
     ...createSubcorpus,
     onSuccess: (data, ...args) => {
       createSubcorpus.onSuccess?.(data, ...args)
+      router.invalidate()
       navigate({
         to: '/subcorpora/$subcorpusId',
         params: { subcorpusId: String(data?.id) },
@@ -142,55 +149,56 @@ function SubcorpusNew() {
   const [nrBins, setNrBins] = useState(30)
   const debouncedNrBins = useDebouncedValue(nrBins, 500)
 
-  const { data, fetchNextPage, hasNextPage, isFetching, isLoading } =
-    useInfiniteQuery({
-      ...corpusMetaFrequencies(corpusId, level, key, {
-        pageSize: 50,
-        sortBy: metaValueType === 'datetime' ? 'bin' : sortBy,
-        sortOrder: sortBy === 'bin' ? 'ascending' : 'descending',
-        timeInterval: metaValueType === 'datetime' ? timeInterval : undefined,
-        nrBins: debouncedNrBins,
-      }),
-      select: (data) => ({
-        ...data,
-        nrItems: data.pages[0]?.nr_items ?? 0,
-        loadedItems: data.pages.reduce(
-          (acc, page) => acc + page.frequencies.length,
-          0,
-        ),
-        frequencies:
-          data.pages
-            .flatMap((page) => page.frequencies)
-            .map((frequency) => ({
-              value:
-                frequency.bin_boolean ??
-                frequency.bin_datetime ??
-                frequency.bin_numeric ??
-                frequency.bin_unicode,
-              nrSpans: frequency.nr_spans,
-              nrTokens: frequency.nr_tokens,
-            }))
-            .toSorted(({ value: a }, { value: b }) =>
-              a === b ? 0 : String(a) < String(b) ? -1 : 1,
-            ) ?? [],
-        legalFrequencyValues:
-          data.pages
-            .flatMap((page) => page.frequencies)
-            .map(
-              (frequency) =>
-                frequency.bin_boolean ??
-                frequency.bin_datetime ??
-                frequency.bin_numeric ??
-                frequency.bin_unicode,
-            ) ?? [],
-      }),
-      retry: 0,
-      enabled: Boolean(level) && Boolean(key),
-    })
+  const {
+    data: metaFrequencyData,
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isLoading,
+  } = useInfiniteQuery({
+    ...corpusMetaFrequencies(corpusId, level, key, {
+      pageSize: 50,
+      sortBy: metaValueType === 'datetime' ? 'bin' : sortBy,
+      sortOrder: sortBy === 'bin' ? 'ascending' : 'descending',
+      timeInterval: metaValueType === 'datetime' ? timeInterval : undefined,
+      nrBins: debouncedNrBins,
+    }),
+    select: (data) => ({
+      ...data,
+      nrItems: data.pages[0]?.nr_items ?? 0,
+      loadedItems: data.pages.reduce(
+        (acc, page) => acc + page.frequencies.length,
+        0,
+      ),
+      frequencies: data.pages
+        .flatMap((page) => page.frequencies)
+        .map((frequency) => ({
+          value:
+            frequency.bin_boolean ??
+            frequency.bin_datetime ??
+            (frequency.bin_numeric as [number, number] | undefined) ??
+            frequency.bin_unicode,
+          nrSpans: frequency.nr_spans,
+          nrTokens: frequency.nr_tokens,
+        })),
+      legalFrequencyValues:
+        data.pages
+          .flatMap((page) => page.frequencies)
+          .map(
+            (frequency) =>
+              frequency.bin_boolean ??
+              frequency.bin_datetime ??
+              (frequency.bin_numeric as [number, number] | undefined) ??
+              frequency.bin_unicode,
+          ) ?? [],
+    }),
+    retry: 0,
+    enabled: Boolean(level) && Boolean(key),
+  })
 
   const frequencies = useMemo(
-    () => data?.frequencies ?? [],
-    [data?.frequencies],
+    () => metaFrequencyData?.frequencies ?? [],
+    [metaFrequencyData?.frequencies],
   )
 
   useEffect(() => {
@@ -226,9 +234,27 @@ function SubcorpusNew() {
                     message: 'Required',
                   })
                 }
-              } else {
-                mutate(data)
+                return
               }
+              if (metaValueType === 'datetime' && timeInterval === 'year') {
+                // turn year strings into ISO date strings
+                const inputYears = [
+                  parseInt(String(data.bins_datetime?.[0]?.[0])),
+                  parseInt(String(data.bins_datetime?.[0]?.[1])),
+                ]
+                const startYear = Math.min(...inputYears)
+                const endYear = Math.max(...inputYears)
+                if (isNaN(startYear) || isNaN(endYear)) {
+                  toast.error(
+                    'Please select a valid year range for datetime bins',
+                  )
+                  return
+                }
+                data.bins_datetime = [
+                  [`${startYear}-01-01T00:00:00`, `${endYear}-12-31T23:59:59`],
+                ]
+              }
+              mutate(data)
             })}
           >
             <fieldset disabled={isPending} className="grid grid-cols-2 gap-4">
@@ -274,13 +300,9 @@ function SubcorpusNew() {
                 name="description"
                 render={({ field }) => (
                   <FormItem className="col-span-full">
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Comment</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        className="description"
-                        placeholder="Description"
-                      />
+                      <Input {...field} placeholder="Comment" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -397,13 +419,26 @@ function SubcorpusNew() {
                       type="number"
                       min={1}
                       step={1}
-                      value={String(nrBins)}
+                      required
+                      defaultValue={String(nrBins)}
                       onChange={(event) => {
-                        setNrBins(parseInt(event.target.value))
+                        // check if valid number
+                        const inputElement = event.target as HTMLInputElement
+                        if (inputElement.validity.valid) {
+                          setNrBins(parseInt(inputElement.value))
+                        }
+                      }}
+                      onBlur={(event) => {
+                        // check if valid number
+                        const inputElement = event.target as HTMLInputElement
+                        if (inputElement.validity.valid) {
+                          setNrBins(parseInt(inputElement.value))
+                        } else {
+                          inputElement.value = String(nrBins)
+                        }
                       }}
                     />
                   </LabelBox>
-
                   <FormField
                     control={form.control}
                     name="bins_numeric"
@@ -411,9 +446,13 @@ function SubcorpusNew() {
                       <FormItem className="col-span-full">
                         <FormControl>
                           <MetaFrequencyNumericInput
-                            frequencies={frequencies as Frequency<number>[]}
+                            key={nrBins}
+                            frequencies={
+                              frequencies as Frequency<[number, number]>[]
+                            }
                             onChange={(value) => field.onChange([value])}
                             value={field.value?.[0] ?? [0, 0]}
+                            formatY={(value) => formatNumber(Math.round(value))}
                           />
                         </FormControl>
 

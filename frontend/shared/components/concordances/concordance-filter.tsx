@@ -50,7 +50,7 @@ export function WindowSizeInput({ className }: { className?: string }) {
       className={className}
       labelText={
         <span className="flex items-baseline gap-1">
-          <span>Window size</span>
+          <span className="text-nowrap">Window size</span>
 
           <Input
             value={currentWindowSize}
@@ -256,7 +256,7 @@ export function SecondaryInput({ className }: { className?: string }) {
     <LabelBox className={className} labelText="Secondary">
       <Select value={secondary} onValueChange={(value) => setSecondary(value)}>
         <SelectTrigger>
-          <SelectValue placeholder="Primary" />
+          <SelectValue placeholder="Secondary (?)" />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>

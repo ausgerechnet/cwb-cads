@@ -43,7 +43,7 @@ const CollocationItemsOut = z
     coordinates: z.array(CoordinatesOut),
     id: z.number().int(),
     items: z.array(CollocationItemOut),
-    min_score: z.number().nullish(),
+    min_score: z.number().nullish().optional(),
     nr_items: z.number().int(),
     page_count: z.number().int(),
     page_number: z.number().int(),
@@ -527,7 +527,7 @@ const ConstellationCollocationItemsOut = z
     discourseme_scores: z.array(DiscoursemeScoresOut),
     id: z.number().int(),
     items: z.array(CollocationItemOut),
-    min_score: z.number().nullish(),
+    min_score: z.number().nullish().optional(),
     nr_items: z.number().int(),
     page_count: z.number().int(),
     page_number: z.number().int(),
@@ -546,14 +546,23 @@ const ConstellationMapItemOut = z
     y: z.number(),
   })
   .passthrough()
+const ScoreDeciles = z
+  .object({
+    decile: z.number().int(),
+    scaled_score: z.number(),
+    score: z.number(),
+  })
+  .passthrough()
 const ConstellationMapOut = z
   .object({
     id: z.number().int(),
     map: z.array(ConstellationMapItemOut).optional(),
+    min_score: z.number().optional(),
     nr_items: z.number().int(),
     page_count: z.number().int(),
     page_number: z.number().int(),
     page_size: z.number().int(),
+    score_deciles: z.array(ScoreDeciles).optional(),
     semantic_map_id: z.number().int(),
     sort_by: z.string(),
   })
@@ -848,6 +857,7 @@ export const schemas = {
   DiscoursemeScoresOut,
   ConstellationCollocationItemsOut,
   ConstellationMapItemOut,
+  ScoreDeciles,
   ConstellationMapOut,
   ConstellationKeywordIn,
   ConstellationKeywordItemsOut,

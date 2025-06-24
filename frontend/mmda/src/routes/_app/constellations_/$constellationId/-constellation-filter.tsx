@@ -38,18 +38,16 @@ import {
 import { LabelBox } from '@cads/shared/components/label-box'
 import { measures } from '@cads/shared/components/measures'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-
-import { useAnalysisSelection } from './-use-analysis-selection'
-import { useDescription } from './-use-description'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 
-// TODO: Unify this with -query-filter.tsx
+import { useDescription } from './-use-description'
+
 export function ConstellationCollocationFilter({
-  className,
   hideSortOrder = false,
+  hideWindowSize = false,
 }: {
-  className?: string
   hideSortOrder?: boolean
+  hideWindowSize?: boolean
 }) {
   const {
     ccSortOrder,
@@ -63,11 +61,9 @@ export function ConstellationCollocationFilter({
     ccFilterDiscoursemeIds.length !== clFilterDiscoursemeIds.length ||
     ccFilterDiscoursemeIds.some((id) => !clFilterDiscoursemeIds.includes(id))
 
-  const { analysisType } = useAnalysisSelection()
-
   return (
-    <div className={cn('bg-background z-10 flex gap-2', className)}>
-      {analysisType !== 'keyword' && <WindowSizeInput className="w-52" />}
+    <>
+      {!hideWindowSize && <WindowSizeInput className="w-52" />}
 
       <LabelBox labelText="Filter Discoursemes" className="w-full">
         <div className="flex gap-2">
@@ -89,12 +85,10 @@ export function ConstellationCollocationFilter({
                 <TooltipTrigger asChild>
                   <Link
                     className={cn(
-                      buttonVariants({
-                        variant: 'default',
-                        size: 'sm',
-                      }),
+                      buttonVariants({ variant: 'default', size: 'sm' }),
                       'my-auto ml-auto',
                     )}
+                    replace
                     to=""
                     search={(s) => ({
                       ...s,
@@ -125,7 +119,7 @@ export function ConstellationCollocationFilter({
       </LabelBox>
 
       {!hideSortOrder && (
-        <LabelBox labelText="Association Measure">
+        <LabelBox labelText="Association Measure" className="w-72 min-w-max">
           <div className="flex items-center gap-1">
             <TooltipProvider>
               <Tooltip>
@@ -148,9 +142,9 @@ export function ConstellationCollocationFilter({
                     ) : (
                       <ArrowDownIcon className="h-4 w-4" />
                     )}
-                    {/* {ccSortOrder === 'ascending' ? 'asc' : 'desc'} */}
                   </Button>
                 </TooltipTrigger>
+
                 <TooltipContent side="bottom">
                   {ccSortOrder === 'ascending'
                     ? 'Sort by ascending association measure'
@@ -169,6 +163,7 @@ export function ConstellationCollocationFilter({
               <SelectTrigger>
                 <SelectValue placeholder="Association Measure" />
               </SelectTrigger>
+
               <SelectContent>
                 <SelectGroup>
                   {measures.map((value) => (
@@ -182,32 +177,33 @@ export function ConstellationCollocationFilter({
           </div>
         </LabelBox>
       )}
-    </div>
+    </>
   )
 }
 
 export function ConstellationConcordanceFilter({
   className,
+  hideWindowSize = false,
+  hideSecondary = false,
+  hideFocusDiscourseme = false,
 }: {
   className?: string
+  hideWindowSize?: boolean
+  hideSecondary?: boolean
+  hideFocusDiscourseme?: boolean
 }) {
-  const { analysisType } = useAnalysisSelection()
   return (
     <div
       className={cn(
-        'z-10 mb-8 grid grid-cols-6 gap-2',
-        analysisType === 'keyword' && 'grid-cols-9',
+        'z-10 mb-8 grid auto-cols-[1fr] grid-flow-col gap-2',
         className,
       )}
     >
-      {analysisType === 'keyword' && (
-        <>
-          {' '}
-          <WindowSizeInput />
-          <LabelBox labelText="Focus Discourseme">
-            <FocusDiscourseme />
-          </LabelBox>
-        </>
+      {!hideWindowSize && <WindowSizeInput />}
+      {!hideFocusDiscourseme && (
+        <LabelBox labelText="Focus Discourseme">
+          <FocusDiscourseme />
+        </LabelBox>
       )}
 
       <LabelBox labelText="Filter Discoursemes" className="col-span-2">
@@ -220,7 +216,7 @@ export function ConstellationConcordanceFilter({
 
       <PrimaryInput />
 
-      {analysisType === 'keyword' && <SecondaryInput />}
+      {!hideSecondary && <SecondaryInput />}
 
       <FilterItemInput />
     </div>

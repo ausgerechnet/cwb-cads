@@ -650,7 +650,4 @@ export const putSemanticMapCoordinates: MutationOptions<
     apiClient.put('/semantic-map/:id/coordinates/', body, {
       params: { id: semanticMapId.toString() },
     }),
-  onSuccess: () => {
-    // TODO: should not invalidate anything, but update the cache; requires more information though
-  },
 }

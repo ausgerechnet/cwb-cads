@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { PencilIcon, PlusIcon } from 'lucide-react'
-import { createLazyFileRoute, Link } from '@tanstack/react-router'
+import { PencilIcon } from 'lucide-react'
+import { createLazyFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { type ColumnDef } from '@tanstack/react-table'
 
@@ -66,12 +66,12 @@ function SingleDiscourseme() {
         )
       }
       cta={{
-        label: 'New description',
+        label: 'New Constellation',
         nav: {
-          to: '/discoursemes/$discoursemeId/new-description',
+          to: '/constellations/new',
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
-          params: { discoursemeId: discoursemeId.toString() },
+          search: { defaultDiscoursemeIds: [discoursemeId] },
         },
       }}
     >
@@ -106,31 +106,12 @@ function SingleDiscourseme() {
             <br />
             Create one using the button below.
           </Large>
-          <Link
-            to="/discoursemes/$discoursemeId/new-description"
-            params={{ discoursemeId: discoursemeId.toString() }}
-            className={cn(buttonVariants(), 'self-start')}
-          >
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Create New Description
-          </Link>
         </div>
       )}
 
       <Card className="mr-auto mt-6 flex w-full max-w-5xl flex-col gap-2 p-4">
         <div className="flex items-center justify-between">
           {descriptions.length > 0 && <Large>Descriptions</Large>}
-
-          <Link
-            to="/discoursemes/$discoursemeId/new-description"
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            params={{ discoursemeId: discoursemeId.toString() }}
-            className={buttonVariants()}
-          >
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Create New Description
-          </Link>
         </div>
 
         <DataTable<z.infer<typeof schemas.DiscoursemeDescriptionOut>>

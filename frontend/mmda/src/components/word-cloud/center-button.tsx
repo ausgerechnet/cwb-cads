@@ -4,8 +4,10 @@ import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
 
 export function CenterButton({
   centerView,
+  className,
 }: {
   centerView: (zoom?: number) => void
+  className?: string
 }) {
   useEffect(() => {
     function handleKeydown(event: KeyboardEvent) {
@@ -20,7 +22,7 @@ export function CenterButton({
   return (
     <ButtonTooltip
       onClick={() => centerView(1)}
-      className="absolute bottom-1 left-1 z-[5002]"
+      className={className}
       variant="secondary"
       size="icon"
       tooltip={

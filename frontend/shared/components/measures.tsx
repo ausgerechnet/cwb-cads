@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from './ui/button'
 import { CheckSquareIcon, Columns3Icon, SquareIcon } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
@@ -83,10 +83,23 @@ function subscribe(
   return () => void callbacks.delete(callback)
 }
 
-export function useMeasureSelection() {
-  const [selectedMeasures, setSelectedMeasures] = useState(selection)
+export function useMeasureSelection(
+  mandatoryMeasure?: (typeof measures)[number],
+) {
+  const [savedSelectedMeasures, setSelectedMeasures] = useState(selection)
   useEffect(() => subscribe(setSelectedMeasures), [])
-  return { measures, selectedMeasures, measureNameMap, toggleMeasure }
+  const selectedMeasures = useMemo(() => {
+    if (!mandatoryMeasure || savedSelectedMeasures.includes(mandatoryMeasure)) {
+      return savedSelectedMeasures
+    }
+    return [...savedSelectedMeasures, mandatoryMeasure]
+  }, [savedSelectedMeasures])
+  return {
+    measures,
+    selectedMeasures,
+    measureNameMap,
+    toggleMeasure,
+  }
 }
 
 export function MeasureSelect({ className }: { className?: string }) {

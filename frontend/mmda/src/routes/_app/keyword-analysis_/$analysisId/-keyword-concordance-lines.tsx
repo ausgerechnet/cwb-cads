@@ -1,12 +1,12 @@
 import { Fragment, useMemo, useRef } from 'react'
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
-import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 import { schemas } from '@/rest-client'
 import { cn } from '@cads/shared/lib/utils'
-import { corpusById, queryConcordances, queryById } from '@cads/shared/queries'
+import { queryConcordances } from '@cads/shared/queries'
 import { formatNumber } from '@cads/shared/lib/format-number'
 import {
   Table,
@@ -29,53 +29,32 @@ import { Repeat } from '@cads/shared/components/repeat'
 import { Ellipsis } from '@cads/shared/components/ellipsis'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
+import { useConcordanceFilterContext } from '@cads/shared/components/concordances'
 
 const emptyArray = [] as const
 
-// TODO: This is mostly a duplicate. exract shared component
 export function QueryConcordanceLines({
   queryId,
   className,
-  p,
 }: {
   queryId: number
   className?: string
-  p: string
 }) {
-  const { data: query } = useSuspenseQuery(queryById(queryId))
-  const { data: corpus } = useQuery({
-    ...corpusById(query.corpus_id as number),
-    enabled: query?.corpus_id !== undefined,
-  })
   const navigate = useNavigate()
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
-  const searchParams = useSearch({
-    from: '/_app/keyword-analysis_/$analysisId',
-  })
-  const pAttributes = corpus?.p_atts ?? emptyArray
-  // TODO: duplicated across -query-filter.tsx and this file
-  const primary =
-    searchParams.primary ??
-    // It seems sensible to default to 'word'
-    pAttributes.find((p) => p === 'word') ??
-    pAttributes[0]
-  const secondary =
-    searchParams.secondary ??
-    pAttributes.find((a) => a === p) ??
-    pAttributes.find((a) => a === 'lemma') ??
-    pAttributes[0]
-
   const {
-    windowSize = 3,
-    clPageSize = 10,
-    clPageIndex = 0,
-    clSortByOffset = 0,
-    clSortOrder = 'random',
+    windowSize,
+    clPageSize,
+    clPageIndex,
+    clSortByOffset,
+    clSortOrder,
     clFilterItem,
     clContextBreak,
-  } = searchParams
+    primary,
+    secondary,
+  } = useConcordanceFilterContext()
 
   const {
     data: concordanceLines,

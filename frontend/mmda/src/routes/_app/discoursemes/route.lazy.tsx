@@ -45,7 +45,7 @@ const columns: ColumnDef<z.infer<typeof schemas.DiscoursemeOut>>[] = [
   },
   {
     accessorKey: '_items',
-    header: 'Items',
+    header: 'Template',
     cell: ({ row }) =>
       shortenArray(
         (row.original.template ?? [])

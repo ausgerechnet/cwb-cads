@@ -39,7 +39,7 @@ function MetaFrequencyComponents() {
 
         <MetaFrequencyNumericInput
           frequencies={Array.from({ length: 20 }).map((_, i, { length }) => ({
-            value: i,
+            value: [i, i + 0.5],
             nrTokens: (length - i) ** 2 + 5,
             nrSpans: i * 3,
           }))}
@@ -51,7 +51,7 @@ function MetaFrequencyComponents() {
 
         <MetaFrequencyNumericInput
           frequencies={Array.from({ length: 500 }).map((_, i, { length }) => ({
-            value: i,
+            value: [i, i + 0.5],
             nrTokens: Math.round((length - i + 500) ** 10 / 1e26 + 5_000),
             nrSpans: i * 3,
           }))}

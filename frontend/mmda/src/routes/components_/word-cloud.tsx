@@ -6,10 +6,87 @@ import { WordCloud, WordCloudEvent } from '@/components/word-cloud'
 import { Checkbox } from '@cads/shared/components/ui/checkbox'
 import { buttonVariants } from '@cads/shared/components/ui/button'
 import { Block, BlockComment } from './-block'
+import { CutOffSelect } from '@/components/word-cloud/cut-off-select'
 
 export const Route = createFileRoute('/components_/word-cloud')({
-  component: WordCloudComponents,
+  component: function () {
+    return (
+      <>
+        <CutOffSelectComponents />
+        <WordCloudComponents />
+      </>
+    )
+  },
 })
+
+function CutOffSelectComponents() {
+  const [value, setValue] = useState(5)
+  return (
+    <Block componentTag="CutOffSelect">
+      <CutOffSelect
+        value={value}
+        onChange={setValue}
+        options={[
+          {
+            decile: 0,
+            scaled_score: 0.025,
+            score: 0.076,
+          },
+          {
+            decile: 1,
+            scaled_score: 0.13,
+            score: 0.389,
+          },
+          {
+            decile: 2,
+            scaled_score: 0.238,
+            score: 0.723,
+          },
+          {
+            decile: 3,
+            scaled_score: 0.433,
+            score: 1.385,
+          },
+          {
+            decile: 4,
+            scaled_score: 0.473,
+            score: 1.534,
+          },
+          {
+            decile: 5,
+            scaled_score: 0.558,
+            score: 1.88,
+          },
+          {
+            decile: 6,
+            scaled_score: 0.677,
+            score: 2.46,
+          },
+          {
+            decile: 7,
+            scaled_score: 0.719,
+            score: 2.706,
+          },
+          {
+            decile: 8,
+            scaled_score: 0.856,
+            score: 3.821,
+          },
+          {
+            decile: 9,
+            scaled_score: 0.915,
+            score: 4.646,
+          },
+          {
+            decile: 10,
+            scaled_score: 0.987,
+            score: 7.467,
+          },
+        ]}
+      />
+    </Block>
+  )
+}
 
 function WordCloudComponents() {
   const [debug, setDebug] = useState(false)

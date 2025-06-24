@@ -1,9 +1,8 @@
+import { Fragment, useMemo } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { z } from 'zod'
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react'
 
 import { schemas } from '@cads/shared/api-client'
-import { Button } from '@cads/shared/components/ui/button'
 import {
   Table,
   TableBody,
@@ -12,9 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from '@cads/shared/components/ui/table'
-import { Fragment, useMemo } from 'react'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { DiscoursemeName } from '@cads/shared/components/discourseme-name'
+import { SortButtonView } from '@cads/shared/components/data-table'
+import { measureNameMap } from '@cads/shared/components/measures'
 
 export const DiscoursemeBreakdownSearch = z.object({
   dbSortBy: z.enum(['O11', 'ipm']).optional().catch('ipm'),
@@ -26,11 +26,6 @@ export const DiscoursemeBreakdownSearch = z.object({
 })
 
 const measureOrder = ['O11', 'ipm'] as const
-
-const measureMap: Record<(typeof measureOrder)[number], string> = {
-  O11: 'frequency',
-  ipm: 'IPM',
-}
 
 type Discourseme = {
   id: number
@@ -109,11 +104,15 @@ export function DiscoursemeBreakdown({
 
           {measureOrder.map((measure) => {
             const isCurrent = dbSortBy === measure
+            const isSorted = isCurrent
+              ? dbSortOrder === 'ascending'
+                ? 'asc'
+                : 'desc'
+              : 'hide'
             return (
               <TableHead key={measure} className="text-right">
-                <Button
-                  variant="ghost"
-                  className="-mx-2 inline-flex h-auto gap-1 px-2 leading-none"
+                <SortButtonView
+                  isSorted={isSorted}
                   onClick={() => {
                     navigate({
                       to: '',
@@ -137,14 +136,8 @@ export function DiscoursemeBreakdown({
                     })
                   }}
                 >
-                  {isCurrent && dbSortOrder === 'ascending' && (
-                    <ArrowDownIcon className="h-3 w-3" />
-                  )}
-                  {isCurrent && dbSortOrder === 'descending' && (
-                    <ArrowUpIcon className="h-3 w-3" />
-                  )}
-                  {measureMap[measure]}
-                </Button>
+                  {measureNameMap.get(measure)}
+                </SortButtonView>
               </TableHead>
             )
           })}

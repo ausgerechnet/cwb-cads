@@ -16,7 +16,7 @@ export function AppPageFrameSemanticMap({
   ...props
 }: ComponentProps<typeof AppPageFrame> & {
   showsSemanticMap: boolean
-  title: string
+  title: ReactNode
   children: ReactNode
   drawerContent: ReactNode
   mapContent: ReactNode
