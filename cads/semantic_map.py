@@ -34,14 +34,14 @@ def ccc_semmap(analyses, embeddings, per_am=200, method='tsne', blacklist_items=
         db.session.commit()
 
         items = analysis.top_items(per_am)
-        items = [item for item in items if item not in blacklist_items]
+        items = set([item for item in items if item not in blacklist_items])
         if len(items) < 10:
-            current_app.logger.error('ccc_semmap :: no enough items after considering blacklist')
+            current_app.logger.error('ccc_semmap :: not enough items after considering blacklist')
         all_items = all_items.union(items)
 
     current_app.logger.debug(f'ccc_semmap :: creating coordinates for {len(all_items)} items')
     semspace = SemanticSpace(semantic_map.embeddings, normalise=True)
-    coordinates = semspace.generate2d(all_items, method=semantic_map.method, parameters=None)
+    coordinates = semspace.generate2d(list(all_items), method=semantic_map.method, parameters=None)
     coordinates.index.name = 'item'
     coordinates['semantic_map_id'] = semantic_map.id
     coordinates.to_sql('coordinates', con=db.engine, if_exists='append')
@@ -231,6 +231,8 @@ def create_semantic_map(json_data):
     keywords = [db.get_or_404(Keyword, keyword_id) for keyword_id in keyword_ids]
 
     analyses = collocations + keywords
+    # TODO: different databases for different corpora possible (and typical)
+    # allow passing in list and default to corpus embeddings internally
     embeddings = analyses[0].corpus.embeddings
 
     semantic_map = ccc_semmap(analyses, embeddings, per_am=200, method=method)
