@@ -11,6 +11,6 @@ Flask-CORS==4.0.0
 SQLAlchemy==2.0.28
 pytest==8.1.1
 pylint==3.2.5
-PyJWT<=2.9.0
+PyJWT==2.9.0
 statsmodels==0.14.4
-scipy==1.15.3
+scipy<=1.15.3,>=1.13
