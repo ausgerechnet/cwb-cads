@@ -1,4 +1,4 @@
-cwb-ccc @ git+https://github.com/ausgerechnet/cwb-ccc@v0.13.0
+cwb-ccc @ git+https://github.com/ausgerechnet/cwb-ccc@v0.13.3
 association-measures @ git+https://github.com/fau-klue/pandas-association-measures@v0.3.2
 semmap @ git+https://github.com/ausgerechnet/semmap@master
 APIFlask==2.1.1
@@ -13,3 +13,4 @@ pytest==8.1.1
 pylint==3.2.5
 PyJWT<=2.9.0
 statsmodels==0.14.4
+scipy==1.15.3
