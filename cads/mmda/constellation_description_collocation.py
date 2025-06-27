@@ -7,6 +7,7 @@ from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from association_measures import measures
 from flask import abort, current_app
+from math import isnan
 from pandas import DataFrame, concat, merge, to_numeric
 from sqlalchemy import select
 
@@ -50,8 +51,8 @@ def get_score_deciles(raw_scores, method='sigmoid'):
     decile_list = [
         {
             'decile': int(q * 10),
-            'score': round(score_q[q], 3),
-            'scaled_score': round(scaled_q[q], 3)
+            'score': None if isnan(score_q[q]) else round(score_q[q], 3),
+            'scaled_score': None if isnan(scaled_q[q]) else round(scaled_q[q], 3)
         }
         for q in quantiles
     ]
@@ -658,7 +659,7 @@ def get_collocation_discourseme_scores_2(collocation_id, discourseme_description
         df_discourseme_unigram_items = df_discourseme_unigram_items.explode('item')
         df_discourseme_unigram_items = df_discourseme_unigram_items.groupby('item').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
         df_unigram_item_scores = measures.score(df_discourseme_unigram_items, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
-        df_unigram_item_scores['discourseme_id'] = discourseme_id
+        df_unigram_item_scores['discourseme_id']= discourseme_id
         df_unigram_item_scores['source'] = 'discourseme_unigram_items'
         unigram_item_scores.append(df_unigram_item_scores)
 
@@ -699,8 +700,8 @@ class ConstellationCollocationIn(CollocationIn):
 # OUTPUT
 class ScoreDeciles(Schema):
     decile = Integer(required=True)
-    score = Float(required=True)
-    scaled_score = Float(required=True)
+    score = Float(required=True, allow_none=True)
+    scaled_score = Float(required=True, allow_none=True)
 
 
 class ConstellationCollocationOut(CollocationOut):
