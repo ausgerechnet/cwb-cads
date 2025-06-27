@@ -157,7 +157,7 @@ def test_get_similar(client, auth):
 
         assert similar.status_code == 200
         assert len(similar.json) == 200
-        assert similar.json[1]['surface'] == "Bundesland"
+        assert similar.json[1]['surface'] == "Bundesregierung"
 
 
 def test_deletion(client, auth):
