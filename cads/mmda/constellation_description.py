@@ -80,7 +80,7 @@ def pairwise_intersections(dict_of_sets):
 class ConstellationDescriptionIn(Schema):
 
     corpus_id = Integer(required=True)
-    subcorpus_id = Integer(required=False)
+    subcorpus_id = Integer(required=False, allow_none=True)
     # semantic_map_id = Integer(required=False, load_default=None)
     s = String(required=False)
     match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))

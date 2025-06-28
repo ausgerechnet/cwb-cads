@@ -743,6 +743,7 @@
             "type": "string"
           },
           "subcorpus_id": {
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -2762,7 +2763,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev60"
+    "version": "0.3.0.dev61"
   },
   "openapi": "3.0.2",
   "paths": {
