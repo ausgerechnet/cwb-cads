@@ -125,7 +125,7 @@ export function DiscoursemeCollocateTable({
                   onClick={() => {
                     navigate({
                       replace: true,
-                      to: '',
+                      to: '.',
                       /**
                       // @ts-ignore */
                       // params: (p) => p,
@@ -177,7 +177,7 @@ export function DiscoursemeCollocateTable({
                 onClick={() => {
                   navigate({
                     replace: true,
-                    to: '',
+                    to: '.',
                     search: (s) => ({
                       ...s,
                       dctHidden: dctHidden?.includes(id)

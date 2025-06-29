@@ -115,7 +115,7 @@ export function DiscoursemeBreakdown({
                   isSorted={isSorted}
                   onClick={() => {
                     navigate({
-                      to: '',
+                      to: '.',
                       params: (p) => p,
                       search: (s) => {
                         if (isCurrent) {
@@ -152,7 +152,7 @@ export function DiscoursemeBreakdown({
               onClick={() => {
                 navigate({
                   replace: true,
-                  to: '',
+                  to: '.',
                   params: (p) => p,
                   search: (s) => ({
                     ...s,

@@ -1,4 +1,8 @@
-import { createLazyRoute, useNavigate } from '@tanstack/react-router'
+import {
+  createLazyRoute,
+  useNavigate,
+  createLazyFileRoute,
+} from '@tanstack/react-router'
 
 import { Card } from '@cads/shared/components/ui/card'
 import { Headline1 } from '@cads/shared/components/ui/typography'

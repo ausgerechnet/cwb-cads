@@ -1,12 +1,7 @@
 'use no memo'
-import { useEffect, useMemo } from 'react'
+import { ReactNode, useEffect, useMemo } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react'
-import {
-  Link,
-  ReactNode,
-  useNavigate,
-  type LinkProps,
-} from '@tanstack/react-router'
+import { Link, useNavigate, type LinkProps } from '@tanstack/react-router'
 import {
   ColumnDef,
   SortingColumn,
