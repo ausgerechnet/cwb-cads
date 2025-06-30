@@ -20,6 +20,7 @@ export default defineConfig({
       },
     }),
   ],
+  base: './',
   resolve: {
     alias: {
       '@cads/shared': path.resolve(__dirname, '../shared'),
