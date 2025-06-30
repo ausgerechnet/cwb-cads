@@ -1,4 +1,4 @@
-import { createLazyRoute, useNavigate } from '@tanstack/react-router'
+import { useNavigate, createLazyFileRoute } from '@tanstack/react-router'
 
 import { Card } from '@cads/shared/components/ui/card'
 import { Headline1 } from '@cads/shared/components/ui/typography'
@@ -12,7 +12,7 @@ import { Skeleton } from '@cads/shared/components/ui/skeleton'
 import { QueryFormCQP } from '@/components/query-form-cqp'
 import { QueryFormAssisted } from '@/components/query-form-assisted'
 
-export const Route = createLazyRoute('/_app/queries_/new')({
+export const Route = createLazyFileRoute('/_app/queries_/new')({
   component: QueriesNew,
   pendingComponent: QueriesNewPending,
 })

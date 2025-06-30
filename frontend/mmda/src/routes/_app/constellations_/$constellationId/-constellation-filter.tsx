@@ -89,7 +89,7 @@ export function ConstellationCollocationFilter({
                       'my-auto ml-auto',
                     )}
                     replace
-                    to=""
+                    to="."
                     search={(s) => ({
                       ...s,
                       ccPageNumber: 1,

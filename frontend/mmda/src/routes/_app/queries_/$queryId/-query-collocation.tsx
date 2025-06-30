@@ -60,7 +60,7 @@ export function QueryCollocation() {
                   <SortButtonLink
                     isSorted={isSorted}
                     replace
-                    to=""
+                    to="."
                     params={(p) => p}
                     search={(s) => {
                       if (isCurrent) {
@@ -113,7 +113,7 @@ export function QueryCollocation() {
                       buttonVariants({ variant: 'outline' }),
                       'inline-flex h-auto gap-1 px-2 py-1 leading-none',
                     )}
-                    to=""
+                    to="."
                     params={(p) => p}
                     search={(s) => ({
                       ...s,
