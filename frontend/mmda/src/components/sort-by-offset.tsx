@@ -1,5 +1,5 @@
 import { cn } from '@cads/shared/lib/utils'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 
 export function SortByOffset({
   value,

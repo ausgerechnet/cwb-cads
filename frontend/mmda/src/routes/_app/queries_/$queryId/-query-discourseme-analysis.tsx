@@ -17,10 +17,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
+} from '@cads/shared/components/form'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { QuickCreateDiscourseme } from '@/components/quick-create-discourseme'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import {
   Select,
@@ -29,13 +29,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
-import { ItemsInput } from '@cads/shared/components/ui/items-input'
+} from '@cads/shared/components/select'
+import { ItemsInput } from '@cads/shared/components/items-input'
 import {
   Dialog,
   DialogContent,
   DialogTitle,
-} from '@cads/shared/components/ui/dialog'
+} from '@cads/shared/components/dialog'
 import { useNavigate } from '@tanstack/react-router'
 
 // The automatically generated DiscoursemeDescriptionIn does not support .extend()

@@ -36,11 +36,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
-import { Button } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/form'
+import { Button } from '@cads/shared/components/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
-import { Input } from '@cads/shared/components/ui/input'
+import { Skeleton } from '@cads/shared/components/skeleton'
+import { Input } from '@cads/shared/components/input'
 import {
   Select,
   SelectGroup,
@@ -48,9 +48,9 @@ import {
   SelectTrigger,
   SelectValue,
   SelectContent,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 import { LabelBox } from '@cads/shared/components/label-box'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
 import { useDebouncedValue } from '@cads/shared/lib/use-debounced-value'

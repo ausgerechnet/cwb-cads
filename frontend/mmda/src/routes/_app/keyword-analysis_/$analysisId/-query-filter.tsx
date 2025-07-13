@@ -3,7 +3,7 @@ import { Loader2Icon, ShuffleIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { shuffleQueryConcordances } from '@cads/shared/queries'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 import {
   SortByOffsetInput,
   WindowSizeInput,

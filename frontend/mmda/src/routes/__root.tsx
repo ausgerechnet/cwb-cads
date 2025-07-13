@@ -10,8 +10,8 @@ import { MenuLink } from '@/components/menu-link'
 import {
   NavigationMenuItem,
   NavigationMenuList,
-} from '@cads/shared/components/ui/navigation-menu'
-import { Toaster } from '@cads/shared/components/ui/sonner'
+} from '@cads/shared/components/navigation-menu'
+import { Toaster } from '@cads/shared/components/sonner'
 import { DiscoursemeCollocateTableSearch } from '@/components/discourseme-collocate-table'
 import { DiscoursemeBreakdownSearch } from '@/components/discourseme-breakdown'
 import { measures } from '@cads/shared/components/measures'

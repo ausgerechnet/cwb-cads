@@ -6,7 +6,7 @@ import { CheckIcon } from 'lucide-react'
 import { constellationKeywordAnalysisItems } from '@cads/shared/queries'
 import { Pagination } from '@cads/shared/components/pagination'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 import {
   Table,
@@ -15,8 +15,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+} from '@cads/shared/components/table'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { Repeat } from '@cads/shared/components/repeat'
 import {
   MeasureSelect,
@@ -24,7 +24,7 @@ import {
 } from '@cads/shared/components/measures'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { SortButtonLink } from '@cads/shared/components/data-table'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 
 import { useDescription } from '../-use-description'
 import { useKeywordSelection } from './-use-keyword-selection'

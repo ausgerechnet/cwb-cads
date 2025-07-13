@@ -9,9 +9,9 @@ import { Loader2Icon, PencilIcon, PencilOffIcon, XIcon } from 'lucide-react'
 import { z } from 'zod'
 
 import { schemas } from '@/rest-client'
-import { Card } from '@cads/shared/components/ui/card'
-import { Small } from '@cads/shared/components/ui/typography'
-import { Button } from '@cads/shared/components/ui/button'
+import { Card } from '@cads/shared/components/card'
+import { Small } from '@cads/shared/components/typography'
+import { Button } from '@cads/shared/components/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import {

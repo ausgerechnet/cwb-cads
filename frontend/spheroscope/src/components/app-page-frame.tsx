@@ -2,8 +2,8 @@ import { ComponentProps, ReactNode } from 'react'
 import { Plus } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 
-import { Headline1 } from '@cads/shared/components/ui/typography'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { Headline1 } from '@cads/shared/components/typography'
+import { buttonVariants } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 
 export function AppPageFrame({

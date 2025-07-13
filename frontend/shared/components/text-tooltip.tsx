@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from './ui/tooltip'
+} from './tooltip'
 
 export function TextTooltip({
   tooltipText,

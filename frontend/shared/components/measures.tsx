@@ -1,15 +1,15 @@
 import { z } from 'zod'
 import { useEffect, useMemo, useState } from 'react'
-import { Button } from './ui/button'
+import { Button } from './button'
 import { CheckSquareIcon, Columns3Icon, SquareIcon } from 'lucide-react'
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
+import { Popover, PopoverContent, PopoverTrigger } from './popover'
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from './ui/command'
+} from './command'
 import { cn } from '../lib/utils'
 
 export const measures = [

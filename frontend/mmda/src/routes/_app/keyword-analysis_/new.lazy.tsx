@@ -13,14 +13,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
+} from '@cads/shared/components/form'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 import { corpusList, createKeywordAnalysis } from '@cads/shared/queries'
 import { schemas } from '@/rest-client'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Large } from '@cads/shared/components/ui/typography'
+import { Large } from '@cads/shared/components/typography'
 import {
   Select,
   SelectContent,
@@ -28,7 +28,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { SelectSubcorpus } from '@cads/shared/components/select-subcorpus'
 
 export const Route = createLazyFileRoute('/_app/keyword-analysis_/new')({

@@ -2,15 +2,15 @@ import { type Table } from '@tanstack/table-core'
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
-import { Button, buttonVariants } from '@cads/shared/components/ui/button'
-import { Select } from '@cads/shared/components/ui/select'
+import { Button, buttonVariants } from '@cads/shared/components/button'
+import { Select } from '@cads/shared/components/select'
 import {
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectTrigger,
-} from '@cads/shared/components/ui/select'
-import { Small } from '@cads/shared/components/ui/typography'
+} from '@cads/shared/components/select'
+import { Small } from '@cads/shared/components/typography'
 import { formatNumber } from '@cads/shared/lib/format-number'
 
 export function PaginationForTable<T>({ table }: { table: Table<T> }) {

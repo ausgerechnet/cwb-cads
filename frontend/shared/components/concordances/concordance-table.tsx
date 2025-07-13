@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { schemas } from '../../api-client'
 import { Repeat } from '../repeat'
-import { Skeleton } from '../ui/skeleton'
+import { Skeleton } from '../skeleton'
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../ui/table'
+} from '../table'
 import { cn } from '../../lib/utils'
 import { ConcordanceLineRender } from './concordance-line'
 import {

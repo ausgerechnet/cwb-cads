@@ -3,7 +3,7 @@ import { createLazyFileRoute } from '@tanstack/react-router'
 import { AppPageFrame } from '@/components/app-page-frame'
 import { DefaultPendingComponent } from '@/components/default-pending-component'
 import { PartitionForm } from './-partition-form'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 
 export const Route = createLazyFileRoute('/_app/partition')({
   component: Partition,

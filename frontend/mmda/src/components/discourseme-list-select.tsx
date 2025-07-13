@@ -5,8 +5,8 @@ import { z } from 'zod'
 
 import { discoursemesList } from '@cads/shared/queries'
 import { schemas } from '@cads/shared/api-client'
-import { Small } from '@cads/shared/components/ui/typography'
-import { Button } from '@cads/shared/components/ui/button'
+import { Small } from '@cads/shared/components/typography'
+import { Button } from '@cads/shared/components/button'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 
 export function DiscoursemeListSelect({

@@ -8,9 +8,9 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { logIn, userIdentify } from '@cads/shared/queries'
 import { required_error } from '@cads/shared/lib/strings'
-import { Button } from '@cads/shared/components/ui/button'
-import { Input } from '@cads/shared/components/ui/input'
-import { Headline1 } from '@cads/shared/components/ui/typography'
+import { Button } from '@cads/shared/components/button'
+import { Input } from '@cads/shared/components/input'
+import { Headline1 } from '@cads/shared/components/typography'
 import {
   Form,
   FormControl,
@@ -18,7 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
+} from '@cads/shared/components/form'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 
 export const Route = createLazyFileRoute('/login')({

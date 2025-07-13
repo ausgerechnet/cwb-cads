@@ -10,8 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@cads/shared/components/ui/alert-dialog'
-import { Button } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/alert-dialog'
+import { Button } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 
 export function ButtonAlert({

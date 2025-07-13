@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { ComponentProps } from 'react'
 import { cn } from '@cads/shared/lib/utils'
-import { navigationMenuTriggerStyle } from '@cads/shared/components/ui/navigation-menu'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { navigationMenuTriggerStyle } from '@cads/shared/components/navigation-menu'
+import { buttonVariants } from '@cads/shared/components/button'
 
 export function MenuLink({
   className,

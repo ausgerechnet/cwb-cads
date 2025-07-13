@@ -3,8 +3,8 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ExpandIcon } from 'lucide-react'
 
 import { WordCloud, WordCloudEvent } from '@/components/word-cloud'
-import { Checkbox } from '@cads/shared/components/ui/checkbox'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { Checkbox } from '@cads/shared/components/checkbox'
+import { buttonVariants } from '@cads/shared/components/button'
 import { Block, BlockComment } from './-block'
 import { CutOffSelect } from '@/components/word-cloud/cut-off-select'
 

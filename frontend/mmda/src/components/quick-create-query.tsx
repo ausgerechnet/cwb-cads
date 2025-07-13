@@ -6,14 +6,14 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
-} from '@cads/shared/components/ui/dialog'
-import { Button } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/dialog'
+import { Button } from '@cads/shared/components/button'
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@cads/shared/components/ui/tabs'
+} from '@cads/shared/components/tabs'
 import { QueryFormCQP } from '@/components/query-form-cqp'
 import { QueryFormAssisted } from '@/components/query-form-assisted'
 import {
@@ -21,7 +21,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@cads/shared/components/ui/tooltip'
+} from '@cads/shared/components/tooltip'
 
 export function QuickCreateQuery({
   onSuccess,

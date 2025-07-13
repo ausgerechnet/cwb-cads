@@ -4,9 +4,9 @@ import { ShrinkIcon } from 'lucide-react'
 
 import { cn } from '@cads/shared/lib/utils'
 import { WordCloud } from '@/components/word-cloud'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/button'
 import { ButtonTooltip } from '@cads/shared/components/button-tooltip'
-import { Checkbox } from '@cads/shared/components/ui/checkbox'
+import { Checkbox } from '@cads/shared/components/checkbox'
 import { WordCloudEvent } from '@/components/word-cloud'
 import { CutOffSelect } from '@/components/word-cloud/cut-off-select'
 

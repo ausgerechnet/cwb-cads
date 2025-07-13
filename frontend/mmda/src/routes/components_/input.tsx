@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { SelectMulti } from '@cads/shared/components/select-multi'
 import { InputGrowable } from '@cads/shared/components/input-growable'
 import { LabelBox } from '@cads/shared/components/label-box'
-import { Input } from '@cads/shared/components/ui/input'
+import { Input } from '@cads/shared/components/input'
 import { RangeSlider } from '@cads/shared/components/range-slider'
 import {
   Select,
@@ -13,10 +13,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 
 import { Block } from './-block'
-import { Slider } from '@cads/shared/components/ui/slider'
+import { Slider } from '@cads/shared/components/slider'
 
 export const Route = createFileRoute('/components_/input')({
   component: InputComponents,

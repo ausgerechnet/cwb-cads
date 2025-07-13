@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 
 import { useBreakdownSelection } from './-use-breakdown-selection'
 

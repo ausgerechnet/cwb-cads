@@ -14,11 +14,11 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from '@cads/shared/components/ui/form'
-import { Input } from '@cads/shared/components/ui/input'
-import { Button } from '@cads/shared/components/ui/button'
-import { Alert, AlertDescription } from '@cads/shared/components/ui/alert'
-import { ItemsInput } from '@cads/shared/components/ui/items-input'
+} from '@cads/shared/components/form'
+import { Input } from '@cads/shared/components/input'
+import { Button } from '@cads/shared/components/button'
+import { Alert, AlertDescription } from '@cads/shared/components/alert'
+import { ItemsInput } from '@cads/shared/components/items-input'
 
 const Discourseme = z.object({
   name: z.string({ required_error }),

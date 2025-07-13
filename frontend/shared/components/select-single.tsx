@@ -6,7 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select'
+} from './select'
 
 export function SelectSingle({
   items,

@@ -15,8 +15,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/select'
+import { buttonVariants } from '@cads/shared/components/button'
 
 import { useDescription } from '../-use-description'
 import { useUfaSelection } from './-use-ufa-selection'

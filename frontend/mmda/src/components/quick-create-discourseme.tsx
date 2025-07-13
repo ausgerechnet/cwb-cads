@@ -3,16 +3,16 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
-} from '@cads/shared/components/ui/dialog'
+} from '@cads/shared/components/dialog'
 
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 import { DiscoursemeForm } from '@/components/discourseme-form'
 import {
   TooltipTrigger,
   TooltipContent,
   TooltipProvider,
   Tooltip,
-} from '@cads/shared/components/ui/tooltip'
+} from '@cads/shared/components/tooltip'
 import { Plus } from 'lucide-react'
 import { cn } from '@cads/shared/lib/utils'
 

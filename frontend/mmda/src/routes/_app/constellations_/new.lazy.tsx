@@ -16,11 +16,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
+} from '@cads/shared/components/form'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Button } from '@cads/shared/components/ui/button'
-import { Input } from '@cads/shared/components/ui/input'
-import { Card } from '@cads/shared/components/ui/card'
+import { Button } from '@cads/shared/components/button'
+import { Input } from '@cads/shared/components/input'
+import { Card } from '@cads/shared/components/card'
 import { DiscoursemeListSelect } from '@/components/discourseme-list-select'
 
 export const Route = createLazyFileRoute('/_app/constellations_/new')({

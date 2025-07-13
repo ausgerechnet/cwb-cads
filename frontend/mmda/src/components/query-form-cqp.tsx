@@ -14,7 +14,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
+} from '@cads/shared/components/form'
 import {
   Select,
   SelectContent,
@@ -22,10 +22,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
-import { Button } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/select'
+import { Button } from '@cads/shared/components/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Textarea } from '@cads/shared/components/ui/textarea'
+import { Textarea } from '@cads/shared/components/textarea'
 import { CorpusSelect } from '@/components/select-corpus'
 import { useFormFieldDependency } from '@cads/shared/lib/use-form-field-dependency'
 

@@ -25,11 +25,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectGroup,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/button'
 import { WordCloudPreview } from '@/components/word-cloud-preview'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 import { cn } from '@cads/shared/lib/utils'
 import { LoaderBig } from '@cads/shared/components/loader-big'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'

@@ -1,5 +1,5 @@
 import { createLazyFileRoute } from '@tanstack/react-router'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 import { ConstellationLayout } from '../-constellation-layout'
 import { AssociationsSelection } from './-selection'
 import { DescriptionAssociations } from './-description-associations'

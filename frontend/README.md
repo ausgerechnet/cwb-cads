@@ -103,7 +103,7 @@ For development it's often practical to persist query results across page refres
 
 Shared React components are located in the `components` directory. They're generally split into two categories:
 
-- `components/ui`
+- `components`
   These are purely presentational components that are used in multiple places. They're usually created via [shadcn/ui](https://ui.shadcn.com/).
   You can easily bootstrap new components from shadcn/ui by running:
   ```bash

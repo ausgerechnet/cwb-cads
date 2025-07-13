@@ -21,8 +21,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from './ui/table'
-import { Button, buttonVariants } from './ui/button'
+} from './table'
+import { Button, buttonVariants } from './button'
 import { PaginationForTable } from './pagination'
 import { safeJsonParse } from '../lib/safe-json-parse'
 import { cn } from '../lib/utils'

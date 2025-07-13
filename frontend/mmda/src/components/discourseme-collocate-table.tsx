@@ -11,9 +11,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table'
+} from '@cads/shared/components/table'
 import { Repeat } from '@cads/shared/components/repeat'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { DiscoursemeName } from '@cads/shared/components/discourseme-name'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import {

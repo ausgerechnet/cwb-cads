@@ -12,6 +12,7 @@
   },
   "aliases": {
     "components": "@/components",
+    "ui": "@/components",
     "utils": "@cads/shared/lib/utils"
   }
 }

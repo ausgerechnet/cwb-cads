@@ -4,7 +4,7 @@ import { useQuery, useSuspenseQuery, useMutation } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { z } from 'zod'
 
-import { CollapsibleTrigger } from '@cads/shared/components/ui/collapsible'
+import { CollapsibleTrigger } from '@cads/shared/components/collapsible'
 import { cn } from '@cads/shared/lib/utils'
 import {
   addConstellationDiscourseme,
@@ -14,13 +14,13 @@ import {
   removeDescriptionItem,
 } from '@cads/shared/queries'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Button } from '@cads/shared/components/ui/button'
-import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
+import { Button } from '@cads/shared/components/button'
+import { ScrollArea } from '@cads/shared/components/scroll-area'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import {
   Collapsible,
   CollapsibleContent,
-} from '@cads/shared/components/ui/collapsible'
+} from '@cads/shared/components/collapsible'
 import { TextTooltip } from '@cads/shared/components/text-tooltip'
 import { DiscoursemeSelect } from '@cads/shared/components/select-discourseme'
 import { schemas } from '@cads/shared/api-client'

@@ -15,16 +15,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table'
+} from '@cads/shared/components/table'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@cads/shared/components/ui/tooltip'
+} from '@cads/shared/components/tooltip'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { Pagination } from '@cads/shared/components/pagination'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { Repeat } from '@cads/shared/components/repeat'
 import { Ellipsis } from '@cads/shared/components/ellipsis'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'

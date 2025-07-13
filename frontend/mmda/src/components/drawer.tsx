@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from 'react'
 import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 
 export function Drawer({

@@ -10,8 +10,8 @@ import { DevTools } from '@/components/dev-tools'
 import {
   NavigationMenuItem,
   NavigationMenuList,
-} from '@cads/shared/components/ui/navigation-menu'
-import { Toaster } from '@cads/shared/components/ui/sonner'
+} from '@cads/shared/components/navigation-menu'
+import { Toaster } from '@cads/shared/components/sonner'
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient

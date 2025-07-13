@@ -16,10 +16,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
+} from '@cads/shared/components/form'
 import { corpusMeta, createSubcorpusCollection } from '@cads/shared/queries'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Input } from '@cads/shared/components/ui/input'
+import { Input } from '@cads/shared/components/input'
 import {
   Select,
   SelectContent,
@@ -27,9 +27,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { cn } from '@cads/shared/lib/utils'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 
 const Partition = schemas.SubCorpusCollectionIn.extend({
   corpus: z.object({

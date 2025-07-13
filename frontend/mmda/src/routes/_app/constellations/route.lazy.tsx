@@ -19,8 +19,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@cads/shared/components/ui/popover'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/popover'
+import { buttonVariants } from '@cads/shared/components/button'
 import { ButtonAlert } from '@/components/button-alert'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 

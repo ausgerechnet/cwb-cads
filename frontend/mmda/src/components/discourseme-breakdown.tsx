@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table'
+} from '@cads/shared/components/table'
 import { getColorForNumber } from '@cads/shared/lib/get-color-for-number'
 import { DiscoursemeName } from '@cads/shared/components/discourseme-name'
 import { SortButtonView } from '@cads/shared/components/data-table'

@@ -4,7 +4,7 @@ import { Loader2Icon } from 'lucide-react'
 import { constellationDescriptionBreakdown } from '@cads/shared/queries'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { DiscoursemeBreakdown } from '@/components/discourseme-breakdown'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 
 import { useDescription } from '../-use-description'
 import { useBreakdownSelection } from './-use-breakdown-selection'

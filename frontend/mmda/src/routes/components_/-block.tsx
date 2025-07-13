@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
 
 import { cn } from '@cads/shared/lib/utils'
-import { Headline2 } from '@cads/shared/components/ui/typography'
+import { Headline2 } from '@cads/shared/components/typography'
 
 export function Block({
   className,

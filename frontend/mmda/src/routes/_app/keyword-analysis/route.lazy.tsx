@@ -6,8 +6,8 @@ import { Link } from '@tanstack/react-router'
 import { EyeIcon, MoreVerticalIcon, PlusIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { buttonVariants } from '@cads/shared/components/ui/button'
-import { Large } from '@cads/shared/components/ui/typography'
+import { buttonVariants } from '@cads/shared/components/button'
+import { Large } from '@cads/shared/components/typography'
 import { cn } from '@cads/shared/lib/utils'
 import {
   corpusById,
@@ -17,13 +17,13 @@ import {
 } from '@cads/shared/queries'
 import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { schemas } from '@/rest-client'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { formatNumber } from '@cads/shared/lib/format-number'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@cads/shared/components/ui/popover'
+} from '@cads/shared/components/popover'
 import { ButtonAlert } from '@/components/button-alert'
 import { KeywordAnalysisLayout } from './-keyword-analysis-layout'
 

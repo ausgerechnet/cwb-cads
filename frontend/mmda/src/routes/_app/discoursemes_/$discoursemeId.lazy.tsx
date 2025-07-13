@@ -12,14 +12,14 @@ import {
   discoursemeDescriptionsById,
 } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Large } from '@cads/shared/components/ui/typography'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { Large } from '@cads/shared/components/typography'
+import { buttonVariants } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 import { ButtonAlert } from '@/components/button-alert'
 import { DataTable } from '@cads/shared/components/data-table'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { DiscoursemeFieldEditor } from './-discourseme-field-editor'
 import { useId } from 'react'
 

@@ -13,8 +13,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
   TooltipContent,
-} from '../ui/tooltip'
-import { TableCell, TableRow } from '../ui/table'
+} from '../tooltip'
+import { TableCell, TableRow } from '../table'
 import { Ellipsis } from '../ellipsis'
 import { ButtonTooltip } from '../button-tooltip'
 import { ErrorMessage } from '../error-message'

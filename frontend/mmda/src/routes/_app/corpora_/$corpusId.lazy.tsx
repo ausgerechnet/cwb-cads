@@ -14,8 +14,8 @@ import {
   subcorpusCollections,
 } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Card } from '@cads/shared/components/ui/card'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { Card } from '@cads/shared/components/card'
+import { buttonVariants } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 import {
   Select,
@@ -24,10 +24,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { ToggleBar } from '@cads/shared/components/toggle-bar'
-import { Input } from '@cads/shared/components/ui/input'
+import { Input } from '@cads/shared/components/input'
 import { GraphRange, XAxisVertical } from '@cads/shared/components/graph'
 import { formatNumber } from '@cads/shared/lib/format-number'
 

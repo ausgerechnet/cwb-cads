@@ -9,13 +9,13 @@ import {
   SelectGroup,
   SelectItem,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { cn } from '@cads/shared/lib/utils'
 import {
   FilterSchema,
   useFilterSelection,
 } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
-import { Button, buttonVariants } from '@cads/shared/components/ui/button'
+import { Button, buttonVariants } from '@cads/shared/components/button'
 import { SelectMulti } from '@cads/shared/components/select-multi'
 import { discoursemesList } from '@cads/shared/queries'
 import { Link } from '@tanstack/react-router'
@@ -25,7 +25,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@cads/shared/components/ui/tooltip'
+} from '@cads/shared/components/tooltip'
 import {
   FilterItemInput,
   PrimaryInput,

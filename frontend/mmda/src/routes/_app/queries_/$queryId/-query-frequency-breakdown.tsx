@@ -13,11 +13,11 @@ import {
   SelectContent,
   SelectGroup,
   SelectTrigger,
-} from '@cads/shared/components/ui/select'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+} from '@cads/shared/components/select'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { ErrorMessage } from '@cads/shared/components/error-message'
-import { Headline3 } from '@cads/shared/components/ui/typography'
+import { Headline3 } from '@cads/shared/components/typography'
 
 export function QueryFrequencyBreakdown({ queryId }: { queryId: number }) {
   const { pAtt } = useSearch({ from: '/_app/queries_/$queryId' })

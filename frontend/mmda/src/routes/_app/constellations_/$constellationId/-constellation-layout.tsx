@@ -5,9 +5,9 @@ import { PencilIcon } from 'lucide-react'
 
 import { constellationById } from '@cads/shared/queries'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 import { cn } from '@cads/shared/lib/utils'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/button'
 
 import { Route } from './route'
 import { AnalysisLinks } from './-analysis-links'

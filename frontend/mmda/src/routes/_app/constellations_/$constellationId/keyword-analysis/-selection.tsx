@@ -8,7 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { ContextBreakInput } from '@cads/shared/components/concordances'
 
 import { useKeywordSelection } from './-use-keyword-selection'

@@ -3,7 +3,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@cads/shared/components/ui/tooltip'
+} from '@cads/shared/components/tooltip'
 import { TextTooltip } from '@cads/shared/components/text-tooltip'
 import { createFileRoute } from '@tanstack/react-router'
 import { Block, BlockComment } from './-block'

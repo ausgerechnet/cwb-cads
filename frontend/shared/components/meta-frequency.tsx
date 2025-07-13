@@ -6,7 +6,7 @@ import { ErrorMessage } from './error-message'
 import { GraphRange, XAxisVertical } from './graph'
 import { RangeSlider } from './range-slider'
 import { ComplexSelect } from './select-complex'
-import { Input } from './ui/input'
+import { Input } from './input'
 
 export function MetaFrequencyNumericInput({
   className,

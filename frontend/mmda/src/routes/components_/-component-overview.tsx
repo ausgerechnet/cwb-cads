@@ -1,4 +1,4 @@
-import { Headline1 } from '@cads/shared/components/ui/typography'
+import { Headline1 } from '@cads/shared/components/typography'
 import { Link, Outlet } from '@tanstack/react-router'
 import { ComponentProps } from 'react'
 

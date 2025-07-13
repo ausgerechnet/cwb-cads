@@ -11,16 +11,16 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@cads/shared/components/ui/popover'
-import { Button } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/popover'
+import { Button } from '@cads/shared/components/button'
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from '@cads/shared/components/ui/command'
-import { ScrollArea } from '@cads/shared/components/ui/scroll-area'
+} from '@cads/shared/components/command'
+import { ScrollArea } from '@cads/shared/components/scroll-area'
 import { getColorForNumber } from '../lib/get-color-for-number'
 
 type Item<IdType> = {

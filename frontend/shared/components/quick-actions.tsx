@@ -2,8 +2,8 @@ import { type ReactNode } from 'react'
 import { MoreVertical } from 'lucide-react'
 
 import { cn } from '../lib/utils'
-import { buttonVariants } from './ui/button'
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
+import { buttonVariants } from './button'
+import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 export function QuickActions({ children }: { children: ReactNode }) {
   return (

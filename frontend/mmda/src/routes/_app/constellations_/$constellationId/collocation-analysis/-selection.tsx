@@ -13,7 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { SelectSingle } from '@cads/shared/components/select-single'
 import { cn } from '@cads/shared/lib/utils'
 

@@ -12,7 +12,7 @@ import {
   putSemanticMapCoordinates,
   putConstellationDiscoursemeCoordinates,
 } from '@cads/shared/queries'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/button'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { LoaderBig } from '@cads/shared/components/loader-big'
 import {

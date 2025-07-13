@@ -4,13 +4,13 @@ import { useMutation } from '@tanstack/react-query'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 import { logOut } from '@cads/shared/queries'
-import { Headline1, Large } from '@cads/shared/components/ui/typography'
+import { Headline1, Large } from '@cads/shared/components/typography'
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@cads/shared/components/ui/alert'
-import { Button } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/alert'
+import { Button } from '@cads/shared/components/button'
 
 export const Route = createLazyFileRoute('/logout')({
   component: Logout,

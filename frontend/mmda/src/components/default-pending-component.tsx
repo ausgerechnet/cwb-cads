@@ -1,4 +1,4 @@
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/skeleton'
 
 export function DefaultPendingComponent() {
   return (

@@ -4,7 +4,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@cads/shared/components/ui/alert'
+} from '@cads/shared/components/alert'
 import { cn } from '@cads/shared/lib/utils'
 
 type ErrorType = Error | string | null | undefined | ErrorType[]

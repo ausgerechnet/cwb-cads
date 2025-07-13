@@ -11,7 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   DialogTrigger,
-} from '@cads/shared/components/ui/dialog'
+} from '@cads/shared/components/dialog'
 import {
   Form,
   FormControl,
@@ -19,12 +19,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@cads/shared/components/ui/form'
-import { ItemsInput } from '@cads/shared/components/ui/items-input'
-import { Alert, AlertDescription } from '@cads/shared/components/ui/alert'
+} from '@cads/shared/components/form'
+import { ItemsInput } from '@cads/shared/components/items-input'
+import { Alert, AlertDescription } from '@cads/shared/components/alert'
 import { required_error } from '@cads/shared/lib/strings'
 import { createDiscoursemeForConstellationDescription } from '@cads/shared/queries'
-import { Button } from '@cads/shared/components/ui/button'
+import { Button } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 
 import { Route } from '../route'

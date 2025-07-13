@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { XIcon } from 'lucide-react'
 
 import { LabelBox } from '../label-box'
-import { Slider } from '../ui/slider'
-import { Button } from '../ui/button'
+import { Slider } from '../slider'
+import { Button } from '../button'
 import { cn } from '../../lib/utils'
 import { useConcordanceFilterContext } from './concordance-context'
 import {
@@ -13,8 +13,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select'
-import { Input } from '../ui/input'
+} from '../select'
+import { Input } from '../input'
 import { ToggleBar } from '../toggle-bar'
 import { SelectSingle } from '../select-single'
 

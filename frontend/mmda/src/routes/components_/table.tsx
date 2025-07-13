@@ -5,7 +5,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table'
+} from '@cads/shared/components/table'
 import { createFileRoute } from '@tanstack/react-router'
 import { Block, BlockComment } from './-block'
 import { DataTable, SortButton } from '@cads/shared/components/data-table'

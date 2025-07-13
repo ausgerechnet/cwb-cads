@@ -2,7 +2,7 @@ import { type ComponentProps, type ReactNode, forwardRef } from 'react'
 import { createLink, LinkComponent } from '@tanstack/react-router'
 import { MapIcon } from 'lucide-react'
 
-import { Card } from '@cads/shared/components/ui/card'
+import { Card } from '@cads/shared/components/card'
 import { cn } from '@cads/shared/lib/utils'
 import { WordCloudPreview } from './word-cloud-preview'
 

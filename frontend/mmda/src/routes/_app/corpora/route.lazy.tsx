@@ -6,10 +6,10 @@ import { EyeIcon, ScissorsIcon } from 'lucide-react'
 
 import { corpusList } from '@cads/shared/queries'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { DataTable, SortButton } from '@cads/shared/components/data-table'
 import { schemas } from '@/rest-client'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/button'
 import { cn } from '@cads/shared/lib/utils'
 import { QuickActions } from '@cads/shared/components/quick-actions'
 

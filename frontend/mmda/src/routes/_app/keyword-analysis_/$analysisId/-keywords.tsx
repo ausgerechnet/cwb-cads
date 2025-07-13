@@ -12,12 +12,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@cads/shared/components/ui/table'
-import { Card } from '@cads/shared/components/ui/card'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+} from '@cads/shared/components/table'
+import { Card } from '@cads/shared/components/card'
+import { buttonVariants } from '@cads/shared/components/button'
 import { Pagination } from '@cads/shared/components/pagination'
 import { Repeat } from '@cads/shared/components/repeat'
-import { Skeleton } from '@cads/shared/components/ui/skeleton'
+import { Skeleton } from '@cads/shared/components/skeleton'
 import { useFilterSelection } from '@/routes/_app/constellations_/$constellationId/-use-filter-selection'
 import { keywordAnalysisItemsById } from '@cads/shared/queries'
 import {

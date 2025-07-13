@@ -5,8 +5,8 @@ import { PlusIcon } from 'lucide-react'
 import { subcorporaList } from '@cads/shared/queries'
 import { cn } from '@cads/shared/lib/utils'
 import { AppPageFrame } from '@/components/app-page-frame'
-import { buttonVariants } from '@cads/shared/components/ui/button'
-import { Card } from '@cads/shared/components/ui/card'
+import { buttonVariants } from '@cads/shared/components/button'
+import { Card } from '@cads/shared/components/card'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 
 export const Route = createLazyFileRoute('/_app/subcorpora_/$subcorpusId')({

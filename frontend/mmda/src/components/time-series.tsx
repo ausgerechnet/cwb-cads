@@ -7,7 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@cads/shared/components/ui/select'
+} from '@cads/shared/components/select'
 import { GraphRange } from '@cads/shared/components/graph'
 import { schemas } from '@/rest-client'
 

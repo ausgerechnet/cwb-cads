@@ -21,12 +21,12 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
-} from '@cads/shared/components/ui/alert'
-import { Headline3, Large } from '@cads/shared/components/ui/typography'
-import { Card } from '@cads/shared/components/ui/card'
+} from '@cads/shared/components/alert'
+import { Headline3, Large } from '@cads/shared/components/typography'
+import { Card } from '@cads/shared/components/card'
 import { WordCloudPreview } from '@/components/word-cloud-preview'
 import { cn } from '@cads/shared/lib/utils'
-import { buttonVariants } from '@cads/shared/components/ui/button'
+import { buttonVariants } from '@cads/shared/components/button'
 import { AppPageFrameSemanticMap } from '@/components/app-page-frame-drawer'
 import {
   ConcordanceFilterProvider,

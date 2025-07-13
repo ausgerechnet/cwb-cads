@@ -1,11 +1,11 @@
 import { ComponentProps, ReactNode } from 'react'
-import { Button } from './ui/button'
+import { Button } from './button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from './ui/tooltip'
+} from './tooltip'
 
 export function ButtonTooltip({
   tooltip,
