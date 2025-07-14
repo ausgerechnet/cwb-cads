@@ -94,7 +94,7 @@ function SingleQuery() {
         isDrawerVisible={Boolean(isConcordanceVisible)}
         onDrawerToggle={(isVisible) =>
           navigate({
-            to: '',
+            to: '.',
             params: (p) => p,
             search: (s) => ({ ...s, isConcordanceVisible: isVisible }),
           })

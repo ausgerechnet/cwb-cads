@@ -130,7 +130,7 @@ export function QueryConcordanceLines({
           pageIndex={clPageIndex}
           setPageSize={(pageSize) => {
             void navigate({
-              to: '',
+              to: '.',
               params: (p) => p,
               search: (s) => ({ ...s, clPageSize: pageSize }),
               replace: true,
@@ -138,7 +138,7 @@ export function QueryConcordanceLines({
           }}
           setPageIndex={(pageIndex) => {
             void navigate({
-              to: '',
+              to: '.',
               params: (p) => p,
               search: (s) => ({ ...s, clPageIndex: pageIndex }),
               replace: true,
@@ -353,7 +353,7 @@ function TokenRender({
         <TooltipTrigger asChild>
           <Link
             replace
-            to=""
+            to="."
             params={(p) => p}
             search={(s) => ({
               ...s,

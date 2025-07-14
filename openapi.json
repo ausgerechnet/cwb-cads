@@ -2162,9 +2162,11 @@
             "type": "integer"
           },
           "scaled_score": {
+            "nullable": true,
             "type": "number"
           },
           "score": {
+            "nullable": true,
             "type": "number"
           }
         },
@@ -2760,7 +2762,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev59"
+    "version": "0.3.0.dev60"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -11750,6 +11752,10 @@
     }
   },
   "servers": [
+    {
+      "name": "Beta Server",
+      "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-beta/"
+    },
     {
       "name": "Development Server",
       "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"

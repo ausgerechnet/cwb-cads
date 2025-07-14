@@ -79,7 +79,7 @@ export function useFilterSelection(
     value: FilterSchema[K],
   ) => {
     void navigate({
-      to: '',
+      to: '.',
       search: (s) => ({ ...s, [key]: value }),
       params: (p) => p,
       replace: true,
@@ -89,7 +89,7 @@ export function useFilterSelection(
     values: Record<K, FilterSchema[K]>,
   ) => {
     void navigate({
-      to: '',
+      to: '.',
       search: (s) => ({ ...s, ...values }),
       params: (p) => p,
       replace: true,

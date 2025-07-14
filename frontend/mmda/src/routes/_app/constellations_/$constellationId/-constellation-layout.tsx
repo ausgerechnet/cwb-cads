@@ -1,9 +1,5 @@
-import { useId } from 'react'
-import {
-  useRouterState,
-  useNavigate,
-  type ReactNode,
-} from '@tanstack/react-router'
+import { useId, type ReactNode } from 'react'
+import { useRouterState, useNavigate } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { PencilIcon } from 'lucide-react'
 

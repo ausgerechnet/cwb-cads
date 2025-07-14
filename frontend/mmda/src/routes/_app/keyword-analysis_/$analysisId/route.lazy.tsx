@@ -101,7 +101,7 @@ function KeywordAnalysis() {
         isDrawerVisible={clIsVisible}
         onDrawerToggle={(clIsVisible) =>
           navigate({
-            to: '',
+            to: '.',
             params: (p) => p,
             search: (s) => ({ ...s, clIsVisible }),
           })
@@ -201,7 +201,7 @@ function DrawerContent() {
             onValueChange={(clCorpus) => {
               if (clCorpus !== 'target' && clCorpus !== 'reference') return
               navigate({
-                to: '',
+                to: '.',
                 params: (p) => p,
                 search: (s) => ({ ...s, clCorpus }),
               })
@@ -285,7 +285,7 @@ function MapContent({
       }
       case 'set_filter_item': {
         navigate({
-          to: '',
+          to: '.',
           params: (p) => p,
           search: (s) => ({
             ...s,
@@ -318,7 +318,7 @@ function MapContent({
             <Select
               onValueChange={(ccSortBy) => {
                 navigate({
-                  to: '',
+                  to: '.',
                   params: (p) => p,
                   search: (s) => ({ ...s, ccSortBy }),
                 })
