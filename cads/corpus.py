@@ -415,7 +415,7 @@ def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin,
 
     # is there one and only one segmentation?
     if len(segmentation.all()) > 1:
-        raise NotImplementedError('several corresponding segmentation founds')
+        raise NotImplementedError('several corresponding segmentations found')
 
     segmentation = segmentation.first()
     if not segmentation:
