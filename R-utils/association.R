@@ -2,9 +2,9 @@ library(tidyverse)
 library(ggraph)
 library(tidygraph)
 
-associations.map <- function(associations, discoursemes, measure, min.weight = 0){
+associations.map <- function(association_scores, discoursemes, measure, min.weight = 0){
 
-  g <- associations |> 
+  g <- association_scores |> 
     filter(node %in% discoursemes$id, candidate %in% discoursemes$id) |> 
     filter(measure == !!measure) |> 
     filter(score > 0) |> 
