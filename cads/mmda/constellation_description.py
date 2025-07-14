@@ -199,6 +199,78 @@ def create_description(constellation_id, json_data):
     return ConstellationDescriptionOut().dump(description), 200
 
 
+@bp.put('/')
+@bp.input(ConstellationDescriptionIn)
+@bp.output(ConstellationDescriptionOut)
+@bp.auth_required(auth)
+def get_or_create_description(constellation_id, json_data):
+    """Same as corresponding POST but will only create description if it does not already exist.
+
+    """
+
+    constellation = db.get_or_404(Constellation, constellation_id)
+
+    corpus_id = json_data.get('corpus_id')
+    corpus = db.get_or_404(Corpus, corpus_id)
+    subcorpus_id = json_data.get('subcorpus_id')
+    semantic_map_id = json_data.get('semantic_map_id')
+
+    s_query = json_data.get('s', corpus.s_default)
+    match_strategy = json_data.get('match_strategy')
+    overlap = json_data.get('overlap')
+
+    description = ConstellationDescription.query.filter(
+        ConstellationDescription.constellation_id == constellation_id,
+        ConstellationDescription.semantic_map_id.is_(semantic_map_id),
+        ConstellationDescription.corpus_id == corpus_id,
+        ConstellationDescription.subcorpus_id.is_(subcorpus_id),
+        ConstellationDescription.s == s_query,
+        ConstellationDescription.match_strategy == match_strategy,
+        ConstellationDescription.overlap == overlap
+    ).first()
+
+    if not description:
+        current_app.logger.debug("description does not exist, creating")
+
+        description = ConstellationDescription(
+            constellation_id=constellation.id,
+            semantic_map_id=semantic_map_id,
+            corpus_id=corpus.id,
+            subcorpus_id=subcorpus_id,
+            s=s_query,
+            match_strategy=match_strategy,
+            overlap=overlap
+        )
+
+        for discourseme in constellation.discoursemes:
+            desc = DiscoursemeDescription.query.filter_by(
+                discourseme_id=discourseme.id,
+                corpus_id=corpus_id,
+                subcorpus_id=subcorpus_id,
+                filter_sequence=None,
+                s=s_query,
+                match_strategy=match_strategy
+            ).first()
+            if not desc:
+                desc = discourseme_template_to_description(
+                    discourseme,
+                    [],
+                    corpus_id,
+                    subcorpus_id,
+                    s_query,
+                    match_strategy
+                )
+            description.discourseme_descriptions.append(desc)
+
+        db.session.add(description)
+        db.session.commit()
+
+    else:
+        current_app.logger.debug("description already exists")
+
+    return ConstellationDescriptionOut().dump(description), 200
+
+
 @bp.get('/')
 @bp.output(ConstellationDescriptionOut(many=True))
 @bp.auth_required(auth)

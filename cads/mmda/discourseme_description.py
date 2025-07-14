@@ -309,6 +309,58 @@ def create_description(discourseme_id, json_data, query_data):
     return DiscoursemeDescriptionOut().dump(description), 200
 
 
+@bp.put('/')
+@bp.input(DiscoursemeDescriptionIn)
+@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
+@bp.output(DiscoursemeDescriptionOut)
+@bp.auth_required(auth)
+def get_or_create_description(discourseme_id, json_data, query_data):
+    """Same as corresponding POST but will only create description if it does not already exist.
+
+    """
+
+    discourseme = db.get_or_404(Discourseme, discourseme_id)
+
+    corpus_id = json_data.get('corpus_id')
+    corpus = db.get_or_404(Corpus, corpus_id)
+    subcorpus_id = json_data.get('subcorpus_id')
+    # subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
+
+    s_query = json_data.get('s', corpus.s_default)
+    match_strategy = json_data.get('match_strategy')
+
+    items = json_data.get('items', [])  # will use discourseme template if not given
+
+    description = DiscoursemeDescription.query.filter(
+        DiscoursemeDescription.discourseme_id == discourseme_id,
+        DiscoursemeDescription.corpus_id == corpus_id,
+        DiscoursemeDescription.subcorpus_id.is_(subcorpus_id),
+        DiscoursemeDescription.filter_sequence.is_(None),
+        DiscoursemeDescription.s == s_query,
+        DiscoursemeDescription.match_strategy == match_strategy
+    ).first()
+
+    if not description:
+        current_app.logger.debug("description does not exist, creating")
+    
+        description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
+        # update discourseme template
+        if query_data['update_discourseme']:
+            current_app.logger.debug('updating discourseme template')
+            for item in items:
+                db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=item['p'], surface=item['surface']).first()
+                if db_item:
+                    current_app.logger.debug(f'item {item["p"]}="{item["surface"]}" already in template')
+                else:
+                    db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=item['p'], surface=item['surface'])
+                    db.session.add(db_item)
+                    db.session.commit()
+    else:
+        current_app.logger.debug("description already exists")
+
+    return DiscoursemeDescriptionOut().dump(description), 200
+
+
 @bp.get('/')
 @bp.output(DiscoursemeDescriptionOut(many=True))
 @bp.auth_required(auth)
