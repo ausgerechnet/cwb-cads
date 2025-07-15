@@ -690,7 +690,7 @@ def delete_subcorpus(id, subcorpus_id):
     return 'Deletion successful.', 200
 
 
-@bp.put('/<id>/subcorpus/')
+@bp.post('/<id>/subcorpus/')
 @bp.input(SubCorpusIn)
 @bp.output(SubCorpusOut)
 @bp.auth_required(auth)
@@ -704,6 +704,7 @@ def create_subcorpus(id, json_data):
     Subcorpora can be built iteratively as long as working on the same level.
 
     """
+
     corpus = db.get_or_404(Corpus, id)
     subcorpus_id = json_data.get('subcorpus_id')
 
@@ -768,6 +769,101 @@ def create_subcorpus(id, json_data):
                                   cqp_bin=current_app.config['CCC_CQP_BIN'],
                                   registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                                   data_dir=current_app.config['CCC_DATA_DIR'])
+
+    return SubCorpusOut().dump(subcorpus), 200
+
+
+@bp.put('/<id>/subcorpus/')
+@bp.input(SubCorpusIn)
+@bp.output(SubCorpusOut)
+@bp.auth_required(auth)
+def get_or_create_subcorpus(id, json_data):
+    """Same as corresponding POST.
+    Subcorpus will only be created if one
+    - with the same name and
+    - created from the same attribute does not already exist
+    - in this corpus.
+
+    """
+
+    corpus = db.get_or_404(Corpus, id)
+    subcorpus_id = json_data.get('subcorpus_id')
+
+    name = json_data['name']
+    description = json_data.get('description')
+
+    level = json_data['level']
+    key = json_data['key']
+
+    create_nqr = json_data['create_nqr']
+
+    segmentation = Segmentation.query.filter_by(corpus_id=corpus.id, level=level).first()
+    segmentation_annotation = SegmentationAnnotation.query.filter_by(segmentation_id=segmentation.id, key=key).first()
+    value_type = segmentation_annotation.value_type
+
+    values = json_data.get(f'bins_{value_type}')
+
+    subcorpus = SubCorpus.query.filter(
+        SubCorpus.name == name,
+        SubCorpus.corpus_id == id,
+        # SubCorpus.subcorpus_id.is_(subcorpus_id),  # TODO
+        SubCorpus.segmentation_id == segmentation.id
+    )
+
+    if not subcorpus:
+
+        current_app.logger.debug("creating subcorpus")
+
+        if values is None:
+            abort(400, f'Bad Request: {level}_{key} is of type {value_type}, but no such value(s) provided')
+
+        if subcorpus_id:
+            subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
+            if subcorpus.segmentation.level != level:
+                abort(
+                    400,
+                    description=f'Bad Request: subcorpus was created on "{subcorpus.segmentation.level}", cannot use "{level}" for further subcorpus creation'
+                )
+
+        if value_type in ['unicode', 'boolean']:
+            span_ids = select(SegmentationSpanAnnotation.segmentation_span_id).filter(
+                SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
+                SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type].in_(values)
+            )
+
+        elif value_type in ['numeric', 'datetime']:
+            span_ids = select(SegmentationSpanAnnotation.segmentation_span_id).filter(
+                SegmentationSpanAnnotation.segmentation_annotation_id == segmentation_annotation.id,
+                or_(*[
+                    (SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type] >= start) &
+                    (SegmentationSpanAnnotation.__table__.c['value_' + segmentation_annotation.value_type] < end) for start, end in values
+                ])
+            )
+        else:
+            raise ValueError()
+
+        if subcorpus_id:
+            span_subquery = select(subcorpus_segmentation_span.c.segmentation_span_id).where(
+                subcorpus_segmentation_span.c.subcorpus_id == subcorpus_id
+            ).scalar_subquery()
+            span_ids = span_ids.filter(
+                SegmentationSpanAnnotation.segmentation_span_id.in_(span_subquery)
+            )
+
+        spans = SegmentationSpan.query.filter(SegmentationSpan.id.in_(span_ids.scalar_subquery()))
+        df = DataFrame([vars(s) for s in spans])
+        if len(df) == 0:
+            abort(406, 'empty subcorpus')
+
+        df = df[['match', 'matchend']]
+
+        subcorpus = subcorpus_from_df(corpus.cwb_id, name, description, df, level, create_nqr,
+                                      cqp_bin=current_app.config['CCC_CQP_BIN'],
+                                      registry_dir=current_app.config['CCC_REGISTRY_DIR'],
+                                      data_dir=current_app.config['CCC_DATA_DIR'])
+
+    else:
+        current_app.logger.debug("subcorpus already exists")
 
     return SubCorpusOut().dump(subcorpus), 200
 
