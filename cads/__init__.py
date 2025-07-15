@@ -52,6 +52,7 @@ def create_app(config=CONFIG):
     except OSError:
         app.logger.warning(f"could not create cache directory for sentence transformers: {st_cache_dir}")
 
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"  # avoid warning for forked processes
     # load config
     app.config.from_object(config)
 
