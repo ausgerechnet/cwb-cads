@@ -684,6 +684,7 @@ def delete_subcorpus(id, subcorpus_id):
     """
 
     subcorpus = db.get_or_404(SubCorpus, subcorpus_id)
+    current_app.logger.debug(f"deleting subcorpus {subcorpus_id}")
     db.session.delete(subcorpus)
     db.session.commit()
 
