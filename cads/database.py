@@ -60,8 +60,8 @@ users_roles = db.Table(
 
 subcorpus_segmentation_span = db.Table(
     'sub_corpus_segmentation_span',
-    db.Column('subcorpus_id', db.Integer, db.ForeignKey('sub_corpus.id')),
-    db.Column('segmentation_span_id', db.Integer, db.ForeignKey('segmentation_span.id'))
+    db.Column('subcorpus_id', db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE')),
+    db.Column('segmentation_span_id', db.Integer, db.ForeignKey('segmentation_span.id', ondelete='CASCADE'))
 )
 
 collection_subcorpus = db.Table(
@@ -215,7 +215,7 @@ class SubCorpus(db.Model):
 
     nqr_cqp = db.Column(db.Unicode)
 
-    spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span, backref=db.backref('sub_corpus'))
+    spans = db.relationship('SegmentationSpan', secondary=subcorpus_segmentation_span, backref=db.backref('sub_corpus'), passive_deletes=True)
     queries = db.relationship('Query', backref='subcorpus', passive_deletes=True, cascade='all, delete')
     collections = db.relationship('SubCorpusCollection', backref='subcorpus', passive_deletes=True, cascade='all, delete')
 
