@@ -2763,7 +2763,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev62"
+    "version": "0.3.0.dev63"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -4120,7 +4120,7 @@
           "Corpus"
         ]
       },
-      "put": {
+      "post": {
         "description": "We only support creation of subcorpora from one level-key pair.\n- boolean / unicode keys: categorical select\n- numeric / datetime keys: interval select\n\nSubcorpora can be built iteratively as long as working on the same level.",
         "parameters": [
           {
@@ -4189,6 +4189,79 @@
           }
         ],
         "summary": "Create subcorpus from stored meta data.",
+        "tags": [
+          "Corpus"
+        ]
+      },
+      "put": {
+        "description": "Subcorpus will only be created if one\n- with the same name and\n- created from the same attribute does not already exist\n- in this corpus.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubCorpusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubCorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Same as corresponding POST.",
         "tags": [
           "Corpus"
         ]
@@ -11906,10 +11979,6 @@
     }
   },
   "servers": [
-    {
-      "name": "Beta Server",
-      "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-beta/"
-    },
     {
       "name": "Development Server",
       "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"
