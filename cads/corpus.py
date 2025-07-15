@@ -809,7 +809,7 @@ def get_or_create_subcorpus(id, json_data):
         SubCorpus.corpus_id == id,
         # SubCorpus.subcorpus_id.is_(subcorpus_id),  # TODO
         SubCorpus.segmentation_id == segmentation.id
-    )
+    ).first()
 
     if not subcorpus:
 
