@@ -33,12 +33,10 @@ bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
 
 DEFAULT_VALUE_TYPES = {
     'date': 'datetime',
-    'lp': 'numeric',
+    'duplicated': 'boolean',
     'n': 'numeric',
-    'session': 'numeric',
     'no': 'numeric',
-    'counts': 'numeric',
-    'duplicated': 'boolean'
+    'counts': 'numeric'
 }
 
 
