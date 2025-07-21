@@ -7040,6 +7040,15 @@
           },
           {
             "in": "query",
+            "name": "hide_focus_unigrams",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
             "name": "sort_order",
             "required": false,
             "schema": {

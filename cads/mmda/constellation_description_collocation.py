@@ -261,7 +261,8 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     return collocation_items
 
 
-def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None, hide_discourseme_unigrams=True):
+def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None,
+                  hide_focus_unigrams=True, hide_discourseme_unigrams=True):
     """
 
     NB min_score is exclusive
@@ -281,6 +282,18 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
                     CollocationItem.item.in_(desc_unigrams)
                 )
                 blacklist += [b.id for b in blacklist_desc]
+    # only filter out focus discourseme unigrams
+    elif hide_focus_unigrams:
+        focus_query_id = collocation.query_id
+        desc = DiscoursemeDescription.query.filter_by(query_id=focus_query_id).first()
+        bd = desc.breakdown(collocation.p)
+        if bd is not None:
+            desc_unigrams = [i for i in chain.from_iterable([a.split(" ") for a in bd.index])]
+            blacklist_desc = CollocationItem.query.filter(
+                CollocationItem.collocation_id == collocation.id,
+                CollocationItem.item.in_(desc_unigrams)
+            )
+            blacklist += [b.id for b in blacklist_desc]
 
     # retrieve scores (without blacklist)
     scores = CollocationItemScore.query.filter(
@@ -660,7 +673,7 @@ def get_collocation_discourseme_scores_2(collocation_id, discourseme_description
         df_discourseme_unigram_items = df_discourseme_unigram_items.explode('item')
         df_discourseme_unigram_items = df_discourseme_unigram_items.groupby('item').aggregate({'f': 'sum', 'f1': 'max', 'f2': 'sum', 'N': 'max'})
         df_unigram_item_scores = measures.score(df_discourseme_unigram_items, freq=True, per_million=True, digits=6, boundary='poisson').reset_index()
-        df_unigram_item_scores['discourseme_id']= discourseme_id
+        df_unigram_item_scores['discourseme_id'] = discourseme_id
         df_unigram_item_scores['source'] = 'discourseme_unigram_items'
         unigram_item_scores.append(df_unigram_item_scores)
 
@@ -949,7 +962,8 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
 
 @bp.get("/<collocation_id>/map")
 @bp.input(CollocationItemsIn, location='query')
-@bp.input({'hide_discourseme_unigrams': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
+@bp.input({'hide_discourseme_unigrams': Boolean(required=False, load_default=True),
+           'hide_focus_unigrams': Boolean(required=False, load_default=True),}, location='query', arg_name='query_hide')
 @bp.output(ConstellationMapOut)
 @bp.auth_required(auth)
 def get_collocation_map(constellation_id, description_id, collocation_id, query_data, query_hide):
@@ -966,13 +980,15 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
     sort_by = query_data.pop('sort_by')
     min_score = query_data.pop('min_score')
     hide_discourseme_unigrams = query_hide.pop('hide_discourseme_unigrams')
+    hide_focus_unigrams = query_hide.pop('hide_focus_unigrams')
 
     # discourseme scores (set here to use for creating blacklist if necessary)
     set_collocation_discourseme_scores(
         collocation, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None], overlap=description.overlap
     )
     collocation_map = get_collo_map(
-        description, collocation, page_size, page_number, sort_order, sort_by, min_score, hide_discourseme_unigrams=hide_discourseme_unigrams
+        description, collocation, page_size, page_number, sort_order, sort_by, min_score,
+        hide_focus_unigrams=hide_focus_unigrams, hide_discourseme_unigrams=hide_discourseme_unigrams
     )
 
     return ConstellationMapOut().dump(collocation_map), 200
