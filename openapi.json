@@ -969,9 +969,11 @@
             "type": "string"
           },
           "x": {
+            "nullable": true,
             "type": "number"
           },
           "y": {
+            "nullable": true,
             "type": "number"
           }
         },
@@ -6692,6 +6694,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "create_map",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
           }
         ],
         "requestBody": {
@@ -12006,6 +12017,10 @@
     }
   },
   "servers": [
+    {
+      "name": "Beta Server",
+      "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-beta/"
+    },
     {
       "name": "Development Server",
       "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"

@@ -79,7 +79,8 @@ def get_or_create_coll(description,
                        window, p, marginals, include_negative,
                        semantic_map_id,
                        focus_discourseme_id,
-                       filter_discourseme_ids, filter_item, filter_item_p_att):
+                       filter_discourseme_ids, filter_item, filter_item_p_att,
+                       create_map=True):
 
     s = description.s
     semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
@@ -155,7 +156,8 @@ def get_or_create_coll(description,
         set_collocation_discourseme_scores(collocation,
                                            [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None],
                                            overlap=description.overlap)
-        ccc_semmap_init(collocation, semantic_map_id)
+        if create_map:
+            ccc_semmap_init(collocation, semantic_map_id)
 
     if description.semantic_map_id is None:
         description.semantic_map_id = collocation.semantic_map_id
@@ -385,13 +387,17 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
 
         # set user coordinates
-        df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
-        df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
+        if collocation.semantic_map and return_coordinates:
+            df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
+            df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
+            df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+        else:
+            df['x'] = None
+            df['y'] = None
 
         # select columns
         df = df.rename({sort_by: 'score'}, axis=1)
-        df = df[['item', 'discourseme_id', 'source', 'x_user', 'y_user', 'score']]
-        df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
+        df = df[['item', 'discourseme_id', 'source', 'x', 'y', 'score']]
 
         # scale scores
         df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, logarithmic=logarithmic))
@@ -735,8 +741,8 @@ class ConstellationMapItemOut(Schema):
     item = String(required=True)
     discourseme_id = Integer(required=True, allow_none=True)
     source = String(required=True)
-    x = Float(required=True)
-    y = Float(required=True)
+    x = Float(required=True, allow_none=True)
+    y = Float(required=True, allow_none=True)
     score = Float(required=True)
     scaled_score = Float(required=True)
 
@@ -855,12 +861,15 @@ def create_collocation(constellation_id, description_id, json_data):
 
 @bp.put("/")
 @bp.input(ConstellationCollocationIn)
+@bp.input({'create_map': Boolean(required=False, load_default=False)}, location='query', arg_name='query_coord')
 @bp.output(ConstellationCollocationOut)
 @bp.auth_required(auth)
-def get_or_create_collocation(constellation_id, description_id, json_data):
+def get_or_create_collocation(constellation_id, description_id, json_data, query_coord):
     """Get collocation analysis of constellation description; create if necessary.
 
     """
+
+    create_map = query_coord.pop('create_map')
 
     # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
     description = db.get_or_404(ConstellationDescription, description_id)
@@ -891,7 +900,8 @@ def get_or_create_collocation(constellation_id, description_id, json_data):
         window, p, marginals, include_negative,
         semantic_map_id,
         focus_discourseme_id,
-        filter_discourseme_ids, filter_item, filter_item_p_att
+        filter_discourseme_ids, filter_item, filter_item_p_att,
+        create_map=create_map
     )
     if not collocation:
         abort(406, 'empty cotext')
