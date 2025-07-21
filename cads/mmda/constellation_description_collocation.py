@@ -262,7 +262,7 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
 
 
 def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None,
-                  hide_focus_unigrams=True, hide_discourseme_unigrams=True):
+                  hide_focus_unigrams=True, hide_discourseme_unigrams=True, return_coordinates=True):
     """
 
     NB min_score is exclusive
@@ -355,7 +355,7 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
     if nr_items != 0 or nr_discourseme_items != 0:
 
         # coordinates
-        if collocation.semantic_map:
+        if collocation.semantic_map and return_coordinates:
 
             # make sure there's coordinates for all requested items
             requested_items = (list(df_scores['item'].values) if len(df_scores) > 0 else [])
@@ -963,10 +963,11 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
 @bp.get("/<collocation_id>/map")
 @bp.input(CollocationItemsIn, location='query')
 @bp.input({'hide_discourseme_unigrams': Boolean(required=False, load_default=True),
-           'hide_focus_unigrams': Boolean(required=False, load_default=True),}, location='query', arg_name='query_hide')
+           'hide_focus_unigrams': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
+@bp.input({'return_coordinates': Boolean(required=False, load_default=False)}, location='query', arg_name='query_coord')
 @bp.output(ConstellationMapOut)
 @bp.auth_required(auth)
-def get_collocation_map(constellation_id, description_id, collocation_id, query_data, query_hide):
+def get_collocation_map(constellation_id, description_id, collocation_id, query_data, query_hide, query_coord):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
     """
@@ -981,6 +982,7 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
     min_score = query_data.pop('min_score')
     hide_discourseme_unigrams = query_hide.pop('hide_discourseme_unigrams')
     hide_focus_unigrams = query_hide.pop('hide_focus_unigrams')
+    return_coordinates = query_coord.pop('return_coordinates')
 
     # discourseme scores (set here to use for creating blacklist if necessary)
     set_collocation_discourseme_scores(
@@ -988,7 +990,7 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
     )
     collocation_map = get_collo_map(
         description, collocation, page_size, page_number, sort_order, sort_by, min_score,
-        hide_focus_unigrams=hide_focus_unigrams, hide_discourseme_unigrams=hide_discourseme_unigrams
+        hide_focus_unigrams=hide_focus_unigrams, hide_discourseme_unigrams=hide_discourseme_unigrams, return_coordinates=return_coordinates
     )
 
     return ConstellationMapOut().dump(collocation_map), 200

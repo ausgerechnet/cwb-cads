@@ -7031,6 +7031,15 @@
           },
           {
             "in": "query",
+            "name": "return_coordinates",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
             "name": "hide_discourseme_unigrams",
             "required": false,
             "schema": {
