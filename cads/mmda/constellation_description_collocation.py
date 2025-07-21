@@ -261,7 +261,7 @@ def get_collo_items(description, collocation, page_size, page_number, sort_order
     return collocation_items
 
 
-def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None):
+def get_collo_map(description, collocation, page_size, page_number, sort_order, sort_by, min_score=None, hide_discourseme_unigrams=True):
     """
 
     NB min_score is exclusive
@@ -271,15 +271,16 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
 
     # filter out all items that are included in any discourseme unigram breakdown
     blacklist = []
-    for desc in description.discourseme_descriptions:
-        bd = desc.breakdown(collocation.p)
-        if bd is not None:
-            desc_unigrams = [i for i in chain.from_iterable([a.split(" ") for a in bd.index])]
-            blacklist_desc = CollocationItem.query.filter(
-                CollocationItem.collocation_id == collocation.id,
-                CollocationItem.item.in_(desc_unigrams)
-            )
-            blacklist += [b.id for b in blacklist_desc]
+    if hide_discourseme_unigrams:
+        for desc in description.discourseme_descriptions:
+            bd = desc.breakdown(collocation.p)
+            if bd is not None:
+                desc_unigrams = [i for i in chain.from_iterable([a.split(" ") for a in bd.index])]
+                blacklist_desc = CollocationItem.query.filter(
+                    CollocationItem.collocation_id == collocation.id,
+                    CollocationItem.item.in_(desc_unigrams)
+                )
+                blacklist += [b.id for b in blacklist_desc]
 
     # retrieve scores (without blacklist)
     scores = CollocationItemScore.query.filter(
@@ -948,9 +949,10 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
 
 @bp.get("/<collocation_id>/map")
 @bp.input(CollocationItemsIn, location='query')
+@bp.input({'hide_discourseme_unigrams': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
 @bp.output(ConstellationMapOut)
 @bp.auth_required(auth)
-def get_collocation_map(constellation_id, description_id, collocation_id, query_data):
+def get_collocation_map(constellation_id, description_id, collocation_id, query_data, query_hide):
     """Get scored items and discourseme scores of constellation collocation analysis.
 
     """
@@ -963,13 +965,14 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
     sort_order = query_data.pop('sort_order')
     sort_by = query_data.pop('sort_by')
     min_score = query_data.pop('min_score')
+    hide_discourseme_unigrams = query_hide.pop('hide_discourseme_unigrams')
 
     # discourseme scores (set here to use for creating blacklist if necessary)
     set_collocation_discourseme_scores(
         collocation, [desc for desc in description.discourseme_descriptions if desc.filter_sequence is None], overlap=description.overlap
     )
     collocation_map = get_collo_map(
-        description, collocation, page_size, page_number, sort_order, sort_by, min_score
+        description, collocation, page_size, page_number, sort_order, sort_by, min_score, hide_discourseme_unigrams=hide_discourseme_unigrams
     )
 
     return ConstellationMapOut().dump(collocation_map), 200

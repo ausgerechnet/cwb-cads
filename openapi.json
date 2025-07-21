@@ -2763,7 +2763,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev63"
+    "version": "0.3.0.dev64"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -7027,6 +7027,15 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hide_discourseme_unigrams",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
             }
           },
           {
