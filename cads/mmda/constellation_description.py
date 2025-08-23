@@ -160,6 +160,10 @@ def create_description(constellation_id, json_data):
     semantic_map_id = json_data.get('semantic_map_id')
 
     s_query = json_data.get('s', corpus.s_default)
+    if s_query not in corpus.s_atts:
+        current_app.logger.error(f's-attribute "{s_query}" not in s-attributes; using {corpus.s_default} instead')
+        s_query = corpus.s_default
+
     match_strategy = json_data.get('match_strategy')
     overlap = json_data.get('overlap')
 
@@ -216,6 +220,10 @@ def get_or_create_description(constellation_id, json_data):
     semantic_map_id = json_data.get('semantic_map_id')
 
     s_query = json_data.get('s', corpus.s_default)
+    if s_query not in corpus.s_atts:
+        current_app.logger.error(f's-attribute "{s_query}" not in s-attributes; using {corpus.s_default} instead')
+        s_query = corpus.s_default
+   
     match_strategy = json_data.get('match_strategy')
     overlap = json_data.get('overlap')
 
