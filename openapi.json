@@ -6700,7 +6700,7 @@
             "name": "create_map",
             "required": false,
             "schema": {
-              "default": false,
+              "default": true,
               "type": "boolean"
             }
           }
@@ -7045,7 +7045,7 @@
             "name": "return_coordinates",
             "required": false,
             "schema": {
-              "default": false,
+              "default": true,
               "type": "boolean"
             }
           },
