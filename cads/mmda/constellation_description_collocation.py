@@ -861,7 +861,7 @@ def create_collocation(constellation_id, description_id, json_data):
 
 @bp.put("/")
 @bp.input(ConstellationCollocationIn)
-@bp.input({'create_map': Boolean(required=False, load_default=False)}, location='query', arg_name='query_coord')
+@bp.input({'create_map': Boolean(required=False, load_default=True)}, location='query', arg_name='query_coord')
 @bp.output(ConstellationCollocationOut)
 @bp.auth_required(auth)
 def get_or_create_collocation(constellation_id, description_id, json_data, query_coord):
@@ -974,7 +974,7 @@ def get_collocation_items(constellation_id, description_id, collocation_id, quer
 @bp.input(CollocationItemsIn, location='query')
 @bp.input({'hide_discourseme_unigrams': Boolean(required=False, load_default=True),
            'hide_focus_unigrams': Boolean(required=False, load_default=True)}, location='query', arg_name='query_hide')
-@bp.input({'return_coordinates': Boolean(required=False, load_default=False)}, location='query', arg_name='query_coord')
+@bp.input({'return_coordinates': Boolean(required=False, load_default=True)}, location='query', arg_name='query_coord')
 @bp.output(ConstellationMapOut)
 @bp.auth_required(auth)
 def get_collocation_map(constellation_id, description_id, collocation_id, query_data, query_hide, query_coord):
