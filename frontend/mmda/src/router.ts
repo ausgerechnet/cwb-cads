@@ -5,7 +5,7 @@ import { DefaultPendingComponent } from '@/components/default-pending-component'
 import { queryClient } from '@cads/shared/queries'
 import { ErrorMessage } from '@cads/shared/components/error-message'
 
-const basepath = import.meta.env.VITE_ROUTER_BASEPATH || '/'
+const basepath = import.meta.env.BASE_URL || '/mmda-v2'
 
 export const router = createRouter({
   basepath,

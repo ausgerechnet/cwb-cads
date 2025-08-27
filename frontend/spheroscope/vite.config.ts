@@ -12,6 +12,8 @@ export default defineConfig({
     }),
     react(),
   ],
+  base: '/spheroscope/',
+  envPrefix: ['VITE_', 'BASE_URL'],
   resolve: {
     alias: {
       '@cads/shared': path.resolve(__dirname, '../shared'),

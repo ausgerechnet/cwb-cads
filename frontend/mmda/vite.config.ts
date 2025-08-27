@@ -20,7 +20,8 @@ export default defineConfig({
       },
     }),
   ],
-  base: './',
+  base: '/mmda-v2/',
+  envPrefix: ['VITE_', 'BASE_URL'],
   resolve: {
     alias: {
       '@cads/shared': path.resolve(__dirname, '../shared'),

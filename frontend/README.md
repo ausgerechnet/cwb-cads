@@ -1,6 +1,7 @@
 # CADS/Spheroscope Frontend
 
 - [Project setup](#project-setup)
+- [Deployment](#deployment)
 - [Tech Stack](#tech-stack)
 - [Development](#development)
   - [Running the development server](#running-the-development-server)
@@ -40,6 +41,29 @@ Quick overview of the tech stack used in this project:
 - [Tanstack Table](https://tanstack.com/table/latest) for tables (Why, yes, I do like Tanner Linsley's great libraries!)
 - [shadcn/ui](https://ui.shadcn.com/) for component generation
 - [openapi-zod-client](https://github.com/astahmer/openapi-zod-client) for generating an API client from the OpenAPI specification
+
+## Deployment
+
+The project is set up in such a way, that all files can be hosted on a static web server.
+
+To create production builds, run `npm run build`.
+In `/mmda/` and `/spheroscope/` there'll be `dist/` folders with the build artifacts for each package.
+
+### Base Paths
+
+By default both projects are configured to run in a **subfolder** of your web server:
+
+- `mmda`: `https://your-server/mmda-v2`
+- `spheroscope`: `https://your-server/spheroscope`
+
+This behavior can be modified in several ways.
+
+- Run the build command with `--base <new base path>`, e.g.: `npm --workspace @cads/mmda run build -- --base /another-base/`
+- Update the `base` value inside the `vite.config.ts` file(s)
+
+**🚨 Important:** You must configure your web server in such a way, that all requests that would normally return a 404 are redirected to the `index.html`. This file is the entry point for _all_ pages.
+
+**Good to know:** The environment variable `BASE_PATH` is explicitly exempt from vite's [restriction on which envs to expose](https://vite.dev/guide/env-and-mode.html#env-variables) so that [the client side router (TanStack Router)](https://tanstack.com/router/latest) can consume it.
 
 ## Development
 
