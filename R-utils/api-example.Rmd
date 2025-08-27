@@ -1,0 +1,880 @@
+---
+title: "Case Study 'Tag der Befreiung' in GermaParl"
+editor: source
+author: Philipp Heinrich
+date: May 18, 2025
+format:
+  html:
+    toc: true
+    toc-float: true
+    collapsed: false
+    smooth-scroll: false
+    code-fold: true
+    number-sections: true
+    df-print: paged
+---
+
+## notation
+- "Befreiung" refers to a word or lemma
+- **Befreiung** is a discourseme
+
+## setup
+
+- a couple of helper functions are defined in cwb-cads/R-utils
+```{r, message = FALSE}
+source("R-utils/collocation.R")
+source("R-utils/concordance.R")
+source("R-utils/association.R")
+source("R-utils/api.R")
+library(corpora)
+```
+
+### API
+
+- beta server
+```{r}
+cads_connect(user="admin", password="tag-der-befreiung")
+```
+
+### corpus
+
+```{r}
+corpora <- cads_list_corpora()
+corpora
+```
+
+- we use GermaParl v2.2.0
+- data set covers all records of the German parliament from 1949-2024 (legislative periods (LPs) 1 through 20)
+- NB we use original GERMAPARL220 here, not GERMAPARL220WEB
+- final data set comprises 288,054,199 tokens in 4524 plenary protocols and 1,018,495 speeches
+
+```{r}
+cads_activate_corpus("GERMAPARL220")
+```
+
+### meta data
+
+```{r}
+meta <- cads_corpus_metadata()
+meta
+```
+
+#### parliamentary groups
+
+```{r}
+cads_metadata_frequencies("speaker", "parlgroup") |>
+  extract2("frequencies") ->
+  meta.groups
+```
+
+- note that far too most entries are n/a, so we have a very incomplete classification if we rely on this level
+
+```{r}
+meta.groups |> 
+  ggplot(aes(y = bin_unicode, x = nr_spans)) +
+  geom_col()
+```
+
+#### parties
+
+```{r}
+cads_metadata_frequencies("speaker", "party") |>
+  extract2("frequencies") -> 
+  meta.all.parties
+```
+
+```{r}
+meta.all.parties |> 
+  ggplot(aes(y = bin_unicode, x = nr_spans)) +
+  geom_col()
+```
+
+- reduce to major relevant parties for visualisations, recoding everything else als _andere_
+
+```{r}
+map.parties <- function (x, ordered=FALSE) {
+  lvl <- qw("AfD,CSU,CDU,FDP,SPD,GRUENE,PDS,DIE LINKE,andere", sep=",")
+  x <- ifelse(x %in% lvl, x, "andere")
+  if (ordered) factor(x, levels=lvl) else x
+}
+meta.all.parties |> 
+  mutate(party=map.parties(bin_unicode)) |>
+  group_by(party) |>
+  summarize(nr_spans=sum(nr_spans), nr_tokens=sum(nr_tokens)) ->
+  meta.parties
+```
+
+```{r}
+meta.parties |> 
+  ggplot(aes(y=map.parties(party, ordered=TRUE), x=nr_tokens/1e6)) +
+  geom_col() + ylab("Partei") + xlab("M Token")
+```
+
+
+#### years
+
+```{r}
+to.date <- function (x) as.Date(str_c(x, "-01-01"))
+cads_metadata_frequencies("protocol", "year") |>
+  extract2("frequencies") |>
+  mutate(year = to.date(bin_unicode)) |>
+  tibble() -> meta.years
+```
+
+```{r}
+meta.years |> 
+  ggplot(aes(x = year, y = nr_tokens / 1e6)) +
+  geom_col() + ylab("M Token") + xlab("Jahr")
+```
+
+
+
+### subcorpora
+
+```{r}
+subcorpora <- cads_list_subcorpora()
+subcorpora
+```
+
+
+#### create subcorpora
+
+- I already created subcorpora for parliamentary groups (and years)
+
+```{r}
+groups <- c("CDU/CSU", "GRUENE", "SPD", "AfD", "DIE LINKE", "FDP")
+subcorpora <- groups
+```
+
+- you can create further subcorpora via PUT request on subcorpus endpoint
+- NB this endpoint has been implemented with datetime variables in mind but should work fine for unicode meta data
+- NB you can create complex subcorpora (e.g. SPD in LP19) iteratively (i.e. via a subcorpus on a subcorpus)
+
+**TODO** API for subcorpus info and working with subcorpora
+
+- subcorpus collections (e.g. all parties) can be created via following endpoint
+- **TODO** create API for this
+
+```{r}
+# collection <- str_interp("${url_api}/corpus/${corpus.id}/subcorpus-collection/") |>
+#   request() |> 
+#   req_auth_bearer_token(access.token) |>
+#   req_body_json(list(name = 'parliamentary groups', level = 'speaker', key = 'parlgroup')) |> 
+#   req_method('put') |> 
+#   req_perform() |> 
+#   magrittr::extract2("body") |> rawToChar() |> fromJSON()
+```
+
+
+## corpus queries
+
+### query & concordance
+
+- various queries have already be created
+
+```{r}
+cads_list_queries()
+```
+
+- since it's more or less impossible to find a specific query in this table (because the `cqp_query` is often cryptic with ad-hoc wordlists and there is no meaningful label), we have to run a new query, adding yet another entry to the list
+- we first look at "Tag der Befreiung" and related terms
+
+```{r}
+query <- cads_run_simple_query(list("Tag die Befreiung", "8. Mai", "8. Mai 1945", "8. Mai die Jahr 1945"), p.att="lemma_smor")
+query.id <- query$id
+```
+
+- query object returned contains various information, most importantly the query ID
+
+```{r}
+query
+```
+
+- retrieve concordance for this query (first page of 25 items) and use convenience function `conc.kwic()` for display
+
+```{r}
+concordance <- cads_query_concordance(query.id, page.size=25, window=5)
+concordance |> conc.kwic()
+```
+
+- there's a substantial amount of FPs since May 8th can indeed refer to other things (d'uh), we will ignore this issue here
+
+- we can also obtain a frequency breakdown of the query matches
+
+```{r}
+breakdown <- cads_query_breakdown(query.id, p.att="lemma_smor")
+breakdown$items |> arrange(desc(freq))
+```
+
+### Tag der Befreiung
+
+- we want to plot distribution of the expression "Tag der Befreiung" ➞ need to obtain metadata from concordance and aggregate frequencies
+
+```{r}
+tdb.query <- cads_run_simple_query(list("Tag die Befreiung"), p.att="lemma_smor")
+tdb.query.id <- tdb.query$id
+```
+
+- pull entire concordance so we can extract metadata
+
+```{r}
+tdb.conc <- cads_query_concordance(tdb.query.id, secondary.att="lemma_smor", page.size=1e6)
+```
+
+```{r}
+tdb.conc$lines$structural |> 
+  select(protocol_date, protocol_year, speaker_name, speaker_party) |>
+  mutate(year=to.date(protocol_year), party=map.parties(speaker_party)) ->
+  tdb.meta
+```
+
+- compute relative frequencies for parties and years and display as barplots
+
+```{r}
+tdb.meta |> 
+  summarise(f=n(), .by="year") |>
+  right_join(meta.years, by="year") |>
+  mutate(pmw=1e6 * coalesce(f, 0) / nr_tokens) |>
+  ggplot(aes(y=pmw, x=year)) +
+  geom_col() + ylab("PMW") + xlab("Jahr") + ylim(c(0, 5))
+```
+
+```{r}
+tdb.meta |> 
+  summarise(f=n(), .by="party") |>
+  right_join(meta.parties, by="party") |>
+  mutate(pmw=1e6 * coalesce(f, 0) / nr_tokens) |>
+  ggplot(aes(x=pmw, y=party)) +
+  geom_col() + ylab("Partei") + xlab("PMW") + xlim(c(0, 5))
+```
+
+## try to work with discoursemes in a constellation
+
+```{r}
+constellations <- cads_list_constellations()
+constellations
+```
+
+- work with the latest constellation (presumably from last version of PH's script)
+
+```{r}
+constellation.id <- 19
+constellations |> filter(id == constellation.id) |> pull("discoursemes") |> extract2(1) -> discoursemes19
+discoursemes19
+```
+
+- now we can display the discoursemes
+
+```{r}
+for (i in seq_len(nrow(discoursemes19))) {
+  discoursemes19$template[[i]] |> mutate(discourseme=discoursemes19$name[i]) |> print()
+}
+```
+
+```{r}
+str_interp("mmda/constellation/${constellation.id}/description/") |>
+  cads_mk_request() |>
+  cads_perform_request() ->
+  descriptions19
+
+print(descriptions19)
+print(descriptions19$discourseme_descriptions[[1]])
+```
+
+
+## focus discourseme
+
+### creation
+- we create focus discourseme using lemma "Befreiung"
+```{r}
+focus.discourseme <- str_interp("${url_api}/mmda/discourseme/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_body_json(list(name = "Befreiung")) |> 
+  req_method("POST") |>
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+focus.discourseme.id <- focus.discourseme |> magrittr::extract2("id")
+```
+
+- and a corresponding discourseme description
+```{r}
+focus.discourseme.description <- str_interp("${url_api}/mmda/discourseme/${focus.discourseme.id}/description/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_body_json(
+    list(corpus_id = corpus.id, 
+         items = list(
+           list(p = "lemma", surface = "Befreiung")
+         ))
+    ) |>
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+focus.discourseme.description.id <- focus.discourseme.description |> magrittr::extract2("id")
+```
+
+### breakdown
+```{r}
+breakdown <- str_interp("${url_api}/mmda/discourseme/${focus.discourseme.id}/description/${focus.discourseme.description.id}/breakdown") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |>
+  req_url_query(p = "lemma") |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("items") |> 
+  tibble()
+
+breakdown |> rename(lemma = item) |> 
+  arrange(desc(ipm)) |> 
+  mutate(ipm = round(ipm, 2),
+         ratio = round(freq / sum(freq), 2)) |> 
+  arrange(desc(ipm)) |> 
+  select(lemma, freq, ipm, ratio)
+```
+
+### supervised extension
+
+- TODO doesn't work on the beta server ("Truncated or oversized response headers received from daemon process 'mmda-beta': /data/Philipp/cwb-cads-beta/cwb-cads.wsgi")
+
+### frequencies across groups, years, and periods
+
+```{r}
+meta.dist <- str_interp("${url_api}/mmda/discourseme/${focus.discourseme.id}/description/${focus.discourseme.description.id}/meta") |> 
+  request() |> 
+  req_url_query(level = "speaker", key = "parlgroup", page_size = 1000) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+```{r}
+meta.dist$frequencies |> ggplot(aes(x = nr_ipm, y = bin_unicode)) + geom_col()
+```
+
+
+```{r}
+meta.dist <- str_interp("${url_api}/mmda/discourseme/${focus.discourseme.id}/description/${focus.discourseme.description.id}/meta") |> 
+  request() |> 
+  req_url_query(level = "protocol", key = "year", page_size = 1000) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+```
+
+```{r}
+meta.dist$frequencies |> ggplot(aes(x = nr_ipm, y = bin_unicode)) + geom_col()
+```
+
+
+## constellation
+
+- we create a constellation (project) **Befreiung** (and directly add focus discourseme)
+
+```{r}
+constellations <- str_interp("${url_api}/mmda/constellation/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+constellations
+```
+
+
+```{r}
+constellation <- str_interp("${url_api}/mmda/constellation/") |> 
+  request() |> 
+  req_body_json(list(discourseme_ids = list(focus.discourseme.id), name = "Befreiung")) |> 
+  req_auth_bearer_token(access.token) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |>
+  rawToChar() |> fromJSON()
+
+constellation.id <- constellation |> magrittr::extract2("id")
+```
+
+## collocation analysis
+
+- how is **Befreiung** used in GermaParl?
+- look at collocates
+```{r}
+constellation.description.id <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_body_json(list(corpus_id = corpus.id, s = "s")) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("id")
+
+collocation.id <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/") |> 
+  request() |> 
+  req_auth_bearer_token(access.token) |> 
+  req_method("put") |> 
+  req_body_json(list(focus_discourseme_id = focus.discourseme.id, p = "lemma", window = 10)) |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+  magrittr::extract2("id")
+```
+
+### comparison of LRC and LLR
+
+```{r}
+coll.lrc <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/map")) |>
+  req_auth_bearer_token(access.token) |>
+  req_url_query(page_number = 1, page_size = 50, sort_by = "conservative_log_ratio", sort_order = "descending") |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+coll.llr <- request(str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/map")) |>
+  req_auth_bearer_token(access.token) |>
+  req_url_query(page_number = 1, page_size = 50, sort_by = "log_likelihood", sort_order = "descending") |> 
+  req_perform() |> 
+  magrittr::extract2("body") |> rawToChar() |> fromJSON()
+```
+
+- we display ranks here (score scales not comparable)
+```{r, fig.width = 8, fig.height = 12}
+overlap <- intersect(
+  coll.llr |> magrittr::extract2("map") |>
+    filter(source %in% c("items", "discourseme_unigram_items"), is.na(discourseme_id) | discourseme_id != focus.discourseme.id) |>
+    arrange(desc(score)) |> head(50) |> pull("item"),
+  coll.lrc |> magrittr::extract2("map") |> 
+    filter(source %in% c("items", "discourseme_unigram_items"), is.na(discourseme_id) | discourseme_id != focus.discourseme.id) |> 
+    arrange(desc(score)) |> head(50) |> pull("item")
+)
+
+rbind(
+  coll.llr |> magrittr::extract2("map") |> 
+    filter(source %in% c("items", "discourseme_unigram_items"), is.na(discourseme_id) | discourseme_id != focus.discourseme.id) |> arrange(desc(score)) |> head(50) |> 
+    mutate(rank = 1:n(), am = "log likelihood"),
+  coll.lrc |> magrittr::extract2("map") |>
+    filter(source %in% c("items", "discourseme_unigram_items"), is.na(discourseme_id) | discourseme_id != focus.discourseme.id) |> arrange(desc(score)) |> head(50) |> 
+    mutate(rank = 1:n(), am = "LRC")
+) |> 
+  select(item, am, rank, x, y) |> 
+  mutate(overlap = item %in% overlap) |> 
+  ggplot(aes(x = x, y = y, label = item, colour = overlap)) + 
+  geom_label_repel(aes(size = - rank), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") + 
+  facet_wrap(~ am, ncol = 1) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+- LRC retrieves more content words
+- additional words in LLR mostly highly frequent terms, including grammatical particles
+- we use LRC here
+
+### comparison of window sizes
+
+- results for different window sizes (1:10)
+```{r}
+maps.windows <- tibble()
+for (w in 1:10){
+
+  collocation.id.w <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/") |> 
+    request() |> 
+    req_auth_bearer_token(access.token) |> 
+    req_method("put") |> 
+    req_body_json(list(focus_discourseme_id = focus.discourseme.id, p = "lemma", window = w, semantic_map_id = coll.lrc$semantic_map_id)) |> 
+    req_perform() |> 
+    magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+    magrittr::extract2("id")
+  
+  coll.lrc.w <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id.w}/map") |>
+    request() |> 
+    req_auth_bearer_token(access.token) |>
+    req_url_query(page_number = 1, page_size = 50, sort_by = "conservative_log_ratio", sort_order = "descending") |> 
+    req_perform() |> 
+    magrittr::extract2("body") |> rawToChar() |> fromJSON()
+  
+  df <- coll.lrc.w$map
+  df$window <- w
+  
+  maps.windows <- rbind(maps.windows, df)
+}
+```
+
+- semantic maps for each window size
+```{r, fig.height = 20, fig.width = 15}
+maps.windows |> filter(source == "items", window %in% 1:6) |> 
+  select(item, score, x, y, window) |> 
+  ggplot(aes(x = x, y = y, label = item)) + 
+  geom_label_repel(aes(size = score), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") + 
+  facet_wrap(~ window, ncol = 2) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+- low window sizes yield grammatical particles (articles, conjunctions, punctuation marks), attributions (adjectives), and transitive verbs
+- high window sizes yield lemmata indicating subdiscourses or related discourses
+
+- direct comparison between 3 and 10
+```{r, fig.width = 8, fig.height = 12}
+overlap <- intersect(
+  maps.windows |> filter(source == "items", window == 3, score > 0) |> pull("item"),
+  maps.windows |> filter(source == "items", window == 10, score > 0) |> pull("item")
+)
+
+rbind(
+  maps.windows |> filter(window == 3),
+  maps.windows |> filter(window == 10)
+) |> 
+  filter(source == "items", score > 0) |> 
+  select(item, score, window, x, y) |> 
+  mutate(overlap = item %in% overlap) |> 
+  ggplot(aes(x = x, y = y, label = item, colour = overlap)) + 
+  geom_label_repel(aes(size = score), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") + 
+  facet_wrap(~ window, ncol = 1) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+- we use a window size of 10 here, which captures related discourses
+
+### comparison of parl. groups
+
+- we compute "local" collocation profiles (i.e. compare co-occurrence frequencies with marginals in subcorpora)
+- we use the same semantic map (based on global profile) for all analyses
+```{r}
+semantic_map.id <- coll.lrc$semantic_map_id
+```
+
+```{r}
+factions <- c("CDU/CSU", "GRUENE", "SPD", "AfD")
+sbcrpra <- factions
+
+map.list <- tibble()
+for (subcorpus in sbcrpra){
+
+  print(subcorpus)
+
+  subcorpus.id <- subcorpora |> filter(name == subcorpus) |> pull(id)
+
+  if (length(subcorpus.id) > 0){
+
+    const.description.subcorpus.id <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/") |>
+      request() |> 
+      req_auth_bearer_token(access.token) |>
+      req_body_json(list(subcorpus_id = subcorpus.id, corpus_id = corpus.id, s = "s")) |>
+      req_perform() |>
+      magrittr::extract2("body") |> rawToChar() |> fromJSON() |>
+      magrittr::extract2("id")
+
+    # create collocation
+    collocation.id.subcorpus <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${const.description.subcorpus.id}/collocation/") |>
+      request() |> 
+      req_method("put") |>
+      req_auth_bearer_token(access.token) |>
+      req_body_json(list(focus_discourseme_id = focus.discourseme.id, p = "lemma", window = 10, semantic_map_id = semantic_map.id, marginals = "local")) |>
+      req_perform() |>
+      magrittr::extract2("body") |> rawToChar() |> fromJSON() |>
+      magrittr::extract2("id")
+
+    # get items
+    coll.subcorpus <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${const.description.subcorpus.id}/collocation/${collocation.id.subcorpus}/map") |>
+      request() |> 
+      req_auth_bearer_token(access.token) |>
+      req_url_query(page_number = 1, page_size = 50, sort_by = "conservative_log_ratio", sort_order = "descending") |>
+      req_perform() |>
+      magrittr::extract2("body") |> rawToChar() |> fromJSON()
+
+    map.subcorpus <- coll.subcorpus |> magrittr::extract2("map") |> mutate(subcorpus = subcorpus)
+
+    map.list <- rbind(map.list, map.subcorpus)
+  }
+}
+```
+
+```{r}
+maps.factions <- map.list |> filter(source == "items", score > 0)
+
+maps.factions |>
+  select(item, subcorpus, score) |> 
+  pivot_wider(names_from = subcorpus, values_from = score) |> 
+  mutate(sum.lrc = rowSums(across(where(is.numeric)), na.rm = T)) |>
+  arrange(desc(sum.lrc))
+```
+
+```{r, fig.width = 10, fig.height = 15}
+maps.factions |> 
+  ggplot(aes(x = x, y = y, label = item)) + 
+  geom_label_repel(aes(size = score), max.overlaps = Inf, point.size = NA, min.segment.length = Inf) +
+  xlab("") + ylab("") + 
+  facet_wrap(~ subcorpus, ncol = 1) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank())
+```
+
+
+- pairwise overlaps
+```{r}
+dfs <- tibble()
+for (sbcrps1 in factions){
+  for (sbcrps2 in factions){
+    o <- overlap.pairwise(maps.factions |> filter(subcorpus == sbcrps1), maps.factions |> filter(subcorpus == sbcrps2))
+    df <- tibble(left = sbcrps1, right = sbcrps2, overlap = o)
+    dfs <- rbind(dfs, df)
+  }
+}
+
+dfs |> 
+  ggplot(aes(x = left, y = right)) + 
+  geom_raster(aes(fill = overlap)) + 
+  geom_text(aes(label = round(overlap, 2)), size = 2) +
+  scale_fill_gradient(low = "grey90", high = "red")
+```
+
+## discourseme formation from collocates
+
+- need to look at concordances to make sense of lemmata and find meaningful discoursemes
+- TODO filtered concordancing is still ridiculously slow, somebody should really fix this …
+```{r}
+# conc <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/concordance/") |> 
+#   request() |> 
+#   # req_url_query(focus_discourseme_id = focus.discourseme.id, filter_discourseme_ids = c(2)) |> 
+#   req_url_query(focus_discourseme_id = focus.discourseme.id, filter_item = "zusammen") |> 
+#   req_auth_bearer_token(access.token) |> 
+#   req_perform() |> 
+#   magrittr::extract2("body") |>
+#   rawToChar() |> fromJSON()
+# 
+# conc |> conc.kwic()
+```
+
+- this is a highly interactive procedure, cannot protocol each and every step
+- in practice, categorise via drag & drop in interactive semantic maps of MMDA toolkit
+- here, we can e.g. create one large list and categorise in LibreOffice or alike
+
+```{r}
+bind_rows(
+  coll.lrc$map |> filter(source == "items") |> 
+    mutate(source = "global", rank = 1:n()) |>
+    filter(score > 0) |> 
+    select(item, rank, score, source),
+  maps.windows |> filter(source == "items") |>
+    group_by(window) |> 
+    filter(score > 0) |> 
+    mutate(rank = 1:n()) |> 
+    ungroup() |> 
+    mutate(source = str_c("global_window-", window)) |>
+    select(item, rank, score, source),
+  map.subcorpus |> filter(source == "items") |>
+    filter(score > 0) |> 
+    group_by(subcorpus) |> 
+    mutate(rank = 1:n()) |> 
+    ungroup() |> 
+    mutate(source = str_c("faction-", subcorpus)) |>
+    select(item, rank, score, source)
+) |> 
+  pivot_wider(id_cols = item, names_from = source, values_from = c(rank, score), names_glue = "{.value}_{source}") |> 
+  write_tsv("befreiung-collocates-raw.tsv")
+```
+
+- then read categorisation and do some visualisations / statistical analyses
+```{r}
+# discoursemes <- read_tsv("befreiung-collocates-cat.tsv") |> 
+#   select(item, discourseme) |> 
+#   drop_na()
+```
+
+```{r}
+# discoursemes |> group_by(discourseme) |> summarise(n = n()) |> 
+#   arrange(desc(n))
+```
+
+```{r}
+# discoursemes |>
+#   arrange(discourseme) 
+```
+
+- don't forget to feed back discoursemes into database
+```{r}
+# discoursemes |> 
+#   mutate(name = discourseme) |> 
+#   group_by(discourseme) |> 
+#   group_walk(~ {
+#     template_data <- .x |> 
+#       mutate(p = "lemma", surface = item) |> 
+#       select(p, surface) |> 
+#       nest(template = c(p, surface)) |> 
+#       pull(template)
+#     
+#     print(.x)
+# 
+#     body <- list(
+#       name = unique(.x$name),
+#       template = template_data[[1]]
+#     )
+# 
+#     resp <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/discourseme-description") |>
+#       request() |>
+#       req_auth_bearer_token(access.token) |>
+#       req_body_json(body) |>
+#       req_perform() |>
+#       magrittr::extract2("body") |> rawToChar() |> fromJSON()
+#     print(resp)
+#   })
+```
+
+- retrieve all discoursemes
+```{r}
+# discoursemes <- request(str_interp("${url_api}/mmda/discourseme/")) |>
+#   req_auth_bearer_token(access.token) |>
+#   req_perform() |> 
+#   magrittr::extract2("body") |> rawToChar() |> fromJSON() |> 
+#   tibble()
+```
+
+## constellation analysis
+
+### global
+
+- look at top-500 in global collocation analysis with discourseme categorisation
+```{r}
+# coll.const <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/map") |>
+#   request() |> 
+#   req_auth_bearer_token(access.token) |>
+#   req_url_query(page_number = 1, page_size = 500, sort_by = "conservative_log_ratio", sort_order = "descending") |> 
+#   req_perform() |> 
+#   magrittr::extract2("body") |> rawToChar() |> fromJSON()
+```
+
+- visualisation of discoursemes: centering effect
+```{r}
+# coll.const |> 
+#   magrittr::extract2("map") |> 
+#   filter(source == "discoursemes") |> 
+#   rename(conservative_log_ratio = score) |> 
+#   left_join(discoursemes |> rename(discourseme_id = id, discourseme = name) |> select(discourseme_id, discourseme)) |> 
+#   filter(discourseme_id != focus.discourseme.id, conservative_log_ratio > 0) |> 
+#   ggplot(aes(x = x, y = y, label = item, col = discourseme)) + 
+#   geom_label_repel(aes(size = conservative_log_ratio),
+#                    max.overlaps = Inf, point.size = NA, min.segment.length = Inf, 
+#                    max.time = 2, max.iter = 10e5) +
+#   coord_cartesian(xlim = c(-1, 1), ylim = c(-1, 1)) +
+#   xlab("") + ylab("") +
+#   theme(legend.position = "none", panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),
+#         axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+#   guides(colour = "none")
+```
+
+- visualisation of items and discourseme items
+```{r, fig.width = 35, fig.height = 15}
+# coll.const |> 
+#   magrittr::extract2("map") |> 
+#   filter(source %in% c("items", "discourseme_items")) |> 
+#   left_join(discoursemes |> rename(discourseme_id = id, discourseme = name) |> select(discourseme_id, discourseme)) |> 
+#   rename(conservative_log_ratio = score) |> 
+#   filter((is.na(discourseme_id) & conservative_log_ratio > 0) | (discourseme_id != focus.discourseme.id)) |> 
+#   # write_tsv("climate-change-collocates.tsv") 
+#   ggplot(aes(x = x, y = y, label = item, col = discourseme)) + 
+#   geom_label_repel(aes(size = conservative_log_ratio),
+#                    max.overlaps = Inf, point.size = NA, min.segment.length = Inf, 
+#                    max.time = 2, max.iter = 10e5) +
+#   coord_cartesian(xlim = c(-1, 1), ylim = c(-1, 1)) +
+#   xlab("") + ylab("") +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),
+#         axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank())
+```
+
+
+### subcorpora
+
+- get all constellation descriptions
+```{r}
+# const.description.ids <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/") |>
+#   request() |> 
+#   req_auth_bearer_token(access.token) |>
+#   req_perform() |> 
+#   magrittr::extract2("body") |> rawToChar() |> fromJSON() |> tibble()
+# 
+# const.description.ids <- const.description.ids |>
+#   left_join(subcorpora |> select(id, name) |> rename(subcorpus_id = id, subcorpus_name = name))
+```
+
+### LPs
+
+- add discoursemes to constellation descriptions in LPs
+```{r}
+# discourseme.ids <- coll.const |> magrittr::extract2("map") |> drop_na() |> pull(discourseme_id) |> unique()
+# sbcrpra <- str_c("LP", as.character(15:19))
+# map.list <- tibble()
+# for (subcorpus in sbcrpra){
+# 
+#   print(subcorpus)
+# 
+#   const.desc.id <- const.description.ids |> filter(subcorpus_name == subcorpus) |> tail(1) |> pull(id)
+# 
+#   # make sure discourseme descriptions are part of contellation description
+#   str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${const.desc.id}/add-discoursemes") |>
+#     request() |> 
+#     req_method("patch") |>
+#     req_auth_bearer_token(access.token) |>
+#     req_body_json(list(discourseme_ids = discourseme.ids)) |>
+#     req_perform() |>
+#     magrittr::extract2("body") |> rawToChar() |> fromJSON() |>
+#     magrittr::extract2("id")
+# 
+#   # get collocation
+#   collocation.id.subcorpus <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${const.desc.id}/collocation/") |>
+#     request() |> 
+#     req_method("put") |>
+#     req_auth_bearer_token(access.token) |>
+#     req_body_json(list(focus_discourseme_id = focus.discourseme.id, p = "lemma", window = 10, semantic_map_id = semantic_map.id, marginals = "local")) |>
+#     req_perform() |>
+#     magrittr::extract2("body") |> rawToChar() |> fromJSON() |>
+#     magrittr::extract2("id")
+# 
+#   # get items
+#   coll.subcorpus <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${const.desc.id}/collocation/${collocation.id.subcorpus}/map") |>
+#     request() |> 
+#     req_auth_bearer_token(access.token) |>
+#     req_url_query(page_number = 1, page_size = 100, sort_by = "conservative_log_ratio", sort_order = "descending") |>
+#     req_perform() |>
+#     magrittr::extract2("body") |> rawToChar() |> fromJSON()
+#     map.subcorpus <- coll.subcorpus |> magrittr::extract2("map") |> mutate(subcorpus = subcorpus)
+# 
+#   map.list <- rbind(map.list, map.subcorpus)
+# }
+```
+
+```{r, fig.width = 10, fig.height = 15}
+# map.list |> 
+#   filter(source %in% c("items", "discourseme_items")) |> 
+#   left_join(discoursemes |> rename(discourseme_id = id, discourseme = name) |> select(discourseme_id, discourseme)) |> 
+#   rename(conservative_log_ratio = score) |> 
+#   filter(conservative_log_ratio > 0) |> 
+#   filter((is.na(discourseme_id) & conservative_log_ratio > 0) | (discourseme_id != focus.discourseme.id)) |> 
+#   ggplot(aes(x = x, y = y, label = item, col = discourseme)) + 
+#   geom_label_repel(aes(size = conservative_log_ratio),
+#                    max.overlaps = Inf, point.size = NA, min.segment.length = Inf, 
+#                    max.time = 2, max.iter = 10e5) +
+#   coord_cartesian(xlim = c(-1, 1), ylim = c(-1, 1)) +
+#   xlab("") + ylab("") +
+#   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.background = element_blank(),
+#         axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+#   facet_wrap(~ subcorpus, ncol = 1)
+```
+
+- semantic maps are ideal for extending discoursemes
+```{r}
+# conc <- str_interp("${url_api}/mmda/constellation/${constellation.id}/description/${constellation.description.id}/concordance/") |> 
+#   request() |> 
+#   req_url_query(focus_discourseme_id = focus.discourseme.id, filter_discourseme_ids = 3, filter_discourseme_ids = 4) |> 
+#   req_auth_bearer_token(access.token) |> 
+#   req_perform() |> 
+#   magrittr::extract2("body") |>
+#   rawToChar() |> fromJSON()
+# 
+# conc |> conc.kwic()
+```

@@ -39,12 +39,8 @@ discoursemes.scores.formatter <- function(scores, ids){
 #' 
 #' @param collocation.items collocation object as returned by cwb-cads
 #' @returns a flat tibble with all scores
-collocation.map <- function(collocation.items, parse.discoursemes=TRUE){
+collocation.map <- function(collocation.items, parse.discoursemes = TRUE, parse.coordinates = TRUE){
   
-  coordinates <- collocation.items |> 
-    extract2("coordinates") |> 
-    distinct()
-
   items.ids <- collocation.items |> 
     extract2("items") |>
     extract2("item")
@@ -67,12 +63,18 @@ collocation.map <- function(collocation.items, parse.discoursemes=TRUE){
     left_join(items.raw.scores, suffix = c("", "_raw"), by = "item") |> 
     left_join(items.scaled.scores, suffix = c("", "_scaled"), by = "item")
 
-  # create map
   map <- items |> 
-    left_join(coordinates, by = "item") |> 
     mutate(discourseme_id = NA) |> 
     mutate(source = "items")
   
+  if (parse.coordinates){
+    coordinates <- collocation.items |> 
+      extract2("coordinates") |> 
+      distinct()
+    map <- map |> 
+      left_join(coordinates, by = "item")
+  }
+
   if (parse.discoursemes){
     discoursemes.coordinates <- collocation.items |> 
       extract2("discourseme_coordinates") |> 

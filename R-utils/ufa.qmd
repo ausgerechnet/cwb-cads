@@ -1,0 +1,134 @@
+---
+title: "UFA"
+editor: source
+author: Philipp Heinrich
+date: June 06, 2025
+format:
+  html:
+    toc: true
+    toc-float: true
+    collapsed: false
+    smooth-scroll: false
+    code-fold: true
+    number-sections: true
+    df-print: paged
+    embed-resources: True
+---
+
+## setup
+
+- a couple of helper functions are defined in cwb-cads/R-utils
+```{r, message = FALSE}
+source("collocation.R")
+source("concordance.R")
+source("association.R")
+source("api.R")
+```
+
+### API
+
+- dev server
+```{r}
+.cads.password <- Sys.getenv("CWB_CADS_PASSWORD")
+.cads.url <- "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"
+
+cads_connect(user = "admin", password = .cads.password, url = .cads.url)
+```
+
+```{r}
+Sys.time()
+```
+
+### corpus
+
+```{r}
+(corpora <- cads_list_corpora())
+```
+
+```{r}
+cads_activate_corpus("TAGESSCHAU_2020_2022")
+```
+
+### meta data
+
+```{r}
+cads_corpus_metadata()
+```
+
+
+## subcorpus collection
+```{r}
+collection <- cads_create_subcorpus_collection("months", "text", "date", time_interval = "month")
+```
+
+## focus discourseme
+
+### creation
+
+- create focus discourseme **Wirtschaft**
+```{r}
+focus.discourseme <- cads_create_discourseme("Wirtschaft")
+```
+
+- and corresponding discourseme description (= realisation in corpus)
+```{r}
+focus.discourseme.description <- cads_create_discourseme_description(focus.discourseme$id, c("Wirtschaft"))
+```
+
+### breakdown
+
+```{r}
+cads_discourseme_breakdown(focus.discourseme$id, focus.discourseme.description$id)
+```
+
+
+### frequencies across months
+
+```{r}
+focus.meta <- cads_discourseme_meta(focus.discourseme$id, focus.discourseme.description$id, "text", "month")
+
+focus.meta$frequencies |> tibble()
+  mutate(month = lubridate::floor_date(as.Date(bin_datetime), "month")) |> 
+  group_by(month) |> summarise(nr_matches = sum(nr_matches)) |> 
+  ggplot(aes(y = nr_matches, x = month)) + geom_col()
+```
+
+## constellation
+
+- create a constellation **Wirtschaft** (and directly add focus discourseme)
+
+```{r}
+constellation <- cads_create_constellation("Wirtschaft", list(focus.discourseme$id))
+constellation.description <- cads_create_constellation_description(constellation$id, "s")
+```
+
+
+## usage fluctuation analysis
+
+```{r}
+collection.descriptions <- cads_create_constellation_description_collection(constellation$id, collection$id, "s")
+```
+
+```{r}
+collection.ufa <- cads_constellation_ufa(constellation$id, collection.descriptions$id, focus.discourseme$id)
+
+
+collection.ufa <- cads_constellation_ufa(6, 40, 27)
+```
+
+
+
+```{r}
+collection.ufa$ufa |>
+  unnest_wider(score_confidence) |> 
+  mutate(x_label = as.Date(str_c(x_label, "-01"))) |> 
+  ggplot(aes(x = x_label, y = score)) + geom_point() + xlab("") + 
+  geom_line(aes(y = upper_95)) +
+  geom_line(aes(y = lower_95)) +
+  geom_line(aes(y = smooth)) +
+  ggtitle("Usage Fluctuation Analysis") +
+  stat_smooth(method = "gam", formula = y ~ s(x, bs = "cr", fx = FALSE, k = 5), linewidth = 1, fill="#707070", level = 0.95) +
+  stat_smooth(method = "gam", formula = y ~ s(x, bs = "cr", fx = FALSE, k = 5), linewidth = 1, fill="#FFFF00", level = 0.99)
+```
+
+

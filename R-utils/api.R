@@ -62,10 +62,10 @@ cads_corpus_metadata <- function (corpus.id=.cads.cid) {
 }
 
 ## frequency distribution for metadata
-cads_metadata_frequencies <- function (level, attribute, max.items=1e6, corpus.id=.cads.cid, subcorpus.id=NULL) {
+cads_metadata_frequencies <- function (level, attribute, max.items=1e6, corpus.id=.cads.cid, subcorpus.id=NULL, time.interval = "year") {
   str_interp("corpus/${corpus.id}/meta/frequencies") |>
     cads_mk_request() |>
-    req_url_query(level=level, key=attribute, page_size=max.items, subcorpus_id=subcorpus.id) |>
+    req_url_query(level=level, key=attribute, page_size=max.items, subcorpus_id=subcorpus.id, time_interval=time.interval) |>
     req_auth_bearer_token(.cads.token) |>
     cads_perform_request()
 }
@@ -96,10 +96,10 @@ cads_get_subcorpus <- function(subcorpus.id, corpus.id = .cads.cid){
 }
 
 ## create subcorpus collection
-cads_create_subcorpus_collection <- function(name, level, key, time_interval = "year", corpus.id = .cads.cid){
+cads_create_subcorpus_collection <- function(name, level, key, time.interval = "year", subcorpus.id = NULL, corpus.id = .cads.cid){
   collection <- str_interp("/corpus/${corpus.id}/subcorpus-collection/") |>
     cads_mk_request() |> 
-    req_body_json(list(name = name, level = level, key = key, time_interval = time_interval)) |>
+    req_body_json(list(name = name, level = level, key = key, time_interval = time.interval, subcorpus_id = subcorpus.id)) |>
     req_method('put') |>
     cads_perform_request()
 }
@@ -176,13 +176,14 @@ cads_create_discourseme <- function(name) {
 }
 
 ## create discourseme description
-cads_create_discourseme_description <- function(discourseme.id, items, p.att = "lemma", corpus.id = .cads.cid) {
+cads_create_discourseme_description <- function(discourseme.id, items, p.att = "lemma", update.discourseme = T, corpus.id = .cads.cid) {
   str_interp("mmda/discourseme/${discourseme.id}/description/") |> 
     cads_mk_request() |> 
     req_body_json(
       list(corpus_id = corpus.id, 
            items = lapply(items, function(x) list(p = p.att, surface = x)))
     ) |>
+    req_url_query(update_discourseme = update.discourseme) |> 
     req_method("PUT") |> 
     cads_perform_request()
 }
@@ -244,8 +245,7 @@ cads_create_constellation_description <- function(constellation.id, s, corpus.id
   # TODO check NULL values: doesn't seem to work
   str_interp("mmda/constellation/${constellation.id}/description/") |> 
     cads_mk_request() |> 
-    req_body_json(list(corpus_id = corpus.id, s = s)) |> # subcorpus_id = subcorpus.id, 
-    # req_dry_run()
+    req_body_json(list(corpus_id = corpus.id, s = s, subcorpus_id = subcorpus.id)) |> 
     req_method("PUT") |> 
     cads_perform_request()
 }
@@ -259,22 +259,37 @@ cads_create_constellation_description_collection <- function(constellation.id, c
 }
 
 ## constellation collocation
-cads_constellation_collocation <- function(constellation.id, constellation.description.id, focus.discourseme.id, p, window, semmap.id = NULL){
+cads_constellation_collocation <- function(constellation.id, constellation.description.id, focus.discourseme.id, p, window, 
+                                           semmap.id = NULL, create.map = T, filter.item = NULL, filter.item.p.att = "lemma"){
   str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/") |> 
     cads_mk_request() |> 
     req_method("PUT") |> 
-    req_body_json(list(focus_discourseme_id = focus.discourseme.id, p = p, window = window, semantic_map_id = semmap.id)) |> 
+    req_body_json(list(focus_discourseme_id = focus.discourseme.id, p = p, window = window, semantic_map_id = semmap.id,
+                       filter_item = filter.item, filter_item_p_att = filter.item.p.att)) |> 
+    req_url_query(create_map = create.map) |> 
     cads_perform_request()
 }
 
-## constellation collocation map
 cads_constellation_collocation_map <- function(constellation.id, constellation.description.id, collocation.id,
-                                               page.number = 1, page.size = 50, sort.by = "conservative_log_ratio"){
+                                               page.number = 1, page.size = 50, sort.by = "conservative_log_ratio", hide.disc.unigrams = T,
+                                               return.coordinates = T){
   str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/map") |>
     cads_mk_request() |> 
-    req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by, sort_order = "descending") |> 
+    req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
+                  sort_order = "descending", hide_discourseme_unigrams = hide.disc.unigrams, return_coordinates = return.coordinates) |> 
     cads_perform_request()
 }
+
+cads_constellation_collocation_items <- function(constellation.id, constellation.description.id, collocation.id,
+                                                 page.number = 1, page.size = 50, sort.by = "conservative_log_ratio",
+                                                 return.coordinates = T){
+  str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/items") |>
+    cads_mk_request() |> 
+    req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
+                  sort_order = "descending", return_coordinates = return.coordinates) |> 
+    cads_perform_request()
+}
+
 
 cads_list_constellation_description <- function(constellation.id){
   str_interp("mmda/constellation/${constellation.id}/description/") |> 
@@ -289,12 +304,13 @@ cads_list_constellation_collocation <- function(constellation.id, description.id
 }
 
 cads_constellation_concordance <- function(constellation.id, description.id, 
-                                           focus.discourseme.id, filter.discourseme.ids = c(), filter.item = NULL){
+                                           focus.discourseme.id, filter.discourseme.ids = c(), filter.item = NULL,
+                                           subcorpus.id = NULL, window = 10){
   str_interp("mmda/constellation/${constellation.id}/description/${description.id}/concordance/") |> 
     cads_mk_request() |> 
     req_url_query(focus_discourseme_id = focus.discourseme.id,
                   filter_discourseme_ids = filter.discourseme.ids, filter_item = filter.item,
-                  subcorpus_id = subcorpus.id) |> 
+                  subcorpus_id = subcorpus.id, window = window) |> 
     cads_perform_request()
 }
 
@@ -336,7 +352,7 @@ cads_constellation_add_discoursemes <- function(constellation.id, constellation.
     })
 }
 
-cads_constellation_associations <- function(constellation.d, constellation.description.id){
+cads_constellation_associations <- function(constellation.id, constellation.description.id){
   str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/associations") |>
     cads_mk_request() |> 
     cads_perform_request()
