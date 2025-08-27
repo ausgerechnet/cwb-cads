@@ -82,7 +82,7 @@ class User(db.Model, UserMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, default=datetime.utcnow)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
@@ -194,8 +194,8 @@ class CorpusAttributes(db.Model):
     """
     id = db.Column(db.Integer, primary_key=True)
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'), index=True)
-    attribute = db.Column(db.Unicode)  # p(ositional) or s(structural)
-    level = db.Column(db.Unicode)  # text, p, s, ...
+    attribute = db.Column(db.Unicode)  # p(ositional) or s(tructural)
+    level = db.Column(db.Unicode)  # word, lemma, ... text, p, s, ...
     embeddings = db.Column(db.Integer, db.ForeignKey('embeddings.id'))  # only for p-attributes
 
 
@@ -337,7 +337,7 @@ class Query(db.Model):
     __table_args__ = ({'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
@@ -411,7 +411,7 @@ class Breakdown(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
@@ -494,7 +494,7 @@ class Cotext(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
@@ -528,13 +528,16 @@ class SemanticMap(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     name = db.Column(db.Unicode)
-    embeddings = db.Column(db.Unicode)
-    method = db.Column(db.Unicode)
-    coordinates = db.relationship('Coordinates', backref='semantic_map', passive_deletes=True, cascade='all, delete')
+
+    embeddings = db.Column(db.Unicode)  # db.Column(db.Integer, db.ForeignKey('embeddings.id'))
+    method = db.Column(db.Unicode)  # db.Column(Enum('tsne', 'umap', name='method_enum'))
+
     collocations = db.relationship('Collocation', backref='semantic_map', passive_deletes=True, cascade='all, delete')
     keywords = db.relationship('Keyword', backref='semantic_map', passive_deletes=True, cascade='all, delete')
+
+    coordinates = db.relationship('Coordinates', backref='semantic_map', passive_deletes=True, cascade='all, delete')
 
 
 class Coordinates(db.Model):
@@ -545,7 +548,7 @@ class Coordinates(db.Model):
     __table_args__ = (db.UniqueConstraint('semantic_map_id', 'item'),)
 
     id = db.Column(db.Integer(), primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
@@ -566,7 +569,7 @@ class Collocation(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     p = db.Column(db.Unicode(255), nullable=False)
     s_break = db.Column(db.Unicode(255), nullable=True)
@@ -726,7 +729,7 @@ class Keyword(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
-    modified = db.Column(db.DateTime, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     corpus_id = db.Column(db.Integer(), db.ForeignKey('corpus.id', ondelete='CASCADE'), nullable=False)
     subcorpus_id = db.Column(db.Integer(), db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), nullable=True)
