@@ -223,7 +223,7 @@ def get_or_create_description(constellation_id, json_data):
     if s_query not in corpus.s_atts:
         current_app.logger.error(f's-attribute "{s_query}" not in s-attributes; using {corpus.s_default} instead')
         s_query = corpus.s_default
-   
+
     match_strategy = json_data.get('match_strategy')
     overlap = json_data.get('overlap')
 
@@ -699,6 +699,7 @@ def get_constellation_associations(constellation_id, description_id):
 
     """
 
+    current_app.logger.debug('get constellation associations :: enter')
     description = db.get_or_404(ConstellationDescription, description_id)
     N = len(description.corpus.ccc().attributes.attribute(description.s, 's'))  # TODO: subcorpus size?
 
@@ -717,7 +718,6 @@ def get_constellation_associations(constellation_id, description_id):
                 context_ids[discourseme_description.discourseme.id] = set(matches_df['contextid'])
 
         current_app.logger.debug('get constellation associations :: counting co-occurrences')
-
         records = list()
         pairs = pairwise_intersections(context_ids)
         for pair, f in pairs.items():
@@ -737,6 +737,7 @@ def get_constellation_associations(constellation_id, description_id):
         scores = scores.dropna()
 
         # scale scores
+        current_app.logger.debug('get constellation associations :: scaling scores')
         scaled_scores_dict = dict()
         for sort_by in scores.columns:
             scaled_scores_dict[sort_by] = scores[sort_by] / scores[sort_by].abs().max()
@@ -762,6 +763,8 @@ def get_constellation_associations(constellation_id, description_id):
         scores=scores,
         scaled_scores=scaled_scores
     )
+
+    current_app.logger.debug('get constellation associations :: exit')
 
     return ConstellationAssociationOut().dump(association), 200
 
