@@ -3,7 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { constellationDescriptionFor, corpusById } from '@cads/shared/queries'
 import { Route } from './route'
 
-export function useDescription() {
+export function useDescription({
+  mayDefaultToFirstAnnotation = true,
+}: {
+  mayDefaultToFirstAnnotation?: boolean
+} = {}) {
   const constellationId = parseInt(Route.useParams().constellationId)
   const searchParams = Route.useSearch()
   const corpusId = searchParams.corpusId
@@ -20,7 +24,7 @@ export function useDescription() {
   const contextBreak =
     searchParams.contextBreak ||
     searchParams.clContextBreak ||
-    data?.s_annotations?.[0]
+    (mayDefaultToFirstAnnotation ? data?.s_annotations?.[0] : undefined)
 
   const {
     data: description,

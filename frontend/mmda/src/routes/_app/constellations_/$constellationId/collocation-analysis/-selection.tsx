@@ -18,7 +18,7 @@ import { SelectSingle } from '@cads/shared/components/select-single'
 import { cn } from '@cads/shared/lib/utils'
 
 import { useCollocationSelection } from './-use-collocation-selection'
-import { useDescription } from '../-use-description'
+import { useCollocationAnalysisDescription } from './-use-collocation-analysis-description'
 
 export function CollocationSelection() {
   const { corpusId } = useCollocationSelection()
@@ -75,11 +75,11 @@ function AnalysisLayerInput() {
 }
 
 function FocusDiscoursemeInput({ className }: { className?: string }) {
-  const { corpusId, focusDiscourseme, setFocusDiscourseme } =
+  const { contextBreak, corpusId, focusDiscourseme, setFocusDiscourseme } =
     useCollocationSelection()
 
   const { description, isLoadingDescription, errorDescription } =
-    useDescription()
+    useCollocationAnalysisDescription()
   const { data: discoursemes = [] } = useQuery(discoursemesList)
 
   const constellationIds = (description?.discourseme_descriptions ?? []).map(
@@ -96,17 +96,23 @@ function FocusDiscoursemeInput({ className }: { className?: string }) {
     >
       <ErrorMessage error={errorDescription} className="col-span-full" />
 
-      <DiscoursemeSelect
-        discoursemes={discoursemesInDescription}
-        discoursemeId={focusDiscourseme}
-        onChange={setFocusDiscourseme}
-        disabled={isLoadingDescription || corpusId === undefined}
-        className="w-full"
-      />
+      <div className="relative">
+        <DiscoursemeSelect
+          discoursemes={discoursemesInDescription}
+          discoursemeId={focusDiscourseme}
+          onChange={setFocusDiscourseme}
+          disabled={
+            isLoadingDescription ||
+            corpusId === undefined ||
+            contextBreak === undefined
+          }
+          className="w-full"
+        />
 
-      {isLoadingDescription && (
-        <Loader2Icon className="absolute left-1/2 top-2 animate-spin" />
-      )}
+        {isLoadingDescription && (
+          <Loader2Icon className="absolute left-1/2 top-2 animate-spin" />
+        )}
+      </div>
     </LabelBox>
   )
 }
