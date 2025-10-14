@@ -25,7 +25,7 @@ import { useConcordanceFilterContext } from '@cads/shared/components/concordance
 import { CutOffSelect } from '@/components/word-cloud/cut-off-select'
 import { LabelBox } from '@cads/shared/components/label-box'
 
-import { useDescription } from '../-use-description'
+import { useCollocationAnalysisDescription } from './-use-collocation-analysis-description'
 import { useCollocation } from '../-use-collocation'
 import { ConstellationCollocationFilter } from '../-constellation-filter'
 import { ConstellationDiscoursemesEditor } from '../-constellation-discoursemes-editor'
@@ -43,7 +43,7 @@ export function CollocationSemanticMap() {
   const { isFaultySelection, analysisLayer } = useCollocationSelection()
   const [cutOff, setCutOff] = useState(0.5)
 
-  const { description } = useDescription()
+  const { description } = useCollocationAnalysisDescription()
   const {
     mapItems,
     isFetching,
