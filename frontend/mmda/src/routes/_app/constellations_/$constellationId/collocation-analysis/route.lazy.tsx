@@ -8,7 +8,7 @@ import { CollocationTable } from './-collocation-table'
 import { ConstellationConcordanceLines } from './-concordance-lines'
 import { ConstellationCollocationFilter } from '../-constellation-filter'
 import { useCollocationSelection } from './-use-collocation-selection'
-import { useDescription } from '../-use-description'
+import { useCollocationAnalysisDescription } from './-use-collocation-analysis-description'
 
 export const Route = createLazyFileRoute(
   '/_app/constellations_/$constellationId/collocation-analysis',
@@ -17,7 +17,7 @@ export const Route = createLazyFileRoute(
 })
 
 function CollocationAnalysis() {
-  const descriptionId = useDescription().description?.id
+  const descriptionId = useCollocationAnalysisDescription().description?.id
   const { isValidSelection } = useCollocationSelection()
 
   return (

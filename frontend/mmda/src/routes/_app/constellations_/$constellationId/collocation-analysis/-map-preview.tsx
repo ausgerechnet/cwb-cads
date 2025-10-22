@@ -1,7 +1,7 @@
 import { ErrorMessage } from '@cads/shared/components/error-message'
 import { WordCloudLink } from '@/components/word-cloud-link'
 
-import { useDescription } from '../-use-description'
+import { useCollocationAnalysisDescription } from './-use-collocation-analysis-description'
 import { useCollocationSelection } from './-use-collocation-selection'
 import { useCollocation } from '../-use-collocation'
 import { Route } from './route'
@@ -10,7 +10,7 @@ export function CollocationMapPreview() {
   const constellationId = parseInt(Route.useParams().constellationId)
   const { corpusId, contextBreak, analysisLayer, focusDiscourseme } =
     useCollocationSelection()
-  const descriptionId = useDescription()?.description?.id
+  const descriptionId = useCollocationAnalysisDescription()?.description?.id
   const { mapItems, error } = useCollocation(descriptionId)
 
   if (error) {

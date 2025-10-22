@@ -13,9 +13,9 @@ import {
 } from '@cads/shared/components/concordances'
 import { ConstellationConcordanceFilter } from '@/routes/_app/constellations_/$constellationId/-constellation-filter'
 
-import { useDescription } from '../-use-description'
 import { useCollocationSelection } from './-use-collocation-selection'
 import { Route } from './route'
+import { useCollocationAnalysisDescription } from './-use-collocation-analysis-description'
 
 export function ConstellationConcordanceLines() {
   const constellationId = parseInt(Route.useParams().constellationId)
@@ -41,7 +41,7 @@ export function ConstellationConcordanceLines() {
     setFilterItem,
   } = useConcordanceFilterContext()
 
-  const descriptionId = useDescription()?.description?.id
+  const descriptionId = useCollocationAnalysisDescription()?.description?.id
 
   const enabled =
     focusDiscourseme !== undefined &&
