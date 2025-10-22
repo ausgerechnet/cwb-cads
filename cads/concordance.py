@@ -283,13 +283,14 @@ def ccc_concordance(focus_query,
         overwrite=False,
         lib_dir=None
     )
+    # TODO: these are two retrievals, takes ~1.5s on obelix to retrieve 100 lines
     lines_in_context = lines.set_context(
         context=window,
         context_break=context_break
     ).concordance(
         form='dict',
-        p_show=p_show,
-        s_show=s_show,
+        p_show=[],
+        s_show=[],
         order='asis'
     )
     lines_in_extended_context = lines.set_context(
