@@ -25,7 +25,7 @@ from .database import (Corpus, CorpusAttributes, Segmentation,
                        SegmentationSpanAnnotation, SubCorpus,
                        SubCorpusCollection, subcorpus_segmentation_span)
 from .query import (QueryAssistedIn, get_concordance_lines,
-                    get_or_create_query_assisted)
+                    get_or_create_query_wrapper)
 from .users import auth
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
@@ -1144,7 +1144,7 @@ def concordance(id, json_data, query_data):
     ignore_diacritics = json_data.get('ignore_diacritics', json_data.get('ignore_diacritics'))
     ignore_case = json_data.get('ignore_case', json_data.get('ignore_case'))
 
-    query = get_or_create_query_assisted(
+    query = get_or_create_query_wrapper(
         corpus_id, subcorpus_id, items, p, s,
         escape, ignore_case, ignore_diacritics, focus_query=None,
         execute=True

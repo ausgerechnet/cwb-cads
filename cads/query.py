@@ -94,21 +94,22 @@ def ccc_query(query, return_df=True):
     return matches_df
 
 
-def get_or_create_query_assisted(corpus_id, subcorpus_id, items, p, s,
-                                 escape, ignore_case, ignore_diacritics,
-                                 focus_query=None, execute=True):
-    """create a query in assisted mode
+def get_or_create_query_wrapper(corpus_id, subcorpus_id, items, p, s,
+                                escape, ignore_case, ignore_diacritics,
+                                focus_query=None, execute=True):
+    """get or create a query from provided parameters
     - will retrieve query if a query with the same arguments already exists
     - runs ccc_query if execute is True
 
     """
+
     corpus = db.get_or_404(Corpus, corpus_id)
     s = corpus.s_default if s is None else s
 
     flags = translate_flags(ignore_case, ignore_diacritics)
     cqp_query = format_cqp_query(items, p_query=p, s_query=s, flags=flags, escape=escape)
 
-    current_app.logger.debug(f'get_or_create_query_assisted :: items "{items}" in corpus "{corpus.cwb_id}"')
+    current_app.logger.debug(f'get_or_create_query_wrapper :: items "{items}" in corpus "{corpus.cwb_id}"')
 
     if focus_query:
         # TODO speed up for subcorpus queries on context of focus query
@@ -140,12 +141,12 @@ def get_or_create_query_assisted(corpus_id, subcorpus_id, items, p, s,
         db.session.commit()
 
         if execute:
-            current_app.logger.debug('get_or_create_query_assisted :: querying')
+            current_app.logger.debug('get_or_create_query_wrapper :: querying')
             ret = ccc_query(query)
             if isinstance(ret, str):  # CQP error
                 return ret
 
-    current_app.logger.debug('get_or_create_query_assisted :: exit')
+    current_app.logger.debug('get_or_create_query_wrapper :: exit')
 
     return query
 
@@ -366,7 +367,7 @@ def get_concordance_lines(query_id, query_data):
     # prepare filter queries
     filter_queries = {query_id: db.get_or_404(Query, query_id) for query_id in filter_query_ids}
     if filter_item:
-        fq = get_or_create_query_assisted(
+        fq = get_or_create_query_wrapper(
             corpus.id, query.subcorpus_id, [filter_item],
             filter_item_p_att, query.s,
             True, False, False
@@ -440,10 +441,10 @@ class QueryIn(Schema):
 
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False, allow_none=True)
-
-    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    description = String(required=False, allow_none=True)
 
     cqp_query = String(required=True)
+    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
     s = String(required=False)
 
@@ -452,15 +453,14 @@ class QueryAssistedIn(Schema):
 
     corpus_id = Integer(required=True)
     subcorpus_id = Integer(required=False, allow_none=True)
-
-    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    description = String(required=False, allow_none=True)
 
     items = List(String, required=True)
     p = String(required=True)
-
     ignore_case = Boolean(required=False, dump_default=True)
     ignore_diacritics = Boolean(required=False, dump_default=True)
     escape = Boolean(required=False, dump_default=True)
+    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
     s = String(required=False)
 
@@ -492,6 +492,7 @@ class QueryMetaFrequenciesIn(Schema):
 class QueryOut(Schema):
 
     id = Integer(required=True)
+    description = String(required=False, allow_none=True)
     corpus_id = Integer(required=True)
     corpus_name = String(required=True)
     subcorpus_id = Integer(required=True, dump_default=None, allow_none=True)
@@ -500,6 +501,7 @@ class QueryOut(Schema):
     cqp_query = String(required=True)
     random_seed = Integer(required=True)
     number_matches = Integer(required=True)
+    s = String(required=True, allow_none=True)
 
 
 class QueryMetaFrequencyOut(Schema):
@@ -538,7 +540,7 @@ class QueryMetaFrequenciesOut(Schema):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def create(json_data, query_data):
+def create_query(json_data, query_data):
     """Create new CQP query.
 
     """
@@ -558,12 +560,46 @@ def create(json_data, query_data):
     return QueryOut().dump(query), 200
 
 
+@bp.put('/')
+@bp.input(QueryIn)
+@bp.input({'execute': Boolean(load_default=True)}, location='query')
+@bp.output(QueryOut)
+@bp.auth_required(auth)
+def get_or_create_query(json_data, query_data):
+    """Create new CQP query if it does not exist.
+
+    """
+
+    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    json_data['s'] = json_data.get('s', corpus.s_default)
+
+    query = Query.query.filter(
+        Query.corpus_id == json_data['corpus_id'],
+        Query.cqp_query == json_data['cqp_query'],
+        Query.s == json_data['s'],
+        Query.subcorpus_id.is_(None) if json_data['subcorpus_id'] is None else Query.subcorpus_id == json_data['subcorpus_id']
+    ).first()
+
+    if not query:
+
+        query = Query(**json_data)
+        db.session.add(query)
+        db.session.commit()
+
+        if query_data['execute']:
+            ret = ccc_query(query)
+            if isinstance(ret, str):  # CQP error
+                return abort(406, ret)
+
+    return QueryOut().dump(query), 200
+
+
 @bp.post('/assisted/')
 @bp.input(QueryAssistedIn)
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def create_assisted(json_data, query_data):
+def create_query_assisted(json_data, query_data):
     """Create new query in assisted mode.
 
     """
@@ -571,19 +607,13 @@ def create_assisted(json_data, query_data):
     corpus = db.get_or_404(Corpus, json_data['corpus_id'])
     json_data['s'] = json_data.get('s', corpus.s_default)
 
+    # create cqp_query
     items = json_data.pop('items')
     p = json_data.pop('p')
     escape = json_data.pop('escape', json_data.get('escape'))
     ignore_diacritics = json_data.pop('ignore_diacritics', json_data.get('ignore_diacritics'))
     ignore_case = json_data.pop('ignore_case', json_data.get('ignore_case'))
-    flags = ''
-    if ignore_case or ignore_diacritics:
-        flags = '%'
-        if ignore_case:
-            flags += 'c'
-        if ignore_diacritics:
-            flags += 'd'
-
+    flags = translate_flags(ignore_case, ignore_diacritics)
     json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
 
     query = Query(**json_data)
@@ -603,29 +633,39 @@ def create_assisted(json_data, query_data):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
-def create_or_get_query(json_data, query_data):
-    """Create new query in assisted mode, if it does not exist.
+def get_or_create_query_assisted(json_data, query_data):
+    """Create new query in assisted mode if it does not exist.
 
     """
 
-    corpus_id = json_data.get('corpus_id')
-    subcorpus_id = json_data.get('subcorpus_id')
+    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    json_data['s'] = json_data.get('s', corpus.s_default)
 
-    s = json_data.get('s')
-    items = json_data.get('items')
-    p = json_data.get('p')
-    escape = json_data.get('escape', json_data.get('escape'))
-    ignore_diacritics = json_data.get('ignore_diacritics', json_data.get('ignore_diacritics'))
-    ignore_case = json_data.get('ignore_case', json_data.get('ignore_case'))
+    # create cqp_query
+    items = json_data.pop('items')
+    p = json_data.pop('p')
+    escape = json_data.pop('escape', json_data.get('escape'))
+    ignore_diacritics = json_data.pop('ignore_diacritics', json_data.get('ignore_diacritics'))
+    ignore_case = json_data.pop('ignore_case', json_data.get('ignore_case'))
+    flags = translate_flags(ignore_case, ignore_diacritics)
+    json_data['cqp_query'] = format_cqp_query(items, p_query=p, s_query=json_data['s'], flags=flags, escape=escape)
 
-    query = get_or_create_query_assisted(
-        corpus_id, subcorpus_id, items, p, s,
-        escape, ignore_case, ignore_diacritics, focus_query=None,
-        execute=query_data['execute']
-    )
+    query = Query.query.filter(
+        Query.corpus_id == json_data['corpus_id'],
+        Query.cqp_query == json_data['cqp_query'],
+        Query.s == json_data['s'],
+        Query.subcorpus_id.is_(None) if json_data['subcorpus_id'] is None else Query.subcorpus_id == json_data['subcorpus_id']
+    ).first()
 
-    if isinstance(query, str):
-        return abort(406, query)
+    if not query:
+        query = Query(**json_data)
+        db.session.add(query)
+        db.session.commit()
+
+        if query_data['execute']:
+            ret = ccc_query(query)
+            if isinstance(ret, str):  # CQP error
+                return abort(406, ret)
 
     return QueryOut().dump(query), 200
 
@@ -890,7 +930,7 @@ def get_or_create_collocation(query_id, json_data):
     filter_overlap = json_data.pop('filter_overlap', 'partial')
     filter_queries = dict()
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_assisted(
+        filter_queries['_FILTER'] = get_or_create_query_wrapper(
             query.corpus_id, None, [filter_item], filter_item_p_att, query.s, True, False, False
         )
     if len(filter_queries) > 0:

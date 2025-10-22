@@ -1974,6 +1974,10 @@
           "corpus_id": {
             "type": "integer"
           },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
           "escape": {
             "type": "boolean"
           },
@@ -2021,6 +2025,10 @@
             "type": "integer"
           },
           "cqp_query": {
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
             "type": "string"
           },
           "match_strategy": {
@@ -2146,6 +2154,10 @@
           "cqp_query": {
             "type": "string"
           },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
           "id": {
             "type": "integer"
           },
@@ -2157,6 +2169,10 @@
           },
           "random_seed": {
             "type": "integer"
+          },
+          "s": {
+            "nullable": true,
+            "type": "string"
           },
           "subcorpus_id": {
             "nullable": true,
@@ -2175,6 +2191,7 @@
           "match_strategy",
           "number_matches",
           "random_seed",
+          "s",
           "subcorpus_id",
           "subcorpus_name"
         ],
@@ -2801,7 +2818,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev65"
+    "version": "0.3.0.dev66"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -10282,6 +10299,69 @@
         "tags": [
           "Query"
         ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "execute",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create new CQP query if it does not exist.",
+        "tags": [
+          "Query"
+        ]
       }
     },
     "/query/assisted/": {
@@ -10406,7 +10486,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create new query in assisted mode, if it does not exist.",
+        "summary": "Create new query in assisted mode if it does not exist.",
         "tags": [
           "Query"
         ]

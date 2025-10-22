@@ -20,7 +20,7 @@ from ..database import (Breakdown, Collocation, CollocationItem,
                         CollocationItemScore, CotextLines, Matches, Query,
                         get_or_create)
 from ..query import (ccc_query, get_or_create_cotext,
-                     get_or_create_query_assisted,
+                     get_or_create_query_wrapper,
                      get_or_create_query_iterative)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from ..users import auth
@@ -90,7 +90,7 @@ def get_or_create_coll(description,
     focus_query = highlight_queries[focus_discourseme_id]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_assisted(
+        filter_queries['_FILTER'] = get_or_create_query_wrapper(
             description.corpus_id, description.subcorpus_id, [filter_item],
             filter_item_p_att, description.s,
             True, False, False, None, True
@@ -806,7 +806,7 @@ def create_collocation(constellation_id, description_id, json_data):
     focus_query = highlight_queries[json_data['focus_discourseme_id']]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_assisted(
+        filter_queries['_FILTER'] = get_or_create_query_wrapper(
             description.corpus_id, description.subcorpus_id, [filter_item],
             filter_item_p_att, description.s,
             True, False, False, None, True
