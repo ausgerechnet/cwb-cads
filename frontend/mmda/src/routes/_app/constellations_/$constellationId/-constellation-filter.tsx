@@ -200,6 +200,7 @@ export function ConstellationConcordanceFilter({
       )}
     >
       {!hideWindowSize && <WindowSizeInput />}
+
       {!hideFocusDiscourseme && (
         <LabelBox labelText="Focus Discourseme">
           <FocusDiscourseme />

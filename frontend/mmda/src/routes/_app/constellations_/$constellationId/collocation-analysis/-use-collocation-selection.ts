@@ -34,7 +34,10 @@ export function useCollocationSelection() {
   })
 
   analysisLayer = defaultValue(layers, analysisLayer, 'lemma')
-  contextBreak = defaultValue(structuredAttributes, contextBreak)
+  contextBreak = defaultValue(
+    [...(structuredAttributes ?? []), undefined],
+    contextBreak,
+  )
 
   const isValidSelection =
     corpusId !== undefined &&
@@ -85,7 +88,7 @@ export function useCollocationSelection() {
       navigate({
         to: '.',
         params: (p) => p,
-        search: (s) => ({ ...s, contextBreak }),
+        search: (s) => ({ ...s, contextBreak, focusDiscourseme: undefined }),
       }),
   }
 }
