@@ -110,10 +110,11 @@ def test_query_concordance_filter(client, auth):
                            headers=auth_header)
 
         assert lines.status_code == 200
-
+        from pprint import pprint
+        pprint(lines.json)
         for line in lines.json['lines']:
-            row = [t['primary'] for t in line['tokens'] if not t['out_of_window']]
-            assert 'Beifall' in row
+            assert 'Beifall' in [t['primary'] for t in line['tokens'] if not t['out_of_window']]
+            assert True in [t['is_filter_item'] for t in line['tokens'] if not t['out_of_window']]
 
 
 def test_query_concordance_sort(client, auth):

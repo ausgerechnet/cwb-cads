@@ -364,6 +364,9 @@ def get_concordance_lines(query_id, query_data):
     # highlighting
     highlight_query_ids = query_data.get('highlight_query_ids')
 
+    # prepare highlight queries
+    highlight_queries = {query_id: db.get_or_404(Query, query_id) for query_id in highlight_query_ids}
+
     # prepare filter queries
     filter_queries = {query_id: db.get_or_404(Query, query_id) for query_id in filter_query_ids}
     if filter_item:
@@ -373,9 +376,7 @@ def get_concordance_lines(query_id, query_data):
             True, False, False
         )
         filter_queries['_FILTER'] = fq
-
-    # prepare highlight queries
-    highlight_queries = {query_id: db.get_or_404(Query, query_id) for query_id in highlight_query_ids}
+        highlight_queries['_FILTER'] = fq  # for highlighting
 
     # attributes to show
     p_show = [primary, secondary]
