@@ -74,8 +74,8 @@
 - BUG: create new constellation → add successfully → empty panel (visible after refresh works)
 
 ### constellation
-- order: Breakdown > Associations > Keyword Analysis > Collocation Analysis > UFA
-- lock in settings when switching tabs
+- [x] order: Breakdown > Associations > Keyword Analysis > Collocation Analysis > UFA
+- [ ] lock in settings when switching tabs
 
 #### breakdown (parameters: corpus, context break, analysis layer)
 - should also include "Context Break" to be selected by user
