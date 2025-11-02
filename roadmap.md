@@ -83,8 +83,8 @@
 /mmda/constellation/{constellation_id}/description/{description_id}/breakdown/
 
 #### associations (parameters: corpus, context break)
-- should also include "Context Break" to be selected by user
-- BUG: doesn't show any data; should call
+- [x] should also include "Context Break" to be selected by user
+- [x] BUG: doesn't show any data; should call
 /mmda/constellation/{constellation_id}/description/{description_id}/associations/
   
 #### keyword analysis (parameters: corpus, context break, analysis layer, reference corpus, reference analysis layer)

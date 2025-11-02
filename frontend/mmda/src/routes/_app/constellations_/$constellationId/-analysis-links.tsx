@@ -17,6 +17,9 @@ export function AnalysisLinks({ className }: { className?: string }) {
           params={(p) => p}
           search={(s) => ({
             isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
+            analysisLayer: s.analysisLayer,
+            contextBreak: s.contextBreak,
           })}
         >
           Breakdown
@@ -31,6 +34,7 @@ export function AnalysisLinks({ className }: { className?: string }) {
           params={(p) => p}
           search={(s) => ({
             isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
           })}
         >
           Associations
@@ -45,6 +49,7 @@ export function AnalysisLinks({ className }: { className?: string }) {
           params={(p) => p}
           search={(s) => ({
             isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
           })}
         >
           Keyword Analysis
@@ -59,6 +64,7 @@ export function AnalysisLinks({ className }: { className?: string }) {
           params={(p) => p}
           search={(s) => ({
             isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
           })}
         >
           Collocation Analysis
@@ -73,6 +79,7 @@ export function AnalysisLinks({ className }: { className?: string }) {
           params={(p) => p}
           search={(s) => ({
             isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
           })}
         >
           UFA
