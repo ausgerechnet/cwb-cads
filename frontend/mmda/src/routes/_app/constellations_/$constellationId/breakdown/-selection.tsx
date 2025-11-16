@@ -16,7 +16,7 @@ export function BreakdownSelection() {
     <div className="grid grid-cols-[1fr_1fr] content-start gap-2">
       <CorpusInput className="col-span-full" />
       <AnalysisLayerInput />
-      <ContextSelection />
+      <ContextBreakInput />
     </div>
   )
 }
@@ -63,7 +63,7 @@ function AnalysisLayerInput() {
   )
 }
 
-function ContextSelection() {
+function ContextBreakInput() {
   const { contextBreakList, contextBreak, setContextBreak, corpusId } =
     useBreakdownSelection()
   return (

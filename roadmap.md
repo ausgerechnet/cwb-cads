@@ -104,8 +104,8 @@
 - auto-select (and lock in) focus discourseme (in "filter discoursemes")
 
 #### UFA
-- should also include "Context Break" to be selected by user
-- BUG: cannot select focus discourseme:
+- [x] should also include "Context Break" to be selected by user
+- [ ] BUG: cannot select focus discourseme:
 ```
 Error ["constellation-description",{"constellationId":1,"corpusId":2,"matchStrategy":"longest","s":"corpus_name","subcorpusId":null}] data is undefined
 ```
