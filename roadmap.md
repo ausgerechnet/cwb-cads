@@ -78,8 +78,8 @@
 - [ ] lock in settings when switching tabs
 
 #### breakdown (parameters: corpus, context break, analysis layer)
-- should also include "Context Break" to be selected by user
-- BUG: doesn't show any data; should call
+- [x] should also include "Context Break" to be selected by user
+- [ ] BUG: doesn't show any data; should call
 /mmda/constellation/{constellation_id}/description/{description_id}/breakdown/
 
 #### associations (parameters: corpus, context break)

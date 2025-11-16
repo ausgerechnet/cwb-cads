@@ -368,11 +368,12 @@ export const constellationDescriptionBreakdown = (
   constellationId: number,
   descriptionId: number,
   p: string,
+  s: string,
 ) =>
   queryOptions({
     queryKey: [
       'constellation-description-breakdown',
-      { constellationId, descriptionId, p },
+      { constellationId, descriptionId, p, s },
     ],
     queryFn: async ({ signal }) =>
       apiClient.get(
@@ -382,7 +383,7 @@ export const constellationDescriptionBreakdown = (
             constellation_id: constellationId.toString(),
             description_id: descriptionId.toString(),
           },
-          queries: { p },
+          queries: { p, s },
           signal,
         },
       ),
