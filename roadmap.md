@@ -98,7 +98,7 @@
 - possibility to remove filter discourseme in 2nd order analysis
 
 ##### semantic map
-- opening / closing concordance lines throws user back to item table
+- [x] opening / closing concordance lines throws user back to item table
 
 ##### concordance lines
 - auto-select (and lock in) focus discourseme (in "filter discoursemes")
