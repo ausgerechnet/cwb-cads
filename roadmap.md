@@ -71,7 +71,7 @@
 - make items editable
 
 ## constellations
-- BUG: create new constellation → add successfully → empty panel (visible after refresh works)
+- [x] BUG: create new constellation → add successfully → empty panel (visible after refresh works)
 
 ### constellation
 - [x] order: Breakdown > Associations > Keyword Analysis > Collocation Analysis > UFA
