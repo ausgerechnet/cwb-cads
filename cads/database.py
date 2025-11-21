@@ -12,6 +12,7 @@ from sqlalchemy import text
 from werkzeug.security import generate_password_hash
 
 from . import db
+from .utils import AMS_DICT
 
 bp = Blueprint('database', __name__, url_prefix='/database', cli_group='database')
 
@@ -695,14 +696,7 @@ class CollocationItem(db.Model):
     def scaled_scores(self):
 
         return [
-            {'measure': measure, 'score': self.scale_measure(measure)} for measure in [
-                'O11', 'E11', 'ipm', 'ipm_reference', 'ipm_expected',
-                'conservative_log_ratio',
-                'log_likelihood',
-                'dice',
-                'log_ratio',
-                'mutual_information'
-            ]
+            {'measure': measure, 'score': self.scale_measure(measure)} for measure in AMS_DICT.keys()
         ]
 
 
