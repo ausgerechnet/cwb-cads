@@ -14,7 +14,7 @@ export const BreakdownAnalysisSchema = z.object({
 
 export function useBreakdownSelection() {
   const navigate = Route.useNavigate()
-  const { corpusId, subcorpusId } = Route.useSearch()
+  const { corpusId, subcorpusId, contextBreak } = Route.useSearch()
   let { analysisLayer } = Route.useSearch()
 
   const { data: { layers, structuredAttributes } = {}, error: errorLayers } =
@@ -29,7 +29,12 @@ export function useBreakdownSelection() {
 
   analysisLayer = defaultValue(layers, analysisLayer, 'lemma')
 
-  const isValidSelection = corpusId !== undefined && analysisLayer !== undefined
+  const isValidSelection =
+    corpusId !== undefined &&
+    analysisLayer !== undefined &&
+    contextBreak !== undefined
+
+  const contextBreakList = structuredAttributes ?? []
 
   return {
     errors: [errorLayers],
@@ -39,6 +44,18 @@ export function useBreakdownSelection() {
     subcorpusId,
     layers,
     structuredAttributes,
+    contextBreak,
+    contextBreakList,
+    setContextBreak: (contextBreak?: string) =>
+      navigate({
+        to: '.',
+        replace: true,
+        params: (p) => p,
+        search: (s) => ({
+          ...s,
+          contextBreak,
+        }),
+      }),
     setAnalysisLayer: (layer: string) =>
       navigate({
         to: '.',

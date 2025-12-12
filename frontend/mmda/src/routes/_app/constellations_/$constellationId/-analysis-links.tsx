@@ -12,11 +12,59 @@ export function AnalysisLinks({ className }: { className?: string }) {
       <li className="flex flex-1 items-stretch">
         <Link
           className="ring-offset-background focus-visible:ring-ring data-[status=active]:bg-background data-[status=active]:text-foreground data-[status=inactive]:hover:bg-background/80 hover:bg-background/50 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[status=active]:shadow-sm"
+          to="/constellations/$constellationId/breakdown"
+          from="/constellations/$constellationId"
+          params={(p) => p}
+          search={(s) => ({
+            isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
+            analysisLayer: s.analysisLayer,
+            contextBreak: s.contextBreak,
+          })}
+        >
+          Breakdown
+        </Link>
+      </li>
+
+      <li className="flex flex-1 items-stretch">
+        <Link
+          className="ring-offset-background focus-visible:ring-ring data-[status=active]:bg-background data-[status=active]:text-foreground data-[status=inactive]:hover:bg-background/80 hover:bg-background/50 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[status=active]:shadow-sm"
+          to="/constellations/$constellationId/associations"
+          from="/constellations/$constellationId"
+          params={(p) => p}
+          search={(s) => ({
+            isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
+          })}
+        >
+          Associations
+        </Link>
+      </li>
+
+      <li className="flex flex-1 items-stretch">
+        <Link
+          className="ring-offset-background focus-visible:ring-ring data-[status=active]:bg-background data-[status=active]:text-foreground data-[status=inactive]:hover:bg-background/80 hover:bg-background/50 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[status=active]:shadow-sm"
+          to="/constellations/$constellationId/keyword-analysis"
+          from="/constellations/$constellationId"
+          params={(p) => p}
+          search={(s) => ({
+            isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
+          })}
+        >
+          Keyword Analysis
+        </Link>
+      </li>
+
+      <li className="flex flex-1 items-stretch">
+        <Link
+          className="ring-offset-background focus-visible:ring-ring data-[status=active]:bg-background data-[status=active]:text-foreground data-[status=inactive]:hover:bg-background/80 hover:bg-background/50 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[status=active]:shadow-sm"
           to="/constellations/$constellationId/collocation-analysis"
           from="/constellations/$constellationId"
           params={(p) => p}
           search={(s) => ({
             isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
           })}
         >
           Collocation Analysis
@@ -31,51 +79,10 @@ export function AnalysisLinks({ className }: { className?: string }) {
           params={(p) => p}
           search={(s) => ({
             isConcordanceVisible: s.isConcordanceVisible,
+            corpusId: s.corpusId,
           })}
         >
           UFA
-        </Link>
-      </li>
-
-      <li className="flex flex-1 items-stretch">
-        <Link
-          className="ring-offset-background focus-visible:ring-ring data-[status=active]:bg-background data-[status=active]:text-foreground data-[status=inactive]:hover:bg-background/80 hover:bg-background/50 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[status=active]:shadow-sm"
-          to="/constellations/$constellationId/keyword-analysis"
-          from="/constellations/$constellationId"
-          params={(p) => p}
-          search={(s) => ({
-            isConcordanceVisible: s.isConcordanceVisible,
-          })}
-        >
-          Keyword Analysis
-        </Link>
-      </li>
-
-      <li className="flex flex-1 items-stretch">
-        <Link
-          className="ring-offset-background focus-visible:ring-ring data-[status=active]:bg-background data-[status=active]:text-foreground data-[status=inactive]:hover:bg-background/80 hover:bg-background/50 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[status=active]:shadow-sm"
-          to="/constellations/$constellationId/associations"
-          from="/constellations/$constellationId"
-          params={(p) => p}
-          search={(s) => ({
-            isConcordanceVisible: s.isConcordanceVisible,
-          })}
-        >
-          Associations
-        </Link>
-      </li>
-
-      <li className="flex flex-1 items-stretch">
-        <Link
-          className="ring-offset-background focus-visible:ring-ring data-[status=active]:bg-background data-[status=active]:text-foreground data-[status=inactive]:hover:bg-background/80 hover:bg-background/50 inline-flex grow items-center justify-center whitespace-nowrap rounded-sm px-1 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[status=active]:shadow-sm"
-          to="/constellations/$constellationId/breakdown"
-          from="/constellations/$constellationId"
-          params={(p) => p}
-          search={(s) => ({
-            isConcordanceVisible: s.isConcordanceVisible,
-          })}
-        >
-          Breakdown
         </Link>
       </li>
     </ul>

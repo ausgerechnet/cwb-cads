@@ -26,7 +26,7 @@ export function ConstellationConcordanceLinesUfa({
   const nrLinesRef = useRef<number>(0)
   const pageCountRef = useRef<number>(0)
 
-  const { focusDiscourseme } = useUfaSelection()
+  const { focusDiscourseme, contextBreak } = useUfaSelection()
 
   const {
     primary,
@@ -39,7 +39,6 @@ export function ConstellationConcordanceLinesUfa({
     clFilterItem,
     clFilterItemPAtt,
     clFilterDiscoursemeIds,
-    clContextBreak,
     setPageSize,
     setPageIndex,
     setFilterItem,
@@ -50,7 +49,8 @@ export function ConstellationConcordanceLinesUfa({
     focusDiscourseme !== undefined &&
     descriptionId !== undefined &&
     primary !== undefined &&
-    secondary !== undefined
+    secondary !== undefined &&
+    contextBreak !== undefined
 
   const {
     data: concordanceLines,
@@ -72,7 +72,7 @@ export function ConstellationConcordanceLinesUfa({
         sortOrder: clSortOrder,
         sortByOffset: clSortByOffset,
         sortByPAtt: secondary,
-        contextBreak: clContextBreak,
+        contextBreak: contextBreak!,
         filterDiscoursemeIds: clFilterDiscoursemeIds,
       },
     ),

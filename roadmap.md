@@ -72,20 +72,20 @@
 - make items editable
 
 ## constellations
-- BUG: create new constellation → add successfully → empty panel (visible after refresh works)
+- [x] BUG: create new constellation → add successfully → empty panel (visible after refresh works)
 
 ### constellation
-- order: Breakdown > Associations > Keyword Analysis > Collocation Analysis > UFA
-- lock in settings when switching tabs
+- [x] order: Breakdown > Associations > Keyword Analysis > Collocation Analysis > UFA
+- [ ] lock in settings when switching tabs
 
 #### breakdown (parameters: corpus, context break, analysis layer)
-- should also include "Context Break" to be selected by user
-- BUG: doesn't show any data; should call
+- [x] should also include "Context Break" to be selected by user
+- [ ] BUG: doesn't show any data; should call
 /mmda/constellation/{constellation_id}/description/{description_id}/breakdown/
 
 #### associations (parameters: corpus, context break)
-- should also include "Context Break" to be selected by user
-- BUG: doesn't show any data; should call
+- [x] should also include "Context Break" to be selected by user
+- [x] BUG: doesn't show any data; should call
 /mmda/constellation/{constellation_id}/description/{description_id}/associations/
   
 #### keyword analysis (parameters: corpus, context break, analysis layer, reference corpus, reference analysis layer)
@@ -100,14 +100,14 @@
 - unify text when parameter is not select ("select analysis layer" vs. "context break" vs. "no discourseme selected")
 
 ##### semantic map
-- opening / closing concordance lines throws user back to item table
+- [x] opening / closing concordance lines throws user back to item table
 
 ##### concordance lines
 - auto-select (and lock in) focus discourseme (in "filter discoursemes")
 
 #### UFA
-- should also include "Context Break" to be selected by user
-- BUG: cannot select focus discourseme:
+- [x] should also include "Context Break" to be selected by user
+- [ ] BUG: cannot select focus discourseme:
 ```
 Error ["constellation-description",{"constellationId":1,"corpusId":2,"matchStrategy":"longest","s":"corpus_name","subcorpusId":null}] data is undefined
 ```
