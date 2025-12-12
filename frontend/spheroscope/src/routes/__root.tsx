@@ -31,7 +31,7 @@ function RootComponent() {
           <NavigationMenuList>
             <NavigationMenuItem className="mr-auto">
               <MenuLink to="/" activeOptions={{ exact: true }}>
-                <img src="/logo.png" className="mr-2 h-8 w-8" />
+                <img src="logo.png" className="mr-2 h-8 w-8" />
                 Home
               </MenuLink>
             </NavigationMenuItem>
