@@ -270,6 +270,31 @@ cads_constellation_collocation <- function(constellation.id, constellation.descr
     cads_perform_request()
 }
 
+cads_constellation_collocation_items <- function(constellation.id, constellation.description.id, collocation.id,
+                                                 page.number = 1, page.size = 50, sort.by = "conservative_log_ratio", hide.focus = T, hide.filter = T,
+                                                 return.coordinates = T){
+  df <- str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/items") |>
+    cads_mk_request() |> 
+    req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
+                  sort_order = "descending", hide_focus = hide.focus, hide_filter = hide.filter, return_coordinates = return.coordinates) |> 
+    cads_perform_request()
+  
+  flat_tibble <- bind_rows(
+    bind_rows(
+      lapply(seq_along(df$items$scores), function(i) {
+        df$items$scores[[i]] %>% mutate(item = df$items$item[i])
+      })
+    ),
+    bind_rows(
+      lapply(seq_along(df$items$raw_scores), function(i) {
+        df$items$raw_scores[[i]] %>% mutate(item = df$items$item[i])
+      })
+    )
+  ) |> distinct() |> 
+    pivot_wider(id_cols = item, names_from = measure, values_from = score) |>
+    left_join(df$coordinates)
+}
+
 cads_constellation_collocation_map <- function(constellation.id, constellation.description.id, collocation.id,
                                                page.number = 1, page.size = 50, sort.by = "conservative_log_ratio", hide.disc.unigrams = T,
                                                return.coordinates = T){
@@ -277,16 +302,6 @@ cads_constellation_collocation_map <- function(constellation.id, constellation.d
     cads_mk_request() |> 
     req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
                   sort_order = "descending", hide_discourseme_unigrams = hide.disc.unigrams, return_coordinates = return.coordinates) |> 
-    cads_perform_request()
-}
-
-cads_constellation_collocation_items <- function(constellation.id, constellation.description.id, collocation.id,
-                                                 page.number = 1, page.size = 50, sort.by = "conservative_log_ratio",
-                                                 return.coordinates = T){
-  str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/items") |>
-    cads_mk_request() |> 
-    req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
-                  sort_order = "descending", return_coordinates = return.coordinates) |> 
     cads_perform_request()
 }
 
