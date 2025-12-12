@@ -6,8 +6,8 @@
 - semantic map:
   + there should be the possibility to show items that belong to the breakdown of a discourseme in the map
   + adding items to the focus discourseme from semantic map in collocation analyses → pop-up warning / complete re-load
-- concordances:
-  + overlapping segmentation annotation
+    → bug: reload
+    → text
 
 ## corpora
 - make filterable
@@ -24,7 +24,7 @@
 - move into "corpus" view (like subcorpus collectons)
 - make table filterable
 - hide / filter collections / display collection ID or name (issue #12)
-- clicking on "view subcorpus" → ID "0"
+- BUG: clicking on "view subcorpus" → ID "0"
 
 #### subcorpus collection
 - extend creation (needs backend update, issue #12)
@@ -51,9 +51,10 @@
 
 #### item table
 - should have a title
-- display rank
+- display rank → TODO return ranks
 - flip up/down arrow
 - overall nice item table, unify with constellation collocation table
+- BUG: sort by t-score → "score not found"
 
 #### semantic map
 - include cut-off, parameters (unify with constellations)
@@ -94,8 +95,9 @@
 - only works with focus discourseme (should also work with filter item only)
 
 #### collocation analysis (parameters: corpus, context break, analysis layer, focus discourseme)
-- show if an item belongs to a discourseme in collocation table
+- show if an item belongs to a discourseme in collocation table (nice to have)
 - possibility to remove filter discourseme in 2nd order analysis
+- unify text when parameter is not select ("select analysis layer" vs. "context break" vs. "no discourseme selected")
 
 ##### semantic map
 - opening / closing concordance lines throws user back to item table
