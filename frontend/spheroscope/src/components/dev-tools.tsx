@@ -5,7 +5,7 @@ export function DevTools() {
   return (
     <>
       <ReactQueryDevtools buttonPosition="bottom-right" />
-      <TanStackRouterDevtools position="top-left" />
+      <TanStackRouterDevtools position="bottom-right" />
     </>
   )
 }
