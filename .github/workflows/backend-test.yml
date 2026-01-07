@@ -13,7 +13,7 @@ jobs:
         python-version: [ 3.9, "3.10", "3.11", "3.12" ]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Install CWB
       run: |
         sudo apt-get install libncurses5-dev glib2.0-dev libpcre3 libpcre3-dev
