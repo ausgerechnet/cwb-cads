@@ -20,8 +20,9 @@ export function useUfa() {
   const constellationId = parseInt(Route.useParams().constellationId)
   let { ufaTimeSpan } = Route.useSearch()
   const navigate = Route.useNavigate()
-  const { partition, focusDiscourseme, analysisLayer } = useUfaSelection()
-  const { clContextBreak, windowSize } = useConcordanceFilterContext()
+  const { partition, focusDiscourseme, analysisLayer, contextBreak } =
+    useUfaSelection()
+  const { windowSize } = useConcordanceFilterContext()
 
   function setUfaTimeSpan(ufaTimeSpan: string) {
     navigate({
@@ -34,10 +35,10 @@ export function useUfa() {
   const { data: collection, error: errorCollection } = useQuery({
     ...constellationDescriptionCollection(
       constellationId,
-      clContextBreak!,
+      contextBreak!,
       partition!,
     ),
-    enabled: clContextBreak !== undefined && partition !== undefined,
+    enabled: contextBreak !== undefined && partition !== undefined,
   })
   const collectionId = collection?.id
 
@@ -54,13 +55,13 @@ export function useUfa() {
       filterItemPAtt: undefined,
       focusDiscoursemeId: focusDiscourseme!,
       p: analysisLayer!,
-      sBreak: clContextBreak!,
+      sBreak: contextBreak!,
       window: windowSize,
     }),
     retry: 0,
     enabled:
       collectionId !== undefined &&
-      clContextBreak !== undefined &&
+      contextBreak !== undefined &&
       collectionId !== undefined &&
       focusDiscourseme !== undefined &&
       analysisLayer !== undefined,

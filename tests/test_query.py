@@ -10,7 +10,7 @@ def test_create_query(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="Wirtschaft"]',
@@ -36,7 +36,7 @@ def test_create_query_assisted(client, auth):
         client.get("/")
 
         # query
-        query = client.post(url_for('query.create_assisted'),
+        query = client.post(url_for('query.create_query_assisted'),
                             json={
                                 'corpus_id': 1,
                                 'items': ['bei', 'zu'],
@@ -72,7 +72,7 @@ def test_query_concordance(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="Wirtschaft"]',
@@ -98,7 +98,7 @@ def test_query_concordance_filter(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="SPD"]',
@@ -110,10 +110,11 @@ def test_query_concordance_filter(client, auth):
                            headers=auth_header)
 
         assert lines.status_code == 200
-
+        from pprint import pprint
+        pprint(lines.json)
         for line in lines.json['lines']:
-            row = [t['primary'] for t in line['tokens'] if not t['out_of_window']]
-            assert 'Beifall' in row
+            assert 'Beifall' in [t['primary'] for t in line['tokens'] if not t['out_of_window']]
+            assert True in [t['is_filter_item'] for t in line['tokens'] if not t['out_of_window']]
 
 
 def test_query_concordance_sort(client, auth):
@@ -122,7 +123,7 @@ def test_query_concordance_sort(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="Wirtschaft"]',
@@ -163,7 +164,7 @@ def test_query_concordance_filter_sort(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="SPD"]',
@@ -206,7 +207,7 @@ def test_query_breakdown(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="Wirtschaft"]',
@@ -230,7 +231,7 @@ def test_query_meta(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 2,
                                 'cqp_query': '[lemma="müssen"]',
@@ -259,7 +260,7 @@ def test_query_meta_few(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="Kernkraftwerk"]',
@@ -283,7 +284,7 @@ def test_query_meta_empty(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 2,
                                 'cqp_query': '[lemma="Kernkraftwerk"]',
@@ -304,7 +305,7 @@ def test_query_collocation(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '"CDU" "/" "CSU" | "CDU" | "CSU" | "CDU" "/" "CSU-Fraktion"',
@@ -337,7 +338,7 @@ def test_query_collocation_empty(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="Kernkraftwerk"]',
@@ -373,7 +374,7 @@ def test_query_concordance_sort_complete(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '[lemma="SPD"]',
@@ -459,7 +460,7 @@ def test_query_collocation_scores(client, auth):
     with client:
         client.get("/")
 
-        query = client.post(url_for('query.create'),
+        query = client.post(url_for('query.create_query'),
                             json={
                                 'corpus_id': 1,
                                 'cqp_query': '"CDU" "/" "CSU" | "CDU" | "CSU" | "CDU" "/" "CSU-Fraktion"',

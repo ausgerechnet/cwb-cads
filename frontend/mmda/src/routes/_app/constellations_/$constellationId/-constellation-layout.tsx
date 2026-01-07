@@ -69,16 +69,20 @@ export function ConstellationLayout({
       mapContent={mapContent}
       drawerContent={drawerContent}
       isDrawerVisible={isConcordanceVisible ?? false}
-      onDrawerToggle={(isConcordanceVisible) =>
+      onDrawerToggle={(isConcordanceVisible) => {
         navigate({
-          to: '.',
           replace: true,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-expect-error
+          params: (p) => p,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-expect-error
           search: (s) => ({
             ...s,
             isConcordanceVisible,
           }),
         })
-      }
+      }}
     >
       <Card className="grid max-w-5xl grid-cols-[auto,1fr] gap-4 gap-y-0.5 p-4">
         <label

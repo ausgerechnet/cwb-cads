@@ -15,7 +15,7 @@ from .database import (Collocation, CollocationItem, CollocationItemScore,
 from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap_init,
                            ccc_semmap_update)
 from .users import auth
-from .utils import AMS_DICT, AMS_CUTOFF
+from .utils import AMS_CUTOFF, AMS_DICT
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
 
