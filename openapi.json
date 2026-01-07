@@ -1341,6 +1341,27 @@
         ],
         "type": "object"
       },
+      "CorpusPatchIn": {
+        "properties": {
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "language": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "nullable": true,
+            "type": "string"
+          },
+          "register": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "DiscoursemeCoordinatesIn": {
         "properties": {
           "discourseme_id": {
@@ -1953,6 +1974,10 @@
           "corpus_id": {
             "type": "integer"
           },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
           "escape": {
             "type": "boolean"
           },
@@ -2000,6 +2025,10 @@
             "type": "integer"
           },
           "cqp_query": {
+            "type": "string"
+          },
+          "description": {
+            "nullable": true,
             "type": "string"
           },
           "match_strategy": {
@@ -2125,6 +2154,10 @@
           "cqp_query": {
             "type": "string"
           },
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
           "id": {
             "type": "integer"
           },
@@ -2136,6 +2169,10 @@
           },
           "random_seed": {
             "type": "integer"
+          },
+          "s": {
+            "nullable": true,
+            "type": "string"
           },
           "subcorpus_id": {
             "nullable": true,
@@ -2154,6 +2191,7 @@
           "match_strategy",
           "number_matches",
           "random_seed",
+          "s",
           "subcorpus_id",
           "subcorpus_name"
         ],
@@ -2480,6 +2518,21 @@
         ],
         "type": "object"
       },
+      "SubCorpusPatchIn": {
+        "properties": {
+          "description": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
       "TokenOut": {
         "properties": {
           "cpos": {
@@ -2765,7 +2818,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev64"
+    "version": "0.3.0.dev66"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -3193,6 +3246,57 @@
       }
     },
     "/corpus/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete corpus.",
+        "tags": [
+          "Corpus"
+        ]
+      },
       "get": {
         "parameters": [
           {
@@ -3242,6 +3346,80 @@
           }
         ],
         "summary": "Get details of a corpus.",
+        "tags": [
+          "Corpus"
+        ]
+      }
+    },
+    "/corpus/{id}/": {
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorpusPatchIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch corpus (description, name, register, language).",
         "tags": [
           "Corpus"
         ]
@@ -4196,7 +4374,7 @@
         ]
       },
       "put": {
-        "description": "Subcorpus will only be created if one\n- with the same name and\n- created from the same attribute does not already exist\n- in this corpus.",
+        "description": "We check for:\n- one with the same name,\n- created from the same attribute\n- in this corpus.",
         "parameters": [
           {
             "in": "path",
@@ -4263,7 +4441,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Same as corresponding POST.",
+        "summary": "Same as corresponding POST but subcorpus will only be created if it doesn't exist.",
         "tags": [
           "Corpus"
         ]
@@ -4386,6 +4564,86 @@
           }
         ],
         "summary": "Get details of a subcorpus.",
+        "tags": [
+          "Corpus"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "subcorpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubCorpusPatchIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubCorpusOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Patch subcorpus (description or name).",
         "tags": [
           "Corpus"
         ]
@@ -10041,6 +10299,69 @@
         "tags": [
           "Query"
         ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "execute",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create new CQP query if it does not exist.",
+        "tags": [
+          "Query"
+        ]
       }
     },
     "/query/assisted/": {
@@ -10165,7 +10486,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create new query in assisted mode, if it does not exist.",
+        "summary": "Create new query in assisted mode if it does not exist.",
         "tags": [
           "Query"
         ]

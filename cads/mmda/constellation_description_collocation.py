@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from itertools import chain
+from math import isnan
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Float, Integer, List, Nested, String
 from association_measures import measures
 from flask import abort, current_app
-from math import isnan
 from pandas import DataFrame, concat, merge, to_numeric
 from sqlalchemy import select
 
@@ -20,8 +20,8 @@ from ..database import (Breakdown, Collocation, CollocationItem,
                         CollocationItemScore, CotextLines, Matches, Query,
                         get_or_create)
 from ..query import (ccc_query, get_or_create_cotext,
-                     get_or_create_query_assisted,
-                     get_or_create_query_iterative)
+                     get_or_create_query_iterative,
+                     get_or_create_query_wrapper)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
 from ..users import auth
 from ..utils import AMS_CUTOFF, scale_score
@@ -90,7 +90,7 @@ def get_or_create_coll(description,
     focus_query = highlight_queries[focus_discourseme_id]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_assisted(
+        filter_queries['_FILTER'] = get_or_create_query_wrapper(
             description.corpus_id, description.subcorpus_id, [filter_item],
             filter_item_p_att, description.s,
             True, False, False, None, True
@@ -806,7 +806,7 @@ def create_collocation(constellation_id, description_id, json_data):
     focus_query = highlight_queries[json_data['focus_discourseme_id']]
     filter_queries = {disc_id: highlight_queries[disc_id] for disc_id in filter_discourseme_ids}
     if filter_item:
-        filter_queries['_FILTER'] = get_or_create_query_assisted(
+        filter_queries['_FILTER'] = get_or_create_query_wrapper(
             description.corpus_id, description.subcorpus_id, [filter_item],
             filter_item_p_att, description.s,
             True, False, False, None, True

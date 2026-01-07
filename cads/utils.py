@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from functools import wraps
-from math import log, isnan, exp
+from math import exp, isnan, log
 from timeit import default_timer
 
 

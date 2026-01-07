@@ -25,9 +25,10 @@ export function UfaSelection({ className }: { className?: string }) {
   return (
     <div className={cn('grid grid-cols-2 content-start gap-2', className)}>
       <CorpusInput />
-      <AnalysisLayerInput />
-      <FocusDiscoursemeInput />
       <PartitionInput />
+      <FocusDiscoursemeInput className="col-span-full" />
+      <AnalysisLayerInput />
+      <ContextBreakInput />
     </div>
   )
 }
@@ -76,7 +77,6 @@ function AnalysisLayerInput() {
 
 function FocusDiscoursemeInput({ className }: { className?: string }) {
   const { corpusId, focusDiscourseme, setFocusDiscourseme } = useUfaSelection()
-
   const { description, isLoadingDescription, errorDescription } =
     useDescription()
   const { data: discoursemes = [] } = useQuery(discoursemesList)
@@ -157,6 +157,34 @@ function PartitionInput() {
           No Subcorpus Collections, yet - Create One?
         </Link>
       )}
+    </LabelBox>
+  )
+}
+
+function ContextBreakInput() {
+  const { contextBreakList, contextBreak, setContextBreak, corpusId } =
+    useUfaSelection()
+  return (
+    <LabelBox labelText="Context Break">
+      <Select
+        disabled={corpusId === undefined}
+        value={contextBreak ?? ''}
+        onValueChange={setContextBreak}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select context break" />
+        </SelectTrigger>
+
+        <SelectContent>
+          <SelectGroup>
+            {contextBreakList.map((contextBreak) => (
+              <SelectItem key={contextBreak} value={contextBreak}>
+                {contextBreak}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
     </LabelBox>
   )
 }
