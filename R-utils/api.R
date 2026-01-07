@@ -176,11 +176,12 @@ cads_create_discourseme <- function(name) {
 }
 
 ## create discourseme description
-cads_create_discourseme_description <- function(discourseme.id, items, p.att = "lemma", update.discourseme = T, corpus.id = .cads.cid) {
+cads_create_discourseme_description <- function(discourseme.id, items, p.att = "lemma", update.discourseme = T, corpus.id = .cads.cid, subcorpus.id = NULL) {
   str_interp("mmda/discourseme/${discourseme.id}/description/") |> 
     cads_mk_request() |> 
     req_body_json(
       list(corpus_id = corpus.id, 
+           subcorpus_id = subcorpus.id,
            items = lapply(items, function(x) list(p = p.att, surface = x)))
     ) |>
     req_url_query(update_discourseme = update.discourseme) |> 
