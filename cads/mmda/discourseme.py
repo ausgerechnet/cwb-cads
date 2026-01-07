@@ -34,7 +34,7 @@ def read_ldjson(path_ldjson):
     return discoursemes
 
 
-def import_discoursemes(glob_in, p='lemma', col_surface='surface', col_name='name', username='admin', create_constellation=True):
+def import_discoursemes(glob_in, p='lemma', col_surface='item', col_name='discourseme', username='admin', create_constellation=True):
     """import discoursemes from TSV file
 
     - name
