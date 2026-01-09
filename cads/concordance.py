@@ -23,7 +23,7 @@ def ccc2attributes(line, p_show, s_show):
         raise NotImplementedError()
 
     match = line.name[0]
-    contextid = line['contextid']
+    contextid = line.get('contextid')
     context = line['context']
     contextend = line['contextend']
     structural = dict()
