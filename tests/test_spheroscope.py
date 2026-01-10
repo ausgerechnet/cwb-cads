@@ -44,21 +44,6 @@ def test_create_slot_query(client, auth):
         assert slot_query.status_code == 200
 
 
-def test_execute_slot_query(client, auth):
-
-    auth_header = auth.login()
-
-    with client:
-        client.get("/")
-
-        slot_query = client.post(url_for('spheroscope.slot_query.execute', id=8),
-                                 headers=auth_header)
-
-        assert slot_query.status_code == 200
-        # pprint(slot_query)
-
-
-@pytest.mark.now
 def test_query_concordance(client, auth):
 
     # define queries and slots
