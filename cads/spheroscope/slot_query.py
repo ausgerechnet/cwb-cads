@@ -8,6 +8,7 @@ from apiflask.fields import Integer, Nested, String, Dict, List
 from apiflask.validators import OneOf
 from flask import current_app
 from pandas import DataFrame, concat
+from ccc import SubCorpus
 
 from .. import db
 from ..database import Corpus
@@ -18,8 +19,10 @@ bp = APIBlueprint('slot_query', __name__, url_prefix='/slot-query')
 
 
 def ccc_slot_query(slot_query, context=None):
+    """run a slot query, get result as dataframe.
 
-    # TODO force contextid?
+    - TODO force contextid?
+    """
 
     crps = slot_query.corpus.ccc()
 
@@ -50,12 +53,12 @@ def ccc_slot_query(slot_query, context=None):
     return dump.df
 
 
-def ccc2attributes(line, p_show, s_show):
-    """
-    context
-    contextend
-    tokens (list of dicts): cpos + word
-    structural (dict): s_show at match_x
+def format_line(line, p_show, s_show):
+    """format one line, provide dictionary of
+    - context
+    - contextend
+    - tokens (list of dicts): cpos + word
+    - structural (dict): s_show
 
     """
 
@@ -83,8 +86,6 @@ def ccc2attributes(line, p_show, s_show):
 
 def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
 
-    from ccc import SubCorpus
-
     lines = SubCorpus(
         subcorpus_name=None,
         df_dump=df_dump,
@@ -101,7 +102,7 @@ def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
         order='asis'
     )
 
-    lines = lines.apply(lambda line: ccc2attributes(line, p_show, s_show), axis=1)
+    lines = lines.apply(lambda line: format_line(line, p_show, s_show), axis=1)
 
     return lines.to_list()
 
@@ -263,6 +264,23 @@ class DiffLine(Schema):
     meta_B = List(Dict(keys=String(), values=Integer()), required=True, dump_default=[])
 
 
+class ConcLine(Schema):
+
+    tokens = Nested(TokenOut(many=True), required=True, dump_default=[])
+    structural = Dict(required=True, dump_default={})
+    meta = Dict(keys=String(), values=Integer(), required=True, dump_default=[])
+
+
+class SlotQueryConcOut(Schema):
+
+    id = Integer()
+    lines = Nested(ConcLine(many=True))
+    nr_lines = Integer()
+    page_size = Integer()
+    page_count = Integer()
+    page_number = Integer()
+
+
 class SlotDiffOut(Schema):
 
     id1 = Integer()
@@ -278,7 +296,7 @@ class SlotDiffOut(Schema):
 @bp.output(SlotQueryOut(many=True))
 @bp.auth_required(auth)
 def get_all():
-    """
+    """Get all slot queries.
 
     """
 
@@ -292,7 +310,7 @@ def get_all():
 @bp.output(SlotQueryOut)
 @bp.auth_required(auth)
 def create(json_data):
-    """
+    """Create a new slot query.
 
     """
 
@@ -313,22 +331,54 @@ def create(json_data):
     return SlotQueryOut().dump(slot_query), 200
 
 
-@bp.post('/<id>/execute')
+@bp.get('/<id>/')
 @bp.output(SlotQueryOut)
 @bp.auth_required(auth)
-def execute(id):
-    """
+def get_one(id):
+    """Get details of a slot query.
 
     """
 
     slot_query = db.get_or_404(SlotQuery, id)
 
-    # this is the dataframe with corpus positions of match, matchend (as index), anchors (0-9), and context and contextend:
-    df = ccc_slot_query(slot_query)
-    # TODO flexiconc integration
-    print(df)
-
     return SlotQueryOut().dump(slot_query), 200
+
+
+@bp.get('/<id>/concordance')
+@bp.output(SlotQueryConcOut)
+@bp.auth_required(auth)
+def concordance(id):
+    """Get concordance lines of a slot query.
+
+    """
+
+    slot_query = db.get_or_404(SlotQuery, id)
+
+    df = ccc_slot_query(slot_query)
+    df['concordance'] = lexicalise(df, slot_query.corpus.cwb_id)
+    df = df.reset_index()
+    anchors = set(range(0, 10)).intersection(set(df.columns))
+
+    def _combine(row):
+        row['concordance']['meta'] = {str(k): int(row[k]) for k in anchors}
+        row['concordance']['meta']['match'] = row['match']
+        row['concordance']['meta']['matchend'] = row['matchend']
+        row['concordance']['meta']['context'] = row['context']
+        row['concordance']['meta']['contextend'] = row['contextend']
+        return row
+
+    lines = df.apply(lambda row: _combine(row), axis=1)['concordance'].to_list()
+
+    print(lines)
+
+    return SlotQueryConcOut().dump({
+        'id': slot_query.id,
+        'lines': lines,
+        'nr_lines': len(lines),
+        'page_size': len(lines),
+        'page_number': 1,
+        'page_count': len(lines)
+    }), 200
 
 
 @bp.get('/diff')
@@ -336,16 +386,18 @@ def execute(id):
 @bp.output(SlotDiffOut)
 @bp.auth_required(auth)
 def diff(query_data):
-    """
+    """Get difference between two slot queries.
 
     """
 
     slot_query_1 = db.get_or_404(SlotQuery, query_data['id1'])
     slot_query_2 = db.get_or_404(SlotQuery, query_data['id2'])
 
+    # check corpora
     assert slot_query_1.corpus.cwb_id == slot_query_2.corpus.cwb_id
     cwb_id = slot_query_1.corpus.cwb_id
 
+    # gather query results and merge
     df1 = ccc_slot_query(slot_query_1)
     df2 = ccc_slot_query(slot_query_2)
     diff = merge_and_coalesce(df1, df2)

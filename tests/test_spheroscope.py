@@ -59,6 +59,37 @@ def test_execute_slot_query(client, auth):
 
 
 @pytest.mark.now
+def test_query_concordance(client, auth):
+
+    # define queries and slots
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        slot_query = client.post(url_for('spheroscope.slot_query.create'),
+                                 content_type='application/json',
+                                 json={
+                                     'cqp_query': cqp,
+                                     'corpus_id': 1,
+                                     'slots': slots,
+                                     'corrections': []
+                                 },
+                                 headers=auth_header)
+
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=slot_query.json['id']),
+                          headers=auth_header)
+
+        pprint(conc.json)
+
+        assert conc.status_code == 200
+
+
 def test_query_diff(client, auth):
 
     # define queries and slots
@@ -96,5 +127,4 @@ def test_query_diff(client, auth):
         slot_diff = client.get(url_for('spheroscope.slot_query.diff', id1=slot_query_1.json['id'], id2=slot_query_2.json['id']),
                                headers=auth_header)
 
-        pprint(slot_diff.json)
         assert slot_diff.status_code == 200
