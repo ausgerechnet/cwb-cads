@@ -410,7 +410,7 @@ def diff(query_data):
         row['concordance']['meta_A'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df1_rows']]
         row['concordance']['meta_B'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df2_rows']]
         row['concordance']['source'] = 'A' if len(row['df1_rows']) > 0 else ''
-        row['concordance']['source'] += 'B' if len(row['df1_rows']) > 0 else ''
+        row['concordance']['source'] += 'B' if len(row['df2_rows']) > 0 else ''
         return row
 
     conc = diff.apply(lambda row: _combine(row), axis=1)['concordance'].to_list()
