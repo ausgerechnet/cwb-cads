@@ -12,5 +12,5 @@ SQLAlchemy>=2.0.28,<2.1
 pytest==8.1.1
 pylint==3.2.5
 PyJWT==2.9.0
-statsmodels==0.14.4
+statsmodels==0.14.6
 scipy<=1.17.0,>=1.13
