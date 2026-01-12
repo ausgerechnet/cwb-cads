@@ -1,6 +1,6 @@
 ---
 title: "cwb-cads slot queries"
-date: "December 18, 2024"
+date: "January 12, 2026"
 author: Philipp Heinrich
 editor: source
 format:
@@ -17,23 +17,86 @@ format:
 
 ```{r, message = FALSE}
 rm(list = ls())
-library(tidyverse)
-library(httr2)
-library(jsonlite)
-library(ggrepel)
-library(ggraph)
-library(tidygraph)
-url_api <- "http://127.0.0.1:5000"
+source("~/repositories/cwb-cads/R-utils/api.R")
+url_api <- "https://corpora.linguistik.uni-erlangen.de/cwb-cads-spheroscope/"
 ```
 
 - get API access token via `/user/login`
 ```{r, message = FALSE}
-access.token <- str_interp("${url_api}/user/login") |> 
-  request() |> 
-  req_method("POST") |> 
-  req_body_form(password = 'mmda-admin', username = 'admin') |> 
-  req_perform() |>
-  magrittr::extract2("body") |>
-  rawToChar() |> fromJSON() |>
-  magrittr::extract2("access_token")
+cads_connect(user = "admin", password = "RC21", url = url_api)
+cads_list_corpora()
 ```
+
+## Concordance Lines
+
+```{r}
+slot.query <- cads_mk_request("spheroscope/slot-query/create") |>
+  req_body_json(list(
+      cqp_query = '"Test"',
+      name = 'Test',
+      corpus_id = 1,  # GERMAPARL220WEB
+      slots = list(),
+      corrections = list()
+  )) |>
+  cads_perform_request()
+
+conc <- cads_mk_request(str_interp("spheroscope/slot-query/${slot.query$id}/concordance")) |>
+  cads_perform_request()
+
+conc |> magrittr::extract2("lines") |> pull(tokens) |> head(1)
+```
+
+## Diff
+
+```{r}
+slots <- list(
+  list(slot = "verb", start = "0", end = "0"),
+  list(slot = "rest", start = "1", end = "matchend")
+)
+```
+
+
+```{r}
+slot.query.1 <- cads_mk_request("spheroscope/slot-query/create") |>
+  req_body_json(list(
+      cqp_query = '("ich"%c|"er"%c) @0[lemma_smor="wollen"] @1[xpos="VVINF"]',
+      name = 'ich oder er',
+      corpus_id = 1,  # GERMAPARL220WEB
+      slots = slots,
+      corrections = list()
+  )) |>
+  cads_perform_request()
+
+conc <- cads_mk_request(str_interp("spheroscope/slot-query/${slot.query.1$id}/concordance")) |>
+  cads_perform_request()
+
+conc |> magrittr::extract2("lines") |> pull(tokens) |> head(1)
+```
+
+```{r}
+slot.query.2 <- cads_mk_request("spheroscope/slot-query/create") |>
+  req_body_json(list(
+      cqp_query = '("ich"%c|"wir"%c) @0[lemma_smor="wollen"] @1[xpos="VVINF"]+',
+      name = 'ich oder er',
+      corpus_id = 1,  # GERMAPARL220WEB
+      slots = slots,
+      corrections = list()
+  )) |>
+  cads_perform_request()
+
+conc <- cads_mk_request(str_interp("spheroscope/slot-query/${slot.query.2$id}/concordance")) |>
+  cads_perform_request()
+
+conc |> magrittr::extract2("lines") |> pull(tokens) |> head(1)
+```
+
+```{r}
+query.diff <- cads_mk_request("spheroscope/slot-query/diff") |>
+  req_url_query(id1 = slot.query.1$id, id2 = slot.query.2$id) |>
+  cads_perform_request()
+
+query.diff |> magrittr::extract2("lines") |> pull(tokens) |> head(1)
+
+query.diff |> magrittr::extract2("lines") |> pull(source) |> table()
+```
+
