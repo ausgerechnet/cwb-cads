@@ -14,7 +14,7 @@
 
 ## Reference
 
-The functionality is explained in detail in [Heinrich & Evert (2024)](https://aclanthology.org/2024.cpss-1.3/).
+The MMDA functionality is explained in detail in [Heinrich & Evert (2024)](https://aclanthology.org/2024.cpss-1.3/).
 
 **Abstract:** We propose a framework for quantitative-qualitative research in corpus-assisted discourse studies (CADS), which operationalises the central process of manually forming groups of related words and phrases in terms of “discoursemes” and their constellations. We introduce an open-source implementation of this framework in the form of a REST API based on Corpus Workbench. Going through the workflow of a collocation analysis for fleeing and related terms in the German Federal Parliament, the paper gives details about the underlying algorithms, with available parameters and further possible choices. We also address multi-word units (which are often disregarded by CADS tools), a semantic map visualisation of collocations, and how to compute assocations between discoursemes.
 
