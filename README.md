@@ -6,17 +6,17 @@
 
 - implemented in Python/APIFlask
   + JWT authorisation
-  + interactive OpenAPI documentation at [cwb-cads/docs](https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/docs)
+  + interactive OpenAPI documentation
 
 - uses [cwb-ccc](https://github.com/ausgerechnet/cwb-ccc) for connecting to CWB
-  + CWB must be installed and corpora must be encoded via cwb-encode
-  + meta data can be stored separately or be parsed from s-attributes
+  + CWB must be installed and corpora must be encoded via `cwb-encode`
+  + meta data can be stored separately or be parsed from structural attributes
+  
+- the repository also contains a beta version of a frontend (the "MMDA toolkit")
 
 ## Reference
 
-The MMDA functionality is explained in detail in [Heinrich & Evert (2024)](https://aclanthology.org/2024.cpss-1.3/).
-
-**Abstract:** We propose a framework for quantitative-qualitative research in corpus-assisted discourse studies (CADS), which operationalises the central process of manually forming groups of related words and phrases in terms of “discoursemes” and their constellations. We introduce an open-source implementation of this framework in the form of a REST API based on Corpus Workbench. Going through the workflow of a collocation analysis for fleeing and related terms in the German Federal Parliament, the paper gives details about the underlying algorithms, with available parameters and further possible choices. We also address multi-word units (which are often disregarded by CADS tools), a semantic map visualisation of collocations, and how to compute assocations between discoursemes.
+Our methodology is explained in detail in [Heinrich & Evert (2024)](https://aclanthology.org/2024.cpss-1.3/).
 
 ```bibtex
 @InProceedings{HeinrichEvert2024,
@@ -33,11 +33,22 @@ The MMDA functionality is explained in detail in [Heinrich & Evert (2024)](https
 }
 ```
 
+**Abstract:** We propose a framework for quantitative-qualitative research in corpus-assisted discourse studies (CADS), which operationalises the central process of manually forming groups of related words and phrases in terms of “discoursemes” and their constellations. We introduce an open-source implementation of this framework in the form of a REST API based on Corpus Workbench. Going through the workflow of a collocation analysis for fleeing and related terms in the German Federal Parliament, the paper gives details about the underlying algorithms, with available parameters and further possible choices. We also address multi-word units (which are often disregarded by CADS tools), a semantic map visualisation of collocations, and how to compute assocations between discoursemes.
+
+We provide running instances of the [backend](https://corpora.linguistik.uni-erlangen.de/cwb-cads/docs) and [frontend](https://corpora.linguistik.uni-erlangen.de/mmda-v2/) on our web server.
+
+For information regarding the original `mmda-v1` toolkit, see the [former repository](https://github.com/fau-klue/mmda-toolkit) and our [project website](https://www.linguistik.phil.fau.de/research/projects/past-projects/efe/mmda-toolkit/).
+
 ## Manual
 
-We provide detailed information regarding general CADS functionality in the [manual](manual/cwb-cads-functionality.html) and details on MMDA functionality in the [MMDA manual](manual/cwb-cads-discoursemes.html).
+We provide information
+
+- regarding general CADS functionality in the [manual](manual/cwb-cads-functionality.html), and
+- regarding discourseme-based functionality in the [MMDA manual](manual/cwb-cads-discoursemes.html).
 
 ## Installation and Configuration
+
+### Backend: cwb-cads
 
 - We recommend installing all dependencies of the API in a virtual environment:
   ```
@@ -78,9 +89,7 @@ We provide detailed information regarding general CADS functionality in the [man
   flask --app cads --debug run
   ```
 
-## Frontend
-
-The repository contains a beta version of a frontend supporting MMDA functionality.
+### Frontend: mmda-toolkit
 
 Requirements:
 - [node.js](https://nodejs.org/en)
@@ -107,7 +116,7 @@ Setup:
   npm run dev
   ```
 
-### Production
+#### production
 
 - set `target` in `frontend/mmda/vite.config.ts`
 - set frontend URL `VITE_ROUTER_BASEPATH` in `frontend/mmda/.env.production`
