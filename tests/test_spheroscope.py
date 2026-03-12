@@ -44,15 +44,72 @@ def test_create_slot_query(client, auth):
         assert slot_query.status_code == 200
 
 
-def test_execute_slot_query(client, auth):
+def test_query_concordance(client, auth):
+
+    # define queries and slots
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
 
     auth_header = auth.login()
-
     with client:
         client.get("/")
 
-        slot_query = client.post(url_for('spheroscope.slot_query.execute', id=8),
+        slot_query = client.post(url_for('spheroscope.slot_query.create'),
+                                 content_type='application/json',
+                                 json={
+                                     'cqp_query': cqp,
+                                     'corpus_id': 1,
+                                     'slots': slots,
+                                     'corrections': []
+                                 },
                                  headers=auth_header)
 
-        assert slot_query.status_code == 200
-        # pprint(slot_query)
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=slot_query.json['id']),
+                          headers=auth_header)
+
+        pprint(conc.json)
+
+        assert conc.status_code == 200
+
+
+def test_query_diff(client, auth):
+
+    # define queries and slots
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp1 = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
+    cqp2 = '"ich|wir"%c @0[pos="V.*"] @1".*" ".*"'
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        slot_query_1 = client.post(url_for('spheroscope.slot_query.create'),
+                                   content_type='application/json',
+                                   json={
+                                       'cqp_query': cqp1,
+                                       'corpus_id': 1,
+                                       'slots': slots,
+                                       'corrections': []
+                                   },
+                                   headers=auth_header)
+
+        slot_query_2 = client.post(url_for('spheroscope.slot_query.create'),
+                                   content_type='application/json',
+                                   json={
+                                       'cqp_query': cqp2,
+                                       'corpus_id': 1,
+                                       'slots': slots,
+                                       'corrections': []
+                                   },
+                                   headers=auth_header)
+
+        slot_diff = client.get(url_for('spheroscope.slot_query.diff', id1=slot_query_1.json['id'], id2=slot_query_2.json['id']),
+                               headers=auth_header)
+
+        assert slot_diff.status_code == 200

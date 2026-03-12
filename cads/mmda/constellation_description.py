@@ -15,7 +15,7 @@ from ..breakdown import BreakdownIn, ccc_breakdown
 from ..concordance import (ConcordanceIn, ConcordanceLineIn,
                            ConcordanceLineOut, ConcordanceOut, ccc_concordance)
 from ..database import Breakdown, Corpus, get_or_create
-from ..query import ccc_query, get_or_create_query_assisted
+from ..query import ccc_query, get_or_create_query_wrapper
 from ..users import auth
 from .database import (Constellation, ConstellationDescription, Discourseme,
                        DiscoursemeDescription, DiscoursemeTemplateItems)
@@ -599,7 +599,7 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
     else:
         if not filter_item:
             abort(400, 'Bad Request: no focus discourseme and no filter item provided')
-        focus_query = get_or_create_query_assisted(
+        focus_query = get_or_create_query_wrapper(
             description.corpus_id, description.subcorpus_id, [filter_item],
             filter_item_p_att, description.s,
             True, False, False
@@ -620,7 +620,7 @@ def concordance_lines(constellation_id, description_id, query_data, query_focus,
         if focus_discourseme_id and filter_item:
             # TODO: speed up - this can take up to 10 minutes for highly frequent items
             # only search for filter in context of focus
-            filter_queries['_FILTER'] = get_or_create_query_assisted(
+            filter_queries['_FILTER'] = get_or_create_query_wrapper(
                 description.corpus_id, description.subcorpus_id, [filter_item],
                 filter_item_p_att, description.s,
                 True, False, False, None, True

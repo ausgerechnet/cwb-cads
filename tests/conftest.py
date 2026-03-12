@@ -28,6 +28,8 @@ with app.app_context():
 
     import_library("tests/library/", corpus_id=1, username='admin')
 
+    # TODO: this creates faulty CQPY files in instance folder
+
 
 class AuthActions:
 

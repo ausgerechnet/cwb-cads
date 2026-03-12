@@ -13,9 +13,10 @@ import { useBreakdownSelection } from './-use-breakdown-selection'
 
 export function BreakdownSelection() {
   return (
-    <div className="grid grid-cols-[2fr_1fr] content-start gap-2">
-      <CorpusInput />
+    <div className="grid grid-cols-[1fr_1fr] content-start gap-2">
+      <CorpusInput className="col-span-full" />
       <AnalysisLayerInput />
+      <ContextBreakInput />
     </div>
   )
 }
@@ -53,6 +54,34 @@ function AnalysisLayerInput() {
             {(layers ?? ([] satisfies string[])).map((layer) => (
               <SelectItem key={layer} value={layer}>
                 {layer}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </LabelBox>
+  )
+}
+
+function ContextBreakInput() {
+  const { contextBreakList, contextBreak, setContextBreak, corpusId } =
+    useBreakdownSelection()
+  return (
+    <LabelBox labelText="Context Break">
+      <Select
+        disabled={corpusId === undefined}
+        value={contextBreak ?? ''}
+        onValueChange={setContextBreak}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Select context break" />
+        </SelectTrigger>
+
+        <SelectContent>
+          <SelectGroup>
+            {contextBreakList.map((contextBreak) => (
+              <SelectItem key={contextBreak} value={contextBreak}>
+                {contextBreak}
               </SelectItem>
             ))}
           </SelectGroup>

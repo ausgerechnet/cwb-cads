@@ -20,7 +20,7 @@ export const UfaAnalysisSchema = z.object({
 
 export function useUfaSelection() {
   const navigate = useNavigate()
-  const { corpusId, subcorpusId, focusDiscourseme, partition } =
+  const { corpusId, subcorpusId, focusDiscourseme, partition, contextBreak } =
     Route.useSearch()
   let { analysisLayer } = Route.useSearch()
 
@@ -50,10 +50,13 @@ export function useUfaSelection() {
     corpusId !== undefined &&
     focusDiscourseme !== undefined &&
     analysisLayer !== undefined &&
-    partition !== undefined
+    partition !== undefined &&
+    contextBreak !== undefined
 
   const isFaultySelection =
     !isValidSelection && !errorLayers && !subcorpusCollectionsError
+
+  const contextBreakList = structuredAttributes ?? []
 
   return {
     errors: [errorLayers, subcorpusCollectionsError],
@@ -67,6 +70,14 @@ export function useUfaSelection() {
     structuredAttributes,
     focusDiscourseme,
     partition,
+    contextBreak,
+    contextBreakList,
+    setContextBreak: (contextBreak?: string) =>
+      navigate({
+        to: '.',
+        params: (p) => p,
+        search: (s) => ({ ...s, contextBreak }),
+      }),
     setAnalysisLayer: (layer: string) =>
       navigate({
         to: '.',

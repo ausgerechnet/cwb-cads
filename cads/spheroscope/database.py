@@ -93,7 +93,7 @@ class SlotQuery(db.Model):
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    name = db.Column(db.Unicode(255), nullable=False)
+    name = db.Column(db.Unicode(255))
 
     _corrections = db.Column(db.Unicode)
     _slots = db.Column(db.Unicode)

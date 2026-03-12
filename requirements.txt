@@ -6,11 +6,11 @@ Flask==3.0.2
 Flask-HTTPAuth==4.8.0
 Flask-JWT-Extended==4.6.0
 Flask-Login==0.6.3
-Flask-SQLAlchemy==3.0.5
+Flask-SQLAlchemy>=3.0.5,<3.2
 Flask-CORS==4.0.0
-SQLAlchemy==2.0.28
+SQLAlchemy>=2.0.28,<2.1
 pytest==8.1.1
 pylint==3.2.5
 PyJWT==2.9.0
-statsmodels==0.14.4
-scipy<=1.15.3,>=1.13
+statsmodels==0.14.6
+scipy<=1.17.0,>=1.13

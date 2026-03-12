@@ -17,8 +17,8 @@ associations.map <- function(association_scores, discoursemes, measure, min.weig
     filter(weight >= min.weight) |> 
     as_tbl_graph(directed = FALSE) |> 
     ggraph(layout = "fr") +
-    geom_edge_link(aes(width = weight, alpha = .05), color = "darkgray") +
+    geom_edge_link(aes(width = weight), alpha = .5, color = "darkgray") +
     geom_node_point() +
     geom_node_text(aes(label = name), repel = TRUE) +
-    theme_void()    
+    theme_void()
 }

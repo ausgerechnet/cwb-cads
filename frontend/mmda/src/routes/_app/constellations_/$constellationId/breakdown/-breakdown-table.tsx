@@ -12,7 +12,7 @@ import { Route } from './route'
 
 export function BreakdownTable() {
   const constellationId = parseInt(Route.useParams().constellationId)
-  const { analysisLayer, errors } = useBreakdownSelection()
+  const { analysisLayer, errors, contextBreak } = useBreakdownSelection()
 
   const { description } = useDescription()
   const descriptionId = description?.id
@@ -27,8 +27,12 @@ export function BreakdownTable() {
         constellationId,
         descriptionId!,
         analysisLayer!,
+        contextBreak!,
       ),
-      enabled: descriptionId !== undefined && analysisLayer !== undefined,
+      enabled:
+        descriptionId !== undefined &&
+        analysisLayer !== undefined &&
+        contextBreak !== undefined,
     }),
   )
 

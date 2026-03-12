@@ -176,11 +176,12 @@ cads_create_discourseme <- function(name) {
 }
 
 ## create discourseme description
-cads_create_discourseme_description <- function(discourseme.id, items, p.att = "lemma", update.discourseme = T, corpus.id = .cads.cid) {
+cads_create_discourseme_description <- function(discourseme.id, items, p.att = "lemma", update.discourseme = T, corpus.id = .cads.cid, subcorpus.id = NULL) {
   str_interp("mmda/discourseme/${discourseme.id}/description/") |> 
     cads_mk_request() |> 
     req_body_json(
       list(corpus_id = corpus.id, 
+           subcorpus_id = subcorpus.id,
            items = lapply(items, function(x) list(p = p.att, surface = x)))
     ) |>
     req_url_query(update_discourseme = update.discourseme) |> 
@@ -270,6 +271,31 @@ cads_constellation_collocation <- function(constellation.id, constellation.descr
     cads_perform_request()
 }
 
+cads_constellation_collocation_items <- function(constellation.id, constellation.description.id, collocation.id,
+                                                 page.number = 1, page.size = 50, sort.by = "conservative_log_ratio", hide.focus = T, hide.filter = T,
+                                                 return.coordinates = T){
+  df <- str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/items") |>
+    cads_mk_request() |> 
+    req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
+                  sort_order = "descending", hide_focus = hide.focus, hide_filter = hide.filter, return_coordinates = return.coordinates) |> 
+    cads_perform_request()
+  
+  flat_tibble <- bind_rows(
+    bind_rows(
+      lapply(seq_along(df$items$scores), function(i) {
+        df$items$scores[[i]] %>% mutate(item = df$items$item[i])
+      })
+    ),
+    bind_rows(
+      lapply(seq_along(df$items$raw_scores), function(i) {
+        df$items$raw_scores[[i]] %>% mutate(item = df$items$item[i])
+      })
+    )
+  ) |> distinct() |> 
+    pivot_wider(id_cols = item, names_from = measure, values_from = score) |>
+    left_join(df$coordinates)
+}
+
 cads_constellation_collocation_map <- function(constellation.id, constellation.description.id, collocation.id,
                                                page.number = 1, page.size = 50, sort.by = "conservative_log_ratio", hide.disc.unigrams = T,
                                                return.coordinates = T){
@@ -277,16 +303,6 @@ cads_constellation_collocation_map <- function(constellation.id, constellation.d
     cads_mk_request() |> 
     req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
                   sort_order = "descending", hide_discourseme_unigrams = hide.disc.unigrams, return_coordinates = return.coordinates) |> 
-    cads_perform_request()
-}
-
-cads_constellation_collocation_items <- function(constellation.id, constellation.description.id, collocation.id,
-                                                 page.number = 1, page.size = 50, sort.by = "conservative_log_ratio",
-                                                 return.coordinates = T){
-  str_interp("mmda/constellation/${constellation.id}/description/${constellation.description.id}/collocation/${collocation.id}/items") |>
-    cads_mk_request() |> 
-    req_url_query(page_number = page.number, page_size = page.size, sort_by = sort.by,
-                  sort_order = "descending", return_coordinates = return.coordinates) |> 
     cads_perform_request()
 }
 
