@@ -122,11 +122,11 @@ cads_list_queries <- function (corpus.id=.cads.cid, subcorpus.id=NA) {
 }
 
 ## run a new query
-cads_run_simple_query <- function (items, p.att="word", s.att="s", strategy="longest", case.ignore=FALSE, diac.ignore=FALSE, corpus.id=.cads.cid, subcorpus.id=NULL) {
+cads_run_simple_query <- function (items, p.att="word", s.att="s", strategy="longest", case.ignore=FALSE, diac.ignore=FALSE, escape=TRUE, corpus.id=.cads.cid, subcorpus.id=NULL) {
   if (is.character(items)) items <- as.list(items)
   cads_mk_request("query/assisted") |>
     req_body_json(list(
-      items=items, p=p.att, s=s.att, ignore_case=case.ignore, ignore_diacritics=diac.ignore,
+      items=items, p=p.att, s=s.att, ignore_case=case.ignore, ignore_diacritics=diac.ignore, escape=escape,
       corpus_id=corpus.id, subcorpus_id=subcorpus.id)) |>
     req_method('PUT') |> 
     cads_perform_request()
@@ -306,6 +306,15 @@ cads_constellation_collocation_map <- function(constellation.id, constellation.d
     cads_perform_request()
 }
 
+
+## create constellation description breakdown
+cads_constellation_description_breakdown <- function(constellation.id, description.id, p = "word") {
+  str_interp("mmda/constellation/${constellation.id}/description/${description.id}/breakdown") |>
+    cads_mk_request() |>
+    req_url_query(p = p) |>
+    req_method("GET") |>
+    cads_perform_request()
+}
 
 cads_list_constellation_description <- function(constellation.id){
   str_interp("mmda/constellation/${constellation.id}/description/") |> 
