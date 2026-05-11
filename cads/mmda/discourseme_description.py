@@ -209,6 +209,7 @@ class DiscoursemeDescriptionSimilarIn(Schema):
 
     number = Integer(required=False, load_default=200)
     # min_freq = Integer(required=False, load_default=2)
+    p = String(required=False, load_default=None, allow_none=True)
     embeddings = String(required=False, load_default=None, allow_none=True)
 
 
@@ -440,7 +441,7 @@ def description_get_similar(discourseme_id, description_id, breakdown_id, query_
 
     description = db.get_or_404(DiscoursemeDescription, description_id)
     breakdown = db.get_or_404(Breakdown, breakdown_id)
-    p = breakdown.p
+    p = query_data.get('p', breakdown.p)
 
     number = query_data.get('number')
     # min_freq = query_data.get('min_freq')
