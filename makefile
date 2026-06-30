@@ -56,7 +56,12 @@ library:
 	export CWB_CADS_CONFIG=${config} && \
 	flask --app cads library import-library --lib_dir ${library}
 
-examples: init corpora discoursemes
+meta:
+	. venv/bin/activate && \
+	export CWB_CADS_CONFIG=${config} && \
+	flask --app cads corpus read-meta GERMAPARL220WEB --level text
+
+examples: init corpora meta
 
 run:
 	. venv/bin/activate && \
