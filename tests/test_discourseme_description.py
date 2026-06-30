@@ -1,5 +1,5 @@
 from flask import url_for
-import pytest
+# import pytest
 
 
 def test_discourseme_create_description(client, auth):
@@ -192,7 +192,7 @@ def test_deletion(client, auth):
                       headers=auth_header)
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_discourseme_get_meta(client, auth):
 
     auth_header = auth.login()

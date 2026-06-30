@@ -442,6 +442,7 @@ def description_get_similar(discourseme_id, description_id, breakdown_id, query_
     description = db.get_or_404(DiscoursemeDescription, description_id)
     breakdown = db.get_or_404(Breakdown, breakdown_id)
     p = query_data.get('p', breakdown.p)
+    p = 'word' if p is None else p
 
     number = query_data.get('number')
     # min_freq = query_data.get('min_freq')

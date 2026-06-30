@@ -274,8 +274,8 @@ def test_constellation_keyword_map(client, auth):
                                     page_size=50, sort_by='conservative_log_ratio'),
                             headers=auth_header)
         assert kw_map.status_code == 200
-        from pprint import pprint
-        pprint(kw_map.json['map'])
+        # from pprint import pprint
+        # pprint(kw_map.json['map'])
         assert kw_map.json['map'][0]['discourseme_id'] is None
         assert kw_map.json['map'][9]['discourseme_id'] is None
 
