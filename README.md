@@ -122,3 +122,8 @@ Setup:
 - set frontend URL `VITE_ROUTER_BASEPATH` in `frontend/mmda/.env.production`
 - set backend URL `VITE_API_URL` in `frontend/mmda/.env.production`
 - run `npm run build` and deploy `mmda/dist/`
+
+## Acknowledgements ##
+
+This work was supported by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation), project no. 466328567.
+
