@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import os
+import json
+import re
+
 from datetime import datetime
 
 from ccc import Corpus as Crps
@@ -182,7 +186,7 @@ class Corpus(db.Model):
 
     def ccc(self):
         return Crps(corpus_name=self.cwb_id,
-                    lib_dir=current_app.config['CCC_LIB_DIR'],
+                    lib_dir=os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.id}"),
                     cqp_bin=current_app.config['CCC_CQP_BIN'],
                     registry_dir=current_app.config['CCC_REGISTRY_DIR'],
                     data_dir=current_app.config['CCC_DATA_DIR'],
@@ -330,6 +334,15 @@ class SegmentationSpanAnnotation(db.Model):
 
 # QUERIES #
 ###########
+def parse_macro_call_arguments(argstring):
+    """Determines the number of arguments supplied to a macro call"""
+
+    if argstring:
+        return len(argstring.split(","))
+    else:
+        return 0
+
+
 class Query(db.Model):
     """Query: executed in CQP and dumped to disk
 
@@ -338,6 +351,9 @@ class Query(db.Model):
     __table_args__ = ({'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Unicode(255))
+    version = db.Column(db.Unicode(255))
+    type = db.Column(db.Unicode(10))
     modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     description = db.Column(db.Unicode)
 
@@ -345,6 +361,8 @@ class Query(db.Model):
     subcorpus_id = db.Column(db.Integer, db.ForeignKey('sub_corpus.id', ondelete='CASCADE'))  # run on previously defined subcorpus
     zero_matches = db.Column(db.Boolean, default=False)
     error = db.Column(db.Boolean, default=False)
+
+    comment = db.Column(db.Unicode)
 
     filter_sequence = db.Column(db.Unicode)
 
@@ -360,6 +378,109 @@ class Query(db.Model):
     collocations = db.relationship('Collocation', backref='_query', passive_deletes=True, cascade='all, delete')
     concordances = db.relationship('Concordance', backref='_query', passive_deletes=True, cascade='all, delete')
     cotexts = db.relationship('Cotext', backref='_query', passive_deletes=True, cascade='all, delete')
+
+    wordlist_calls = db.relationship("WordListCall", passive_deletes=True, cascade='all, delete')
+    macro_calls = db.relationship("MacroCall", passive_deletes=True, cascade='all, delete')
+
+    __table_args__ = (
+        db.UniqueConstraint("name", "version"),  # alternative primary key for version history
+    )
+
+    __mapper_args__ = {
+        "polymorphic_on": "type",
+        "polymorphic_identity": "query",
+    }
+
+    def __init__(self, **kwargs):
+        super(Query, self).__init__(**kwargs)
+        db.session.add(self)
+
+        # perform dependency resolution and fail if resolution is impossible
+
+        # word list extraction
+
+        wl_matches = re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.cqp_query)
+        wl_calls = {wl[1] for wl in wl_matches}
+        if wl_calls:
+            current_app.logger.debug(f"\tcontains word lists '{wl_calls}'")
+
+        # resolve word lists and save relationship for later mangling before execution
+        for identifier in wl_calls:
+            wl = WordList.query \
+                    .filter(WordList.corpus_id == self.corpus_id) \
+                    .filter(WordList.name == identifier) \
+                    .order_by(WordList.version.desc()) \
+                    .first()
+
+            if not wl:
+                db.session.delete(self)
+                raise Exception(f"undefined word list {identifier}")
+            else:
+                call = WordListCall(
+                    query_id=self.id,
+                    wordlist_id=wl.id
+                )
+                db.session.add(call)
+
+        db.session.commit()
+
+        # macro extraction
+
+        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.cqp_query)
+        macro_calls = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
+        if macro_calls:
+            current_app.logger.debug(f"\tcontains macros '{macro_calls}'")
+
+        # resolve macros and save relationship for later mangling before execution
+        for identifier, valency in macro_calls:
+            macro = Macro.query \
+                    .filter(Macro.corpus_id == self.corpus_id) \
+                    .filter(Macro.name == identifier) \
+                    .filter(Macro.valency == valency) \
+                    .order_by(Macro.version.desc()) \
+                    .first()
+
+            if not macro:
+                db.session.delete(self)
+                raise Exception(f"undefined macro {identifier} with valency {valency}")
+            else:
+                call = MacroCall(
+                    query_id=self.id,
+                    macro_id=macro.id
+                )
+                db.session.add(call)
+
+        db.session.commit()
+
+    @property
+    def mangled_query(self):
+        """Preprocessed version of cqp_query with mangled identifiers.
+        When the query string contains references to macros or word lists from the library,
+        this is the only canonically executable version of the query.
+        TODO: deprecate unmangled, direct access to `self.cqp_query`, make this the default
+        """
+
+        # process query to mangle library identifiers
+        mangled_query = self.cqp_query
+
+        # apply macro mangling
+        for mc in self.macro_calls:
+            m = mc.macro
+            # pattern = fr"/{m.name}(\[{', ?'.join(m.valency * [r'[^,\s]+?'])}\])"
+            # repl = fr"/{m.name}__{m.valency}__v{m.version}\1"
+            args = '\\[' + ', ?'.join(m.valency * ['[^,\\s]+?']) + '\\]'
+            pattern = f"/{m.name}({args})"
+            repl = f"/{m.name}__{m.valency}__v{m.version}\\1"
+            mangled_query = re.sub(pattern, repl, mangled_query)
+
+        # apply wordlist mangling
+        for wlc in self.wordlist_calls:
+            wl = wlc.wordlist
+            pattern = fr"\${wl.name}"
+            repl = fr"${wl.name}__v{wl.version}"
+            mangled_query = re.sub(pattern, repl, mangled_query)
+
+        return mangled_query
 
     @property
     def number_matches(self):
@@ -937,6 +1058,220 @@ class KeywordItemScore(db.Model):
 
     measure = db.Column(db.Unicode)
     score = db.Column(db.Float)
+
+
+# WORD LISTS AND MACROS #
+#########################
+class WordList(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    # __table_args__ = (
+    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
+    # )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.Unicode(255), nullable=False)
+    version = db.Column(db.Integer, nullable=False)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
+    words = db.relationship("WordListWords", backref="word_list", cascade="all, delete")
+    # p_att = db.Column(db.Unicode(50), nullable=False)
+
+    comment = db.Column(db.Unicode)
+
+    __table_args__ = (
+        db.UniqueConstraint("name", "version", "corpus_id"),  # alternative primary key for version history
+    )
+
+    @property
+    def path(self):
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "wordlists", f"{self.name}__v{self.version}.txt")
+
+    def write(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, "wt") as f:
+            f.write("\n".join([w. word for w in self.words]))
+
+
+class WordListWords(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer(), primary_key=True)
+    wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete='CASCADE'))
+
+    word = db.Column(db.Unicode(), nullable=True)
+
+    def __str__(self):
+        return self.word
+
+
+class WordListCall(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
+    wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete="CASCADE"), primary_key=True)
+
+    wordlist = db.relationship("WordList")
+
+
+class Macro(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.Unicode(255), nullable=False)
+    valency = db.Column(db.Integer, nullable=False)
+    argument_names = db.Column(db.Unicode(255), nullable=True)
+    version = db.Column(db.Integer, nullable=False)
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+
+    body = db.Column(db.Unicode)
+
+    comment = db.Column(db.Unicode)
+
+    nested_wordlist = db.relationship("NestedWordList", passive_deletes=True, cascade='all, delete')
+    nested_macro = db.relationship("NestedMacro", passive_deletes=True,
+                                   cascade='all, delete', primaryjoin="Macro.id == NestedMacro.macro_id")
+
+    __table_args__ = (
+        db.UniqueConstraint("name", "valency", "version", "corpus_id"),  # alternative primary key for version history
+    )
+
+    def __init__(self, **kwargs):
+        super(Macro, self).__init__(**kwargs)
+        db.session.add(self)
+
+        # perform dependency resolution and fail init if resolution is impossible
+        # TODO: refactor and unify this code with Query __init__
+
+        # handle nested word lists
+        nested_wordlists = {m[1] for m in re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.body)}
+        if nested_wordlists:
+            current_app.logger.debug(f"\tcontains nested word list calls: '{nested_wordlists}'")
+
+        for identifier in nested_wordlists:
+            # check if word list with this identifier is in db
+            # and get latest version
+            wl = WordList.query \
+                    .filter(WordList.corpus_id == self.corpus_id) \
+                    .filter(WordList.name == identifier) \
+                    .order_by(WordList.version.desc()) \
+                    .first()
+            
+            if not wl:
+                # abort and delete self if there is no candidate
+                db.session.delete(self)
+                raise Exception(f"undefined word list {identifier}")
+            else:
+                # mangle and replace identifiers in the macro definition
+                pattern = fr"\${wl.name}"
+                repl = fr"${wl.name}__v{wl.version}"
+                self.body = re.sub(pattern, repl, self.body, flags=re.S)
+
+                # save the dependency in the db
+                record = NestedWordList(
+                    macro_id=self.id,
+                    wordlist_id=wl.id
+                )
+
+                db.session.add(record)
+
+        ## handle nested macros
+        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.body)
+        nested_macros = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
+        if nested_macros:
+            current_app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
+
+        for identifier, valency in nested_macros:
+            # check if macro with this identifier and valency is in db
+            # and get latest version
+            nm = Macro.query \
+                    .filter(Macro.corpus_id == self.corpus_id) \
+                    .filter(Macro.name == identifier) \
+                    .filter(Macro.valency == valency) \
+                    .order_by(Macro.version.desc()) \
+                    .first()
+            
+            if not nm:
+                # abort and delete self if no candidate exists
+                db.session.delete(self)
+                raise Exception(f"undefined nested macro call {identifier} with valency {valency}")
+            else:
+                # mangle and replace identifiers in the macro definition
+                args_pattern = r'\[' + ', ?'.join(nm.valency * [r'[^,\s]+?']) + r'\]'
+                pattern = f"/{nm.name}({args_pattern})"
+                repl = f"/{nm.name}__{nm.valency}__v{nm.version}\\1"
+                # pattern = fr"/{nm.name}(\[{', ?'.join(nm.valency * [r'[^,\s]+?'])}\])"
+                # repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
+                self.body = re.sub(pattern, repl, self.body, flags=re.S)
+
+                # save the dependency in the db
+                record = NestedMacro(
+                    macro_id=self.id,
+                    nested_id=nm.id
+                )
+
+                db.session.add(record)
+
+    @property
+    def canonical_name(self):
+        return f"{self.name}__{self.valency}__v{self.version}"
+
+    @property
+    def path(self):
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", \
+                            "macros", self.canonical_name + ".txt")
+
+    def write(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, "wt") as f:
+
+            if self.argument_names:
+                names = json.loads(self.argument_names)
+                assert len(names) == self.valency
+                argstring = " ".join(f"${i}={n}" for i, n in enumerate(names))
+                f.write(f"MACRO {self.canonical_name}({argstring})\n")
+            else:
+                f.write(f"MACRO {self.canonical_name}({self.valency})\n")
+            f.write(self.body)
+            f.write(";\n")
+
+
+class NestedMacro(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+    nested_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+
+
+class NestedWordList(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+    wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete="CASCADE"), primary_key=True)
+
+
+class MacroCall(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
+    macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
+
+    macro = db.relationship("Macro")
 
 
 # CLI #

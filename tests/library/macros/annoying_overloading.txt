@@ -1,0 +1,34 @@
+MACRO annoying(1)
+(
+    [lemma = "$0"]
+)
+;
+
+MACRO annoying(2)
+(
+    [lemma = "$0"]
+    [lemma = "$1"]
+)
+;
+
+MACRO annoying(3)
+(
+    [lemma = "$0"]
+    [lemma = "$1"]
+    [lemma = "$2"]
+)
+;
+
+MACRO annoying_nested(4)
+(
+    /annoying[$0, $1]
+    /annoying[$2, $3]
+)
+;
+
+MACRO annoying_nested2(3)
+(
+    /annoying[$0]
+    /annoying[$1, $2]
+)
+;

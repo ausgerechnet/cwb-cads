@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import json
+import re
+import os
 
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Integer, Nested, String, Dict, List
@@ -9,20 +11,69 @@ from apiflask.validators import OneOf
 from flask import current_app
 from pandas import DataFrame, concat
 from ccc import SubCorpus
+from ccc.cqpy import cqpy_load
+
+from flask import current_app as app
 
 from .. import db
-from ..database import Corpus
+from ..database import Corpus, Macro, MacroCall, WordList, WordListCall
 from ..users import auth
 from .database import SlotQuery
+
+from ..query import ccc_query
 
 bp = APIBlueprint('slot_query', __name__, url_prefix='/slot-query')
 
 
-def ccc_slot_query(slot_query, context=None):
-    """run a slot query, get result as dataframe.
+def ccc_get_library(slot_query, wordlists=[], macros=[]):
+    """TODO find out the exact purpose of this function
+    
+    This function runs a slot query and dumps the macros and word lists
+    defined within it?"""
 
-    - TODO force contextid?
-    """
+    crps = slot_query.corpus.ccc()
+    cqp = crps.start_cqp()
+
+    for wordlist in wordlists:
+        name = wordlist.split('/')[-1].split('.')[0]
+        abs_path = os.path.abspath(wordlist)
+        cqp_exec = f'define ${name} < "{abs_path}";'
+        cqp.Exec(cqp_exec)
+
+    # macros
+    for macro in macros:
+        abs_path = os.path.abspath(macro)
+        cqp_exec = f'define macro < "{abs_path}";'
+        cqp.Exec(cqp_exec)
+    # for wordlists defined in macros, it is necessary to execute the macro once
+    macros = cqp.Exec("show macro;").split("\n")
+    for macro in macros:
+        # NB: this yields !cqp.Ok() if macro is not zero-valent
+        cqp.Exec(macro.split("(")[0] + "();")
+
+    cqp.Exec("set ParseOnly on;")
+    cqp.Exec('set PrettyPrint off;')
+    cqp.Exec("set SpheroscopeDebug on;")
+    cqp.Exec("set SpheroscopeDebug;")
+
+    result = cqp.Exec(slot_query.cqp_query)
+    cqp.__del__()
+
+    wordlists = list()
+    macros = list()
+    for line in result.split("\n"):
+        if line.startswith("WORDLIST"):
+            wordlists.append(line.split(" ")[-1])
+        elif line.startswith("MACRO"):
+            macros.append(line.split(" ")[-1])
+
+    return {
+        'wordlists': wordlists,
+        'macros': macros
+    }
+
+
+def ccc_slot_query(slot_query):
 
     crps = slot_query.corpus.ccc()
 
@@ -43,12 +94,12 @@ def ccc_slot_query(slot_query, context=None):
 
     # invalid query
     if isinstance(dump, str):
-        current_app.logger.error('invalid query')
+        app.logger.error('invalid query')
         return dump
 
     # valid query, but no matches
     if len(dump.df) == 0:
-        current_app.logger.warning(f'no results for query {slot_query.id}')
+        app.logger.warning(f'no results for query {slot_query.id}')
 
     return dump.df
 
@@ -205,6 +256,46 @@ def merge_and_coalesce(df1, df2):
     merged_df = merged_df.drop(columns=['context_list', 'contextend_list'])
 
     return merged_df
+def import_slot_query(path, corpus_id):
+
+    query = cqpy_load(path)
+
+
+    anchors = query.get('anchors')
+    slots = []
+    corrections = []
+    if anchors:
+        if anchors.get('slots'):
+            slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]      
+        if anchors.get('corrections'):
+            corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in query['anchors']['corrections'].items()]
+
+    app.logger.debug(f"importing SlottedQuery {query['meta']['name']}")
+
+    corpus = db.get_or_404(Corpus, corpus_id)
+
+    try:
+        slot_query = SlotQuery(
+            corpus_id=corpus.id,
+            cqp_query=query['cqp'],
+            name=query['meta']['name'],
+            _slots=json.dumps(slots) if slots else None,
+            _corrections=json.dumps(corrections) if corrections else None,
+            s=corpus.s_default
+        )
+        db.session.add(slot_query)
+    except Exception as e:
+        app.logger.error(f"could not init query: {e}")
+        return
+    finally:
+        db.session.commit()
+
+    ## dump to library directory
+    # TODO: is this really necessary? it just basically duplicates the input and is never read by the backend
+    slot_query.write()
+
+    # execute query to cache results (?)
+    # ccc_query(slot_query, return_df=False)
 
 
 class AnchorCorrection(Schema):

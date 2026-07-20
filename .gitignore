@@ -139,7 +139,4 @@ ENV/
 *.Rproj
 .RData
 .Rhistory
-
-# Config
-# ------
-cfg.py
+frontend/.vite/

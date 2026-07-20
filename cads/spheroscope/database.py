@@ -5,118 +5,40 @@ import json
 import os
 from datetime import datetime
 
+from apiflask import abort
 from ccc.cqpy import cqpy_dump
 from flask import current_app
 
 from .. import db
-from ..database import Corpus
+from ..database import Query
 
+from flexiconc import Concordance
 
-class WordList(db.Model):
-
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    # __table_args__ = (
-    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
-    # )
-
-    id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
-
-    # corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-    name = db.Column(db.Unicode(255), nullable=False)
-    words = db.relationship("WordListWords", backref="word_list", cascade="all, delete")
-    # p_att = db.Column(db.Unicode(50), nullable=False)
-
-    comment = db.Column(db.Unicode)
-
-    @property
-    def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], "wordlists", self.name + ".txt")
-
-    def write(self):
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, "wt") as f:
-            f.write("\n".join([w. word for w in self.words]))
-
-
-class WordListWords(db.Model):
-
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    id = db.Column(db.Integer(), primary_key=True)
-    wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete='CASCADE'))
-
-    word = db.Column(db.Unicode(), nullable=True)
-
-
-class Macro(db.Model):
-
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    # __table_args__ = (
-    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
-    # )
-
-    id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
-
-    # corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-    name = db.Column(db.Unicode(255), nullable=False)
-    macro = db.Column(db.Unicode)
-
-    comment = db.Column(db.Unicode)
-
-    @property
-    def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], "macros", self.name + ".txt")
-
-    def write(self):
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, "wt") as f:
-            f.write(self.macro)
-
-
-class SlotQuery(db.Model):
-
-    # __table_args__ = (
-    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
-    # )
-
-    id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
-
-    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    name = db.Column(db.Unicode(255))
+class SlotQuery(Query):
 
     _corrections = db.Column(db.Unicode)
     _slots = db.Column(db.Unicode)
-    cqp_query = db.Column(db.Unicode)
-    match_strategy = db.Column(db.Unicode, default='longest')
 
-    comment = db.Column(db.Unicode)
-
-    @property
-    def corpus(self):
-        return db.get_or_404(Corpus, self.corpus_id)
+    __mapper_args__ = {
+        "polymorphic_identity": "slot_query",
+    }
 
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], "queries", self.name + ".cqpy")
+        identifier = self.name if self.name else str(self.corpus_id)
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "queries", identifier + ".cqpy")
 
     @property
     def slots(self):
-        return json.loads(self._slots)
+        if self._slots:
+            return json.loads(self._slots)
+        return []
 
     @property
     def corrections(self):
-        return json.loads(self._corrections)
+        if self._corrections:
+            return json.loads(self._corrections)
+        return []
 
     def serialize(self):
 
@@ -135,3 +57,113 @@ class SlotQuery(db.Model):
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         cqpy_dump(self.serialize(), self.path)
+
+
+class QueryHistory(db.Model):
+
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(db.Unicode)
+
+    entries = db.relationship("QueryHistoryEntry", back_populates="parent", passive_deletes=True, cascade='all, delete')
+
+
+    def add_entry(self, query_id, comment):
+
+        entry = QueryHistoryEntry(
+            history_id = self.id,
+            query_id = query_id,
+            comment = comment
+        )
+
+        self.entries.append(entry)
+
+        return entry
+
+
+class QueryHistoryEntry(db.Model):
+
+    corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    name = db.Column(db.Unicode(255))
+
+    _corrections = db.Column(db.Unicode)
+    _slots = db.Column(db.Unicode)
+    cqp_query = db.Column(db.Unicode)
+    match_strategy = db.Column(db.Unicode, default='longest')
+    history_id = db.Column(db.Integer, db.ForeignKey("query_history.id", ondelete="CASCADE"), primary_key=True)
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
+
+    time = db.Column(db.DateTime, default=datetime.utcnow, primary_key=True)
+    comment = db.Column(db.Unicode)
+
+    parent = db.relationship("QueryHistory", back_populates="entries")
+    query = db.relationship("Query")
+
+
+class FlexiConcSession(db.Model):
+
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id"), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
+
+    created = db.Column(db.DateTime, default=datetime.utcnow)
+    tree = db.Column(db.String)
+
+    cqp_query = db.relationship("Query")
+    user = db.relationship("User")
+
+    _flexiconc = None
+
+    @property
+    def concordance(self):
+
+        if not self._flexiconc:
+            db.session.add(self)
+            c = Concordance()
+            # TODO: work with actual concordance data frome the DB
+            c.retrieve_from_cwb(
+                query=self.cqp_query.mangled_query,
+                corpus=self.cqp_query.corpus.ccc()
+            )
+            
+            if self.tree:
+                # undump previous tree from DB
+                current_app.logger.debug(f"flexiconc :: using saved tree")
+                tree = json.loads(self.tree)
+                c.root = c._build_tree_from_data(tree)
+            else:
+                # dump fresh tree to DB
+                from .flexiconc import TreeNodeOut
+                current_app.logger.debug(f"flexiconc :: dumping initial tree")
+                self.tree = json.dumps(TreeNodeOut().dump(c.root))
+                self.created = datetime.utcnow()                
+                db.session.commit()
+
+            self._flexiconc = c
+        
+        return self._flexiconc
+
+
+    def save_tree(self):
+        from .flexiconc import TreeNodeOut
+        self.tree = json.dumps(TreeNodeOut().dump(self.concordance.root))
+        db.session.merge(self)
+        db.session.commit()
+
+
+    def delete_tree(self):
+        self.tree = None
+        self._flexiconc = None
+        db.session.merge(self)
+        db.session.commit()
+
+
+    def get_node(self, node_id):
+        c = self.concordance
+        node = c.find_node_by_id(node_id)
+        if not node:
+            abort(404, message=f"No tree node with id {node_id}")
+        return node

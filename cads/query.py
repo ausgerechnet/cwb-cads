@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import re
+
 from random import randint
 
 from apiflask import APIBlueprint, Schema, abort
@@ -50,7 +52,7 @@ def ccc_query(query, return_df=True):
 
         # query corpus
         current_app.logger.debug('ccc_query :: querying')
-        matches = corpus.query(cqp_query=query.cqp_query,
+        matches = corpus.query(cqp_query=query.mangled_query,
                                context_break=query.s,
                                match_strategy=query.match_strategy,
                                propagate_error=True)
@@ -59,7 +61,7 @@ def ccc_query(query, return_df=True):
             current_app.logger.error(f"ccc_query :: error: '{matches}'")
             query.error = True
             db.session.commit()
-            return DataFrame()
+            return DataFrame()  
 
         if len(matches.df) == 0:  # no matches
             current_app.logger.debug("ccc_query :: 0 matches")
