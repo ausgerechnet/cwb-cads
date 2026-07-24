@@ -57,17 +57,23 @@ def import_macro(name, valency, argument_names, body, corpus_id):
     macro.write()
 
 
-def import_wordlist(path, corpus_id):
+def import_wordlist(path, corpus_id, comment="imported via CLI"):
 
     name = path.split('/')[-1].split('.')[0]
     with open(path, "rt") as f:
         words = f.read().strip().split("\n")
 
+    # check if wordlist already exists for corpus, if yes, delete it
+    # recreating the wl ensures possible edge cases where code might
+    # create a new temporary wl with changed entries (i.e. discoursemes)
+    q = db.session.query(WordList).filter(WordList.name == name, WordList.corpus_id == corpus_id)
+    q.delete(synchronize_session=False)
+
     wordlist = WordList(
         name=name,
         version=1,
         corpus_id=corpus_id,
-        comment='imported via CLI'
+        comment=comment
     )
     db.session.add(wordlist)
     db.session.commit()

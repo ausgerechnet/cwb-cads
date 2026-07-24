@@ -25,6 +25,7 @@ from .database import (CollocationDiscoursemeItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
                        DiscoursemeTemplateItems, KeywordDiscoursemeItem)
 from .discourseme import DiscoursemeItem
+from ..library import import_wordlist
 
 bp = APIBlueprint('description', __name__, url_prefix='/<discourseme_id>/description', cli_group='discourseme')
 
@@ -80,6 +81,7 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
         os.makedirs(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists'), exist_ok=True)
         with open(wl_path, mode='wt') as f:
             f.write("\n".join(wordlists[p]))
+        import_wordlist(wl_path, corpus.id, comment="temp discourseme wl") # import wordlist into DB to not break library versioning/name mangling
         queries.append(f"[{p} = ${wl_name}]")
 
     # create joint query
