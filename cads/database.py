@@ -466,7 +466,8 @@ class Query(db.Model):
         # apply macro mangling
         for mc in self.macro_calls:
             m = mc.macro
-            pattern = fr"/{m.name}(\[{', ?'.join(m.valency * [r'[^,\s]+?'])}\])"
+            args = ', ?'.join([r'[^,\s]+?'] * m.valency)
+            pattern = fr"/{m.name}(\[{args}\])"
             repl = fr"/{m.name}__{m.valency}__v{m.version}\1"
             mangled_query = re.sub(pattern, repl, mangled_query)
 
@@ -1205,7 +1206,8 @@ class Macro(db.Model):
                 raise Exception(f"undefined nested macro call {identifier} with valency {valency}")
             else:
                 # mangle and replace identifiers in the macro definition
-                pattern = fr"/{nm.name}(\[{', ?'.join(nm.valency * [r'[^,\s]+?'])}\])"
+                arg_pattern = ', ?'.join([r'[^,\s]+?'] * nm.valency)
+                pattern = fr"/{nm.name}(\[{arg_pattern}\])"
                 repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
                 self.body = re.sub(pattern, repl, self.body, flags=re.S)
 
