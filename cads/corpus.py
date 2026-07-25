@@ -433,7 +433,9 @@ def subcorpus_from_df(cwb_id, name, description, df, level, create_nqr, cqp_bin,
     # we need to batch here for select clause (hard limit: 500,000 for `column.in_()`)
     # TODO use sqlite subquery instead
     nr_arrays = int(len(df) / 100000) + 1
-    dfs = array_split(df, nr_arrays)
+    index_splits = array_split(df.index, nr_arrays)
+    dfs = [df.loc[idx] for idx in index_splits]
+
     spans = list()
     for i, df in enumerate(dfs):
         current_app.logger.debug(f'.. batch {i+1} of {len(dfs)}')
