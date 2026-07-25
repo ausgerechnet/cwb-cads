@@ -385,11 +385,14 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
 
         # concatenate
         df = concat([df_scores, df_discourseme_item_scores, df_discourseme_unigram_item_scores, df_discourseme_global_scores])
+        print(df)
+        print(df.columns)
 
         # set user coordinates
         if collocation.semantic_map and return_coordinates:
             df['x_user'] = df['x_user'].astype(float).fillna(df['x'])
             df['y_user'] = df['y_user'].astype(float).fillna(df['y'])
+            df = df.drop(['x', 'y'], axis=1)
             df = df.rename({'x_user': 'x', 'y_user': 'y'}, axis=1)
         else:
             df['x'] = None
@@ -403,6 +406,8 @@ def get_collo_map(description, collocation, page_size, page_number, sort_order, 
         df['scaled_score'] = df['score'].apply(lambda x: scale_score(x, score_max, logarithmic=logarithmic))
 
         # create output
+        print(df)
+        print(df.columns)
         _map = [ConstellationMapItemOut().dump(d) for d in df.to_dict(orient='records')]
 
     collocation_map = {
