@@ -3,7 +3,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from apiflask import abort
 from ccc.cqpy import cqpy_dump
@@ -13,6 +13,7 @@ from .. import db
 from ..database import Query
 
 from flexiconc import Concordance
+
 
 class SlotQuery(Query):
 
@@ -88,7 +89,7 @@ class QueryHistoryEntry(db.Model):
     history_id = db.Column(db.Integer, db.ForeignKey("query_history.id", ondelete="CASCADE"), primary_key=True)
     query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
 
-    time = db.Column(db.DateTime, default=datetime.utcnow, primary_key=True)
+    time = db.Column(db.DateTime, default=datetime.now(timezone.utc), primary_key=True)
     comment = db.Column(db.Unicode)
 
     parent = db.relationship("QueryHistory", back_populates="entries")
@@ -100,7 +101,7 @@ class FlexiConcSession(db.Model):
     query_id = db.Column(db.Integer, db.ForeignKey("query.id"), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
 
-    created = db.Column(db.DateTime, default=datetime.utcnow)
+    created = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     tree = db.Column(db.String)
 
     cqp_query = db.relationship("Query")
@@ -130,7 +131,7 @@ class FlexiConcSession(db.Model):
                 from .flexiconc import TreeNodeOut
                 current_app.logger.debug(f"flexiconc :: dumping initial tree")
                 self.tree = json.dumps(TreeNodeOut().dump(c.root))
-                self.created = datetime.utcnow()                
+                self.created = datetime.now(timezone.utc)()                
                 db.session.commit()
 
             self._flexiconc = c

@@ -5,7 +5,7 @@ import os
 import json
 import re
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ccc import Corpus as Crps
 from flask import Blueprint, current_app
@@ -86,8 +86,8 @@ class User(db.Model, UserMixin):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.utcnow)
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
@@ -354,7 +354,7 @@ class Query(db.Model):
     name = db.Column(db.Unicode(255))    
     version = db.Column(db.Unicode(255))   
     type = db.Column(db.Unicode(10))
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     description = db.Column(db.Unicode)
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
@@ -532,7 +532,7 @@ class Breakdown(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
@@ -615,7 +615,7 @@ class Cotext(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
@@ -649,7 +649,7 @@ class SemanticMap(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     name = db.Column(db.Unicode)
 
     embeddings = db.Column(db.Unicode)  # db.Column(db.Integer, db.ForeignKey('embeddings.id'))
@@ -669,7 +669,7 @@ class Coordinates(db.Model):
     __table_args__ = (db.UniqueConstraint('semantic_map_id', 'item'),)
 
     id = db.Column(db.Integer(), primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
@@ -690,7 +690,7 @@ class Collocation(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     p = db.Column(db.Unicode(255), nullable=False)
     s_break = db.Column(db.Unicode(255), nullable=True)
@@ -843,7 +843,7 @@ class Keyword(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
-    modified = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     corpus_id = db.Column(db.Integer(), db.ForeignKey('corpus.id', ondelete='CASCADE'), nullable=False)
     subcorpus_id = db.Column(db.Integer(), db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), nullable=True)
