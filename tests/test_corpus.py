@@ -657,7 +657,7 @@ def test_create_subcorpus_collection_nans(client, auth):
                             headers=auth_header)
         assert corpus.status_code == 200
 
-        pprint(corpus.json)
+        # pprint(corpus.json)
 
         meta = client.put(url_for('corpus.set_meta', id=corpora.json[0]['id']),
                           json={
@@ -667,7 +667,7 @@ def test_create_subcorpus_collection_nans(client, auth):
                           headers=auth_header)
         assert meta.status_code == 200
 
-        pprint(meta.json)
+        # pprint(meta.json)
 
         collection = client.put(url_for('corpus.create_subcorpus_collection', id=corpora.json[0]['id']),
                                 json={
@@ -675,6 +675,6 @@ def test_create_subcorpus_collection_nans(client, auth):
                                 },
                                 content_type='application/json',
                                 headers=auth_header)
-        pprint(collection.json)
+        # pprint(collection.json)
 
         assert collection.status_code == 200

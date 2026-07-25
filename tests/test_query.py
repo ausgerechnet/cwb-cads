@@ -110,8 +110,8 @@ def test_query_concordance_filter(client, auth):
                            headers=auth_header)
 
         assert lines.status_code == 200
-        from pprint import pprint
-        pprint(lines.json)
+        # from pprint import pprint
+        # pprint(lines.json)
         for line in lines.json['lines']:
             assert 'Beifall' in [t['primary'] for t in line['tokens'] if not t['out_of_window']]
             assert True in [t['is_filter_item'] for t in line['tokens'] if not t['out_of_window']]
@@ -245,12 +245,12 @@ def test_query_meta(client, auth):
                           headers=auth_header)
 
         assert meta.status_code == 200
-        pprint(meta.json)
+        # pprint(meta.json)
 
         meta = client.get(url_for('query.get_meta', query_id=query.json['id'], level='article', key='date', page_size=25, p='lemma'),
                           headers=auth_header)
         assert meta.status_code == 200
-        pprint(meta.json)
+        # pprint(meta.json)
 
 
 # @pytest.mark.now
@@ -274,7 +274,7 @@ def test_query_meta_few(client, auth):
                           headers=auth_header)
 
         assert meta.status_code == 200
-        pprint(meta.json)
+        # pprint(meta.json)
 
 
 # @pytest.mark.now

@@ -125,7 +125,7 @@ def test_constellation_concordance_filter_item(client, auth):
 
         assert concordance.status_code == 200
 
-        print(concordance.json['nr_lines'])
+        # print(concordance.json['nr_lines'])
 
         # for line in concordance.json['lines']:
         #     # make sure every line contains focus query

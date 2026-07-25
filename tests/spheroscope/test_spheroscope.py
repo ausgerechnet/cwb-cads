@@ -70,7 +70,7 @@ def test_query_concordance(client, auth):
         conc = client.get(url_for('spheroscope.slot_query.concordance', id=slot_query.json['id']),
                           headers=auth_header)
 
-        pprint(conc.json)
+        # pprint(conc.json)
 
         assert conc.status_code == 200
 

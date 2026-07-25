@@ -229,7 +229,7 @@ def test_constellation_description_collection_ufa(client, auth):
                                             headers=auth_header)
         assert collocation_collection.status_code == 200
 
-        pprint(collocation_collection.json)
+        # pprint(collocation_collection.json)
 
 
 @pytest.mark.now
