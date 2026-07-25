@@ -1,7 +1,81 @@
 {
   "components": {
     "schemas": {
+      "AlgorithmDetailsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "algorithm_type": {
+            "type": "string"
+          },
+          "args_schema": {
+            "$ref": "#/components/schemas/ArgsSchemaOut"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "function": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AlgorithmIn": {
+        "additionalProperties": false,
+        "properties": {
+          "algorithm_name": {
+            "type": "string"
+          },
+          "args": {
+            "additionalProperties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "algorithm_name",
+          "args"
+        ],
+        "type": "object"
+      },
+      "AlgorithmOut": {
+        "additionalProperties": false,
+        "properties": {
+          "algorithm_name": {
+            "type": "string"
+          },
+          "args": {
+            "additionalProperties": {},
+            "type": "object"
+          }
+        },
+        "required": [
+          "algorithm_name",
+          "args"
+        ],
+        "type": "object"
+      },
+      "AlgorithmsOut": {
+        "additionalProperties": false,
+        "properties": {
+          "grouping": {
+            "$ref": "#/components/schemas/AlgorithmOut"
+          },
+          "ordering": {
+            "items": {
+              "$ref": "#/components/schemas/AlgorithmOut"
+            },
+            "type": "array"
+          },
+          "subset": {
+            "$ref": "#/components/schemas/AlgorithmOut"
+          }
+        },
+        "type": "object"
+      },
       "AnchorCorrection": {
+        "additionalProperties": false,
         "properties": {
           "anchor": {
             "type": "string"
@@ -13,6 +87,7 @@
         "type": "object"
       },
       "AnchorSlot": {
+        "additionalProperties": false,
         "properties": {
           "end": {
             "type": "string"
@@ -26,7 +101,51 @@
         },
         "type": "object"
       },
+      "ArgOut": {
+        "additionalProperties": false,
+        "properties": {
+          "default": {},
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ArgsSchemaOut": {
+        "additionalProperties": false,
+        "properties": {
+          "properties": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ArgOut"
+            },
+            "type": "object"
+          },
+          "required": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "BookmarkNodeIn": {
+        "additionalProperties": false,
+        "properties": {
+          "bookmarked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bookmarked"
+        ],
+        "type": "object"
+      },
       "BreakdownItemsOut": {
+        "additionalProperties": false,
         "properties": {
           "breakdown_id": {
             "type": "integer"
@@ -58,6 +177,7 @@
         "type": "object"
       },
       "BreakdownOut": {
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "integer"
@@ -84,6 +204,7 @@
         "type": "object"
       },
       "CollocationIn": {
+        "additionalProperties": false,
         "properties": {
           "filter_item": {
             "nullable": true,
@@ -137,6 +258,7 @@
         "type": "object"
       },
       "CollocationItemOut": {
+        "additionalProperties": false,
         "properties": {
           "item": {
             "type": "string"
@@ -168,6 +290,7 @@
         "type": "object"
       },
       "CollocationItemsOut": {
+        "additionalProperties": false,
         "properties": {
           "coordinates": {
             "items": {
@@ -217,6 +340,7 @@
         "type": "object"
       },
       "CollocationOut": {
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "integer"
@@ -257,6 +381,7 @@
         "type": "object"
       },
       "CollocationScoreOut": {
+        "additionalProperties": false,
         "properties": {
           "measure": {
             "type": "string"
@@ -271,7 +396,35 @@
         ],
         "type": "object"
       },
+      "ConcLine": {
+        "additionalProperties": false,
+        "properties": {
+          "meta": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "structural": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/TokenOut1"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "meta",
+          "structural",
+          "tokens"
+        ],
+        "type": "object"
+      },
       "ConcordanceLineOut": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_ranges": {
             "items": {
@@ -302,6 +455,7 @@
         "type": "object"
       },
       "ConcordanceOut": {
+        "additionalProperties": false,
         "properties": {
           "lines": {
             "items": {
@@ -332,6 +486,7 @@
         "type": "object"
       },
       "ConstellationAssociationItemOut": {
+        "additionalProperties": false,
         "properties": {
           "candidate": {
             "type": "integer"
@@ -356,6 +511,7 @@
         "type": "object"
       },
       "ConstellationAssociationOut": {
+        "additionalProperties": false,
         "properties": {
           "N": {
             "type": "integer"
@@ -389,6 +545,7 @@
         "type": "object"
       },
       "ConstellationBreakdownItemOut": {
+        "additionalProperties": false,
         "properties": {
           "breakdown_id": {
             "type": "integer"
@@ -433,6 +590,7 @@
         "type": "object"
       },
       "ConstellationBreakdownOut": {
+        "additionalProperties": false,
         "properties": {
           "constellation_description_id": {
             "type": "integer"
@@ -455,6 +613,7 @@
         "type": "object"
       },
       "ConstellationCollocationIn": {
+        "additionalProperties": false,
         "properties": {
           "filter_discourseme_ids": {
             "default": [],
@@ -523,6 +682,7 @@
         "type": "object"
       },
       "ConstellationCollocationItemsOut": {
+        "additionalProperties": false,
         "properties": {
           "coordinates": {
             "items": {
@@ -586,6 +746,7 @@
         "type": "object"
       },
       "ConstellationCollocationOut": {
+        "additionalProperties": false,
         "properties": {
           "filter_discourseme_ids": {
             "items": {
@@ -637,6 +798,7 @@
         "type": "object"
       },
       "ConstellationDescriptionCollectionIn": {
+        "additionalProperties": false,
         "properties": {
           "match_strategy": {
             "default": "longest",
@@ -670,6 +832,7 @@
         "type": "object"
       },
       "ConstellationDescriptionCollectionOut": {
+        "additionalProperties": false,
         "properties": {
           "constellation_descriptions": {
             "items": {
@@ -716,6 +879,7 @@
         "type": "object"
       },
       "ConstellationDescriptionIn": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -753,6 +917,7 @@
         "type": "object"
       },
       "ConstellationDescriptionOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -788,6 +953,7 @@
         "type": "object"
       },
       "ConstellationDescriptionOutUpdate": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -815,6 +981,7 @@
         "type": "object"
       },
       "ConstellationIn": {
+        "additionalProperties": false,
         "properties": {
           "comment": {
             "nullable": true,
@@ -835,6 +1002,7 @@
         "type": "object"
       },
       "ConstellationInUpdate": {
+        "additionalProperties": false,
         "properties": {
           "comment": {
             "nullable": true,
@@ -855,6 +1023,7 @@
         "type": "object"
       },
       "ConstellationKeywordIn": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id_reference": {
             "type": "integer"
@@ -892,6 +1061,7 @@
         "type": "object"
       },
       "ConstellationKeywordItemsOut": {
+        "additionalProperties": false,
         "properties": {
           "coordinates": {
             "items": {
@@ -951,6 +1121,7 @@
         "type": "object"
       },
       "ConstellationMapItemOut": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_id": {
             "nullable": true,
@@ -989,6 +1160,7 @@
         "type": "object"
       },
       "ConstellationMapOut": {
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "integer"
@@ -1040,6 +1212,7 @@
         "type": "object"
       },
       "ConstellationOut": {
+        "additionalProperties": false,
         "properties": {
           "comment": {
             "nullable": true,
@@ -1068,6 +1241,7 @@
         "type": "object"
       },
       "CoordinatesIn": {
+        "additionalProperties": false,
         "properties": {
           "item": {
             "type": "string"
@@ -1089,6 +1263,7 @@
         "type": "object"
       },
       "CoordinatesOut": {
+        "additionalProperties": false,
         "properties": {
           "item": {
             "type": "string"
@@ -1122,6 +1297,7 @@
         "type": "object"
       },
       "CorpusAnnotationsIn": {
+        "additionalProperties": false,
         "properties": {
           "key": {
             "type": "string"
@@ -1147,6 +1323,7 @@
         "type": "object"
       },
       "CorpusAnnotationsOut": {
+        "additionalProperties": false,
         "properties": {
           "key": {
             "type": "string"
@@ -1168,6 +1345,7 @@
         "type": "object"
       },
       "CorpusLevelOut": {
+        "additionalProperties": false,
         "properties": {
           "annotations": {
             "items": {
@@ -1186,6 +1364,7 @@
         "type": "object"
       },
       "CorpusLevelsOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -1204,6 +1383,7 @@
         "type": "object"
       },
       "CorpusMetaFrequenciesOut": {
+        "additionalProperties": false,
         "properties": {
           "frequencies": {
             "items": {
@@ -1252,6 +1432,7 @@
         "type": "object"
       },
       "CorpusMetaFrequencyOut": {
+        "additionalProperties": false,
         "properties": {
           "bin_boolean": {
             "nullable": true,
@@ -1282,6 +1463,7 @@
         "type": "object"
       },
       "CorpusOut": {
+        "additionalProperties": false,
         "properties": {
           "cwb_id": {
             "type": "string"
@@ -1342,6 +1524,7 @@
         "type": "object"
       },
       "CorpusPatchIn": {
+        "additionalProperties": false,
         "properties": {
           "description": {
             "nullable": true,
@@ -1362,7 +1545,57 @@
         },
         "type": "object"
       },
+      "DiffLine": {
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "type": "integer"
+          },
+          "contextend": {
+            "type": "integer"
+          },
+          "meta_A": {
+            "items": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "meta_B": {
+            "items": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "source": {
+            "type": "string"
+          },
+          "structural": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "tokens": {
+            "items": {
+              "$ref": "#/components/schemas/TokenOut1"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "meta_A",
+          "meta_B",
+          "structural",
+          "tokens"
+        ],
+        "type": "object"
+      },
       "DiscoursemeCoordinatesIn": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_id": {
             "type": "integer"
@@ -1384,6 +1617,7 @@
         "type": "object"
       },
       "DiscoursemeCoordinatesOut": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_id": {
             "type": "integer"
@@ -1417,6 +1651,7 @@
         "type": "object"
       },
       "DiscoursemeDescriptionIDs": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_description_ids": {
             "items": {
@@ -1431,6 +1666,7 @@
         "type": "object"
       },
       "DiscoursemeDescriptionIn": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -1466,6 +1702,7 @@
         "type": "object"
       },
       "DiscoursemeDescriptionOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -1509,6 +1746,7 @@
         "type": "object"
       },
       "DiscoursemeDescriptionSimilarOut": {
+        "additionalProperties": false,
         "properties": {
           "freq": {
             "type": "integer"
@@ -1532,6 +1770,7 @@
         "type": "object"
       },
       "DiscoursemeIDs": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_ids": {
             "items": {
@@ -1546,6 +1785,7 @@
         "type": "object"
       },
       "DiscoursemeIn": {
+        "additionalProperties": false,
         "properties": {
           "comment": {
             "nullable": true,
@@ -1567,6 +1807,7 @@
         "type": "object"
       },
       "DiscoursemeInUpdate": {
+        "additionalProperties": false,
         "properties": {
           "comment": {
             "nullable": true,
@@ -1588,6 +1829,7 @@
         "type": "object"
       },
       "DiscoursemeItem": {
+        "additionalProperties": false,
         "properties": {
           "cqp_query": {
             "nullable": true,
@@ -1605,6 +1847,7 @@
         "type": "object"
       },
       "DiscoursemeItemsIn": {
+        "additionalProperties": false,
         "properties": {
           "items": {
             "items": {
@@ -1623,6 +1866,7 @@
         "type": "object"
       },
       "DiscoursemeOut": {
+        "additionalProperties": false,
         "properties": {
           "comment": {
             "nullable": true,
@@ -1651,6 +1895,7 @@
         "type": "object"
       },
       "DiscoursemeRangeOut": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_id": {
             "type": "integer"
@@ -1670,6 +1915,7 @@
         "type": "object"
       },
       "DiscoursemeScoresOut": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_id": {
             "type": "integer"
@@ -1705,6 +1951,7 @@
         "type": "object"
       },
       "Generated": {
+        "additionalProperties": false,
         "properties": {
           "discourseme_description_ids": {
             "items": {
@@ -1730,6 +1977,7 @@
         "type": "object"
       },
       "HTTPRefreshTokenIn": {
+        "additionalProperties": false,
         "properties": {
           "refresh_token": {
             "type": "string"
@@ -1741,6 +1989,7 @@
         "type": "object"
       },
       "HTTPTokenOut": {
+        "additionalProperties": false,
         "properties": {
           "access_token": {
             "type": "string"
@@ -1756,6 +2005,7 @@
         "type": "object"
       },
       "KeywordIn": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -1806,6 +2056,7 @@
         "type": "object"
       },
       "KeywordItemOut": {
+        "additionalProperties": false,
         "properties": {
           "item": {
             "type": "string"
@@ -1838,6 +2089,7 @@
         "type": "object"
       },
       "KeywordItemsOut": {
+        "additionalProperties": false,
         "properties": {
           "coordinates": {
             "items": {
@@ -1883,6 +2135,7 @@
         "type": "object"
       },
       "KeywordOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -1955,6 +2208,7 @@
         "type": "object"
       },
       "KeywordScoreOut": {
+        "additionalProperties": false,
         "properties": {
           "measure": {
             "type": "string"
@@ -1969,7 +2223,35 @@
         ],
         "type": "object"
       },
+      "MacroOut": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "macro": {
+            "type": "string"
+          },
+          "modified": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "QueryAssistedIn": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -2019,7 +2301,68 @@
         ],
         "type": "object"
       },
+      "QueryHistoryEntryIn": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "query_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "QueryHistoryEntryOut": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "history_id": {
+            "type": "integer"
+          },
+          "query": {
+            "$ref": "#/components/schemas/QueryOut"
+          },
+          "query_id": {
+            "type": "integer"
+          },
+          "time": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "QueryHistoryIn": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "QueryHistoryOut": {
+        "additionalProperties": false,
+        "properties": {
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/QueryHistoryEntryOut"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "QueryIn": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -2054,6 +2397,7 @@
         "type": "object"
       },
       "QueryMetaFrequenciesOut": {
+        "additionalProperties": false,
         "properties": {
           "frequencies": {
             "items": {
@@ -2102,6 +2446,7 @@
         "type": "object"
       },
       "QueryMetaFrequencyOut": {
+        "additionalProperties": false,
         "properties": {
           "bin_boolean": {
             "nullable": true,
@@ -2144,6 +2489,7 @@
         "type": "object"
       },
       "QueryOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -2198,6 +2544,7 @@
         "type": "object"
       },
       "ScoreDeciles": {
+        "additionalProperties": false,
         "properties": {
           "decile": {
             "type": "integer"
@@ -2219,6 +2566,7 @@
         "type": "object"
       },
       "SemanticMapIn": {
+        "additionalProperties": false,
         "properties": {
           "collocation_ids": {
             "default": [],
@@ -2246,6 +2594,7 @@
         "type": "object"
       },
       "SemanticMapOut": {
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "integer"
@@ -2264,7 +2613,65 @@
         ],
         "type": "object"
       },
+      "SlotDiffOut": {
+        "additionalProperties": false,
+        "properties": {
+          "id1": {
+            "type": "integer"
+          },
+          "id2": {
+            "type": "integer"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/DiffLine"
+            },
+            "type": "array"
+          },
+          "nr_lines": {
+            "type": "integer"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SlotQueryConcOut": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ConcLine"
+            },
+            "type": "array"
+          },
+          "nr_lines": {
+            "type": "integer"
+          },
+          "page_count": {
+            "type": "integer"
+          },
+          "page_number": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "SlotQueryIn": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -2297,11 +2704,13 @@
           }
         },
         "required": [
-          "corpus_id"
+          "corpus_id",
+          "cqp_query"
         ],
         "type": "object"
       },
       "SlotQueryOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus_id": {
             "type": "integer"
@@ -2339,6 +2748,7 @@
         "type": "object"
       },
       "SubCorpusCollectionIn": {
+        "additionalProperties": false,
         "properties": {
           "create_nqr": {
             "default": true,
@@ -2383,6 +2793,7 @@
         "type": "object"
       },
       "SubCorpusCollectionOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus": {
             "$ref": "#/components/schemas/CorpusOut"
@@ -2427,6 +2838,7 @@
         "type": "object"
       },
       "SubCorpusIn": {
+        "additionalProperties": false,
         "properties": {
           "bins_boolean": {
             "items": {
@@ -2485,6 +2897,7 @@
         "type": "object"
       },
       "SubCorpusOut": {
+        "additionalProperties": false,
         "properties": {
           "corpus": {
             "$ref": "#/components/schemas/CorpusOut"
@@ -2519,6 +2932,7 @@
         "type": "object"
       },
       "SubCorpusPatchIn": {
+        "additionalProperties": false,
         "properties": {
           "description": {
             "nullable": true,
@@ -2534,6 +2948,7 @@
         "type": "object"
       },
       "TokenOut": {
+        "additionalProperties": false,
         "properties": {
           "cpos": {
             "type": "integer"
@@ -2564,7 +2979,57 @@
         ],
         "type": "object"
       },
+      "TokenOut1": {
+        "additionalProperties": false,
+        "properties": {
+          "cpos": {
+            "type": "integer"
+          },
+          "word": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cpos",
+          "word"
+        ],
+        "type": "object"
+      },
+      "TreeNodeOut": {
+        "additionalProperties": false,
+        "properties": {
+          "algorithms": {
+            "$ref": "#/components/schemas/AlgorithmsOut"
+          },
+          "bookmarked": {
+            "type": "boolean"
+          },
+          "children": {
+            "$ref": "#/components/schemas/TreeNodeOut"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "label": {
+            "type": "string"
+          },
+          "line_count": {
+            "type": "integer"
+          },
+          "node_type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "bookmarked",
+          "id",
+          "label",
+          "node_type"
+        ],
+        "type": "object"
+      },
       "UFAComparisonOut": {
+        "additionalProperties": false,
         "properties": {
           "collocation_id_left": {
             "type": "integer"
@@ -2604,6 +3069,7 @@
         "type": "object"
       },
       "UFAConfidenceIntervalOut": {
+        "additionalProperties": false,
         "properties": {
           "lower_90": {
             "nullable": true,
@@ -2636,6 +3102,7 @@
         "type": "object"
       },
       "UFAOut": {
+        "additionalProperties": false,
         "properties": {
           "collocations": {
             "items": {
@@ -2657,6 +3124,7 @@
         "type": "object"
       },
       "UFAScoreOut": {
+        "additionalProperties": false,
         "properties": {
           "collocation_id_left": {
             "nullable": true,
@@ -2695,6 +3163,7 @@
         "type": "object"
       },
       "UserIn": {
+        "additionalProperties": false,
         "properties": {
           "password": {
             "type": "string"
@@ -2710,6 +3179,7 @@
         "type": "object"
       },
       "UserOut": {
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "integer"
@@ -2725,6 +3195,7 @@
         "type": "object"
       },
       "UserRegister": {
+        "additionalProperties": false,
         "properties": {
           "confirm_password": {
             "type": "string"
@@ -2756,6 +3227,7 @@
         "type": "object"
       },
       "UserUpdate": {
+        "additionalProperties": false,
         "properties": {
           "confirm_password": {
             "type": "string"
@@ -2797,6 +3269,36 @@
           }
         },
         "type": "object"
+      },
+      "WordListOut": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "modified": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -2818,7 +3320,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.0.dev66"
+    "version": "0.3.1"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -5073,6 +5575,248 @@
         "summary": "Create new semantic map for keyword items or make sure there are coordinates for all items on an existing map.",
         "tags": [
           "Keyword"
+        ]
+      }
+    },
+    "/library/{corpus_id}/macros": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MacroOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Gets all macros for a specified corpus",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
+    "/library/{corpus_id}/macros/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacroOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Gets a single macro for a specified corpus",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
+    "/library/{corpus_id}/wordlists": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WordListOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Gets all wordlists for a specified corpus",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
+    "/library/{corpus_id}/wordlists/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordListOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Gets a single wordlist for a specified corpus",
+        "tags": [
+          "Library"
         ]
       }
     },
@@ -9861,6 +10605,16 @@
           },
           {
             "in": "query",
+            "name": "p",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "embeddings",
             "required": false,
             "schema": {
@@ -11664,6 +12418,899 @@
         ]
       }
     },
+    "/spheroscope/flexiconc/{query_id}/tree": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Tree",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNodeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Tree",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      }
+    },
+    "/spheroscope/flexiconc/{query_id}/tree/{node_id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNodeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete Node",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNodeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Node",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      }
+    },
+    "/spheroscope/flexiconc/{query_id}/tree/{node_id}/arrangement": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlgorithmIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNodeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Add Arrangement Node",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      }
+    },
+    "/spheroscope/flexiconc/{query_id}/tree/{node_id}/available-algorithms": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "algo_type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AlgorithmDetailsOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Available",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      }
+    },
+    "/spheroscope/flexiconc/{query_id}/tree/{node_id}/bookmark": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/BookmarkNodeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNodeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Bookmark Node",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      }
+    },
+    "/spheroscope/flexiconc/{query_id}/tree/{node_id}/concordance": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get Concordance",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      }
+    },
+    "/spheroscope/flexiconc/{query_id}/tree/{node_id}/subset": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "node_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlgorithmIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreeNodeOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Add Subset Node",
+        "tags": [
+          "Spheroscope.Flexiconc"
+        ]
+      }
+    },
+    "/spheroscope/query-history/": {
+      "get": {
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QueryHistoryOut"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all query histories.",
+        "tags": [
+          "Spheroscope.Query_History"
+        ]
+      },
+      "post": {
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryHistoryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryHistoryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create a new quey history.",
+        "tags": [
+          "Spheroscope.Query_History"
+        ]
+      }
+    },
+    "/spheroscope/query-history/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Deletes a given query history",
+        "tags": [
+          "Spheroscope.Query_History"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryHistoryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get all entries in a given query history.",
+        "tags": [
+          "Spheroscope.Query_History"
+        ]
+      }
+    },
+    "/spheroscope/query-history/{id}/entry": {
+      "put": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryHistoryEntryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryHistoryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create a new entry in a given query history.",
+        "tags": [
+          "Spheroscope.Query_History"
+        ]
+      }
+    },
     "/spheroscope/slot-query/": {
       "get": {
         "parameters": [],
@@ -11697,7 +13344,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Get All",
+        "summary": "Get all slot queries.",
         "tags": [
           "Spheroscope.Slot_Query"
         ]
@@ -11752,14 +13399,77 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Create",
+        "summary": "Create a new slot query.",
         "tags": [
           "Spheroscope.Slot_Query"
         ]
       }
     },
-    "/spheroscope/slot-query/{id}/execute": {
-      "post": {
+    "/spheroscope/slot-query/diff": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id1",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "id2",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotDiffOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get difference between two slot queries.",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      }
+    },
+    "/spheroscope/slot-query/{id}/": {
+      "get": {
         "parameters": [
           {
             "in": "path",
@@ -11807,7 +13517,62 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Execute",
+        "summary": "Get details of a slot query.",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      }
+    },
+    "/spheroscope/slot-query/{id}/concordance": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotQueryConcOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get concordance lines of a slot query.",
         "tags": [
           "Spheroscope.Slot_Query"
         ]
@@ -12339,10 +14104,6 @@
   },
   "servers": [
     {
-      "name": "Beta Server",
-      "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-beta/"
-    },
-    {
       "name": "Development Server",
       "url": "https://corpora.linguistik.uni-erlangen.de/cwb-cads-dev/"
     },
@@ -12378,6 +14139,9 @@
       "name": "Ufa"
     },
     {
+      "name": "Library"
+    },
+    {
       "name": "Mmda"
     },
     {
@@ -12409,6 +14173,12 @@
     },
     {
       "name": "Spheroscope.Slot_Query"
+    },
+    {
+      "name": "Spheroscope.Query_History"
+    },
+    {
+      "name": "Spheroscope.Flexiconc"
     }
   ]
 }
