@@ -9,11 +9,11 @@ from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Integer, String, Boolean, Nested, Dict, List, Raw
 
 from .database import FlexiConcSession
-# from ..database import Query
+from ..database import Query
 from ..users import auth
 from .. import db
 
-# from flexiconc import Concordance
+from flexiconc import Concordance
 
 bp = APIBlueprint('flexiconc', __name__, url_prefix='/flexiconc')
 
