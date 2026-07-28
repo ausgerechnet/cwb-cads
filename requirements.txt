@@ -14,4 +14,4 @@ pylint==3.2.5
 PyJWT==2.9.0
 statsmodels==0.14.6
 scipy<=1.17.0,>=1.13
-flexiconc @ git+https://github.com/fau-klue/flexiconc.git@main
+flexiconc==0.1.21
