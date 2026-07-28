@@ -12,7 +12,7 @@ from flask import current_app
 from .. import db
 from ..database import Query
 
-from flexiconc import Concordance
+# from flexiconc import Concordance
 
 
 class SlotQuery(Query):
@@ -112,29 +112,29 @@ class FlexiConcSession(db.Model):
     @property
     def concordance(self):
 
-        if not self._flexiconc:
-            db.session.add(self)
-            c = Concordance()
-            # TODO: work with actual concordance data frome the DB
-            c.retrieve_from_cwb(
-                query=self.cqp_query.mangled_query,
-                corpus=self.cqp_query.corpus.ccc()
-            )
+        # if not self._flexiconc:
+        #     db.session.add(self)
+        #     c = Concordance()
+        #     # TODO: work with actual concordance data frome the DB
+        #     c.retrieve_from_cwb(
+        #         query=self.cqp_query.mangled_query,
+        #         corpus=self.cqp_query.corpus.ccc()
+        #     )
             
-            if self.tree:
-                # undump previous tree from DB
-                current_app.logger.debug(f"flexiconc :: using saved tree")
-                tree = json.loads(self.tree)
-                c.root = c._build_tree_from_data(tree)
-            else:
-                # dump fresh tree to DB
-                from .flexiconc import TreeNodeOut
-                current_app.logger.debug(f"flexiconc :: dumping initial tree")
-                self.tree = json.dumps(TreeNodeOut().dump(c.root))
-                self.created = datetime.now(timezone.utc)()                
-                db.session.commit()
+        #     if self.tree:
+        #         # undump previous tree from DB
+        #         current_app.logger.debug(f"flexiconc :: using saved tree")
+        #         tree = json.loads(self.tree)
+        #         c.root = c._build_tree_from_data(tree)
+        #     else:
+        #         # dump fresh tree to DB
+        #         from .flexiconc import TreeNodeOut
+        #         current_app.logger.debug(f"flexiconc :: dumping initial tree")
+        #         self.tree = json.dumps(TreeNodeOut().dump(c.root))
+        #         self.created = datetime.now(timezone.utc)()                
+        #         db.session.commit()
 
-            self._flexiconc = c
+        #     self._flexiconc = c
         
         return self._flexiconc
 
