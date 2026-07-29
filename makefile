@@ -88,7 +88,7 @@ lint:
 test:
 	. venv/bin/activate && \
 	export CWB_CADS_CONFIG=cfg.TestConfig && \
-	pytest -s -v
+	pytest  # -s -v
 
 test_examples:
 	. venv/bin/activate && \

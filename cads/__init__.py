@@ -1,12 +1,13 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# import logging
+import logging
+import time
 import os
 
 import werkzeug.exceptions
 from apiflask import APIFlask, HTTPTokenAuth
-from flask import jsonify, redirect, request
+from flask import jsonify, redirect, request, g
 # from flask.logging import default_handler
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -52,15 +53,17 @@ def create_app(config=CONFIG):
     except OSError:
         app.logger.warning(f"could not create cache directory for sentence transformers: {st_cache_dir}")
 
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"  # avoid warning for forked processes
+    # avoid warning for forked processes
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
     # load config
     app.config.from_object(config)
 
-    # also log cwb-ccc INFO messages
-    # if app.config['DEBUG']:
-    #     logger = logging.getLogger('ccc')
-    #     logger.addHandler(default_handler)
-    #     logger.setLevel(logging.DEBUG)
+    # set logging levels
+    for logger_name, level in app.config['LOGGING_LEVELS'].items():
+        logging.getLogger(logger_name).setLevel(
+            getattr(logging, level)
+        )
 
     # dynamic error handler for all HTTP errors
     @app.errorhandler(werkzeug.exceptions.HTTPException)
@@ -109,6 +112,35 @@ def create_app(config=CONFIG):
         with app.app_context():
             from sqlalchemy import event
             event.listen(db.engine, 'connect', _pragma_on_connect)
+
+    # time all endpoints
+    @app.before_request
+    def start_timer():
+        g.start_time = time.perf_counter()
+
+    @app.after_request
+    def log_request(response):
+        elapsed = time.perf_counter() - g.start_time
+
+        app.logger.info(
+            "%s %s%s -> %s %.3fs",
+            request.method,
+            request.path,
+            f"?{request.query_string.decode()}" if request.query_string else "",
+            response.status_code,
+            elapsed,
+        )
+
+        if "REQUEST_TIMES" in app.config:
+
+            app.config["REQUEST_TIMES"].append({
+                "method": request.method,
+                "path": request.path,
+                "status": response.status_code,
+                "seconds": round(elapsed, 3),
+            })
+
+        return response
 
     # say hello
     @app.get('/hello')

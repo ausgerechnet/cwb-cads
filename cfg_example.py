@@ -2,8 +2,18 @@
 # -*- coding: utf-8 -*-
 
 from os import getenv
+import warnings
 
 from cads.version import __version__
+
+
+# I'm ignoring this for now -- if it breaks, I'll get rid of pymagnitude altogether
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API",
+    category=UserWarning,
+    module="pymagnitude.third_party.repoze",
+)
 
 
 class Config:
@@ -44,6 +54,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CCC_CQP_BIN = str(getenv('CQP_BIN', default='cqp'))
 
+    LOGGING_LEVELS = {
+        "ccc": "WARNING",
+    }
+
 
 class ProdConfig(Config):
 
@@ -53,23 +67,23 @@ class ProdConfig(Config):
 
     SECRET_KEY = "CHANGE-ME-IN-PRODUCTION"
 
-    DB_NAME = 'mmda.sqlite'
-    ADMIN_PASSWORD = '0000'
+    JWT_ACCESS_TOKEN_EXPIRES = 60*30
+    JWT_REFRESH_TOKEN_EXPIRES = 60*60*12
+
+    DB_NAME = 'cwb-cads-prod.sqlite'
+    ADMIN_PASSWORD = "CHANGE-ME-IN-PRODUCTION"
 
     CORPORA = 'tests/corpora/corpora.json'
     CCC_REGISTRY_DIR = 'tests/corpora/registry/'
     CCC_DATA_DIR = 'instance/cwb-cads-ccc-data-test/'
     CCC_LIB_DIR = 'instance/cwb-cads-ccc-lib-test/'
 
-    JWT_ACCESS_TOKEN_EXPIRES = 60*30
-    JWT_REFRESH_TOKEN_EXPIRES = 60*60*12
-
 
 class DevConfig(Config):
 
-    DEBUG = True
+    # DEBUG = True
 
-    DB_NAME = 'mmda-dev.sqlite'
+    DB_NAME = 'cwb-cads-dev.sqlite'
     ADMIN_PASSWORD = '0000'
 
     CORPORA = 'tests/corpora/corpora.json'
@@ -83,11 +97,11 @@ class DevConfig(Config):
 
 class TestConfig(Config):
 
-    DEBUG = True
-    TESTING = True,
+    # DEBUG = True
+    TESTING = True
     APP_ENV = 'testing'
 
-    DB_NAME = 'mmda-test.sqlite'
+    DB_NAME = 'cwb-cads-test.sqlite'
     ADMIN_PASSWORD = '0000'
 
     CORPORA = 'tests/corpora/corpora.json'
