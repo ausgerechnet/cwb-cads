@@ -142,7 +142,7 @@ def patch_constellation_add(constellation_id, json_data):
     """
     constellation = db.get_or_404(Constellation, constellation_id)
     discoursemes_ids = json_data.get('discourseme_ids', [])
-    print(discoursemes_ids)
+
     discoursemes = [db.get_or_404(Discourseme, did) for did in discoursemes_ids]
     for disc in discoursemes:
         constellation.discoursemes.append(disc)

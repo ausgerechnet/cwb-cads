@@ -510,14 +510,8 @@ def test_constellation_description_collection_add_new_discourseme(client, auth):
                                           collection_id=collection.json['id']),
                                   json={
                                       'name': 'Test',
-                                      'templates': [
-                                          {
-                                              'language': 'de',
-                                              'register': 'standard',
-                                              'items': [
-                                                  {'p': 'lemma', 'surface': 'wollen'}
-                                              ]
-                                          }
+                                      'items': [
+                                          {'p': 'lemma', 'surface': 'wollen'}
                                       ]
                                   },
                                   headers=auth_header)

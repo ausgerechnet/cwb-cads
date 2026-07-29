@@ -179,6 +179,16 @@ class DiscoursemeInSchema(Schema):
     )
 
 
+class DiscoursemeItemsOnlyInSchema(Schema):
+    name = String(required=True)
+    comment = String(required=False, allow_none=True)
+    items = Nested(
+        DiscoursemeItemSchema,
+        many=True,
+        required=True,
+    )
+
+
 # OUTPUT
 class DiscoursemeOutSchema(Schema):
 

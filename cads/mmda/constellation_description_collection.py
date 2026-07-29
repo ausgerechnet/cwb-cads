@@ -22,7 +22,7 @@ from .database import (Constellation, ConstellationDescription,
                        ConstellationDescriptionCollection,
                        Discourseme, DiscoursemeDescription,
                        DiscoursemeTemplate, DiscoursemeTemplateItem)
-from .discourseme import DiscoursemeIDsSchema, DiscoursemeInSchema, DiscoursemeOutSchema
+from .discourseme import DiscoursemeIDsSchema, DiscoursemeOutSchema, DiscoursemeItemsOnlyInSchema
 from .discourseme_description import discourseme_template_to_description
 
 bp = APIBlueprint('collection', __name__, url_prefix='/collection/')
@@ -511,7 +511,7 @@ def patch_collection_remove_discourseme(constellation_id, collection_id, json_da
 
 
 @bp.post('/<collection_id>/discourseme-description')
-@bp.input(DiscoursemeInSchema)
+@bp.input(DiscoursemeItemsOnlyInSchema)
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def post_items_into_collection(constellation_id, collection_id, json_data):
@@ -573,24 +573,23 @@ def post_items_into_collection(constellation_id, collection_id, json_data):
         else:
             template = templates[key]
 
-        for template_item in json_data.get('templates', []):
-            for item in template_item.get('items', []):
+        for item in json_data["items"]:
 
-                existing = DiscoursemeTemplateItem.query.filter_by(
-                    template_id=template.id,
-                    p=item.get('p'),
-                    surface=item.get('surface'),
-                ).first()
+            existing = DiscoursemeTemplateItem.query.filter_by(
+                template_id=template.id,
+                p=item.get('p'),
+                surface=item.get('surface'),
+            ).first()
 
-                if not existing:
-                    db.session.add(
-                        DiscoursemeTemplateItem(
-                            template_id=template.id,
-                            p=item.get('p'),
-                            surface=item.get('surface'),
-                            cqp_query=item.get('cqp_query'),
-                        )
+            if not existing:
+                db.session.add(
+                    DiscoursemeTemplateItem(
+                        template_id=template.id,
+                        p=item.get('p'),
+                        surface=item.get('surface'),
+                        cqp_query=item.get('cqp_query'),
                     )
+                )
 
     db.session.flush()
 
@@ -621,7 +620,7 @@ def post_items_into_collection(constellation_id, collection_id, json_data):
 
 
 @bp.put('/<description_id>/discourseme-description')
-@bp.input(DiscoursemeInSchema)
+@bp.input(DiscoursemeItemsOnlyInSchema)
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def put_items_into_collection(constellation_id, collection_id, json_data):

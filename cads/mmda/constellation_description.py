@@ -20,7 +20,8 @@ from ..users import auth
 from .database import (Constellation, ConstellationDescription,
                        Discourseme, DiscoursemeTemplateItem,
                        DiscoursemeTemplate, DiscoursemeDescription)
-from .discourseme import DiscoursemeIDsSchema, DiscoursemeInSchema, DiscoursemeOutSchema
+from .discourseme import (DiscoursemeIDsSchema, DiscoursemeOutSchema,
+                          DiscoursemeItemsOnlyInSchema)
 from .discourseme_description import (DiscoursemeDescriptionOut,
                                       discourseme_template_to_description)
 
@@ -471,7 +472,7 @@ def patch_discourseme_add(constellation_id, description_id, json_data):
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_discourseme_remove(constellation_id, description_id, json_data):
-    """convenience function for adding discourseme(s) and creating and linking corresponding descriptions.
+    """Convenience function for removing discourseme(s) and unlinking corresponding descriptions.
 
     """
 
@@ -502,7 +503,7 @@ def patch_discourseme_remove(constellation_id, description_id, json_data):
 
 
 @bp.post('/<description_id>/discourseme-description')
-@bp.input(DiscoursemeInSchema)
+@bp.input(DiscoursemeItemsOnlyInSchema)
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def post_items_into_constellation(constellation_id, description_id, json_data):
@@ -549,7 +550,7 @@ def post_items_into_constellation(constellation_id, description_id, json_data):
     db.session.flush()
 
     # add template items
-    for item in json_data.get('template', []):
+    for item in json_data["items"]:
 
         db.session.add(
             DiscoursemeTemplateItem(
@@ -586,7 +587,7 @@ def post_items_into_constellation(constellation_id, description_id, json_data):
 
 
 @bp.put('/<description_id>/discourseme-description')
-@bp.input(DiscoursemeInSchema)
+@bp.input(DiscoursemeItemsOnlyInSchema)
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def put_items_into_constellation(constellation_id, description_id, json_data):
@@ -636,7 +637,7 @@ def put_items_into_constellation(constellation_id, description_id, json_data):
         db.session.flush()
 
         # add template items
-        for item in json_data.get('template', []):
+        for item in json_data["items"]:
 
             db.session.add(
                 DiscoursemeTemplateItem(
