@@ -141,4 +141,8 @@ ENV/
 .Rhistory
 frontend/.vite/
 
+# config
 cfg.py
+
+# backups
+*.bak
