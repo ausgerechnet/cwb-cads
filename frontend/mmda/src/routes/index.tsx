@@ -1,5 +1,5 @@
-import img1 from '../assets/mmda-v2-constellation-concordance.png'
-import img2 from '../assets/mmda-v2-constellation.png'
+import img1 from '../assets/mmda-v2-constellation.png'
+import img2 from '../assets/mmda-v2-constellation-germaparl-cc.png'
 import img3 from '../assets/mmda-v2-constellation-concordance.png'
 
 import { createFileRoute } from '@tanstack/react-router'
