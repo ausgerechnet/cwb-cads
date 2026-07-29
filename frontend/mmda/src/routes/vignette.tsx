@@ -6,31 +6,27 @@ export const Route = createFileRoute('/vignette')({
 
 function Vignette() {
   return (
-<div className="p-8 space-y-6 max-w-3xl">
+    <div className="max-w-3xl space-y-6 p-8">
+      <h1 className="text-4xl font-bold">Vignette</h1>
 
-  <h1 className="text-4xl font-bold">
-    Vignette
-  </h1>
+      <div className="space-y-3 rounded-lg border p-6">
+        <p className="text-lg font-medium">
+          A guided introduction to MMDA is currently under development.
+        </p>
 
-  <div className="rounded-lg border p-6 space-y-3">
-    <p className="text-lg font-medium">
-      A guided introduction to MMDA is currently under development.
-    </p>
-
-    <p>
-      In the meantime, please consult the manual on{" "}
-      <a
-        href="https://github.com/ausgerechnet/cwb-cads/tree/main/manual"
-        target="_blank"
-        rel="noreferrer"
-        className="underline font-medium"
-      >
-GitHub
-      </a>.
-
-    </p>
-  </div>
-
-</div>
+        <p>
+          In the meantime, please consult the manual on{' '}
+          <a
+            href="https://github.com/ausgerechnet/cwb-cads/tree/main/manual"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium underline"
+          >
+            GitHub
+          </a>
+          .
+        </p>
+      </div>
+    </div>
   )
 }
