@@ -262,7 +262,7 @@ def create_user_cmd(username, password, role):
     """Create a new user
 
     Example:
-        flask create-user guest untangling-associations read-only
+        flask --app cads user create guest guest
     """
 
     role_obj = Role.query.filter_by(name=role).first()
