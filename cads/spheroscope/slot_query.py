@@ -462,8 +462,6 @@ def concordance(id):
 
     lines = df.apply(lambda row: _combine(row), axis=1)['concordance'].to_list()
 
-    print(lines)
-
     return SlotQueryConcOut().dump({
         'id': slot_query.id,
         'lines': lines,
