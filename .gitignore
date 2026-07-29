@@ -146,3 +146,6 @@ cfg.py
 
 # backups
 *.bak
+
+# ignore execution times
+execution-times.tsv
