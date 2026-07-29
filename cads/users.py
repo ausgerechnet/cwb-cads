@@ -242,16 +242,17 @@ def update_user(id, json_data):
 
     """
 
-    user = auth.current_user
-    role_names = {role.name for role in auth.current_user.roles}
+    this_user = auth.current_user
+    role_names = {role.name for role in this_user.roles}
 
-    if user.id != id and 'admin' not in role_names:
+    update_user = db.get_or_404(User, id)
+    if this_user.id != id and 'admin' not in role_names:
         abort(403, 'restricted')
 
-    user.password_hash = generate_password_hash(json_data['new_password'])
+    update_user.password_hash = generate_password_hash(json_data['new_password'])
     db.session.commit()
 
-    return UserOut().dump(user), 200
+    return UserOut().dump(update_user), 200
 
 
 @bp.cli.command("create")
