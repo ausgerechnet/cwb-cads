@@ -3,7 +3,8 @@
 
 import pytest
 
-from pandas import DataFrame
+from pathlib import Path
+from pandas import DataFrame, set_option
 
 from cads import create_app
 from cads.corpus import meta_from_within_xml, read_corpora, subcorpora_from_tsv
@@ -74,16 +75,35 @@ def auth(client):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def print_request_summary(request_times):
+def print_request_summary(app, request_times):
     yield
 
     df = DataFrame(request_times)
 
     if not df.empty:
+
+        set_option("display.max_rows", None)
+        set_option("display.max_columns", None)
+        set_option("display.width", 200)
+
         print("\nRequest timing summary:")
-        print(
-            df.sort_values("seconds", ascending=False)
+        summary = (
+            df.groupby(["path", "method", "status"])
+            .agg(
+                n=("seconds", "count"),
+                seconds=("seconds", "sum"),
+            )
+            .reset_index()
+            .assign(sec_per_call=lambda x: x["seconds"] / x["n"])
+            .sort_values("seconds", ascending=False)
         )
-        path_out = "execution-times.tsv"
-        df.to_csv(path_out, sep="\t")
-        print(f"\nResults saved to {path_out}")
+        print(
+            summary.sort_values("seconds", ascending=False)
+        )
+        path_out = Path(app.instance_path) / "execution-times-summary.tsv"
+        summary.to_csv(path_out, sep="\t", index=False)
+        print(f"\nSummary saved to {path_out}")
+
+        path_out = Path(app.instance_path) / "execution-times.tsv"
+        df.to_csv(path_out, sep="\t", index=False)
+        print(f"\nDetailed results saved to {path_out}")
