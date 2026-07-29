@@ -22,7 +22,7 @@ from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
 from ..users import auth, write_access_required
 from ..utils import paginate_dataframe
 from .database import (CollocationDiscoursemeItem, Discourseme,
-                       DiscoursemeTemplate, DiscoursemeTemplateItems,
+                       DiscoursemeTemplate,
                        DiscoursemeDescription,
                        DiscoursemeDescriptionItems,
                        KeywordDiscoursemeItem,
@@ -449,21 +449,6 @@ def get_or_create_description(discourseme_id, json_data, query_data):
     if 'read-only' in role_names:
         abort(403, "read-only users cannot modify data.")
 
-    current_app.logger.debug("description does not exist, creating")
-
-    description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
-    # update discourseme template
-    if query_data['update_discourseme']:
-        current_app.logger.debug('updating discourseme template')
-        for item in items:
-            db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=item['p'], surface=item['surface']).first()
-            if db_item:
-                current_app.logger.debug(f'item {item["p"]}="{item["surface"]}" already in template')
-            else:
-                db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=item['p'], surface=item['surface'])
-                db.session.add(db_item)
-                db.session.commit()
-
     current_app.logger.debug(
         "description does not exist, creating"
     )
@@ -500,7 +485,7 @@ def get_or_create_description(discourseme_id, json_data, query_data):
             db.session.flush()
 
         for item in items:
-
+            # TODO this should also ask for cqp query (careful of Nones)
             db_item = DiscoursemeTemplateItem.query.filter_by(
                 template_id=template.id,
                 p=item.get('p'),
