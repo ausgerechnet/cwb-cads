@@ -14,7 +14,7 @@ from pandas import DataFrame, read_csv
 
 from .. import db
 from ..database import User, get_or_create
-from ..users import auth
+from ..users import auth, write_access_required
 from .database import Constellation, Discourseme, DiscoursemeTemplateItems
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
@@ -148,6 +148,7 @@ def get_discoursemes():
 @bp.input(DiscoursemeIn)
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_discourseme(json_data):
     """Create new discourseme.
 
@@ -187,6 +188,7 @@ def get_discourseme(discourseme_id):
 
 @bp.delete('/<discourseme_id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_discourseme(discourseme_id):
     """Delete discourseme.
 
@@ -202,6 +204,7 @@ def delete_discourseme(discourseme_id):
 @bp.input(DiscoursemeIn(partial=True))
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_discourseme(discourseme_id, json_data):
     """Patch discourseme.
 

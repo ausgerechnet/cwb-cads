@@ -26,7 +26,7 @@ from .database import (Corpus, CorpusAttributes, Segmentation,
                        SubCorpusCollection, subcorpus_segmentation_span)
 from .query import (QueryAssistedIn, get_concordance_lines,
                     get_or_create_query_wrapper)
-from .users import auth
+from .users import auth, write_access_required
 
 bp = APIBlueprint('corpus', __name__, url_prefix='/corpus', cli_group='corpus')
 
@@ -721,6 +721,7 @@ def get_corpus(id):
 
 @bp.delete('/<id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_corpus(id):
     """Delete corpus.
 
@@ -738,6 +739,7 @@ def delete_corpus(id):
 @bp.input(CorpusPatchIn)
 @bp.output(CorpusOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_corpus(id, json_data):
     """Patch corpus (description, name, register, language).
 
@@ -780,6 +782,7 @@ def get_subcorpus(id, subcorpus_id):
 
 @bp.delete('/<id>/subcorpus/<subcorpus_id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_subcorpus(id, subcorpus_id):
     """Delete subcorpus.
 
@@ -797,6 +800,7 @@ def delete_subcorpus(id, subcorpus_id):
 @bp.input(SubCorpusPatchIn)
 @bp.output(SubCorpusOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_subcorpus(id, subcorpus_id, json_data):
     """Patch subcorpus (description or name).
 
@@ -815,6 +819,7 @@ def patch_subcorpus(id, subcorpus_id, json_data):
 @bp.input(SubCorpusIn)
 @bp.output(SubCorpusOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_subcorpus(id, json_data):
     """Create subcorpus from stored meta data.
 
@@ -853,6 +858,7 @@ def create_subcorpus(id, json_data):
 @bp.input(SubCorpusIn)
 @bp.output(SubCorpusOut)
 @bp.auth_required(auth)
+@write_access_required
 def get_or_create_subcorpus(id, json_data):
     """Same as corresponding POST but subcorpus will only be created if it doesn't exist.
 
@@ -903,6 +909,7 @@ def get_or_create_subcorpus(id, json_data):
 @bp.input(SubCorpusCollectionIn)
 @bp.output(SubCorpusCollectionOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_subcorpus_collection(id, json_data):
     """Create subcorpus collection.
 
@@ -1018,6 +1025,7 @@ def get_subcorpus_collection(id, subcorpus_collection_id):
 
 @bp.delete('/<id>/subcorpus-collection/<subcorpus_collection_id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_subcorpus_collection(id, subcorpus_collection_id):
     """Delete subcorpus collection.
 
@@ -1058,6 +1066,7 @@ def get_meta(id):
 @bp.input(CorpusAnnotationsIn)
 @bp.auth_required(auth)
 @bp.output(CorpusAnnotationsOut)
+@write_access_required
 def set_meta(id, json_data):
     """Set meta data of corpus from CWB-encoded s-attribute.
 

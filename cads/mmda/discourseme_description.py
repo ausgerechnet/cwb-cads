@@ -19,7 +19,7 @@ from ..corpus import rename_meta_freq
 from ..database import Breakdown, Corpus, Query, get_or_create
 from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
                      QueryMetaFrequencyOut, get_query_meta_freq_breakdown)
-from ..users import auth
+from ..users import auth, write_access_required
 from ..utils import paginate_dataframe
 from .database import (CollocationDiscoursemeItem, Discourseme,
                        DiscoursemeDescription, DiscoursemeDescriptionItems,
@@ -274,6 +274,7 @@ class DiscoursemeCoordinatesOut(Schema):
 @bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_description(discourseme_id, json_data, query_data):
     """Create description of discourseme in corpus.
 
@@ -342,8 +343,13 @@ def get_or_create_description(discourseme_id, json_data, query_data):
     ).first()
 
     if not description:
+
+        role_names = {role.name for role in auth.current_user.roles}
+        if 'read-only' in role_names:
+            abort(403, "read-only users cannot modify data.")
+
         current_app.logger.debug("description does not exist, creating")
-    
+
         description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
         # update discourseme template
         if query_data['update_discourseme']:
@@ -392,6 +398,7 @@ def get_description(discourseme_id, description_id):
 
 @bp.delete('/<description_id>/')
 @bp.auth_required(auth)
+@write_access_required
 def delete_description(discourseme_id, description_id):
     """Delete discourseme description.
 
@@ -526,6 +533,7 @@ def description_get_meta(discourseme_id, description_id, query_data):
 @bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
+@write_access_required
 def description_patch_add(discourseme_id, description_id, json_data, query_data):
     """Patch discourseme description: add item(s) to description.
 
@@ -567,6 +575,7 @@ def description_patch_add(discourseme_id, description_id, json_data, query_data)
 @bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
+@write_access_required
 def description_patch_remove(discourseme_id, description_id, json_data, query_data):
     """Patch discourseme description: remove item(s) from description.
 

@@ -16,7 +16,7 @@ from ..concordance import (ConcordanceIn, ConcordanceLineIn,
                            ConcordanceLineOut, ConcordanceOut, ccc_concordance)
 from ..database import Breakdown, Corpus, get_or_create
 from ..query import ccc_query, get_or_create_query_wrapper
-from ..users import auth
+from ..users import auth, write_access_required
 from .database import (Constellation, ConstellationDescription, Discourseme,
                        DiscoursemeDescription, DiscoursemeTemplateItems)
 from .discourseme import DiscoursemeIDs, DiscoursemeIn, DiscoursemeOut
@@ -147,6 +147,7 @@ class ConstellationBreakdownOut(Schema):
 @bp.input(ConstellationDescriptionIn)
 @bp.output(ConstellationDescriptionOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_description(constellation_id, json_data):
     """Create description of constellation. Makes sure individual discourseme descriptions exist.
 
@@ -238,6 +239,11 @@ def get_or_create_description(constellation_id, json_data):
     ).first()
 
     if not description:
+
+        role_names = {role.name for role in auth.current_user.roles}
+        if 'read-only' in role_names:
+            abort(403, "read-only users cannot modify data.")
+
         current_app.logger.debug("description does not exist, creating")
 
         description = ConstellationDescription(
@@ -307,6 +313,7 @@ def get_description(constellation_id, description_id):
 
 @bp.delete('/<description_id>/')
 @bp.auth_required(auth)
+@write_access_required
 def delete_description(constellation_id, description_id):
     """Delete constellation description.
 
@@ -323,6 +330,7 @@ def delete_description(constellation_id, description_id):
 @bp.input(DiscoursemeDescriptionIDs, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
+@write_access_required
 def patch_description_add(constellation_id, description_id, json_data):
     """Patch constellation description: add discourseme description(s).
 
@@ -342,6 +350,7 @@ def patch_description_add(constellation_id, description_id, json_data):
 @bp.input({'discourseme_description_ids': List(Integer, required=True)}, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
+@write_access_required
 def patch_description_remove(constellation_id, description_id, json_data):
     """Patch constellation description: remove discourseme description(s).
 
@@ -361,6 +370,7 @@ def patch_description_remove(constellation_id, description_id, json_data):
 @bp.input(DiscoursemeIDs, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
+@write_access_required
 def patch_discourseme_add(constellation_id, description_id, json_data):
     """convenience function for adding discourseme(s) and creating and linking corresponding descriptions.
 
@@ -403,6 +413,7 @@ def patch_discourseme_add(constellation_id, description_id, json_data):
 @bp.input(DiscoursemeIDs, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
+@write_access_required
 def patch_discourseme_remove(constellation_id, description_id, json_data):
     """convenience function for adding discourseme(s) and creating and linking corresponding descriptions.
 
@@ -438,6 +449,7 @@ def patch_discourseme_remove(constellation_id, description_id, json_data):
 @bp.input(DiscoursemeIn)
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
+@write_access_required
 def post_items_into_constellation(constellation_id, description_id, json_data):
     """convenience function for creating a new discourseme incl. description during an analysis (e.g. drag & drop on semantic map)
 
@@ -488,6 +500,7 @@ def post_items_into_constellation(constellation_id, description_id, json_data):
 @bp.input(DiscoursemeIn)
 @bp.output(DiscoursemeOut)
 @bp.auth_required(auth)
+@write_access_required
 def put_items_into_constellation(constellation_id, description_id, json_data):
     """same as corresponding POST but will only create if discourseme with the same name does not exist
 

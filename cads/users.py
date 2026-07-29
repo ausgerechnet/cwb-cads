@@ -7,12 +7,15 @@ from apiflask.fields import Integer, String
 from flask import current_app
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 decode_token)
+from functools import wraps
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import auth, db
-from .database import User
+from .database import User, Role
 
-bp = APIBlueprint('user', __name__, url_prefix='/user')
+import click
+
+bp = APIBlueprint('user', __name__, url_prefix='/user', cli_group='user')
 
 
 @auth.verify_token
@@ -24,6 +27,34 @@ def verify_token(token):
     user = db.get_or_404(User, data['sub']['id'])
 
     return user
+
+
+def admin_access_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        role_names = {role.name for role in auth.current_user.roles}
+
+        if "admin" not in role_names:
+            abort(403, "only admin users can do admin stuff.")
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def write_access_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        role_names = {role.name for role in auth.current_user.roles}
+
+        if "read-only" in role_names:
+            abort(403, "read-only users cannot modify data.")
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 ################
@@ -135,6 +166,7 @@ def identify():
 @bp.input(UserRegister)
 @bp.output(UserOut)
 @bp.auth_required(auth)
+@admin_access_required
 def create_user(json_data):
     """Register new user.
 
@@ -174,6 +206,7 @@ def get_user(id):
 
 @bp.delete('/<id>')
 @bp.auth_required(auth)
+@admin_access_required
 def delete_user(id):
     """Delete user.
 
@@ -189,6 +222,7 @@ def delete_user(id):
 @bp.get('/')
 @bp.output(UserOut(many=True))
 @bp.auth_required(auth)
+@admin_access_required
 def get_users():
     """Get all users.
 
@@ -209,7 +243,57 @@ def update_user(id, json_data):
     """
 
     user = auth.current_user
+    role_names = {role.name for role in auth.current_user.roles}
+
+    if user.id != id and 'admin' not in role_names:
+        abort(403, 'restricted')
+
     user.password_hash = generate_password_hash(json_data['new_password'])
     db.session.commit()
 
     return UserOut().dump(user), 200
+
+
+@bp.cli.command("create")
+@click.argument("username")
+@click.argument("password")
+@click.option("--role", default='read-only', show_default=True)
+def create_user_cmd(username, password, role):
+    """Create a new user
+
+    Example:
+        flask create-user guest untangling-associations read-only
+    """
+
+    role_obj = Role.query.filter_by(name=role).first()
+
+    if role_obj is None:
+        role_obj = Role(
+            name=role,
+            description=f"Automatically created role '{role}'",
+        )
+        db.session.add(role_obj)
+        db.session.flush()
+
+    if User.query.filter_by(username=username).first():
+        raise click.ClickException(
+            f'User "{username}" already exists.'
+        )
+
+    user = User(
+        username=username,
+        email=f"{username}@localhost",
+        first_name=username,
+        last_name=username,
+        password_hash=generate_password_hash(password),
+        active=True,
+    )
+
+    user.roles.append(role_obj)
+
+    db.session.add(user)
+    db.session.commit()
+
+    click.echo(
+        f'Created user "{username}" with role "{role}".'
+    )

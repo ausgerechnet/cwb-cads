@@ -40,6 +40,8 @@ def init_db():
     # roles
     admin_role = Role(name='admin', description='admin stuff')
     db.session.add(admin_role)
+    read_role = Role(name='read-only', description='only GET requests')
+    db.session.add(read_role)
     db.session.commit()
 
     # users

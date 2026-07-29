@@ -6,7 +6,7 @@ from apiflask.fields import Integer, List, Nested, String
 from flask import current_app
 
 from .. import db
-from ..users import auth
+from ..users import auth, write_access_required
 from .database import Constellation, Discourseme
 from .discourseme import DiscoursemeOut
 
@@ -39,6 +39,7 @@ class ConstellationOut(Schema):
 @bp.input(ConstellationIn)
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_constellation(json_data):
     """Create new constellation.
 
@@ -103,6 +104,7 @@ def delete_constellation(constellation_id):
 @bp.input(ConstellationIn(partial=True))
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_constellation(constellation_id, json_data):
     """Patch constellation. Use for updating name, comment, or discoursemes.
 
@@ -136,6 +138,7 @@ def patch_constellation(constellation_id, json_data):
 @bp.input(ConstellationIn(partial=True))
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_constellation_add(constellation_id, json_data):
     """Patch constellation: add discourseme(s).
 
@@ -155,6 +158,7 @@ def patch_constellation_add(constellation_id, json_data):
 @bp.input(ConstellationIn(partial=True))
 @bp.output(ConstellationOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_constellation_remove(constellation_id, json_data):
     """Patch constellation: remove discourseme(s).
 

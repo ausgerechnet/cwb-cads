@@ -23,7 +23,7 @@ from ..query import (ccc_query, get_or_create_cotext,
                      get_or_create_query_iterative,
                      get_or_create_query_wrapper)
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
-from ..users import auth
+from ..users import auth, write_access_required
 from ..utils import AMS_CUTOFF, scale_score
 from .constellation_description import expand_scores_dataframe
 from .constellation_description_semantic_map import get_discourseme_coordinates
@@ -80,7 +80,7 @@ def get_or_create_coll(description,
                        semantic_map_id,
                        focus_discourseme_id,
                        filter_discourseme_ids, filter_item, filter_item_p_att,
-                       create_map=True):
+                       create_map=True, allow_create=True):
 
     s = description.s
     semantic_map_id = description.semantic_map_id if not semantic_map_id else semantic_map_id
@@ -133,6 +133,13 @@ def get_or_create_coll(description,
         ).order_by(Collocation.id.desc()).first()
 
     if not collocation:
+
+        if not allow_create:
+            current_app.logger.debug(
+                "collocation does not exist and user is not allowed to create it"
+            )
+            return None
+
         current_app.logger.debug("collocation object does not exist, creating new one")
         # create collocation object
         collocation = Collocation(
@@ -769,6 +776,7 @@ class ConstellationMapOut(Schema):
 @bp.input(ConstellationCollocationIn)
 @bp.output(ConstellationCollocationOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_collocation(constellation_id, description_id, json_data):
     """DEPRECATED. USE PUT INSTEAD.
 
@@ -869,6 +877,9 @@ def get_or_create_collocation(constellation_id, description_id, json_data, query
 
     """
 
+    role_names = {role.name for role in auth.current_user.roles}
+    allow_create = "read-only" not in role_names
+
     create_map = query_coord.pop('create_map')
 
     # constellation = db.get_or_404(Constellation, id)  # TODO: needed?
@@ -901,10 +912,15 @@ def get_or_create_collocation(constellation_id, description_id, json_data, query
         semantic_map_id,
         focus_discourseme_id,
         filter_discourseme_ids, filter_item, filter_item_p_att,
-        create_map=create_map
+        create_map=create_map, allow_create=allow_create
     )
     if not collocation:
-        abort(406, 'empty cotext')
+        abort(
+            403 if not allow_create else 406,
+            "Read-only users cannot create new collocation analyses."
+            if not allow_create
+            else "Empty cotext"
+        )
 
     collocation.focus_discourseme_id = focus_discourseme_id
     collocation.filter_discourseme_ids = filter_discourseme_ids
@@ -1009,6 +1025,7 @@ def get_collocation_map(constellation_id, description_id, collocation_id, query_
 @bp.put('/<collocation_id>/auto-associate')
 @bp.auth_required(auth)
 @bp.output(ConstellationCollocationOut)
+@write_access_required
 def associate_discoursemes(constellation_id, description_id, collocation_id):
     """Automatically associate discoursemes that occur in the top collocational profile with this constellation.
 
