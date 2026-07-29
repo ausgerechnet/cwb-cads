@@ -15,7 +15,8 @@ from pandas import DataFrame, read_csv
 from .. import db
 from ..database import User, get_or_create
 from ..users import auth
-from .database import Constellation, Discourseme, DiscoursemeTemplateItems
+from .database import Constellation, Discourseme, DiscoursemeTemplate, DiscoursemeTemplateItem
+
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 
@@ -34,15 +35,17 @@ def read_ldjson(path_ldjson):
     return discoursemes
 
 
-def import_discoursemes(glob_in, p='lemma', col_surface='item', col_name='discourseme', username='admin', create_constellation=True):
-    """import discoursemes from TSV file
+def import_discoursemes(glob_in, language, register, p='lemma',
+                        col_surface='item', col_name='discourseme', username='admin',
+                        create_constellation=True):
+    """import discoursemes from TSV file(s)
 
     - name
-    - either surface + p (default = lemma)
+    - either item + p (default = lemma)
     - or cqp_query
     - or both (for different rows)
 
-    surface may contain wildcards, MWUs, disjunction
+    item may contain wildcards, MWUs, disjunction
 
     """
 
@@ -51,45 +54,78 @@ def import_discoursemes(glob_in, p='lemma', col_surface='item', col_name='discou
     for path in glob(glob_in):
         current_app.logger.debug(f'path: {path}')
         df = read_csv(path, sep="\t")
-        df = df.rename({col_surface: 'surface'}, axis=1)
-        discoursemes = list()
+        df = df.rename({col_surface: "surface"}, axis=1)
+
+        discoursemes = []
 
         for name, items in df.groupby(col_name):
 
-            discourseme = get_or_create(Discourseme, user_id=user.id, name=name)
+            discourseme = get_or_create(
+                Discourseme,
+                user_id=user.id,
+                name=name,
+            )
             db.session.add(discourseme)
             db.session.commit()
+
+            template = get_or_create(
+                DiscoursemeTemplate,
+                discourseme_id=discourseme.id,
+                language=language,
+                register=register,
+            )
+            db.session.add(template)
+            db.session.commit()
+
             discoursemes.append(discourseme)
 
-            items = items[['surface']]
-            items['discourseme_id'] = discourseme.id
-            items['p'] = p
-            items.to_sql("discourseme_template_items", con=db.engine, if_exists='append', index=False)
+            items = items[["surface"]].copy()
+            items["template_id"] = template.id
+            items["p"] = p
+
+            items.to_sql(
+                "discourseme_template_item",
+                con=db.engine,
+                if_exists="append",
+                index=False,
+            )
 
         if create_constellation:
 
             constellation_name = path.split("/")[-1].split(".")[0]
-            constellation = get_or_create(Constellation, user_id=user.id, name=constellation_name)
-            [constellation.discoursemes.append(discourseme) for discourseme in discoursemes]
-            db.session.add(discourseme)
+            constellation = get_or_create(
+                Constellation,
+                user_id=user.id,
+                name=constellation_name,
+            )
 
-    db.session.commit()
+            for discourseme in discoursemes:
+                constellation.discoursemes.append(discourseme)
+
+            db.session.add(constellation)
+            db.session.commit()
 
 
 def export_discoursemes(path_out):
-    """export discoursemes to TSV file
+    """Export discoursemes to a TSV file."""
 
-    """
+    records = []
 
-    records = list()
-    for discourseme in Discourseme.query.all():
-        for item in discourseme.template:
-            records.append({'name': discourseme.name,
-                            'surface': item.surface, 'p': item.p, 'cqp_query': item.cqp_query,
-                            'username': discourseme.user.username})
-    discoursemes = DataFrame(records)
+    for template in DiscoursemeTemplate.query.all():
+        discourseme = template.discourseme
 
-    discoursemes.to_csv(path_out, sep="\t", index=False)
+        for item in template.items:
+            records.append({
+                "name": discourseme.name,
+                "language": template.language,
+                "register": template.register,
+                "surface": item.surface,
+                "p": item.p,
+                "cqp_query": item.cqp_query,
+                "username": discourseme.user.username,
+            })
+
+    DataFrame(records).to_csv(path_out, sep="\t", index=False)
 
 
 ################
@@ -97,43 +133,72 @@ def export_discoursemes(path_out):
 ################
 
 # INPUT / OUTPUT
-class DiscoursemeIDs(Schema):
+class DiscoursemeIDsSchema(Schema):
 
     discourseme_ids = List(Integer, required=True)
 
 
-class DiscoursemeItem(Schema):
+class DiscoursemeItemSchema(Schema):
     """Used both for templates and descriptions, in- and output.
 
     """
 
+    id = Integer(required=False)
     p = String(required=False, allow_none=True)
     surface = String(required=False, allow_none=True)
     cqp_query = String(required=False, allow_none=True)
 
 
+class DiscoursemeTemplateSchema(Schema):
+
+    language = String(required=True)
+    register = String(required=False, allow_none=True)
+    name = String(required=False, allow_none=True)
+    comment = String(required=False, allow_none=True)
+
+    items = Nested(
+        DiscoursemeItemSchema,
+        many=True,
+        required=False,
+        load_default=[],
+    )
+
+
 # INPUT
-class DiscoursemeIn(Schema):
+class DiscoursemeInSchema(Schema):
 
     name = String(required=False, allow_none=True)
     comment = String(required=False, allow_none=True)
-    template = Nested(DiscoursemeItem(many=True), required=False, allow_none=True, load_default=[])
+
+    templates = Nested(
+        DiscoursemeTemplateSchema,
+        many=True,
+        required=False,
+        allow_none=True,
+        load_default=[],
+    )
 
 
 # OUTPUT
-class DiscoursemeOut(Schema):
+class DiscoursemeOutSchema(Schema):
 
     id = Integer(required=True)
     name = String(required=True, dump_default=None, allow_none=True)
     comment = String(required=True, dump_default=None, allow_none=True)
-    template = Nested(DiscoursemeItem(many=True), required=True, dump_default=[])
+
+    templates = Nested(
+        DiscoursemeTemplateSchema,
+        many=True,
+        required=True,
+        dump_default=[],
+    )
 
 
 #################
 # API endpoints #
 #################
 @bp.get('/')
-@bp.output(DiscoursemeOut(many=True))
+@bp.output(DiscoursemeOutSchema(many=True))
 @bp.auth_required(auth)
 def get_discoursemes():
     """Get all discoursemes.
@@ -141,40 +206,53 @@ def get_discoursemes():
     """
 
     discoursemes = Discourseme.query.all()
-    return [DiscoursemeOut().dump(discourseme) for discourseme in discoursemes], 200
+    return [DiscoursemeOutSchema().dump(discourseme) for discourseme in discoursemes], 200
 
 
-@bp.post('/')
-@bp.input(DiscoursemeIn)
-@bp.output(DiscoursemeOut)
+@bp.post("/")
+@bp.input(DiscoursemeInSchema)
+@bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def create_discourseme(json_data):
-    """Create new discourseme.
+    """Create new discourseme."""
 
-    """
-
-    template = json_data.get('template')
     discourseme = Discourseme(
         user_id=auth.current_user.id,
-        name=json_data.get('name'),
-        comment=json_data.get('comment')
+        name=json_data.get("name"),
+        comment=json_data.get("comment"),
     )
     db.session.add(discourseme)
-    db.session.commit()
+    db.session.flush()  # get discourseme.id without committing
 
-    for item in template:
-        db.session.add(DiscoursemeTemplateItems(
+    for template_data in json_data.get("templates", []):
+
+        template = DiscoursemeTemplate(
             discourseme_id=discourseme.id,
-            p=item.get('p'),
-            surface=item.get('surface')
-        ))
+            language=template_data["language"],
+            register=template_data.get("register"),
+            name=template_data.get("name"),
+            comment=template_data.get("comment"),
+        )
+        db.session.add(template)
+        db.session.flush()  # get template.id
+
+        for item in template_data.get("items", []):
+            db.session.add(
+                DiscoursemeTemplateItem(
+                    template_id=template.id,
+                    p=item.get("p"),
+                    surface=item.get("surface"),
+                    cqp_query=item.get("cqp_query"),
+                )
+            )
+
     db.session.commit()
 
-    return DiscoursemeOut().dump(discourseme), 200
+    return discourseme, 200
 
 
 @bp.get('/<discourseme_id>')
-@bp.output(DiscoursemeOut)
+@bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def get_discourseme(discourseme_id):
     """Get details of discourseme.
@@ -182,7 +260,7 @@ def get_discourseme(discourseme_id):
     """
 
     discourseme = db.get_or_404(Discourseme, discourseme_id)
-    return DiscoursemeOut().dump(discourseme), 200
+    return DiscoursemeOutSchema().dump(discourseme), 200
 
 
 @bp.delete('/<discourseme_id>')
@@ -198,40 +276,53 @@ def delete_discourseme(discourseme_id):
     return 'Deletion successful.', 200
 
 
-@bp.patch('/<discourseme_id>')
-@bp.input(DiscoursemeIn(partial=True))
-@bp.output(DiscoursemeOut)
+@bp.patch("/<discourseme_id>")
+@bp.input(DiscoursemeInSchema(partial=True))
+@bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def patch_discourseme(discourseme_id, json_data):
-    """Patch discourseme.
-
-    """
+    """Patch discourseme."""
 
     discourseme = db.get_or_404(Discourseme, discourseme_id)
 
-    template = json_data.pop('template', None)
-    if template and len(template) > 0:
+    templates = json_data.pop("templates", None)
 
-        # delete old template
-        for item in discourseme.template:
-            db.session.delete(item)
-        db.session.commit()
+    if templates is not None:
+        # replace existing templates
+        for template in discourseme.templates:
+            db.session.delete(template)
 
-        # create new template
-        for item in template:
-            db.session.add(DiscoursemeTemplateItems(
+        db.session.flush()
+
+        # create new templates
+        for template_data in templates:
+            template = DiscoursemeTemplate(
                 discourseme_id=discourseme.id,
-                p=item['p'],
-                surface=item['surface']
-            ))
-        db.session.commit()
+                language=template_data["language"],
+                register=template_data.get("register"),
+                name=template_data.get("name"),
+                comment=template_data.get("comment"),
+            )
+            db.session.add(template)
+            db.session.flush()
 
+            for item in template_data.get("items", []):
+                db.session.add(
+                    DiscoursemeTemplateItem(
+                        template_id=template.id,
+                        p=item.get("p"),
+                        surface=item.get("surface"),
+                        cqp_query=item.get("cqp_query"),
+                    )
+                )
+
+    # patch scalar attributes
     for attr, value in json_data.items():
         setattr(discourseme, attr, value)
 
     db.session.commit()
 
-    return DiscoursemeOut().dump(discourseme), 200
+    return discourseme, 200
 
 
 # @bp.post('/<discourseme_id>/template')
@@ -253,10 +344,12 @@ def patch_discourseme(discourseme_id, json_data):
 ################
 @bp.cli.command('import')
 @click.option('--path_in', default='discoursemes.tsv')
+@click.option('--language', default='de')
+@click.option('--register', default='standard')
 @click.option('--no_constellation', is_flag=True, default=False)
-def import_discoursemes_cmd(path_in, no_constellation):
+def import_discoursemes_cmd(path_in, language, register, no_constellation):
 
-    import_discoursemes(path_in, username='admin', create_constellation=not no_constellation)
+    import_discoursemes(path_in, language, register, username='admin', create_constellation=not no_constellation)
 
 
 @bp.cli.command('export')

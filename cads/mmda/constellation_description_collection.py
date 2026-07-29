@@ -19,9 +19,10 @@ from .constellation_description_collocation import (
     ConstellationCollocationIn, ConstellationCollocationOut, get_collo_items,
     get_or_create_coll)
 from .database import (Constellation, ConstellationDescription,
-                       ConstellationDescriptionCollection, Discourseme,
-                       DiscoursemeDescription, DiscoursemeTemplateItems)
-from .discourseme import DiscoursemeIDs, DiscoursemeIn, DiscoursemeOut
+                       ConstellationDescriptionCollection,
+                       Discourseme, DiscoursemeDescription,
+                       DiscoursemeTemplate, DiscoursemeTemplateItem)
+from .discourseme import DiscoursemeIDsSchema, DiscoursemeInSchema, DiscoursemeOutSchema
 from .discourseme_description import discourseme_template_to_description
 
 bp = APIBlueprint('collection', __name__, url_prefix='/collection/')
@@ -429,7 +430,7 @@ def get_or_create_ufa(constellation_id, collection_id, json_data, query_data):
 
 
 @bp.patch('/<collection_id>/add-discoursemes')
-@bp.input(DiscoursemeIDs, location='json')
+@bp.input(DiscoursemeIDsSchema, location='json')
 @bp.output(ConstellationDescriptionCollectionOut)
 @bp.auth_required(auth)
 def patch_collection_add_discourseme(constellation_id, collection_id, json_data):
@@ -474,7 +475,7 @@ def patch_collection_add_discourseme(constellation_id, collection_id, json_data)
 
 
 @bp.patch('/<collection_id>/remove-discoursemes')
-@bp.input(DiscoursemeIDs, location='json')
+@bp.input(DiscoursemeIDsSchema, location='json')
 @bp.output(ConstellationDescriptionCollectionOut)
 @bp.auth_required(auth)
 def patch_collection_remove_discourseme(constellation_id, collection_id, json_data):
@@ -510,116 +511,244 @@ def patch_collection_remove_discourseme(constellation_id, collection_id, json_da
 
 
 @bp.post('/<collection_id>/discourseme-description')
-@bp.input(DiscoursemeIn)
-@bp.output(DiscoursemeOut)
+@bp.input(DiscoursemeInSchema)
+@bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def post_items_into_collection(constellation_id, collection_id, json_data):
-    """convenience function for creating a new discourseme incl. description during an analysis (e.g. drag & drop on semantic map)
+    """Convenience function for creating a new discourseme incl. descriptions during an analysis.
+
+    E.g. drag & drop on semantic map.
 
     (1) create a discourseme with provided items
     (2) create a suitable description in the constellation description corpus
     (3) link discourseme to constellation
     (4) link discourseme description and constellation description
-
     """
 
-    constellation = db.get_or_404(Constellation, constellation_id)
-    collection = db.get_or_404(ConstellationDescriptionCollection, collection_id)
+    constellation = db.get_or_404(
+        Constellation,
+        constellation_id
+    )
+
+    collection = db.get_or_404(
+        ConstellationDescriptionCollection,
+        collection_id
+    )
 
     # create discourseme
     discourseme = Discourseme(
         user_id=auth.current_user.id,
         name=json_data.get('name'),
+        comment=json_data.get('comment'),
     )
+
     db.session.add(discourseme)
-    db.session.commit()
+    db.session.flush()
 
-    # we also create template here to easily use in 'discourseme_template_to_description()'
-    for item in json_data.get('template'):
-        db.session.add(DiscoursemeTemplateItems(
-            discourseme_id=discourseme.id,
-            p=item['p'],
-            surface=item['surface']
-        ))
-    db.session.commit()
-
-    # link discourseme to constellation
-    constellation.discoursemes.append(discourseme)
-    db.session.commit()
+    # create templates for all language/register combinations represented in the collection
+    templates = {}
 
     for description in collection.constellation_descriptions:
-        # create discourseme description
-        discourseme_description = discourseme_template_to_description(
-            discourseme, [], description.corpus_id, description.subcorpus_id, description.s, description.match_strategy
+
+        corpus = description.corpus
+
+        key = (
+            corpus.language,
+            corpus.register,
         )
 
-        # link discourseme_description to constellation description
-        description.discourseme_descriptions.append(discourseme_description)
-        db.session.commit()
+        if key not in templates:
 
-    return DiscoursemeOut().dump(discourseme), 200
+            template = DiscoursemeTemplate(
+                discourseme_id=discourseme.id,
+                language=corpus.language,
+                register=corpus.register,
+            )
+
+            db.session.add(template)
+            db.session.flush()
+
+            templates[key] = template
+
+        else:
+            template = templates[key]
+
+        for template_item in json_data.get('templates', []):
+            for item in template_item.get('items', []):
+
+                existing = DiscoursemeTemplateItem.query.filter_by(
+                    template_id=template.id,
+                    p=item.get('p'),
+                    surface=item.get('surface'),
+                ).first()
+
+                if not existing:
+                    db.session.add(
+                        DiscoursemeTemplateItem(
+                            template_id=template.id,
+                            p=item.get('p'),
+                            surface=item.get('surface'),
+                            cqp_query=item.get('cqp_query'),
+                        )
+                    )
+
+    db.session.flush()
+
+    # link discourseme to constellation
+    if discourseme not in constellation.discoursemes:
+        constellation.discoursemes.append(discourseme)
+
+    # create/link discourseme descriptions
+    for description in collection.constellation_descriptions:
+
+        discourseme_description = discourseme_template_to_description(
+            discourseme,
+            [],
+            description.corpus_id,
+            description.subcorpus_id,
+            description.s,
+            description.match_strategy,
+        )
+
+        if discourseme_description not in description.discourseme_descriptions:
+            description.discourseme_descriptions.append(
+                discourseme_description
+            )
+
+    db.session.commit()
+
+    return discourseme, 200
 
 
 @bp.put('/<description_id>/discourseme-description')
-@bp.input(DiscoursemeIn)
-@bp.output(DiscoursemeOut)
+@bp.input(DiscoursemeInSchema)
+@bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def put_items_into_collection(constellation_id, collection_id, json_data):
-    """same as corresponding POST but will only create if discourseme with the same name does not exist.
+    """Same as corresponding POST but will only create if discourseme with the same name does not exist."""
 
-    """
+    constellation = db.get_or_404(
+        Constellation,
+        constellation_id
+    )
 
-    constellation = db.get_or_404(Constellation, constellation_id)
-    collection = db.get_or_404(ConstellationDescriptionCollection, collection_id)
+    collection = db.get_or_404(
+        ConstellationDescriptionCollection,
+        collection_id
+    )
+
     discourseme_name = json_data.get('name')
-    discourseme = Discourseme.query.filter_by(name=discourseme_name).first()
+
+    discourseme = Discourseme.query.filter_by(
+        name=discourseme_name
+    ).first()
 
     if not discourseme:
-        current_app.logger.debug(f'discourseme named "{discourseme_name}" does not exist, creating and linking')
+
+        current_app.logger.debug(
+            f'discourseme named "{discourseme_name}" does not exist, creating and linking'
+        )
 
         # create discourseme
         discourseme = Discourseme(
             user_id=auth.current_user.id,
             name=discourseme_name,
+            comment=json_data.get('comment'),
         )
-        db.session.add(discourseme)
-        db.session.commit()
 
-        # we also create template here to easily use in 'discourseme_template_to_description()'
-        for item in json_data.get('template'):
-            db.session.add(DiscoursemeTemplateItems(
-                discourseme_id=discourseme.id,
-                p=item['p'],
-                surface=item['surface']
-            ))
-        db.session.commit()
+        db.session.add(discourseme)
+        db.session.flush()
+
+        # create templates for all language/register combinations
+        # occurring in the collection
+        templates = {}
+
+        for description in collection.constellation_descriptions:
+
+            corpus = description.corpus
+
+            key = (
+                corpus.language,
+                corpus.register,
+            )
+
+            if key not in templates:
+
+                template = DiscoursemeTemplate(
+                    discourseme_id=discourseme.id,
+                    language=corpus.language,
+                    register=corpus.register,
+                )
+
+                db.session.add(template)
+                db.session.flush()
+
+                templates[key] = template
+
+            else:
+                template = templates[key]
+
+            # add template items
+            for item in json_data.get('template', []):
+
+                existing = DiscoursemeTemplateItem.query.filter_by(
+                    template_id=template.id,
+                    p=item.get('p'),
+                    surface=item.get('surface'),
+                ).first()
+
+                if not existing:
+                    db.session.add(
+                        DiscoursemeTemplateItem(
+                            template_id=template.id,
+                            p=item.get('p'),
+                            surface=item.get('surface'),
+                            cqp_query=item.get('cqp_query'),
+                        )
+                    )
+
+        db.session.flush()
 
     else:
-        current_app.logger.debug(f'discourseme named "{discourseme_name}" already exists')
 
+        current_app.logger.debug(
+            f'discourseme named "{discourseme_name}" already exists'
+        )
+
+    # link discourseme to constellation
     if discourseme not in constellation.discoursemes:
-        # link discourseme to constellation
         constellation.discoursemes.append(discourseme)
-        db.session.commit()
 
+    # create/link discourseme descriptions
     for description in collection.constellation_descriptions:
 
-        desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
-                                                      corpus_id=description.corpus_id,
-                                                      subcorpus_id=description.subcorpus_id,
-                                                      filter_sequence=None,
-                                                      s=description.s,
-                                                      match_strategy=description.match_strategy).first()
+        desc = DiscoursemeDescription.query.filter_by(
+            discourseme_id=discourseme.id,
+            corpus_id=description.corpus_id,
+            subcorpus_id=description.subcorpus_id,
+            filter_sequence=None,
+            s=description.s,
+            match_strategy=description.match_strategy,
+        ).first()
 
         if not desc:
-            # create discourseme description
+
+            current_app.logger.debug(
+                f'creating description for discourseme "{discourseme.name}"'
+            )
+
             desc = discourseme_template_to_description(
-                discourseme, [], description.corpus_id, description.subcorpus_id, description.s, description.match_strategy
+                discourseme,
+                [],
+                description.corpus_id,
+                description.subcorpus_id,
+                description.s,
+                description.match_strategy,
             )
 
         if desc not in description.discourseme_descriptions:
-            # link discourseme_description to constellation description
             description.discourseme_descriptions.append(desc)
-            db.session.commit()
 
-    return DiscoursemeOut().dump(discourseme), 200
+    db.session.commit()
+
+    return discourseme, 200

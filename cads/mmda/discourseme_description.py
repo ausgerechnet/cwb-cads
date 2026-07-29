@@ -22,9 +22,11 @@ from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
 from ..users import auth
 from ..utils import paginate_dataframe
 from .database import (CollocationDiscoursemeItem, Discourseme,
-                       DiscoursemeDescription, DiscoursemeDescriptionItems,
-                       DiscoursemeTemplateItems, KeywordDiscoursemeItem)
-from .discourseme import DiscoursemeItem
+                       DiscoursemeTemplate, DiscoursemeDescription,
+                       DiscoursemeDescriptionItems,
+                       KeywordDiscoursemeItem,
+                       DiscoursemeTemplateItem)
+from .discourseme import DiscoursemeItemSchema
 from ..library import import_wordlist
 
 bp = APIBlueprint('description', __name__, url_prefix='/<discourseme_id>/description', cli_group='discourseme')
@@ -81,7 +83,7 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
         os.makedirs(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists'), exist_ok=True)
         with open(wl_path, mode='wt') as f:
             f.write("\n".join(wordlists[p]))
-        import_wordlist(wl_path, corpus.id, comment="temp discourseme wl") # import wordlist into DB to not break library versioning/name mangling
+        import_wordlist(wl_path, corpus.id, comment="temp discourseme wl")  # import wordlist into DB to not break library versioning/name mangling
         queries.append(f"[{p} = ${wl_name}]")
 
     # create joint query
@@ -154,37 +156,83 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
     return query
 
 
-def discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy):
-    """create discourseme description from template or items, then create query
+def discourseme_template_to_description(
+    discourseme,
+    items,
+    corpus_id,
+    subcorpus_id,
+    s_query,
+    match_strategy,
+):
+    """Create discourseme description from template or items, then create query."""
 
-    """
+    corpus = db.get_or_404(Corpus, corpus_id)
 
-    # items from template?
+    # If no items were provided, load them from matching template
     if len(items) == 0:
-        if len(discourseme.template) == 0:
+
+        template = discourseme.get_template(
+            language=corpus.language,
+            register=corpus.register,
+        )
+
+        # Generate template if none exists
+        if template is None:
             discourseme.generate_template()
-        items = [{'surface': item.surface, 'p': item.p, 'cqp_query': item.cqp_query} for item in discourseme.template]
 
-    p_default = db.get_or_404(Corpus, corpus_id).p_default
+            template = discourseme.get_template(
+                language=corpus.language,
+                register=corpus.register,
+            )
 
-    # description
+        if template is None:
+            raise ValueError(
+                "No discourseme template available for "
+                f"language='{corpus.language}', "
+                f"register='{corpus.register}'"
+            )
+
+        items = [
+            {
+                "surface": item.surface,
+                "p": item.p,
+                "cqp_query": item.cqp_query,
+            }
+            for item in template.items
+        ]
+
+    # Create description
     description = DiscoursemeDescription(
         discourseme_id=discourseme.id,
         corpus_id=corpus_id,
         subcorpus_id=subcorpus_id,
         s=s_query,
-        match_strategy=match_strategy
+        match_strategy=match_strategy,
     )
+
     db.session.add(description)
-    db.session.commit()
+    db.session.flush()
 
+    # Create description items
     for item in items:
-        p = p_default if (item['p'] is None or len(item['p']) == 0) else item['p']
-        description.items.append(DiscoursemeDescriptionItems(discourseme_description_id=description.id,
-                                                             p=p,
-                                                             surface=item['surface']))
+
+        p = (
+            corpus.p_default
+            if item.get("p") is None or item.get("p") == ""
+            else item["p"]
+        )
+
+        description.items.append(
+            DiscoursemeDescriptionItems(
+                discourseme_description_id=description.id,
+                p=p,
+                surface=item["surface"],
+            )
+        )
+
     db.session.commit()
 
+    # Create CQP query
     description.create_query
 
     return description
@@ -204,7 +252,7 @@ class DiscoursemeDescriptionIn(Schema):
     s = String(required=False)
     match_strategy = String(required=False, load_default='longest', validate=OneOf(['longest', 'shortest', 'standard']))
 
-    items = Nested(DiscoursemeItem(many=True), required=False, allow_none=True, load_default=[])
+    items = Nested(DiscoursemeItemSchema(many=True), required=False, allow_none=True, load_default=[])
 
 
 class DiscoursemeDescriptionSimilarIn(Schema):
@@ -238,7 +286,7 @@ class DiscoursemeDescriptionOut(Schema):
     query_id = Integer(required=True)
     s = String(required=True)
     match_strategy = String(required=True)
-    items = Nested(DiscoursemeItem(many=True), required=True, dump_default=[])
+    items = Nested(DiscoursemeItemSchema(many=True), required=True, dump_default=[])
 
 
 class DiscoursemeScoresOut(Schema):
@@ -273,66 +321,112 @@ class DiscoursemeCoordinatesOut(Schema):
 
 @bp.post('/')
 @bp.input(DiscoursemeDescriptionIn)
-@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
+@bp.input(
+    {'update_discourseme': Boolean(required=False, load_default=True)},
+    location='query',
+    arg_name='query_data'
+)
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def create_description(discourseme_id, json_data, query_data):
     """Create description of discourseme in corpus.
 
     Will automatically create query (from provided items or template).
-
     """
 
     discourseme = db.get_or_404(Discourseme, discourseme_id)
 
     corpus_id = json_data.get('corpus_id')
     corpus = db.get_or_404(Corpus, corpus_id)
+
     subcorpus_id = json_data.get('subcorpus_id')
-    # subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
 
     s_query = json_data.get('s', corpus.s_default)
     match_strategy = json_data.get('match_strategy')
 
-    items = json_data.get('items', [])  # will use discourseme template if not given
+    items = json_data.get('items', [])
 
-    description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
+    description = discourseme_template_to_description(
+        discourseme,
+        items,
+        corpus_id,
+        subcorpus_id,
+        s_query,
+        match_strategy,
+    )
 
     # update discourseme template
-    if query_data['update_discourseme']:
-        current_app.logger.debug('updating discourseme template')
-        for item in items:
-            db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=item['p'], surface=item['surface']).first()
-            if db_item:
-                current_app.logger.debug(f'item {item["p"]}="{item["surface"]}" already in template')
-            else:
-                db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=item['p'], surface=item['surface'])
-                db.session.add(db_item)
-                db.session.commit()
+    if query_data['update_discourseme'] and items:
 
-    return DiscoursemeDescriptionOut().dump(description), 200
+        current_app.logger.debug(
+            'updating discourseme template'
+        )
+
+        template = discourseme.get_template(
+            language=corpus.language,
+            register=corpus.register,
+        )
+
+        if template is None:
+            template = DiscoursemeTemplate(
+                discourseme_id=discourseme.id,
+                language=corpus.language,
+                register=corpus.register,
+            )
+            db.session.add(template)
+            db.session.flush()
+
+        for item in items:
+
+            db_item = DiscoursemeTemplateItem.query.filter_by(
+                template_id=template.id,
+                p=item.get('p'),
+                surface=item.get('surface'),
+            ).first()
+
+            if db_item:
+                current_app.logger.debug(
+                    f'item {item.get("p")}="{item.get("surface")}" already in template'
+                )
+
+            else:
+                db_item = DiscoursemeTemplateItem(
+                    template_id=template.id,
+                    p=item.get('p'),
+                    surface=item.get('surface'),
+                    cqp_query=item.get('cqp_query'),
+                )
+
+                db.session.add(db_item)
+
+        db.session.commit()
+
+    return description, 200
 
 
 @bp.put('/')
 @bp.input(DiscoursemeDescriptionIn)
-@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
+@bp.input(
+    {'update_discourseme': Boolean(required=False, load_default=True)},
+    location='query',
+    arg_name='query_data'
+)
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def get_or_create_description(discourseme_id, json_data, query_data):
-    """Same as corresponding POST but will only create description if it does not already exist.
-
-    """
+    """Same as corresponding POST but will only create description if it does not already exist."""
 
     discourseme = db.get_or_404(Discourseme, discourseme_id)
 
     corpus_id = json_data.get('corpus_id')
     corpus = db.get_or_404(Corpus, corpus_id)
+
     subcorpus_id = json_data.get('subcorpus_id')
-    # subcorpus = db.get_or_404(SubCorpus, subcorpus_id) if subcorpus_id else None
 
     s_query = json_data.get('s', corpus.s_default)
     match_strategy = json_data.get('match_strategy')
 
-    items = json_data.get('items', [])  # will use discourseme template if not given
+    items = json_data.get('items', [])
 
     description = DiscoursemeDescription.query.filter(
         DiscoursemeDescription.discourseme_id == discourseme_id,
@@ -344,24 +438,73 @@ def get_or_create_description(discourseme_id, json_data, query_data):
     ).first()
 
     if not description:
-        current_app.logger.debug("description does not exist, creating")
-    
-        description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
-        # update discourseme template
-        if query_data['update_discourseme']:
-            current_app.logger.debug('updating discourseme template')
-            for item in items:
-                db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=item['p'], surface=item['surface']).first()
-                if db_item:
-                    current_app.logger.debug(f'item {item["p"]}="{item["surface"]}" already in template')
-                else:
-                    db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=item['p'], surface=item['surface'])
-                    db.session.add(db_item)
-                    db.session.commit()
-    else:
-        current_app.logger.debug("description already exists")
 
-    return DiscoursemeDescriptionOut().dump(description), 200
+        current_app.logger.debug(
+            "description does not exist, creating"
+        )
+
+        description = discourseme_template_to_description(
+            discourseme,
+            items,
+            corpus_id,
+            subcorpus_id,
+            s_query,
+            match_strategy,
+        )
+
+        # update discourseme template
+        if query_data['update_discourseme'] and items:
+
+            current_app.logger.debug(
+                "updating discourseme template"
+            )
+
+            template = discourseme.get_template(
+                language=corpus.language,
+                register=corpus.register,
+            )
+
+            if template is None:
+                template = DiscoursemeTemplate(
+                    discourseme_id=discourseme.id,
+                    language=corpus.language,
+                    register=corpus.register,
+                )
+
+                db.session.add(template)
+                db.session.flush()
+
+            for item in items:
+
+                db_item = DiscoursemeTemplateItem.query.filter_by(
+                    template_id=template.id,
+                    p=item.get('p'),
+                    surface=item.get('surface'),
+                ).first()
+
+                if db_item:
+                    current_app.logger.debug(
+                        f'item {item.get("p")}="{item.get("surface")}" already in template'
+                    )
+
+                else:
+                    db.session.add(
+                        DiscoursemeTemplateItem(
+                            template_id=template.id,
+                            p=item.get('p'),
+                            surface=item.get('surface'),
+                            cqp_query=item.get('cqp_query'),
+                        )
+                    )
+
+            db.session.commit()
+
+    else:
+        current_app.logger.debug(
+            "description already exists"
+        )
+
+    return description, 200
 
 
 @bp.get('/')
@@ -525,79 +668,163 @@ def description_get_meta(discourseme_id, description_id, query_data):
 
 @bp.patch('/<description_id>/add-items')
 @bp.input(DiscoursemeItemsIn)
-@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
+@bp.input(
+    {'update_discourseme': Boolean(required=False, load_default=True)},
+    location='query',
+    arg_name='query_data'
+)
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def description_patch_add(discourseme_id, description_id, json_data, query_data):
-    """Patch discourseme description: add item(s) to description.
-
-    """
+    """Patch discourseme description: add item(s) to description."""
 
     discourseme = db.get_or_404(Discourseme, discourseme_id)
     description = db.get_or_404(DiscoursemeDescription, description_id)
+
     p = json_data.get('p')
-    items = json_data.get('items')
+    items = json_data.get('items', [])
+
+    corpus = description.corpus
+
+    # find corpus-specific discourseme template
+    template = None
+    if query_data['update_discourseme']:
+        template = discourseme.get_template(
+            language=corpus.language,
+            register=corpus.register,
+        )
+
+        if template is None:
+            template = DiscoursemeTemplate(
+                discourseme_id=discourseme.id,
+                language=corpus.language,
+                register=corpus.register,
+            )
+            db.session.add(template)
+            db.session.flush()
 
     for surface in items:
 
         # update discourseme template
         if query_data['update_discourseme']:
-            current_app.logger.debug('updating discourseme template')
-            db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=p, surface=surface).first()
+
+            db_item = DiscoursemeTemplateItem.query.filter_by(
+                template_id=template.id,
+                p=p,
+                surface=surface,
+            ).first()
+
             if db_item:
-                current_app.logger.debug(f'item {p}="{surface}" already in template')
+                current_app.logger.debug(
+                    f'item {p}="{surface}" already in template'
+                )
+
             else:
-                db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=p, surface=surface)
-                db.session.add(db_item)
-                db.session.commit()
+                db.session.add(
+                    DiscoursemeTemplateItem(
+                        template_id=template.id,
+                        p=p,
+                        surface=surface,
+                    )
+                )
 
         # update discourseme description
-        db_item = DiscoursemeDescriptionItems.query.filter_by(discourseme_description_id=description.id, p=p, surface=surface).first()
+        db_item = DiscoursemeDescriptionItems.query.filter_by(
+            discourseme_description_id=description.id,
+            p=p,
+            surface=surface,
+        ).first()
+
         if db_item:
-            current_app.logger.debug(f'item {p}="{surface}" already in description')
+            current_app.logger.debug(
+                f'item {p}="{surface}" already in description'
+            )
+
         else:
-            db_item = DiscoursemeDescriptionItems(discourseme_description_id=description.id, p=p, surface=surface)
-            db.session.add(db_item)
-            db.session.commit()
+            db.session.add(
+                DiscoursemeDescriptionItems(
+                    discourseme_description_id=description.id,
+                    p=p,
+                    surface=surface,
+                )
+            )
+
             delete_description_children(description)
 
-    return DiscoursemeDescriptionOut().dump(description), 200
+    db.session.commit()
+
+    return description, 200
 
 
 @bp.patch('/<description_id>/remove-items')
 @bp.input(DiscoursemeItemsIn)
-@bp.input({'update_discourseme': Boolean(required=False, load_default=True)}, location='query', arg_name='query_data')
+@bp.input(
+    {'update_discourseme': Boolean(required=False, load_default=True)},
+    location='query',
+    arg_name='query_data'
+)
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
 def description_patch_remove(discourseme_id, description_id, json_data, query_data):
-    """Patch discourseme description: remove item(s) from description.
-
-    """
+    """Patch discourseme description: remove item(s) from description."""
 
     discourseme = db.get_or_404(Discourseme, discourseme_id)
     description = db.get_or_404(DiscoursemeDescription, description_id)
+
     p = json_data.get('p')
-    items = json_data.get('items')
+    items = json_data.get('items', [])
+
+    corpus = description.corpus
+
+    # find corpus-specific discourseme template
+    template = None
+    if query_data['update_discourseme']:
+        template = discourseme.get_template(
+            language=corpus.language,
+            register=corpus.register,
+        )
 
     for surface in items:
+
         # update discourseme template
         if query_data['update_discourseme']:
-            current_app.logger.debug('updating discourseme template')
-            db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=p, surface=surface).first()
-            if not db_item:
-                current_app.logger.debug('item {p}="{surface}" item not in template')
+
+            if template is None:
+                current_app.logger.debug(
+                    "no matching discourseme template found"
+                )
+
             else:
-                db.session.delete(db_item)
-                db.session.commit()
+                db_item = DiscoursemeTemplateItem.query.filter_by(
+                    template_id=template.id,
+                    p=p,
+                    surface=surface,
+                ).first()
+
+                if not db_item:
+                    current_app.logger.debug(
+                        f'item {p}="{surface}" not in template'
+                    )
+
+                else:
+                    db.session.delete(db_item)
 
         # update discourseme description
-        db_item = DiscoursemeDescriptionItems.query.filter_by(discourseme_description_id=description.id, p=p, surface=surface).first()
-        if not db_item:
-            current_app.logger.debug('item {p}="{surface}" item not in description')
-            continue
-        else:
-            db.session.delete(db_item)
-            db.session.commit()
-            delete_description_children(description)
+        db_item = DiscoursemeDescriptionItems.query.filter_by(
+            discourseme_description_id=description.id,
+            p=p,
+            surface=surface,
+        ).first()
 
-    return DiscoursemeDescriptionOut().dump(description), 200
+        if not db_item:
+            current_app.logger.debug(
+                f'item {p}="{surface}" not in description'
+            )
+            continue
+
+        db.session.delete(db_item)
+        delete_description_children(description)
+
+    db.session.commit()
+
+    return description, 200

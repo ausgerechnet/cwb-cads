@@ -24,7 +24,6 @@ constellation_discourseme_description = db.Table(
 class Discourseme(db.Model):
     """Discourseme
 
-
     """
 
     __table_args__ = {'sqlite_autoincrement': True}
@@ -36,29 +35,156 @@ class Discourseme(db.Model):
     name = db.Column(db.Unicode(255), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
 
-    template = db.RelationshipProperty("DiscoursemeTemplateItems", backref="discourseme", cascade='all, delete')
+    templates = db.relationship(
+        "DiscoursemeTemplate",
+        backref="discourseme",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
 
-    descriptions = db.relationship("DiscoursemeDescription", backref="discourseme", passive_deletes=True, cascade='all, delete')
+    descriptions = db.relationship(
+        "DiscoursemeDescription",
+        backref="discourseme",
+        cascade='all, delete',
+        passive_deletes=True,
+    )
 
-    def generate_template(self, p='word'):
-        # items = set(self.template_items)
-        # for _query in self.queries:
-        #     for breakdown in _query.breakdowns:
-        #         if breakdown.p == p:
-        #             items = items.union(set([cqp_escape(item.item) for item in breakdown.items]))
-        # items = sorted(list(items))
-        raise NotImplementedError("generate template from descriptions")
+    def get_template(self, language, register):
+        """Return template matching language and register."""
+
+        return next(
+            (
+                template
+                for template in self.templates
+                if template.language == language
+                and template.register == register
+            ),
+            None,
+        )
+
+    def generate_template(self, p=None):
+        """Generate templates from existing discourseme descriptions.
+
+        Creates one template per language/register combination for which
+        descriptions exist.
+        """
+
+        templates = {}
+
+        # collect descriptions grouped by language/register
+        for description in self.descriptions:
+
+            corpus = description.corpus
+
+            key = (
+                corpus.language,
+                corpus.register,
+            )
+
+            if key not in templates:
+                templates[key] = set()
+
+            for item in description.items:
+
+                if item.p == p:
+                    templates[key].add(
+                        (
+                            item.p,
+                            item.surface,
+                        )
+                    )
+
+        # create/update templates
+        for (language, register), items in templates.items():
+
+            template = self.get_template(
+                language=language,
+                register=register,
+            )
+
+            if template is None:
+                template = DiscoursemeTemplate(
+                    discourseme_id=self.id,
+                    language=language,
+                    register=register,
+                )
+
+                db.session.add(template)
+                db.session.flush()
+
+            existing_items = {
+                (
+                    item.p,
+                    item.surface,
+                )
+                for item in template.items
+            }
+
+            for item_p, surface in sorted(items):
+
+                if (item_p, surface) not in existing_items:
+                    db.session.add(
+                        DiscoursemeTemplateItem(
+                            template_id=template.id,
+                            p=item_p,
+                            surface=surface,
+                        )
+                    )
+
+        db.session.commit()
 
 
-class DiscoursemeTemplateItems(db.Model):
-    """Discourseme Template Items
+class DiscoursemeTemplate(db.Model):
+    """Discourseme template
+
+    """
+
+    __table_args__ = (          # we enforce uniqueness wrt to language and register
+        db.UniqueConstraint(
+            "discourseme_id",
+            "language",
+            "register",
+            name="uq_discourseme_template"
+        ),
+        {"sqlite_autoincrement": True},
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    discourseme_id = db.Column(
+        db.Integer,
+        db.ForeignKey("discourseme.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    name = db.Column(db.Unicode, nullable=True)
+    language = db.Column(db.Unicode, nullable=False)
+    register = db.Column(db.Unicode, nullable=True)
+    comment = db.Column(db.Unicode, nullable=True)
+
+    items = db.relationship(
+        "DiscoursemeTemplateItem",
+        backref="template",
+        cascade="all, delete",
+        passive_deletes=True,
+    )
+
+
+class DiscoursemeTemplateItem(db.Model):
+    """Items belonging to a discourseme template
 
     """
 
     __table_args__ = {'sqlite_autoincrement': True}
 
-    id = db.Column(db.Integer(), primary_key=True)
-    discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
+    id = db.Column(db.Integer, primary_key=True)
+
+    template_id = db.Column(
+        db.Integer,
+        db.ForeignKey("discourseme_template.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
     p = db.Column(db.String(), nullable=True)
     surface = db.Column(db.String(), nullable=True)
     cqp_query = db.Column(db.String(), nullable=True)

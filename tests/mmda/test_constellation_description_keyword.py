@@ -170,8 +170,17 @@ def test_constellation_keyword_empty_queries(client, auth):
                                   json={
                                       'name': 'Bereicherung',
                                       'comment': 'Testdiskursem ohne Treffer in Referenz',
-                                      'template': [
-                                          {'surface': 'Bereicherung2', 'p': 'lemma'}
+                                      'templates': [
+                                          {
+                                              'language': 'de',
+                                              'register': 'standard',
+                                              'items': [
+                                                  {
+                                                      'surface': 'Bereicherung2',
+                                                      'p': 'lemma'
+                                                  }
+                                              ]
+                                          }
                                       ],
                                   },
                                   content_type='application/json',

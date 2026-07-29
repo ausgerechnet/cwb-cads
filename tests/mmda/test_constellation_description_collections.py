@@ -192,8 +192,17 @@ def test_constellation_description_collection_ufa(client, auth):
                                    json={
                                        'name': 'Modalverben',
                                        'comment': 'Testdiskursem mit vielen Treffern',
-                                       'template': [
-                                           {'surface': 'von', 'p': 'lemma'}
+                                       'templates': [
+                                           {
+                                               'language': 'de',
+                                               'register': 'standard',
+                                               'items': [
+                                                   {
+                                                       'surface': 'von',
+                                                       'p': 'lemma'
+                                                    }
+                                               ]
+                                           }
                                        ],
                                    },
                                    content_type='application/json',
@@ -232,7 +241,7 @@ def test_constellation_description_collection_ufa(client, auth):
         # pprint(collocation_collection.json)
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_description_collection_ufa_empty(client, auth):
 
     auth_header = auth.login()
@@ -269,8 +278,14 @@ def test_constellation_description_collection_ufa_empty(client, auth):
                                   json={
                                       'name': 'Wenig',
                                       'comment': 'Testdiskursem mit wenigen Treffern',
-                                      'template': [
-                                          {'surface': 'Kraft'}
+                                      'templates': [
+                                          {
+                                              'language': 'de',
+                                              'register': 'standard',
+                                              'items': [
+                                                  {'surface': 'Kraft'}
+                                              ]
+                                          }
                                       ],
                                    },
                                   content_type='application/json',
@@ -343,9 +358,15 @@ def test_constellation_description_collection_add_remove_discoursemes(client, au
                                   json={
                                       'name': 'Kraft',
                                       'comment': 'Testdiskursem mit wenigen Treffern',
-                                      'template': [
-                                          {'surface': 'Kraft'}
-                                      ],
+                                      'templates': [
+                                          {
+                                              'language': 'de',
+                                              'register': 'standard',
+                                              'items': [
+                                                  {'surface': 'Kraft'}
+                                              ]
+                                          }
+                                      ]
                                    },
                                   content_type='application/json',
                                   headers=auth_header)
@@ -355,9 +376,15 @@ def test_constellation_description_collection_add_remove_discoursemes(client, au
                                    json={
                                        'name': 'Wollen',
                                        'comment': 'Testdiskursem mit einigen Treffern',
-                                       'template': [
-                                          {'surface': 'wollen'}
-                                       ],
+                                       'templates': [
+                                           {
+                                               'language': 'de',
+                                               'register': 'standard',
+                                               'items': [
+                                                   {'surface': 'wollen'}
+                                               ]
+                                           }
+                                       ]
                                    },
                                    content_type='application/json',
                                    headers=auth_header)
@@ -443,8 +470,14 @@ def test_constellation_description_collection_add_new_discourseme(client, auth):
                                   json={
                                       'name': 'Kraft',
                                       'comment': 'Testdiskursem mit wenigen Treffern',
-                                      'template': [
-                                          {'surface': 'Kraft'}
+                                      'templates': [
+                                          {
+                                              'language': 'de',
+                                              'register': 'standard',
+                                              'items': [
+                                                  {'surface': 'Kraft'}
+                                              ]
+                                          }
                                       ],
                                    },
                                   content_type='application/json',
@@ -477,14 +510,21 @@ def test_constellation_description_collection_add_new_discourseme(client, auth):
                                           collection_id=collection.json['id']),
                                   json={
                                       'name': 'Test',
-                                      'template': [{'p': 'lemma', 'surface': 'wollen'}]
+                                      'templates': [
+                                          {
+                                              'language': 'de',
+                                              'register': 'standard',
+                                              'items': [
+                                                  {'p': 'lemma', 'surface': 'wollen'}
+                                              ]
+                                          }
+                                      ]
                                   },
                                   headers=auth_header)
-        assert collection.status_code == 200
+        assert discourseme.status_code == 200
 
         # check collection
         collection = client.get(url_for('mmda.constellation.description.collection.get_constellation_description_collection',
                                         constellation_id=constellation.json['id'], collection_id=collection.json['id']),
                                 headers=auth_header)
-        assert collection.status_code == 200
         assert len(collection.json['constellation_descriptions'][0]['discourseme_descriptions']) == 2

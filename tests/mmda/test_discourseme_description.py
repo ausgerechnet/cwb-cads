@@ -1,5 +1,5 @@
 from flask import url_for
-# import pytest
+import pytest
 
 
 def test_discourseme_create_description(client, auth):
@@ -61,7 +61,7 @@ def test_discourseme_get_breakdown(client, auth):
 #         assert lines.status_code == 200
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_discourseme_patch_add_remove(client, auth):
 
     auth_header = auth.login()
@@ -102,17 +102,32 @@ def test_get_similar(client, auth):
 
     with client:
         client.get("/")
-        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
-                                  json={
-                                      'name': 'Verben',
-                                      'comment': 'Testdiskursem',
-                                      'template': [
-                                          {'surface': 'gehen', 'p': 'lemma'},
-                                          {'surface': 'laufen', 'p': 'lemma'}
-                                      ],
-                                  },
-                                  content_type='application/json',
-                                  headers=auth_header)
+        discourseme = client.post(
+            url_for('mmda.discourseme.create_discourseme'),
+            json={
+                'name': 'Verben',
+                'comment': 'Testdiskursem',
+                'templates': [
+                    {
+                        'language': 'de',
+                        'register': 'standard',
+                        'items': [
+                            {
+                                'surface': 'gehen',
+                                'p': 'lemma'
+                            },
+                            {
+                                'surface': 'laufen',
+                                'p': 'lemma'
+                            }
+                        ]
+                    }
+                ],
+            },
+            content_type='application/json',
+            headers=auth_header
+        )
+
         assert discourseme.status_code == 200
 
         description = client.post(url_for('mmda.discourseme.description.create_description', discourseme_id=discourseme.json['id']),
@@ -166,30 +181,64 @@ def test_deletion(client, auth):
 
     with client:
         client.get("/")
-        discourseme = client.post(url_for('mmda.discourseme.create_discourseme'),
-                                  json={
-                                      'name': 'Modalverben',
-                                      'comment': 'Testdiskursem das gelöscht wird',
-                                      'template': [
-                                          {'surface': 'können', 'p': 'lemma'}
-                                      ],
-                                  },
-                                  content_type='application/json',
-                                  headers=auth_header)
+
+        discourseme = client.post(
+            url_for('mmda.discourseme.create_discourseme'),
+            json={
+                'name': 'Modalverben',
+                'comment': 'Testdiskursem das gelöscht wird',
+                'templates': [
+                    {
+                        'language': 'de',
+                        'register': 'standard',
+                        'items': [
+                            {
+                                'surface': 'können',
+                                'p': 'lemma'
+                            }
+                        ]
+                    }
+                ],
+            },
+            content_type='application/json',
+            headers=auth_header
+        )
+
         assert discourseme.status_code == 200
 
-        discourseme = client.get(url_for('mmda.discourseme.get_discourseme', discourseme_id=discourseme.json['id']),
-                                 headers=auth_header)
+        discourseme = client.get(
+            url_for(
+                'mmda.discourseme.get_discourseme',
+                discourseme_id=discourseme.json['id']
+            ),
+            headers=auth_header
+        )
+
         assert discourseme.status_code == 200
 
-        description = client.post(url_for('mmda.discourseme.description.create_description', discourseme_id=discourseme.json['id']),
-                                  content_type='application/json',
-                                  json={'corpus_id': 1},
-                                  headers=auth_header)
+        description = client.post(
+            url_for(
+                'mmda.discourseme.description.create_description',
+                discourseme_id=discourseme.json['id']
+            ),
+            content_type='application/json',
+            json={
+                'corpus_id': 1
+            },
+            headers=auth_header
+        )
+
         assert description.status_code == 200
 
-        client.delete(url_for('mmda.discourseme.delete_discourseme', discourseme_id=discourseme.json['id']),
-                      headers=auth_header)
+        response = client.delete(
+            url_for(
+                'mmda.discourseme.delete_discourseme',
+                discourseme_id=discourseme.json['id']
+            ),
+            headers=auth_header
+        )
+
+        assert response.status_code == 200
 
 
 # @pytest.mark.now

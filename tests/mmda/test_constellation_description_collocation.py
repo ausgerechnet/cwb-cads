@@ -712,8 +712,17 @@ def test_constellation_collocation_empty_queries(client, auth):
                                   json={
                                       'name': 'Bereicherung',
                                       'comment': 'Testdiskursem ohne Treffer in Referenz',
-                                      'template': [
-                                          {'surface': 'Bereicherung2', 'p': 'lemma'}
+                                      'templates': [
+                                          {
+                                              'language': 'de',
+                                              'register': 'standard',
+                                              'items': [
+                                                  {
+                                                      'surface': 'Bereicherung2',
+                                                      'p': 'lemma'
+                                                  }
+                                              ]
+                                          }
                                       ],
                                   },
                                   content_type='application/json',
@@ -898,8 +907,14 @@ def test_constellation_collocation_map_nan(client, auth):
                                   json={
                                       'name': 'Empty',
                                       'comment': 'Testdiskursem ohne Treffer',
-                                      'template': [
-                                          {'surface': 'naaaah', 'p': 'lemma'}
+                                      'templates': [
+                                          {
+                                              'language': 'de',
+                                              'register': 'standard',
+                                              'items': [
+                                                  {'surface': 'naaaah', 'p': 'lemma'}
+                                              ]
+                                          }
                                       ],
                                   },
                                   content_type='application/json',
@@ -1016,30 +1031,61 @@ def test_discourseme_creation(client, auth):
         #                           content_type='application/json',
         #                           headers=auth_header).json
 
-        spd = client.post(url_for('mmda.discourseme.create_discourseme'),
-                          json={
-                              'name': 'SPD',
-                              'template': [
-                                  {'surface': 'SPD'},
-                                  {'surface': 'Sozialdemokraten'}
-                              ]
-                          },
-                          content_type='application/json',
-                          headers=auth_header)
+        spd = client.post(
+            url_for('mmda.discourseme.create_discourseme'),
+            json={
+                'name': 'SPD',
+                'templates': [
+                    {
+                        'language': 'de',
+                        'register': 'standard',
+                        'items': [
+                            {
+                                'surface': 'SPD'
+                            },
+                            {
+                                'surface': 'Sozialdemokraten'
+                            }
+                        ]
+                    }
+                ]
+            },
+            content_type='application/json',
+            headers=auth_header
+        )
+
         assert spd.status_code == 200
 
-        union = client.post(url_for('mmda.discourseme.create_discourseme'),
-                            json={
-                                'name': 'Union',
-                                'template': [
-                                    {'surface': 'CDU', 'p': ''},
-                                    {'surface': 'CSU'},
-                                    {'surface': 'CDU/CSU'},
-                                    {'surface': 'Union'}
-                                ],
+        union = client.post(
+            url_for('mmda.discourseme.create_discourseme'),
+            json={
+                'name': 'Union',
+                'templates': [
+                    {
+                        'language': 'de',
+                        'register': 'standard',
+                        'items': [
+                            {
+                                'surface': 'CDU',
+                                'p': ''
                             },
-                            content_type='application/json',
-                            headers=auth_header)
+                            {
+                                'surface': 'CSU'
+                            },
+                            {
+                                'surface': 'CDU/CSU'
+                            },
+                            {
+                                'surface': 'Union'
+                            }
+                        ]
+                    }
+                ],
+            },
+            content_type='application/json',
+            headers=auth_header
+        )
+
         assert union.status_code == 200
 
         # constellation

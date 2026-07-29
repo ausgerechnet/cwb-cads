@@ -17,9 +17,10 @@ from ..concordance import (ConcordanceIn, ConcordanceLineIn,
 from ..database import Breakdown, Corpus, get_or_create
 from ..query import ccc_query, get_or_create_query_wrapper
 from ..users import auth
-from .database import (Constellation, ConstellationDescription, Discourseme,
-                       DiscoursemeDescription, DiscoursemeTemplateItems)
-from .discourseme import DiscoursemeIDs, DiscoursemeIn, DiscoursemeOut
+from .database import (Constellation, ConstellationDescription,
+                       Discourseme, DiscoursemeTemplateItem,
+                       DiscoursemeTemplate, DiscoursemeDescription)
+from .discourseme import DiscoursemeIDsSchema, DiscoursemeInSchema, DiscoursemeOutSchema
 from .discourseme_description import (DiscoursemeDescriptionOut,
                                       discourseme_template_to_description)
 
@@ -148,20 +149,35 @@ class ConstellationBreakdownOut(Schema):
 @bp.output(ConstellationDescriptionOut)
 @bp.auth_required(auth)
 def create_description(constellation_id, json_data):
-    """Create description of constellation. Makes sure individual discourseme descriptions exist.
+    """Create description of constellation.
 
+    Makes sure individual discourseme descriptions exist.
     """
 
-    constellation = db.get_or_404(Constellation, constellation_id)
+    constellation = db.get_or_404(
+        Constellation,
+        constellation_id
+    )
 
     corpus_id = json_data.get('corpus_id')
-    corpus = db.get_or_404(Corpus, corpus_id)
+    corpus = db.get_or_404(
+        Corpus,
+        corpus_id
+    )
+
     subcorpus_id = json_data.get('subcorpus_id')
     semantic_map_id = json_data.get('semantic_map_id')
 
-    s_query = json_data.get('s', corpus.s_default)
+    s_query = json_data.get(
+        's',
+        corpus.s_default
+    )
+
     if s_query not in corpus.s_atts:
-        current_app.logger.error(f's-attribute "{s_query}" not in s-attributes; using {corpus.s_default} instead')
+        current_app.logger.error(
+            f's-attribute "{s_query}" not in s-attributes; '
+            f'using {corpus.s_default} instead'
+        )
         s_query = corpus.s_default
 
     match_strategy = json_data.get('match_strategy')
@@ -174,33 +190,40 @@ def create_description(constellation_id, json_data):
         subcorpus_id=subcorpus_id,
         s=s_query,
         match_strategy=match_strategy,
-        overlap=overlap
+        overlap=overlap,
     )
 
     for discourseme in constellation.discoursemes:
+
         desc = DiscoursemeDescription.query.filter_by(
             discourseme_id=discourseme.id,
             corpus_id=corpus_id,
             subcorpus_id=subcorpus_id,
             filter_sequence=None,
             s=s_query,
-            match_strategy=match_strategy
+            match_strategy=match_strategy,
         ).first()
+
         if not desc:
+            current_app.logger.debug(
+                f'creating description for discourseme "{discourseme.name}"'
+            )
+
             desc = discourseme_template_to_description(
                 discourseme,
                 [],
                 corpus_id,
                 subcorpus_id,
                 s_query,
-                match_strategy
+                match_strategy,
             )
+
         description.discourseme_descriptions.append(desc)
 
     db.session.add(description)
     db.session.commit()
 
-    return ConstellationDescriptionOut().dump(description), 200
+    return description, 200
 
 
 @bp.put('/')
@@ -208,20 +231,32 @@ def create_description(constellation_id, json_data):
 @bp.output(ConstellationDescriptionOut)
 @bp.auth_required(auth)
 def get_or_create_description(constellation_id, json_data):
-    """Same as corresponding POST but will only create description if it does not already exist.
+    """Same as corresponding POST but will only create description if it does not already exist."""
 
-    """
-
-    constellation = db.get_or_404(Constellation, constellation_id)
+    constellation = db.get_or_404(
+        Constellation,
+        constellation_id
+    )
 
     corpus_id = json_data.get('corpus_id')
-    corpus = db.get_or_404(Corpus, corpus_id)
+    corpus = db.get_or_404(
+        Corpus,
+        corpus_id
+    )
+
     subcorpus_id = json_data.get('subcorpus_id')
     semantic_map_id = json_data.get('semantic_map_id')
 
-    s_query = json_data.get('s', corpus.s_default)
+    s_query = json_data.get(
+        's',
+        corpus.s_default
+    )
+
     if s_query not in corpus.s_atts:
-        current_app.logger.error(f's-attribute "{s_query}" not in s-attributes; using {corpus.s_default} instead')
+        current_app.logger.error(
+            f's-attribute "{s_query}" not in s-attributes; '
+            f'using {corpus.s_default} instead'
+        )
         s_query = corpus.s_default
 
     match_strategy = json_data.get('match_strategy')
@@ -234,49 +269,60 @@ def get_or_create_description(constellation_id, json_data):
         ConstellationDescription.subcorpus_id.is_(subcorpus_id),
         ConstellationDescription.s == s_query,
         ConstellationDescription.match_strategy == match_strategy,
-        ConstellationDescription.overlap == overlap
+        ConstellationDescription.overlap == overlap,
     ).first()
 
-    if not description:
-        current_app.logger.debug("description does not exist, creating")
+    if description:
+        current_app.logger.debug(
+            "description already exists"
+        )
+        return description, 200
 
-        description = ConstellationDescription(
-            constellation_id=constellation.id,
-            semantic_map_id=semantic_map_id,
-            corpus_id=corpus.id,
+    current_app.logger.debug(
+        "description does not exist, creating"
+    )
+
+    description = ConstellationDescription(
+        constellation_id=constellation.id,
+        semantic_map_id=semantic_map_id,
+        corpus_id=corpus.id,
+        subcorpus_id=subcorpus_id,
+        s=s_query,
+        match_strategy=match_strategy,
+        overlap=overlap,
+    )
+
+    for discourseme in constellation.discoursemes:
+
+        desc = DiscoursemeDescription.query.filter_by(
+            discourseme_id=discourseme.id,
+            corpus_id=corpus_id,
             subcorpus_id=subcorpus_id,
+            filter_sequence=None,
             s=s_query,
             match_strategy=match_strategy,
-            overlap=overlap
-        )
+        ).first()
 
-        for discourseme in constellation.discoursemes:
-            desc = DiscoursemeDescription.query.filter_by(
-                discourseme_id=discourseme.id,
-                corpus_id=corpus_id,
-                subcorpus_id=subcorpus_id,
-                filter_sequence=None,
-                s=s_query,
-                match_strategy=match_strategy
-            ).first()
-            if not desc:
-                desc = discourseme_template_to_description(
-                    discourseme,
-                    [],
-                    corpus_id,
-                    subcorpus_id,
-                    s_query,
-                    match_strategy
-                )
-            description.discourseme_descriptions.append(desc)
+        if not desc:
+            current_app.logger.debug(
+                f'creating description for discourseme "{discourseme.name}"'
+            )
 
-        db.session.add(description)
-        db.session.commit()
+            desc = discourseme_template_to_description(
+                discourseme,
+                [],
+                corpus_id,
+                subcorpus_id,
+                s_query,
+                match_strategy,
+            )
 
-    else:
-        current_app.logger.debug("description already exists")
+        description.discourseme_descriptions.append(desc)
 
-    return ConstellationDescriptionOut().dump(description), 200
+    db.session.add(description)
+    db.session.commit()
+
+    return description, 200
 
 
 @bp.get('/')
@@ -358,49 +404,70 @@ def patch_description_remove(constellation_id, description_id, json_data):
 
 
 @bp.patch('/<description_id>/add-discoursemes')
-@bp.input(DiscoursemeIDs, location='json')
+@bp.input(DiscoursemeIDsSchema, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_discourseme_add(constellation_id, description_id, json_data):
-    """convenience function for adding discourseme(s) and creating and linking corresponding descriptions.
+    """Convenience function for adding discourseme(s) and creating and linking corresponding descriptions."""
 
-    """
+    constellation = db.get_or_404(
+        Constellation,
+        constellation_id
+    )
 
-    constellation = db.get_or_404(Constellation, constellation_id)
-    description = db.get_or_404(ConstellationDescription, description_id)
-    discourseme_ids = json_data.get("discourseme_ids")
+    description = db.get_or_404(
+        ConstellationDescription,
+        description_id
+    )
+
+    discourseme_ids = json_data.get("discourseme_ids", [])
+
     for discourseme_id in discourseme_ids:
 
         # link discourseme to constellation
-        discourseme = db.get_or_404(Discourseme, discourseme_id)
+        discourseme = db.get_or_404(
+            Discourseme,
+            discourseme_id
+        )
+
         if discourseme not in constellation.discoursemes:
             constellation.discoursemes.append(discourseme)
-            db.session.commit()
 
-        # link discourseme description to constellation description
-        desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
-                                                      corpus_id=description.corpus_id,
-                                                      subcorpus_id=description.subcorpus_id,
-                                                      filter_sequence=None,
-                                                      s=description.s,
-                                                      match_strategy=description.match_strategy).first()
+        # find or create discourseme description
+        desc = DiscoursemeDescription.query.filter_by(
+            discourseme_id=discourseme.id,
+            corpus_id=description.corpus_id,
+            subcorpus_id=description.subcorpus_id,
+            filter_sequence=None,
+            s=description.s,
+            match_strategy=description.match_strategy,
+        ).first()
 
         if not desc:
-            # create discourseme description if necessary
-            desc = discourseme_template_to_description(
-                discourseme, [], description.corpus_id, description.subcorpus_id, description.s, description.match_strategy
+            current_app.logger.debug(
+                f'creating description for discourseme "{discourseme.name}"'
             )
 
-        if desc not in description.discourseme_descriptions:
-            # link discourseme_description to constellation description if necessary
-            description.discourseme_descriptions.append(desc)
-            db.session.commit()
+            desc = discourseme_template_to_description(
+                discourseme,
+                [],
+                description.corpus_id,
+                description.subcorpus_id,
+                description.s,
+                description.match_strategy,
+            )
 
-    return ConstellationDescriptionOut().dump(description), 200
+        # link discourseme description to constellation description
+        if desc not in description.discourseme_descriptions:
+            description.discourseme_descriptions.append(desc)
+
+    db.session.commit()
+
+    return description, 200
 
 
 @bp.patch('/<description_id>/remove-discoursemes')
-@bp.input(DiscoursemeIDs, location='json')
+@bp.input(DiscoursemeIDsSchema, location='json')
 @bp.output(ConstellationDescriptionOut(partial=True))
 @bp.auth_required(auth)
 def patch_discourseme_remove(constellation_id, description_id, json_data):
@@ -435,116 +502,195 @@ def patch_discourseme_remove(constellation_id, description_id, json_data):
 
 
 @bp.post('/<description_id>/discourseme-description')
-@bp.input(DiscoursemeIn)
-@bp.output(DiscoursemeOut)
+@bp.input(DiscoursemeInSchema)
+@bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def post_items_into_constellation(constellation_id, description_id, json_data):
-    """convenience function for creating a new discourseme incl. description during an analysis (e.g. drag & drop on semantic map)
+    """Convenience function for creating a new discourseme incl. description during an analysis.
+
+    E.g. drag & drop on semantic map.
 
     (1) create a discourseme with provided items
     (2) create a suitable description in the constellation description corpus
     (3) link discourseme to constellation
     (4) link discourseme description and constellation description
-
     """
 
-    constellation = db.get_or_404(Constellation, constellation_id)
-    description = db.get_or_404(ConstellationDescription, description_id)
+    constellation = db.get_or_404(
+        Constellation,
+        constellation_id
+    )
+
+    description = db.get_or_404(
+        ConstellationDescription,
+        description_id
+    )
+
+    corpus = description.corpus
 
     # create discourseme
     discourseme = Discourseme(
         user_id=auth.current_user.id,
         name=json_data.get('name'),
+        comment=json_data.get('comment'),
     )
-    db.session.add(discourseme)
-    db.session.commit()
 
-    # we also create template here to easily use in 'discourseme_template_to_description()'
-    for item in json_data.get('template'):
-        db.session.add(DiscoursemeTemplateItems(
-            discourseme_id=discourseme.id,
-            p=item['p'],
-            surface=item['surface']
-        ))
-    db.session.commit()
+    db.session.add(discourseme)
+    db.session.flush()
+
+    # create template matching constellation description corpus
+    template = DiscoursemeTemplate(
+        discourseme_id=discourseme.id,
+        language=corpus.language,
+        register=corpus.register,
+    )
+
+    db.session.add(template)
+    db.session.flush()
+
+    # add template items
+    for item in json_data.get('template', []):
+
+        db.session.add(
+            DiscoursemeTemplateItem(
+                template_id=template.id,
+                p=item.get('p'),
+                surface=item.get('surface'),
+                cqp_query=item.get('cqp_query'),
+            )
+        )
+
+    db.session.flush()
 
     # link discourseme to constellation
     constellation.discoursemes.append(discourseme)
-    db.session.commit()
 
     # create discourseme description
     discourseme_description = discourseme_template_to_description(
-        discourseme, [], description.corpus_id, description.subcorpus_id, description.s, description.match_strategy
+        discourseme,
+        [],
+        description.corpus_id,
+        description.subcorpus_id,
+        description.s,
+        description.match_strategy,
     )
 
-    # link discourseme_description to constellation description
-    description.discourseme_descriptions.append(discourseme_description)
+    # link discourseme description to constellation description
+    description.discourseme_descriptions.append(
+        discourseme_description
+    )
+
     db.session.commit()
 
-    return DiscoursemeOut().dump(discourseme), 200
+    return discourseme, 200
 
 
 @bp.put('/<description_id>/discourseme-description')
-@bp.input(DiscoursemeIn)
-@bp.output(DiscoursemeOut)
+@bp.input(DiscoursemeInSchema)
+@bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
 def put_items_into_constellation(constellation_id, description_id, json_data):
-    """same as corresponding POST but will only create if discourseme with the same name does not exist
+    """Same as corresponding POST but will only create if discourseme with the same name does not exist."""
 
-    """
+    constellation = db.get_or_404(
+        Constellation,
+        constellation_id
+    )
 
-    constellation = db.get_or_404(Constellation, constellation_id)
-    description = db.get_or_404(ConstellationDescription, description_id)
+    description = db.get_or_404(
+        ConstellationDescription,
+        description_id
+    )
+
+    corpus = description.corpus
     discourseme_name = json_data.get('name')
 
-    discourseme = Discourseme.query.filter_by(name=discourseme_name).first()
+    discourseme = Discourseme.query.filter_by(
+        name=discourseme_name
+    ).first()
+
     if not discourseme:
-        current_app.logger.debug(f'discourseme named "{discourseme_name}" does not exist, creating and linking')
+
+        current_app.logger.debug(
+            f'discourseme named "{discourseme_name}" does not exist, creating and linking'
+        )
 
         # create discourseme
         discourseme = Discourseme(
             user_id=auth.current_user.id,
             name=discourseme_name,
+            comment=json_data.get('comment'),
         )
-        db.session.add(discourseme)
-        db.session.commit()
 
-        # we also create template here to easily use in 'discourseme_template_to_description()'
-        for item in json_data.get('template'):
-            db.session.add(DiscoursemeTemplateItems(
-                discourseme_id=discourseme.id,
-                p=item['p'],
-                surface=item['surface']
-            ))
-        db.session.commit()
+        db.session.add(discourseme)
+        db.session.flush()
+
+        # create corpus-specific template
+        template = DiscoursemeTemplate(
+            discourseme_id=discourseme.id,
+            language=corpus.language,
+            register=corpus.register,
+        )
+
+        db.session.add(template)
+        db.session.flush()
+
+        # add template items
+        for item in json_data.get('template', []):
+
+            db.session.add(
+                DiscoursemeTemplateItem(
+                    template_id=template.id,
+                    p=item.get('p'),
+                    surface=item.get('surface'),
+                    cqp_query=item.get('cqp_query'),
+                )
+            )
+
+        db.session.flush()
 
     else:
-        current_app.logger.debug(f'discourseme named "{discourseme_name}" already exists')
 
-    if discourseme not in constellation.discoursemes:
-        # link discourseme to constellation
-        constellation.discoursemes.append(discourseme)
-        db.session.commit()
-
-    desc = DiscoursemeDescription.query.filter_by(discourseme_id=discourseme.id,
-                                                  corpus_id=description.corpus_id,
-                                                  subcorpus_id=description.subcorpus_id,
-                                                  filter_sequence=None,
-                                                  s=description.s,
-                                                  match_strategy=description.match_strategy).first()
-
-    if not desc:
-        # create discourseme description
-        desc = discourseme_template_to_description(
-            discourseme, [], description.corpus_id, description.subcorpus_id, description.s, description.match_strategy
+        current_app.logger.debug(
+            f'discourseme named "{discourseme_name}" already exists'
         )
 
-    if desc not in description.discourseme_descriptions:
-        # link discourseme_description to constellation description
-        description.discourseme_descriptions.append(desc)
-        db.session.commit()
+    # link discourseme to constellation
+    if discourseme not in constellation.discoursemes:
+        constellation.discoursemes.append(discourseme)
 
-    return DiscoursemeOut().dump(discourseme), 200
+    # find or create discourseme description
+    desc = DiscoursemeDescription.query.filter_by(
+        discourseme_id=discourseme.id,
+        corpus_id=description.corpus_id,
+        subcorpus_id=description.subcorpus_id,
+        filter_sequence=None,
+        s=description.s,
+        match_strategy=description.match_strategy,
+    ).first()
+
+    if not desc:
+
+        current_app.logger.debug(
+            f'creating description for discourseme "{discourseme.name}"'
+        )
+
+        desc = discourseme_template_to_description(
+            discourseme,
+            [],
+            description.corpus_id,
+            description.subcorpus_id,
+            description.s,
+            description.match_strategy,
+        )
+
+    # link discourseme description to constellation description
+    if desc not in description.discourseme_descriptions:
+        description.discourseme_descriptions.append(desc)
+
+    db.session.commit()
+
+    return discourseme, 200
 
 
 # CONCORDANCE

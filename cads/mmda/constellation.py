@@ -8,7 +8,7 @@ from flask import current_app
 from .. import db
 from ..users import auth
 from .database import Constellation, Discourseme
-from .discourseme import DiscoursemeOut
+from .discourseme import DiscoursemeOutSchema
 
 bp = APIBlueprint('constellation', __name__, url_prefix='/constellation')
 
@@ -29,7 +29,7 @@ class ConstellationOut(Schema):
     id = Integer(required=True)
     name = String(required=True, allow_none=True)
     comment = String(required=True, allow_none=True)
-    discoursemes = Nested(DiscoursemeOut(many=True), required=True, dump_default=[])
+    discoursemes = Nested(DiscoursemeOutSchema(many=True), required=True, dump_default=[])
 
 
 #################

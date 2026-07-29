@@ -18,7 +18,7 @@ with app.app_context():
 
     read_corpora()
 
-    import_discoursemes("tests/discoursemes/germaparl-actors.tsv")
+    import_discoursemes("tests/discoursemes/germaparl-actors.tsv", language="de", register="standard")
 
     meta_from_within_xml("GERMAPARL1386")
 

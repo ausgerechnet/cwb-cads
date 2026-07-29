@@ -302,16 +302,27 @@ def test_discourseme_deletion(client, auth):
                                   content_type='application/json',
                                   headers=auth_header).json
 
-        tmp_disc = client.post(url_for('mmda.discourseme.create_discourseme'),
-                               json={
-                                   'name': 'Modalverben',
-                                   'comment': 'Testdiskursem das gelöscht wird',
-                                   'template': [
-                                       {'surface': 'können', 'p': 'lemma'}
-                                   ],
-                                  },
-                               content_type='application/json',
-                               headers=auth_header)
+        tmp_disc = client.post(
+            url_for('mmda.discourseme.create_discourseme'),
+            json={
+                'name': 'Modalverben',
+                'comment': 'Testdiskursem das gelöscht wird',
+                'templates': [
+                    {
+                        'language': 'de',
+                        'register': 'standard',
+                        'items': [
+                            {
+                                'surface': 'können',
+                                'p': 'lemma'
+                            }
+                        ]
+                    }
+                ],
+            },
+            content_type='application/json',
+            headers=auth_header
+        )
 
         assert tmp_disc.status_code == 200
 
@@ -347,16 +358,27 @@ def test_associations(client, auth):
                                   content_type='application/json',
                                   headers=auth_header).json
 
-        tmp_disc = client.post(url_for('mmda.discourseme.create_discourseme'),
-                               json={
-                                   'name': 'Modalverben',
-                                   'comment': 'Testdiskursem das gelöscht wird',
-                                   'template': [
-                                       {'surface': 'können', 'p': 'lemma'}
-                                   ],
-                                  },
-                               content_type='application/json',
-                               headers=auth_header)
+        tmp_disc = client.post(
+            url_for('mmda.discourseme.create_discourseme'),
+            json={
+                'name': 'Modalverben',
+                'comment': 'Testdiskursem das gelöscht wird',
+                'templates': [
+                    {
+                        'language': 'de',
+                        'register': 'standard',
+                        'items': [
+                            {
+                                'surface': 'können',
+                                'p': 'lemma'
+                            }
+                        ]
+                    }
+                ],
+            },
+            content_type='application/json',
+            headers=auth_header
+        )
 
         assert tmp_disc.status_code == 200
 
@@ -396,13 +418,23 @@ def test_associations_empty(client, auth):
         client.get("/")
 
         tmp_disc = client.post(url_for('mmda.discourseme.create_discourseme'),
-                               json={
-                                   'name': 'modal verbs',
-                                   'template': [
-                                       {'surface': 'können', 'p': 'lemma'}
-                                   ],
-                                  },
                                content_type='application/json',
+                               json={
+                                    'name': 'Modalverben',
+                                    'comment': 'Testdiskursem das gelöscht wird',
+                                    'templates': [
+                                        {
+                                            'language': 'de',
+                                            'register': 'standard',
+                                            'items': [
+                                                {
+                                                    'surface': 'können',
+                                                    'p': 'lemma'
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                },
                                headers=auth_header)
 
         assert tmp_disc.status_code == 200
@@ -431,7 +463,7 @@ def test_associations_empty(client, auth):
         assert associations.status_code == 200
 
 
-# @pytest.mark.now
+@pytest.mark.now
 def test_associations_nan(client, auth):
 
     auth_header = auth.login()
@@ -439,13 +471,23 @@ def test_associations_nan(client, auth):
         client.get("/")
 
         tmp_disc = client.post(url_for('mmda.discourseme.create_discourseme'),
-                               json={
-                                   'name': 'können',
-                                   'template': [
-                                       {'surface': 'können', 'p': 'lemma'}
-                                   ],
-                                  },
                                content_type='application/json',
+                               json={
+                                    'name': 'Modalverben',
+                                    'comment': 'Testdiskursem das gelöscht wird',
+                                    'templates': [
+                                        {
+                                            'language': 'de',
+                                            'register': 'standard',
+                                            'items': [
+                                                {
+                                                    'surface': 'können',
+                                                    'p': 'lemma'
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                },
                                headers=auth_header)
 
         assert tmp_disc.status_code == 200
@@ -453,8 +495,18 @@ def test_associations_nan(client, auth):
         tmp_disc_2 = client.post(url_for('mmda.discourseme.create_discourseme'),
                                  json={
                                      'name': 'empty',
-                                     'template': [
-                                         {'surface': 'könsdanen', 'p': 'lemma'}
+                                     'comment': 'Testdiskursem das gelöscht wird',
+                                     'templates': [
+                                         {
+                                             'language': 'de',
+                                             'register': 'standard',
+                                             'items': [
+                                                 {
+                                                     'surface': 'könsdanen',
+                                                     'p': 'lemma'
+                                                 }
+                                             ]
+                                         }
                                      ],
                                  },
                                  content_type='application/json',
@@ -465,14 +517,23 @@ def test_associations_nan(client, auth):
         tmp_disc_3 = client.post(url_for('mmda.discourseme.create_discourseme'),
                                  json={
                                      'name': 'hapax',
-                                     'template': [
-                                         {'surface': 'Kraftfahrt', 'p': 'lemma'}
+                                     'templates': [
+                                         {
+                                             'language': 'de',
+                                             'register': 'standard',
+                                             'items': [
+                                                 {
+                                                     'surface': 'Kraftfahrt',
+                                                     'p': 'lemma'
+                                                 }
+                                             ]
+                                         }
                                      ],
                                  },
                                  content_type='application/json',
                                  headers=auth_header)
 
-        assert tmp_disc.status_code == 200
+        assert tmp_disc_3.status_code == 200
 
         # constellation
         constellation = client.post(url_for('mmda.constellation.create_constellation'),
@@ -540,7 +601,7 @@ def test_discourseme_get_breakdown(client, auth):
         assert breakdown.json['items'][0]['freq'] == 14
 
 
-@pytest.mark.now
+# @pytest.mark.now
 def test_constellation_concordance_filter2(client, auth):
 
     auth_header = auth.login()
