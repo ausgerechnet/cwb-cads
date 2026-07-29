@@ -4,6 +4,7 @@
 import logging
 import time
 import os
+import warnings
 
 import werkzeug.exceptions
 from apiflask import APIFlask, HTTPTokenAuth
@@ -14,6 +15,14 @@ from flask_jwt_extended import JWTManager
 from flask_sqlalchemy import SQLAlchemy
 
 from .version import __version__
+
+# I'm ignoring this for now -- if it breaks, I'll get rid of pymagnitude altogether
+warnings.filterwarnings(
+    "ignore",
+    message="pkg_resources is deprecated as an API",
+    category=UserWarning,
+    module="pymagnitude.third_party.repoze",
+)
 
 CONFIG = os.getenv('CWB_CADS_CONFIG', default='cfg.ProdConfig')
 

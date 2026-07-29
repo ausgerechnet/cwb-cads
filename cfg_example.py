@@ -2,18 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from os import getenv
-import warnings
 
 from cads.version import __version__
-
-
-# I'm ignoring this for now -- if it breaks, I'll get rid of pymagnitude altogether
-warnings.filterwarnings(
-    "ignore",
-    message="pkg_resources is deprecated as an API",
-    category=UserWarning,
-    module="pymagnitude.third_party.repoze",
-)
 
 
 class Config:
