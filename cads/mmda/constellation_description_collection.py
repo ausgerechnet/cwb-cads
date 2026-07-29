@@ -13,7 +13,7 @@ from pandas import DataFrame
 from .. import db
 from ..database import SubCorpusCollection
 from ..tsa import gam_smoothing
-from ..users import auth
+from ..users import auth, write_access_required
 from .constellation_description import ConstellationDescriptionOut
 from .constellation_description_collocation import (
     ConstellationCollocationIn, ConstellationCollocationOut, get_collo_items,
@@ -183,6 +183,7 @@ class UFAOut(Schema):
 @bp.input(ConstellationDescriptionCollectionIn)
 @bp.output(ConstellationDescriptionCollectionOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_constellation_description_collection(constellation_id, json_data):
     """DEPRECATED. USE PUT INSTEAD.
 
@@ -255,6 +256,7 @@ def create_constellation_description_collection(constellation_id, json_data):
 @bp.input(ConstellationDescriptionCollectionIn)
 @bp.output(ConstellationDescriptionCollectionOut)
 @bp.auth_required(auth)
+@write_access_required
 def get_or_create_constellation_description_collection(constellation_id, json_data):
     """Get constellation description collection; create if not exists.
 
@@ -363,6 +365,7 @@ def get_constellation_description_collection(constellation_id, collection_id):
 
 @bp.delete('/<collection_id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_constellation_description_collection(constellation_id, collection_id):
     """Delete constellation description collection.
 
@@ -383,6 +386,7 @@ def delete_constellation_description_collection(constellation_id, collection_id)
 @bp.input({'sort_by': String(), 'max_depth': Integer()}, location='query')
 @bp.output(UFAOut)
 @bp.auth_required(auth)
+@write_access_required
 def get_or_create_ufa(constellation_id, collection_id, json_data, query_data):
     """Get or create usage fluctuation analysis (list of collocation analyses).
 
@@ -433,6 +437,7 @@ def get_or_create_ufa(constellation_id, collection_id, json_data, query_data):
 @bp.input(DiscoursemeIDsSchema, location='json')
 @bp.output(ConstellationDescriptionCollectionOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_collection_add_discourseme(constellation_id, collection_id, json_data):
     """Patch collection: add discourseme description(s).
 
@@ -478,6 +483,7 @@ def patch_collection_add_discourseme(constellation_id, collection_id, json_data)
 @bp.input(DiscoursemeIDsSchema, location='json')
 @bp.output(ConstellationDescriptionCollectionOut)
 @bp.auth_required(auth)
+@write_access_required
 def patch_collection_remove_discourseme(constellation_id, collection_id, json_data):
     """Patch collection: add discourseme description(s).
 
@@ -514,6 +520,7 @@ def patch_collection_remove_discourseme(constellation_id, collection_id, json_da
 @bp.input(DiscoursemeItemsOnlyInSchema)
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
+@write_access_required
 def post_items_into_collection(constellation_id, collection_id, json_data):
     """Convenience function for creating a new discourseme incl. descriptions during an analysis.
 
@@ -623,6 +630,7 @@ def post_items_into_collection(constellation_id, collection_id, json_data):
 @bp.input(DiscoursemeItemsOnlyInSchema)
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
+@write_access_required
 def put_items_into_collection(constellation_id, collection_id, json_data):
     """Same as corresponding POST but will only create if discourseme with the same name does not exist."""
 

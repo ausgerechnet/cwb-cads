@@ -12,7 +12,7 @@ from pandas import DataFrame, to_numeric
 from . import db
 from .database import Keyword, KeywordItem, KeywordItemScore
 from .semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
-from .users import auth
+from .users import auth, write_access_required
 from .utils import AMS_DICT
 
 bp = APIBlueprint('keyword', __name__, url_prefix='/keyword')
@@ -205,6 +205,7 @@ def get_keyword(id):
 
 @bp.delete('/<id>/')
 @bp.auth_required(auth)
+@write_access_required
 def delete_keyword(id):
     """Delete keyword analysis.
 
@@ -299,6 +300,7 @@ def get_keyword_items(id, query_data):
 @bp.input(KeywordIn)
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_keyword(json_data):
     """Create keyword analysis.
 
@@ -349,6 +351,7 @@ def create_keyword(json_data):
           location='query')
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_semantic_map(id, query_data):
     """Create new semantic map for keyword items or make sure there are coordinates for all items on an existing map.
 

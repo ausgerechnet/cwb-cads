@@ -14,7 +14,7 @@ from pandas import DataFrame, read_csv
 
 from .. import db
 from ..database import User, get_or_create
-from ..users import auth
+from ..users import auth, write_access_required
 from .database import Constellation, Discourseme, DiscoursemeTemplate, DiscoursemeTemplateItem
 
 
@@ -223,6 +223,7 @@ def get_discoursemes():
 @bp.input(DiscoursemeInSchema)
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
+@write_access_required
 def create_discourseme(json_data):
     """Create new discourseme."""
 
@@ -275,6 +276,7 @@ def get_discourseme(discourseme_id):
 
 @bp.delete('/<discourseme_id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_discourseme(discourseme_id):
     """Delete discourseme.
 
@@ -290,6 +292,7 @@ def delete_discourseme(discourseme_id):
 @bp.input(DiscoursemeInSchema(partial=True))
 @bp.output(DiscoursemeOutSchema)
 @bp.auth_required(auth)
+@write_access_required
 def patch_discourseme(discourseme_id, json_data):
     """Patch discourseme."""
 

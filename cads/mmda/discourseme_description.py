@@ -19,10 +19,11 @@ from ..corpus import rename_meta_freq
 from ..database import Breakdown, Corpus, Query, get_or_create
 from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
                      QueryMetaFrequencyOut, get_query_meta_freq_breakdown)
-from ..users import auth
+from ..users import auth, write_access_required
 from ..utils import paginate_dataframe
 from .database import (CollocationDiscoursemeItem, Discourseme,
-                       DiscoursemeTemplate, DiscoursemeDescription,
+                       DiscoursemeTemplate, DiscoursemeTemplateItems,
+                       DiscoursemeDescription,
                        DiscoursemeDescriptionItems,
                        KeywordDiscoursemeItem,
                        DiscoursemeTemplateItem)
@@ -328,6 +329,7 @@ class DiscoursemeCoordinatesOut(Schema):
 )
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_description(discourseme_id, json_data, query_data):
     """Create description of discourseme in corpus.
 
@@ -437,72 +439,90 @@ def get_or_create_description(discourseme_id, json_data, query_data):
         DiscoursemeDescription.match_strategy == match_strategy
     ).first()
 
-    if not description:
+    if description:
+        current_app.logger.debug(
+            "description already exists"
+        )
+        return description, 200
+
+    role_names = {role.name for role in auth.current_user.roles}
+    if 'read-only' in role_names:
+        abort(403, "read-only users cannot modify data.")
+
+    current_app.logger.debug("description does not exist, creating")
+
+    description = discourseme_template_to_description(discourseme, items, corpus_id, subcorpus_id, s_query, match_strategy)
+    # update discourseme template
+    if query_data['update_discourseme']:
+        current_app.logger.debug('updating discourseme template')
+        for item in items:
+            db_item = DiscoursemeTemplateItems.query.filter_by(discourseme_id=discourseme.id, p=item['p'], surface=item['surface']).first()
+            if db_item:
+                current_app.logger.debug(f'item {item["p"]}="{item["surface"]}" already in template')
+            else:
+                db_item = DiscoursemeTemplateItems(discourseme_id=discourseme.id, p=item['p'], surface=item['surface'])
+                db.session.add(db_item)
+                db.session.commit()
+
+    current_app.logger.debug(
+        "description does not exist, creating"
+    )
+
+    description = discourseme_template_to_description(
+        discourseme,
+        items,
+        corpus_id,
+        subcorpus_id,
+        s_query,
+        match_strategy,
+    )
+
+    # update discourseme template
+    if query_data['update_discourseme'] and items:
 
         current_app.logger.debug(
-            "description does not exist, creating"
+            "updating discourseme template"
         )
 
-        description = discourseme_template_to_description(
-            discourseme,
-            items,
-            corpus_id,
-            subcorpus_id,
-            s_query,
-            match_strategy,
+        template = discourseme.get_template(
+            language=corpus.language,
+            register=corpus.register,
         )
 
-        # update discourseme template
-        if query_data['update_discourseme'] and items:
-
-            current_app.logger.debug(
-                "updating discourseme template"
-            )
-
-            template = discourseme.get_template(
+        if template is None:
+            template = DiscoursemeTemplate(
+                discourseme_id=discourseme.id,
                 language=corpus.language,
                 register=corpus.register,
             )
 
-            if template is None:
-                template = DiscoursemeTemplate(
-                    discourseme_id=discourseme.id,
-                    language=corpus.language,
-                    register=corpus.register,
+            db.session.add(template)
+            db.session.flush()
+
+        for item in items:
+
+            db_item = DiscoursemeTemplateItem.query.filter_by(
+                template_id=template.id,
+                p=item.get('p'),
+                surface=item.get('surface'),
+            ).first()
+
+            if db_item:
+                current_app.logger.debug(
+                    f'item {item.get("p")}="{item.get("surface")}" already in template'
                 )
 
-                db.session.add(template)
-                db.session.flush()
-
-            for item in items:
-
-                db_item = DiscoursemeTemplateItem.query.filter_by(
-                    template_id=template.id,
-                    p=item.get('p'),
-                    surface=item.get('surface'),
-                ).first()
-
-                if db_item:
-                    current_app.logger.debug(
-                        f'item {item.get("p")}="{item.get("surface")}" already in template'
+            else:
+                db.session.add(
+                    DiscoursemeTemplateItem(
+                        template_id=template.id,
+                        p=item.get('p'),
+                        surface=item.get('surface'),
+                        cqp_query=item.get('cqp_query'),
                     )
+                )
 
-                else:
-                    db.session.add(
-                        DiscoursemeTemplateItem(
-                            template_id=template.id,
-                            p=item.get('p'),
-                            surface=item.get('surface'),
-                            cqp_query=item.get('cqp_query'),
-                        )
-                    )
-
-            db.session.commit()
-
-    else:
-        current_app.logger.debug(
-            "description already exists"
-        )
+        db.session.commit()
 
     return description, 200
 
@@ -537,6 +557,7 @@ def get_description(discourseme_id, description_id):
 
 @bp.delete('/<description_id>/')
 @bp.auth_required(auth)
+@write_access_required
 def delete_description(discourseme_id, description_id):
     """Delete discourseme description.
 
@@ -675,6 +696,7 @@ def description_get_meta(discourseme_id, description_id, query_data):
 )
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
+@write_access_required
 def description_patch_add(discourseme_id, description_id, json_data, query_data):
     """Patch discourseme description: add item(s) to description."""
 
@@ -765,6 +787,7 @@ def description_patch_add(discourseme_id, description_id, json_data, query_data)
 )
 @bp.output(DiscoursemeDescriptionOut)
 @bp.auth_required(auth)
+@write_access_required
 def description_patch_remove(discourseme_id, description_id, json_data, query_data):
     """Patch discourseme description: remove item(s) from description."""
 

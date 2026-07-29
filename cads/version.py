@@ -1,4 +1,4 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-__version__ = "0.3.1sph1"
+__version__ = "0.3.2.dev1"

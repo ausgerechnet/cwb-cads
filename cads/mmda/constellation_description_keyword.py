@@ -7,7 +7,7 @@ from math import isnan
 from apiflask import APIBlueprint, Schema
 from apiflask.fields import Boolean, Integer, Nested, String
 from association_measures import measures
-from flask import current_app
+from flask import abort, current_app
 from pandas import DataFrame, concat, merge, to_numeric
 
 from .. import db
@@ -16,7 +16,7 @@ from ..keyword import (KeywordItemOut, KeywordItemsIn, KeywordItemsOut,
                        KeywordOut, ccc_keywords)
 from ..query import ccc_query
 from ..semantic_map import CoordinatesOut, ccc_semmap_init, ccc_semmap_update
-from ..users import auth
+from ..users import auth, write_access_required
 from .constellation_description import expand_scores_dataframe
 from .constellation_description_collocation import (ConstellationMapItemOut,
                                                     ConstellationMapOut)
@@ -447,6 +447,7 @@ class ConstellationKeywordItemsOut(KeywordItemsOut):
 @bp.input(ConstellationKeywordIn)
 @bp.output(KeywordOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_keyword(constellation_id, description_id, json_data):
     """DEPRECATED. USE PUT INSTEAD.
 
@@ -556,6 +557,11 @@ def get_or_create_keyword(constellation_id, description_id, json_data):
 
     keyword = keyword_query.order_by(Keyword.id.desc()).first()
     if not keyword:
+
+        role_names = {role.name for role in auth.current_user.roles}
+        if 'read-only' in role_names:
+            abort(403, "read-only users cannot modify data.")
+
         current_app.logger.debug("keyword object does not exist, creating new one")
         keyword = Keyword(
             semantic_map_id=semantic_map_id,
@@ -662,6 +668,7 @@ def get_keyword_map(constellation_id, description_id, keyword_id, query_data):
 
 @bp.put('/<keyword_id>/auto-associate')
 @bp.auth_required(auth)
+@write_access_required
 def associate_discoursemes_keyword(constellation_id, description_id, keyword_id):
     """Automatically associate discoursemes that occur in the top keyword profile with this constellation.
 

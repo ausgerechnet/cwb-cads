@@ -14,7 +14,7 @@ from .database import (Collocation, CollocationItem, CollocationItemScore,
                        CotextLines)
 from .semantic_map import (CoordinatesOut, SemanticMapOut, ccc_semmap_init,
                            ccc_semmap_update)
-from .users import auth
+from .users import auth, write_access_required
 from .utils import AMS_CUTOFF, AMS_DICT
 
 bp = APIBlueprint('collocation', __name__, url_prefix='/collocation')
@@ -229,6 +229,7 @@ def get_collocation(id):
 
 @bp.delete('/<id>/')
 @bp.auth_required(auth)
+@write_access_required
 def delete_collocation(id):
     """Delete collocation analysis.
 
@@ -311,6 +312,7 @@ def get_collocation_items(id, query_data):
           location='query')
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_semantic_map(id, query_data):
     """Create new semantic map for collocation items or make sure there are coordinates for all items on an existing map.
 

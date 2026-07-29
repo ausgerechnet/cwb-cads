@@ -10,7 +10,7 @@ from semmap import SemanticSpace
 
 from . import db
 from .database import Collocation, Coordinates, Keyword, SemanticMap
-from .users import auth
+from .users import auth, write_access_required
 
 bp = APIBlueprint('semantic-map', __name__, url_prefix='/semantic-map')
 
@@ -220,6 +220,7 @@ def get_semantic_map(id):
 @bp.input(SemanticMapIn)
 @bp.output(SemanticMapOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_semantic_map(json_data):
     """Create semantic map for all top items in the provided keyword and collocation analyses.
 
@@ -244,6 +245,7 @@ def create_semantic_map(json_data):
 
 @bp.delete('/<id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_semantic_map(id):
     """Delete semantic map.
 
@@ -273,6 +275,7 @@ def get_coordinates(id):
 @bp.input(CoordinatesIn)
 @bp.output(CoordinatesOut(many=True))
 @bp.auth_required(auth)
+@write_access_required
 def set_coordinates(id, json_data):
     """Set coordinates of an item.
 

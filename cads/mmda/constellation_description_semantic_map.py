@@ -8,7 +8,7 @@ from .. import db
 from ..breakdown import ccc_breakdown
 from ..database import Breakdown, SemanticMap, get_or_create
 from ..semantic_map import ccc_semmap_update
-from ..users import auth
+from ..users import auth, write_access_required
 from .database import ConstellationDescription, DiscoursemeCoordinates
 from .discourseme_description import (DiscoursemeCoordinatesIn,
                                       DiscoursemeCoordinatesOut)
@@ -87,6 +87,7 @@ def get_coordinates(constellation_id, description_id, semantic_map_id):
 @bp.input(DiscoursemeCoordinatesIn)
 @bp.output(DiscoursemeCoordinatesOut(many=True))
 @bp.auth_required(auth)
+@write_access_required
 def set_coordinates(constellation_id, description_id, semantic_map_id, json_data):
     """Set coordinates of a discourseme.
 

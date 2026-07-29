@@ -24,7 +24,7 @@ from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
 from .database import (Breakdown, Collocation, Corpus, Cotext, CotextLines,
                        Matches, Query, get_or_create)
 from .semantic_map import ccc_semmap_init
-from .users import auth
+from .users import auth, write_access_required
 from .utils import paginate_dataframe, translate_flags
 
 bp = APIBlueprint('query', __name__, url_prefix='/query')
@@ -543,6 +543,7 @@ class QueryMetaFrequenciesOut(Schema):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_query(json_data, query_data):
     """Create new CQP query.
 
@@ -585,6 +586,10 @@ def get_or_create_query(json_data, query_data):
 
     if not query:
 
+        role_names = {role.name for role in auth.current_user.roles}
+        if 'read-only' in role_names:
+            abort(403, "read-only users cannot modify data.")
+
         query = Query(**json_data)
         db.session.add(query)
         db.session.commit()
@@ -602,6 +607,7 @@ def get_or_create_query(json_data, query_data):
 @bp.input({'execute': Boolean(load_default=True)}, location='query')
 @bp.output(QueryOut)
 @bp.auth_required(auth)
+@write_access_required
 def create_query_assisted(json_data, query_data):
     """Create new query in assisted mode.
 
@@ -661,6 +667,11 @@ def get_or_create_query_assisted(json_data, query_data):
     ).first()
 
     if not query:
+
+        role_names = {role.name for role in auth.current_user.roles}
+        if 'read-only' in role_names:
+            abort(403, "read-only users cannot modify data.")
+
         query = Query(**json_data)
         db.session.add(query)
         db.session.commit()
@@ -727,6 +738,7 @@ def get_query(query_id):
 
 @bp.delete('/<query_id>')
 @bp.auth_required(auth)
+@write_access_required
 def delete_query(query_id):
     """Delete query.
 
@@ -911,6 +923,7 @@ def get_meta(query_id, query_data):
 @bp.input(CollocationIn)
 @bp.output(CollocationOut)
 @bp.auth_required(auth)
+@write_access_required
 def get_or_create_collocation(query_id, json_data):
     """Get collocation analysis of query (create if doesn't exist). TODO should be PUT instead?
 
