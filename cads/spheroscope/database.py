@@ -89,7 +89,7 @@ class QueryHistoryEntry(db.Model):
     history_id = db.Column(db.Integer, db.ForeignKey("query_history.id", ondelete="CASCADE"), primary_key=True)
     query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
 
-    time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), primary_key=True)
+    time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     comment = db.Column(db.Unicode)
 
     parent = db.relationship("QueryHistory", back_populates="entries")
