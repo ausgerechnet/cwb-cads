@@ -8,7 +8,7 @@ import json
 
 from flask import current_app
 
-from cads.query import QueryOut
+from .slot_query import SlotQueryOut
 from .database import QueryHistory, QueryHistoryEntry
 from ..database import Corpus, Query
 from ..users import auth
@@ -32,7 +32,7 @@ class QueryHistoryEntryOut(Schema):
     time = String()
     comment = String()
 
-    query = Nested(QueryOut)
+    query = Nested(SlotQueryOut)
 
 
 class QueryHistoryIn(Schema):
