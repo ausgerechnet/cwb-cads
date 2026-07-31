@@ -88,6 +88,7 @@ def ccc_slot_query(slot_query):
     dump = crps.query(
         cqp_query=slot_query.cqp_query,
         corrections=corrections,
+        # context_break=slot_query.s,
         match_strategy=slot_query.match_strategy,
         propagate_error=True,
     )
@@ -318,6 +319,7 @@ class SlotQueryIn(Schema):
     corpus_id = Integer(required=True)
     cqp_query = String(required=True)
     name = String()
+    # context_break = String(required=False)
     slots = Nested(AnchorSlot(many=True))
     corrections = Nested(AnchorCorrection(many=True))
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
@@ -340,7 +342,7 @@ class SlotDiffIn(Schema):
     id2 = Integer()
 
 
-class TokenOut(Schema):
+class TokenOutSlot(Schema):
 
     cpos = Integer(required=True)
     word = String(required=True)
@@ -351,7 +353,7 @@ class DiffLine(Schema):
     source = String()
     context = Integer()
     contextend = Integer()
-    tokens = Nested(TokenOut(many=True), required=True, dump_default=[])
+    tokens = Nested(TokenOutSlot(many=True), required=True, dump_default=[])
     structural = Dict(required=True, dump_default={})
     meta_A = List(Dict(keys=String(), values=Integer()), required=True, dump_default=[])
     meta_B = List(Dict(keys=String(), values=Integer()), required=True, dump_default=[])
@@ -359,7 +361,7 @@ class DiffLine(Schema):
 
 class ConcLine(Schema):
 
-    tokens = Nested(TokenOut(many=True), required=True, dump_default=[])
+    tokens = Nested(TokenOutSlot(many=True), required=True, dump_default=[])
     structural = Dict(required=True, dump_default={})
     meta = Dict(keys=String(), values=Integer(), required=True, dump_default=[])
 
@@ -408,6 +410,7 @@ def create(json_data):
     """
 
     corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    # context_break = json_data.get('context_break', corpus.s_default)
     slots = json_data.get('slots')
     corrections = json_data.get('corrections')
     slot_query = SlotQuery(
@@ -415,6 +418,7 @@ def create(json_data):
         name=json_data.get('name'),
         corpus_id=corpus.id,
         match_strategy=json_data.get('match_strategy'),
+        # s=context_break,
         _slots=json.dumps(slots),
         _corrections=json.dumps(corrections),
     )
@@ -492,10 +496,11 @@ def diff(query_data):
     df1 = ccc_slot_query(slot_query_1)
     df2 = ccc_slot_query(slot_query_2)
     diff = merge_and_coalesce(df1, df2)
-    diff['concordance'] = lexicalise(
-        diff[['context_min', 'context_max']].rename({'context_min': 'match', 'context_max': 'matchend'}, axis=1).set_index(['match', 'matchend']),
-        cwb_id
-    )
+    df_lines = diff[['context_min', 'context_max']].\
+        rename({'context_min': 'match', 'context_max': 'matchend'}, axis=1).\
+        set_index(['match', 'matchend'])
+    lines = lexicalise(df_lines, cwb_id)
+    diff['concordance'] = lines
 
     def _combine(row):
         row['concordance']['meta_A'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df1_rows']]
