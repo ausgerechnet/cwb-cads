@@ -89,8 +89,7 @@ def ccc_slot_query(slot_query):
         cqp_query=slot_query.cqp_query,
         corrections=corrections,
         # context_break=slot_query.s,
-        match_strategy=slot_query.match_strategy,
-        propagate_error=True,
+        match_strategy=slot_query.match_strategy
     )
 
     # invalid query

@@ -1,6 +1,5 @@
 semmap @ git+https://github.com/ausgerechnet/semmap@master
-association-measures==0.3.2
-cwb-ccc==0.13.3
+cwb-ccc==0.14.0
 APIFlask==2.1.1
 Flask==3.0.2
 Flask-HTTPAuth==4.8.0
@@ -14,4 +13,4 @@ pylint==3.2.5
 PyJWT==2.9.0
 statsmodels==0.14.6
 scipy<=1.17.0,>=1.13
-flexiconc==0.1.21
+flexiconc==0.1.22

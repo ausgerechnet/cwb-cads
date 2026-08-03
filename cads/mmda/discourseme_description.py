@@ -124,8 +124,7 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
     matches_df = cqp.nqr_from_query(query.cqp_query,
                                     name=name,
                                     match_strategy=match_strategy,
-                                    return_dump=True,
-                                    propagate_error=True)
+                                    return_dump=True)
     cqp.nqr_save(corpus.cwb_id, name=name)
     cqp.__del__()
 

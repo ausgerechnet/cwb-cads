@@ -54,8 +54,7 @@ def ccc_query(query, return_df=True):
         current_app.logger.debug('ccc_query :: querying')
         matches = corpus.query(cqp_query=query.mangled_query,
                                context_break=query.s,
-                               match_strategy=query.match_strategy,
-                               propagate_error=True)
+                               match_strategy=query.match_strategy)
 
         if isinstance(matches, str):  # error
             current_app.logger.error(f"ccc_query :: error: '{matches}'")
