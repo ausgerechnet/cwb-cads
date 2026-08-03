@@ -113,3 +113,33 @@ def test_query_diff(client, auth):
                                headers=auth_header)
 
         assert slot_diff.status_code == 200
+
+
+def test_query_direct_concordancing(client, auth):
+
+    # define queries and slots
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp1 = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        slot_query = client.post(url_for('spheroscope.slot_query.create'),
+                                 content_type='application/json',
+                                 json={
+                                     'cqp_query': cqp1,
+                                     'corpus_id': 1,
+                                     'slots': slots,
+                                     'corrections': []
+                                 },
+                                 headers=auth_header)
+
+        result = client.get(url_for('query.concordance_lines',
+                                    query_id=slot_query.json['id']),
+                            headers=auth_header)
+
+        assert result.status_code == 200

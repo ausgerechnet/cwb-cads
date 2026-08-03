@@ -263,7 +263,7 @@ class SlotQueryIn(Schema):
     corpus_id = Integer(required=True)
     cqp_query = String(required=True)
     name = String()
-    # context_break = String(required=False)
+    context_break = String(required=False)
     slots = Nested(AnchorSlot(many=True))
     corrections = Nested(AnchorCorrection(many=True))
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
@@ -354,7 +354,7 @@ def create(json_data):
     """
 
     corpus = db.get_or_404(Corpus, json_data['corpus_id'])
-    # context_break = json_data.get('context_break', corpus.s_default)
+    context_break = json_data.get('context_break', corpus.s_default)
     slots = json_data.get('slots')
     corrections = json_data.get('corrections')
     slot_query = SlotQuery(
@@ -362,7 +362,7 @@ def create(json_data):
         name=json_data.get('name'),
         corpus_id=corpus.id,
         match_strategy=json_data.get('match_strategy'),
-        # s=context_break,
+        s=context_break,
         _slots=json.dumps(slots),
         _corrections=json.dumps(corrections),
     )
