@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import time
 import os
+import time
 import warnings
 
 import werkzeug.exceptions
 from apiflask import APIFlask, HTTPTokenAuth
-from flask import jsonify, redirect, request, g
+from flask import g, jsonify, redirect, request
 # from flask.logging import default_handler
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -170,7 +170,8 @@ def create_app(config=CONFIG):
         return redirect(request.base_url + "docs")
 
     # register blueprints
-    from . import collocation, corpus, keyword, query, semantic_map, ufa, users, library
+    from . import (collocation, corpus, keyword, library, query, semantic_map,
+                   ufa, users)
 
     app.register_blueprint(users.bp)
     app.register_blueprint(corpus.bp)

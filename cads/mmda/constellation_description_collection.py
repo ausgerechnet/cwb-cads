@@ -19,10 +19,11 @@ from .constellation_description_collocation import (
     ConstellationCollocationIn, ConstellationCollocationOut, get_collo_items,
     get_or_create_coll)
 from .database import (Constellation, ConstellationDescription,
-                       ConstellationDescriptionCollection,
-                       Discourseme, DiscoursemeDescription,
-                       DiscoursemeTemplate, DiscoursemeTemplateItem)
-from .discourseme import DiscoursemeIDsSchema, DiscoursemeOutSchema, DiscoursemeItemsOnlyInSchema
+                       ConstellationDescriptionCollection, Discourseme,
+                       DiscoursemeDescription, DiscoursemeTemplate,
+                       DiscoursemeTemplateItem)
+from .discourseme import (DiscoursemeIDsSchema, DiscoursemeItemsOnlyInSchema,
+                          DiscoursemeOutSchema)
 from .discourseme_description import discourseme_template_to_description
 
 bp = APIBlueprint('collection', __name__, url_prefix='/collection/')

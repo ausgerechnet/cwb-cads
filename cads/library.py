@@ -3,25 +3,25 @@
 
 import json
 import os
-from glob import glob
 import re
+from glob import glob
 
 import click
-from flask import current_app as app
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Boolean, Float, Integer, List, Nested, String
-from .database import Macro, NestedMacro, NestedWordList, WordList, WordListWords, Corpus, parse_macro_call_arguments
-from .users import auth
+from apiflask.fields import Integer, List, String
+from flask import current_app as app
+
 from . import db
-
+from .database import Corpus, Macro, WordList, WordListWords
 from .spheroscope.slot_query import import_slot_query
-
+from .users import auth
 
 bp = APIBlueprint('library', __name__, url_prefix='/library', cli_group='library')
 
 
 argstring_simple = re.compile(r"\d|10")
 argstring_named = re.compile(r"\d=([a-zA-Z_][a-zA-Z0-9_\-]*)")
+
 
 def parse_macro_arguments(argstring):
     """Parses a macro definition to determine number and name of arguments"""
@@ -119,7 +119,7 @@ def import_library(lib_dir, corpus_id, username):
                 app.logger.debug(f"Importing macro '{name}' with arguments {argument_names} from file '{path}'")
             else:
                 app.logger.debug(f"Importing macro '{name}' with {valency} arguments from file '{path}'")
-            
+
             import_macro(name, valency, argument_names, body, corpus_id)
 
     for path in paths_queries:
@@ -142,7 +142,7 @@ class MacroOut(Schema):
 
 
 class WordListOut(Schema):
-    
+
     id = Integer()
     modified = String()
     corpus_id = Integer()
@@ -150,6 +150,7 @@ class WordListOut(Schema):
     version = Integer()
     comment = String()
     words = List(String())
+
 
 #################
 # API endpoints #
@@ -162,7 +163,7 @@ def get_macro(corpus_id, id):
 
     """Gets a single macro for a specified corpus"""
 
-    corpus = db.get_or_404(Corpus, corpus_id) 
+    corpus = db.get_or_404(Corpus, corpus_id)
 
     try:
         macro = Macro.query \
@@ -182,11 +183,11 @@ def get_macros(corpus_id):
 
     """Gets all macros for a specified corpus"""
 
-    corpus = db.get_or_404(Corpus, corpus_id) 
+    corpus = db.get_or_404(Corpus, corpus_id)
 
-    macros = Macro.query \
-            .filter(Macro.corpus_id == corpus.id) \
-            .all()
+    macros = Macro.query.\
+        filter(Macro.corpus_id == corpus.id).\
+        all()
 
     return [MacroOut().dump(m) for m in macros], 200
 
@@ -198,7 +199,7 @@ def get_word_list(corpus_id, id):
 
     """Gets a single wordlist for a specified corpus"""
 
-    corpus = db.get_or_404(Corpus, corpus_id) 
+    corpus = db.get_or_404(Corpus, corpus_id)
 
     try:
         wl = WordList.query \
@@ -218,11 +219,11 @@ def get_word_lists(corpus_id):
 
     """Gets all wordlists for a specified corpus"""
 
-    corpus = db.get_or_404(Corpus, corpus_id) 
+    corpus = db.get_or_404(Corpus, corpus_id)
 
-    wls = WordList.query \
-            .filter(WordList.corpus_id == corpus.id) \
-            .all()
+    wls = WordList.query.\
+        filter(WordList.corpus_id == corpus.id).\
+        all()
 
     return [WordListOut().dump(wl) for wl in wls], 200
 
@@ -234,7 +235,7 @@ def get_word_lists(corpus_id):
 @bp.cli.command('import-library')
 @click.option('--corpus_id', default=1)
 @click.option('--lib_dir', default='tests/library/')
-def import_library_cmd(corpus_id, lib_dir): 
+def import_library_cmd(corpus_id, lib_dir):
 
     username = 'admin'
 

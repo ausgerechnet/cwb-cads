@@ -1,17 +1,17 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from functools import lru_cache
 import json
+from functools import lru_cache
 
-from flask import current_app
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Integer, String, Boolean, Nested, Dict, List, Raw
+from apiflask.fields import Boolean, Dict, Integer, List, Nested, Raw, String
+from flask import current_app
 
-from .database import FlexiConcSession
+from .. import db
 # from ..database import Query
 from ..users import auth
-from .. import db
+from .database import FlexiConcSession
 
 # from flexiconc import Concordance
 

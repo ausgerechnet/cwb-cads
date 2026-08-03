@@ -17,11 +17,11 @@ from ..concordance import (ConcordanceIn, ConcordanceLineIn,
 from ..database import Breakdown, Corpus, get_or_create
 from ..query import ccc_query, get_or_create_query_wrapper
 from ..users import auth, write_access_required
-from .database import (Constellation, ConstellationDescription,
-                       Discourseme, DiscoursemeTemplateItem, DiscoursemeTemplate,
-                       DiscoursemeDescription)
-from .discourseme import (DiscoursemeIDsSchema, DiscoursemeOutSchema,
-                          DiscoursemeItemsOnlyInSchema)
+from .database import (Constellation, ConstellationDescription, Discourseme,
+                       DiscoursemeDescription, DiscoursemeTemplate,
+                       DiscoursemeTemplateItem)
+from .discourseme import (DiscoursemeIDsSchema, DiscoursemeItemsOnlyInSchema,
+                          DiscoursemeOutSchema)
 from .discourseme_description import (DiscoursemeDescriptionOut,
                                       discourseme_template_to_description)
 

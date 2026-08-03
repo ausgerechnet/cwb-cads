@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import re
-
 from random import randint
 
 from apiflask import APIBlueprint, Schema, abort
@@ -60,7 +58,7 @@ def ccc_query(query, return_df=True):
             current_app.logger.error(f"ccc_query :: error: '{matches}'")
             query.error = True
             db.session.commit()
-            return DataFrame()  
+            return DataFrame()
 
         if len(matches.df) == 0:  # no matches
             current_app.logger.debug("ccc_query :: 0 matches")

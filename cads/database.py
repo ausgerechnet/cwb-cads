@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os
 import json
+import os
 import re
-
 from datetime import datetime, timezone
 
 from ccc import Corpus as Crps

@@ -15,8 +15,8 @@ from pandas import DataFrame, read_csv
 from .. import db
 from ..database import User, get_or_create
 from ..users import auth, write_access_required
-from .database import Constellation, Discourseme, DiscoursemeTemplate, DiscoursemeTemplateItem
-
+from .database import (Constellation, Discourseme, DiscoursemeTemplate,
+                       DiscoursemeTemplateItem)
 
 bp = APIBlueprint('discourseme', __name__, url_prefix='/discourseme', cli_group='discourseme')
 

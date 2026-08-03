@@ -17,18 +17,16 @@ from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..corpus import rename_meta_freq
 from ..database import Breakdown, Corpus, Query, get_or_create
+from ..library import import_wordlist
 from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
                      QueryMetaFrequencyOut, get_query_meta_freq_breakdown)
 from ..users import auth, write_access_required
 from ..utils import paginate_dataframe
 from .database import (CollocationDiscoursemeItem, Discourseme,
-                       DiscoursemeTemplate,
-                       DiscoursemeDescription,
-                       DiscoursemeDescriptionItems,
-                       KeywordDiscoursemeItem,
-                       DiscoursemeTemplateItem)
+                       DiscoursemeDescription, DiscoursemeDescriptionItems,
+                       DiscoursemeTemplate, DiscoursemeTemplateItem,
+                       KeywordDiscoursemeItem)
 from .discourseme import DiscoursemeItemSchema
-from ..library import import_wordlist
 
 bp = APIBlueprint('description', __name__, url_prefix='/<discourseme_id>/description', cli_group='discourseme')
 

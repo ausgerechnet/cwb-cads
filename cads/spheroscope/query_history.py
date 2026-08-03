@@ -1,18 +1,14 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Integer, String, Date, Nested
-from apiflask.validators import OneOf
-import json
+from apiflask.fields import Integer, Nested, String
 
-from flask import current_app
-
-from .slot_query import SlotQueryOut
-from .database import QueryHistory, QueryHistoryEntry
-from ..database import Corpus, Query
-from ..users import auth
 from .. import db
+from ..users import auth
+from .database import QueryHistory, QueryHistoryEntry
+from .slot_query import SlotQueryOut
 
 bp = APIBlueprint('query_history', __name__, url_prefix='/query-history')
 
@@ -53,12 +49,12 @@ class QueryHistoryOut(Schema):
 @bp.auth_required(auth)
 def create(json_data):
     """Create a new quey history.
-    
+
     """
 
     query_history = QueryHistory(
-        id = None,
-        name = json_data.get("name")
+        id=None,
+        name=json_data.get("name")
     )
 
     db.session.add(query_history)
@@ -86,7 +82,7 @@ def get_all():
 @bp.auth_required(auth)
 def add_query(id, json_data):
     """Create a new entry in a given query history.
-    
+
     """
 
     history = db.get_or_404(QueryHistory, id)
@@ -108,7 +104,7 @@ def add_query(id, json_data):
 @bp.auth_required(auth)
 def get_history(id):
     """Get all entries in a given query history.
-    
+
     """
 
     history = db.get_or_404(QueryHistory, id)
@@ -120,11 +116,11 @@ def get_history(id):
 @bp.auth_required(auth)
 def delete_history(id):
     """ Deletes a given query history
-    
+
     """
 
     history = db.get_or_404(QueryHistory, id)
-    
+
     try:
         db.session.delete(history)
         db.session.commit()
@@ -137,7 +133,7 @@ def delete_history(id):
 @bp.auth_required(auth)
 def delete_history_entry(hid, qid):
     """ Deletes the given query from a history
-    
+
     """
 
     entry = db.get_or_404(QueryHistoryEntry, (hid, qid))

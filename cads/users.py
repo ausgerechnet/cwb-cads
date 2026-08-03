@@ -2,18 +2,18 @@
 # -*- coding: utf-8 -*-
 
 
+from functools import wraps
+
+import click
 from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Integer, String
 from flask import current_app
 from flask_jwt_extended import (create_access_token, create_refresh_token,
                                 decode_token)
-from functools import wraps
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from . import auth, db
-from .database import User, Role
-
-import click
+from .database import Role, User
 
 bp = APIBlueprint('user', __name__, url_prefix='/user', cli_group='user')
 

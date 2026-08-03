@@ -5,8 +5,7 @@
 from apiflask import APIBlueprint
 
 from .. import library
-
-from . import slot_query, query_history, flexiconc
+from . import flexiconc, query_history, slot_query
 
 bp = APIBlueprint('spheroscope', __name__, url_prefix='/spheroscope')
 

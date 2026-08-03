@@ -2,75 +2,21 @@
 # -*- coding: utf-8 -*-
 
 import json
-import re
-import os
 
 from apiflask import APIBlueprint, Schema
-from apiflask.fields import Integer, Nested, String, Dict, List
+from apiflask.fields import Dict, Integer, List, Nested, String
 from apiflask.validators import OneOf
-from ccc.cqpy import cqpy_load
-
-from pandas import DataFrame, concat
 from ccc import SubCorpus
+from ccc.cqpy import cqpy_load
 from flask import current_app as app
+from pandas import DataFrame, concat
 
 from .. import db
-from ..database import Corpus, Macro, MacroCall, WordList, WordListCall
+from ..database import Corpus
 from ..users import auth
 from .database import SlotQuery
 
-from ..query import ccc_query
-
 bp = APIBlueprint('slot_query', __name__, url_prefix='/slot-query')
-
-
-def ccc_get_library(slot_query, wordlists=[], macros=[]):
-
-    """TODO find out the exact purpose of this function
-    
-    This function runs a slot query and dumps the macros and word lists
-    defined within it?"""
-
-    crps = slot_query.corpus.ccc()
-    cqp = crps.start_cqp()
-
-    for wordlist in wordlists:
-        name = wordlist.split('/')[-1].split('.')[0]
-        abs_path = os.path.abspath(wordlist)
-        cqp_exec = f'define ${name} < "{abs_path}";'
-        cqp.Exec(cqp_exec)
-
-    # macros
-    for macro in macros:
-        abs_path = os.path.abspath(macro)
-        cqp_exec = f'define macro < "{abs_path}";'
-        cqp.Exec(cqp_exec)
-    # for wordlists defined in macros, it is necessary to execute the macro once
-    macros = cqp.Exec("show macro;").split("\n")
-    for macro in macros:
-        # NB: this yields !cqp.Ok() if macro is not zero-valent
-        cqp.Exec(macro.split("(")[0] + "();")
-
-    cqp.Exec("set ParseOnly on;")
-    cqp.Exec('set PrettyPrint off;')
-    cqp.Exec("set SpheroscopeDebug on;")
-    cqp.Exec("set SpheroscopeDebug;")
-
-    result = cqp.Exec(slot_query.cqp_query)
-    cqp.__del__()
-
-    wordlists = list()
-    macros = list()
-    for line in result.split("\n"):
-        if line.startswith("WORDLIST"):
-            wordlists.append(line.split(" ")[-1])
-        elif line.startswith("MACRO"):
-            macros.append(line.split(" ")[-1])
-
-    return {
-        'wordlists': wordlists,
-        'macros': macros
-    }
 
 
 def ccc_slot_query(slot_query):
@@ -262,13 +208,12 @@ def import_slot_query(path, corpus_id):
 
     query = cqpy_load(path)
 
-
     anchors = query.get('anchors')
     slots = []
     corrections = []
     if anchors:
         if anchors.get('slots'):
-            slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]      
+            slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in query['anchors']['slots'].items()]
         if anchors.get('corrections'):
             corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in query['anchors']['corrections'].items()]
 
@@ -292,7 +237,7 @@ def import_slot_query(path, corpus_id):
     finally:
         db.session.commit()
 
-    ## dump to library directory
+    # dump to library directory
     # TODO: is this really necessary? it just basically duplicates the input and is never read by the backend
     slot_query.write()
 
