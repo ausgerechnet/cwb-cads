@@ -76,7 +76,8 @@ def ccc_keywords(keyword, include_negative=False):
     # save scores
     current_app.logger.debug(f'ccc_keywords :: saving {len(scores)} scores')
     nr_arrays = int(len(scores) / 10000000) + 1
-    dfs = array_split(scores, nr_arrays)
+    index_splits = array_split(scores.index, nr_arrays)
+    dfs = [scores.loc[idx] for idx in index_splits]
     for i, df in enumerate(dfs):
         current_app.logger.debug(f'.. batch {i+1} of {len(dfs)}')
         df.to_sql('keyword_item_score', con=db.engine, if_exists='append', index=False)
