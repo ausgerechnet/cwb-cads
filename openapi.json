@@ -2730,6 +2730,9 @@
       "SlotQueryIn": {
         "additionalProperties": false,
         "properties": {
+          "context_break": {
+            "type": "string"
+          },
           "corpus_id": {
             "type": "integer"
           },
@@ -2743,6 +2746,7 @@
             "type": "string"
           },
           "match_strategy": {
+            "default": "longest",
             "enum": [
               "longest",
               "shortest",
@@ -3377,7 +3381,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.2.dev1"
+    "version": "0.3.2.dev3"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -13519,6 +13523,59 @@
           }
         ],
         "summary": "Create a new slot query.",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      },
+      "put": {
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlotQueryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotQueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Return an existing slot query or create it if it does not exist.",
         "tags": [
           "Spheroscope.Slot_Query"
         ]
