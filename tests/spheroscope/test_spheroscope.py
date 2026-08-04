@@ -44,6 +44,47 @@ def test_create_slot_query(client, auth):
         assert slot_query.status_code == 200
 
 
+def test_put_slot_query(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+        client.get("/")
+
+        test_query = cqpy_load("tests/library/queries/pattern3_np_hat_wunsch_dass.cqpy")
+
+        slots = [{'slot': key, 'start': str(value[0]), 'end': str(value[1])} for key, value in test_query['anchors']['slots'].items()]
+        corrections = [{'anchor': str(key), 'correction': int(value)} for key, value in test_query['anchors']['corrections'].items()]
+
+        slot_query_1 = client.post(url_for('spheroscope.slot_query.create'),
+                                   content_type='application/json',
+                                   json={
+                                       'cqp_query': test_query['cqp'],
+                                       'name': 'test-put',
+                                       'corpus_id': 1,
+                                       'slots': slots,
+                                       'corrections': corrections
+                                   },
+                                   headers=auth_header)
+
+        assert slot_query_1.status_code == 200
+
+        slot_query_2 = client.put(url_for('spheroscope.slot_query.get_or_create'),
+                                  content_type='application/json',
+                                  json={
+                                      'cqp_query': test_query['cqp'],
+                                      'name': 'test-put',
+                                      'corpus_id': 1,
+                                      'slots': slots,
+                                      'corrections': corrections
+                                  },
+                                  headers=auth_header)
+
+        assert slot_query_2.status_code == 200
+
+        assert slot_query_1.json['id'] == slot_query_2.json['id']
+
+
 def test_query_concordance(client, auth):
 
     # define queries and slots
@@ -75,6 +116,7 @@ def test_query_concordance(client, auth):
         assert conc.status_code == 200
 
 
+@pytest.mark.now
 def test_query_diff(client, auth):
 
     # define queries and slots

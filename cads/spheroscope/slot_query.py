@@ -34,7 +34,7 @@ def ccc_slot_query(slot_query):
     dump = crps.query(
         cqp_query=slot_query.cqp_query,
         corrections=corrections,
-        # context_break=slot_query.s,
+        context_break=slot_query.s,
         match_strategy=slot_query.match_strategy
     )
 
@@ -83,9 +83,15 @@ def format_line(line, p_show, s_show):
 
 def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
 
+    # ccc's concordance() selects rows via df.loc[list(matches), :], which
+    # over-selects whenever (match, matchend) is not unique in df_dump (both
+    # duplicate tuples and shared 'match' values with differing 'matchend'
+    # trigger this). Deduplicate before querying and re-expand afterwards.
+    df_unique = df_dump[~df_dump.index.duplicated(keep='first')]
+
     lines = SubCorpus(
         subcorpus_name=None,
-        df_dump=df_dump,
+        df_dump=df_unique,
         corpus_name=cwb_id,
         cqp_bin=app.config['CCC_CQP_BIN'],
         registry_dir=app.config['CCC_REGISTRY_DIR'],
@@ -96,9 +102,11 @@ def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
         form='dict',
         p_show=p_show,
         s_show=s_show,
-        order='asis'
+        order='asis',
+        matches=list(df_unique.index)
     )
 
+    lines = lines.reindex(df_dump.index)
     lines = lines.apply(lambda line: format_line(line, p_show, s_show), axis=1)
 
     return lines.to_list()
@@ -266,7 +274,7 @@ class SlotQueryIn(Schema):
     context_break = String(required=False)
     slots = Nested(AnchorSlot(many=True))
     corrections = Nested(AnchorCorrection(many=True))
-    match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    match_strategy = String(load_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
 
 class SlotQueryOut(Schema):
@@ -357,15 +365,65 @@ def create(json_data):
     context_break = json_data.get('context_break', corpus.s_default)
     slots = json_data.get('slots')
     corrections = json_data.get('corrections')
+    cqp_query = json_data.get('cqp_query')
+    match_strategy = json_data.get('match_strategy')
+    name = json_data.get('name')
+
     slot_query = SlotQuery(
-        cqp_query=json_data.get('cqp_query'),
-        name=json_data.get('name'),
+        cqp_query=cqp_query,
+        name=name,
         corpus_id=corpus.id,
-        match_strategy=json_data.get('match_strategy'),
+        match_strategy=match_strategy,
         s=context_break,
         _slots=json.dumps(slots),
         _corrections=json.dumps(corrections),
     )
+    db.session.add(slot_query)
+    db.session.commit()
+
+    return SlotQueryOut().dump(slot_query), 200
+
+
+@bp.put('/create')
+@bp.input(SlotQueryIn)
+@bp.output(SlotQueryOut)
+@bp.auth_required(auth)
+def get_or_create(json_data):
+    """Return an existing slot query or create it if it does not exist."""
+
+    corpus = db.get_or_404(Corpus, json_data['corpus_id'])
+    context_break = json_data.get('context_break', corpus.s_default)
+    slots = json_data.get('slots')
+    corrections = json_data.get('corrections')
+    cqp_query = json_data.get('cqp_query')
+    match_strategy = json_data.get('match_strategy')
+    name = json_data.get('name')
+
+    slot_query = SlotQuery.query.filter_by(
+        corpus_id=corpus.id,
+        name=name,
+        cqp_query=cqp_query,
+        match_strategy=match_strategy,
+        s=context_break,
+        _slots=json.dumps(slots),
+        _corrections=json.dumps(corrections),
+    ).first()
+
+    if slot_query:
+        app.logger.debug('slot query already exists')
+        return SlotQueryOut().dump(slot_query), 200
+
+    app.logger.debug('slot query does not exist, creating')
+    slot_query = SlotQuery(
+        cqp_query=cqp_query,
+        name=name,
+        corpus_id=corpus.id,
+        match_strategy=match_strategy,
+        s=context_break,
+        _slots=json.dumps(slots),
+        _corrections=json.dumps(corrections),
+    )
+
     db.session.add(slot_query)
     db.session.commit()
 
