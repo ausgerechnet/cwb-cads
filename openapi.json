@@ -2780,6 +2780,37 @@
         },
         "type": "object"
       },
+      "SlotMatch": {
+        "additionalProperties": false,
+        "properties": {
+          "anchors": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "context": {
+            "type": "integer"
+          },
+          "contextend": {
+            "type": "integer"
+          },
+          "match": {
+            "type": "integer"
+          },
+          "matchend": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "anchors",
+          "context",
+          "contextend",
+          "match",
+          "matchend"
+        ],
+        "type": "object"
+      },
       "SlotQueryConcOut": {
         "additionalProperties": false,
         "properties": {
@@ -2848,6 +2879,24 @@
           "corpus_id",
           "cqp_query"
         ],
+        "type": "object"
+      },
+      "SlotQueryMatchesOut": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "matches": {
+            "items": {
+              "$ref": "#/components/schemas/SlotMatch"
+            },
+            "type": "array"
+          },
+          "nr_matches": {
+            "type": "integer"
+          }
+        },
         "type": "object"
       },
       "SlotQueryOut": {
@@ -14026,11 +14075,61 @@
     },
     "/spheroscope/slot-query/diff": {
       "get": {
+        "description": "Only the requested page is lexicalised; all lines are returned if no page_size is given.",
         "parameters": [
+          {
+            "description": "page size (all lines if not given)",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": null,
+              "minimum": 1,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "page number",
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "order by corpus position (first / last) or randomly",
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "first",
+              "enum": [
+                "first",
+                "last",
+                "random"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "random seed for sort_order random (default: random seed of the (first) query)",
+            "in": "query",
+            "name": "random_seed",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
           {
             "in": "query",
             "name": "id1",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "integer"
             }
@@ -14038,7 +14137,7 @@
           {
             "in": "query",
             "name": "id2",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "integer"
             }
@@ -14144,6 +14243,7 @@
     },
     "/spheroscope/slot-query/{id}/concordance": {
       "get": {
+        "description": "Only the requested page is lexicalised; all lines are returned if no page_size is given.",
         "parameters": [
           {
             "in": "path",
@@ -14151,6 +14251,55 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "page size (all lines if not given)",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": null,
+              "minimum": 1,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "page number",
+            "in": "query",
+            "name": "page_number",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "order by corpus position (first / last) or randomly",
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "first",
+              "enum": [
+                "first",
+                "last",
+                "random"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "random seed for sort_order random (default: random seed of the (first) query)",
+            "in": "query",
+            "name": "random_seed",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
             }
           }
         ],
@@ -14184,6 +14333,16 @@
               }
             },
             "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
           }
         },
         "security": [
@@ -14192,6 +14351,61 @@
           }
         ],
         "summary": "Get concordance lines of a slot query.",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      }
+    },
+    "/spheroscope/slot-query/{id}/matches": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotQueryMatchesOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get match positions and anchors of a slot query (without lexicalisation).",
         "tags": [
           "Spheroscope.Slot_Query"
         ]

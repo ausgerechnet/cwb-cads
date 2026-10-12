@@ -3,9 +3,9 @@
 
 import json
 
-from apiflask import APIBlueprint, Schema
+from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Dict, Integer, List, Nested, String
-from apiflask.validators import OneOf
+from apiflask.validators import OneOf, Range
 from ccc import SubCorpus
 from ccc.cqpy import cqpy_load
 from flask import current_app as app
@@ -87,7 +87,7 @@ def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
     # over-selects whenever (match, matchend) is not unique in df_dump (both
     # duplicate tuples and shared 'match' values with differing 'matchend'
     # trigger this). Deduplicate before querying and re-expand afterwards.
-    df_unique = df_dump[~df_dump.index.duplicated(keep='first')]
+    df_unique = df_dump[~df_dump.index.duplicated(keep='first')].copy()
 
     lines = SubCorpus(
         subcorpus_name=None,
@@ -110,6 +110,41 @@ def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
     lines = lines.apply(lambda line: format_line(line, p_show, s_show), axis=1)
 
     return lines.to_list()
+
+
+def paginate_matches(df, sort_order='first', random_seed=None, page_size=None, page_number=1):
+    """Sorts a DataFrame with columns 'match' and 'matchend' and returns the
+    requested page together with pagination metadata. Returns all rows on
+    one page if page_size is None.
+
+    """
+
+    if sort_order == 'random':
+        df = df.sample(frac=1, random_state=random_seed)
+    else:
+        df = df.sort_values(by=['match', 'matchend'], ascending=sort_order == 'first', kind='stable')
+
+    nr_lines = len(df)
+    if page_size is None:
+        page_size = nr_lines
+        page_number = 1
+    page_count = (nr_lines + page_size - 1) // page_size if page_size > 0 else 0
+
+    start = (page_number - 1) * page_size
+    df_page = df.iloc[start:start + page_size]
+
+    return df_page, {
+        'nr_lines': nr_lines,
+        'page_size': page_size,
+        'page_number': page_number,
+        'page_count': page_count
+    }
+
+
+def anchor_columns(df):
+    """Returns the anchor columns (0–9) present in a dump"""
+
+    return sorted(set(range(0, 10)).intersection(set(df.columns)))
 
 
 def merge_and_coalesce(df1, df2):
@@ -303,10 +338,34 @@ class SlotQueryOut(Schema):
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
 
 
-class SlotDiffIn(Schema):
+class PaginationIn(Schema):
 
-    id1 = Integer()
-    id2 = Integer()
+    page_size = Integer(
+        required=False, load_default=None, validate=Range(min=1),
+        metadata={'description': 'page size (all lines if not given)'}
+    )
+    page_number = Integer(
+        required=False, load_default=1, validate=Range(min=1),
+        metadata={'description': 'page number'}
+    )
+    sort_order = String(
+        required=False, load_default='first', validate=OneOf(['first', 'last', 'random']),
+        metadata={'description': 'order by corpus position (first / last) or randomly'}
+    )
+    random_seed = Integer(
+        required=False, load_default=None,
+        metadata={'description': 'random seed for sort_order random (default: random seed of the (first) query)'}
+    )
+
+
+class SlotConcordanceIn(PaginationIn):
+    pass
+
+
+class SlotDiffIn(PaginationIn):
+
+    id1 = Integer(required=True)
+    id2 = Integer(required=True)
 
 
 class TokenOutSlot(Schema):
@@ -341,6 +400,22 @@ class SlotQueryConcOut(Schema):
     page_size = Integer()
     page_count = Integer()
     page_number = Integer()
+
+
+class SlotMatch(Schema):
+
+    match = Integer(required=True)
+    matchend = Integer(required=True)
+    context = Integer(required=True)
+    contextend = Integer(required=True)
+    anchors = Dict(keys=String(), values=Integer(), required=True)
+
+
+class SlotQueryMatchesOut(Schema):
+
+    id = Integer()
+    nr_matches = Integer()
+    matches = Nested(SlotMatch(many=True))
 
 
 class SlotDiffOut(Schema):
@@ -458,38 +533,86 @@ def get_one(id):
     return SlotQueryOut().dump(slot_query), 200
 
 
-@bp.get('/<id>/concordance')
-@bp.output(SlotQueryConcOut)
+def get_slot_query_matches(slot_query):
+    """Returns the matches of a slot query as a DataFrame with columns
+    match, matchend, context, contextend and anchors; aborts if the query
+    is invalid.
+
+    """
+
+    df = ccc_slot_query(slot_query)
+    if isinstance(df, str):
+        abort(400, message=f"invalid query: {df}")
+
+    if len(df) == 0:
+        return DataFrame(columns=['match', 'matchend', 'context', 'contextend'])
+
+    return df.reset_index()
+
+
+@bp.get('/<id>/matches')
+@bp.output(SlotQueryMatchesOut)
 @bp.auth_required(auth)
-def concordance(id):
-    """Get concordance lines of a slot query.
+def matches(id):
+    """Get match positions and anchors of a slot query (without lexicalisation).
 
     """
 
     slot_query = db.get_or_404(SlotQuery, id)
 
-    df = ccc_slot_query(slot_query)
-    df['concordance'] = lexicalise(df, slot_query.corpus.cwb_id)
-    df = df.reset_index()
-    anchors = set(range(0, 10)).intersection(set(df.columns))
+    df = get_slot_query_matches(slot_query)
+    anchors = anchor_columns(df)
+    df = df.sort_values(by=['match', 'matchend'])
 
-    def _combine(row):
-        row['concordance']['meta'] = {str(k): int(row[k]) for k in anchors}
-        row['concordance']['meta']['match'] = row['match']
-        row['concordance']['meta']['matchend'] = row['matchend']
-        row['concordance']['meta']['context'] = row['context']
-        row['concordance']['meta']['contextend'] = row['contextend']
-        return row
+    matches = [{
+        'match': int(row['match']),
+        'matchend': int(row['matchend']),
+        'context': int(row['context']),
+        'contextend': int(row['contextend']),
+        'anchors': {str(k): int(row[k]) for k in anchors}
+    } for row in df.to_dict('records')]
 
-    lines = df.apply(lambda row: _combine(row), axis=1)['concordance'].to_list()
+    return {
+        'id': slot_query.id,
+        'nr_matches': len(matches),
+        'matches': matches
+    }, 200
+
+
+@bp.get('/<id>/concordance')
+@bp.input(SlotConcordanceIn, location='query')
+@bp.output(SlotQueryConcOut)
+@bp.auth_required(auth)
+def concordance(id, query_data):
+    """Get concordance lines of a slot query.
+
+    Only the requested page is lexicalised; all lines are returned if no page_size is given.
+
+    """
+
+    slot_query = db.get_or_404(SlotQuery, id)
+    random_seed = query_data['random_seed'] if query_data['random_seed'] is not None else slot_query.random_seed
+
+    df = get_slot_query_matches(slot_query)
+    anchors = anchor_columns(df)
+    df, pagination = paginate_matches(df, query_data['sort_order'], random_seed,
+                                      query_data['page_size'], query_data['page_number'])
+
+    lines = list()
+    if len(df) > 0:
+        df = df.set_index(['match', 'matchend'], drop=False)
+        df['concordance'] = lexicalise(df[['context', 'contextend']], slot_query.corpus.cwb_id)
+        for row in df.to_dict('records'):
+            line = row['concordance']
+            line['meta'] = {str(k): int(row[k]) for k in anchors}
+            for key in ['match', 'matchend', 'context', 'contextend']:
+                line['meta'][key] = int(row[key])
+            lines.append(line)
 
     return SlotQueryConcOut().dump({
         'id': slot_query.id,
         'lines': lines,
-        'nr_lines': len(lines),
-        'page_size': len(lines),
-        'page_number': 1,
-        'page_count': len(lines)
+        **pagination
     }), 200
 
 
@@ -500,10 +623,13 @@ def concordance(id):
 def diff(query_data):
     """Get difference between two slot queries.
 
+    Only the requested page is lexicalised; all lines are returned if no page_size is given.
+
     """
 
     slot_query_1 = db.get_or_404(SlotQuery, query_data['id1'])
     slot_query_2 = db.get_or_404(SlotQuery, query_data['id2'])
+    random_seed = query_data['random_seed'] if query_data['random_seed'] is not None else slot_query_1.random_seed
 
     # check corpora
     assert slot_query_1.corpus.cwb_id == slot_query_2.corpus.cwb_id
@@ -513,27 +639,28 @@ def diff(query_data):
     df1 = ccc_slot_query(slot_query_1)
     df2 = ccc_slot_query(slot_query_2)
     diff = merge_and_coalesce(df1, df2)
-    df_lines = diff[['context_min', 'context_max']].\
-        rename({'context_min': 'match', 'context_max': 'matchend'}, axis=1).\
-        set_index(['match', 'matchend'])
-    lines = lexicalise(df_lines, cwb_id)
-    diff['concordance'] = lines
+    diff, pagination = paginate_matches(diff, query_data['sort_order'], random_seed,
+                                        query_data['page_size'], query_data['page_number'])
 
-    def _combine(row):
-        row['concordance']['meta_A'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df1_rows']]
-        row['concordance']['meta_B'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df2_rows']]
-        row['concordance']['source'] = 'A' if len(row['df1_rows']) > 0 else ''
-        row['concordance']['source'] += 'B' if len(row['df2_rows']) > 0 else ''
-        return row
+    conc = list()
+    if len(diff) > 0:
+        df_lines = diff[['context_min', 'context_max']].\
+            rename({'context_min': 'match', 'context_max': 'matchend'}, axis=1).\
+            set_index(['match', 'matchend'])
+        diff = diff.assign(concordance=lexicalise(df_lines, cwb_id))
 
-    conc = diff.apply(lambda row: _combine(row), axis=1)['concordance'].to_list()
+        def _combine(row):
+            row['concordance']['meta_A'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df1_rows']]
+            row['concordance']['meta_B'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df2_rows']]
+            row['concordance']['source'] = 'A' if len(row['df1_rows']) > 0 else ''
+            row['concordance']['source'] += 'B' if len(row['df2_rows']) > 0 else ''
+            return row
+
+        conc = diff.apply(lambda row: _combine(row), axis=1)['concordance'].to_list()
 
     return SlotDiffOut().dump({
         'id1': slot_query_1.id,
         'id2': slot_query_2.id,
         'lines': conc,
-        'nr_lines': diff.shape[0],
-        'page_size': diff.shape[0],
-        'page_number': 1,
-        'page_count': diff.shape[0]
+        **pagination
     }), 200

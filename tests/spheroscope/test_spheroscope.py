@@ -229,3 +229,110 @@ def test_slot_query_library(client, auth):
                 matches = ccc_slot_query(slot_query)
                 assert not isinstance(matches, str), matches
                 assert len(matches) > 0, slot_query.mangled_query
+
+
+def test_query_concordance_pagination(client, auth):
+
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        slot_query = client.post(url_for('spheroscope.slot_query.create'),
+                                 json={'cqp_query': cqp, 'corpus_id': 1, 'slots': slots, 'corrections': []},
+                                 headers=auth_header)
+        id = slot_query.json['id']
+
+        # matches
+        matches = client.get(url_for('spheroscope.slot_query.matches', id=id), headers=auth_header)
+        assert matches.status_code == 200
+        nr_matches = matches.json['nr_matches']
+        assert nr_matches == len(matches.json['matches']) > 25
+        assert set(matches.json['matches'][0]['anchors'].keys()) == {'0', '1'}
+        starts = [m['match'] for m in matches.json['matches']]
+        assert starts == sorted(starts)
+
+        # all lines by default
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=id), headers=auth_header)
+        assert conc.status_code == 200
+        assert conc.json['nr_lines'] == len(conc.json['lines']) == nr_matches
+        assert conc.json['page_count'] == 1
+        assert [line['meta']['match'] for line in conc.json['lines']] == starts
+
+        # pages
+        page_size = 10
+        page_count = (nr_matches + page_size - 1) // page_size
+        lines = list()
+        for page_number in range(1, page_count + 1):
+            page = client.get(url_for('spheroscope.slot_query.concordance', id=id,
+                                      page_size=page_size, page_number=page_number),
+                              headers=auth_header)
+            assert page.status_code == 200
+            assert page.json['nr_lines'] == nr_matches
+            assert page.json['page_count'] == page_count
+            lines.extend(page.json['lines'])
+        assert len(lines) == nr_matches
+        assert [line['meta']['match'] for line in lines] == starts
+
+        # beyond the last page
+        empty = client.get(url_for('spheroscope.slot_query.concordance', id=id,
+                                   page_size=page_size, page_number=page_count + 1),
+                           headers=auth_header)
+        assert empty.status_code == 200
+        assert empty.json['lines'] == []
+
+        # last
+        last = client.get(url_for('spheroscope.slot_query.concordance', id=id, page_size=5, sort_order='last'),
+                          headers=auth_header)
+        assert [line['meta']['match'] for line in last.json['lines']] == starts[::-1][:5]
+
+        # random: reproducible with seed
+        random_1 = client.get(url_for('spheroscope.slot_query.concordance', id=id, page_size=5,
+                                      sort_order='random', random_seed=1),
+                              headers=auth_header)
+        random_2 = client.get(url_for('spheroscope.slot_query.concordance', id=id, page_size=5,
+                                      sort_order='random', random_seed=1),
+                              headers=auth_header)
+        random_3 = client.get(url_for('spheroscope.slot_query.concordance', id=id, page_size=5,
+                                      sort_order='random', random_seed=2),
+                              headers=auth_header)
+        assert random_1.json['lines'] == random_2.json['lines']
+        assert random_1.json['lines'] != random_3.json['lines']
+
+        # invalid parameters
+        invalid = client.get(url_for('spheroscope.slot_query.concordance', id=id, page_size=0),
+                             headers=auth_header)
+        assert invalid.status_code == 422
+
+
+def test_query_diff_pagination(client, auth):
+
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp1 = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
+    cqp2 = '"ich|wir"%c @0[pos="V.*"] @1".*" ".*"'
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        ids = [client.post(url_for('spheroscope.slot_query.create'),
+                           json={'cqp_query': cqp, 'corpus_id': 1, 'slots': slots, 'corrections': []},
+                           headers=auth_header).json['id'] for cqp in [cqp1, cqp2]]
+
+        full = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1]), headers=auth_header)
+        assert full.status_code == 200
+        assert full.json['nr_lines'] == len(full.json['lines'])
+
+        page = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1], page_size=7, page_number=2),
+                          headers=auth_header)
+        assert page.status_code == 200
+        assert page.json['nr_lines'] == full.json['nr_lines']
+        assert page.json['lines'] == full.json['lines'][7:14]
