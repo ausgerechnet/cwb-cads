@@ -401,6 +401,10 @@ class SlotQueryPatchIn(Schema):
 
 class SlotQueryFilterIn(Schema):
 
+    corpus_id = Integer(
+        required=False, load_default=None,
+        metadata={'description': 'only slot queries on this corpus'}
+    )
     outdated = Boolean(
         required=False, load_default=None,
         metadata={'description': 'only slot queries using outdated (true) or only latest (false) library versions'}
@@ -541,7 +545,11 @@ def get_all(query_data):
 
     """
 
-    slot_queries = SlotQuery.query.all()
+    slot_queries = SlotQuery.query
+    if query_data['corpus_id'] is not None:
+        corpus = db.get_or_404(Corpus, query_data['corpus_id'])
+        slot_queries = slot_queries.filter_by(corpus_id=corpus.id)
+    slot_queries = slot_queries.order_by(SlotQuery.id).all()
     if query_data['outdated'] is not None:
         slot_queries = [q for q in slot_queries if q.up_to_date != query_data['outdated']]
 

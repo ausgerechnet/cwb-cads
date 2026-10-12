@@ -2491,6 +2491,7 @@
             "type": "array"
           },
           "body": {
+            "description": "body as executed, with versioned identifiers of nested word lists and macros",
             "type": "string"
           },
           "comment": {
@@ -2498,6 +2499,10 @@
           },
           "corpus_id": {
             "type": "integer"
+          },
+          "definition": {
+            "description": "body with plain identifiers, as it can be posted again",
+            "type": "string"
           },
           "dependencies": {
             "$ref": "#/components/schemas/DependenciesOut"
@@ -14308,6 +14313,17 @@
     "/spheroscope/slot-query/": {
       "get": {
         "parameters": [
+          {
+            "description": "only slot queries on this corpus",
+            "in": "query",
+            "name": "corpus_id",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "integer"
+            }
+          },
           {
             "description": "only slot queries using outdated (true) or only latest (false) library versions",
             "in": "query",

@@ -4,6 +4,7 @@
 import json
 import os
 import re
+from collections import namedtuple
 from datetime import datetime, timezone
 
 from ccc import Corpus as Crps
@@ -335,13 +336,80 @@ class SegmentationSpanAnnotation(db.Model):
 
 # QUERIES #
 ###########
-def parse_macro_call_arguments(argstring):
-    """Determines the number of arguments supplied to a macro call"""
+MacroCallSpan = namedtuple('MacroCallSpan', ['start', 'end', 'name', 'arguments'])
 
-    if argstring:
-        return len(argstring.split(","))
-    else:
-        return 0
+macro_call_start = re.compile(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[")
+
+
+def skip_string(text, i):
+    """Returns the position after the quoted string starting at text[i]"""
+
+    quote = text[i]
+    i += 1
+    while i < len(text):
+        if text[i] == '\\':
+            i += 2
+            continue
+        if text[i] == quote:
+            return i + 1
+        i += 1
+
+    return len(text)
+
+
+def parse_macro_call_arguments(text, i):
+    """Parses the arguments of a macro call starting at text[i] (after the opening bracket).
+    Arguments are separated by commas outside quotes; the call ends at the first ']' outside quotes.
+
+    Returns the list of (stripped) arguments and the position after the closing bracket,
+    or (None, None) if the call is not terminated.
+    """
+
+    arguments = list()
+    start = i
+    while i < len(text):
+        c = text[i]
+        if c in '"\'':
+            i = skip_string(text, i)
+            continue
+        if c == ',':
+            arguments.append(text[start:i].strip())
+            start = i + 1
+        elif c == ']':
+            last = text[start:i].strip()
+            if arguments or last:
+                arguments.append(last)
+            return arguments, i + 1
+        i += 1
+
+    return None, None
+
+
+def parse_macro_calls(text):
+    """Finds all macro calls /name[arg, ...] in a query or macro body (outside quoted strings),
+    parsing arguments the way CQP does: quotes protect ',' and ']'.
+
+    Returns a list of MacroCallSpan(start, end, name, arguments); valency = len(arguments).
+    """
+
+    calls = list()
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if c in '"\'':
+            i = skip_string(text, i)
+            continue
+        if c == '/':
+            match = macro_call_start.match(text, i)
+            if match:
+                arguments, end = parse_macro_call_arguments(text, match.end())
+                if arguments is not None:
+                    calls.append(MacroCallSpan(i, end, match[1], arguments))
+                    i = end
+                    continue
+        i += 1
+
+    return calls
 
 
 def mangle_wordlist_call(text, wl):
@@ -357,11 +425,11 @@ def mangle_wordlist_call(text, wl):
 def mangle_macro_call(text, macro):
     """Replaces calls of macro.name with macro.valency arguments with its versioned identifier"""
 
-    arg_pattern = ', ?'.join([r'[^,\s]+?'] * macro.valency)
-    pattern = fr"/{re.escape(macro.name)}(\[{arg_pattern}\])"
-    repl = fr"/{macro.canonical_name}\1"
+    for call in reversed(parse_macro_calls(text)):
+        if call.name == macro.name and len(call.arguments) == macro.valency:
+            text = text[:call.start] + "/" + macro.canonical_name + text[call.start + 1 + len(call.name):]
 
-    return re.sub(pattern, repl, text, flags=re.S)
+    return text
 
 
 def resolve_macro_body(body, corpus_id):
@@ -395,8 +463,7 @@ def resolve_macro_body(body, corpus_id):
         wordlists.append(wl)
 
     # nested macros
-    macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", body)
-    nested_macros = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
+    nested_macros = {(call.name, len(call.arguments)) for call in parse_macro_calls(body)}
     if nested_macros:
         current_app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
 
@@ -520,8 +587,7 @@ class Query(db.Model):
         db.session.commit()
 
         # macro extraction
-        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.cqp_query)
-        macro_calls = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
+        macro_calls = {(call.name, len(call.arguments)) for call in parse_macro_calls(self.cqp_query)}
         if macro_calls:
             current_app.logger.debug(f"\tcontains macros '{macro_calls}'")
 

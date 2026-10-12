@@ -473,3 +473,28 @@ def test_slot_query_identity(client, auth):
         assert patched.json['comment'] is None
         assert client.get(url_for('spheroscope.slot_query.get_one', id=first.json['id']),
                           headers=auth_header).json['name'] == 'renamed'
+
+
+def test_slot_query_corpus_filter_and_diff_corpora(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        ids = [client.put(url_for('spheroscope.slot_query.get_or_create'),
+                          json={'cqp_query': '[lemma="Haus"]', 'corpus_id': corpus_id}, headers=auth_header).json['id']
+               for corpus_id in [1, 2]]
+
+        for corpus_id, id in zip([1, 2], ids):
+            slot_queries = client.get(url_for('spheroscope.slot_query.get_all', corpus_id=corpus_id), headers=auth_header)
+            assert slot_queries.status_code == 200
+            assert {q['corpus_id'] for q in slot_queries.json} == {corpus_id}
+            assert id in {q['id'] for q in slot_queries.json}
+
+        all_queries = client.get(url_for('spheroscope.slot_query.get_all'), headers=auth_header)
+        assert set(ids) <= {q['id'] for q in all_queries.json}
+        assert client.get(url_for('spheroscope.slot_query.get_all', corpus_id=999), headers=auth_header).status_code == 404
+
+        # diff across corpora
+        diff = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1]), headers=auth_header)
+        assert diff.status_code == 400
