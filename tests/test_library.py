@@ -364,3 +364,48 @@ def test_query_library_from(app):
         assert copy.mangled_query == focus.mangled_query == '[lemma = $copy_nouns__v1]'
         assert fresh.mangled_query == '[lemma = $copy_nouns__v2]'
         assert focus.up_to_date is False and copy.up_to_date is False and fresh.up_to_date is True
+
+
+def test_macro_definition_and_timestamps(client, auth):
+
+    from datetime import datetime, timezone
+    from time import sleep
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        def post(endpoint, **json):
+            return client.post(url_for(endpoint, corpus_id=2), json=json, headers=auth_header)
+
+        # word list names sharing a prefix, nested macro with arguments
+        post('library.create_word_list', name='def_noun', words=['Haus'])
+        post('library.create_word_list', name='def_nouns', words=['Haus', 'Baum'])
+        post('library.create_macro_endpoint', name='def_inner', argument_names=['Word'], body='[word = "$0"]')
+        body = '[lemma = $def_noun | lemma = $def_nouns] /def_inner["und"]\n'
+        macro = post('library.create_macro_endpoint', name='def_outer', valency=0, body=body)
+        assert macro.status_code == 201
+        assert '$def_noun__v1' in macro.json['body'] and '/def_inner__1__v1[' in macro.json['body']
+        assert macro.json['definition'] == body
+
+        # definition can be posted again: same version
+        again = post('library.create_macro_endpoint', name='def_outer', valency=0, body=macro.json['definition'])
+        assert again.status_code == 200
+        assert again.json['id'] == macro.json['id']
+
+        # the mangled body cannot
+        mangled = post('library.create_macro_endpoint', name='def_outer', valency=0, body=macro.json['body'])
+        assert mangled.status_code == 400
+
+        # timestamps are set at creation time
+        first = post('library.create_word_list', name='time_a', words=['a'])
+        sleep(1.1)
+        second = post('library.create_word_list', name='time_b', words=['b'])
+        t1, t2 = (datetime.fromisoformat(r.json['modified']) for r in [first, second])
+        assert t2 > t1
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        assert abs((now - t2).total_seconds()) < 60
+
+        # unknown ids
+        assert client.get(url_for('library.get_macro', corpus_id=2, id=999999), headers=auth_header).status_code == 404
+        assert client.get(url_for('library.get_word_list', corpus_id=2, id=999999), headers=auth_header).status_code == 404

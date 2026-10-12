@@ -302,7 +302,8 @@ class MacroOut(Schema):
     valency = Integer()
     argument_names = List(String(), attribute='argument_list', allow_none=True)
     comment = String()
-    body = String()
+    body = String(metadata={'description': 'body as executed, with versioned identifiers of nested word lists and macros'})
+    definition = String(metadata={'description': 'body with plain identifiers, as it can be posted again'})
     dependencies = Nested(DependenciesOut)
     up_to_date = Boolean(metadata={'description': 'whether all nested word lists and macros are the latest versions'})
 
@@ -365,16 +366,11 @@ def get_macro(corpus_id, id):
     """Gets a single macro for a specified corpus"""
 
     corpus = db.get_or_404(Corpus, corpus_id)
-
-    try:
-        macro = Macro.query \
-                .filter(Macro.corpus_id == corpus.id) \
-                .filter(Macro.id == id) \
-                .one()
-
-        return macro, 200
-    except:
+    macro = Macro.query.filter(Macro.corpus_id == corpus.id, Macro.id == id).first()
+    if not macro:
         return abort(404, message=f"Macro with id {id} does not exist for corpus with id {corpus_id} in database")
+
+    return macro, 200
 
 
 @bp.get("/<corpus_id>/macros")
@@ -468,16 +464,11 @@ def get_word_list(corpus_id, id):
     """Gets a single wordlist for a specified corpus"""
 
     corpus = db.get_or_404(Corpus, corpus_id)
-
-    try:
-        wl = WordList.query \
-                .filter(WordList.corpus_id == corpus.id) \
-                .filter(WordList.id == id) \
-                .one()
-
-        return wl, 200
-    except:
+    wordlist = WordList.query.filter(WordList.corpus_id == corpus.id, WordList.id == id).first()
+    if not wordlist:
         return abort(404, message=f"Word list with id {id} does not exist for corpus with id {corpus_id} in database")
+
+    return wordlist, 200
 
 
 @bp.get("/<corpus_id>/wordlists")

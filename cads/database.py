@@ -87,8 +87,8 @@ class User(db.Model, UserMixin):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, default=datetime.now(timezone.utc))
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    created = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     first_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
     last_name = db.Column(db.Unicode(255), nullable=False, server_default=u'')
@@ -441,7 +441,7 @@ class Query(db.Model):
     name = db.Column(db.Unicode(255))
     version = db.Column(db.Unicode(255))
     type = db.Column(db.Unicode(10))
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     description = db.Column(db.Unicode)
 
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
@@ -631,7 +631,7 @@ class Breakdown(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
@@ -714,7 +714,7 @@ class Cotext(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     query_id = db.Column(db.Integer, db.ForeignKey('query.id', ondelete='CASCADE'), index=True)
 
@@ -748,7 +748,7 @@ class SemanticMap(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     name = db.Column(db.Unicode)
 
     embeddings = db.Column(db.Unicode)  # db.Column(db.Integer, db.ForeignKey('embeddings.id'))
@@ -768,7 +768,7 @@ class Coordinates(db.Model):
     __table_args__ = (db.UniqueConstraint('semantic_map_id', 'item'),)
 
     id = db.Column(db.Integer(), primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     semantic_map_id = db.Column(db.Integer, db.ForeignKey('semantic_map.id', ondelete='CASCADE'))
 
@@ -789,7 +789,7 @@ class Collocation(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     p = db.Column(db.Unicode(255), nullable=False)
     s_break = db.Column(db.Unicode(255), nullable=True)
@@ -942,7 +942,7 @@ class Keyword(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id', ondelete='CASCADE'))
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     corpus_id = db.Column(db.Integer(), db.ForeignKey('corpus.id', ondelete='CASCADE'), nullable=False)
     subcorpus_id = db.Column(db.Integer(), db.ForeignKey('sub_corpus.id', ondelete='CASCADE'), nullable=True)
@@ -1174,7 +1174,7 @@ class WordList(db.Model):
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    modified = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     words = db.relationship("WordListWords", backref="word_list", cascade="all, delete", order_by="WordListWords.id")
     # p_att = db.Column(db.Unicode(50), nullable=False)
@@ -1244,7 +1244,7 @@ class Macro(db.Model):
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id'), nullable=False)
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
+    modified = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     body = db.Column(db.Unicode)
 
@@ -1276,6 +1276,21 @@ class Macro(db.Model):
     @property
     def argument_list(self):
         return json.loads(self.argument_names) if self.argument_names else None
+
+    @property
+    def definition(self):
+        """Body with versioned identifiers of nested word lists and macros replaced by their names,
+        i.e. the body as it can be posted again"""
+
+        body = self.body
+        for nested in self.nested_macro:
+            macro = nested.nested
+            body = body.replace(f"/{macro.canonical_name}[", f"/{macro.name}[")
+        for nested in self.nested_wordlist:
+            wl = nested.wordlist
+            body = re.sub(fr"\${re.escape(wl.name)}__v{wl.version}(?![a-zA-Z0-9_\-])", lambda m: f"${wl.name}", body)
+
+        return body
 
     @property
     def latest_version(self):

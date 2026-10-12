@@ -101,7 +101,7 @@ class FlexiConcSession(db.Model):
     query_id = db.Column(db.Integer, db.ForeignKey("query.id"), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), primary_key=True)
 
-    created = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    created = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     tree = db.Column(db.String)
 
     cqp_query = db.relationship("Query")

@@ -30,7 +30,7 @@ class Discourseme(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     name = db.Column(db.Unicode(255), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
@@ -197,7 +197,7 @@ class DiscoursemeDescription(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc))  # (→ query needs update)
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # (→ query needs update)
 
     discourseme_id = db.Column(db.Integer, db.ForeignKey('discourseme.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
@@ -286,7 +286,7 @@ class Constellation(db.Model):
 
     id = db.Column(db.Integer(), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'))
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     name = db.Column(db.Unicode(255), nullable=True)
     comment = db.Column(db.Unicode, nullable=True)
@@ -303,7 +303,7 @@ class ConstellationDescription(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc))  # (→ queries need update)
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))  # (→ queries need update)
 
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
     collection_id = db.Column(db.Integer, db.ForeignKey('constellation_description_collection.id', ondelete='CASCADE'), index=True)
@@ -332,7 +332,7 @@ class ConstellationDescriptionCollection(db.Model):
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    modified = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     constellation_id = db.Column(db.Integer, db.ForeignKey('constellation.id', ondelete='CASCADE'))
     corpus_id = db.Column(db.Integer, db.ForeignKey('corpus.id', ondelete='CASCADE'))
