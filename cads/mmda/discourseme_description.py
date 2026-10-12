@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import os
 from collections import defaultdict
 
 from apiflask import APIBlueprint, Schema
@@ -17,7 +16,7 @@ from ..breakdown import BreakdownIn, BreakdownOut, ccc_breakdown
 from ..collocation import CollocationItemOut, CollocationScoreOut
 from ..corpus import rename_meta_freq
 from ..database import Breakdown, Corpus, Query, get_or_create
-from ..library import import_wordlist
+from ..library import save_wordlist
 from ..query import (QueryMetaFrequenciesIn, QueryMetaFrequenciesOut,
                      QueryMetaFrequencyOut, get_query_meta_freq_breakdown)
 from ..users import auth, write_access_required
@@ -75,19 +74,15 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
                 query += f'[{p}="{token}"]'
             queries.append(query)
 
-    # define wordlists and append to queries
-    for p in wordlists.keys():
-        wl_name = generate_idx(wordlists[p], prefix=f"W_{p}_")
-        wl_path = os.path.abspath(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists', wl_name + '.txt'))
-        os.makedirs(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists'), exist_ok=True)
-        with open(wl_path, mode='wt') as f:
-            f.write("\n".join(wordlists[p]))
-        import_wordlist(wl_path, corpus.id, comment="temp discourseme wl")  # import wordlist into DB to not break library versioning/name mangling
-        queries.append(f"[{p} = ${wl_name}]")
+    # define wordlists in library and append to queries
+    for p, words in wordlists.items():
+        wordlist = save_wordlist(generate_idx(words, prefix=f"W_{p}_"), words, corpus.id,
+                                 comment="discourseme word list")
+        queries.append(f"[{p} = ${wordlist.name}]")
 
     # create joint query
     cqp_query = "|".join(queries)
-    cqp_query = f'({cqp_query}) within {s_query};' if s_query is not None else query + ";"
+    cqp_query = f'({cqp_query}) within {s_query};' if s_query is not None else f'({cqp_query});'
 
     # save query to database
     query = Query(
@@ -112,14 +107,10 @@ def description_items_to_query(description_items, s_query, corpus, subcorpus=Non
         crps = query.corpus.ccc()
 
     cqp = crps.start_cqp()
-    for p in wordlists.keys():
-        wl_name = generate_idx(wordlists[p], prefix=f"W_{p}_")
-        wl_path = os.path.abspath(os.path.join(current_app.config['CCC_LIB_DIR'], 'wordlists', wl_name + '.txt'))
-        cqp.Exec(f'define ${wl_name} < "{wl_path}";')
 
     # query CQP and exit
     cqp.Exec(f'set MatchingStrategy "{match_strategy}";')
-    matches_df = cqp.nqr_from_query(query.cqp_query,
+    matches_df = cqp.nqr_from_query(query.mangled_query,
                                     name=name,
                                     match_strategy=match_strategy,
                                     return_dump=True)

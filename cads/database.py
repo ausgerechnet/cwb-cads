@@ -344,6 +344,26 @@ def parse_macro_call_arguments(argstring):
         return 0
 
 
+def mangle_wordlist_call(text, wl):
+    """Replaces calls of word list wl.name with its versioned identifier"""
+
+    # do not touch longer identifiers sharing this prefix
+    pattern = fr"\${re.escape(wl.name)}(?![a-zA-Z0-9_\-])"
+    repl = fr"${wl.name}__v{wl.version}"
+
+    return re.sub(pattern, repl, text, flags=re.S)
+
+
+def mangle_macro_call(text, macro):
+    """Replaces calls of macro.name with macro.valency arguments with its versioned identifier"""
+
+    arg_pattern = ', ?'.join([r'[^,\s]+?'] * macro.valency)
+    pattern = fr"/{re.escape(macro.name)}(\[{arg_pattern}\])"
+    repl = fr"/{macro.canonical_name}\1"
+
+    return re.sub(pattern, repl, text, flags=re.S)
+
+
 def resolve_macro_body(body, corpus_id):
     """Resolves word list and macro calls in a macro body to the latest
     versions in the library and mangles their identifiers.
@@ -371,10 +391,7 @@ def resolve_macro_body(body, corpus_id):
         if not wl:
             raise ValueError(f"undefined word list {identifier}")
 
-        # do not touch longer identifiers sharing this prefix
-        pattern = fr"\${re.escape(wl.name)}(?![a-zA-Z0-9_\-])"
-        repl = fr"${wl.name}__v{wl.version}"
-        body = re.sub(pattern, repl, body, flags=re.S)
+        body = mangle_wordlist_call(body, wl)
         wordlists.append(wl)
 
     # nested macros
@@ -394,10 +411,7 @@ def resolve_macro_body(body, corpus_id):
         if not nm:
             raise ValueError(f"undefined nested macro call {identifier} with valency {valency}")
 
-        arg_pattern = ', ?'.join([r'[^,\s]+?'] * nm.valency)
-        pattern = fr"/{re.escape(nm.name)}(\[{arg_pattern}\])"
-        repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
-        body = re.sub(pattern, repl, body, flags=re.S)
+        body = mangle_macro_call(body, nm)
         macros.append(nm)
 
     return body, wordlists, macros
@@ -521,20 +535,11 @@ class Query(db.Model):
         # process query to mangle library identifiers
         mangled_query = self.cqp_query
 
-        # apply macro mangling
         for mc in self.macro_calls:
-            m = mc.macro
-            args = ', ?'.join([r'[^,\s]+?'] * m.valency)
-            pattern = fr"/{m.name}(\[{args}\])"
-            repl = fr"/{m.name}__{m.valency}__v{m.version}\1"
-            mangled_query = re.sub(pattern, repl, mangled_query)
+            mangled_query = mangle_macro_call(mangled_query, mc.macro)
 
-        # apply wordlist mangling
         for wlc in self.wordlist_calls:
-            wl = wlc.wordlist
-            pattern = fr"\${wl.name}"
-            repl = fr"${wl.name}__v{wl.version}"
-            mangled_query = re.sub(pattern, repl, mangled_query)
+            mangled_query = mangle_wordlist_call(mangled_query, wlc.wordlist)
 
         return mangled_query
 

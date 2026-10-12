@@ -177,17 +177,23 @@ def create_macros(macros, corpus_id, comment=None):
     return results, []
 
 
-def import_wordlist(path, corpus_id, comment="imported via CLI"):
-
-    name = path.split('/')[-1].split('.')[0]
-    with open(path, "rt") as f:
-        words = f.read().strip().split("\n")
+def save_wordlist(name, words, corpus_id, comment=None):
+    """Creates (or reuses) a word list, commits, and writes it to the library directory"""
 
     wordlist, _ = create_wordlist(name, words, corpus_id, comment)
     db.session.commit()
     wordlist.write()
 
     return wordlist
+
+
+def import_wordlist(path, corpus_id, comment="imported via CLI"):
+
+    name = path.split('/')[-1].split('.')[0]
+    with open(path, "rt") as f:
+        words = f.read().strip().split("\n")
+
+    return save_wordlist(name, words, corpus_id, comment)
 
 
 def import_library(lib_dir, corpus_id, username):

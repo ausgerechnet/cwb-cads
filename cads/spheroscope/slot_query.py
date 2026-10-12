@@ -32,7 +32,7 @@ def ccc_slot_query(slot_query):
         corrections[k] = d['correction']
 
     dump = crps.query(
-        cqp_query=slot_query.cqp_query,
+        cqp_query=slot_query.mangled_query,
         corrections=corrections,
         context_break=slot_query.s,
         match_strategy=slot_query.match_strategy
