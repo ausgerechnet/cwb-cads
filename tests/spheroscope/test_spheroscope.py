@@ -59,7 +59,7 @@ def test_put_slot_query(client, auth):
         slot_query_1 = client.post(url_for('spheroscope.slot_query.create'),
                                    content_type='application/json',
                                    json={
-                                       'cqp_query': test_query['cqp'],
+                                       'cqp_query': test_query['cqp'] + ' []?',
                                        'name': 'test-put',
                                        'corpus_id': 1,
                                        'slots': slots,
@@ -72,7 +72,7 @@ def test_put_slot_query(client, auth):
         slot_query_2 = client.put(url_for('spheroscope.slot_query.get_or_create'),
                                   content_type='application/json',
                                   json={
-                                      'cqp_query': test_query['cqp'],
+                                      'cqp_query': test_query['cqp'] + ' []?',
                                       'name': 'test-put',
                                       'corpus_id': 1,
                                       'slots': slots,
@@ -399,3 +399,77 @@ def test_query_diff_categories(client, auth):
         invalid = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1], categories=['foo']),
                              headers=auth_header)
         assert invalid.status_code == 422
+
+
+def test_slot_query_identity(client, auth):
+
+    from cads import db
+    from cads.spheroscope.database import SlotQuery
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        definition = {
+            'cqp_query': '@0[::] [lemma="Haus"] @1[::]',
+            'corpus_id': 1,
+            'slots': [{'slot': 'noun', 'start': '0', 'end': '1'}],
+            'corrections': []
+        }
+
+        def put(**kwargs):
+            return client.put(url_for('spheroscope.slot_query.get_or_create'),
+                              json={**definition, **kwargs}, headers=auth_header)
+
+        # metadata is returned
+        first = put(name='house', comment='a comment')
+        assert first.status_code == 200
+        assert first.json['name'] == 'house'
+        assert first.json['comment'] == 'a comment'
+        assert first.json['context_break'] == 's'
+        assert first.json['modified']
+
+        # name and comment are not part of the identity
+        assert put(name='other name', comment='other comment').json['id'] == first.json['id']
+        assert put().json['id'] == first.json['id']
+        assert put().json['name'] == 'house'
+
+        # context break and match strategy are
+        text = put(context_break='text')
+        assert text.json['id'] != first.json['id']
+        assert text.json['context_break'] == 'text'
+        assert put(context_break='text').json['id'] == text.json['id']
+        assert put(match_strategy='shortest').json['id'] not in [first.json['id'], text.json['id']]
+
+        # empty slots / corrections: omitted, null and [] are the same
+        empty = {k: v for k, v in definition.items() if k not in ['slots', 'corrections']}
+        omitted = client.put(url_for('spheroscope.slot_query.get_or_create'), json=empty, headers=auth_header)
+        explicit = client.put(url_for('spheroscope.slot_query.get_or_create'),
+                              json={**empty, 'slots': [], 'corrections': []}, headers=auth_header)
+        assert omitted.json['id'] == explicit.json['id'] != first.json['id']
+        assert omitted.json['slots'] == [] and omitted.json['corrections'] == []
+
+        # legacy encodings in the database ("null", NULL) are matched as well
+        for encoding in ['null', None]:
+            with client.application.app_context():
+                legacy = db.session.get(SlotQuery, omitted.json['id'])
+                legacy._slots = encoding
+                legacy._corrections = encoding
+                db.session.commit()
+            again = client.put(url_for('spheroscope.slot_query.get_or_create'), json=empty, headers=auth_header)
+            assert again.json['id'] == omitted.json['id']
+            assert again.json['slots'] == []
+
+        # PATCH changes name and comment, keeps id
+        patched = client.patch(url_for('spheroscope.slot_query.patch', id=first.json['id']),
+                               json={'name': 'renamed'}, headers=auth_header)
+        assert patched.status_code == 200
+        assert patched.json['id'] == first.json['id']
+        assert patched.json['name'] == 'renamed'
+        assert patched.json['comment'] == 'a comment'
+        patched = client.patch(url_for('spheroscope.slot_query.patch', id=first.json['id']),
+                               json={'comment': None}, headers=auth_header)
+        assert patched.json['name'] == 'renamed'
+        assert patched.json['comment'] is None
+        assert client.get(url_for('spheroscope.slot_query.get_one', id=first.json['id']),
+                          headers=auth_header).json['name'] == 'renamed'

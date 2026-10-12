@@ -32,13 +32,13 @@ class SlotQuery(Query):
     @property
     def slots(self):
         if self._slots:
-            return json.loads(self._slots)
+            return json.loads(self._slots) or []
         return []
 
     @property
     def corrections(self):
         if self._corrections:
-            return json.loads(self._corrections)
+            return json.loads(self._corrections) or []
         return []
 
     def serialize(self):

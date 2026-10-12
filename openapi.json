@@ -1545,34 +1545,133 @@
         },
         "type": "object"
       },
+      "DependenciesOut": {
+        "additionalProperties": false,
+        "properties": {
+          "macros": {
+            "items": {
+              "$ref": "#/components/schemas/MacroDependency"
+            },
+            "type": "array"
+          },
+          "wordlists": {
+            "items": {
+              "$ref": "#/components/schemas/WordListDependency"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "DiffCounts": {
+        "additionalProperties": false,
+        "properties": {
+          "anchors": {
+            "type": "integer"
+          },
+          "extended": {
+            "type": "integer"
+          },
+          "identical": {
+            "type": "integer"
+          },
+          "near": {
+            "type": "integer"
+          },
+          "only_A": {
+            "type": "integer"
+          },
+          "only_B": {
+            "type": "integer"
+          },
+          "reduced": {
+            "type": "integer"
+          },
+          "shifted": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "DiffDelta": {
+        "additionalProperties": false,
+        "properties": {
+          "anchors": {
+            "description": "anchors with different positions",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "match": {
+            "description": "start position of B minus start position of A",
+            "type": "integer"
+          },
+          "matchend": {
+            "description": "end position of B minus end position of A",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "DiffLine": {
         "additionalProperties": false,
         "properties": {
+          "A": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/SlotMatch"
+              }
+            ]
+          },
+          "B": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
+              },
+              {
+                "$ref": "#/components/schemas/SlotMatch"
+              }
+            ]
+          },
+          "category": {
+            "enum": [
+              "identical",
+              "anchors",
+              "near",
+              "extended",
+              "reduced",
+              "shifted",
+              "only_A",
+              "only_B"
+            ],
+            "type": "string"
+          },
           "context": {
             "type": "integer"
           },
           "contextend": {
             "type": "integer"
           },
-          "meta_A": {
-            "items": {
-              "additionalProperties": {
-                "type": "integer"
+          "delta": {
+            "anyOf": [
+              {
+                "nullable": true,
+                "type": "object"
               },
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "meta_B": {
-            "items": {
-              "additionalProperties": {
-                "type": "integer"
-              },
-              "type": "object"
-            },
-            "type": "array"
+              {
+                "$ref": "#/components/schemas/DiffDelta"
+              }
+            ]
           },
           "source": {
+            "deprecated": true,
+            "description": "deprecated: use category",
             "type": "string"
           },
           "structural": {
@@ -1587,8 +1686,6 @@
           }
         },
         "required": [
-          "meta_A",
-          "meta_B",
           "structural",
           "tokens"
         ],
@@ -2316,6 +2413,39 @@
         },
         "type": "object"
       },
+      "MacroDependency": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "latest_version": {
+            "type": "integer"
+          },
+          "macros": {
+            "items": {
+              "$ref": "#/components/schemas/MacroDependency"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "valency": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "wordlists": {
+            "items": {
+              "$ref": "#/components/schemas/WordListDependency"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "MacroIn": {
         "additionalProperties": false,
         "properties": {
@@ -2369,6 +2499,9 @@
           "corpus_id": {
             "type": "integer"
           },
+          "dependencies": {
+            "$ref": "#/components/schemas/DependenciesOut"
+          },
           "id": {
             "type": "integer"
           },
@@ -2377,6 +2510,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "up_to_date": {
+            "description": "whether all nested word lists and macros are the latest versions",
+            "type": "boolean"
           },
           "valency": {
             "type": "integer"
@@ -2637,6 +2774,14 @@
           "cqp_query": {
             "type": "string"
           },
+          "dependencies": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DependenciesOut"
+              }
+            ],
+            "description": "library versions used by the query"
+          },
           "description": {
             "nullable": true,
             "type": "string"
@@ -2664,6 +2809,10 @@
           "subcorpus_name": {
             "nullable": true,
             "type": "string"
+          },
+          "up_to_date": {
+            "description": "whether all library versions used by the query are the latest ones",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2678,6 +2827,28 @@
           "subcorpus_id",
           "subcorpus_name"
         ],
+        "type": "object"
+      },
+      "QueryUsage": {
+        "additionalProperties": false,
+        "properties": {
+          "corpus_id": {
+            "type": "integer"
+          },
+          "cqp_query": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "nullable": true,
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "ScoreDeciles": {
@@ -2753,6 +2924,9 @@
       "SlotDiffOut": {
         "additionalProperties": false,
         "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/DiffCounts"
+          },
           "id1": {
             "type": "integer"
           },
@@ -2841,6 +3015,10 @@
       "SlotQueryIn": {
         "additionalProperties": false,
         "properties": {
+          "comment": {
+            "description": "not part of the query definition (see PUT /create)",
+            "type": "string"
+          },
           "context_break": {
             "type": "string"
           },
@@ -2866,6 +3044,7 @@
             "type": "string"
           },
           "name": {
+            "description": "not part of the query definition (see PUT /create)",
             "type": "string"
           },
           "slots": {
@@ -2902,6 +3081,14 @@
       "SlotQueryOut": {
         "additionalProperties": false,
         "properties": {
+          "comment": {
+            "nullable": true,
+            "type": "string"
+          },
+          "context_break": {
+            "nullable": true,
+            "type": "string"
+          },
           "corpus_id": {
             "type": "integer"
           },
@@ -2914,6 +3101,14 @@
           "cqp_query": {
             "type": "string"
           },
+          "dependencies": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DependenciesOut"
+              }
+            ],
+            "description": "library versions used by the query"
+          },
           "id": {
             "type": "integer"
           },
@@ -2925,7 +3120,11 @@
             ],
             "type": "string"
           },
+          "modified": {
+            "type": "string"
+          },
           "name": {
+            "nullable": true,
             "type": "string"
           },
           "slots": {
@@ -2933,6 +3132,24 @@
               "$ref": "#/components/schemas/AnchorSlot"
             },
             "type": "array"
+          },
+          "up_to_date": {
+            "description": "whether all library versions used by the query are the latest ones",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "SlotQueryPatchIn": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "type": "object"
@@ -3352,6 +3569,24 @@
         ],
         "type": "object"
       },
+      "UsageOut": {
+        "additionalProperties": false,
+        "properties": {
+          "macros": {
+            "items": {
+              "$ref": "#/components/schemas/MacroOut"
+            },
+            "type": "array"
+          },
+          "queries": {
+            "items": {
+              "$ref": "#/components/schemas/QueryUsage"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
       "UserIn": {
         "additionalProperties": false,
         "properties": {
@@ -3456,6 +3691,24 @@
           },
           "message": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WordListDependency": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "latest_version": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
           }
         },
         "type": "object"
@@ -6120,6 +6373,69 @@
         ]
       }
     },
+    "/library/{corpus_id}/macros/{id}/usage": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Gets macros and queries that use a macro version (directly or via nested macros)",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
     "/library/{corpus_id}/wordlists": {
       "get": {
         "parameters": [
@@ -6368,6 +6684,69 @@
           }
         ],
         "summary": "Gets a single wordlist for a specified corpus",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
+    "/library/{corpus_id}/wordlists/{id}/usage": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Gets macros and queries that use a word list version (directly or via nested macros)",
         "tags": [
           "Library"
         ]
@@ -13928,7 +14307,19 @@
     },
     "/spheroscope/slot-query/": {
       "get": {
-        "parameters": [],
+        "parameters": [
+          {
+            "description": "only slot queries using outdated (true) or only latest (false) library versions",
+            "in": "query",
+            "name": "outdated",
+            "required": false,
+            "schema": {
+              "default": null,
+              "nullable": true,
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -13952,6 +14343,16 @@
               }
             },
             "description": "Authentication error"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
           }
         },
         "security": [
@@ -14020,6 +14421,7 @@
         ]
       },
       "put": {
+        "description": "A slot query is identified by corpus, CQP query, slots, corrections, match strategy and context break\n(name and comment are ignored; use PATCH to change them). An existing slot query is only returned\nif its library calls resolve to the latest versions.",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -14075,7 +14477,7 @@
     },
     "/spheroscope/slot-query/diff": {
       "get": {
-        "description": "Only the requested page is lexicalised; all lines are returned if no page_size is given.",
+        "description": "Matches of both queries are paired according to `same`; each line is a pair\n(or an unpaired match) with one of the categories\n- identical: same span and anchors\n- anchors: same span, different anchors\n- near: start and end differ by at most `tolerance` tokens\n- extended: B contains A\n- reduced: A contains B\n- shifted: overlapping, neither contains the other\n- only_A, only_B: unpaired\n\nOnly the requested page is lexicalised; all lines are returned if no page_size is given.",
         "parameters": [
           {
             "description": "page size (all lines if not given)",
@@ -14141,6 +14543,58 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "description": "when two matches are considered the same: same start position, same span, or overlapping",
+            "in": "query",
+            "name": "same",
+            "required": false,
+            "schema": {
+              "default": "start",
+              "enum": [
+                "start",
+                "span",
+                "overlap"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "maximum difference of start and end positions for category \"near\"",
+            "in": "query",
+            "name": "tolerance",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "only return lines of these categories (counts are not affected)",
+            "explode": true,
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "default": null,
+              "items": {
+                "enum": [
+                  "identical",
+                  "anchors",
+                  "near",
+                  "extended",
+                  "reduced",
+                  "shifted",
+                  "only_A",
+                  "only_B"
+                ],
+                "type": "string"
+              },
+              "nullable": true,
+              "type": "array"
+            },
+            "style": "form"
           }
         ],
         "responses": {
@@ -14236,6 +14690,78 @@
           }
         ],
         "summary": "Get details of a slot query.",
+        "tags": [
+          "Spheroscope.Slot_Query"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlotQueryPatchIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlotQueryOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update name and/or comment of a slot query.",
         "tags": [
           "Spheroscope.Slot_Query"
         ]
