@@ -493,7 +493,7 @@ class DiscoursemeCoordinates(db.Model):
 
     """
 
-    __table_args__ = (db.UniqueConstraint('semantic_map_id', 'discourseme_id'),)
+    __table_args__ = (db.UniqueConstraint('semantic_map_id', 'discourseme_id'), {'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
 

@@ -435,8 +435,6 @@ class Query(db.Model):
 
     """
 
-    __table_args__ = ({'sqlite_autoincrement': True})
-
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Unicode(255))
     version = db.Column(db.Unicode(255))
@@ -471,6 +469,7 @@ class Query(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint("name", "version"),  # alternative primary key for version history
+        {'sqlite_autoincrement': True}           # never reuse ids of deleted queries
     )
 
     __mapper_args__ = {
@@ -653,7 +652,7 @@ class BreakdownItems(db.Model):
 
     """
 
-    __table_args__ = (db.UniqueConstraint('breakdown_id', 'item'),)
+    __table_args__ = (db.UniqueConstraint('breakdown_id', 'item'), {'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -765,7 +764,7 @@ class Coordinates(db.Model):
 
     """
 
-    __table_args__ = (db.UniqueConstraint('semantic_map_id', 'item'),)
+    __table_args__ = (db.UniqueConstraint('semantic_map_id', 'item'), {'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer(), primary_key=True)
     modified = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
@@ -1161,12 +1160,6 @@ class KeywordItemScore(db.Model):
 #########################
 class WordList(db.Model):
 
-    __table_args__ = {'sqlite_autoincrement': True}
-
-    # __table_args__ = (
-    #     db.UniqueConstraint('name', 'corpus_id', name='unique_name_corpus'),
-    # )
-
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(db.Unicode(255), nullable=False)
@@ -1183,6 +1176,7 @@ class WordList(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint("name", "version", "corpus_id"),  # alternative primary key for version history
+        {'sqlite_autoincrement': True}
     )
 
     @property
@@ -1233,8 +1227,6 @@ class WordListCall(db.Model):
 
 class Macro(db.Model):
 
-    __table_args__ = {'sqlite_autoincrement': True}
-
     id = db.Column(db.Integer, primary_key=True)
 
     name = db.Column(db.Unicode(255), nullable=False)
@@ -1256,6 +1248,7 @@ class Macro(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint("name", "valency", "version", "corpus_id"),  # alternative primary key for version history
+        {'sqlite_autoincrement': True}
     )
 
     def __init__(self, **kwargs):

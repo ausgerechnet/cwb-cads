@@ -409,3 +409,40 @@ def test_macro_definition_and_timestamps(client, auth):
         # unknown ids
         assert client.get(url_for('library.get_macro', corpus_id=2, id=999999), headers=auth_header).status_code == 404
         assert client.get(url_for('library.get_word_list', corpus_id=2, id=999999), headers=auth_header).status_code == 404
+
+
+def test_ids_not_reused(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        # queries
+        query = client.post(url_for('query.create_query'),
+                            json={'corpus_id': 2, 'cqp_query': '[word="ids_not_reused"]', 's': 's'},
+                            headers=auth_header)
+        assert client.delete(url_for('query.delete_query', query_id=query.json['id']),
+                             headers=auth_header).status_code == 200
+        query_new = client.post(url_for('query.create_query'),
+                                json={'corpus_id': 2, 'cqp_query': '[word="ids_not_reused_2"]', 's': 's'},
+                                headers=auth_header)
+        assert query_new.json['id'] > query.json['id']
+
+        # word lists
+        wl = client.post(url_for('library.create_word_list', corpus_id=2),
+                         json={'name': 'ids_not_reused', 'words': ['a']}, headers=auth_header)
+        assert client.delete(url_for('library.delete_word_list', corpus_id=2, id=wl.json['id']),
+                             headers=auth_header).status_code == 200
+        wl_new = client.post(url_for('library.create_word_list', corpus_id=2),
+                             json={'name': 'ids_not_reused_2', 'words': ['a']}, headers=auth_header)
+        assert wl_new.json['id'] > wl.json['id']
+
+        # macros
+        macro = client.post(url_for('library.create_macro_endpoint', corpus_id=2),
+                            json={'name': 'ids_not_reused', 'valency': 0, 'body': '[word = "a"]'}, headers=auth_header)
+        assert client.delete(url_for('library.delete_macro', corpus_id=2, id=macro.json['id']),
+                             headers=auth_header).status_code == 200
+        macro_new = client.post(url_for('library.create_macro_endpoint', corpus_id=2),
+                                json={'name': 'ids_not_reused_2', 'valency': 0, 'body': '[word = "a"]'},
+                                headers=auth_header)
+        assert macro_new.json['id'] > macro.json['id']
