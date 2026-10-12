@@ -9,7 +9,7 @@ from apiflask.validators import OneOf, Range
 from ccc import SubCorpus
 from ccc.cqpy import cqpy_load
 from flask import current_app as app
-from pandas import DataFrame, concat
+from pandas import DataFrame
 
 from .. import db
 from ..database import Corpus, resolve_macro_body
@@ -147,104 +147,129 @@ def anchor_columns(df):
     return sorted(set(range(0, 10)).intersection(set(df.columns)))
 
 
-def merge_and_coalesce(df1, df2):
+DIFF_CATEGORIES = ['identical', 'anchors', 'near', 'extended', 'reduced', 'shifted', 'only_A', 'only_B']
+
+
+def pair_matches(df_a, df_b, same='start'):
+    """Pairs matches of two queries one-to-one.
+
+    df_a and df_b must have columns 'match' and 'matchend' (and a RangeIndex).
+    same='start': matches with the same start position are paired
+    same='span': matches with the same start and end position are paired
+    same='overlap': overlapping matches are paired greedily in order of position
+
+    Returns a list of (index in df_a or None, index in df_b or None).
     """
-    Merge df1 and df2 intervals (closed), coalesce overlapping/touching spans,
-    include original columns, and compute min/max of 'context'/'contextend'.
 
-    Both df1 and df2 must have MultiIndex: ['match', 'matchend'].
+    if same in ['start', 'span']:
+        keys = ['match'] if same == 'start' else ['match', 'matchend']
+        a = df_a[keys].copy()
+        b = df_b[keys].copy()
+        # number duplicates of keys so that pairing is one-to-one
+        a['nr'] = a.groupby(keys).cumcount()
+        b['nr'] = b.groupby(keys).cumcount()
+        merged = a.reset_index(names='a').merge(b.reset_index(names='b'), on=keys + ['nr'], how='outer')
+        return [(None if a != a else int(a), None if b != b else int(b)) for a, b in zip(merged['a'], merged['b'])]
 
-    Returns a dataframe with:
-        - match, matchend: merged intervals
-        - in_df1, in_df2: flags
-        - df1_rows, df2_rows: list of contributing original rows
-        - context_min: minimum of all context values from df1 and df2
-        - context_max: maximum of all contextend values from df1 and df2
+    if same == 'overlap':
+        a_sorted = df_a.sort_values(['match', 'matchend']).index.to_list()
+        b_sorted = df_b.sort_values(['match', 'matchend']).index.to_list()
+        pairs = list()
+        paired_b = set()
+        active = list()         # unpaired matches of B starting before the current match of A ends
+        j = 0
+        for i in a_sorted:
+            match, matchend = df_a.at[i, 'match'], df_a.at[i, 'matchend']
+            while j < len(b_sorted) and df_b.at[b_sorted[j], 'match'] <= matchend:
+                active.append(b_sorted[j])
+                j += 1
+            # matches of B ending before the current match of A cannot overlap any later one
+            active = [k for k in active if df_b.at[k, 'matchend'] >= match]
+            if active:
+                k = active.pop(0)
+                pairs.append((i, k))
+                paired_b.add(k)
+            else:
+                pairs.append((i, None))
+        pairs.extend((None, k) for k in b_sorted if k not in paired_b)
+        return pairs
+
+    raise ValueError(f"unknown matching rule '{same}'")
+
+
+def categorise_pair(a, b, tolerance=1):
+    """Categorises a pair of matches (dictionaries with keys match, matchend, anchors)"""
+
+    if a is None:
+        return 'only_B'
+    if b is None:
+        return 'only_A'
+
+    delta_match = b['match'] - a['match']
+    delta_matchend = b['matchend'] - a['matchend']
+
+    if delta_match == 0 and delta_matchend == 0:
+        return 'identical' if a['anchors'] == b['anchors'] else 'anchors'
+    if abs(delta_match) <= tolerance and abs(delta_matchend) <= tolerance:
+        return 'near'
+    if delta_match <= 0 and delta_matchend >= 0:
+        return 'extended'
+    if delta_match >= 0 and delta_matchend <= 0:
+        return 'reduced'
+    return 'shifted'
+
+
+def match_records(df):
+    """Converts a DataFrame of matches to a list of dictionaries with keys
+    match, matchend, context, contextend, anchors"""
+
+    anchors = anchor_columns(df)
+
+    return [{
+        'match': int(row['match']),
+        'matchend': int(row['matchend']),
+        'context': int(row['context']),
+        'contextend': int(row['contextend']),
+        'anchors': {str(k): int(row[k]) for k in anchors}
+    } for row in df.to_dict('records')]
+
+
+def diff_matches(df_a, df_b, same='start', tolerance=1):
+    """Compares the matches of two queries.
+
+    Returns a DataFrame with one row per pair of matches (or unpaired match)
+    and columns match, matchend, context, contextend (spanning both matches),
+    category, A, B (match records or None), delta (or None).
     """
 
-    # Reset indices
-    df1_reset = df1.reset_index()
-    df2_reset = df2.reset_index()
+    records_a = match_records(df_a.reset_index(drop=True))
+    records_b = match_records(df_b.reset_index(drop=True))
 
-    # Add presence flags
-    df1_reset['in_df1'] = True
-    df1_reset['in_df2'] = False
-    df2_reset['in_df1'] = False
-    df2_reset['in_df2'] = True
+    rows = list()
+    for i, j in pair_matches(df_a.reset_index(drop=True), df_b.reset_index(drop=True), same):
+        a = records_a[i] if i is not None else None
+        b = records_b[j] if j is not None else None
+        present = [m for m in [a, b] if m is not None]
+        delta = None
+        if a is not None and b is not None:
+            delta = {
+                'match': b['match'] - a['match'],
+                'matchend': b['matchend'] - a['matchend'],
+                'anchors': sorted(k for k in set(a['anchors']) | set(b['anchors'])
+                                  if a['anchors'].get(k) != b['anchors'].get(k))
+            }
+        rows.append({
+            'match': min(m['match'] for m in present),
+            'matchend': max(m['matchend'] for m in present),
+            'context': min(m['context'] for m in present),
+            'contextend': max(m['contextend'] for m in present),
+            'category': categorise_pair(a, b, tolerance),
+            'A': a,
+            'B': b,
+            'delta': delta
+        })
 
-    # Combine spans
-    all_spans = concat([df1_reset, df2_reset], ignore_index=True)
-    all_spans = all_spans.sort_values('match').reset_index(drop=True)
-
-    merged = []
-
-    for _, row in all_spans.iterrows():
-        s, e = row['match'], row['matchend']
-
-        # Original columns (excluding flags and index)
-        df1_cols = {k: row[k] for k in df1_reset.columns if k not in ['in_df1', 'in_df2']}
-        df2_cols = {k: row[k] for k in df2_reset.columns if k not in ['in_df1', 'in_df2']}
-
-        # Extract context/contextend if present
-        context_val = row['context'] if 'context' in row else None
-        contextend_val = row['contextend'] if 'contextend' in row else None
-
-        if not merged:
-            merged.append([
-                s, e,
-                row['in_df1'], row['in_df2'],
-                [df1_cols] if row['in_df1'] else [],
-                [df2_cols] if row['in_df2'] else [],
-                [context_val] if context_val is not None else [],
-                [contextend_val] if contextend_val is not None else []
-            ])
-            continue
-
-        last = merged[-1]
-        last_s, last_e, last_df1_flag, last_df2_flag, last_df1_rows, last_df2_rows, last_contexts, last_contextends = last
-
-        if s <= last_e + 1:  # overlap or touching
-            # Merge interval
-            last[1] = max(last_e, e)
-            last[2] = last_df1_flag or row['in_df1']
-            last[3] = last_df2_flag or row['in_df2']
-
-            # Append original row data
-            if row['in_df1']:
-                last[4].append(df1_cols)
-            if row['in_df2']:
-                last[5].append(df2_cols)
-
-            # Append context/contextend
-            if context_val is not None:
-                last[6].append(context_val)
-            if contextend_val is not None:
-                last[7].append(contextend_val)
-
-        else:
-            merged.append([
-                s, e,
-                row['in_df1'], row['in_df2'],
-                [df1_cols] if row['in_df1'] else [],
-                [df2_cols] if row['in_df2'] else [],
-                [context_val] if context_val is not None else [],
-                [contextend_val] if contextend_val is not None else []
-            ])
-
-    # Build final dataframe
-    merged_df = DataFrame(
-        merged,
-        columns=['match', 'matchend', 'in_df1', 'in_df2', 'df1_rows', 'df2_rows', 'context_list', 'contextend_list']
-    )
-
-    # Compute min/max across lists
-    merged_df['context_min'] = merged_df['context_list'].apply(lambda x: min(x) if x else None)
-    merged_df['context_max'] = merged_df['contextend_list'].apply(lambda x: max(x) if x else None)
-
-    # Drop intermediate lists
-    merged_df = merged_df.drop(columns=['context_list', 'contextend_list'])
-
-    return merged_df
+    return DataFrame(rows, columns=['match', 'matchend', 'context', 'contextend', 'category', 'A', 'B', 'delta'])
 
 
 def import_slot_query(path, corpus_id):
@@ -366,6 +391,18 @@ class SlotDiffIn(PaginationIn):
 
     id1 = Integer(required=True)
     id2 = Integer(required=True)
+    same = String(
+        required=False, load_default='start', validate=OneOf(['start', 'span', 'overlap']),
+        metadata={'description': 'when two matches are considered the same: same start position, same span, or overlapping'}
+    )
+    tolerance = Integer(
+        required=False, load_default=1, validate=Range(min=0),
+        metadata={'description': 'maximum difference of start and end positions for category "near"'}
+    )
+    categories = List(
+        String(validate=OneOf(DIFF_CATEGORIES)), required=False, load_default=None,
+        metadata={'description': 'only return lines of these categories (counts are not affected)'}
+    )
 
 
 class TokenOutSlot(Schema):
@@ -374,15 +411,45 @@ class TokenOutSlot(Schema):
     word = String(required=True)
 
 
+class SlotMatch(Schema):
+
+    match = Integer(required=True)
+    matchend = Integer(required=True)
+    context = Integer(required=True)
+    contextend = Integer(required=True)
+    anchors = Dict(keys=String(), values=Integer(), required=True)
+
+
+class DiffDelta(Schema):
+
+    match = Integer(metadata={'description': 'start position of B minus start position of A'})
+    matchend = Integer(metadata={'description': 'end position of B minus end position of A'})
+    anchors = List(String(), metadata={'description': 'anchors with different positions'})
+
+
 class DiffLine(Schema):
 
-    source = String()
+    category = String(validate=OneOf(DIFF_CATEGORIES))
+    A = Nested(SlotMatch, allow_none=True)
+    B = Nested(SlotMatch, allow_none=True)
+    delta = Nested(DiffDelta, allow_none=True)
     context = Integer()
     contextend = Integer()
     tokens = Nested(TokenOutSlot(many=True), required=True, dump_default=[])
     structural = Dict(required=True, dump_default={})
-    meta_A = List(Dict(keys=String(), values=Integer()), required=True, dump_default=[])
-    meta_B = List(Dict(keys=String(), values=Integer()), required=True, dump_default=[])
+    source = String(metadata={'description': 'deprecated: use category', 'deprecated': True})
+
+
+class DiffCounts(Schema):
+
+    identical = Integer()
+    anchors = Integer()
+    near = Integer()
+    extended = Integer()
+    reduced = Integer()
+    shifted = Integer()
+    only_A = Integer()
+    only_B = Integer()
 
 
 class ConcLine(Schema):
@@ -402,15 +469,6 @@ class SlotQueryConcOut(Schema):
     page_number = Integer()
 
 
-class SlotMatch(Schema):
-
-    match = Integer(required=True)
-    matchend = Integer(required=True)
-    context = Integer(required=True)
-    contextend = Integer(required=True)
-    anchors = Dict(keys=String(), values=Integer(), required=True)
-
-
 class SlotQueryMatchesOut(Schema):
 
     id = Integer()
@@ -422,6 +480,7 @@ class SlotDiffOut(Schema):
 
     id1 = Integer()
     id2 = Integer()
+    counts = Nested(DiffCounts)
     lines = Nested(DiffLine(many=True))
     nr_lines = Integer()
     page_size = Integer()
@@ -561,16 +620,7 @@ def matches(id):
     slot_query = db.get_or_404(SlotQuery, id)
 
     df = get_slot_query_matches(slot_query)
-    anchors = anchor_columns(df)
-    df = df.sort_values(by=['match', 'matchend'])
-
-    matches = [{
-        'match': int(row['match']),
-        'matchend': int(row['matchend']),
-        'context': int(row['context']),
-        'contextend': int(row['contextend']),
-        'anchors': {str(k): int(row[k]) for k in anchors}
-    } for row in df.to_dict('records')]
+    matches = match_records(df.sort_values(by=['match', 'matchend']))
 
     return {
         'id': slot_query.id,
@@ -623,6 +673,16 @@ def concordance(id, query_data):
 def diff(query_data):
     """Get difference between two slot queries.
 
+    Matches of both queries are paired according to `same`; each line is a pair
+    (or an unpaired match) with one of the categories
+    - identical: same span and anchors
+    - anchors: same span, different anchors
+    - near: start and end differ by at most `tolerance` tokens
+    - extended: B contains A
+    - reduced: A contains B
+    - shifted: overlapping, neither contains the other
+    - only_A, only_B: unpaired
+
     Only the requested page is lexicalised; all lines are returned if no page_size is given.
 
     """
@@ -631,36 +691,36 @@ def diff(query_data):
     slot_query_2 = db.get_or_404(SlotQuery, query_data['id2'])
     random_seed = query_data['random_seed'] if query_data['random_seed'] is not None else slot_query_1.random_seed
 
-    # check corpora
-    assert slot_query_1.corpus.cwb_id == slot_query_2.corpus.cwb_id
+    if slot_query_1.corpus.cwb_id != slot_query_2.corpus.cwb_id:
+        abort(400, message="slot queries must be on the same corpus")
     cwb_id = slot_query_1.corpus.cwb_id
 
-    # gather query results and merge
-    df1 = ccc_slot_query(slot_query_1)
-    df2 = ccc_slot_query(slot_query_2)
-    diff = merge_and_coalesce(df1, df2)
-    diff, pagination = paginate_matches(diff, query_data['sort_order'], random_seed,
-                                        query_data['page_size'], query_data['page_number'])
+    # gather query results and compare
+    df = diff_matches(get_slot_query_matches(slot_query_1),
+                      get_slot_query_matches(slot_query_2),
+                      query_data['same'], query_data['tolerance'])
+    counts = {c: int((df['category'] == c).sum()) for c in DIFF_CATEGORIES}
 
-    conc = list()
-    if len(diff) > 0:
-        df_lines = diff[['context_min', 'context_max']].\
-            rename({'context_min': 'match', 'context_max': 'matchend'}, axis=1).\
-            set_index(['match', 'matchend'])
-        diff = diff.assign(concordance=lexicalise(df_lines, cwb_id))
+    if query_data['categories']:
+        df = df.loc[df['category'].isin(query_data['categories'])]
+    df, pagination = paginate_matches(df, query_data['sort_order'], random_seed,
+                                      query_data['page_size'], query_data['page_number'])
 
-        def _combine(row):
-            row['concordance']['meta_A'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df1_rows']]
-            row['concordance']['meta_B'] = [{str(k): int(v) for k, v in anchors.items()} for anchors in row['df2_rows']]
-            row['concordance']['source'] = 'A' if len(row['df1_rows']) > 0 else ''
-            row['concordance']['source'] += 'B' if len(row['df2_rows']) > 0 else ''
-            return row
-
-        conc = diff.apply(lambda row: _combine(row), axis=1)['concordance'].to_list()
+    lines = list()
+    if len(df) > 0:
+        df = df.set_index(['match', 'matchend'], drop=False)
+        df['concordance'] = lexicalise(df[['context', 'contextend']], cwb_id)
+        for row in df.to_dict('records'):
+            line = row['concordance']
+            for key in ['category', 'A', 'B', 'delta']:
+                line[key] = row[key]
+            line['source'] = {'only_A': 'A', 'only_B': 'B'}.get(row['category'], 'AB')
+            lines.append(line)
 
     return SlotDiffOut().dump({
         'id1': slot_query_1.id,
         'id2': slot_query_2.id,
-        'lines': conc,
+        'counts': counts,
+        'lines': lines,
         **pagination
     }), 200

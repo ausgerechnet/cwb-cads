@@ -336,3 +336,66 @@ def test_query_diff_pagination(client, auth):
         assert page.status_code == 200
         assert page.json['nr_lines'] == full.json['nr_lines']
         assert page.json['lines'] == full.json['lines'][7:14]
+
+
+def test_query_diff_categories(client, auth):
+
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp1 = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
+    cqp2 = '"ich|wir"%c @0[pos="V.*"] @1".*" ".*"'
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        ids = [client.post(url_for('spheroscope.slot_query.create'),
+                           json={'cqp_query': cqp, 'corpus_id': 1, 'slots': slots, 'corrections': []},
+                           headers=auth_header).json['id'] for cqp in [cqp1, cqp2]]
+        matches = [client.get(url_for('spheroscope.slot_query.matches', id=id), headers=auth_header).json
+                   for id in ids]
+
+        for same in ['start', 'span', 'overlap']:
+            diff = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1], same=same),
+                              headers=auth_header)
+            assert diff.status_code == 200
+            counts = diff.json['counts']
+            lines = diff.json['lines']
+
+            # every match of A and B occurs exactly once
+            assert sum(counts.values()) == diff.json['nr_lines'] == len(lines)
+            assert sum(v for k, v in counts.items() if k != 'only_B') == matches[0]['nr_matches']
+            assert sum(v for k, v in counts.items() if k != 'only_A') == matches[1]['nr_matches']
+            assert sorted(line['A']['match'] for line in lines if line['A']) == \
+                sorted(m['match'] for m in matches[0]['matches'])
+            assert sorted(line['B']['match'] for line in lines if line['B']) == \
+                sorted(m['match'] for m in matches[1]['matches'])
+
+            for line in lines:
+                assert line['source'] == {'only_A': 'A', 'only_B': 'B'}.get(line['category'], 'AB')
+                if line['A'] and line['B']:
+                    assert line['delta']['match'] == line['B']['match'] - line['A']['match']
+                    if same != 'overlap':
+                        assert line['delta']['match'] == 0
+                    if same == 'span':
+                        assert line['category'] in ['identical', 'anchors']
+
+        # the queries differ: "er" only in A, "wir" only in B
+        default = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1]), headers=auth_header)
+        assert default.json['counts']['only_A'] > 0 and default.json['counts']['only_B'] > 0
+
+        # filter categories: counts are not affected
+        filtered = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1],
+                                      categories=['only_A', 'only_B']),
+                              headers=auth_header)
+        assert filtered.status_code == 200
+        assert filtered.json['counts'] == default.json['counts']
+        assert {line['category'] for line in filtered.json['lines']} == {'only_A', 'only_B'}
+        assert filtered.json['nr_lines'] == filtered.json['counts']['only_A'] + filtered.json['counts']['only_B']
+
+        # invalid category
+        invalid = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1], categories=['foo']),
+                             headers=auth_header)
+        assert invalid.status_code == 422

@@ -97,6 +97,6 @@ query.diff <- cads_mk_request("spheroscope/slot-query/diff") |>
 
 query.diff |> magrittr::extract2("lines") |> pull(tokens) |> head(1)
 
-query.diff |> magrittr::extract2("lines") |> pull(source) |> table()
+query.diff |> magrittr::extract2("lines") |> pull(category) |> table()
 ```
 
