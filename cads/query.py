@@ -21,6 +21,7 @@ from .concordance import (ConcordanceIn, ConcordanceLineIn, ConcordanceLineOut,
                           ConcordanceOut, ccc_concordance)
 from .database import (Breakdown, Collocation, Corpus, Cotext, CotextLines,
                        Matches, Query, get_or_create)
+from .library import DependenciesOut
 from .semantic_map import ccc_semmap_init
 from .users import auth, write_access_required
 from .utils import paginate_dataframe, translate_flags
@@ -177,7 +178,8 @@ def get_or_create_query_iterative(focus_query, filter_queries, window, overlap='
             filter_sequence=filter_sequence,
             match_strategy=focus_query.match_strategy,
             s=focus_query.s,
-            cqp_query=focus_query.cqp_query
+            cqp_query=focus_query.cqp_query,
+            library_from=focus_query
         )
         db.session.add(query)
         db.session.commit()
@@ -502,6 +504,8 @@ class QueryOut(Schema):
     random_seed = Integer(required=True)
     number_matches = Integer(required=True)
     s = String(required=True, allow_none=True)
+    dependencies = Nested(DependenciesOut, metadata={'description': 'library versions used by the query'})
+    up_to_date = Boolean(metadata={'description': 'whether all library versions used by the query are the latest ones'})
 
 
 class QueryMetaFrequencyOut(Schema):

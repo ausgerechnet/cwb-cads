@@ -417,6 +417,19 @@ def resolve_macro_body(body, corpus_id):
     return body, wordlists, macros
 
 
+def dependencies_up_to_date(dependencies):
+    """Checks whether all (nested) dependencies are the latest versions"""
+
+    for wl in dependencies['wordlists']:
+        if wl['version'] != wl['latest_version']:
+            return False
+    for macro in dependencies['macros']:
+        if macro['version'] != macro['latest_version'] or not dependencies_up_to_date(macro):
+            return False
+
+    return True
+
+
 class Query(db.Model):
     """Query: executed in CQP and dumped to disk
 
@@ -465,9 +478,19 @@ class Query(db.Model):
         "polymorphic_identity": "query",
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, library_from=None, **kwargs):
         super(Query, self).__init__(**kwargs)
         db.session.add(self)
+
+        # use the library versions of another query (e.g. for filtered copies)
+        if library_from is not None:
+            db.session.flush()
+            for call in library_from.wordlist_calls:
+                db.session.add(WordListCall(query_id=self.id, wordlist_id=call.wordlist_id))
+            for call in library_from.macro_calls:
+                db.session.add(MacroCall(query_id=self.id, macro_id=call.macro_id))
+            db.session.commit()
+            return
 
         # perform dependency resolution and fail if resolution is impossible
         # word list extraction
@@ -523,6 +546,19 @@ class Query(db.Model):
                 db.session.add(call)
 
         db.session.commit()
+
+    @property
+    def dependencies(self):
+        """Library versions used by this query (recursively)"""
+        return {
+            'wordlists': [call.wordlist.dependency() for call in self.wordlist_calls],
+            'macros': [call.macro.dependency() for call in self.macro_calls]
+        }
+
+    @property
+    def up_to_date(self):
+        """Whether all library versions used by this query (recursively) are the latest ones"""
+        return dependencies_up_to_date(self.dependencies)
 
     @property
     def mangled_query(self):
@@ -1154,6 +1190,15 @@ class WordList(db.Model):
         return [w.word for w in self.words]
 
     @property
+    def latest_version(self):
+        return db.session.query(db.func.max(WordList.version)) \
+            .filter(WordList.corpus_id == self.corpus_id, WordList.name == self.name) \
+            .scalar()
+
+    def dependency(self):
+        return {'id': self.id, 'name': self.name, 'version': self.version, 'latest_version': self.latest_version}
+
+    @property
     def path(self):
         return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "wordlists", f"{self.name}__v{self.version}.txt")
 
@@ -1233,6 +1278,32 @@ class Macro(db.Model):
         return json.loads(self.argument_names) if self.argument_names else None
 
     @property
+    def latest_version(self):
+        return db.session.query(db.func.max(Macro.version)) \
+            .filter(Macro.corpus_id == self.corpus_id, Macro.name == self.name, Macro.valency == self.valency) \
+            .scalar()
+
+    @property
+    def dependencies(self):
+        """Library versions used by this macro (recursively)"""
+        return {
+            'wordlists': [nested.wordlist.dependency() for nested in self.nested_wordlist],
+            'macros': [nested.nested.dependency() for nested in self.nested_macro]
+        }
+
+    @property
+    def up_to_date(self):
+        """Whether all library versions used by this macro (recursively) are the latest ones"""
+        return dependencies_up_to_date(self.dependencies)
+
+    def dependency(self):
+        return {
+            'id': self.id, 'name': self.name, 'valency': self.valency,
+            'version': self.version, 'latest_version': self.latest_version,
+            **self.dependencies
+        }
+
+    @property
     def canonical_name(self):
         return f"{self.name}__{self.valency}__v{self.version}"
 
@@ -1263,6 +1334,8 @@ class NestedMacro(db.Model):
     macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
     nested_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
 
+    nested = db.relationship("Macro", foreign_keys=[nested_id], viewonly=True)
+
 
 class NestedWordList(db.Model):
 
@@ -1270,6 +1343,8 @@ class NestedWordList(db.Model):
 
     macro_id = db.Column(db.Integer, db.ForeignKey('macro.id', ondelete="CASCADE"), primary_key=True)
     wordlist_id = db.Column(db.Integer, db.ForeignKey('word_list.id', ondelete="CASCADE"), primary_key=True)
+
+    wordlist = db.relationship("WordList", viewonly=True)
 
 
 class MacroCall(db.Model):

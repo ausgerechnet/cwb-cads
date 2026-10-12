@@ -4,7 +4,7 @@
 import json
 
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Dict, Integer, List, Nested, String
+from apiflask.fields import Boolean, Dict, Integer, List, Nested, String
 from apiflask.validators import OneOf, Range
 from ccc import SubCorpus
 from ccc.cqpy import cqpy_load
@@ -13,6 +13,7 @@ from pandas import DataFrame
 
 from .. import db
 from ..database import Corpus, resolve_macro_body
+from ..library import DependenciesOut
 from ..users import auth
 from .database import SlotQuery
 
@@ -272,6 +273,21 @@ def diff_matches(df_a, df_b, same='start', tolerance=1):
     return DataFrame(rows, columns=['match', 'matchend', 'context', 'contextend', 'category', 'A', 'B', 'delta'])
 
 
+def find_current_slot_query(**definition):
+    """Returns an existing slot query with the given definition whose library
+    calls resolve to the latest versions (or None). Raises ValueError if
+    library calls cannot be resolved.
+
+    """
+
+    mangled_query, _, _ = resolve_macro_body(definition['cqp_query'], definition['corpus_id'])
+    for candidate in SlotQuery.query.filter_by(**definition).all():
+        if candidate.mangled_query == mangled_query:
+            return candidate
+
+    return None
+
+
 def import_slot_query(path, corpus_id):
 
     query = cqpy_load(path)
@@ -300,14 +316,13 @@ def import_slot_query(path, corpus_id):
 
     # reuse existing query if its library calls still resolve to the latest versions
     try:
-        mangled_query, _, _ = resolve_macro_body(query['cqp'], corpus.id)
+        existing = find_current_slot_query(**definition)
     except ValueError as e:
         app.logger.error(f"could not init query: {e}")
         return
-    for candidate in SlotQuery.query.filter_by(**definition).all():
-        if candidate.mangled_query == mangled_query:
-            app.logger.debug(f"SlottedQuery {query['meta']['name']} already exists")
-            return candidate
+    if existing:
+        app.logger.debug(f"SlottedQuery {query['meta']['name']} already exists")
+        return existing
 
     try:
         slot_query = SlotQuery(**definition)
@@ -361,6 +376,16 @@ class SlotQueryOut(Schema):
     slots = Nested(AnchorSlot(many=True))
     corrections = Nested(AnchorCorrection(many=True))
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
+    dependencies = Nested(DependenciesOut, metadata={'description': 'library versions used by the query'})
+    up_to_date = Boolean(metadata={'description': 'whether all library versions used by the query are the latest ones'})
+
+
+class SlotQueryFilterIn(Schema):
+
+    outdated = Boolean(
+        required=False, load_default=None,
+        metadata={'description': 'only slot queries using outdated (true) or only latest (false) library versions'}
+    )
 
 
 class PaginationIn(Schema):
@@ -489,14 +514,17 @@ class SlotDiffOut(Schema):
 
 
 @bp.get('/')
+@bp.input(SlotQueryFilterIn, location='query')
 @bp.output(SlotQueryOut(many=True))
 @bp.auth_required(auth)
-def get_all():
+def get_all(query_data):
     """Get all slot queries.
 
     """
 
     slot_queries = SlotQuery.query.all()
+    if query_data['outdated'] is not None:
+        slot_queries = [q for q in slot_queries if q.up_to_date != query_data['outdated']]
 
     return [SlotQueryOut().dump(q) for q in slot_queries], 200
 
@@ -518,6 +546,11 @@ def create(json_data):
     match_strategy = json_data.get('match_strategy')
     name = json_data.get('name')
 
+    try:
+        resolve_macro_body(cqp_query, corpus.id)
+    except ValueError as e:
+        abort(400, message=str(e))
+
     slot_query = SlotQuery(
         cqp_query=cqp_query,
         name=name,
@@ -538,7 +571,11 @@ def create(json_data):
 @bp.output(SlotQueryOut)
 @bp.auth_required(auth)
 def get_or_create(json_data):
-    """Return an existing slot query or create it if it does not exist."""
+    """Return an existing slot query or create it if it does not exist.
+
+    An existing slot query is only returned if its library calls resolve to the latest versions.
+
+    """
 
     corpus = db.get_or_404(Corpus, json_data['corpus_id'])
     context_break = json_data.get('context_break', corpus.s_default)
@@ -548,15 +585,18 @@ def get_or_create(json_data):
     match_strategy = json_data.get('match_strategy')
     name = json_data.get('name')
 
-    slot_query = SlotQuery.query.filter_by(
-        corpus_id=corpus.id,
-        name=name,
-        cqp_query=cqp_query,
-        match_strategy=match_strategy,
-        s=context_break,
-        _slots=json.dumps(slots),
-        _corrections=json.dumps(corrections),
-    ).first()
+    try:
+        slot_query = find_current_slot_query(
+            corpus_id=corpus.id,
+            name=name,
+            cqp_query=cqp_query,
+            match_strategy=match_strategy,
+            s=context_break,
+            _slots=json.dumps(slots),
+            _corrections=json.dumps(corrections),
+        )
+    except ValueError as e:
+        abort(400, message=str(e))
 
     if slot_query:
         app.logger.debug('slot query already exists')

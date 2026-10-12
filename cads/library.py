@@ -8,14 +8,13 @@ from glob import glob
 
 import click
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Integer, List, Nested, String
+from apiflask.fields import Boolean, Integer, List, Nested, String
 from flask import current_app as app
 
 from . import db
 from .database import (Corpus, Macro, MacroCall, NestedMacro, NestedWordList,
-                       WordList, WordListCall, WordListWords,
+                       Query, WordList, WordListCall, WordListWords,
                        resolve_macro_body)
-from .spheroscope.slot_query import import_slot_query
 from .users import auth, write_access_required
 
 bp = APIBlueprint('library', __name__, url_prefix='/library', cli_group='library')
@@ -201,6 +200,8 @@ def import_library(lib_dir, corpus_id, username):
     """Imports a library of macros, word lists and slot queries for a
     given corpus from a given directory"""
 
+    from .spheroscope.slot_query import import_slot_query
+
     paths_macros = sorted(glob(os.path.join(lib_dir, "macros", "*.txt")))
     paths_wordlists = sorted(glob(os.path.join(lib_dir, "wordlists", "*.txt")))
     paths_queries = sorted(glob(os.path.join(lib_dir, "queries", "*.cqpy")))
@@ -225,9 +226,62 @@ def import_library(lib_dir, corpus_id, username):
         import_slot_query(path, corpus_id)
 
 
+def macros_using(macro_ids):
+    """Returns the ids of all macros that (transitively) nest any of the given macros"""
+
+    found = set()
+    frontier = set(macro_ids)
+    while frontier:
+        parents = {n.macro_id for n in NestedMacro.query.filter(NestedMacro.nested_id.in_(frontier))}
+        frontier = parents - found
+        found |= parents
+
+    return found
+
+
+def usage(macro_ids=set(), wordlist_ids=set()):
+    """Returns macros and queries that (transitively) use any of the given macros or word lists"""
+
+    direct = {n.macro_id for n in NestedWordList.query.filter(NestedWordList.wordlist_id.in_(wordlist_ids))}
+    macros = direct | macros_using(direct | set(macro_ids))
+
+    query_ids = {c.query_id for c in WordListCall.query.filter(WordListCall.wordlist_id.in_(wordlist_ids))} | \
+        {c.query_id for c in MacroCall.query.filter(MacroCall.macro_id.in_(macros | set(macro_ids)))}
+
+    return (
+        Macro.query.filter(Macro.id.in_(macros)).order_by(Macro.id).all(),
+        Query.query.filter(Query.id.in_(query_ids)).order_by(Query.id).all()
+    )
+
+
 ################
 # API schemata #
 ################
+
+class WordListDependency(Schema):
+
+    id = Integer()
+    name = String()
+    version = Integer()
+    latest_version = Integer()
+
+
+class MacroDependency(Schema):
+
+    id = Integer()
+    name = String()
+    valency = Integer()
+    version = Integer()
+    latest_version = Integer()
+    wordlists = Nested(WordListDependency(many=True))
+    macros = List(Nested(lambda: MacroDependency()))
+
+
+class DependenciesOut(Schema):
+
+    wordlists = Nested(WordListDependency(many=True))
+    macros = Nested(MacroDependency(many=True))
+
 
 class MacroIn(Schema):
 
@@ -249,6 +303,8 @@ class MacroOut(Schema):
     argument_names = List(String(), attribute='argument_list', allow_none=True)
     comment = String()
     body = String()
+    dependencies = Nested(DependenciesOut)
+    up_to_date = Boolean(metadata={'description': 'whether all nested word lists and macros are the latest versions'})
 
 
 class WordListIn(Schema):
@@ -274,6 +330,21 @@ class LibraryImportIn(Schema):
     macros = String(required=False, load_default="",
                     metadata={'description': 'CQP macro definitions (contents of one or more macro files)'})
     wordlists = List(Nested(WordListIn), required=False, load_default=[])
+
+
+class QueryUsage(Schema):
+
+    id = Integer()
+    type = String()
+    name = String(allow_none=True)
+    corpus_id = Integer()
+    cqp_query = String()
+
+
+class UsageOut(Schema):
+
+    macros = Nested(MacroOut(many=True))
+    queries = Nested(QueryUsage(many=True))
 
 
 class LibraryImportOut(Schema):
@@ -372,6 +443,23 @@ def delete_macro(corpus_id, id):
     return 'Deletion successful.', 200
 
 
+@bp.get("/<corpus_id>/macros/<id>/usage")
+@bp.output(UsageOut)
+@bp.auth_required(auth)
+def get_macro_usage(corpus_id, id):
+
+    """Gets macros and queries that use a macro version (directly or via nested macros)"""
+
+    corpus = db.get_or_404(Corpus, corpus_id)
+    macro = Macro.query.filter(Macro.corpus_id == corpus.id, Macro.id == id).first()
+    if not macro:
+        return abort(404, message=f"Macro with id {id} does not exist for corpus with id {corpus_id} in database")
+
+    macros, queries = usage(macro_ids={macro.id})
+
+    return {'macros': macros, 'queries': queries}, 200
+
+
 @bp.get("/<corpus_id>/wordlists/<id>")
 @bp.output(WordListOut)
 @bp.auth_required(auth)
@@ -455,6 +543,23 @@ def delete_word_list(corpus_id, id):
         os.remove(path)
 
     return 'Deletion successful.', 200
+
+
+@bp.get("/<corpus_id>/wordlists/<id>/usage")
+@bp.output(UsageOut)
+@bp.auth_required(auth)
+def get_word_list_usage(corpus_id, id):
+
+    """Gets macros and queries that use a word list version (directly or via nested macros)"""
+
+    corpus = db.get_or_404(Corpus, corpus_id)
+    wordlist = WordList.query.filter(WordList.corpus_id == corpus.id, WordList.id == id).first()
+    if not wordlist:
+        return abort(404, message=f"Word list with id {id} does not exist for corpus with id {corpus_id} in database")
+
+    macros, queries = usage(wordlist_ids={wordlist.id})
+
+    return {'macros': macros, 'queries': queries}, 200
 
 
 @bp.post("/<corpus_id>/import")

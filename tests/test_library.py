@@ -4,7 +4,7 @@ import shutil
 from flask import url_for
 
 from cads import db
-from cads.database import Macro, MacroCall, WordList
+from cads.database import Macro, MacroCall, Query, WordList
 from cads.library import import_library
 from cads.spheroscope.database import SlotQuery
 
@@ -264,3 +264,103 @@ def test_reimport_library(app):
 
         # macros and queries without dependency on the changed word list are reused
         assert latest(Macro, 'np_generic').version == 1
+
+
+def test_dependencies_and_usage(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        def post(endpoint, **json):
+            return client.post(url_for(endpoint, corpus_id=2), json=json, headers=auth_header)
+
+        nouns = post('library.create_word_list', name='dep_nouns', words=['Haus'])
+        inner = post('library.create_macro_endpoint', name='dep_inner', valency=0, body='[lemma = $dep_nouns]')
+        outer = post('library.create_macro_endpoint', name='dep_outer', valency=0, body='/dep_inner[] [pos = "V.*"]')
+        definition = {'cqp_query': '@0[::] /dep_outer[] @1[::] [word = $dep_nouns]', 'corpus_id': 2,
+                      'slots': [], 'corrections': []}
+        slot_query = client.post(url_for('spheroscope.slot_query.create'), json=definition, headers=auth_header)
+        assert slot_query.status_code == 200
+
+        # dependency tree
+        assert slot_query.json['up_to_date'] is True
+        dependencies = slot_query.json['dependencies']
+        assert dependencies['wordlists'] == [
+            {'id': nouns.json['id'], 'name': 'dep_nouns', 'version': 1, 'latest_version': 1}
+        ]
+        assert len(dependencies['macros']) == 1
+        dep_outer = dependencies['macros'][0]
+        assert (dep_outer['id'], dep_outer['valency'], dep_outer['version']) == (outer.json['id'], 0, 1)
+        assert dep_outer['wordlists'] == []
+        dep_inner = dep_outer['macros'][0]
+        assert dep_inner['id'] == inner.json['id']
+        assert dep_inner['wordlists'][0]['id'] == nouns.json['id']
+        assert outer.json['dependencies']['macros'][0]['id'] == inner.json['id']
+
+        # usage (direct and via nested macros)
+        usage = client.get(url_for('library.get_word_list_usage', corpus_id=2, id=nouns.json['id']), headers=auth_header)
+        assert {m['name'] for m in usage.json['macros']} == {'dep_inner', 'dep_outer'}
+        assert [q['id'] for q in usage.json['queries']] == [slot_query.json['id']]
+        usage = client.get(url_for('library.get_macro_usage', corpus_id=2, id=inner.json['id']), headers=auth_header)
+        assert [m['name'] for m in usage.json['macros']] == ['dep_outer']
+        assert [q['id'] for q in usage.json['queries']] == [slot_query.json['id']]
+        usage = client.get(url_for('library.get_macro_usage', corpus_id=2, id=outer.json['id']), headers=auth_header)
+        assert usage.json['macros'] == []
+        assert [q['id'] for q in usage.json['queries']] == [slot_query.json['id']]
+
+        # PUT returns the existing query while it is up to date
+        put = client.put(url_for('spheroscope.slot_query.get_or_create'), json=definition, headers=auth_header)
+        assert put.json['id'] == slot_query.json['id']
+
+        # new word list version: query and macros using it are outdated
+        nouns_v2 = post('library.create_word_list', name='dep_nouns', words=['Haus', 'Baum'])
+        assert nouns_v2.json['version'] == 2
+        old = client.get(url_for('spheroscope.slot_query.get_one', id=slot_query.json['id']), headers=auth_header)
+        assert old.json['up_to_date'] is False
+        assert old.json['dependencies']['wordlists'][0]['latest_version'] == 2
+        outer_now = client.get(url_for('library.get_macro', corpus_id=2, id=outer.json['id']), headers=auth_header)
+        assert outer_now.json['up_to_date'] is False
+
+        outdated = client.get(url_for('spheroscope.slot_query.get_all', outdated=True), headers=auth_header)
+        assert slot_query.json['id'] in {q['id'] for q in outdated.json}
+        current = client.get(url_for('spheroscope.slot_query.get_all', outdated=False), headers=auth_header)
+        assert slot_query.json['id'] not in {q['id'] for q in current.json}
+
+        # PUT now creates a new query with the latest word list version (and reuses that one afterwards)
+        put = client.put(url_for('spheroscope.slot_query.get_or_create'), json=definition, headers=auth_header)
+        assert put.json['id'] != slot_query.json['id']
+        assert put.json['dependencies']['wordlists'][0]['version'] == 2
+        put_again = client.put(url_for('spheroscope.slot_query.get_or_create'), json=definition, headers=auth_header)
+        assert put_again.json['id'] == put.json['id']
+
+        # undefined library calls
+        undefined = client.post(url_for('spheroscope.slot_query.create'),
+                                json={**definition, 'cqp_query': '/dep_undefined[]'}, headers=auth_header)
+        assert undefined.status_code == 400
+        undefined = client.put(url_for('spheroscope.slot_query.get_or_create'),
+                               json={**definition, 'cqp_query': '[word = $dep_undefined]'}, headers=auth_header)
+        assert undefined.status_code == 400
+
+
+def test_query_library_from(app):
+
+    with app.app_context():
+
+        from cads.library import save_wordlist
+
+        save_wordlist('copy_nouns', ['Haus'], 2)
+        focus = Query(corpus_id=2, cqp_query='[lemma = $copy_nouns]', s='s')
+        db.session.add(focus)
+        db.session.commit()
+
+        # new version: a copy with library_from keeps the version of the focus query
+        save_wordlist('copy_nouns', ['Haus', 'Baum'], 2)
+        copy = Query(corpus_id=2, cqp_query=focus.cqp_query, s='s', library_from=focus)
+        fresh = Query(corpus_id=2, cqp_query=focus.cqp_query, s='s')
+        db.session.add_all([copy, fresh])
+        db.session.commit()
+
+        assert copy.mangled_query == focus.mangled_query == '[lemma = $copy_nouns__v1]'
+        assert fresh.mangled_query == '[lemma = $copy_nouns__v2]'
+        assert focus.up_to_date is False and copy.up_to_date is False and fresh.up_to_date is True
