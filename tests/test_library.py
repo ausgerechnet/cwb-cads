@@ -1,6 +1,12 @@
 import os
+import shutil
 
 from flask import url_for
+
+from cads import db
+from cads.database import Macro, MacroCall, WordList
+from cads.library import import_library
+from cads.spheroscope.database import SlotQuery
 
 
 PHRASES = open("tests/library/macros/phrases.txt").read()
@@ -200,3 +206,61 @@ def test_delete(client, auth):
                     headers=auth_header)
         assert client.delete(url_for('library.delete_word_list', corpus_id=2, id=wl.json['id']),
                              headers=auth_header).status_code == 409
+
+
+def test_reimport_library(app):
+
+    tmp_lib = "tests/tmp/library"
+
+    def counts():
+        return (
+            WordList.query.filter_by(corpus_id=2).count(),
+            Macro.query.filter_by(corpus_id=2).count(),
+            SlotQuery.query.filter_by(corpus_id=2).count()
+        )
+
+    def latest(model, name):
+        return model.query.filter_by(corpus_id=2, name=name).order_by(model.version.desc()).first()
+
+    with app.app_context():
+
+        import_library("tests/library/", corpus_id=2, username='admin')
+        before = counts()
+
+        # unchanged: everything is reused
+        import_library("tests/library/", corpus_id=2, username='admin')
+        assert counts() == before
+
+        nouns_entity_v1 = latest(WordList, 'nouns_entity')
+        np_entity_v1 = latest(Macro, 'np_entity')
+        slot_query_v1 = SlotQuery.query.filter_by(corpus_id=2, name='pattern3_np_will_np').one()
+        assert MacroCall.query.filter_by(query_id=slot_query_v1.id, macro_id=np_entity_v1.id).one()
+
+        # changed word list: new versions of word list, dependent macro, dependent queries
+        try:
+            shutil.copytree("tests/library/", tmp_lib)
+            with open(os.path.join(tmp_lib, "wordlists", "nouns_entity.txt"), "at") as f:
+                f.write("\nTestnomen\n")
+            import_library(tmp_lib, corpus_id=2, username='admin')
+        finally:
+            shutil.rmtree("tests/tmp")
+
+        nouns_entity_v2 = latest(WordList, 'nouns_entity')
+        assert nouns_entity_v2.version == nouns_entity_v1.version + 1
+        assert nouns_entity_v2.word_list[-1] == 'Testnomen'
+
+        np_entity_v2 = latest(Macro, 'np_entity')
+        assert np_entity_v2.version == np_entity_v1.version + 1
+        assert f"$nouns_entity__v{nouns_entity_v2.version}" in np_entity_v2.body
+
+        slot_queries = SlotQuery.query.filter_by(corpus_id=2, name='pattern3_np_will_np').all()
+        assert len(slot_queries) == 2
+        assert np_entity_v2.canonical_name in slot_queries[-1].mangled_query
+
+        # old versions and provenance are kept
+        assert db.session.get(WordList, nouns_entity_v1.id)
+        assert db.session.get(Macro, np_entity_v1.id)
+        assert np_entity_v1.canonical_name in db.session.get(SlotQuery, slot_query_v1.id).mangled_query
+
+        # macros and queries without dependency on the changed word list are reused
+        assert latest(Macro, 'np_generic').version == 1

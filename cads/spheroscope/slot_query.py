@@ -12,7 +12,7 @@ from flask import current_app as app
 from pandas import DataFrame, concat
 
 from .. import db
-from ..database import Corpus
+from ..database import Corpus, resolve_macro_body
 from ..users import auth
 from .database import SlotQuery
 
@@ -229,15 +229,28 @@ def import_slot_query(path, corpus_id):
 
     corpus = db.get_or_404(Corpus, corpus_id)
 
+    definition = dict(
+        corpus_id=corpus.id,
+        cqp_query=query['cqp'],
+        name=query['meta']['name'],
+        _slots=json.dumps(slots) if slots else None,
+        _corrections=json.dumps(corrections) if corrections else None,
+        s=corpus.s_default
+    )
+
+    # reuse existing query if its library calls still resolve to the latest versions
     try:
-        slot_query = SlotQuery(
-            corpus_id=corpus.id,
-            cqp_query=query['cqp'],
-            name=query['meta']['name'],
-            _slots=json.dumps(slots) if slots else None,
-            _corrections=json.dumps(corrections) if corrections else None,
-            s=corpus.s_default
-        )
+        mangled_query, _, _ = resolve_macro_body(query['cqp'], corpus.id)
+    except ValueError as e:
+        app.logger.error(f"could not init query: {e}")
+        return
+    for candidate in SlotQuery.query.filter_by(**definition).all():
+        if candidate.mangled_query == mangled_query:
+            app.logger.debug(f"SlottedQuery {query['meta']['name']} already exists")
+            return candidate
+
+    try:
+        slot_query = SlotQuery(**definition)
         db.session.add(slot_query)
     except Exception as e:
         app.logger.error(f"could not init query: {e}")
@@ -251,6 +264,8 @@ def import_slot_query(path, corpus_id):
 
     # execute query to cache results (?)
     # ccc_query(slot_query, return_df=False)
+
+    return slot_query
 
 
 class AnchorCorrection(Schema):
