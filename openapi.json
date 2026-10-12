@@ -2280,9 +2280,89 @@
         ],
         "type": "object"
       },
+      "LibraryImportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "macros": {
+            "default": "",
+            "description": "CQP macro definitions (contents of one or more macro files)",
+            "type": "string"
+          },
+          "wordlists": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/WordListIn"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "LibraryImportOut": {
+        "additionalProperties": false,
+        "properties": {
+          "macros": {
+            "items": {
+              "$ref": "#/components/schemas/MacroOut"
+            },
+            "type": "array"
+          },
+          "wordlists": {
+            "items": {
+              "$ref": "#/components/schemas/WordListOut"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "MacroIn": {
+        "additionalProperties": false,
+        "properties": {
+          "argument_names": {
+            "default": null,
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "body": {
+            "type": "string"
+          },
+          "comment": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "valency": {
+            "default": null,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "body",
+          "name"
+        ],
+        "type": "object"
+      },
       "MacroOut": {
         "additionalProperties": false,
         "properties": {
+          "argument_names": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "body": {
+            "type": "string"
+          },
           "comment": {
             "type": "string"
           },
@@ -2292,14 +2372,14 @@
           "id": {
             "type": "integer"
           },
-          "macro": {
-            "type": "string"
-          },
           "modified": {
             "type": "string"
           },
           "name": {
             "type": "string"
+          },
+          "valency": {
+            "type": "integer"
           },
           "version": {
             "type": "integer"
@@ -3329,6 +3409,30 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "WordListIn": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "default": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "words"
+        ],
         "type": "object"
       },
       "WordListOut": {
@@ -5639,6 +5743,81 @@
         ]
       }
     },
+    "/library/{corpus_id}/import": {
+      "post": {
+        "description": "Changed definitions are imported as new versions, identical ones are reused.\nWord lists are imported first; macros may be defined in any order.\nNothing is imported if any definition fails.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LibraryImportIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryImportOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Imports CQP macro definitions and word lists for a specified corpus.",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
     "/library/{corpus_id}/macros": {
       "get": {
         "parameters": [
@@ -5695,9 +5874,141 @@
         "tags": [
           "Library"
         ]
+      },
+      "post": {
+        "description": "Returns the latest version (status 200) if it is identical.\nNested word lists and macros are resolved to their latest versions.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MacroIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacroOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Creates a new version of a macro for a specified corpus.",
+        "tags": [
+          "Library"
+        ]
       }
     },
     "/library/{corpus_id}/macros/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Deletes a single macro version, unless it is used by a query or another macro",
+        "tags": [
+          "Library"
+        ]
+      },
       "get": {
         "parameters": [
           {
@@ -5816,9 +6127,141 @@
         "tags": [
           "Library"
         ]
+      },
+      "post": {
+        "description": "Returns the latest version (status 200) if it is identical.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WordListIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordListOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Creates a new version of a word list for a specified corpus.",
+        "tags": [
+          "Library"
+        ]
       }
     },
     "/library/{corpus_id}/wordlists/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Deletes a single word list version, unless it is used by a query or a macro",
+        "tags": [
+          "Library"
+        ]
+      },
       "get": {
         "parameters": [
           {

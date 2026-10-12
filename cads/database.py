@@ -344,6 +344,65 @@ def parse_macro_call_arguments(argstring):
         return 0
 
 
+def resolve_macro_body(body, corpus_id):
+    """Resolves word list and macro calls in a macro body to the latest
+    versions in the library and mangles their identifiers.
+
+    Returns the mangled body, the resolved word lists, and the resolved
+    macros. Raises ValueError if a dependency is undefined.
+    Nothing is added to the session.
+    """
+
+    wordlists = list()
+    macros = list()
+
+    # nested word lists
+    nested_wordlists = {m[1] for m in re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", body)}
+    if nested_wordlists:
+        current_app.logger.debug(f"\tcontains nested word list calls: '{nested_wordlists}'")
+
+    for identifier in nested_wordlists:
+        wl = WordList.query \
+                .filter(WordList.corpus_id == corpus_id) \
+                .filter(WordList.name == identifier) \
+                .order_by(WordList.version.desc()) \
+                .first()
+
+        if not wl:
+            raise ValueError(f"undefined word list {identifier}")
+
+        # do not touch longer identifiers sharing this prefix
+        pattern = fr"\${re.escape(wl.name)}(?![a-zA-Z0-9_\-])"
+        repl = fr"${wl.name}__v{wl.version}"
+        body = re.sub(pattern, repl, body, flags=re.S)
+        wordlists.append(wl)
+
+    # nested macros
+    macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", body)
+    nested_macros = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
+    if nested_macros:
+        current_app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
+
+    for identifier, valency in nested_macros:
+        nm = Macro.query \
+                .filter(Macro.corpus_id == corpus_id) \
+                .filter(Macro.name == identifier) \
+                .filter(Macro.valency == valency) \
+                .order_by(Macro.version.desc()) \
+                .first()
+
+        if not nm:
+            raise ValueError(f"undefined nested macro call {identifier} with valency {valency}")
+
+        arg_pattern = ', ?'.join([r'[^,\s]+?'] * nm.valency)
+        pattern = fr"/{re.escape(nm.name)}(\[{arg_pattern}\])"
+        repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
+        body = re.sub(pattern, repl, body, flags=re.S)
+        macros.append(nm)
+
+    return body, wordlists, macros
+
+
 class Query(db.Model):
     """Query: executed in CQP and dumped to disk
 
@@ -352,8 +411,8 @@ class Query(db.Model):
     __table_args__ = ({'sqlite_autoincrement': True})
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Unicode(255))    
-    version = db.Column(db.Unicode(255))   
+    name = db.Column(db.Unicode(255))
+    version = db.Column(db.Unicode(255))
     type = db.Column(db.Unicode(10))
     modified = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     description = db.Column(db.Unicode)
@@ -384,7 +443,7 @@ class Query(db.Model):
     macro_calls = db.relationship("MacroCall", passive_deletes=True, cascade='all, delete')
 
     __table_args__ = (
-        db.UniqueConstraint("name", "version"), # alternative primary key for version history
+        db.UniqueConstraint("name", "version"),  # alternative primary key for version history
     )
 
     __mapper_args__ = {
@@ -396,9 +455,8 @@ class Query(db.Model):
         super(Query, self).__init__(**kwargs)
         db.session.add(self)
 
-        ## perform dependency resolution and fail if resolution is impossible
-        
-        ## word list extraction
+        # perform dependency resolution and fail if resolution is impossible
+        # word list extraction
 
         wl_matches = re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.cqp_query)
         wl_calls = {wl[1] for wl in wl_matches}
@@ -412,7 +470,7 @@ class Query(db.Model):
                     .filter(WordList.name == identifier) \
                     .order_by(WordList.version.desc()) \
                     .first()
-            
+
             if not wl:
                 db.session.delete(self)
                 raise Exception(f"undefined word list {identifier}")
@@ -425,8 +483,7 @@ class Query(db.Model):
 
         db.session.commit()
 
-        ## macro extraction
-
+        # macro extraction
         macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.cqp_query)
         macro_calls = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
         if macro_calls:
@@ -440,7 +497,7 @@ class Query(db.Model):
                     .filter(Macro.valency == valency) \
                     .order_by(Macro.version.desc()) \
                     .first()
-            
+
             if not macro:
                 db.session.delete(self)
                 raise Exception(f"undefined macro {identifier} with valency {valency}")
@@ -1078,14 +1135,18 @@ class WordList(db.Model):
 
     modified = db.Column(db.DateTime, nullable=False, default=datetime.now())
 
-    words = db.relationship("WordListWords", backref="word_list", cascade="all, delete")
+    words = db.relationship("WordListWords", backref="word_list", cascade="all, delete", order_by="WordListWords.id")
     # p_att = db.Column(db.Unicode(50), nullable=False)
 
     comment = db.Column(db.Unicode)
 
     __table_args__ = (
-        db.UniqueConstraint("name", "version", "corpus_id"), # alternative primary key for version history
+        db.UniqueConstraint("name", "version", "corpus_id"),  # alternative primary key for version history
     )
+
+    @property
+    def word_list(self):
+        return [w.word for w in self.words]
 
     @property
     def path(self):
@@ -1094,7 +1155,7 @@ class WordList(db.Model):
     def write(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, "wt") as f:
-            f.write("\n".join([w. word for w in self.words]))
+            f.write("\n".join(self.word_list))
 
 
 class WordListWords(db.Model):
@@ -1108,6 +1169,7 @@ class WordListWords(db.Model):
 
     def __str__(self):
         return self.word
+
 
 class WordListCall(db.Model):
 
@@ -1139,86 +1201,31 @@ class Macro(db.Model):
     comment = db.Column(db.Unicode)
 
     nested_wordlist = db.relationship("NestedWordList", passive_deletes=True, cascade='all, delete')
-    nested_macro = db.relationship("NestedMacro", passive_deletes=True, \
-                             cascade='all, delete', primaryjoin="Macro.id == NestedMacro.macro_id")
+    nested_macro = db.relationship("NestedMacro", passive_deletes=True,
+                                   cascade='all, delete', primaryjoin="Macro.id == NestedMacro.macro_id")
 
     __table_args__ = (
-        db.UniqueConstraint("name", "valency", "version", "corpus_id"), # alternative primary key for version history
+        db.UniqueConstraint("name", "valency", "version", "corpus_id"),  # alternative primary key for version history
     )
 
     def __init__(self, **kwargs):
+        # resolve dependencies first so that init fails before anything is added to the session
+        body, wordlists, macros = resolve_macro_body(kwargs['body'], kwargs['corpus_id'])
+        kwargs['body'] = body
+
         super(Macro, self).__init__(**kwargs)
         db.session.add(self)
+        db.session.flush()
 
-        ## perform dependency resolution and fail init if resolution is impossible
-        # TODO: refactor and unify this code with Query __init__
+        # save dependencies in the db
+        for wl in wordlists:
+            db.session.add(NestedWordList(macro_id=self.id, wordlist_id=wl.id))
+        for nm in macros:
+            db.session.add(NestedMacro(macro_id=self.id, nested_id=nm.id))
 
-        ## handle nested word lists
-        nested_wordlists = {m[1] for m in re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.body)}
-        if nested_wordlists:
-            current_app.logger.debug(f"\tcontains nested word list calls: '{nested_wordlists}'")  
-
-        for identifier in nested_wordlists:
-            # check if word list with this identifier is in db
-            # and get latest version
-            wl = WordList.query \
-                    .filter(WordList.corpus_id == self.corpus_id) \
-                    .filter(WordList.name == identifier) \
-                    .order_by(WordList.version.desc()) \
-                    .first()
-            
-            if not wl:
-                # abort and delete self if there is no candidate
-                db.session.delete(self)
-                raise Exception(f"undefined word list {identifier}")
-            else:
-                # mangle and replace identifiers in the macro definition
-                pattern = fr"\${wl.name}"
-                repl = fr"${wl.name}__v{wl.version}"
-                self.body = re.sub(pattern, repl, self.body, flags=re.S)
-
-                # save the dependency in the db
-                record = NestedWordList(
-                    macro_id=self.id,
-                    wordlist_id=wl.id
-                )
-
-                db.session.add(record)
-
-        ## handle nested macros
-        macro_matches = re.finditer(r"/([a-zA-Z_][a-zA-Z0-9_\-]*)\[(.*?)\]", self.body)
-        nested_macros = {(m[1], parse_macro_call_arguments(m[2])) for m in macro_matches}
-        if nested_macros:
-            current_app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
-
-        for identifier, valency in nested_macros:
-            # check if macro with this identifier and valency is in db
-            # and get latest version
-            nm = Macro.query \
-                    .filter(Macro.corpus_id == self.corpus_id) \
-                    .filter(Macro.name == identifier) \
-                    .filter(Macro.valency == valency) \
-                    .order_by(Macro.version.desc()) \
-                    .first()
-            
-            if not nm:
-                # abort and delete self if no candidate exists
-                db.session.delete(self)
-                raise Exception(f"undefined nested macro call {identifier} with valency {valency}")
-            else:
-                # mangle and replace identifiers in the macro definition
-                arg_pattern = ', ?'.join([r'[^,\s]+?'] * nm.valency)
-                pattern = fr"/{nm.name}(\[{arg_pattern}\])"
-                repl = fr"/{nm.name}__{nm.valency}__v{nm.version}\1"
-                self.body = re.sub(pattern, repl, self.body, flags=re.S)
-
-                # save the dependency in the db
-                record = NestedMacro(
-                    macro_id=self.id,
-                    nested_id=nm.id
-                )
-
-                db.session.add(record)
+    @property
+    def argument_list(self):
+        return json.loads(self.argument_names) if self.argument_names else None
 
     @property
     def canonical_name(self):
@@ -1226,7 +1233,7 @@ class Macro(db.Model):
 
     @property
     def path(self):
-        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", \
+        return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}",
                             "macros", self.canonical_name + ".txt")
 
     def write(self):
