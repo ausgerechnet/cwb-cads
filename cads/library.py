@@ -596,7 +596,7 @@ def import_definitions(corpus_id, json_data):
 # CLI commands #
 ################
 
-@bp.cli.command('import-library')
+@bp.cli.command('import')
 @click.option('--corpus_id', default=1)
 @click.option('--lib_dir', default='tests/library/')
 def import_library_cmd(corpus_id, lib_dir):
