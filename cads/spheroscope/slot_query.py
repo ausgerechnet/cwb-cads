@@ -36,13 +36,14 @@ def ccc_slot_query(slot_query):
         cqp_query=slot_query.mangled_query,
         corrections=corrections,
         context_break=slot_query.s,
-        match_strategy=slot_query.match_strategy
+        match_strategy=slot_query.match_strategy,
+        propagate_error=True
     )
 
-    # invalid query
+    # invalid query (CQP error message, e.g. undefined attribute in a global constraint)
     if isinstance(dump, str):
-        app.logger.error('invalid query')
-        return dump
+        app.logger.error(f'invalid query {slot_query.id}: {dump}')
+        return dump.strip()
 
     # valid query, but no matches
     if len(dump.df) == 0:

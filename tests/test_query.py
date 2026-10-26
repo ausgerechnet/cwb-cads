@@ -484,3 +484,43 @@ def test_query_collocation_scores(client, auth):
         assert collocation_items.status_code == 200
 
         assert 'scaled_scores' in collocation_items.json['items'][0]
+
+
+def test_query_cqp_errors(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        def post(cqp_query):
+            return client.post(url_for('query.create_query'),
+                               json={'corpus_id': 1, 'cqp_query': cqp_query, 's': 's'},
+                               headers=auth_header)
+
+        def put(cqp_query):
+            return client.put(url_for('query.get_or_create_query'),
+                              json={'corpus_id': 1, 'cqp_query': cqp_query, 's': 's'},
+                              headers=auth_header)
+
+        # global constraints work
+        query = post('[lemma="Kanzler"] :: int(match.sitzung_date) >= 1996')
+        assert query.status_code == 200
+
+        # CQP errors are reported (undefined attribute, syntax error)
+        query = post('[lemma="Kanzler"] :: int(match.text_year) >= 2016')
+        assert query.status_code == 406
+        assert "text_year" in query.json['message']
+        assert post('[lemma="Kanzler"').status_code == 406
+
+        # also when the erroneous query already exists
+        query = put('[lemma="Kanzler"] :: match.undefined_attribute = "x"')
+        assert query.status_code == 406
+        query = put('[lemma="Kanzler"] :: match.undefined_attribute = "x"')
+        assert query.status_code == 406
+        assert "undefined_attribute" in query.json['message']
+
+        # without execution, the query is just created
+        query = client.post(url_for('query.create_query', execute=False),
+                            json={'corpus_id': 1, 'cqp_query': '[lemma="Kanzler"', 's': 's'},
+                            headers=auth_header)
+        assert query.status_code == 200

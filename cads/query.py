@@ -29,14 +29,19 @@ from .utils import paginate_dataframe, translate_flags
 bp = APIBlueprint('query', __name__, url_prefix='/query')
 
 
-def ccc_query(query, return_df=True):
+def ccc_query(query, return_df=True, propagate_error=False):
     """get or create matches of this query
+
+    CQP errors mark the query as erroneous; the error message is returned if
+    propagate_error is set (otherwise an empty DataFrame, like for 0 matches)
 
     """
 
     current_app.logger.debug(f'ccc_query :: query {query.id} in corpus {query.corpus.cwb_id}')
 
-    if query.zero_matches or query.error:
+    if query.error and propagate_error:
+        current_app.logger.debug("ccc_query :: query has an error, running again to get the message")
+    elif query.zero_matches or query.error:
         current_app.logger.debug("ccc_query :: query has zero matches")
         return DataFrame()
 
@@ -53,13 +58,16 @@ def ccc_query(query, return_df=True):
         current_app.logger.debug('ccc_query :: querying')
         matches = corpus.query(cqp_query=query.mangled_query,
                                context_break=query.s,
-                               match_strategy=query.match_strategy)
+                               match_strategy=query.match_strategy,
+                               propagate_error=True)
 
         if isinstance(matches, str):  # error
             current_app.logger.error(f"ccc_query :: error: '{matches}'")
             query.error = True
             db.session.commit()
-            return DataFrame()
+            return matches.strip() if propagate_error else DataFrame()
+
+        query.error = False
 
         if len(matches.df) == 0:  # no matches
             current_app.logger.debug("ccc_query :: 0 matches")
@@ -558,7 +566,7 @@ def create_query(json_data, query_data):
     db.session.commit()
 
     if query_data['execute']:
-        ret = ccc_query(query)
+        ret = ccc_query(query, propagate_error=True)
         if isinstance(ret, str):  # CQP error
             return abort(406, ret)
 
@@ -582,7 +590,7 @@ def get_or_create_query(json_data, query_data):
         Query.corpus_id == json_data['corpus_id'],
         Query.cqp_query == json_data['cqp_query'],
         Query.s == json_data['s'],
-        Query.subcorpus_id.is_(None) if json_data['subcorpus_id'] is None else Query.subcorpus_id == json_data['subcorpus_id']
+        Query.subcorpus_id.is_(None) if json_data.get('subcorpus_id') is None else Query.subcorpus_id == json_data['subcorpus_id']
     ).first()
 
     if not query:
@@ -596,9 +604,14 @@ def get_or_create_query(json_data, query_data):
         db.session.commit()
 
         if query_data['execute']:
-            ret = ccc_query(query)
+            ret = ccc_query(query, propagate_error=True)
             if isinstance(ret, str):  # CQP error
                 return abort(406, ret)
+
+    elif query.error and query_data['execute']:
+        ret = ccc_query(query, propagate_error=True)
+        if isinstance(ret, str):  # CQP error
+            return abort(406, ret)
 
     return QueryOut().dump(query), 200
 
@@ -631,7 +644,7 @@ def create_query_assisted(json_data, query_data):
     db.session.commit()
 
     if query_data['execute']:
-        ret = ccc_query(query)
+        ret = ccc_query(query, propagate_error=True)
         if isinstance(ret, str):  # CQP error
             return abort(406, ret)
 
@@ -664,7 +677,7 @@ def get_or_create_query_assisted(json_data, query_data):
         Query.corpus_id == json_data['corpus_id'],
         Query.cqp_query == json_data['cqp_query'],
         Query.s == json_data['s'],
-        Query.subcorpus_id.is_(None) if json_data['subcorpus_id'] is None else Query.subcorpus_id == json_data['subcorpus_id']
+        Query.subcorpus_id.is_(None) if json_data.get('subcorpus_id') is None else Query.subcorpus_id == json_data['subcorpus_id']
     ).first()
 
     if not query:
@@ -678,9 +691,14 @@ def get_or_create_query_assisted(json_data, query_data):
         db.session.commit()
 
         if query_data['execute']:
-            ret = ccc_query(query)
+            ret = ccc_query(query, propagate_error=True)
             if isinstance(ret, str):  # CQP error
                 return abort(406, ret)
+
+    elif query.error and query_data['execute']:
+        ret = ccc_query(query, propagate_error=True)
+        if isinstance(ret, str):  # CQP error
+            return abort(406, ret)
 
     return QueryOut().dump(query), 200
 

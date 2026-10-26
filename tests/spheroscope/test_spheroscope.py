@@ -599,3 +599,40 @@ def test_query_p_show(client, auth):
         diff = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1], p_show=['nonexistent']),
                           headers=auth_header)
         assert diff.status_code == 400
+
+
+def test_query_global_constraint(client, auth):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        def nr_matches(cqp):
+            slot_query = client.put(url_for('spheroscope.slot_query.get_or_create'),
+                                    json={'cqp_query': cqp, 'corpus_id': 1}, headers=auth_header)
+            assert slot_query.status_code == 200
+            matches = client.get(url_for('spheroscope.slot_query.matches', id=slot_query.json['id']),
+                                 headers=auth_header)
+            return slot_query.json['id'], matches
+
+        # global constraints restrict the matches (also with anchors)
+        _, unconstrained = nr_matches('[lemma="Kanzler"]')
+        _, all_years = nr_matches('[lemma="Kanzler"] :: int(match.sitzung_date) >= 1996')
+        _, no_years = nr_matches('[lemma="Kanzler"] :: int(match.sitzung_date) >= 1997')
+        _, anchors = nr_matches('@0[lemma="Kanzler"] @1[] @2[] :: int(match.sitzung_date) >= 1996')
+        assert unconstrained.json['nr_matches'] > 0
+        assert all_years.json['nr_matches'] == anchors.json['nr_matches'] == unconstrained.json['nr_matches']
+        assert no_years.json['nr_matches'] == 0
+
+        # CQP errors are reported instead of returning 0 matches
+        id_undefined, undefined = nr_matches('[lemma="Kanzler"] :: int(match.text_year) >= 2016')
+        assert undefined.status_code == 400
+        assert "text_year" in undefined.json['message']
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=id_undefined), headers=auth_header)
+        assert conc.status_code == 400
+        id_valid, _ = nr_matches('[lemma="Kanzler"]')
+        diff = client.get(url_for('spheroscope.slot_query.diff', id1=id_valid, id2=id_undefined), headers=auth_header)
+        assert diff.status_code == 400
+
+        _, syntax = nr_matches('[lemma="Kanzler"] :: match.')
+        assert syntax.status_code == 400
