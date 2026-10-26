@@ -542,3 +542,60 @@ def test_query_history_context_break(client, auth):
         histories = client.get(url_for('spheroscope.query_history.get_all'), headers=auth_header)
         assert histories.status_code == 200
         assert any(e['query']['context_break'] == 's' for h in histories.json for e in h['entries'])
+
+
+def test_query_p_show(client, auth):
+
+    slots = [
+        {'slot': 'verb', 'start': '0', 'end': '0'},
+        {'slot': 'rest', 'start': '1', 'end': 'matchend'}
+    ]
+    cqp1 = '"ich|er"%c @0[pos="V.*"]+ @1".*" ".*"'
+    cqp2 = '"ich|wir"%c @0[pos="V.*"] @1".*" ".*"'
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        ids = list()
+        for cqp in [cqp1, cqp2]:
+            slot_query = client.post(url_for('spheroscope.slot_query.create'),
+                                     content_type='application/json',
+                                     json={'cqp_query': cqp, 'corpus_id': 1, 'slots': slots, 'corrections': []},
+                                     headers=auth_header)
+            assert slot_query.status_code == 200
+            ids.append(slot_query.json['id'])
+
+        # default: cpos and word
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=ids[0], page_size=5),
+                          headers=auth_header)
+        assert conc.status_code == 200
+        assert set(conc.json['lines'][0]['tokens'][0].keys()) == {'cpos', 'word'}
+
+        # repeatable; word is always included
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=ids[0], page_size=5,
+                                  p_show=['lemma', 'pos']),
+                          headers=auth_header)
+        assert conc.status_code == 200
+        for line in conc.json['lines']:
+            for token in line['tokens']:
+                assert set(token.keys()) == {'cpos', 'word', 'lemma', 'pos'}
+        # the verb slot is tagged V.*
+        verb = conc.json['lines'][0]['meta']['match'] + 1
+        assert [t for t in conc.json['lines'][0]['tokens'] if t['cpos'] == verb][0]['pos'].startswith('V')
+
+        diff = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1], page_size=5,
+                                  p_show=['lemma']),
+                          headers=auth_header)
+        assert diff.status_code == 200
+        for line in diff.json['lines']:
+            for token in line['tokens']:
+                assert set(token.keys()) == {'cpos', 'word', 'lemma'}
+
+        # unknown attribute
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=ids[0], p_show=['nonexistent']),
+                          headers=auth_header)
+        assert conc.status_code == 400
+        diff = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1], p_show=['nonexistent']),
+                          headers=auth_header)
+        assert diff.status_code == 400

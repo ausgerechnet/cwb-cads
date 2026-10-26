@@ -410,8 +410,10 @@
             "type": "object"
           },
           "tokens": {
+            "description": "cpos and one key per requested p-attribute",
             "items": {
-              "$ref": "#/components/schemas/TokenOutSlot"
+              "additionalProperties": {},
+              "type": "object"
             },
             "type": "array"
           }
@@ -1679,8 +1681,10 @@
             "type": "object"
           },
           "tokens": {
+            "description": "cpos and one key per requested p-attribute",
             "items": {
-              "$ref": "#/components/schemas/TokenOutSlot"
+              "additionalProperties": {},
+              "type": "object"
             },
             "type": "array"
           }
@@ -3391,22 +3395,6 @@
         ],
         "type": "object"
       },
-      "TokenOutSlot": {
-        "additionalProperties": false,
-        "properties": {
-          "cpos": {
-            "type": "integer"
-          },
-          "word": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "cpos",
-          "word"
-        ],
-        "type": "object"
-      },
       "TreeNodeOut": {
         "additionalProperties": false,
         "properties": {
@@ -3792,7 +3780,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.2.dev3"
+    "version": "0.3.2.dev4"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -14545,6 +14533,23 @@
             }
           },
           {
+            "description": "positional attributes of each token (repeatable; word is always included)",
+            "explode": true,
+            "in": "query",
+            "name": "p_show",
+            "required": false,
+            "schema": {
+              "default": [
+                "word"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
             "in": "query",
             "name": "id1",
             "required": true,
@@ -14843,6 +14848,23 @@
               "nullable": true,
               "type": "integer"
             }
+          },
+          {
+            "description": "positional attributes of each token (repeatable; word is always included)",
+            "explode": true,
+            "in": "query",
+            "name": "p_show",
+            "required": false,
+            "schema": {
+              "default": [
+                "word"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
           }
         ],
         "responses": {

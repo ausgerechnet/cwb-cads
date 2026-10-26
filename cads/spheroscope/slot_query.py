@@ -55,7 +55,7 @@ def format_line(line, p_show, s_show):
     """format one line, provide dictionary of
     - context
     - contextend
-    - tokens (list of dicts): cpos + word
+    - tokens (list of dicts): cpos + one key per p-attribute in p_show
     - structural (dict): s_show
 
     """
@@ -69,8 +69,8 @@ def format_line(line, p_show, s_show):
     line = line['dict']
 
     tokens = list()
-    for cpos, word in zip(line['cpos'], line['word']):
-        tokens.append({'cpos': cpos, 'word': word})
+    for i, cpos in enumerate(line['cpos']):
+        tokens.append({'cpos': cpos, **{p_att: line[p_att][i] for p_att in p_show}})
 
     row = {
         'context': context,
@@ -82,7 +82,7 @@ def format_line(line, p_show, s_show):
     return row
 
 
-def lexicalise(df_dump, cwb_id, p_show=["word", "lemma"], s_show=[]):
+def lexicalise(df_dump, cwb_id, p_show=["word"], s_show=[]):
 
     # ccc's concordance() selects rows via df.loc[list(matches), :], which
     # over-selects whenever (match, matchend) is not unique in df_dump (both
@@ -429,6 +429,10 @@ class PaginationIn(Schema):
         required=False, load_default=None,
         metadata={'description': 'random seed for sort_order random (default: random seed of the (first) query)'}
     )
+    p_show = List(
+        String(), required=False, load_default=['word'],
+        metadata={'description': 'positional attributes of each token (repeatable; word is always included)'}
+    )
 
 
 class SlotConcordanceIn(PaginationIn):
@@ -451,12 +455,6 @@ class SlotDiffIn(PaginationIn):
         String(validate=OneOf(DIFF_CATEGORIES)), required=False, load_default=None,
         metadata={'description': 'only return lines of these categories (counts are not affected)'}
     )
-
-
-class TokenOutSlot(Schema):
-
-    cpos = Integer(required=True)
-    word = String(required=True)
 
 
 class SlotMatch(Schema):
@@ -483,7 +481,8 @@ class DiffLine(Schema):
     delta = Nested(DiffDelta, allow_none=True)
     context = Integer()
     contextend = Integer()
-    tokens = Nested(TokenOutSlot(many=True), required=True, dump_default=[])
+    tokens = List(Dict(keys=String()), required=True, dump_default=[],
+                  metadata={'description': 'cpos and one key per requested p-attribute'})
     structural = Dict(required=True, dump_default={})
     source = String(metadata={'description': 'deprecated: use category', 'deprecated': True})
 
@@ -502,7 +501,8 @@ class DiffCounts(Schema):
 
 class ConcLine(Schema):
 
-    tokens = Nested(TokenOutSlot(many=True), required=True, dump_default=[])
+    tokens = List(Dict(keys=String()), required=True, dump_default=[],
+                  metadata={'description': 'cpos and one key per requested p-attribute'})
     structural = Dict(required=True, dump_default={})
     meta = Dict(keys=String(), values=Integer(), required=True, dump_default=[])
 
@@ -672,6 +672,20 @@ def get_one(id):
     return slot_query, 200
 
 
+def get_p_show(corpus, p_show):
+    """Returns the requested p-attributes (word first, no duplicates); aborts
+    if the corpus does not have one of them.
+
+    """
+
+    p_show = list(dict.fromkeys(['word'] + p_show))
+    unknown = [p_att for p_att in p_show if p_att not in corpus.p_atts]
+    if unknown:
+        abort(400, message=f"corpus {corpus.cwb_id} does not have p-attributes {unknown}")
+
+    return p_show
+
+
 def get_slot_query_matches(slot_query):
     """Returns the matches of a slot query as a DataFrame with columns
     match, matchend, context, contextend and anchors; aborts if the query
@@ -722,6 +736,7 @@ def concordance(id, query_data):
 
     slot_query = db.get_or_404(SlotQuery, id)
     random_seed = query_data['random_seed'] if query_data['random_seed'] is not None else slot_query.random_seed
+    p_show = get_p_show(slot_query.corpus, query_data['p_show'])
 
     df = get_slot_query_matches(slot_query)
     anchors = anchor_columns(df)
@@ -731,7 +746,7 @@ def concordance(id, query_data):
     lines = list()
     if len(df) > 0:
         df = df.set_index(['match', 'matchend'], drop=False)
-        df['concordance'] = lexicalise(df[['context', 'contextend']], slot_query.corpus.cwb_id)
+        df['concordance'] = lexicalise(df[['context', 'contextend']], slot_query.corpus.cwb_id, p_show)
         for row in df.to_dict('records'):
             line = row['concordance']
             line['meta'] = {str(k): int(row[k]) for k in anchors}
@@ -774,6 +789,7 @@ def diff(query_data):
     if slot_query_1.corpus.cwb_id != slot_query_2.corpus.cwb_id:
         abort(400, message="slot queries must be on the same corpus")
     cwb_id = slot_query_1.corpus.cwb_id
+    p_show = get_p_show(slot_query_1.corpus, query_data['p_show'])
 
     # gather query results and compare
     df = diff_matches(get_slot_query_matches(slot_query_1),
@@ -789,7 +805,7 @@ def diff(query_data):
     lines = list()
     if len(df) > 0:
         df = df.set_index(['match', 'matchend'], drop=False)
-        df['concordance'] = lexicalise(df[['context', 'contextend']], cwb_id)
+        df['concordance'] = lexicalise(df[['context', 'contextend']], cwb_id, p_show)
         for row in df.to_dict('records'):
             line = row['concordance']
             for key in ['category', 'A', 'B', 'delta']:
