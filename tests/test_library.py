@@ -94,8 +94,8 @@ def test_create_macro_versions(client, auth):
         assert macro_same.status_code == 200
         assert macro_same.json['id'] == macro.json['id']
 
-        # nested word list changes: new version pointing to new word list version
-        client.post(url_for('library.create_word_list', corpus_id=2),
+        # nested word list changes (without propagation): new version pointing to new word list version
+        client.post(url_for('library.create_word_list', corpus_id=2, propagate=False),
                     json={'name': 'test_nouns', 'words': ['Haus', 'Baum', 'Tisch']},
                     headers=auth_header)
         macro_new = client.post(url_for('library.create_macro_endpoint', corpus_id=2),

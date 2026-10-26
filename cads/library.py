@@ -154,26 +154,30 @@ def create_macros(macros, corpus_id, comment=None):
     argument_names, body). Macros whose dependencies cannot be resolved are
     retried after the others, so the order of definitions does not matter.
 
-    Returns the list of macros and the list of errors (if any).
+    Returns the list of macros, the list of new versions among them, and the
+    list of errors (if any).
     """
 
     results = list()
+    created = list()
     pending = list(macros)
     while pending:
         errors = list()
         failed = list()
         for m in pending:
             try:
-                macro, _ = create_macro(m['name'], m['body'], corpus_id, m['valency'], m['argument_names'], comment)
+                macro, is_new = create_macro(m['name'], m['body'], corpus_id, m['valency'], m['argument_names'], comment)
                 results.append(macro)
+                if is_new:
+                    created.append(macro)
             except ValueError as e:
                 errors.append(f"macro '{m['name']}' with valency {m['valency']}: {e}")
                 failed.append(m)
         if len(failed) == len(pending):
-            return results, errors
+            return results, created, errors
         pending = failed
 
-    return results, []
+    return results, created, []
 
 
 def save_wordlist(name, words, corpus_id, comment=None):
@@ -215,7 +219,7 @@ def import_library(lib_dir, corpus_id, username):
         with open(path, "rt") as f:
             macros.extend(parse_macro_file(f.read()))
 
-    macros, errors = create_macros(macros, corpus_id, comment="imported via CLI")
+    macros, _, errors = create_macros(macros, corpus_id, comment="imported via CLI")
     for error in errors:
         app.logger.error(f"could not import {error}")
     db.session.commit()
@@ -239,11 +243,18 @@ def macros_using(macro_ids):
     return found
 
 
+def macros_depending_on(macro_ids=set(), wordlist_ids=set()):
+    """Returns the ids of all macros that (transitively) use any of the given macros or word lists"""
+
+    direct = {n.macro_id for n in NestedWordList.query.filter(NestedWordList.wordlist_id.in_(wordlist_ids))}
+
+    return direct | macros_using(direct | set(macro_ids))
+
+
 def usage(macro_ids=set(), wordlist_ids=set()):
     """Returns macros and queries that (transitively) use any of the given macros or word lists"""
 
-    direct = {n.macro_id for n in NestedWordList.query.filter(NestedWordList.wordlist_id.in_(wordlist_ids))}
-    macros = direct | macros_using(direct | set(macro_ids))
+    macros = macros_depending_on(macro_ids, wordlist_ids)
 
     query_ids = {c.query_id for c in WordListCall.query.filter(WordListCall.wordlist_id.in_(wordlist_ids))} | \
         {c.query_id for c in MacroCall.query.filter(MacroCall.macro_id.in_(macros | set(macro_ids)))}
@@ -252,6 +263,168 @@ def usage(macro_ids=set(), wordlist_ids=set()):
         Macro.query.filter(Macro.id.in_(macros)).order_by(Macro.id).all(),
         Query.query.filter(Query.id.in_(query_ids)).order_by(Query.id).all()
     )
+
+
+###############
+# propagation #
+###############
+
+def previous_version(obj):
+    """Returns the previous version of a word list or macro (or None)"""
+
+    model = type(obj)
+    previous = model.query \
+        .filter(model.corpus_id == obj.corpus_id) \
+        .filter(model.name == obj.name) \
+        .filter(model.version < obj.version)
+    if model is Macro:
+        previous = previous.filter(Macro.valency == obj.valency)
+
+    return previous.order_by(model.version.desc()).first()
+
+
+def dependency_changes(old, new, path=[]):
+    """Compares two dependency trees (see Query.dependencies) and returns the
+    word lists and macros with different versions as a list of dictionaries
+    with keys kind, name, valency (macros only), from, to, and path (names of
+    the macros via which it is used, outermost first)
+
+    """
+
+    changes = list()
+
+    before = {wl['name']: wl for wl in old['wordlists']}
+    for wl in new['wordlists']:
+        if wl['name'] in before and before[wl['name']]['version'] != wl['version']:
+            changes.append({'kind': 'wordlist', 'name': wl['name'],
+                            'from': before[wl['name']]['version'], 'to': wl['version'], 'path': path})
+
+    before = {(m['name'], m['valency']): m for m in old['macros']}
+    for m in new['macros']:
+        key = (m['name'], m['valency'])
+        if key in before and before[key]['version'] != m['version']:
+            changes.append({'kind': 'macro', 'name': m['name'], 'valency': m['valency'],
+                            'from': before[key]['version'], 'to': m['version'], 'path': path})
+            changes.extend(dependency_changes(before[key], m, path + [m['name']]))
+
+    return changes
+
+
+def describe_changes(changes):
+    """Splits dependency changes into the ones that triggered an update (word
+    lists, and macros without changes in their own dependencies) and the macros
+    they are used by. Returns the triggering changes and a comment, e.g.
+    'auto: speech_verbs v1 → v2 (via speech_verb v1 → v2, speech_vg v2 → v3)'
+
+    """
+
+    def below(change, other):
+        through = change['path'] + [change['name']]
+        return other['path'][:len(through)] == through
+
+    triggers = list()
+    via = list()
+    for change in changes:
+        if change['kind'] == 'macro' and any(below(change, other) for other in changes if other is not change):
+            via.append(change)
+        else:
+            triggers.append(change)
+
+    def describe(changes):
+        return ", ".join(dict.fromkeys(f"{c['name']} v{c['from']} → v{c['to']}" for c in changes))
+
+    comment = f"auto: {describe(triggers)}"
+    if via:
+        # innermost first
+        comment += f" (via {describe(sorted(via, key=lambda c: -len(c['path'])))})"
+
+    return triggers, comment
+
+
+def propagate_macros(corpus_id, created):
+    """Creates new versions of all latest macros that use the previous version
+    of any of the created word lists or macros (directly or nested), with the
+    same definition resolved to the latest versions. Macros are processed in
+    dependency order, so each one is re-created once.
+
+    Returns the new macros. Adds to the session but does not commit.
+    """
+
+    previous = [previous_version(obj) for obj in created]
+    wordlist_ids = {p.id for p in previous if isinstance(p, WordList)}
+    macro_ids = {p.id for p in previous if isinstance(p, Macro)}
+
+    ids = macros_depending_on(macro_ids, wordlist_ids)
+    pending = {m.id: m for m in Macro.query.filter(Macro.id.in_(ids)).order_by(Macro.id)
+               if m.version == m.latest_version and not m.up_to_date}
+
+    macros = list()
+    while pending:
+        ready = [m for m in pending.values() if not any(n.nested_id in pending for n in m.nested_macro)]
+        if not ready:
+            raise ValueError(f"circular macro dependencies: {[m.canonical_name for m in pending.values()]}")
+        for old in ready:
+            macro, _ = create_macro(old.name, old.definition, corpus_id, old.valency, old.argument_list)
+            macro.comment = describe_changes(dependency_changes(old.dependencies, macro.dependencies))[1]
+            macros.append(macro)
+            del pending[old.id]
+
+    return macros
+
+
+def current_history_queries(corpus_id):
+    """Returns the slot queries on this corpus that are the current (newest
+    and up-to-date) entries of query histories, as a list of (history, query).
+    Must be called before new versions are created.
+
+    """
+
+    from .spheroscope.query_history import current_queries
+
+    return current_queries(corpus_id)
+
+
+def propagate(corpus_id, created, snapshot):
+    """Propagates the created word lists and macros to the latest macros and
+    the current queries in query histories (snapshot, see
+    current_history_queries) that use their previous versions.
+
+    Returns a dictionary with the new macros and records of the new queries.
+    Adds to the session but does not commit.
+    """
+
+    from .spheroscope.query_history import propagate_queries
+
+    macros = propagate_macros(corpus_id, created)
+    queries = propagate_queries(snapshot)
+
+    return {'macros': macros, 'queries': queries}
+
+
+def change_library(corpus_id, propagate_changes, change):
+    """Runs change() in one transaction, propagates its new versions (unless
+    propagate_changes is false), commits, and writes all word lists and macros
+    to the library directory. change() returns the word lists and macros to
+    write and the new versions among them. Aborts (400) on ValueError.
+
+    Returns the objects, the new versions, and the propagated macros and
+    queries (None if not propagated).
+    """
+
+    snapshot = current_history_queries(corpus_id) if propagate_changes else None
+
+    try:
+        objects, created = change()
+        propagated = propagate(corpus_id, created, snapshot) if propagate_changes else None
+    except ValueError as e:
+        db.session.rollback()
+        abort(400, message=str(e))
+
+    db.session.commit()
+    for obj in objects + (propagated['macros'] if propagated else []):
+        obj.write()
+
+    return objects, created, propagated
 
 
 ################
@@ -348,15 +521,59 @@ class UsageOut(Schema):
     queries = Nested(QueryUsage(many=True))
 
 
+class PropagateIn(Schema):
+
+    propagate = Boolean(load_default=True, metadata={
+        'description': 'create new versions of macros and current history queries that use the previous versions'
+    })
+
+
+class PropagatedQuery(Schema):
+
+    id = Integer(metadata={'description': 'new query'})
+    previous_id = Integer(metadata={'description': 'outdated query it replaces'})
+    history_ids = List(Integer(), metadata={'description': 'query histories it was added to'})
+
+
+class PropagatedOut(Schema):
+
+    macros = Nested(MacroOut(many=True))
+    queries = Nested(PropagatedQuery(many=True))
+
+
+class WordListCreatedOut(WordListOut):
+
+    propagated = Nested(PropagatedOut, metadata={'description': 'only if propagate is set'})
+
+
+class MacroCreatedOut(MacroOut):
+
+    propagated = Nested(PropagatedOut, metadata={'description': 'only if propagate is set'})
+
+
 class LibraryImportOut(Schema):
 
     wordlists = Nested(WordListOut(many=True))
     macros = Nested(MacroOut(many=True))
+    propagated = Nested(PropagatedOut, metadata={'description': 'only if propagate is set'})
 
 
 #################
 # API endpoints #
 #################
+
+def created_out(corpus_id, propagate_changes, change):
+    """Runs a change creating (or reusing) a single word list or macro (see
+    change_library). Returns it, with the propagated macros and queries, and
+    status 201 for a new version or 200 if the latest version is identical."""
+
+    objects, created, propagated = change_library(corpus_id, propagate_changes, change)
+    obj = objects[0]
+    if propagated is not None:
+        obj.propagated = propagated
+
+    return obj, 201 if created else 200
+
 
 @bp.get("/<corpus_id>/macros/<id>")
 @bp.output(MacroOut)
@@ -391,27 +608,49 @@ def get_macros(corpus_id):
 
 @bp.post("/<corpus_id>/macros")
 @bp.input(MacroIn)
-@bp.output(MacroOut, status_code=201)
+@bp.input(PropagateIn, location='query')
+@bp.output(MacroCreatedOut, status_code=201)
 @bp.auth_required(auth)
 @write_access_required
-def create_macro_endpoint(corpus_id, json_data):
+def create_macro_endpoint(corpus_id, json_data, query_data):
 
     """Creates a new version of a macro for a specified corpus.
     Returns the latest version (status 200) if it is identical.
-    Nested word lists and macros are resolved to their latest versions."""
+    Nested word lists and macros are resolved to their latest versions.
+    A new version is propagated to the macros and current history queries using the previous version."""
 
     corpus = db.get_or_404(Corpus, corpus_id)
 
-    try:
+    def change():
         macro, created = create_macro(corpus_id=corpus.id, **json_data)
-    except ValueError as e:
-        db.session.rollback()
-        return abort(400, message=str(e))
+        return [macro], [macro] if created else []
 
-    db.session.commit()
-    macro.write()
+    return created_out(corpus.id, query_data['propagate'], change)
 
-    return macro, 201 if created else 200
+
+@bp.post("/<corpus_id>/macros/<id>/restore")
+@bp.input(PropagateIn, location='query')
+@bp.output(MacroCreatedOut, status_code=201)
+@bp.auth_required(auth)
+@write_access_required
+def restore_macro(corpus_id, id, query_data):
+
+    """Creates a new version of a macro with the definition of the given version
+    (nested word lists and macros are resolved to their latest versions).
+    Returns the latest version (status 200) if it is identical.
+    The new version is propagated like any other."""
+
+    corpus = db.get_or_404(Corpus, corpus_id)
+    old = Macro.query.filter(Macro.corpus_id == corpus.id, Macro.id == id).first()
+    if not old:
+        return abort(404, message=f"Macro with id {id} does not exist for corpus with id {corpus_id} in database")
+
+    def change():
+        macro, created = create_macro(old.name, old.definition, corpus.id, old.valency, old.argument_list,
+                                      comment=f"restore v{old.version}")
+        return [macro], [macro] if created else []
+
+    return created_out(corpus.id, query_data['propagate'], change)
 
 
 @bp.delete("/<corpus_id>/macros/<id>")
@@ -489,26 +728,46 @@ def get_word_lists(corpus_id):
 
 @bp.post("/<corpus_id>/wordlists")
 @bp.input(WordListIn)
-@bp.output(WordListOut, status_code=201)
+@bp.input(PropagateIn, location='query')
+@bp.output(WordListCreatedOut, status_code=201)
 @bp.auth_required(auth)
 @write_access_required
-def create_word_list(corpus_id, json_data):
+def create_word_list(corpus_id, json_data, query_data):
 
     """Creates a new version of a word list for a specified corpus.
-    Returns the latest version (status 200) if it is identical."""
+    Returns the latest version (status 200) if it is identical.
+    A new version is propagated to the macros and current history queries using the previous version."""
 
     corpus = db.get_or_404(Corpus, corpus_id)
 
-    try:
+    def change():
         wordlist, created = create_wordlist(corpus_id=corpus.id, **json_data)
-    except ValueError as e:
-        db.session.rollback()
-        return abort(400, message=str(e))
+        return [wordlist], [wordlist] if created else []
 
-    db.session.commit()
-    wordlist.write()
+    return created_out(corpus.id, query_data['propagate'], change)
 
-    return wordlist, 201 if created else 200
+
+@bp.post("/<corpus_id>/wordlists/<id>/restore")
+@bp.input(PropagateIn, location='query')
+@bp.output(WordListCreatedOut, status_code=201)
+@bp.auth_required(auth)
+@write_access_required
+def restore_word_list(corpus_id, id, query_data):
+
+    """Creates a new version of a word list with the words of the given version.
+    Returns the latest version (status 200) if it is identical.
+    The new version is propagated like any other."""
+
+    corpus = db.get_or_404(Corpus, corpus_id)
+    old = WordList.query.filter(WordList.corpus_id == corpus.id, WordList.id == id).first()
+    if not old:
+        return abort(404, message=f"Word list with id {id} does not exist for corpus with id {corpus_id} in database")
+
+    def change():
+        wordlist, created = create_wordlist(old.name, old.word_list, corpus.id, comment=f"restore v{old.version}")
+        return [wordlist], [wordlist] if created else []
+
+    return created_out(corpus.id, query_data['propagate'], change)
 
 
 @bp.delete("/<corpus_id>/wordlists/<id>")
@@ -555,41 +814,46 @@ def get_word_list_usage(corpus_id, id):
 
 @bp.post("/<corpus_id>/import")
 @bp.input(LibraryImportIn)
+@bp.input(PropagateIn, location='query')
 @bp.output(LibraryImportOut)
 @bp.auth_required(auth)
 @write_access_required
-def import_definitions(corpus_id, json_data):
+def import_definitions(corpus_id, json_data, query_data):
 
     """Imports CQP macro definitions and word lists for a specified corpus.
     Changed definitions are imported as new versions, identical ones are reused.
     Word lists are imported first; macros may be defined in any order.
-    Nothing is imported if any definition fails."""
+    Nothing is imported if any definition fails.
+    New versions are propagated to the macros and current history queries using the previous versions."""
 
     corpus = db.get_or_404(Corpus, corpus_id)
+    wordlists = list()
+    macros = list()
 
-    try:
-        wordlists = list()
+    def change():
+        created = list()
         for wl in json_data['wordlists']:
-            wordlist, _ = create_wordlist(wl['name'], wl['words'], corpus.id,
-                                          comment=wl['comment'] or "imported via API")
+            wordlist, is_new = create_wordlist(wl['name'], wl['words'], corpus.id,
+                                               comment=wl['comment'] or "imported via API")
             wordlists.append(wordlist)
+            if is_new:
+                created.append(wordlist)
 
         definitions = parse_macro_file(json_data['macros'])
-        macros, errors = create_macros(definitions, corpus.id, comment="imported via API")
+        imported, new_macros, errors = create_macros(definitions, corpus.id, comment="imported via API")
         if errors:
             raise ValueError("; ".join(errors))
+        macros.extend(imported)
 
-    except ValueError as e:
-        db.session.rollback()
-        return abort(400, message=str(e))
+        return wordlists + macros, created + new_macros
 
-    db.session.commit()
-    for wordlist in wordlists:
-        wordlist.write()
-    for macro in macros:
-        macro.write()
+    _, _, propagated = change_library(corpus.id, query_data['propagate'], change)
 
-    return {'wordlists': wordlists, 'macros': macros}, 200
+    out = {'wordlists': wordlists, 'macros': macros}
+    if propagated is not None:
+        out['propagated'] = propagated
+
+    return out, 200
 
 
 ################

@@ -68,15 +68,22 @@ class QueryHistory(db.Model):
 
     name = db.Column(db.Unicode)
 
-    entries = db.relationship("QueryHistoryEntry", back_populates="parent", passive_deletes=True, cascade='all, delete')
+    entries = db.relationship("QueryHistoryEntry", back_populates="parent", passive_deletes=True, cascade='all, delete',
+                              order_by="QueryHistoryEntry.time")
 
+    @property
+    def current_entry(self):
+        """The newest entry (or None)"""
+        return max(self.entries, key=lambda entry: entry.time, default=None)
 
-    def add_entry(self, query_id, comment):
+    def add_entry(self, query_id, comment, trigger=None, auto=False):
 
         entry = QueryHistoryEntry(
             history_id = self.id,
             query_id = query_id,
-            comment = comment
+            comment = comment,
+            _trigger = json.dumps(trigger) if trigger is not None else None,
+            auto = auto
         )
 
         self.entries.append(entry)
@@ -92,8 +99,16 @@ class QueryHistoryEntry(db.Model):
     time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     comment = db.Column(db.Unicode)
 
+    # automatically created after a library change: what triggered it
+    _trigger = db.Column(db.Unicode)
+    auto = db.Column(db.Boolean, default=False)
+
     parent = db.relationship("QueryHistory", back_populates="entries")
     query = db.relationship("Query")
+
+    @property
+    def trigger(self):
+        return json.loads(self._trigger) if self._trigger else None
 
 
 class FlexiConcSession(db.Model):

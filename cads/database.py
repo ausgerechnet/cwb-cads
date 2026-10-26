@@ -545,72 +545,28 @@ class Query(db.Model):
     }
 
     def __init__(self, library_from=None, **kwargs):
+        """Adds the query and its library calls to the session (flushes, but does not commit).
+        Raises ValueError (before anything is added) if library calls cannot be resolved."""
+
         super(Query, self).__init__(**kwargs)
-        db.session.add(self)
 
-        # use the library versions of another query (e.g. for filtered copies)
         if library_from is not None:
-            db.session.flush()
-            for call in library_from.wordlist_calls:
-                db.session.add(WordListCall(query_id=self.id, wordlist_id=call.wordlist_id))
-            for call in library_from.macro_calls:
-                db.session.add(MacroCall(query_id=self.id, macro_id=call.macro_id))
-            db.session.commit()
-            return
+            # use the library versions of another query (e.g. for filtered copies)
+            wordlists = [call.wordlist for call in library_from.wordlist_calls]
+            macros = [call.macro for call in library_from.macro_calls]
+        else:
+            # resolve library calls to the latest versions
+            _, wordlists, macros = resolve_macro_body(self.cqp_query, self.corpus_id)
 
-        # perform dependency resolution and fail if resolution is impossible
-        # word list extraction
+        db.session.add(self)
+        db.session.flush()
 
-        wl_matches = re.finditer(r"\$([a-zA-Z_][a-zA-Z0-9_\-]*)", self.cqp_query)
-        wl_calls = {wl[1] for wl in wl_matches}
-        if wl_calls:
-            current_app.logger.debug(f"\tcontains word lists '{wl_calls}'")
-
-        # resolve word lists and save relationship for later mangling before execution
-        for identifier in wl_calls:
-            wl = WordList.query \
-                    .filter(WordList.corpus_id == self.corpus_id) \
-                    .filter(WordList.name == identifier) \
-                    .order_by(WordList.version.desc()) \
-                    .first()
-
-            if not wl:
-                db.session.delete(self)
-                raise Exception(f"undefined word list {identifier}")
-            else:
-                call = WordListCall(
-                    query_id=self.id,
-                    wordlist_id=wl.id
-                )
-                db.session.add(call)
-
-        db.session.commit()
-
-        # macro extraction
-        macro_calls = {(call.name, len(call.arguments)) for call in parse_macro_calls(self.cqp_query)}
-        if macro_calls:
-            current_app.logger.debug(f"\tcontains macros '{macro_calls}'")
-
-        # resolve macros and save relationship for later mangling before execution
-        for identifier, valency in macro_calls:
-            macro = Macro.query \
-                    .filter(Macro.corpus_id == self.corpus_id) \
-                    .filter(Macro.name == identifier) \
-                    .filter(Macro.valency == valency) \
-                    .order_by(Macro.version.desc()) \
-                    .first()
-
-            if not macro:
-                db.session.delete(self)
-                raise Exception(f"undefined macro {identifier} with valency {valency}")
-            else:
-                call = MacroCall(
-                    query_id=self.id,
-                    macro_id=macro.id
-                )
-                db.session.add(call)
-
-        db.session.commit()
+        # save relationships for later mangling before execution
+        for wl in wordlists:
+            db.session.add(WordListCall(query_id=self.id, wordlist_id=wl.id))
+        for macro in macros:
+            db.session.add(MacroCall(query_id=self.id, macro_id=macro.id))
+        db.session.flush()
 
     @property
     def dependencies(self):

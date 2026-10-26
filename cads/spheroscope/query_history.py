@@ -3,14 +3,69 @@
 
 
 from apiflask import APIBlueprint, Schema, abort
-from apiflask.fields import Integer, Nested, String
+from apiflask.fields import Boolean, Dict, Integer, Nested, String
 
 from .. import db
+from ..library import dependency_changes, describe_changes
 from ..users import auth
-from .database import QueryHistory, QueryHistoryEntry
-from .slot_query import SlotQueryOut
+from .database import QueryHistory, QueryHistoryEntry, SlotQuery
+from .slot_query import (SlotQueryOut, find_current_slot_query,
+                         new_slot_query, slot_query_definition_of)
 
 bp = APIBlueprint('query_history', __name__, url_prefix='/query-history')
+
+
+def current_queries(corpus_id):
+    """Returns the slot queries on this corpus that are the current (newest
+    and up-to-date) entries of query histories, as a list of (history, query)
+
+    """
+
+    snapshot = list()
+    for history in QueryHistory.query.order_by(QueryHistory.id):
+        entry = history.current_entry
+        if entry and isinstance(entry.query, SlotQuery) and entry.query.corpus_id == corpus_id \
+           and entry.query.up_to_date:
+            snapshot.append((history, entry.query))
+
+    return snapshot
+
+
+def propagate_queries(snapshot):
+    """For every query in the snapshot (see current_queries) that is outdated
+    now, creates a new query with the same definition (or reuses an existing
+    up-to-date one) and adds it to the histories as an automatic entry, with a
+    comment and trigger describing the library changes. Queries are not executed.
+
+    Returns a list of dictionaries with keys id, previous_id, history_ids.
+    Adds to the session but does not commit.
+    """
+
+    propagated = dict()
+    for history, query in snapshot:
+
+        if query.up_to_date:
+            continue
+
+        if query.id not in propagated:
+            definition = slot_query_definition_of(query)
+            new = find_current_slot_query(**definition) or new_slot_query(definition, query.name, query.comment)
+            changes, comment = describe_changes(dependency_changes(query.dependencies, new.dependencies))
+            propagated[query.id] = {
+                'query': new, 'comment': comment, 'changes': changes,
+                'record': {'id': new.id, 'previous_id': query.id, 'history_ids': []}
+            }
+
+        p = propagated[query.id]
+        if any(entry.query_id == p['query'].id for entry in history.entries):
+            continue
+        history.add_entry(p['query'].id, p['comment'], auto=True,
+                          trigger={'changes': p['changes'], 'previous_query_id': query.id})
+        p['record']['history_ids'].append(history.id)
+
+    db.session.flush()
+
+    return [p['record'] for p in propagated.values()]
 
 
 class QueryHistoryEntryIn(Schema):
@@ -27,6 +82,10 @@ class QueryHistoryEntryOut(Schema):
 
     time = String()
     comment = String()
+    auto = Boolean(metadata={'description': 'created automatically after a library change'})
+    trigger = Dict(allow_none=True, metadata={
+        'description': 'for automatic entries: library changes (with path of nested macros) and previous query'
+    })
 
     query = Nested(SlotQueryOut)
 

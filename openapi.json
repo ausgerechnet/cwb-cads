@@ -2408,11 +2408,76 @@
             },
             "type": "array"
           },
+          "propagated": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropagatedOut"
+              }
+            ],
+            "description": "only if propagate is set"
+          },
           "wordlists": {
             "items": {
               "$ref": "#/components/schemas/WordListOut"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "MacroCreatedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "argument_names": {
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "body": {
+            "description": "body as executed, with versioned identifiers of nested word lists and macros",
+            "type": "string"
+          },
+          "comment": {
+            "type": "string"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "definition": {
+            "description": "body with plain identifiers, as it can be posted again",
+            "type": "string"
+          },
+          "dependencies": {
+            "$ref": "#/components/schemas/DependenciesOut"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "modified": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "propagated": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropagatedOut"
+              }
+            ],
+            "description": "only if propagate is set"
+          },
+          "up_to_date": {
+            "description": "whether all nested word lists and macros are the latest versions",
+            "type": "boolean"
+          },
+          "valency": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "integer"
           }
         },
         "type": "object"
@@ -2533,6 +2598,45 @@
         },
         "type": "object"
       },
+      "PropagatedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "macros": {
+            "items": {
+              "$ref": "#/components/schemas/MacroOut"
+            },
+            "type": "array"
+          },
+          "queries": {
+            "items": {
+              "$ref": "#/components/schemas/PropagatedQuery"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PropagatedQuery": {
+        "additionalProperties": false,
+        "properties": {
+          "history_ids": {
+            "description": "query histories it was added to",
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "new query",
+            "type": "integer"
+          },
+          "previous_id": {
+            "description": "outdated query it replaces",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "QueryAssistedIn": {
         "additionalProperties": false,
         "properties": {
@@ -2599,6 +2703,10 @@
       "QueryHistoryEntryOut": {
         "additionalProperties": false,
         "properties": {
+          "auto": {
+            "description": "created automatically after a library change",
+            "type": "boolean"
+          },
           "comment": {
             "type": "string"
           },
@@ -2613,6 +2721,12 @@
           },
           "time": {
             "type": "string"
+          },
+          "trigger": {
+            "additionalProperties": {},
+            "description": "for automatic entries: library changes (with path of nested macros) and previous query",
+            "nullable": true,
+            "type": "object"
           }
         },
         "type": "object"
@@ -3684,6 +3798,44 @@
           },
           "message": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "WordListCreatedOut": {
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "type": "string"
+          },
+          "corpus_id": {
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "modified": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "propagated": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PropagatedOut"
+              }
+            ],
+            "description": "only if propagate is set"
+          },
+          "version": {
+            "type": "integer"
+          },
+          "words": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
         "type": "object"
@@ -6040,7 +6192,7 @@
     },
     "/library/{corpus_id}/import": {
       "post": {
-        "description": "Changed definitions are imported as new versions, identical ones are reused.\nWord lists are imported first; macros may be defined in any order.\nNothing is imported if any definition fails.",
+        "description": "Changed definitions are imported as new versions, identical ones are reused.\nWord lists are imported first; macros may be defined in any order.\nNothing is imported if any definition fails.\nNew versions are propagated to the macros and current history queries using the previous versions.",
         "parameters": [
           {
             "in": "path",
@@ -6048,6 +6200,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "create new versions of macros and current history queries that use the previous versions",
+            "in": "query",
+            "name": "propagate",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
             }
           }
         ],
@@ -6171,7 +6333,7 @@
         ]
       },
       "post": {
-        "description": "Returns the latest version (status 200) if it is identical.\nNested word lists and macros are resolved to their latest versions.",
+        "description": "Returns the latest version (status 200) if it is identical.\nNested word lists and macros are resolved to their latest versions.\nA new version is propagated to the macros and current history queries using the previous version.",
         "parameters": [
           {
             "in": "path",
@@ -6179,6 +6341,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "create new versions of macros and current history queries that use the previous versions",
+            "in": "query",
+            "name": "propagate",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
             }
           }
         ],
@@ -6196,7 +6368,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MacroOut"
+                  "$ref": "#/components/schemas/MacroCreatedOut"
                 }
               }
             },
@@ -6366,6 +6538,90 @@
         ]
       }
     },
+    "/library/{corpus_id}/macros/{id}/restore": {
+      "post": {
+        "description": "(nested word lists and macros are resolved to their latest versions).\nReturns the latest version (status 200) if it is identical.\nThe new version is propagated like any other.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "create new versions of macros and current history queries that use the previous versions",
+            "in": "query",
+            "name": "propagate",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MacroCreatedOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Creates a new version of a macro with the definition of the given version",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
     "/library/{corpus_id}/macros/{id}/usage": {
       "get": {
         "parameters": [
@@ -6487,7 +6743,7 @@
         ]
       },
       "post": {
-        "description": "Returns the latest version (status 200) if it is identical.",
+        "description": "Returns the latest version (status 200) if it is identical.\nA new version is propagated to the macros and current history queries using the previous version.",
         "parameters": [
           {
             "in": "path",
@@ -6495,6 +6751,16 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "create new versions of macros and current history queries that use the previous versions",
+            "in": "query",
+            "name": "propagate",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
             }
           }
         ],
@@ -6512,7 +6778,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WordListOut"
+                  "$ref": "#/components/schemas/WordListCreatedOut"
                 }
               }
             },
@@ -6677,6 +6943,90 @@
           }
         ],
         "summary": "Gets a single wordlist for a specified corpus",
+        "tags": [
+          "Library"
+        ]
+      }
+    },
+    "/library/{corpus_id}/wordlists/{id}/restore": {
+      "post": {
+        "description": "Returns the latest version (status 200) if it is identical.\nThe new version is propagated like any other.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "corpus_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "create new versions of macros and current history queries that use the previous versions",
+            "in": "query",
+            "name": "propagate",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WordListCreatedOut"
+                }
+              }
+            },
+            "description": "Successful response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Authentication error"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPError"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            },
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Creates a new version of a word list with the words of the given version.",
         "tags": [
           "Library"
         ]

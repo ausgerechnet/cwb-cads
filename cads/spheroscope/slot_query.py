@@ -571,15 +571,13 @@ def slot_query_definition(json_data):
     )
 
 
-def create_slot_query(definition, name=None, comment=None):
-    """Creates a new slot query from a definition; aborts if library calls cannot be resolved"""
+def new_slot_query(definition, name=None, comment=None):
+    """Creates a new slot query from a definition. Adds to the session but
+    does not commit. Raises ValueError if library calls cannot be resolved.
 
-    try:
-        resolve_macro_body(definition['cqp_query'], definition['corpus_id'])
-    except ValueError as e:
-        abort(400, message=str(e))
+    """
 
-    slot_query = SlotQuery(
+    return SlotQuery(
         corpus_id=definition['corpus_id'],
         cqp_query=definition['cqp_query'],
         match_strategy=definition['match_strategy'],
@@ -589,10 +587,33 @@ def create_slot_query(definition, name=None, comment=None):
         name=name,
         comment=comment
     )
-    db.session.add(slot_query)
+
+
+def create_slot_query(definition, name=None, comment=None):
+    """Creates a new slot query from a definition and commits; aborts if library calls cannot be resolved"""
+
+    try:
+        slot_query = new_slot_query(definition, name, comment)
+    except ValueError as e:
+        db.session.rollback()
+        abort(400, message=str(e))
+
     db.session.commit()
 
     return slot_query
+
+
+def slot_query_definition_of(slot_query):
+    """Returns the definition of an existing slot query (see slot_query_definition)"""
+
+    return dict(
+        corpus_id=slot_query.corpus_id,
+        cqp_query=slot_query.cqp_query,
+        slots=slot_query.slots,
+        corrections=slot_query.corrections,
+        match_strategy=slot_query.match_strategy,
+        s=slot_query.s
+    )
 
 
 @bp.post('/create')
