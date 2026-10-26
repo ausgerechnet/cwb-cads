@@ -60,7 +60,7 @@ def create(json_data):
     db.session.add(query_history)
     db.session.commit()
 
-    return QueryHistoryOut().dump(query_history), 200
+    return query_history, 200
 
 
 @bp.get('/')
@@ -73,7 +73,7 @@ def get_all():
 
     histories = QueryHistory.query.all()
 
-    return [QueryHistoryOut().dump(h) for h in histories], 200
+    return histories, 200
 
 
 @bp.put("/<id>/entry")
@@ -94,7 +94,7 @@ def add_query(id, json_data):
 
     try:
         db.session.commit()
-        return QueryHistoryOut().dump(history), 200
+        return history, 200
     except:
         return abort(400, message=f"Query with id {json_data.get('query_id')} does not exist in database")
 
@@ -109,7 +109,7 @@ def get_history(id):
 
     history = db.get_or_404(QueryHistory, id)
 
-    return QueryHistoryOut().dump(history), 200
+    return history, 200
 
 
 @bp.delete("/<id>")

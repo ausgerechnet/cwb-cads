@@ -498,3 +498,47 @@ def test_slot_query_corpus_filter_and_diff_corpora(client, auth):
         # diff across corpora
         diff = client.get(url_for('spheroscope.slot_query.diff', id1=ids[0], id2=ids[1]), headers=auth_header)
         assert diff.status_code == 400
+
+
+def test_query_history_context_break(client, auth):
+
+    auth_header = auth.login()
+
+    with client:
+        client.get("/")
+
+        slot_query = client.post(url_for('spheroscope.slot_query.create'),
+                                 content_type='application/json',
+                                 json={
+                                     'cqp_query': '[lemma="Wunsch"]',
+                                     'corpus_id': 1,
+                                     'context_break': 's'
+                                 },
+                                 headers=auth_header)
+        assert slot_query.status_code == 200
+        assert slot_query.json['context_break'] == 's'
+
+        history = client.post(url_for('spheroscope.query_history.create'),
+                              content_type='application/json',
+                              json={'name': 'test-context-break'},
+                              headers=auth_header)
+        assert history.status_code == 200
+
+        history = client.put(url_for('spheroscope.query_history.add_query', id=history.json['id']),
+                             content_type='application/json',
+                             json={'query_id': slot_query.json['id'], 'comment': 'first'},
+                             headers=auth_header)
+        assert history.status_code == 200
+        assert history.json['entries'][0]['query']['context_break'] == 's'
+
+        history = client.get(url_for('spheroscope.query_history.get_history', id=history.json['id']),
+                             headers=auth_header)
+        assert history.status_code == 200
+        entry = history.json['entries'][0]
+        assert entry['comment'] == 'first'
+        assert entry['query']['id'] == slot_query.json['id']
+        assert entry['query']['context_break'] == 's'
+
+        histories = client.get(url_for('spheroscope.query_history.get_all'), headers=auth_header)
+        assert histories.status_code == 200
+        assert any(e['query']['context_break'] == 's' for h in histories.json for e in h['entries'])
