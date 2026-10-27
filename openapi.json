@@ -2445,6 +2445,10 @@
           "corpus_id": {
             "type": "integer"
           },
+          "current": {
+            "description": "whether this is the current version",
+            "type": "boolean"
+          },
           "definition": {
             "description": "body with plain identifiers, as it can be posted again",
             "type": "string"
@@ -2469,8 +2473,12 @@
             ],
             "description": "only if propagate is set"
           },
+          "restored": {
+            "description": "an identical older version was made current again",
+            "type": "boolean"
+          },
           "up_to_date": {
-            "description": "whether all nested word lists and macros are the latest versions",
+            "description": "whether all nested word lists and macros are the current versions",
             "type": "boolean"
           },
           "valency": {
@@ -2485,10 +2493,15 @@
       "MacroDependency": {
         "additionalProperties": false,
         "properties": {
+          "current_version": {
+            "description": "version used when resolving calls (the one activated last)",
+            "type": "integer"
+          },
           "id": {
             "type": "integer"
           },
           "latest_version": {
+            "description": "highest version number",
             "type": "integer"
           },
           "macros": {
@@ -2569,6 +2582,10 @@
           "corpus_id": {
             "type": "integer"
           },
+          "current": {
+            "description": "whether this is the current version",
+            "type": "boolean"
+          },
           "definition": {
             "description": "body with plain identifiers, as it can be posted again",
             "type": "string"
@@ -2586,7 +2603,7 @@
             "type": "string"
           },
           "up_to_date": {
-            "description": "whether all nested word lists and macros are the latest versions",
+            "description": "whether all nested word lists and macros are the current versions",
             "type": "boolean"
           },
           "valency": {
@@ -2711,6 +2728,10 @@
             "type": "string"
           },
           "history_id": {
+            "type": "integer"
+          },
+          "id": {
+            "description": "entries are ordered by id",
             "type": "integer"
           },
           "query": {
@@ -3257,7 +3278,7 @@
             "type": "array"
           },
           "up_to_date": {
-            "description": "whether all library versions used by the query are the latest ones",
+            "description": "whether all library versions used by the query are the current ones",
             "type": "boolean"
           }
         },
@@ -3811,6 +3832,10 @@
           "corpus_id": {
             "type": "integer"
           },
+          "current": {
+            "description": "whether this is the current version",
+            "type": "boolean"
+          },
           "id": {
             "type": "integer"
           },
@@ -3828,6 +3853,10 @@
             ],
             "description": "only if propagate is set"
           },
+          "restored": {
+            "description": "an identical older version was made current again",
+            "type": "boolean"
+          },
           "version": {
             "type": "integer"
           },
@@ -3843,10 +3872,15 @@
       "WordListDependency": {
         "additionalProperties": false,
         "properties": {
+          "current_version": {
+            "description": "version used when resolving calls (the one activated last)",
+            "type": "integer"
+          },
           "id": {
             "type": "integer"
           },
           "latest_version": {
+            "description": "highest version number",
             "type": "integer"
           },
           "name": {
@@ -3891,6 +3925,10 @@
           "corpus_id": {
             "type": "integer"
           },
+          "current": {
+            "description": "whether this is the current version",
+            "type": "boolean"
+          },
           "id": {
             "type": "integer"
           },
@@ -3932,7 +3970,7 @@
     },
     "description": "cwb-cads: CWB-based API for Corpus-Assisted Discourse Studies",
     "title": "cwb-cads",
-    "version": "0.3.2.dev4"
+    "version": "0.3.2.dev5"
   },
   "openapi": "3.0.2",
   "paths": {
@@ -6192,7 +6230,7 @@
     },
     "/library/{corpus_id}/import": {
       "post": {
-        "description": "Changed definitions are imported as new versions, identical ones are reused.\nWord lists are imported first; macros may be defined in any order.\nNothing is imported if any definition fails.\nNew versions are propagated to the macros and current history queries using the previous versions.",
+        "description": "Changed definitions are imported as new versions, identical ones (current or older) are reused.\nWord lists are imported first; macros may be defined in any order.\nNothing is imported if any definition fails.\nChanged current versions are propagated to the macros and current history queries using the previous ones.",
         "parameters": [
           {
             "in": "path",
@@ -6203,7 +6241,7 @@
             }
           },
           {
-            "description": "create new versions of macros and current history queries that use the previous versions",
+            "description": "update macros and current history queries that use the previously current versions",
             "in": "query",
             "name": "propagate",
             "required": false,
@@ -6333,7 +6371,7 @@
         ]
       },
       "post": {
-        "description": "Returns the latest version (status 200) if it is identical.\nNested word lists and macros are resolved to their latest versions.\nA new version is propagated to the macros and current history queries using the previous version.",
+        "description": "Returns the current version (status 200) if it is identical; makes an identical older version\ncurrent again (status 200, restored) instead of creating a duplicate.\nNested word lists and macros are resolved to their current versions.\nA changed current version is propagated to the macros and current history queries using the previous one.",
         "parameters": [
           {
             "in": "path",
@@ -6344,7 +6382,7 @@
             }
           },
           {
-            "description": "create new versions of macros and current history queries that use the previous versions",
+            "description": "update macros and current history queries that use the previously current versions",
             "in": "query",
             "name": "propagate",
             "required": false,
@@ -6540,7 +6578,7 @@
     },
     "/library/{corpus_id}/macros/{id}/restore": {
       "post": {
-        "description": "(nested word lists and macros are resolved to their latest versions).\nReturns the latest version (status 200) if it is identical.\nThe new version is propagated like any other.",
+        "description": "(nested word lists and macros are resolved to their current versions): the given version itself\nif its nested versions are current, otherwise an identical or new version.\nThe change is propagated like any other.",
         "parameters": [
           {
             "in": "path",
@@ -6559,7 +6597,7 @@
             }
           },
           {
-            "description": "create new versions of macros and current history queries that use the previous versions",
+            "description": "update macros and current history queries that use the previously current versions",
             "in": "query",
             "name": "propagate",
             "required": false,
@@ -6616,7 +6654,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Creates a new version of a macro with the definition of the given version",
+        "summary": "Makes a macro with the definition of the given version current, like posting that definition",
         "tags": [
           "Library"
         ]
@@ -6743,7 +6781,7 @@
         ]
       },
       "post": {
-        "description": "Returns the latest version (status 200) if it is identical.\nA new version is propagated to the macros and current history queries using the previous version.",
+        "description": "Returns the current version (status 200) if it is identical; makes an identical older version\ncurrent again (status 200, restored) instead of creating a duplicate.\nA changed current version is propagated to the macros and current history queries using the previous one.",
         "parameters": [
           {
             "in": "path",
@@ -6754,7 +6792,7 @@
             }
           },
           {
-            "description": "create new versions of macros and current history queries that use the previous versions",
+            "description": "update macros and current history queries that use the previously current versions",
             "in": "query",
             "name": "propagate",
             "required": false,
@@ -6950,7 +6988,7 @@
     },
     "/library/{corpus_id}/wordlists/{id}/restore": {
       "post": {
-        "description": "Returns the latest version (status 200) if it is identical.\nThe new version is propagated like any other.",
+        "description": "The change is propagated like any other.",
         "parameters": [
           {
             "in": "path",
@@ -6969,7 +7007,7 @@
             }
           },
           {
-            "description": "create new versions of macros and current history queries that use the previous versions",
+            "description": "update macros and current history queries that use the previously current versions",
             "in": "query",
             "name": "propagate",
             "required": false,
@@ -7026,7 +7064,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Creates a new version of a word list with the words of the given version.",
+        "summary": "Makes the given version of a word list current again (like posting its words).",
         "tags": [
           "Library"
         ]
@@ -14462,7 +14500,7 @@
             "BearerAuth": []
           }
         ],
-        "summary": "Deletes the given query from a history",
+        "summary": "Deletes the given query from a history (all its entries)",
         "tags": [
           "Spheroscope.Query_History"
         ]
@@ -14576,6 +14614,7 @@
     },
     "/spheroscope/query-history/{id}/entry": {
       "put": {
+        "description": "Nothing is added if the newest entry already is this query.",
         "parameters": [
           {
             "in": "path",
@@ -14663,7 +14702,7 @@
             }
           },
           {
-            "description": "only slot queries using outdated (true) or only latest (false) library versions",
+            "description": "only slot queries using outdated (true) or only current (false) library versions",
             "in": "query",
             "name": "outdated",
             "required": false,
@@ -14775,7 +14814,7 @@
         ]
       },
       "put": {
-        "description": "A slot query is identified by corpus, CQP query, slots, corrections, match strategy and context break\n(name and comment are ignored; use PATCH to change them). An existing slot query is only returned\nif its library calls resolve to the latest versions.",
+        "description": "A slot query is identified by corpus, CQP query, slots, corrections, match strategy and context break\n(name and comment are ignored; use PATCH to change them). An existing slot query is only returned\nif its library calls resolve to the current versions.",
         "parameters": [],
         "requestBody": {
           "content": {
