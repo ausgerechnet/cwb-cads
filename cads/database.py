@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import hashlib
 import json
 import os
 import re
@@ -412,24 +413,33 @@ def parse_macro_calls(text):
     return calls
 
 
-def mangle_wordlist_call(text, wl):
-    """Replaces calls of word list wl.name with its versioned identifier"""
+def mangle_wordlist_call(text, wl, identifier=None):
+    """Replaces calls of word list wl.name with its versioned identifier (or the given one)"""
+
+    identifier = f"{wl.name}__v{wl.version}" if identifier is None else identifier
 
     # do not touch longer identifiers sharing this prefix
     pattern = fr"\${re.escape(wl.name)}(?![a-zA-Z0-9_\-])"
-    repl = fr"${wl.name}__v{wl.version}"
 
-    return re.sub(pattern, repl, text, flags=re.S)
+    return re.sub(pattern, lambda m: f"${identifier}", text, flags=re.S)
 
 
-def mangle_macro_call(text, macro):
-    """Replaces calls of macro.name with macro.valency arguments with its versioned identifier"""
+def mangle_macro_call(text, macro, identifier=None):
+    """Replaces calls of macro.name with macro.valency arguments with its versioned identifier (or the given one)"""
+
+    identifier = macro.canonical_name if identifier is None else identifier
 
     for call in reversed(parse_macro_calls(text)):
         if call.name == macro.name and len(call.arguments) == macro.valency:
-            text = text[:call.start] + "/" + macro.canonical_name + text[call.start + 1 + len(call.name):]
+            text = text[:call.start] + "/" + identifier + text[call.start + 1 + len(call.name):]
 
     return text
+
+
+def fingerprint(*parts):
+    """Hash of JSON-serialisable parts (identifies library content independently of versions)"""
+
+    return hashlib.sha256(json.dumps(parts, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
 def resolve_macro_body(body, corpus_id):
@@ -599,6 +609,35 @@ class Query(db.Model):
             mangled_query = mangle_wordlist_call(mangled_query, wlc.wordlist)
 
         return mangled_query
+
+    @property
+    def content_query(self):
+        """Version of cqp_query with library identifiers replaced by content identifiers
+        (see WordList.content_name, Macro.content_name): queries with the same content
+        query expand to the same CQP query, whatever versions they use. Used for
+        execution, so that cached results (by query string) are reused when the same
+        library content is posted again as a new version (e.g. on rollback), and are
+        never reused for different content. Requires write_content_library()."""
+
+        content_query = self.cqp_query
+
+        for mc in self.macro_calls:
+            content_query = mangle_macro_call(content_query, mc.macro, mc.macro.content_name)
+
+        for wlc in self.wordlist_calls:
+            content_query = mangle_wordlist_call(content_query, wlc.wordlist, wlc.wordlist.content_name)
+
+        return content_query
+
+    def write_content_library(self):
+        """Writes the word lists and macros used by this query (recursively) to the library
+        directory under their content identifiers, so that content_query can be executed"""
+
+        for mc in self.macro_calls:
+            mc.macro.write_content()
+
+        for wlc in self.wordlist_calls:
+            wlc.wordlist.write_content()
 
     @property
     def number_matches(self):
@@ -1215,13 +1254,25 @@ class WordList(db.Model):
         return {'id': self.id, 'name': self.name, 'version': self.version, 'latest_version': self.latest_version}
 
     @property
+    def content_name(self):
+        """Identifier of the content (set of words), independent of the version"""
+        return f"{self.name}__h{fingerprint(sorted(set(self.word_list)))}"
+
+    @property
     def path(self):
         return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}", "wordlists", f"{self.name}__v{self.version}.txt")
 
-    def write(self):
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, "wt") as f:
+    def write(self, path=None):
+        path = self.path if path is None else path
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wt") as f:
             f.write("\n".join(self.word_list))
+
+    def write_content(self):
+        """Writes the word list under its content identifier (unless it exists)"""
+        path = os.path.join(os.path.dirname(self.path), self.content_name + ".txt")
+        if not os.path.exists(path):
+            self.write(path)
 
 
 class WordListWords(db.Model):
@@ -1308,6 +1359,27 @@ class Macro(db.Model):
         return body
 
     @property
+    def content_body(self):
+        """Body with versioned identifiers of nested word lists and macros replaced by their content identifiers"""
+
+        body = self.body
+        for nested in self.nested_macro:
+            macro = nested.nested
+            body = body.replace(f"/{macro.canonical_name}[", f"/{macro.content_name}[")
+        for nested in self.nested_wordlist:
+            wl = nested.wordlist
+            body = re.sub(fr"\${re.escape(wl.name)}__v{wl.version}(?![a-zA-Z0-9_\-])",
+                          lambda m: f"${wl.content_name}", body)
+
+        return body
+
+    @property
+    def content_name(self):
+        """Identifier of the content (valency, argument names, body with content identifiers
+        of nested word lists and macros), independent of the version"""
+        return f"{self.name}__{self.valency}__h{fingerprint(self.valency, self.argument_names, self.content_body)}"
+
+    @property
     def latest_version(self):
         return db.session.query(db.func.max(Macro.version)) \
             .filter(Macro.corpus_id == self.corpus_id, Macro.name == self.name, Macro.valency == self.valency) \
@@ -1342,19 +1414,35 @@ class Macro(db.Model):
         return os.path.join(current_app.config['CCC_LIB_DIR'], f"corpus_{self.corpus_id}",
                             "macros", self.canonical_name + ".txt")
 
-    def write(self):
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, "wt") as f:
+    def write(self, name=None, body=None):
+        name = self.canonical_name if name is None else name
+        body = self.body if body is None else body
+        path = os.path.join(os.path.dirname(self.path), name + ".txt")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wt") as f:
 
             if self.argument_names:
                 names = json.loads(self.argument_names)
                 assert len(names) == self.valency
                 argstring = " ".join(f"${i}={n}" for i, n in enumerate(names))
-                f.write(f"MACRO {self.canonical_name}({argstring})\n")
+                f.write(f"MACRO {name}({argstring})\n")
             else:
-                f.write(f"MACRO {self.canonical_name}({self.valency})\n")
-            f.write(self.body)
+                f.write(f"MACRO {name}({self.valency})\n")
+            f.write(body)
             f.write(";\n")
+
+    def write_content(self):
+        """Writes the macro and its nested word lists and macros (recursively)
+        under their content identifiers (unless they exist)"""
+
+        for nested in self.nested_macro:
+            nested.nested.write_content()
+        for nested in self.nested_wordlist:
+            nested.wordlist.write_content()
+
+        name = self.content_name
+        if not os.path.exists(os.path.join(os.path.dirname(self.path), name + ".txt")):
+            self.write(name, self.content_body)
 
 
 class NestedMacro(db.Model):

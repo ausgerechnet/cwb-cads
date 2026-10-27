@@ -32,8 +32,9 @@ def ccc_slot_query(slot_query):
             k = d['anchor']
         corrections[k] = d['correction']
 
+    slot_query.write_content_library()
     dump = crps.query(
-        cqp_query=slot_query.mangled_query,
+        cqp_query=slot_query.content_query,
         corrections=corrections,
         context_break=slot_query.s,
         match_strategy=slot_query.match_strategy,

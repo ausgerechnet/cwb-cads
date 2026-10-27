@@ -56,7 +56,8 @@ def ccc_query(query, return_df=True, propagate_error=False):
 
         # query corpus
         current_app.logger.debug('ccc_query :: querying')
-        matches = corpus.query(cqp_query=query.mangled_query,
+        query.write_content_library()
+        matches = corpus.query(cqp_query=query.content_query,
                                context_break=query.s,
                                match_strategy=query.match_strategy,
                                propagate_error=True)
