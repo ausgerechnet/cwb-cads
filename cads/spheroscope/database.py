@@ -69,14 +69,21 @@ class QueryHistory(db.Model):
     name = db.Column(db.Unicode)
 
     entries = db.relationship("QueryHistoryEntry", back_populates="parent", passive_deletes=True, cascade='all, delete',
-                              order_by="QueryHistoryEntry.time")
+                              order_by="QueryHistoryEntry.id")
 
     @property
     def current_entry(self):
         """The newest entry (or None)"""
-        return max(self.entries, key=lambda entry: entry.time, default=None)
+        return self.entries[-1] if self.entries else None
 
     def add_entry(self, query_id, comment, trigger=None, auto=False):
+        """Adds an entry (flushes), unless the newest entry already is this
+        query. A query can be added several times (e.g. after a rollback).
+        Returns the new entry, or None if nothing was added."""
+
+        current = self.current_entry
+        if current and current.query_id == query_id:
+            return None
 
         entry = QueryHistoryEntry(
             history_id = self.id,
@@ -87,14 +94,20 @@ class QueryHistory(db.Model):
         )
 
         self.entries.append(entry)
+        db.session.flush()
 
         return entry
 
 
 class QueryHistoryEntry(db.Model):
 
-    history_id = db.Column(db.Integer, db.ForeignKey("query_history.id", ondelete="CASCADE"), primary_key=True)
-    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), primary_key=True)
+    __table_args__ = {'sqlite_autoincrement': True}
+
+    # order of entries in a history
+    id = db.Column(db.Integer, primary_key=True)
+
+    history_id = db.Column(db.Integer, db.ForeignKey("query_history.id", ondelete="CASCADE"), nullable=False, index=True)
+    query_id = db.Column(db.Integer, db.ForeignKey("query.id", ondelete="CASCADE"), nullable=False, index=True)
 
     time = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     comment = db.Column(db.Unicode)

@@ -277,7 +277,7 @@ def diff_matches(df_a, df_b, same='start', tolerance=1):
 
 def find_current_slot_query(corpus_id, cqp_query, slots, corrections, match_strategy, s):
     """Returns an existing slot query with the given definition whose library
-    calls resolve to the latest versions (or None). Name and comment are not
+    calls resolve to the current versions (or None). Name and comment are not
     part of the definition. Raises ValueError if library calls cannot be
     resolved.
 
@@ -319,7 +319,7 @@ def import_slot_query(path, corpus_id):
         s=corpus.s_default
     )
 
-    # reuse existing query if its library calls still resolve to the latest versions
+    # reuse existing query if its library calls still resolve to the current versions
     try:
         existing = find_current_slot_query(slots=slots, corrections=corrections, **definition)
     except ValueError as e:
@@ -392,7 +392,7 @@ class SlotQueryOut(Schema):
     corrections = Nested(AnchorCorrection(many=True))
     match_strategy = String(dump_default='longest', required=False, validate=OneOf(['longest', 'shortest', 'standard']))
     dependencies = Nested(DependenciesOut, metadata={'description': 'library versions used by the query'})
-    up_to_date = Boolean(metadata={'description': 'whether all library versions used by the query are the latest ones'})
+    up_to_date = Boolean(metadata={'description': 'whether all library versions used by the query are the current ones'})
 
 
 class SlotQueryPatchIn(Schema):
@@ -409,7 +409,7 @@ class SlotQueryFilterIn(Schema):
     )
     outdated = Boolean(
         required=False, load_default=None,
-        metadata={'description': 'only slot queries using outdated (true) or only latest (false) library versions'}
+        metadata={'description': 'only slot queries using outdated (true) or only current (false) library versions'}
     )
 
 
@@ -642,7 +642,7 @@ def get_or_create(json_data):
 
     A slot query is identified by corpus, CQP query, slots, corrections, match strategy and context break
     (name and comment are ignored; use PATCH to change them). An existing slot query is only returned
-    if its library calls resolve to the latest versions.
+    if its library calls resolve to the current versions.
 
     """
 

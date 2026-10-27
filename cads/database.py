@@ -442,8 +442,29 @@ def fingerprint(*parts):
     return hashlib.sha256(json.dumps(parts, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
+def current_wordlist(corpus_id, name):
+    """Returns the current version of a word list (or None): the one activated last"""
+
+    return WordList.query \
+        .filter(WordList.corpus_id == corpus_id) \
+        .filter(WordList.name == name) \
+        .order_by(WordList.activated.desc(), WordList.version.desc()) \
+        .first()
+
+
+def current_macro(corpus_id, name, valency):
+    """Returns the current version of a macro (or None): the one activated last"""
+
+    return Macro.query \
+        .filter(Macro.corpus_id == corpus_id) \
+        .filter(Macro.name == name) \
+        .filter(Macro.valency == valency) \
+        .order_by(Macro.activated.desc(), Macro.version.desc()) \
+        .first()
+
+
 def resolve_macro_body(body, corpus_id):
-    """Resolves word list and macro calls in a macro body to the latest
+    """Resolves word list and macro calls in a macro body to the current
     versions in the library and mangles their identifiers.
 
     Returns the mangled body, the resolved word lists, and the resolved
@@ -460,11 +481,7 @@ def resolve_macro_body(body, corpus_id):
         current_app.logger.debug(f"\tcontains nested word list calls: '{nested_wordlists}'")
 
     for identifier in nested_wordlists:
-        wl = WordList.query \
-                .filter(WordList.corpus_id == corpus_id) \
-                .filter(WordList.name == identifier) \
-                .order_by(WordList.version.desc()) \
-                .first()
+        wl = current_wordlist(corpus_id, identifier)
 
         if not wl:
             raise ValueError(f"undefined word list {identifier}")
@@ -478,12 +495,7 @@ def resolve_macro_body(body, corpus_id):
         current_app.logger.debug(f"\tcontains nested macro calls: '{nested_macros}'")
 
     for identifier, valency in nested_macros:
-        nm = Macro.query \
-                .filter(Macro.corpus_id == corpus_id) \
-                .filter(Macro.name == identifier) \
-                .filter(Macro.valency == valency) \
-                .order_by(Macro.version.desc()) \
-                .first()
+        nm = current_macro(corpus_id, identifier, valency)
 
         if not nm:
             raise ValueError(f"undefined nested macro call {identifier} with valency {valency}")
@@ -495,13 +507,13 @@ def resolve_macro_body(body, corpus_id):
 
 
 def dependencies_up_to_date(dependencies):
-    """Checks whether all (nested) dependencies are the latest versions"""
+    """Checks whether all (nested) dependencies are the current versions"""
 
     for wl in dependencies['wordlists']:
-        if wl['version'] != wl['latest_version']:
+        if wl['version'] != wl['current_version']:
             return False
     for macro in dependencies['macros']:
-        if macro['version'] != macro['latest_version'] or not dependencies_up_to_date(macro):
+        if macro['version'] != macro['current_version'] or not dependencies_up_to_date(macro):
             return False
 
     return True
@@ -565,7 +577,7 @@ class Query(db.Model):
             wordlists = [call.wordlist for call in library_from.wordlist_calls]
             macros = [call.macro for call in library_from.macro_calls]
         else:
-            # resolve library calls to the latest versions
+            # resolve library calls to the current versions
             _, wordlists, macros = resolve_macro_body(self.cqp_query, self.corpus_id)
 
         db.session.add(self)
@@ -588,7 +600,7 @@ class Query(db.Model):
 
     @property
     def up_to_date(self):
-        """Whether all library versions used by this query (recursively) are the latest ones"""
+        """Whether all library versions used by this query (recursively) are the current ones"""
         return dependencies_up_to_date(self.dependencies)
 
     @property
@@ -1229,6 +1241,8 @@ class WordList(db.Model):
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     modified = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    # the current version of a word list is the one activated last (see activate)
+    activated = db.Column(db.Integer, nullable=False, default=0)
 
     words = db.relationship("WordListWords", backref="word_list", cascade="all, delete", order_by="WordListWords.id")
     # p_att = db.Column(db.Unicode(50), nullable=False)
@@ -1250,8 +1264,25 @@ class WordList(db.Model):
             .filter(WordList.corpus_id == self.corpus_id, WordList.name == self.name) \
             .scalar()
 
+    @property
+    def current_version(self):
+        return current_wordlist(self.corpus_id, self.name).version
+
+    @property
+    def current(self):
+        return self.version == self.current_version
+
+    def activate(self):
+        """Makes this version the current one (flushes)"""
+        self.activated = (db.session.query(db.func.max(WordList.activated))
+                          .filter(WordList.corpus_id == self.corpus_id, WordList.name == self.name)
+                          .scalar() or 0) + 1
+        db.session.add(self)
+        db.session.flush()
+
     def dependency(self):
-        return {'id': self.id, 'name': self.name, 'version': self.version, 'latest_version': self.latest_version}
+        return {'id': self.id, 'name': self.name, 'version': self.version,
+                'latest_version': self.latest_version, 'current_version': self.current_version}
 
     @property
     def content_name(self):
@@ -1310,6 +1341,8 @@ class Macro(db.Model):
     # user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     modified = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    # the current version of a macro is the one activated last (see activate)
+    activated = db.Column(db.Integer, nullable=False, default=0)
 
     body = db.Column(db.Unicode)
 
@@ -1395,13 +1428,31 @@ class Macro(db.Model):
 
     @property
     def up_to_date(self):
-        """Whether all library versions used by this macro (recursively) are the latest ones"""
+        """Whether all library versions used by this macro (recursively) are the current ones"""
         return dependencies_up_to_date(self.dependencies)
+
+    @property
+    def current_version(self):
+        return current_macro(self.corpus_id, self.name, self.valency).version
+
+    @property
+    def current(self):
+        return self.version == self.current_version
+
+    def activate(self):
+        """Makes this version the current one (flushes)"""
+        self.activated = (db.session.query(db.func.max(Macro.activated))
+                          .filter(Macro.corpus_id == self.corpus_id, Macro.name == self.name,
+                                  Macro.valency == self.valency)
+                          .scalar() or 0) + 1
+        db.session.add(self)
+        db.session.flush()
 
     def dependency(self):
         return {
             'id': self.id, 'name': self.name, 'valency': self.valency,
             'version': self.version, 'latest_version': self.latest_version,
+            'current_version': self.current_version,
             **self.dependencies
         }
 

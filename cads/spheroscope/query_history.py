@@ -6,6 +6,7 @@ from apiflask import APIBlueprint, Schema, abort
 from apiflask.fields import Boolean, Dict, Integer, Nested, String
 
 from .. import db
+from ..database import Query
 from ..library import dependency_changes, describe_changes
 from ..users import auth
 from .database import QueryHistory, QueryHistoryEntry, SlotQuery
@@ -34,8 +35,9 @@ def current_queries(corpus_id):
 def propagate_queries(snapshot):
     """For every query in the snapshot (see current_queries) that is outdated
     now, creates a new query with the same definition (or reuses an existing
-    up-to-date one) and adds it to the histories as an automatic entry, with a
-    comment and trigger describing the library changes. Queries are not executed.
+    up-to-date one, e.g. after a rollback) and adds it to the histories as an
+    automatic entry, with a comment and trigger describing the library
+    changes. Queries are not executed.
 
     Returns a list of dictionaries with keys id, previous_id, history_ids.
     Adds to the session but does not commit.
@@ -57,11 +59,9 @@ def propagate_queries(snapshot):
             }
 
         p = propagated[query.id]
-        if any(entry.query_id == p['query'].id for entry in history.entries):
-            continue
-        history.add_entry(p['query'].id, p['comment'], auto=True,
-                          trigger={'changes': p['changes'], 'previous_query_id': query.id})
-        p['record']['history_ids'].append(history.id)
+        if history.add_entry(p['query'].id, p['comment'], auto=True,
+                             trigger={'changes': p['changes'], 'previous_query_id': query.id}):
+            p['record']['history_ids'].append(history.id)
 
     db.session.flush()
 
@@ -77,6 +77,7 @@ class QueryHistoryEntryIn(Schema):
 
 class QueryHistoryEntryOut(Schema):
 
+    id = Integer(metadata={'description': 'entries are ordered by id'})
     history_id = Integer()
     query_id = Integer()
 
@@ -142,20 +143,19 @@ def get_all():
 def add_query(id, json_data):
     """Create a new entry in a given query history.
 
+    Nothing is added if the newest entry already is this query.
+
     """
 
     history = db.get_or_404(QueryHistory, id)
-
-    entry = history.add_entry(
-        json_data.get("query_id"),
-        json_data.get("comment")
-    )
-
-    try:
-        db.session.commit()
-        return history, 200
-    except:
+    query = db.session.get(Query, json_data.get("query_id"))
+    if not query:
         return abort(400, message=f"Query with id {json_data.get('query_id')} does not exist in database")
+
+    history.add_entry(query.id, json_data.get("comment"))
+    db.session.commit()
+
+    return history, 200
 
 
 @bp.get("/<id>")
@@ -191,14 +191,17 @@ def delete_history(id):
 @bp.delete("/<hid>/<qid>")
 @bp.auth_required(auth)
 def delete_history_entry(hid, qid):
-    """ Deletes the given query from a history
+    """ Deletes the given query from a history (all its entries)
 
     """
 
-    entry = db.get_or_404(QueryHistoryEntry, (hid, qid))
+    entries = db.session.query(QueryHistoryEntry).filter_by(history_id=hid, query_id=qid).all()
+    if not entries:
+        return abort(404, message=f"Query {qid} is not in history {hid}")
 
     try:
-        db.session.delete(entry)
+        for entry in entries:
+            db.session.delete(entry)
         db.session.commit()
         return f"Deleted QueryHistoryEntry for query {qid} in history {hid} successfully", 200
     except:

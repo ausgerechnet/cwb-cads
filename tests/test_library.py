@@ -287,7 +287,7 @@ def test_dependencies_and_usage(client, auth):
         assert slot_query.json['up_to_date'] is True
         dependencies = slot_query.json['dependencies']
         assert dependencies['wordlists'] == [
-            {'id': nouns.json['id'], 'name': 'dep_nouns', 'version': 1, 'latest_version': 1}
+            {'id': nouns.json['id'], 'name': 'dep_nouns', 'version': 1, 'latest_version': 1, 'current_version': 1}
         ]
         assert len(dependencies['macros']) == 1
         dep_outer = dependencies['macros'][0]

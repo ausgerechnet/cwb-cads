@@ -108,21 +108,25 @@ def test_propagation(client, auth):
         assert wl.status_code == 200
         assert wl.json['propagated'] == {'macros': [], 'queries': []}
 
-        # restore: new version with the words of v1, propagated like any other change
+        # restore: v1 becomes current again (no new version), propagated like any other change
         actors_v1 = [w for w in client.get(url_for('library.get_word_lists', corpus_id=1), headers=auth_header).json
                      if w['name'] == 'prop_actors'][0]
         wl = post('library.create_word_list', name='prop_actors', words=['Kanzler', 'Premier'])
         assert [(m['name'], m['version']) for m in wl.json['propagated']['macros']] == [('prop_actor', 2)]
         restored = client.post(url_for('library.restore_word_list', corpus_id=1, id=actors_v1['id']),
                                headers=auth_header)
-        assert restored.status_code == 201
-        assert (restored.json['version'], restored.json['words'], restored.json['comment']) == (3, ['Kanzler'], 'restore v1')
-        assert [(m['name'], m['version']) for m in restored.json['propagated']['macros']] == [('prop_actor', 3)]
+        assert restored.status_code == 200
+        assert restored.json['restored'] is True and restored.json['current'] is True
+        assert (restored.json['id'], restored.json['version'], restored.json['words']) == (actors_v1['id'], 1, ['Kanzler'])
+        assert [(m['name'], m['version'], m['current']) for m in restored.json['propagated']['macros']] == \
+            [('prop_actor', 1, True)]
+        assert latest('prop_actor') == 2
         assert [q['history_ids'] for q in restored.json['propagated']['queries']] == [[h1, h4]]
-        assert history(h1)['entries'][-1]['comment'] == 'auto: prop_actors v2 → v3 (via prop_actor v2 → v3)'
+        assert history(h1)['entries'][-1]['comment'] == 'auto: prop_actors v2 → v1 (via prop_actor v2 → v1)'
+        assert history(h1)['entries'][-1]['query']['up_to_date'] is True
         assert len(history(h1)['entries']) == 5
 
-        # restoring a macro with an identical definition reuses the latest version
+        # restoring a macro with an identical definition (resolved to the current versions) reuses the current version
         vg_v1 = [m for m in client.get(url_for('library.get_macros', corpus_id=1), headers=auth_header).json
                  if m['name'] == 'prop_speech_vg' and m['version'] == 1][0]
         restored = client.post(url_for('library.restore_macro', corpus_id=1, id=vg_v1['id']), headers=auth_header)
@@ -146,9 +150,9 @@ def test_propagation(client, auth):
         assert len(history(h1)['entries']) == 6
 
         # opt-out
-        wl = post('library.create_word_list', propagate=False, name='prop_actors', words=['Kanzler', 'Premier'])
+        wl = post('library.create_word_list', propagate=False, name='prop_actors', words=['Kanzler', 'Minister'])
         assert wl.status_code == 201
         assert 'propagated' not in wl.json
-        assert latest('prop_actor') == 3
+        assert latest('prop_actor') == 2
         assert len(history(h1)['entries']) == 6
         assert history(h1)['entries'][-1]['query']['up_to_date'] is False
