@@ -641,6 +641,28 @@ class Query(db.Model):
 
         return content_query
 
+    @property
+    def known_zero_matches(self):
+        """Whether this query, or another one with the same content query, context break,
+        matching strategy and subcorpus, was executed without matches (ccc does not cache
+        empty results)"""
+
+        if self.zero_matches:
+            return True
+
+        content_query = self.content_query
+        candidates = Query.query.filter(
+            Query.id != self.id,
+            Query.zero_matches.is_(True),
+            Query.corpus_id == self.corpus_id,
+            Query.subcorpus_id == self.subcorpus_id,     # IS NULL for None
+            Query.cqp_query == self.cqp_query,
+            Query.s == self.s,
+            Query.match_strategy == self.match_strategy
+        )
+
+        return any(candidate.content_query == content_query for candidate in candidates)
+
     def write_content_library(self):
         """Writes the word lists and macros used by this query (recursively) to the library
         directory under their content identifiers, so that content_query can be executed"""

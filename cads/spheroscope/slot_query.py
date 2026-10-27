@@ -22,6 +22,11 @@ bp = APIBlueprint('slot_query', __name__, url_prefix='/slot-query')
 
 def ccc_slot_query(slot_query):
 
+    # ccc does not cache empty results
+    if slot_query.known_zero_matches:
+        app.logger.debug(f'query {slot_query.id} is known to have no results')
+        return DataFrame()
+
     crps = slot_query.corpus.ccc()
 
     corrections = dict()
@@ -49,6 +54,8 @@ def ccc_slot_query(slot_query):
     # valid query, but no matches
     if len(dump.df) == 0:
         app.logger.warning(f'no results for query {slot_query.id}')
+        slot_query.zero_matches = True
+        db.session.commit()
 
     return dump.df
 

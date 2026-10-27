@@ -71,3 +71,58 @@ def test_reuse_results_of_identical_content(client, auth, monkeypatch):
         matches_3, cqp_reused = matches(q3)
         assert matches_3 == matches_1
         assert cqp_reused == cqp_cached
+
+
+def test_remember_zero_matches(client, auth, monkeypatch):
+
+    auth_header = auth.login()
+    with client:
+        client.get("/")
+
+        def post(endpoint, **json):
+            return client.post(url_for(endpoint, corpus_id=1, propagate=False), json=json, headers=auth_header)
+
+        def slot_query(cqp):
+            q = client.put(url_for('spheroscope.slot_query.get_or_create'),
+                           json={'cqp_query': cqp, 'corpus_id': 1, 'slots': [], 'corrections': []},
+                           headers=auth_header)
+            assert q.status_code == 200
+            return q.json['id']
+
+        started = list()
+        start_cqp = Crps.start_cqp
+
+        def counting_start_cqp(self):
+            started.append(1)
+            return start_cqp(self)
+
+        monkeypatch.setattr(Crps, 'start_cqp', counting_start_cqp)
+
+        def matches(id):
+            started.clear()
+            m = client.get(url_for('spheroscope.slot_query.matches', id=id), headers=auth_header)
+            assert m.status_code == 200
+            return m.json['nr_matches'], len(started)
+
+        # words that do not occur (new in every run, since the ccc cache outlives the database)
+        run = uuid4().hex
+        words = [f"never-{run}", f"nowhere-{run}"]
+        cqp = '/empty_vg[]'
+        post('library.create_word_list', name='empty_words', words=words)
+        post('library.create_macro_endpoint', name='empty_vg', valency=0, body='[lemma = $empty_words]')
+        q1 = slot_query(cqp)
+
+        nr_matches, cqp_first = matches(q1)
+        assert nr_matches == 0 and cqp_first > 0
+
+        # executed only once
+        assert matches(q1) == (0, 0)
+        conc = client.get(url_for('spheroscope.slot_query.concordance', id=q1), headers=auth_header)
+        assert conc.status_code == 200 and conc.json['nr_lines'] == 0
+
+        # also for a new version with the same content
+        post('library.create_word_list', name='empty_words', words=list(reversed(words)))
+        post('library.create_macro_endpoint', name='empty_vg', valency=0, body='[lemma = $empty_words]')
+        q2 = slot_query(cqp)
+        assert q2 != q1
+        assert matches(q2) == (0, 0)
